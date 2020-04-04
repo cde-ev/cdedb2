@@ -35,20 +35,20 @@
             {{ util.href(cdedblink("event/registration_query", {"event_id": data['id']}), gettext("Registrations"),
                     aclass="list-group-item", icon="list", active=(sidenav_active == 'event_registration')) }}
             {{ util.href(cdedblink("event/stats", {"event_id": data['id']}), gettext("Statistics"),
-                    aclass="list-group-item", icon="glyphicon-stats", active=(sidenav_active == 'event_stats')) }}
+                    aclass="list-group-item", icon="chart-bar", active=(sidenav_active == 'event_stats')) }}
 
             {% if data['tracks'] %}
                 {{ util.href(cdedblink("event/course_stats", {"event_id": data['id']}), gettext("Courses"),
                              aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_stats')) }}
                 {{ util.href(cdedblink("event/course_choices", {"event_id": data['id']}), gettext("Course Assignment"),
-                        aclass="list-group-item", icon="glyphicon-screenshot", active=(sidenav_active == 'event_course_choices')) }}
+                        aclass="list-group-item", icon="crosshairs", active=(sidenav_active == 'event_course_choices')) }}
             {% endif %}
             {{ util.href(cdedblink("event/lodgements", {"event_id": data['id']}), gettext("Lodgements"),
                     aclass="list-group-item", icon="home", active=(sidenav_active == 'event_lodgements')) }}
             {{ util.href(cdedblink("event/downloads", {"event_id": data['id']}), gettext("Downloads"), aclass="list-group-item",
-                    icon="glyphicon-save-file", active=(sidenav_active == 'event_downloads')) }}
+                    icon="file-download", active=(sidenav_active == 'event_downloads')) }}
             {{ util.href(cdedblink("event/partial_import_form", {"event_id": data['id']}), gettext("Partial Import"), aclass="list-group-item",
-                    icon="glyphicon-cloud-upload ", active=(sidenav_active == 'partial_import')) }}
+                    icon="cloud-upload-alt", active=(sidenav_active == 'partial_import')) }}
             {{ util.href(cdedblink("event/batch_fees_form", {"event_id": data['id']}), gettext("Enter Money Transfers"),
                          aclass="list-group-item", icon="euro-sign", readonly=is_locked,
                          active=(sidenav_active == 'event_batch_fees')) }}
@@ -62,7 +62,7 @@
                          icon='tag', aclass="list-group-item", active=(sidenav_active == 'event_field_summary') ) }}
             {{ util.href(cdedblink("event/questionnaire_summary", {"event_id": data['id']}),
                          gettext("Configure Questionnaire"), aclass="list-group-item",
-                         active=(sidenav_active == 'event_quest_summary'), icon='glyphicon-unchecked') }}
+                         active=(sidenav_active == 'event_quest_summary'), icon='square') }}
             {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), gettext("Log"), aclass="list-group-item",
                          icon="list-alt", active=(sidenav_active == 'event_event_log')) }}
         </div>
@@ -81,7 +81,7 @@
 {% block navigation %}
     {% if ambience['event'] %}
         <p>
-            {{ util.href(cdedblink("event/index"), gettext("Event-Overview"), icon="glyphicon-circle-arrow-up") }}
+            {{ util.href(cdedblink("event/index"), gettext("Event-Overview"), icon="arrow-alt-circle-up") }}
         </p>
 
         <h3 class="heading-sidebar">{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }}

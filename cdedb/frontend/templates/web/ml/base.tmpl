@@ -28,9 +28,9 @@
         <p>
             {% if is_admin and not ambience['mailinglist']['is_active'] %}
                 {{ util.href(cdedblink("ml/list_mailinglists"), gettext("Mailinglist-Overview"),
-                             icon="glyphicon-circle-arrow-up") }}
+                             icon="arrow-alt-circle-up") }}
             {% else %}
-                {{ util.href(cdedblink("ml/index"), gettext("Mailinglist-Overview"), icon="glyphicon-circle-arrow-up") }}
+                {{ util.href(cdedblink("ml/index"), gettext("Mailinglist-Overview"), icon="arrow-alt-circle-up") }}
             {% endif %}
         </p>
 

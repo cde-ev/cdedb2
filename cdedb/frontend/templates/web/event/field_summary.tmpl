@@ -89,7 +89,7 @@
             {% for association in enums['FieldAssociations'] -%}
                 <li role="presentation"{% if loop.first %} class="active"{% endif %}>
                     <a href="#tab_{{ association.name }}" data-toggle="tab" aria-controls="tab_{{ association.name }}"
-                            role="tab">{{ util.make_glyphicon_icon(association.get_icon()) }} {{ gettext(association|string) }}</a>
+                            role="tab">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</a>
                 </li>
             {%- endfor %}
         </ul>
@@ -97,7 +97,7 @@
             {% for association in enums['FieldAssociations'] %}
                 <div class="tab-pane active" role="tabpanel" id="tab_{{ association.name }}"
                         data-association-id="{{ association.value }}">
-                    <h3 class="heading-underline">{{ util.make_glyphicon_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
+                    <h3 class="heading-underline">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
                     <div class="row">
                         {# Old items, already stored in the database #}
                         {% for field_id, entry in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}

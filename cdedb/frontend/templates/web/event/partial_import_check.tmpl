@@ -345,7 +345,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
 
     {% if summary['changed_lodgement_groups'] or summary['new_lodgement_group_ids'] or summary['real_deleted_lodgement_group_ids'] %}
         {% call util.bootstrap_panel(gettext("Lodgement Groups"), aclass='panel panel-info',
-                                     icon='glyphicon-th-large', anid='box-lodgement-groups') %}
+                                     icon='th-large', anid='box-lodgement-groups') %}
             <div class="row">
                 {% if summary['new_lodgement_group_ids'] %}
                     <div class="col-md-4 text-success">

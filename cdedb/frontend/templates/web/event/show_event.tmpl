@@ -218,7 +218,7 @@
                             {{ util.input_file(name="minor_form", accept="application/pdf",
                                                arialabel=gettext("PDF of the new Minor Form")) }}
                             <div class="input-group-btn">
-                                {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='glyphicon-upload') }}
+                                {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='arrow-circle-up') }}
                             </div>
                         </div>
                         {{ util.output_errors('minor_form') }}
@@ -227,7 +227,7 @@
             </div>
 
             <div class="col-md-6" id="offline-use">
-                {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='glyphicon-cloud-download', aclass='panel-danger') %}
+                {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='cloud-download-alt', aclass='panel-danger') %}
                     <p>
                         {% trans %}Full Event Export{% endtrans %}<br />
                         <small>({% trans %}for initilization of the offline-VM{% endtrans %})</small>
@@ -264,7 +264,7 @@
                                     {{ util.input_file(name="json", accept="text/json",
                                                        arialabel=gettext("Export of the Offline-DB")) }}
                                     <div class="input-group-btn">
-                                        {{ util.input_submit(value=gettext("Unlock"), icon='glyphicon-cloud-upload',
+                                        {{ util.input_submit(value=gettext("Unlock"), icon='cloud-upload-alt',
                                                              aclass='btn btn-success') }}
                                     </div>
                                 </div>
@@ -367,7 +367,7 @@
                                     style="display: inline;">
                                 {{ util.anti_csrf_token('event/archive_event') }}
                                 {{ util.input_submit(value=gettext("Archive"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
-                                                     aclass="btn btn-danger", icon="glyphicon-folder-close",
+                                                     aclass="btn btn-danger", icon="folder",
                                                      title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
                                 {{ util.input_checkbox(name="ack_archive", label=gettext("Are you sure?")) }}
                             </form>

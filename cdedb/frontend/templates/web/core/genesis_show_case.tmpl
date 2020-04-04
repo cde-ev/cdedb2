@@ -27,11 +27,11 @@
         <dd id="realm">
             {% with (icon, caption) = {
                         'ml': ('envelope', gettext("Mailinglists")),
-                        'event': ('blackboard', gettext("Events")),
-                        'cde': ('education', gettext("Members")),
+                        'event': ('chalkboard-teacher', gettext("Events")),
+                        'cde': ('graduation-cap', gettext("Members")),
                         'bullhorn': ('education', gettext("Assemblies"))
                     }.get(ambience['genesis_case']['realm']) %}
-                {{ util.make_glyphicon_icon(icon) }} {{ caption }}
+                {{ util.make_icon(icon) }} {{ caption }}
             {% endwith %}
         </dd>
         <dt>{% trans %}Creation Time{% endtrans %}</dt>

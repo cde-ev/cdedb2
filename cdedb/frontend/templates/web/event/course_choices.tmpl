@@ -108,7 +108,7 @@
         {{ util.input_hidden(name="position") }}
         {{ util.input_hidden(name="ids") }}
         {{ util.input_hidden(name="include_active") }}
-        {% call util.bootstrap_panel(title=gettext("Assignment"), icon="glyphicon-screenshot", aclass='panel-warning',
+        {% call util.bootstrap_panel(title=gettext("Assignment"), icon="crosshairs", aclass='panel-warning',
                                      anid="assignment-options") %}
             {% if ambience['event']['tracks']|length == 1 %}
                 {% set tracks=util.input_hidden(name="assign_track_ids", value=(ambience['event']['tracks']|list)[0]) %}

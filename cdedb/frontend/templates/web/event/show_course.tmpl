@@ -156,7 +156,7 @@
             </div>
         {% endfor %}
     </div>
-    {% call util.bootstrap_panel(title=gettext("Description"), icon="glyphicon-pushpin", aclass="panel-default panel-condensed") %}
+    {% call util.bootstrap_panel(title=gettext("Description"), icon="thumbtack", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|md }}
     {% endcall %}
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}

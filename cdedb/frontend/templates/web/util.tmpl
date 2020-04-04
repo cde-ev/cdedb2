@@ -34,7 +34,7 @@
    ref        The full URL to reference to
    label      The Link text. (Please consider to add some sr-only text, if this is empty, to maintain a11y.
    readonly   If True, a simple text instead of a link is added
-   icon       If set, the icon is prepended to the link text. Must be the short icon name, as passed to make_glyphicon_icon()
+   icon       If set, the icon is prepended to the link text. Must be the short icon name, as passed to make_icon()
    aclass     Additional HTML/CSS classes to be added to the link tag
    active     If this link is part of a navigation menu, the current active page/tag can be highlighted by setting this
               to True
@@ -48,31 +48,22 @@
 {%- endif %}
 {%- if active %} aria-current="page" {% endif %}{# We use the `active` attribute for navigation only #}
 {%- if title %} title="{{ title }}"{% endif %}>
-{%- if icon %}{{ make_glyphicon_icon(icon) }}&nbsp;{% endif %}{{ label }}
+{%- if icon %}{{ make_icon(icon) }}&nbsp;{% endif %}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
-{# Macro to place a Bootstrap/Glyphicon icon
+{# Macro to place a Fontawesome icon
 
-   icon       The icon's name. See https://getbootstrap.com/docs/3.3/components/#glyphicons for a list of available
-              icons. Only the distinguishing part of the icon's CSS class is required. E.g. "ok" instead of
-              "glyphicon check"
+   icon       The icon's name. See https://fontawesome.com/icons for a list of available icons.
+              Only the distinguishing part of the icon's CSS class is required.
+              E.g. "ok" instead of "fas fa-ok"
    aclass     An additonal HTML/CSS class to add to the icon. Useful if you want to access the icon via JavaScript
    title      A HTML `title` attribute (hover text) to add to the icon. This is also used as arialabel, if you don't
               provide one explicitly.
    arialabel  A screenreader-only text to append to the icon. Please make sure, to provide one (or a title) for every
               semantically important icon in support of a11y. #}
-{% macro make_glyphicon_icon(icon, aclass='', title='', arialabel='') -%}
-    {% if title and not arialabel %}{% set arialabel = title %}{% endif -%}
-    <span class="glyphicon glyphicon-{{ icon }} {{aclass }}"
-            {%- if title %} title="{{ title }}"{% endif %} aria-hidden="true"></span>
-    {%- if arialabel %}
-        <span class="sr-only">{{ arialabel }}</span>
-    {%- endif %}
-{%- endmacro %}
-
 {% macro make_icon(icon, icon_prefix="fas fa-", aclass="" title=None, arialabel=None) -%}
-    <span{{ {"class": "{}{} {}".format(icon_prefix, icon, aclass), "title": title, "aria-hidden"="true" }|xmlattr }}></span>
+    <span{{ {"class": "{}{} {}".format(icon_prefix, icon, aclass), "title": title, "aria-hidden": "true" }|xmlattr }}></span>
     {%- if arialabel %}<span class="sr-only">{{ arialabel }}</span>{% endif %}
 {%- endmacro%}
 
@@ -85,7 +76,7 @@
     <div class="panel {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
         {%- if title or icon %}
             <div class="panel-heading">
-                <h3 class="panel-title">{% if icon %}{{ make_glyphicon_icon(icon) }} {% endif %}{{ title }}</h3>
+                <h3 class="panel-title">{% if icon %}{{ make_icon(icon) }} {% endif %}{{ title }}</h3>
             </div>
         {%- endif %}
         <div class="panel-body">
@@ -182,7 +173,7 @@
    required to navigate to the currente page – is not accessible to the user (e.g. visible course listing of not yet
    published event, only reachable via direct link).
 
-   An icon (given by its name – see comments of make_glyphicon_icon() macro) should exactly be used, when the Breadcrumb link
+   An icon (given by its name – see comments of make_icon() macro) should exactly be used, when the Breadcrumb link
    represents a page of a dynamic object (e.g. a persona, an event, a course) and is labeled with this object's
    name/title. In this case the icon should represent the type of the named object. For a complex example, take a look
    at the event/change_course template.
@@ -190,11 +181,11 @@
 {% macro breadcrumb_link(ref, label, icon=None, active=False, readonly=False) %}
     {%- if active or readonly -%}
         <li {% if active %}class="active" aria-current="location"{% endif %}>
-            {%- if icon %}{{ make_glyphicon_icon(icon) }} {% endif %}{{ label -}}
+            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label -}}
         </li>
     {%- else -%}
         <li><a href="{{ ref }}">
-                {%- if icon %}{{ make_glyphicon_icon(icon) }} {% endif %}{{ label -}}
+                {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label -}}
         </a></li>
     {%- endif -%}
 {% endmacro %}
@@ -499,7 +490,7 @@
     {%- call form_input_general(None, label, anid, small, info, False, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         <div class="form-control-static {{ aclass }}"{% if anid %}id="{{ anid }}"{% endif %}>
-            {%- if icon %}{{ make_glyphicon_icon(icon) }} {% endif %}
+            {%- if icon %}{{ make_icon(icon) }} {% endif %}
             {{- value -}}
         </div>
     {%- endcall %}
@@ -511,7 +502,7 @@
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %}
             {%- if title %} title="{{ title }}"{% endif %} value="True"
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}>
-            {%- if icon %}{{ make_glyphicon_icon(icon) }} {% endif %}{{ value -}}</button>
+            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ value -}}</button>
 {%- endmacro %}
 
 {% macro form_input_submit(value="Save", name="submitform", readonly=False, anid='',

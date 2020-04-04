@@ -122,12 +122,12 @@
                 <dt>{% trans %}Realms{% endtrans %}</dt>
                 <dd id="has-realm">
                     {% set vars = {'any_realm_not': False} %}
-                    {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "education"),
-                                               ("is_event_realm", gettext("Events"), "blackboard"),
+                    {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "graduation-cap"),
+                                               ("is_event_realm", gettext("Events"), "chalkboard-teacher"),
                                                ("is_ml_realm", gettext("Mailinglists"), "envelope"),
                                                ("is_assembly_realm", gettext("Assemblies"), "bullhorn"),)%}
                         {% if data[bit] %}
-                            {{ util.make_glyphicon_icon(icon, title=desc) }}
+                            {{ util.make_icon(icon, title=desc) }}
                         {% else %}
                             {# Dirty hack to workaround Jinjas set drawbacks #}
                             {% set tmp = vars.update({'any_realm_not': True}) %}
@@ -146,13 +146,13 @@
                     {% set vars = {'any_privilege': False} %}
                     {% for bit, desc, icon in (("is_meta_admin", gettext("Meta-Admin"), "wrench"),
                                               ("is_core_admin", gettext("Core-Admin"), "user"),
-                                              ("is_cde_admin", gettext("CdE-Admin"), "education"),
-                                              ("is_finance_admin", gettext("Finance-Admin"), "euro"),
-                                              ("is_event_admin", gettext("Event-Admin"), "blackboard"),
+                                              ("is_cde_admin", gettext("CdE-Admin"), "graduation-cap"),
+                                              ("is_finance_admin", gettext("Finance-Admin"), "euro-sign"),
+                                              ("is_event_admin", gettext("Event-Admin"), "chalkboard-teacher"),
                                               ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
                                               ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
                         {% if data[bit] %}
-                            {{ util.make_glyphicon_icon(icon, title=desc) }}
+                            {{ util.make_icon(icon, title=desc) }}
                             {% do vars.update({'any_privilege': True}) %}
                         {% endif %}
                     {% endfor %}
