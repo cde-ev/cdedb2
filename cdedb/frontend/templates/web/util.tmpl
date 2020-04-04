@@ -62,8 +62,8 @@
               provide one explicitly.
    arialabel  A screenreader-only text to append to the icon. Please make sure, to provide one (or a title) for every
               semantically important icon in support of a11y. #}
-{% macro make_icon(icon, icon_prefix="fas fa-", aclass="" title=None, arialabel=None) -%}
-    <span{{ {"class": "{}{} {}".format(icon_prefix, icon, aclass), "title": title, "aria-hidden": "true" }|xmlattr }}></span>
+{% macro make_icon(icon, aclass="" title=None, arialabel=None) -%}
+    <span{{ {"class": "fas fa-{} {}".format(icon, aclass), "title": title, "aria-hidden": "true" }|xmlattr }}></span>
     {%- if arialabel %}<span class="sr-only">{{ arialabel }}</span>{% endif %}
 {%- endmacro%}
 
