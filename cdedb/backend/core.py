@@ -24,7 +24,7 @@ from cdedb.common import (
     PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter)
+    decode_parameter, genesis_realm_access_bits, ValidationWarning)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -82,6 +82,19 @@ class CoreBackend(AbstractBackend):
         roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))),
                               introspection_only=True)
         return any(admin <= rs.user.roles for admin in privilege_tier(roles))
+
+    def verify_persona_password(self, rs, password, persona_id):
+        """Helper to retrieve a personas password hash and verify the password.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type password: str
+        :type persona_id: int
+        :rtype bool:
+        """
+        persona_id = affirm("id", persona_id)
+        password_hash = unwrap(self.sql_select_one(
+            rs, "core.personas", ("password_hash",), persona_id))
+        return self.verify_password(password, password_hash)
 
     @staticmethod
     def verify_password(password, password_hash):
@@ -758,7 +771,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_persona(self, rs, data, generation=None, may_wait=True,
-                       change_note=None):
+                       change_note=None, ignore_warnings=False):
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
 
@@ -772,10 +785,12 @@ class CoreBackend(AbstractBackend):
         :param may_wait: override for system requests (which may not wait)
         :type change_note: str
         :param change_note: Descriptive line for changelog
+        :type ignore_warnings: bool
+        :param ignore_warnings: Ignore errors of type ValidationWarning.
         :rtype: int
         :returns: default return code
         """
-        data = affirm("persona", data)
+        data = affirm("persona", data, _ignore_warnings=ignore_warnings)
         generation = affirm("int_or_None", generation)
         may_wait = affirm("bool", may_wait)
         change_note = affirm("str_or_None", change_note)
@@ -842,45 +857,46 @@ class CoreBackend(AbstractBackend):
         data['status'] = const.PrivilegeChangeStati.pending
         data = affirm("privilege_change", data)
 
-        if "is_meta_admin" in data and data['persona_id'] == rs.user.persona_id:
-            raise PrivilegeError(n_("Cannot modify own meta admin privileges."))
-        if self.list_privilege_changes(
-                rs, persona_id=data['persona_id'],
-                stati=(const.PrivilegeChangeStati.pending,)):
-            raise ValueError(n_("Pending privilege change."))
+        with Atomizer(rs):
+            if ("is_meta_admin" in data
+                    and data['persona_id'] == rs.user.persona_id):
+                raise PrivilegeError(n_(
+                    "Cannot modify own meta admin privileges."))
+            if self.list_privilege_changes(
+                    rs, persona_id=data['persona_id'],
+                    stati=(const.PrivilegeChangeStati.pending,)):
+                raise ValueError(n_("Pending privilege change."))
 
-        persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
+            persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
 
-        # see also cdedb.frontend.templates.core.change_privileges
-        # and change_privileges in cdedb.frontend.core
+            # see also cdedb.frontend.templates.core.change_privileges
+            # and change_privileges in cdedb.frontend.core
 
-        realms = {"cde", "event", "ml", "assembly"}
-        for realm in realms:
-            if not persona['is_{}_realm'.format(realm)]:
-                if data.get('is_{}_admin'.format(realm)):
-                    raise ValueError(n_(
-                        "User does not fit the requirements for this "
-                        "admin privilege."))
+            errormsg = n_("User does not fit the requirements for this"
+                          " admin privilege.")
+            realms = {"cde", "event", "ml", "assembly"}
+            for realm in realms:
+                if not persona['is_{}_realm'.format(realm)]:
+                    if data.get('is_{}_admin'.format(realm)):
+                        raise ValueError(errormsg)
 
-        if data.get('is_finance_admin'):
-            if (data.get('is_cde_admin') is False
-                or (not persona['is_cde_admin']
-                    and not data.get('is_cde_admin'))):
-                raise ValueError(n_(
-                    "User does not fit the requirements for this "
-                    "admin privilege."))
+            if data.get('is_finance_admin'):
+                if (data.get('is_cde_admin') is False
+                    or (not persona['is_cde_admin']
+                        and not data.get('is_cde_admin'))):
+                    raise ValueError(errormsg)
 
-        if data.get('is_core_admin') or data.get('is_meta_admin'):
-            if not persona['is_cde_realm']:
-                raise ValueError(n_(
-                    "User does not fit the requirements for this "
-                    "admin privilege."))
+            if data.get('is_core_admin') or data.get('is_meta_admin'):
+                if not persona['is_cde_realm']:
+                    raise ValueError(errormsg)
 
-        self.core_log(
-            rs, const.CoreLogCodes.privilege_change_pending, data['persona_id'],
-            additional_info="Änderung der Admin-Privilegien angestoßen.")
+            self.core_log(
+                rs, const.CoreLogCodes.privilege_change_pending,
+                data['persona_id'],
+                additional_info="Änderung der Admin-Privilegien angestoßen.")
+            ret = self.sql_insert(rs, "core.privilege_changes", data)
 
-        return self.sql_insert(rs, "core.privilege_changes", data)
+        return ret
 
     @access("meta_admin")
     def finalize_privilege_change(self, rs, case_id, case_status):
@@ -888,19 +904,18 @@ class CoreBackend(AbstractBackend):
 
         This has to be done by a different admin.
 
+        If the user had no admin privileges previously, we require a password
+        reset afterwards.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type case_id: int
         :type case_status: int
         :rtype: int
-        :returns: default return code
+        :returns: default return code. A neegative return indicates, that the
+            users password was invalidated and will need to be changed.
         """
         case_id = affirm("id", case_id)
         case_status = affirm("enum_privilegechangestati", case_status)
-
-        case = self.get_privilege_change(rs, case_id)
-        if case['status'] != const.PrivilegeChangeStati.pending:
-            raise ValueError(n_("Invalid privilege change state: %(status)s."),
-                             {"status": case["status"]})
 
         data = {
             "id": case_id,
@@ -909,9 +924,14 @@ class CoreBackend(AbstractBackend):
             "status": case_status,
         }
         with Atomizer(rs):
+            case = self.get_privilege_change(rs, case_id)
+            if case['status'] != const.PrivilegeChangeStati.pending:
+                raise ValueError(
+                    n_("Invalid privilege change state: %(status)s."),
+                    {"status": case["status"]})
             if case_status == const.PrivilegeChangeStati.approved:
                 if (case["is_meta_admin"] is not None
-                    and case['persona_id'] == rs.user.persona_id):
+                        and case['persona_id'] == rs.user.persona_id):
                     raise PrivilegeError(
                         n_("Cannot modify own meta admin privileges."))
                 if case['submitted_by'] == rs.user.persona_id:
@@ -925,6 +945,8 @@ class CoreBackend(AbstractBackend):
                     rs, const.CoreLogCodes.privilege_change_approved,
                     persona_id=case['persona_id'],
                     additional_info="Änderung der Admin-Privilegien bestätigt.")
+
+                old = self.get_persona(rs, case["persona_id"])
                 data = {
                     "id": case["persona_id"]
                 }
@@ -941,6 +963,12 @@ class CoreBackend(AbstractBackend):
                 ret *= self.set_persona(
                     rs, data, may_wait=False,
                     change_note=note, allow_specials=("admins",))
+
+                # Force password reset if non-admin has gained admin privileges.
+                if (not any(old[key] for key in admin_keys)
+                        and any(data.get(key) for key in admin_keys)):
+                    ret *= self.invalidate_password(rs, case["persona_id"])
+                    ret *= -1
 
                 # Mark case as successful
                 data = {
@@ -1127,6 +1155,42 @@ class CoreBackend(AbstractBackend):
                 allow_specials=("membership", "finance"))
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
+
+    @access("core_admin", "meta_admin")
+    def invalidate_password(self, rs, persona_id):
+        """Replace a users password with an unknown one.
+
+        This forces the user to set a new password and also invalidates all
+        current sessions.
+
+        This is to be used when granting admin privileges to a user who has
+        not previously had any, hence we allow backend access for all
+        meta_admins.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :rtype: int
+        :returns: default return code
+        """
+        persona_id = affirm("id", persona_id)
+
+        # modified version of hash for 'secret' and thus
+        # safe/unknown plaintext
+        password_hash = (
+            "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
+            "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
+        query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+        ret = self.query_exec(rs, query, (password_hash, persona_id))
+
+        # Invalidate alle active sessions.
+        query = ("UPDATE core.sessions SET is_active = False "
+                 "WHERE persona_id = %s AND is_active = True")
+        self.query_exec(rs, query, (persona_id,))
+
+        ret *= self.core_log(rs, code=const.CoreLogCodes.password_invalidated,
+                             persona_id=persona_id)
+
+        return ret
 
     @access("core_admin", "cde_admin")
     def archive_persona(self, rs, persona_id, note):
@@ -1439,9 +1503,7 @@ class CoreBackend(AbstractBackend):
             if self.is_relative_admin(rs, persona_id):
                 authorized = True
             elif password:
-                data = self.sql_select_one(rs, "core.personas",
-                                           ("password_hash",), persona_id)
-                if data and self.verify_password(password, unwrap(data)):
+                if self.verify_persona_password(rs, password, persona_id):
                     authorized = True
             if authorized:
                 new = {
@@ -1633,7 +1695,7 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
-    def create_persona(self, rs, data, submitted_by=None):
+    def create_persona(self, rs, data, submitted_by=None, ignore_warnings=False):
         """Instantiate a new data set.
 
         This does the house-keeping and inserts the corresponding entry in
@@ -1646,7 +1708,8 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: The id of the newly created persona.
         """
-        data = affirm("persona", data, creation=True)
+        data = affirm(
+            "persona", data, creation=True, _ignore_warnings=ignore_warnings)
         # zap any admin attempts
         data.update({
             'is_meta_admin': False,
@@ -1844,6 +1907,18 @@ class CoreBackend(AbstractBackend):
         return tuple(key for key, value in roles.items()
                      if value >= required_roles)
 
+    @access("core_admin")
+    def genesis_attachment_usage(self, rs, attachment_hash):
+        """Check whether a genesis attachment is still referenced in a case.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type attachment_hash: str
+        :rtype: bool
+        """
+        attachment_hash = affirm("str", attachment_hash)
+        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment = %s"
+        return bool(self.query_one(rs, query, (attachment_hash,))['count'])
+
     @access("anonymous")
     def verify_existence(self, rs, email):
         """Check wether a certain email belongs to any persona.
@@ -1879,7 +1954,7 @@ class CoreBackend(AbstractBackend):
         :rtype: str
         """
         with Atomizer(rs):
-            if not self.is_admin(rs):
+            if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
                 roles = unwrap(self.get_roles_multi(rs, (persona_id,)))
                 if any("admin" in role for role in roles):
                     raise PrivilegeError(n_("Preventing reset of admin."))
@@ -1947,9 +2022,7 @@ class CoreBackend(AbstractBackend):
         if not old_password and not reset_cookie:
             return False, n_("No authorization provided.")
         if old_password:
-            password_hash = unwrap(self.sql_select_one(
-                rs, "core.personas", ("password_hash",), persona_id))
-            if not self.verify_password(old_password, password_hash):
+            if not self.verify_persona_password(rs, old_password, persona_id):
                 return False, n_("Password verification failed.")
         if reset_cookie:
             success, msg = self.verify_reset_cookie(
@@ -2126,18 +2199,22 @@ class CoreBackend(AbstractBackend):
         return success, msg
 
     @access("anonymous")
-    def genesis_request(self, rs, data):
+    def genesis_request(self, rs, data, ignore_warnings=False):
         """Log a request for a new account.
 
         This is the initial entry point for such a request.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
+        :type ignore_warnings: bool
+        :param ignore_warnings: Ignore errors with kind ValidationWarning
         :rtype: int
         :returns: id of the new request or None if the username is already
           taken
         """
-        data = affirm("genesis_case", data, creation=True)
+        data = affirm(
+            "genesis_case", data, creation=True, _ignore_warnings=ignore_warnings)
+
         if self.verify_existence(rs, data['username']):
             return None
         if self.conf.LOCKDOWN and not self.is_admin(rs):
@@ -2252,21 +2329,29 @@ class CoreBackend(AbstractBackend):
         :type case_id: int
         :rtype: (int, str or None)
         :returns: (default return code, realm of the case if successful)
-
+            A negative return code means, that the case was already verified.
+            A zero return code means the case was not found or another error
+            occured.
         """
         case_id = affirm("id", case_id)
         with Atomizer(rs):
+            data = self.sql_select_one(
+                rs, "core.genesis_cases", ("realm", "username", "case_status"),
+                case_id)
+            # These should be displayed as useful errors in the frontend.
+            if not data:
+                return 0, "core"
+            elif not data["case_status"] == const.GenesisStati.unconfirmed:
+                return -1, data["realm"]
             query = glue("UPDATE core.genesis_cases SET case_status = %s",
                          "WHERE id = %s AND case_status = %s")
             params = (const.GenesisStati.to_review, case_id,
                       const.GenesisStati.unconfirmed)
             ret = self.query_exec(rs, query, params)
-
-            data = self.sql_select_one(
-                rs, "core.genesis_cases", ("realm", "username"), case_id)
-            self.core_log(
-                rs, const.CoreLogCodes.genesis_verified, persona_id=None,
-                additional_info=data["username"])
+            if ret:
+                self.core_log(
+                    rs, const.CoreLogCodes.genesis_verified, persona_id=None,
+                    additional_info=data["username"])
         return ret, data["realm"]
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
@@ -2330,15 +2415,18 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
-    def genesis_modify_case(self, rs, data):
+    def genesis_modify_case(self, rs, data, ignore_warnings=False):
         """Modify a persona creation case.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
+        :type ignore_warnings: bool
+        :param ignore_warnings: Ignore errors with kind ValidationWarning
         :rtype: int
         :returns: default return code
         """
-        data = affirm("genesis_case", data)
+        data = affirm("genesis_case", data, _ignore_warnings=ignore_warnings)
+
         with Atomizer(rs):
             current = self.sql_select_one(
                 rs, "core.genesis_cases", ("case_status", "username", "realm"),
@@ -2377,24 +2465,6 @@ class CoreBackend(AbstractBackend):
         :returns: The id of the newly created persona.
         """
         case_id = affirm("id", case_id)
-        ACCESS_BITS = {
-            'event': {
-                'is_cde_realm': False,
-                'is_event_realm': True,
-                'is_assembly_realm': False,
-                'is_ml_realm': True,
-                'is_member': False,
-                'is_searchable': False,
-            },
-            'ml': {
-                'is_cde_realm': False,
-                'is_event_realm': False,
-                'is_assembly_realm': False,
-                'is_ml_realm': True,
-                'is_member': False,
-                'is_searchable': False,
-            },
-        }
         with Atomizer(rs):
             case = unwrap(self.genesis_get_cases(rs, (case_id,)))
             data = {k: v for k, v in case.items()
@@ -2402,8 +2472,8 @@ class CoreBackend(AbstractBackend):
             data['display_name'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
-            data.update(ACCESS_BITS[case['realm']])
-            data = affirm("persona", data, creation=True)
+            data.update(genesis_realm_access_bits[case['realm']])
+            data = affirm("persona", data, creation=True, _ignore_warnings=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)
@@ -2411,7 +2481,7 @@ class CoreBackend(AbstractBackend):
                     ({case['realm']} | implied_realms(case['realm'])):
                 raise PrivilegeError(n_("Wrong target realm."))
             ret = self.create_persona(
-                rs, data, submitted_by=case['reviewer'])
+                rs, data, submitted_by=case['reviewer'], ignore_warnings=True)
             update = {
                 'id': case_id,
                 'case_status': const.GenesisStati.successful,
@@ -2568,4 +2638,28 @@ class CoreBackend(AbstractBackend):
         :rtype: [{str: object}]
 
         """
+        query = affirm("query", query)
         return self.submit_general_query(rs, query)
+
+    @access("anonymous")
+    def submit_resolve_api_query(self, rs, query):
+        """Quick hack only designed to enable the API to resolve names.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type query: :py:class:`cdedb.query.Query`
+        :rtype: [{str: object}]
+        """
+        query = affirm("query", query)
+        # escalate db privilege role
+        orig_conn = None
+        try:
+            if rs.conn.is_contaminated:
+                raise RuntimeError(
+                    n_("Atomized – impossible to escalate."))
+            orig_conn = rs.conn
+            rs.conn = self.connpool['cdb_persona']
+            return self.general_query(rs, query)
+        finally:
+            # deescalate
+            if orig_conn:
+                rs.conn = orig_conn

@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Add Course ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -16,7 +16,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Add Course{%- endtrans %}
+        {% trans %}Add Course{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -24,14 +24,14 @@
 {% block content %}
     <form action="{{ cdedblink('event/create_course') }}" method="POST" id="createcourseform" class="form-horizontal">
         {{ util.anti_csrf_token('event/create_course') }}
-        <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
         {{ util.form_input_text(name="nr", label=gettext("Number")) }}
         {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-        <h4 class="heading-underline">{% trans -%}Course{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Course{% endtrans %}</h4>
         {{ util.form_input_text(name="instructors", label=gettext("Instructor")) }}
         {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (excl. instr.)")) }}
         {{ util.form_input_text(name="max_size", label=gettext("Maximum Size (excl. instr.)")) }}
@@ -43,17 +43,17 @@
                                           entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title')) }}
         {% endif %}
 
-        <h4 class="heading-underline">{% trans -%}Status{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Status{% endtrans %}</h4>
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
-        <h4 class="heading-underline">{% trans -%}Fields{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
         {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
                 if field['association'] == enums['FieldAssociations'].course %}
             {{ util.form_event_field_input(field) }}
         {% else %}
-            <p class="text-muted">{% trans -%}No custom fields for courses available.{%- endtrans %}</p>
+            <p class="text-muted">{% trans %}No custom fields for courses available.{% endtrans %}</p>
         {% endfor %}
 
         {{ util.form_input_static(aclass='text-info', icon='info-sign',
@@ -63,7 +63,7 @@
 
         {{ util.form_input_submit(value=gettext("Add"), cancellink=cdedblink('event/course_stats')) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#createcourseform').cdedbProtectChanges();
     </script>
 {% endblock %}

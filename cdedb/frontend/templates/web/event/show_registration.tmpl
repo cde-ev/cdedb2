@@ -6,7 +6,7 @@
     {% trans given_names=persona['given_names'], family_name=persona['family_name'],
              title=ambience['event']['title'] -%}
     	Registration by {{ given_names }} {{ family_name }} ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -26,53 +26,53 @@
         {{ util.href(cdedblink("event/change_registration_form"), gettext("Edit"), readonly=is_locked,
                      aclass="btn btn-warning btn-sm", icon="pencil") }}
     </div>
-    <h3 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h3>
+    <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
     <dl class="dl-horizontal">
-        <dt>{% trans -%}Full Name{%- endtrans %}</dt>
+        <dt>{% trans %}Full Name{% endtrans %}</dt>
         <dd>
             {{ persona['title'] }}
             {{ persona['given_names'] }}
             {{ persona['family_name'] }}
             {{ persona['name_supplement'] }}
         </dd>
-        <dt>{% trans -%}CdEDB-ID{%- endtrans %}</dt>
+        <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
         <dd>{{ util.href(show_user_link(persona['id'], event_id=ambience['event']['id']), persona['id']|cdedbid) }}</dd>
         {% if ambience['registration']['real_persona_id'] %}
-            <dt>{% trans -%}Online CdEDB-ID{%- endtrans %}</dt>
+            <dt>{% trans %}Online CdEDB-ID{% endtrans %}</dt>
             <dd>{{ ambience['registration']['real_persona_id']|cdedbid }}</dd>
         {% endif %}
-        <dt>{% trans -%}CdE-Member{%- endtrans %}</dt>
+        <dt>{% trans %}CdE-Member{% endtrans %}</dt>
         <dd>{{ util.deko_checkbox(checked=(persona['is_member'])) }}</dd>
-        <dt>{% trans -%}Birthday{%- endtrans %}</dt>
+        <dt>{% trans %}Birthday{% endtrans %}</dt>
         <dd>
             {{ persona['birthday']|date(lang=lang) }} (<em>{{ gettext(age|string) }}</em>)
         </dd>
-        <dt>{% trans -%}Gender{%- endtrans %}</dt>
+        <dt>{% trans %}Gender{% endtrans %}</dt>
         <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
     </dl>
     <dl class="dl-horizontal">
-        <dt>{% trans -%}E-Mail{%- endtrans %}</dt>
+        <dt>{% trans %}E-Mail{% endtrans %}</dt>
         <dd>{{ util.username_mailto(persona) }} </dd>
-        <dt>{% trans -%}Phone{%- endtrans %}</dt>
+        <dt>{% trans %}Phone{% endtrans %}</dt>
         <dd>{{ persona['telephone'] }}</dd>
-        <dt>{% trans -%}Mobile Phone{%- endtrans %}</dt>
+        <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
         <dd>{{ persona['mobile'] }}</dd>
     </dl>
     <dl class="dl-horizontal">
-        <dt>{% trans -%}Address{%- endtrans %}</dt>
+        <dt>{% trans %}Address{% endtrans %}</dt>
         <dd>{{ persona['address'] }}</dd>
-        <dt>{% trans -%}Address Supplement{%- endtrans %}</dt>
+        <dt>{% trans %}Address Supplement{% endtrans %}</dt>
         <dd>{{ persona['address_supplement'] }}</dd>
-        <dt>{% trans -%}City{%- endtrans %}</dt>
+        <dt>{% trans %}City{% endtrans %}</dt>
         <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
-        <dt>{% trans -%}Country{%- endtrans %}</dt>
+        <dt>{% trans %}Country{% endtrans %}</dt>
         <dd>{{ persona['country'] }}</dd>
     </dl>
     {% if persona['id'] in ambience['event']['orgas'] %}
     <p class="text-info">
-        {% trans given_names=persona['given_names'] -%}
+        {% trans given_names=persona['given_names'] %}
         	{{ given_names }} is Orga of this event.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
     {% endif %}
 
@@ -81,38 +81,38 @@
         {{ ambience['registration']['orga_notes']|md }}
     {% endcall %}
 
-    <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
+    <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
     <dl class="dl-horizontal">
-        <dt>{% trans -%}Participation Fee{%- endtrans %}</dt>
+        <dt>{% trans %}Participation Fee{% endtrans %}</dt>
         <dd>
             {% if ambience['registration']['payment'] %}
-                {% trans date=ambience['registration']['payment']|date(lang=lang) -%}
+                {% trans date=ambience['registration']['payment']|date(lang=lang) %}
                 	Paid on the {{ date }}
-                {%- endtrans %}
+                {% endtrans %}
             {% else %}
-                <em>{% trans -%}Pending{%- endtrans %}</em>
+                <em>{% trans %}Pending{% endtrans %}</em>
             {% endif %}
         </dd>
-        <dt>{% trans -%}Amount Paid{%- endtrans %}</dt>
+        <dt>{% trans %}Amount Paid{% endtrans %}</dt>
         <dd>
             {{ ambience['registration']['amount_paid']|money(lang=lang) }}
         </dd>
 
-        <dt>{% trans -%}Parental Consent{%- endtrans %}</dt>
+        <dt>{% trans %}Parental Consent{% endtrans %}</dt>
         <dd>
             {% if not age.is_minor() %}
-                <em>{% trans -%}Of Age{%- endtrans %}</em>
+                <em>{% trans %}Of Age{% endtrans %}</em>
             {% else %}
                 {{ util.deko_checkbox(checked=ambience['registration']['parental_agreement']) }}
             {% endif %}
         </dd>
 
-        <dt>{% trans -%}Checked-In{%- endtrans %}</dt>
+        <dt>{% trans %}Checked-In{% endtrans %}</dt>
         <dd>
             {% if ambience['registration']['checkin'] %}
-                {% trans datetime=ambience['registration']['checkin']|datetime(lang=lang) -%}
+                {% trans datetime=ambience['registration']['checkin']|datetime(lang=lang) %}
                 	Checked-In: {{ datetime }}
-                {%- endtrans %}
+                {% endtrans %}
             {% else %}
                 —
             {% endif %}
@@ -126,7 +126,7 @@
                     <h4>{{ part['title'] }}</h4>
                 {% endif %}
                 <dl class="dl-horizontal">
-                    <dt>{% trans -%}Status{%- endtrans %}</dt>
+                    <dt>{% trans %}Status{% endtrans %}</dt>
                     <dd>
                         {{ gettext(ambience['registration']['parts'][part_id]['status']
                                 |enum(enums['RegistrationPartStati'])) }}
@@ -136,9 +136,9 @@
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                                 if track['part_id'] == part_id %}
                             <dt>
-                                {% trans track=track['title'] if ambience['event']['tracks']|length > 1 else "" -%}
+                                {% trans track=track['title'] if ambience['event']['tracks']|length > 1 else "" %}
                                 	Course {{ track }}
-                                {%- endtrans %}
+                                {% endtrans %}
                             </dt>
                             <dd>
                                 {% with course_id = ambience['registration']['tracks'][track_id]['course_id'] %}
@@ -153,7 +153,7 @@
                             </dd>
                         {% endfor %}
 
-                        <dt>{% trans -%}Lodgement{%- endtrans %}</dt>
+                        <dt>{% trans %}Lodgement{% endtrans %}</dt>
                         <dd>
                             {% with lodgement_id = ambience['registration']['parts'][part_id]['lodgement_id'] %}
                                 {% if lodgement_id %}
@@ -164,7 +164,7 @@
                                 {% endif %}
                             {% endwith %}
                         </dd>
-                        <dt>{% trans -%}Uses Camping Mat{%- endtrans %}</dt>
+                        <dt>{% trans %}Uses Camping Mat{% endtrans %}</dt>
                         <dd>
                             {{ util.deko_checkbox(checked=ambience['registration']['parts'][part_id]['is_reserve']) }}
                         </dd>
@@ -174,18 +174,18 @@
         {% endfor %}
     </div>
 
-    <h3 class="heading-underline">{% trans -%}Registration Data{%- endtrans %}</h3>
+    <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
         <dl class="dl-horizontal">
-            <dt>{% trans -%}Mixed Lodging{%- endtrans %}</dt>
+            <dt>{% trans %}Mixed Lodging{% endtrans %}</dt>
             <dd>
                 {{ util.deko_checkbox(checked=ambience['registration']['mixed_lodging']) }}
             </dd>
-            <dt>{% trans -%}Participant List Consent{%- endtrans %}</dt>
+            <dt>{% trans %}Participant List Consent{% endtrans %}</dt>
             <dd>
                 {{ util.deko_checkbox(checked=ambience['registration']['list_consent']) }}
             </dd>
         </dl>
-        <h4>{% trans -%}Course Choices{%- endtrans %}</h4>
+        <h4>{% trans %}Course Choices{% endtrans %}</h4>
         {% if ambience['event']['tracks']|length > 0 %}
             <div class="row">
                 {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
@@ -195,7 +195,7 @@
                         {% endif %}
 
                         <dl class="dl-horizontal">
-                            <dt>{% trans -%}Instructor of{%- endtrans %}</dt>
+                            <dt>{% trans %}Instructor of{% endtrans %}</dt>
                             <dd>
                                 {% if ambience['registration']['tracks'][track_id]['course_instructor'] %}
                                     {{ courses[ambience['registration']['tracks'][track_id]['course_instructor']]['nr'] }}.
@@ -225,7 +225,7 @@
     {% endcall %}
 
     {% if ambience['event']['fields']|length > 0 %}
-        <h3 class="heading-underline">{% trans -%}Custom Fields{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
         <dl class="dl-horizontal">
             {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                 {% if field['association'] == enums['FieldAssociations'].registration %}
@@ -259,7 +259,7 @@
         </dl>
     {% endif %}
 
-    <h3 class="heading-underline">{% trans -%}Copy-Paste Template{%- endtrans %}</h3>
+    <h3 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h3>
     <pre>
 Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnehmerbeitrags gültig wird.
 Überweise dazu {{ fee|money(lang=lang) }} auf folgendes Konto.
@@ -284,7 +284,7 @@ Verwendungszweck:   {{ persona['given_names'] }} {{ persona['family_name'] }}, {
                                              icon='trash') }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                     </form>
-                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    <script nonce="{{ csp_nonce }}">
                         $('#deleteregistrationform').cdedbProtectAction(
                             "{{ gettext("The registration will be permanently deleted.") }}");
                         $('#deleteregistrationform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
@@ -293,7 +293,7 @@ Verwendungszweck:   {{ persona['given_names'] }} {{ persona['family_name'] }}, {
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans -%}Deletes the registration including all information shown here.{%- endtrans %}
+                    {% trans %}Deletes the registration including all information shown here.{% endtrans %}
                 </p>
             </div>
         </div>

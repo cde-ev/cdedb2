@@ -4,13 +4,13 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_change_mailinglist.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}
+    {% trans title=ambience['mailinglist']['title'] %}
         {{ title }} – Configuration
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {% if not ambience['is_active'] %}
+    {% if is_admin %}
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
@@ -18,14 +18,14 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Configuration{%- endtrans %}
+        {% trans %}Configuration{% endtrans %}
         <small>
             {{- util.make_icon('envelope', arialabel="Mailingliste") }} {{ ambience['mailinglist']['title'] -}}
         </small>
     </h1>
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist();
         });
@@ -37,10 +37,13 @@
     {% else %}
         <div id="changelistform" class="form-horizontal">
     {% endif %}
-        <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
             {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly) }}
             {{ util.form_input_text(name="title", label=gettext("Title"), readonly=readonly) }}
-            {{ util.form_input_text(name="address", label=gettext("Address"), readonly=readonly) }}
+            {{ util.form_input_text(name="local_part", label=gettext("Address"), readonly=readonly,
+                                    addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
+            {{ util.form_input_select(name="domain", label=gettext("Domain"), readonly=readonly, defaultvalue=ambience['mailinglist']['domain'].value,
+                        entries=enums['MailinglistDomain']|enum_entries(processing=gettext, prefix="@")) }}
             {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", readonly=readonly,
                                         info=gettext("Supports %(infolink)s.")|format(
                                             infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
@@ -50,26 +53,26 @@
                                             infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
                                                                title=gettext("Short Markdown summary")))|s) }}
 
-        <h4 class="heading-underline">{% trans -%}Moderation & Subscribers{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
             {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"), readonly=readonly,
                     entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"), readonly=readonly,
                     entries=enums['MailinglistTypes']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="", entries=sorted_events,
+            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;"|s, entries=sorted_events,
                     readonly=readonly,
                     info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
             {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=readonly,
                     entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
                     info=gettext("No selection results in an orga-list.")) }}
-            {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="", readonly=readonly,
+            {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;"|s, readonly=readonly,
                     entries=sorted_assemblies,
                     info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
 
-        <h4 class="heading-underline">{% trans -%}Mails{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Mails{% endtrans %}</h4>
             {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix"), readonly=readonly) }}
             {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"), readonly=readonly,
                     entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), readonly=readonly) }}
+            {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), readonly=readonly, type="number") }}
     {% if not readonly %}
             {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
         </form>

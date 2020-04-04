@@ -150,6 +150,7 @@ CREATE TABLE core.genesis_cases (
         username                varchar NOT NULL,
         given_names             varchar NOT NULL,
         family_name             varchar NOT NULL,
+        birth_name              varchar,
         gender                  integer,
         birthday                date,
         telephone               varchar,
@@ -164,6 +165,9 @@ CREATE TABLE core.genesis_cases (
         -- user-supplied comment (short justification of request)
         -- may be amended during review
         notes                   varchar,
+        -- For some realms an attachment may be included. This column contains the filename,
+        -- which is the hash of the file.
+        attachment              varchar,
         -- A verification link is sent to the email address; upon
         -- verification an admittance email is sent to the responsible team
         --
@@ -251,9 +255,9 @@ GRANT DELETE ON core.quota TO cdb_admin;
 CREATE TABLE core.meta_info
 (
         id                      serial PRIMARY KEY,
-	-- variable store for things like names of persons on
-	-- regularily changing posts
-        info			jsonb NOT NULL
+        -- variable store for things like names of persons on
+        -- regularily changing posts
+        info                    jsonb NOT NULL
 );
 GRANT SELECT ON core.meta_info TO cdb_anonymous;
 GRANT UPDATE ON core.meta_info TO cdb_admin;
@@ -584,6 +588,7 @@ CREATE TABLE event.events (
         -- automatically warned about registering late
         registration_hard_limit     timestamp WITH TIME ZONE,
         iban                        varchar,
+        nonmember_surcharge         numeric(8,2) NOT NULL,
         orga_address                varchar,
         registration_text           varchar,
         mail_text                   varchar,
@@ -785,7 +790,7 @@ GRANT SELECT, UPDATE ON event.registration_parts_id_seq TO cdb_persona;
 CREATE TABLE event.registration_tracks (
         id                      serial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
-	track_id		integer NOT NULL REFERENCES event.course_tracks(id),
+        track_id                integer NOT NULL REFERENCES event.course_tracks(id),
         course_id               integer REFERENCES event.courses(id),
         -- this is NULL if not an instructor
         course_instructor       integer REFERENCES event.courses(id)
@@ -998,7 +1003,11 @@ GRANT USAGE ON SCHEMA ml TO cdb_persona;
 CREATE TABLE ml.mailinglists (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
+        -- explicitly store the address for simplicity.
         address                 varchar UNIQUE NOT NULL,
+        local_part              varchar UNIQUE NOT NULL,
+        -- see cdedb.database.constants.MailinglisstDomains
+        domain                  integer NOT NULL,
         description             varchar,
         -- see cdedb.database.constants.MailinglistInteractionPolicy
         sub_policy              integer,

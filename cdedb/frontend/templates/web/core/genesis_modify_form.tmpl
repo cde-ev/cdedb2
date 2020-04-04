@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	Edit Account Request
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -45,7 +45,7 @@
              <noscript>
                 <p class="text-muted">
                     {{ util.make_icon('info-sign') }}
-                    {% trans -%}The following fields are only relevant for Event-Account Requests.{%- endtrans %}
+                    {% trans %}The following fields are only relevant for Event-Account Requests.{% endtrans %}
                 </p>
             </noscript>
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
@@ -67,7 +67,7 @@
             {{ util.form_input_text(name="country", label=gettext("Country"), small=True,
                                     aclass="genesis-realm-specific") }}
 
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
                 var $realmSpecificFields = $('.genesis-realm-specific');
                 var fieldsPerRealm = {{ realm_specific_genesis_fields|json|s }};
@@ -84,7 +84,8 @@
                 show_realm_specific_fields();
             </script>
 
-            {{ util.form_input_submit(value=gettext("Save"), small=True, cancellink=cdedblink("core/genesis_show_case")) }}
+            {{ util.form_input_submit(value=gettext("Save"), small=True, cancellink=cdedblink("core/genesis_show_case"),
+                                      differentiate_warnings=True) }}
         </div>
     </form>
 {% endblock %}

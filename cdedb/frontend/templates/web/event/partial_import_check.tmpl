@@ -3,9 +3,9 @@
 {% set jshint='weak' %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Partial Import Validation ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -21,7 +21,7 @@
 {# The following macro generates the diff table for a changed registration, lodgement or course. It takes the (flattened)
 diff of the item and shows a table with all changed attributes, old and new values. #}
 {% macro diff_table(diff, titles, choices) %}
-    <table class="table table-slim small diff-details" style="clear: right;">
+    <table class="table table-layout-fixed small">
         <thead>
             <tr>
                 <th>{% trans %}Attribute{% endtrans %}</th>
@@ -88,10 +88,10 @@ diff of the item and shows a table with all changed attributes, old and new valu
 {% block content %}
     <p class="text-warning">
         {{ util.make_icon('warning-sign') }}
-        {% trans manual=util.href(docurl('Handbuch_partieller_Import'), gettext('manual')) -%}
+        {% trans manual=util.href(docurl('Handbuch_partieller_Import'), gettext('manual')) %}
             Carefully check the summary below, as this tool has the potential to do irreversible damage
             to your event. (You read the {{ manual }}, right?)
-        {%- endtrans %}
+        {% endtrans %}
     </p>
 
     <h2>{% trans %}Summary of Changes{% endtrans %}</h2>
@@ -129,19 +129,22 @@ diff of the item and shows a table with all changed attributes, old and new valu
 
     {% if summary['changed_registrations'] or summary['new_registration_ids'] or summary['deleted_registration_ids'] %}
         <h3>{% trans %}Registrations{% endtrans %}</h3>
-        <!-- ---------------------- Changed registrations ---------------------- -->
+        <!-- Changed registrations -->
         {% if summary['changed_registrations'] %}
             <div class="row">
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info',
                                                  icon='user', anid='box-changed-registrations') %}
-                        <ul class="slim">
+                        <ul class="slim details-list">
                             {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
-                                <li class="clearfix-after">
-                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
-                                    {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                    {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
-                                    {{ diff_table(reg_diff, reg_titles, reg_choices) }}
+                                <li>
+                                    <details>
+                                        <summary>
+                                            {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
+                                            {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                        </summary>
+                                        {{ diff_table(reg_diff, reg_titles, reg_choices) }}
+                                    </details>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -161,7 +164,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% endif %}
 
         <div class="row">
-            <!-- ---------------------- New registrations ---------------------- -->
+            <!-- New registrations -->
             {% if summary['new_registration_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New registrations"), aclass='panel panel-success',
@@ -178,7 +181,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 </div>
             {% endif %}
 
-            <!-- ---------------------- Deleted registrations ---------------------- -->
+            <!-- Deleted registrations -->
             {% if summary['real_deleted_registration_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted registrations"), aclass='panel panel-danger',
@@ -198,21 +201,24 @@ diff of the item and shows a table with all changed attributes, old and new valu
     {% endif %}
     {% if summary['changed_courses'] or summary['new_course_ids'] or summary['deleted_course_ids'] %}
         <h3>{% trans %}Courses{% endtrans %}</h3>
-        <!-- ---------------------- Changed Courses ---------------------- -->
+        <!-- Changed Courses -->
         {% if summary['changed_courses'] %}
             <div class="row">
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='book',
                                                  anid='box-changed-courses') %}
-                        <ul class="slim">
+                        <ul class="slim details-list">
                             {% for course_id, course_diff in summary['changed_courses'].items() %}
-                                <li class="clearfix-after">
-                                    {{ courses[course_id]['nr'] }}.{# -#}
-                                    {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
-                                    {{ courses[course_id]['shortname'] }}{# -#}
-                                    {% if 'shortname' in course_diff %}/{{ course_diff['shortname'][1] }}{% endif %}
-                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
-                                    {{ diff_table(course_diff, course_titles, course_choices) }}
+                                <li>
+                                    <details>
+                                        <summary>
+                                            {{ courses[course_id]['nr'] }}.{# -#}
+                                            {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
+                                            {{ courses[course_id]['shortname'] }}{# -#}
+                                            {% if 'shortname' in course_diff %}/{{ course_diff['shortname'][1] }}{% endif %}
+                                        </summary>
+                                        {{ diff_table(course_diff, course_titles, course_choices) }}
+                                    </details>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -232,7 +238,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% endif %}
 
         <div class="row">
-            <!-- ---------------------- New Courses---------------------- -->
+            <!-- New Courses-->
             {% if summary['new_course_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='book',
@@ -248,7 +254,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 </div>
             {% endif %}
 
-            <!-- ---------------------- Deleted Courses ---------------------- -->
+            <!-- Deleted Courses -->
             {% if summary['real_deleted_course_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel panel-danger', icon='book',
@@ -268,19 +274,22 @@ diff of the item and shows a table with all changed attributes, old and new valu
 
     {% if summary['changed_lodgements'] or summary['new_lodgement_ids'] or summary['deleted_lodgement_ids'] %}
         <h3>{% trans %}Lodgements{% endtrans %}</h3>
-        <!-- ---------------------- Changed Lodgements ---------------------- -->
+        <!-- Changed Lodgements -->
         {% if summary['changed_lodgements'] %}
             <div class="row">
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='home',
                                                  anid='box-changed-lodgements') %}
-                        <ul class="slim">
+                        <ul class="slim details-list">
                             {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
-                                <li class="clearfix-after">
-                                    {{ lodgements[lodgement_id]['moniker'] }}{# -#}
-                                    {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
-                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
-                                    {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
+                                <li>
+                                    <details>
+                                        <summary>
+                                            {{ lodgements[lodgement_id]['moniker'] }}{# -#}
+                                            {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
+                                        </summary>
+                                        {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
+                                   </details>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -300,7 +309,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% endif %}
 
         <div class="row">
-            <!-- ---------------------- New Lodgements ---------------------- -->
+            <!-- New Lodgements -->
             {% if summary['new_lodgement_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel panel-success', icon='home',
@@ -316,7 +325,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 </div>
             {% endif %}
 
-            <!-- ---------------------- Deleted Lodgements ---------------------- -->
+            <!-- Deleted Lodgements -->
             {% if summary['real_deleted_lodgement_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted lodgements"), aclass='panel panel-danger',
@@ -378,27 +387,6 @@ diff of the item and shows a table with all changed attributes, old and new valu
             </div>
         {% endcall %}
     {% endif %}
-
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
-        $('.diff-details').hide();
-        $('.show-details')
-            .show()
-            .on('click', function() {
-                var $details = $(this).siblings('.diff-details');
-                if ($details.is(':visible')) {
-                    $details.hide();
-                    $(this).children('.glyphicon')
-                        .removeClass('glyphicon-collapse-down')
-                        .addClass('glyphicon-expand');
-                } else {
-                    $details.show();
-                    $(this).children('.glyphicon')
-                        .removeClass('glyphicon-expand')
-                        .addClass('glyphicon-collapse-down');
-                }
-                return false;
-            });
-    </script>
 
     {% if not summary['changed_registratios'] and not summary['new_registration_ids'] and not summary['real_deleted_registration_ids']
             and not summary['changed_courses'] and not summary['new_course_ids'] and not summary['real_deleted_course_ids']

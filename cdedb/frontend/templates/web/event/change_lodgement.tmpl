@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans lodgement=ambience['lodgement']['moniker'], event=ambience['event']['title'] -%}
+    {% trans lodgement=ambience['lodgement']['moniker'], event=ambience['event']['title'] %}
         Edit Lodgement {{ lodgement }} ({{ event }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -17,7 +17,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans lodgement=ambience['lodgement']['moniker'] -%}Edit Lodgement {{ lodgement }}{%- endtrans %}
+        {% trans lodgement=ambience['lodgement']['moniker'] %}Edit Lodgement {{ lodgement }}{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -29,19 +29,19 @@
         {{ util.form_input_text(name="capacity", label=gettext("Regular Capacity")) }}
         {{ util.form_input_text(name="reserve", label=gettext("Camping Mat Capacity")) }}
         {{ util.form_input_select(name="group_id", entries=groups, label=gettext("Lodgement Group"),
-                                  nulloption="") }}
+                                  nulloption="&nbsp;"|s) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
 
-        <h4 class="heading-underline">{% trans -%}Fields{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
         {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
             if field['association'] == enums['FieldAssociations'].lodgement %}
             {{ util.form_event_field_input(field) }}
         {% else %}
-            <p class="text-muted">{% trans -%}No custom fields for lodgements available.{%- endtrans %}</p>
+            <p class="text-muted">{% trans %}No custom fields for lodgements available.{% endtrans %}</p>
         {% endfor %}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/show_lodgement")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#changelodgementform').cdedbProtectChanges();
     </script>
 {% endblock %}

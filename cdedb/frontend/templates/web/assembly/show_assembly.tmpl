@@ -16,17 +16,21 @@
         {% endif %}
     </div>
 
-    {{ ambience['assembly']['description']|md }}
+    <div id="description">
+        {{ ambience['assembly']['description']|md }}
+    </div>
 
     <dl class="dl-horizontal">
-        <dt>{% trans -%}Participation Deadline{%- endtrans %}</dt>
-        <dd>{{ ambience['assembly']['signup_end']|datetime(lang=lang) }}</dd>
-        <dt>{% trans -%}Participation Status{%- endtrans %}</dt>
-        <dd>
+        <dt>{% trans %}Participation Deadline{% endtrans %}</dt>
+        <dd id="participation-deadline">
+            {{ ambience['assembly']['signup_end']|datetime(lang=lang) }}
+        </dd>
+        <dt>{% trans %}Participation Status{% endtrans %}</dt>
+        <dd id="participation-status">
             {% if attends %}
-                <strong class="text-success">{% trans -%}You are participating in this assembly.{%- endtrans %}</strong>
+                <strong class="text-success">{% trans %}You are participating in this assembly.{% endtrans %}</strong>
             {% else %}
-                <p><strong class="text-muted">{% trans -%}You are not participating.{%- endtrans %}</strong></p>
+                <p><strong class="text-muted">{% trans %}You are not participating.{% endtrans %}</strong></p>
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
                         {{ util.anti_csrf_token('assembly/signup') }}
@@ -39,7 +43,9 @@
 
     {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
-            {{ ambience['assembly']['notes']|md }}
+            <div id="notes">
+                {{ ambience['assembly']['notes']|md }}
+            </div>
         {% endcall %}
     {% endif %}
 
@@ -48,8 +54,8 @@
         <div class="row">
             {% if attachments or "assembly_contents" in user.admin_views %}
                 <div class="col-sm-6">
-                    <h4>{% trans -%}General Files{%- endtrans %}</h4>
-                    <ul class="slim">
+                    <h4>{% trans %}General Files{% endtrans %}</h4>
+                    <ul class="slim" id="attachments">
                         {% for attachment_id, attachment in attachments|xdictsort("title") %}
                             <li class="hide-hover-container clearfix-after">
                                 {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
@@ -57,14 +63,15 @@
                                 {% if "assembly_contents" in user.admin_views %}
                                     <form action="{{ cdedblink('assembly/remove_attachment',
                                                                {'attachment_id': attachment_id}) }}"
-                                            method="POST" id="removeattachmentform{{ attachment_id }}",
+                                            method="POST"
+                                            id="removeattachmentform{{ attachment_id }}"
                                             class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('assembly/remove_attachment') }}
                                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
                                         {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash",
                                                 title=gettext("Delete File")) }}
                                     </form>
-                                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                                    <script nonce="{{ csp_nonce }}">
                                         $('#removeattachmentform{{ attachment_id }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
                                         $('#removeattachmentform{{ attachment_id }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
                                     </script>
@@ -83,7 +90,7 @@
 
             {% if has_ballot_attachments %}
                 <div class="col-sm-6">
-                <h4>{% trans -%}Ballot Files{%- endtrans %}</h4>
+                <h4>{% trans %}Ballot Files{% endtrans %}</h4>
                     {% for ballot_id, ballot in ballots|xdictsort('title') %}
                         {% if ballot_attachments[ballot_id] %}
                             <ul class="slim">
@@ -114,8 +121,7 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
-                                <form action="{{ cdedblink('assembly/conclude_assembly') }}" method="POST"
-                                      id="concludeassemblyform" style="display: inline;">
+                                <form action="{{ cdedblink('assembly/conclude_assembly') }}" method="POST" id="concludeassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/conclude_assembly') }}
                                     {{ util.input_submit(value=gettext("Archive"), readonly="ballot" in conclude_blockers, aclass="btn btn-danger",
                                             icon="folder-close", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
@@ -125,11 +131,11 @@
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                     Archives the assembly. The configuration cannot be changed after this.
                                     The private keys used to sign the votes will be deleted from the database.
                                     This should typically be done shortly after all ballots have been conlcuded.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>
@@ -138,8 +144,7 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
-                                <form action="{{ cdedblink('assembly/delete_assembly') }}" method="POST"
-                                      id="deleteassemblyform" style="display: inline;">
+                                <form action="{{ cdedblink('assembly/delete_assembly') }}" method="POST" id="deleteassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/delete_assembly') }}
                                     {{ util.input_submit(value=gettext("Delete"), aclass="btn btn-danger", icon="trash") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
@@ -148,16 +153,16 @@
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                     Permanently deletes the assembly including all ballots and attendee information.
                                     This is only possible while no ballots have begun voting.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>
                 {% endif %}
             {% endcall %}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $(function() {
                     $('#concludeassemblyform').cdedbProtectAction("{{ gettext("The assembly will be permanently archived.") }}");
                     $('#concludeassemblyform').find('[name="ack_conclude"]').prop('checked', true).parent().hide();

@@ -21,14 +21,14 @@
     {% endif %}
     {% for heading, sample, show_state in ((gettext("Future Ballots"), future, False),
                                            (gettext("Current Ballots"), current, True),
-                                           (gettext("Past Ballots"), done, False)) %}
-        {% if sample %}
+                                           (gettext("Past Ballots"), done, False))
+                                       if sample %}
         <h3>{{ heading }}</h3>
         <div class="row">
             <div class="col-md-8">
                 <ul>
                     {% for ballot_id, ballot in sample|xdictsort("title") %}
-                        <li class="hide-hover-container">
+                        <li class="hide-hover-container clearfix-after">
                             {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title']) }}
                             {% if ballot_id in votes and show_state %}
                                 ({% if votes[ballot_id] -%}
@@ -50,6 +50,9 @@
                 </ul>
             </div>
         </div>
-        {% endif %}
+    {% else %}
+        <p class="text-muted">
+            {% trans %}No ballots have been created yet.{% endtrans %}
+        </p>
     {% endfor %}
 {% endblock %}

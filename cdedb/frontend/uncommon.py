@@ -40,20 +40,21 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
     @abc.abstractmethod
-    def create_user(self, rs, data):
+    def create_user(self, rs, data, ignore_warnings=False):
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
-        data = check(rs, "persona", data, creation=True)
+        data = check(
+            rs, "persona", data, creation=True, _ignore_warnings=ignore_warnings)
         if data:
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:
-                rs.errors.append(
-                    ("username",
-                     ValueError("User with this E-Mail exists already."))
-                )
-        if rs.errors:
+                rs.extend_validation_errors(
+                    (("username",
+                      ValueError("User with this E-Mail exists already.")),))
+        if rs.has_validation_errors():
             return self.create_user_form(rs)
-        new_id = self.coreproxy.create_persona(rs, data)
+        new_id = self.coreproxy.create_persona(
+            rs, data, ignore_warnings=ignore_warnings)
         if new_id:
             success, message = self.coreproxy.make_reset_cookie(rs, data[
                 'username'])

@@ -1,14 +1,14 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title -%}
-    {% trans -%}
+    {% trans %}
         New Direct Debit Authorization
-    {%- endtrans %}
+    {% endtrans %}
     ({{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }})
 {%- endblock %}
 {% block heading -%}
     <h1>
-        {% trans -%}New Direct Debit Authorization{%- endtrans %}
+        {% trans %}New Direct Debit Authorization{% endtrans %}
         <small>
             {{ util.make_icon('user') }} {{ ambience['persona']['given_names'] }}
             {{ ambience['persona']['family_name'] }}

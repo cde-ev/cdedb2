@@ -4,15 +4,15 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	Account Requests
-    {%- endtrans %}{% endblock %}
+    {% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), active="True") }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('.rejection-form').cdedbProtectAction("{{ gettext("The Account Request will be permanently deleted.") }}");
         });
@@ -23,36 +23,36 @@
                                   'ml': gettext('Mailinglist Account Requests')} %}
         {% for realm, cases in cases_by_realm.items() %}
             <h3>{{ REALM_REQUEST_TITLES[realm] }}</h3>
-            {% for case_id, entry in cases|xdictsort('ctime') %}
-                <div class="row">
+            {% for genesis_case_id, entry in cases|xdictsort('ctime') %}
+                <div class="row" id="request-{{ genesis_case_id }}">
                     <div class="col-sm-3">
                         <p>
                             {{ entry['given_names'] }} {{ entry['family_name'] }}
-                            &lt;{{ util.href('mailto:%s'|format(entry['username']), entry['username']) }}&gt;
+                            &lt;{{ util.href(util.mailto(entry['username']), entry['username']) }}&gt;
                         </p>
                     </div>
                     <div class="col-sm-5">
                         {% if entry['notes'] %}<p class="textbox">{{ entry['notes'] }}</p>{% endif %}
                     </div>
                     <div class="col-sm-4 button-par">
-                        {{ util.href(cdedblink('core/genesis_show_case', {'case_id': case_id}), gettext("Details"),
+                        {{ util.href(cdedblink('core/genesis_show_case', {'genesis_case_id': genesis_case_id}), gettext("Details"),
                             aclass="btn btn-primary btn-sm", icon="user") }}
-                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), gettext("Edit"),
+                        {{ util.href(cdedblink('core/genesis_modify_form', {'genesis_case_id': genesis_case_id}), gettext("Edit"),
                             aclass="btn btn-warning btn-sm", icon="pencil") }}
                         {% if realm == 'ml' %}
                             {# For mailinglist genesis requrests, there is no additional information to review (apart from
                               that shown on this page. So we allow admins to accept these requests directly. #}
-                            <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id}) }}" method="POST"
+                            <form action="{{ cdedblink('core/genesis_decide', {'genesis_case_id': genesis_case_id}) }}" method="POST"
                              id="genesismlapprovalform{{ loop.index }}" style="display: inline;">
                                 {{ util.anti_csrf_token('core/genesis_decide') }}
-                                {{ util.input_hidden(name="case_id", value=case_id) }}
+                                {{ util.input_hidden(name="genesis_case_id", value=genesis_case_id) }}
                                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
                                 {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-sm btn-success") }}
                             </form>
-                            <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id}) }}" method="POST"
+                            <form action="{{ cdedblink('core/genesis_decide', {'genesis_case_id': genesis_case_id}) }}" method="POST"
                              id="genesismlrejectionform{{ loop.index }}" class="rejection-form" style="display: inline;">
                                 {{ util.anti_csrf_token('core/genesis_decide') }}
-                                {{ util.input_hidden(name="case_id", value=case_id) }}
+                                {{ util.input_hidden(name="genesis_case_id", value=genesis_case_id) }}
                                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
                                 {{ util.input_submit(icon="remove", value=gettext("Reject"),
                                     aclass="btn btn-sm btn-danger") }}
@@ -64,8 +64,13 @@
                     <hr />
                 {% endif %}
             {% else %}
-                <p class="text-muted">{% trans realm=REALM_REQUEST_TITLES[realm] -%}
-                    There are currently no {{ realm }} pending for approval.{%- endtrans %}</p>
+                <div id="no-{{realm}}-request">
+                    <p class="text-muted">
+                        {% trans realm=REALM_REQUEST_TITLES[realm] %}
+                            There are currently no {{ realm }} pending for approval.
+                        {% endtrans %}
+                    </p>
+                </div>
             {% endfor %}
         {% endfor %}
     {% endwith %}

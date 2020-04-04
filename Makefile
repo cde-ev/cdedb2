@@ -72,6 +72,7 @@ endif
 	sudo mkdir -p "/var/lib/cdedb/ballot_result/"
 	sudo mkdir -p "/var/lib/cdedb/assembly_attachment/"
 	sudo mkdir -p "/var/lib/cdedb/mailman_templates/"
+	sudo mkdir -p "/var/lib/cdedb/genesis_attachment/"
 	sudo cp test/ancillary_files/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9 /var/lib/cdedb/foto/
 	sudo chown --recursive www-data:www-data /var/lib/cdedb
 
@@ -84,11 +85,12 @@ storage-test:
 	mkdir -p "/tmp/cdedb-store/course_logo/"
 	mkdir -p "/tmp/cdedb-store/ballot_result/"
 	mkdir -p "/tmp/cdedb-store/assembly_attachment/"
+	mkdir -p "/tmp/cdedb-store/genesis_attachment/"
 	mkdir -p "/tmp/cdedb-store/mailman_templates/"
 	mkdir -p "/tmp/cdedb-store/testfiles/"
 	cp test/ancillary_files/{picture.pdf,picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv,partial_event_import.json} /tmp/cdedb-store/testfiles/
 
-sql:
+sql: test/ancillary_files/sample_data.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
@@ -112,7 +114,7 @@ sql-test:
 	make sql-test-shallow
 	sudo systemctl start pgbouncer
 
-sql-test-shallow:
+sql-test-shallow: test/ancillary_files/sample_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
 
@@ -198,3 +200,11 @@ coverage: .coverage
 	${PYTHONBIN} /usr/bin/coverage report -m --omit='test/*,related/*'
 
 .PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint check single-check .coverage coverage
+
+test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json test/create_sample_data_sql.py
+	SQLTEMPFILE=`sudo -u www-data mktemp` \
+		; sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
+		; sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py \
+			-i test/ancillary_files/sample_data.json -o "$${SQLTEMPFILE}" \
+		; cp "$${SQLTEMPFILE}" test/ancillary_files/sample_data.sql \
+		; sudo -u www-data rm "$${SQLTEMPFILE}"

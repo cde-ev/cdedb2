@@ -1,9 +1,9 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] -%}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
     	Modify Balance for {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -15,7 +15,7 @@
 {% block content %}
     <p>
         {{ util.make_icon("info-sign") }}
-        {% trans -%}Here you can manually correct the balance of a member. This should only be used to correct a previous mistake when updating balance.{%- endtrans %}
+        {% trans %}Here you can manually correct the balance of a member. This should only be used to correct a previous mistake when updating balance.{% endtrans %}
     </p>
 
     <form action="{{ cdedblink('core/modify_balance') }}" method="POST" id="modifybalanceform" class="form-horizontal">

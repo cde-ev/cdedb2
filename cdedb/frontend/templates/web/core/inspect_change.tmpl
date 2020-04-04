@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=current['given_names'], family_name=current['family_name'] -%}
+    {% trans given_names=current['given_names'], family_name=current['family_name'] %}
     	Inspect Changes for {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -37,18 +37,18 @@
 
 {% block content %}
     <button type="button" class="btn btn-default btn-sm softhide" id="unhide-button">
-        {{ util.make_icon('eye-close') }} {% trans -%}Show all Fields{%- endtrans %}
+        {{ util.make_icon('eye-close') }} {% trans %}Show all Fields{% endtrans %}
     </button>
     {{ util.href(show_user_link(pending['id']), gettext("Show Profile"), icon="share-alt", aclass="btn btn-sm btn-info") }}
     {{ util.href(cdedblink("core/show_history", {'persona_id': pending['id']}), gettext("Change History"),
                  aclass="btn btn-info btn-sm", icon="time") }}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#diff-view').cdedbHideUnimportant($('#unhide-button'));
         });
     </script>
     <div class="diff-view" id="diff-view">
-        <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
         {{ show_diff('title', gettext("Title"), True) }}
         {{ show_diff('given_names', gettext("Given Names"), True) }}
         {{ show_diff('family_name', gettext("Family Name"), True) }}
@@ -62,34 +62,34 @@
             {% if next %}{{ gettext(enums['Genders'](pending['gender'])|string) }}{% else %}{{ gettext(enums['Genders'](current['gender'])|string) }}{% endif %}
         {% endcall %}
 
-        <h4 class="heading-underline">{% trans -%}Account & Membership{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
         {% call(next) show_diff('id', gettext("CdEDB-ID"), True) %}
             {{ util.href(show_user_link(pending['id']), pending['id']|cdedbid, aclass='nowrap') }}
         {% endcall %}
         {{ show_diff('is_member', gettext("CdE-Membership"), True) }}
         {{ show_diff('balance', gettext("Balance")) }}
 
-        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         {{ show_diff('username', gettext("E-Mail"), True) }}
         {{ show_diff('telephone', gettext("Phone")) }}
         {{ show_diff('mobile', gettext("Mobile Phone")) }}
         {{ show_diff('weblink', gettext("WWW")) }}
 
-        <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
         {{ show_diff('address', gettext("Street")) }}
         {{ show_diff('address_supplement', gettext("Address Supplement")) }}
         {{ show_diff('postal_code', gettext("ZIP")) }}
         {{ show_diff('location', gettext("City")) }}
         {{ show_diff('country', gettext("Country")) }}
 
-        <h4 class="heading-underline">{% trans -%}Second Address{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
         {{ show_diff('address2', gettext("Street")) }}
         {{ show_diff('address_supplement2', gettext("Address Supplement")) }}
         {{ show_diff('postal_code2', gettext("ZIP")) }}
         {{ show_diff('location2', gettext("City")) }}
         {{ show_diff('country2', gettext("Country")) }}
 
-        <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
         {{ show_diff('specialisation', gettext("Specialisation")) }}
         {{ show_diff('affiliation', gettext("School, University, …")) }}
         {{ show_diff('timeline', gettext("Year(s) of Graduation")) }}

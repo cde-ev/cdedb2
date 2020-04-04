@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         {{ title }} – Configuration
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -15,7 +15,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Configuration{%- endtrans %}
+        {% trans %}Configuration{% endtrans %}
         <small>{{ util.make_icon('blackboard', arialabel=gettext("Configuration")) }}
             {{ ambience['event']['title'] }}</small>
     </h1>
@@ -25,7 +25,7 @@
         {{ util.anti_csrf_token('event/change_event') }}
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
 
-        <h4 class="heading-underline">{% trans -%}Event Meta Data{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s. This description is visible publicly (without "
@@ -38,7 +38,7 @@
                                              "Event” is set.")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort(by='value')) }}
 
-        <h4 class="heading-underline">{% trans -%}Visibility and Registration Dates{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Visibility and Registration Dates{% endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event"),
                                 info=gettext("If this is checked, all event users can see the event and anyone with the link can access it. "
                                 "If this is unchecked, event users can still register within the "
@@ -77,16 +77,18 @@
                                 info=gettext("If this is checked, all registrated users can fill out the Questionnaire. "
                                 "You can configure every part of the questionnaire individually in the questionnaire configuration.")) }}
 
-        <h4 class="heading-underline">{% trans -%}Additional Information for Registration{%- endtrans %}</h4>
-        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="",
+        <h4 class="heading-underline">{% trans %}Additional Information for Registration{% endtrans %}</h4>
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="&nbsp;"|s,
                                 info=gettext("Only leave this empty if payment is going to be handled directly by the orgas.")) }}
+        {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants."), addon='€',
+                                info=gettext("Participants who are not currently members will have to pay this additional fee.")) }}
         {{ util.form_input_textarea(name="registration_text", label=gettext("Registration page free text"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
                                                            title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
 
-        <h4 class="heading-underline">{% trans -%}Special Purpose Custom Fields{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
@@ -94,7 +96,7 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the participants’ "
+                                  nulloption="&nbsp;"|s, info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. It is used for the PDF lodgement puzzle "
                                   "download. Fieldtype: Text")) }}
         {#- jinja does not support list comprehension ... #}
@@ -104,7 +106,7 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="reserve_field", label=gettext("Field for Camping Mat"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the participants’ "
+                                  nulloption="&nbsp;"|s, info=gettext("The custom field in which the participants’ "
                                   "willingness to sleep on a camping mat will be saved. It is used for the PDF "
                                   "lodgement puzzle download. Fieldtype: Yes/No")) }}
         {#- jinja does not support list comprehension ... #}
@@ -114,12 +116,12 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course Room"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the course’s "
+                                  nulloption="&nbsp;"|s, info=gettext("The custom field in which the course’s "
                                   "assigned course room will be saved. It is used for PDF participant lists and "
                                   "nametags. Fieldtype: Text")) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#changeeventform').cdedbProtectChanges();
     </script>
 {% endblock %}

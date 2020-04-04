@@ -4,12 +4,11 @@
 
 This utilizes the mailman REST API to drive the mailinglists residing
 on the mail VM from within the CdEDB.
-
-Most functions are uninlined methods from the ml-frontend.
 """
 
 import cdedb.database.constants as const
-from cdedb.frontend.common import AbstractFrontendShard, periodic
+from cdedb.frontend.common import periodic
+from cdedb.frontend.ml_base import MlBaseFrontend
 
 
 POLICY_MEMBER_CONVERT = {
@@ -38,13 +37,12 @@ def template_url(name):
     return "https://db.cde-ev.de/mailman_templates/{}".format(name)
 
 
-class MailmanShard(AbstractFrontendShard):
+class MailmanMixin(MlBaseFrontend):
     def mailman_connect(self):
         """Create a Mailman REST client."""
-        url = "http://{}/3.1".format(self.parent.conf.MAILMAN_HOST)
-        return self.parent.mailman_create_client(
-            url, self.parent.conf.MAILMAN_USER)
-
+        url = "http://{}/3.1".format(self.conf.MAILMAN_HOST)
+        return self.mailman_create_client(
+            url, self.conf.MAILMAN_USER)
 
     def mailman_sync_list_meta(self, rs, mailman, db_list, mm_list):
         prefix = ""
@@ -96,7 +94,7 @@ class MailmanShard(AbstractFrontendShard):
                 "Zur Abo-Verwaltung benutze die Datenbank"
                 " (https://db.cde-ev.de/db/ml/)"),
         }
-        store_path = self.parent.conf.STORAGE_DIR / 'mailman_templates'
+        store_path = self.conf.STORAGE_DIR / 'mailman_templates'
         for name, text in desired_templates.items():
             file_name = "{}__{}".format(db_list['id'], name)
             file_path = store_path / file_name
@@ -113,17 +111,16 @@ class MailmanShard(AbstractFrontendShard):
                     f.write(text)
                 mm_list.set_template(
                     name, template_url(file_name),
-                    username=self.parent.conf.MAILMAN_BASIC_AUTH_USER,
-                    password=self.parent.mailman_template_password())
-
+                    username=self.conf.MAILMAN_BASIC_AUTH_USER,
+                    password=self.mailman_template_password())
 
     def mailman_sync_list_subs(self, rs, mailman, db_list, mm_list):
         SS = const.SubscriptionStates
-        persona_ids = set(self.parent.mlproxy.get_subscription_states(
+        persona_ids = set(self.mlproxy.get_subscription_states(
             rs, db_list['id'], states=SS.subscribing_states()))
-        db_addresses = self.parent.mlproxy.get_subscription_addresses(
+        db_addresses = self.mlproxy.get_subscription_addresses(
             rs, db_list['id'], persona_ids)
-        personas = self.parent.coreproxy.get_personas(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         db_subscribers = {
             address: "{} {}".format(personas[pid]['given_names'],
                                     personas[pid]['family_name'])
@@ -140,9 +137,8 @@ class MailmanShard(AbstractFrontendShard):
                               pre_approved=True)
         mm_list.mass_unsubscribe(delete_subs)
 
-
     def mailman_sync_list_mods(self, rs, mailman, db_list, mm_list):
-        personas = self.parent.coreproxy.get_personas(
+        personas = self.coreproxy.get_personas(
             rs, db_list['moderators'])
         db_moderators = {
             persona['username']: "{} {}".format(persona['given_names'],
@@ -158,7 +154,6 @@ class MailmanShard(AbstractFrontendShard):
             mm_list.add_moderator(address, display_name=db_moderators[address])
         for address in delete_mods:
             mm_list.remove_moderator(address)
-
 
     def mailman_sync_list_whites(self, rs, mailman, db_list, mm_list):
         db_whitelist = db_list['whitelist']
@@ -180,13 +175,11 @@ class MailmanShard(AbstractFrontendShard):
         for address in delete_whites:
             mm_list.remove_role('nonmember', address)
 
-
     def mailman_sync_list(self, rs, mailman, db_list, mm_list):
         self.mailman_sync_list_meta(rs, mailman, db_list, mm_list)
         self.mailman_sync_list_subs(rs, mailman, db_list, mm_list)
         self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
         self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
-
 
     @periodic("mailman_sync")
     def mailman_sync(self, rs, store):
@@ -198,10 +191,10 @@ class MailmanShard(AbstractFrontendShard):
         try:
             _ = mailman.system # cause the client to connect
         except Exception as e: # sadly this throws a host of different exceptions
-            self.parent.logger.exception("Mailman client connection failed!")
+            self.logger.exception("Mailman client connection failed!")
             return store
-        db_lists = self.parent.mlproxy.get_mailinglists(
-            rs, self.parent.mlproxy.list_mailinglists(rs))
+        db_lists = self.mlproxy.get_mailinglists(
+            rs, self.mlproxy.list_mailinglists(rs))
         db_lists = {l['address']: l for l in db_lists.values()}
         mm_lists = {l.fqdn_listname: l for l in mailman.lists}
         new_lists = set(db_lists) - set(mm_lists)

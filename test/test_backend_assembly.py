@@ -49,11 +49,16 @@ class TestAssemblyBackend(BackendTest):
             },
             2: {
                 'id': 2,
-                'is_active': True,
-                'signup_end': datetime.datetime(2222, 2, 22, 0, 0,tzinfo=pytz.utc),
+                'is_active': False,
+                'signup_end': datetime.datetime(2020, 2, 22, 0, 0, tzinfo=pytz.utc),
                 'title': 'Kanonische Beispielversammlung'
-            }
-
+            },
+            3: {
+                'id': 3,
+                'is_active': True,
+                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'title': 'Archiv-Sammlung'
+            },
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
         expectation = {
@@ -112,7 +117,13 @@ class TestAssemblyBackend(BackendTest):
                        2: 'Farbe des Logos',
                        3: 'Bester Hof',
                        4: 'Akademie-Nachtisch',
-                       5: 'Lieblingszahl'}
+                       5: 'Lieblingszahl',
+                       11: 'Antrag zur DSGVO 2.0',
+                       12: 'Eine aktuell wichtige Frage',
+                       13: 'Wahl des Innenvorstand',
+                       14: 'Wie sollen Akademien sich in Zukunft finanzieren',
+                       15: 'Welche Sprache ist die Beste?',
+                       }
         self.assertEqual(expectation, self.assembly.list_ballots(self.key,
                                                                  assembly_id))
         expectation = {
@@ -279,6 +290,11 @@ class TestAssemblyBackend(BackendTest):
             3: 'Bester Hof',
             4: 'Akademie-Nachtisch',
             5: 'Lieblingszahl',
+            11: 'Antrag zur DSGVO 2.0',
+            12: 'Eine aktuell wichtige Frage',
+            13: 'Wahl des Innenvorstand',
+            14: 'Wie sollen Akademien sich in Zukunft finanzieren',
+            15: 'Welche Sprache ist die Beste?',
             new_id: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
 
@@ -463,29 +479,30 @@ class TestAssemblyBackend(BackendTest):
             "filename": "beschluss.pdf",
         }
         self.assertLess(0, self.assembly.add_attachment(self.key, data, b'123'))
-        expectation = {1: 'Rechenschaftsbericht', 2: 'Verfassung des Staates der CdEler'}
+        expectation = {1001: 'Rechenschaftsbericht',
+                       1002: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
-        expectation = {3: 'Beschlussvorlage'}
+        expectation = {1003: 'Beschlussvorlage'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=2))
         expectation = {
-            1: {'assembly_id': 1,
-                'ballot_id': None,
-                'filename': 'rechen.pdf',
-                'id': 1,
-                'title': 'Rechenschaftsbericht'},
-            2: {'assembly_id': 1,
-                'ballot_id': None,
-                'filename': 'verf.pdf',
-                'id': 2,
-                'title': 'Verfassung des Staates der CdEler'},
-            3: {'assembly_id': None,
-                'ballot_id': 2,
-                'filename': 'beschluss.pdf',
-                'id': 3,
-                'title': 'Beschlussvorlage'}}
-        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1, 2, 3)))
-        self.assertLess(0, self.assembly.remove_attachment(self.key, 1))
-        expectation = {2: 'Verfassung des Staates der CdEler'}
+            1001: {'assembly_id': 1,
+                   'ballot_id': None,
+                   'filename': 'rechen.pdf',
+                   'id': 1001,
+                   'title': 'Rechenschaftsbericht'},
+            1002: {'assembly_id': 1,
+                   'ballot_id': None,
+                   'filename': 'verf.pdf',
+                   'id': 1002,
+                   'title': 'Verfassung des Staates der CdEler'},
+            1003: {'assembly_id': None,
+                   'ballot_id': 2,
+                   'filename': 'beschluss.pdf',
+                   'id': 1003,
+                   'title': 'Beschlussvorlage'}}
+        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
+        self.assertLess(0, self.assembly.remove_attachment(self.key, 1001))
+        expectation = {1002: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
 
     @as_users("werner")
@@ -498,9 +515,12 @@ class TestAssemblyBackend(BackendTest):
             1: {'id': 1, 'is_active': True,
                 'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
                 'title': 'Internationaler Kongress'},
-            2: {'id': 2, 'is_active': True,
-                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+            2: {'id': 2, 'is_active': False,
+                'signup_end': datetime.datetime(2020, 2, 22, 0, 0, tzinfo=pytz.utc),
                 'title': 'Kanonische Beispielversammlung'},
+            3: {'id': 3, 'is_active': True,
+                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'title': 'Archiv-Sammlung'},
             1001: {'id': 1001, 'is_active': True,
                    'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
                    'title': 'Umfrage'}

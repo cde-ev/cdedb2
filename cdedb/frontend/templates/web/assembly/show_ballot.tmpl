@@ -38,13 +38,16 @@
         </div>
     {% endif %}
 
+    {# General information about ballot and personalized state info #}
+    {{ ambience['ballot']['description']|md }}
+
     {{ ballot_meta.show_status() }}
 
     {# Display of result #}
     {% if ambience['ballot']['is_tallied'] %}
         {{ ballot_result.show_result() }}
         
-        <h4>{% trans -%}Summary{%- endtrans %}</h4>
+        <h4>{% trans %}Summary{% endtrans %}</h4>
         {% if not ambience['ballot']['votes'] %}
             {{ ballot_result.show_summary() }}
         {% endif %}

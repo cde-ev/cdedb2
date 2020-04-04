@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_historycollapse.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=current['given_names'], family_name=current['family_name'] -%}
+    {% trans given_names=current['given_names'], family_name=current['family_name'] %}
     	Change History of {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -58,7 +58,7 @@
         {% if vars['has_nonconstant'] %}
             <div class="row history-row {{ STATUS[vars['eventual_status']][0] }}">
                 <div class="col-xs-3">
-                    {% trans -%}Gen{%- endtrans %} {{ c }}
+                    {% trans %}Gen{% endtrans %} {{ c }}
                     {% if entries[c]['change_status'] != 1 %}
                         {{ util.make_icon(STATUS[vars['eventual_status']][1],
                                 title=STATUS[vars['eventual_status']][2]) }}
@@ -88,16 +88,16 @@
     {% endif %}
     {% if not current['is_active'] %}
         <p class="text-danger">
-            {% trans -%}The User is deactivated.{%- endtrans %}
+            {% trans %}The User is deactivated.{% endtrans %}
         </p>
     {% endif %}
     {% if current['is_archived'] %}
         <p class="text-danger">
-            {% trans -%}The User is archived.{%- endtrans %}
+            {% trans %}The User is archived.{% endtrans %}
         </p>
     {% endif %}
 
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('.history-container').cdedbHistoryCollapse({
                 'more_versions': "{{ gettext("– {num} more versions –") }}",
@@ -139,7 +139,7 @@
         {% endif %}
 
 
-        <h4 class="heading-underline">{% trans -%}Account & Membership{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
 
         {% call history_field(gettext("Active")) %}
             {{ print_history('is_active') }}
@@ -184,12 +184,12 @@
                 {% call(c) print_multifield_history(['is_member', 'trial_member']) %}
                     {% if entries[c]['is_member'] %}
                         {% if entries[c]['trial_member'] %}
-                            {% trans -%}Trialmembership{%- endtrans %}
+                            {% trans %}Trialmembership{% endtrans %}
                         {% else %}
-                            {% trans -%}CdE-Member{%- endtrans %}
+                            {% trans %}CdE-Member{% endtrans %}
                         {% endif %}
                     {% else %}
-                        {% trans -%}Not a Member{%- endtrans %}
+                        {% trans %}Not a Member{% endtrans %}
                     {% endif %}
                 {% endcall %}
             {% endcall %}
@@ -198,12 +198,12 @@
                 {% call(c) print_multifield_history(['is_searchable', 'decided_search']) %}
                     {% if entries[c]['decided_search'] %}
                         {% if entries[c]['is_searchable'] %}
-                            {% trans -%}Searchable{%- endtrans %}
+                            {% trans %}Searchable{% endtrans %}
                         {% else %}
-                            {% trans -%}Not Searchable{%- endtrans %}
+                            {% trans %}Not Searchable{% endtrans %}
                         {% endif %}
                     {% else %}
-                        {% trans -%}(Undecided){%- endtrans %}
+                        {% trans %}(Undecided){% endtrans %}
                     {% endif %}
                 {% endcall %}
             {% endcall %}
@@ -217,7 +217,7 @@
             {% endfor %}
         {% endif %}
 
-        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
 
         {% for name, field in ((gettext("E-Mail"), 'username'),
                                (gettext("Phone"), 'telephone'),
@@ -255,7 +255,7 @@
         {% endif %}
 
         {% if current['is_cde_realm'] %}
-            <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
 
             {% for name, field in ((gettext("Specialisation"), 'specialisation'),
                                    (gettext("School, University, …"), 'affiliation'),
@@ -270,22 +270,22 @@
 
     </div>
 
-    <h3>{% trans -%}Changes{%- endtrans %}</h3>
+    <h3>{% trans %}Changes{% endtrans %}</h3>
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
                 <th></th>
-                <th>{% trans -%}Timestamp{%- endtrans %}</th>
-                <th>{% trans -%}Status{%- endtrans %}</th>
-                <th>{% trans -%}Submitted By{%- endtrans %}</th>
-                <th>{% trans -%}Reviewed By{%- endtrans %}</th>
-                <th>{% trans -%}Additional Info{%- endtrans %}</th>
+                <th>{% trans %}Timestamp{% endtrans %}</th>
+                <th>{% trans %}Status{% endtrans %}</th>
+                <th>{% trans %}Submitted By{% endtrans %}</th>
+                <th>{% trans %}Reviewed By{% endtrans %}</th>
+                <th>{% trans %}Additional Info{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>
             {% for _, entry in entries|xdictsort('generation')|reverse %}
                 <tr>
-                    <td class="nowrap">{% trans -%}Gen{%- endtrans %} {{ entry['generation'] }}</td>
+                    <td class="nowrap">{% trans %}Gen{% endtrans %} {{ entry['generation'] }}</td>
                     <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
                     <td>{{ gettext(entry['change_status']|enum(enums['MemberChangeStati'])) }}</td>
                     <td>{{ util.persona_anchor(personas[entry['submitted_by']]) }}</td>

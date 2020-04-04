@@ -2,7 +2,7 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
-{% block title %}{% trans -%}Edit Direct Debit Authorization{%- endtrans %}{% endblock %}
+{% block title %}{% trans %}Edit Direct Debit Authorization{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations")) }}
@@ -13,7 +13,7 @@
 	active=True) }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#changelastschriftform').cdedbProtectChanges();
         });

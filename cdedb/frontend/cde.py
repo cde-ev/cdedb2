@@ -16,6 +16,7 @@ import sys
 import tempfile
 import operator
 import datetime
+import time
 import dateutil.easter
 
 import psycopg2.extensions
@@ -28,7 +29,7 @@ from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
     PERSONA_DEFAULTS, diacritic_patterns, shutil_copy, asciificator,
-    EntitySorter)
+    EntitySorter, TransactionType)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
@@ -36,12 +37,7 @@ from cdedb.frontend.common import (
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
-from cdedb.frontend.parse_statement import (
-    Transaction, TransactionType, Accounts, get_event_name_pattern,
-    STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
-    STATEMENT_FAMILY_NAME_UNKNOWN, STATEMENT_DB_ID_EXTERN,
-    MEMBERSHIP_FEE_FIELDS, EVENT_FEE_FIELDS, OTHER_TRANSACTION_FIELDS,
-    ACCOUNT_FIELDS, STATEMENT_OUTPUT_DATEFORMAT)
+import cdedb.frontend.parse_statement as parse
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -128,7 +124,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("ack", "bool"))
     def consent_decision(self, rs, ack):
         """Record decision."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.consent_decision_form(rs)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         new = {
@@ -188,7 +184,31 @@ class CdEFrontend(AbstractUserFrontend):
         result = None
         count = 0
         cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
-        if is_search and not rs.errors:
+
+        if rs.has_validation_errors():
+            # A little hack to fix displaying of errors: The form uses
+            # 'qval_<field>' as input name, the validation only returns the
+            # field's name
+            current = tuple(rs.retrieve_validation_errors())
+            rs.retrieve_validation_errors().clear()
+            rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
+            rs.ignore_validation_errors()
+        elif is_search and not query.constraints:
+            rs.notify("error", n_("You have to specify some filters."))
+        elif is_search:
+
+            def restrict(constraint):
+                filter, operation, value = constraint
+                if filter == 'fulltext':
+                    value = [r"\m{}\M".format(val) if len(val) <= 3 else val
+                             for val in value]
+                elif len(str(value)) <= 3:
+                    operation = QueryOperators.equal
+                constraint = (filter, operation, value)
+                return constraint
+
+            query.constraints = [restrict(constrain)
+                                 for constrain in query.constraints]
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
@@ -200,11 +220,7 @@ class CdEFrontend(AbstractUserFrontend):
             if count > cutoff:
                 result = result[:cutoff]
                 rs.notify("info", n_("Too many query results."))
-        # A little hack to fix displaying of errors: The form uses
-        # 'qval_<field>' as input name, the validation only returns the field's
-        # name
-        elif rs.errors:
-            rs.errors = [('qval_' + k, v) for k, v in rs.errors]
+
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
             'cutoff': cutoff, 'count': count,
@@ -237,7 +253,7 @@ class CdEFrontend(AbstractUserFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.errors and is_search:
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_cde_user"
             result = self.cdeproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -447,7 +463,8 @@ class CdEFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def _perform_one_batch_admission(self, rs, datum, trial_membership, consent):
+    def _perform_one_batch_admission(self, rs, datum, trial_membership,
+                                     consent):
         """Uninlined code from perform_batch_admission().
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -462,7 +479,7 @@ class CdEFrontend(AbstractUserFrontend):
             'family_name', 'given_names', 'title', 'name_supplement',
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
-            'mobile', 'birthday') # email omitted as it is handled separately
+            'mobile', 'birthday')  # email omitted as it is handled separately
         persona_id = None
         if datum['resolution'] == LineResolutions.skip:
             return ret
@@ -539,7 +556,6 @@ class CdEFrontend(AbstractUserFrontend):
                 rs, datum['pevent_id'], datum['pcourse_id'],
                 persona_id, is_instructor=False, is_orga=False)
         return ret
-
 
     def perform_batch_admission(self, rs, data, trial_membership, consent,
                                 sendmail):
@@ -701,17 +717,17 @@ class CdEFrontend(AbstractUserFrontend):
                 rs.values['resolution{}'.format(dataset['lineno'] - 1)] = \
                     LineResolutions.create.value
         if lineno != len(accountlines):
-            rs.errors.append(("accounts",
-                              ValueError(n_("Lines didn’t match up."))))
+            rs.append_validation_error(
+                ("accounts", ValueError(n_("Lines didn’t match up."))))
         if not membership:
-            rs.errors.append(("membership",
-                              ValueError(
-                                  n_("Only member admission supported."))))
+            rs.append_validation_error(
+                ("membership",
+                 ValueError(n_("Only member admission supported."))))
         open_issues = any(
             e['resolution'] is None
             or (e['problems'] and e['resolution'] != LineResolutions.skip)
             for e in data)
-        if rs.errors or not data or open_issues:
+        if rs.has_validation_errors() or not data or open_issues:
             return self.batch_admission_form(rs, data=data, csvfields=fields)
         if not finalized:
             rs.values['finalized'] = True
@@ -732,30 +748,82 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("finance_admin")
-    def parse_statement_form(self, rs, data=None, problems=None,
-                             csvfields=None):
+    def parse_statement_form(self, rs, data=None, params=None):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object} or None
-        :type problems: list(str) or None
-        :type csvfields: tuple(str) or None
+        :type data: {str: obj} or None
+        :type params: {str: obj} or None
         """
         data = data or {}
-        problems = problems or []
-        csvfields = csvfields or tuple()
-        csv_position = {key: ind for ind, key in enumerate(csvfields)}
-        return self.render(rs, "parse_statement", {'data': data,
-                                                   'problems': problems,
-                                                   'csvfields': csv_position})
+        merge_dicts(rs.values, data)
+        event_list = self.eventproxy.list_db_events(rs)
+        event_entries = sorted(event_list.items(), key=lambda x: x[1])
+        params = {
+            'params': params or None,
+            'data': data,
+            'TransactionType': parse.TransactionType,
+            'event_entries': event_entries,
+            'events': event_list,
+        }
+        return self.render(rs, "parse_statement", params)
+
+    def organize_transaction_data(self, rs, transactions, start, end,
+                                  timestamp):
+        """
+        Organize transactions into data and params usable in the form.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type transactions: [parse.Transaction]
+        :type start: datetime.date or None
+        :type end: datetime.date or None
+        :type timestamp: datetime.time
+        :rtype: {str: object}, {str: object}
+        """
+        data = {"{}{}".format(k, t.t_id): v
+                for t in transactions
+                for k, v in t.to_dict(rs, self.coreproxy.get_persona,
+                                      self.eventproxy.get_event).items()}
+        data["count"] = len(transactions)
+        data["start"] = start
+        data["end"] = end
+        data["timestamp"] = timestamp
+        params = {
+            "all": [],
+            "has_error": [],
+            "has_warning": [],
+            "jump_order": {},
+            "has_none": [],
+            "accounts": defaultdict(int),
+            "events": defaultdict(int),
+            "memberships": 0,
+        }
+        prev_jump = None
+        for t in transactions:
+            params["all"].append(t.t_id)
+            if t.errors or t.warnings:
+                params["jump_order"][prev_jump] = t.t_id
+                params["jump_order"][t.t_id] = None
+                prev_jump = t.t_id
+                if t.errors:
+                    params["has_error"].append(t.t_id)
+                else:
+                    params["has_warning"].append(t.t_id)
+            else:
+                params["has_none"].append(t.t_id)
+            params["accounts"][str(t.account)] += 1
+            if t.event_id:
+                params["events"][t.event_id] += 1
+            if t.type == TransactionType.MembershipFee:
+                params["memberships"] += 1
+        return data, params
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdata(("statement", "str_or_None"))
     @REQUESTfile("statement_file")
-    def parse_statement(self, rs, statement, statement_file):
+    def parse_statement(self, rs, statement_file):
         """
         Parse the statement into multiple CSV files.
 
@@ -776,181 +844,144 @@ class CdEFrontend(AbstractUserFrontend):
         This uses POST because the expected data is too large for GET.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type statement: str or None
         :type statement_file: file or None
         """
 
+        filename = pathlib.Path(statement_file.filename).parts[-1]
+        start, end, timestamp = parse.dates_from_filename(filename)
+
         # The statements from BFS are encoded in latin-1
-        statement_file = check(rs, "csvfile_or_None", statement_file,
+        statement_file = check(rs, "csvfile", statement_file,
                                "statement_file", encoding="latin-1")
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.parse_statement_form(rs)
 
-        if statement_file and statement:
-            rs.notify("warning", n_("Only one input method allowed."))
-            return self.parse_statement_form(rs)
-        elif statement_file:
-            rs.values["statement"] = statement_file
-            statementlines = statement_file.splitlines()
-        elif statement:
-            statementlines = statement.splitlines()
-        else:
-            rs.notify("error", n_("No input provided."))
-            return self.parse_statement_form(rs)
+        statementlines = statement_file.splitlines()
 
         event_list = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_list)
-        event_names = {e["title"]: (get_event_name_pattern(e), e["shortname"])
-                       for e in events.values()}
 
         # This does not use the cde csv dialect, but rather the bank's.
         reader = csv.DictReader(statementlines, delimiter=";",
                                 quotechar='"',
-                                fieldnames=STATEMENT_CSV_FIELDS,
-                                restkey=STATEMENT_CSV_RESTKEY,
+                                fieldnames=parse.STATEMENT_CSV_FIELDS,
+                                restkey=parse.STATEMENT_CSV_RESTKEY,
                                 restval="")
-        problems = []
 
         transactions = []
-        event_fees = []
-        membership_fees = []
-        other_transactions = []
 
         for i, line in enumerate(reversed(list(reader))):
             if not len(line) == 23:
-                p = (i, "statement",
+                p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
                                    "the correct number of "
                                    "columns."),
                                 {'lineno': i + 1}
                                 ))
-                problems.append(p)
-                rs.errors.append(p)
+                rs.append_validation_error(p)
                 continue
             line["id"] = i
-            t = Transaction(line)
-            t.guess_type(event_names)
-            t.match_member(rs, self.coreproxy.get_persona)
-            t.match_event(event_names)
-
-            problems.extend((t.t_id, key, p) for key, p in t.problems)
+            t = parse.Transaction.from_csv(line)
+            t.analyze(rs, events, self.coreproxy.get_persona)
+            t.inspect(rs, self.coreproxy.get_persona)
 
             transactions.append(t)
-            if (t.type in {TransactionType.EventFee}
-                    and t.best_event_match
-                    and t.best_member_match
-                    and t.best_member_confidence > 2):
-                event_fees.append(t)
-            elif (t.type in {TransactionType.MembershipFee}
-                  and t.best_member_match
-                  and t.best_member_confidence > 2):
-                membership_fees.append(t)
-            else:
-                other_transactions.append(t)
+        if rs.has_validation_errors():
+            return self.parse_statement_form(rs)
 
-        data = {"event_fees": event_fees,
-                "membership_fees": membership_fees,
-                "other_transactions": other_transactions,
-                "transactions": transactions,
-                "files": {}}
+        data, params = self.organize_transaction_data(
+            rs, transactions, start, end, timestamp)
 
-        if membership_fees:
-            rows = []
-            # Separate by known and unknown Names
-            rows.extend([
-                t.to_dict()
-                for t in membership_fees if
-                (t.best_member_match.given_names !=
-                 STATEMENT_GIVEN_NAMES_UNKNOWN or
-                 t.best_member_match.family_name !=
-                 STATEMENT_FAMILY_NAME_UNKNOWN)
-            ])
-            rows.extend([
-                t.to_dict()
-                for t in membership_fees if
-                (t.best_member_match.given_names ==
-                 STATEMENT_GIVEN_NAMES_UNKNOWN and
-                 t.best_member_match.family_name ==
-                 STATEMENT_FAMILY_NAME_UNKNOWN)
-            ])
-
-            if rows:
-                csv_data = csv_output(rows, MEMBERSHIP_FEE_FIELDS,
-                                      writeheader=False)
-                data["files"]["membership_fees"] = csv_data
-
-        all_rows = []
-        for event_name in event_names:
-            rows = []
-            # Separate by not Extern and Extern
-            rows.extend([
-                t.to_dict()
-                for t in event_fees
-                if (event_name == t.best_event_match.title
-                    and t.best_member_match.db_id != STATEMENT_DB_ID_EXTERN)
-            ])
-
-            rows.extend([
-                t.to_dict()
-                for t in event_fees
-                if (event_name == t.best_event_match.title
-                    and t.best_member_match.db_id == STATEMENT_DB_ID_EXTERN)
-            ])
-
-            if rows:
-                all_rows.extend(rows)
-                e_name = event_name.replace(" ", "_").replace("/", "-")
-                csv_data = csv_output(rows, EVENT_FEE_FIELDS,
-                                      writeheader=False)
-                data["files"][e_name] = csv_data
-        if all_rows:
-            csv_data = csv_output(all_rows, EVENT_FEE_FIELDS,
-                                  writeheader=False)
-            data["files"]["event_fees"] = csv_data
-
-        if other_transactions:
-            rows = []
-            # Separate by TransactionType
-            for ty in TransactionType:
-                rows.extend([
-                    t.to_dict()
-                    for t in other_transactions if t.type == ty
-                ])
-            rows.extend([
-                t.to_dict()
-                for t in other_transactions if t.type is None])
-
-            if rows:
-                csv_data = csv_output(rows, OTHER_TRANSACTION_FIELDS,
-                                      writeheader=True)
-                data["files"]["other_transactions"] = csv_data
-
-        rows = defaultdict(list)
-        for t in transactions:
-            rows[t.account].append(t.to_dict())
-
-        for acc in Accounts:
-            if acc in rows:
-                csv_data = csv_output(rows[acc], ACCOUNT_FIELDS,
-                                      writeheader=False)
-                data["files"]["transactions_{}".format(acc)] = csv_data
-
-        csvfields = None
-        return self.parse_statement_form(rs, data=data, problems=problems,
-                                         csvfields=csvfields)
+        return self.parse_statement_form(rs, data, params)
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdata(("data", "str"), ("filename", "str"))
-    def parse_download(self, rs, data, filename):
+    @REQUESTdata(("count", "int"), ("start", "date"), ("end", "date_or_None"),
+                 ("timestamp", "datetime"),
+                 ("validate", "str_or_None"),
+                 ("event", "id_or_None"),
+                 ("membership", "str_or_None"),
+                 ("excel", "str_or_None"),
+                 ("gnucash", "str_or_None"))
+    def parse_download(self, rs, count, start, end, timestamp, validate=None,
+                       event=None, membership=None, excel=None, gnucash=None):
         """
         Provide data as CSV-Download with the given filename.
 
         This uses POST, because the expected filesize is too large for GET.
         """
-        if rs.errors:
-            return self.parse_statement_form(rs)
-        return self.send_file(rs, mimetype="text/csv", data=data,
-                              filename=filename)
+        rs.ignore_validation_errors()
+
+        params = lambda i: (
+            ("reference{}".format(i), "str_or_None"),
+            ("account{}".format(i), "enum_accounts"),
+            ("statement_date{}".format(i), "date"),
+            ("amount{}".format(i), "decimal"),
+            ("account_holder{}".format(i), "str_or_None"),
+            ("posting{}".format(i), "str"),
+            ("iban{}".format(i), "iban_or_None"),
+            ("t_id{}".format(i), "id"),
+            ("transaction_type{}".format(i), "enum_transactiontype"),
+            ("transaction_type_confidence{}".format(i), "int"),
+            ("transaction_type_confirm{}".format(i), "bool_or_None"),
+            ("cdedbid{}".format(i), "cdedbid_or_None"),
+            ("persona_id_confidence{}".format(i), "int_or_None"),
+            ("persona_id_confirm{}".format(i), "bool_or_None"),
+            ("event_id{}".format(i), "id_or_None"),
+            ("event_id_confidence{}".format(i), "int_or_None"),
+            ("event_id_confirm{}".format(i), "bool_or_None"),
+        )
+
+        transactions = []
+        for i in range(1, count + 1):
+            t = request_extractor(rs, params(i))
+            t = parse.Transaction({k.rstrip(str(i)): v for k, v in t.items()})
+            t.inspect(rs, self.coreproxy.get_persona)
+            transactions.append(t)
+
+        data, params = self.organize_transaction_data(
+            rs, transactions, start, end, timestamp)
+
+        if validate is not None or params["has_error"] \
+                or params["has_warning"]:
+            return self.parse_statement_form(rs, data, params)
+        elif membership is not None:
+            filename = "Mitgliedsbeiträge"
+            transactions = [t for t in transactions
+                            if t.type == TransactionType.MembershipFee]
+            fields = parse.MEMBERSHIP_EXPORT_FIELDS
+            write_header = False
+        elif event is not None:
+            aux = int(event)
+            event = self.eventproxy.get_event(rs, aux)
+            filename = event["shortname"]
+            transactions = [t for t in transactions
+                            if t.event_id == aux
+                            and t.type == TransactionType.EventFee]
+            fields = parse.EVENT_EXPORT_FIELDS
+            write_header = False
+        elif gnucash is not None:
+            filename = "gnucash"
+            fields = parse.GNUCASH_EXPORT_FIELDS
+            write_header = True
+        elif excel is not None:
+            aux = excel
+            filename = "transactions_" + aux
+            transactions = [t for t in transactions
+                            if str(t.account) == aux]
+            fields = parse.EXCEL_EXPORT_FIELDS
+            write_header = False
+        else:
+            rs.notify("error", n_("Unknown action."))
+            return self.parse_statement_form(rs, data, params)
+        if end is None:
+            filename += "_{}".format(start)
+        else:
+            filename += "_{}_bis_{}.csv".format(start, end)
+        csv_data = [t.to_dict(rs, self.coreproxy.get_persona,
+                              self.eventproxy.get_event)
+                    for t in transactions]
+        csv_data = csv_output(csv_data, fields, write_header)
+        return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
     @access("finance_admin")
     def money_transfers_form(self, rs, data=None, csvfields=None, saldo=None):
@@ -994,7 +1025,6 @@ class CdEFrontend(AbstractUserFrontend):
             datum['raw']['note'], "note")
         problems.extend(p)
 
-        persona = None
         if persona_id:
             try:
                 persona = self.coreproxy.get_persona(rs, persona_id)
@@ -1011,12 +1041,12 @@ class CdEFrontend(AbstractUserFrontend):
                     problems.append((
                         'persona_id',
                         ValueError(n_("Persona is not in CdE realm."))))
-                if not re.search(diacritic_patterns(family_name),
+                if not re.search(diacritic_patterns(re.escape(family_name)),
                                  persona['family_name'], flags=re.IGNORECASE):
                     problems.append(('family_name',
                                      ValueError(
                                          n_("Family name doesn’t match."))))
-                if not re.search(diacritic_patterns(given_names),
+                if not re.search(diacritic_patterns(re.escape(given_names)),
                                  persona['given_names'], flags=re.IGNORECASE):
                     problems.append(('given_names',
                                      ValueError(
@@ -1061,7 +1091,7 @@ class CdEFrontend(AbstractUserFrontend):
                     if note:
                         try:
                             date = datetime.datetime.strptime(
-                                note, STATEMENT_OUTPUT_DATEFORMAT)
+                                note, parse.OUTPUT_DATEFORMAT)
                         except ValueError:
                             pass
                         else:
@@ -1069,7 +1099,7 @@ class CdEFrontend(AbstractUserFrontend):
                             note = note_template.format(
                                 amount=money_filter(datum['amount']),
                                 new_balance=money_filter(new_balance),
-                                date=date.strftime(STATEMENT_OUTPUT_DATEFORMAT))
+                                date=date.strftime(parse.OUTPUT_DATEFORMAT))
                     count += self.coreproxy.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
@@ -1125,7 +1155,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         transfers_file = check(rs, "csvfile_or_None", transfers_file,
                                "transfers_file")
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.money_transfers_form(rs)
         if transfers_file and transfers:
             rs.notify("warning", n_("Only one input method allowed."))
@@ -1158,11 +1188,11 @@ class CdEFrontend(AbstractUserFrontend):
                 ds1['warnings'].append(warning)
                 ds2['warnings'].append(warning)
         if lineno != len(transferlines):
-            rs.errors.append(("transfers",
-                              ValueError(n_("Lines didn’t match up."))))
+            rs.append_validation_error(
+                ("transfers", ValueError(n_("Lines didn’t match up."))))
         open_issues = any(e['problems'] for e in data)
         saldo = sum(e['amount'] for e in data if e['amount'])
-        if rs.errors or not data or open_issues:
+        if rs.has_validation_errors() or not data or open_issues:
             rs.values['checksum'] = None
             return self.money_transfers_form(rs, data=data, csvfields=fields,
                                              saldo=saldo)
@@ -1296,7 +1326,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Modify one permit."""
         data['id'] = lastschrift_id
         data = check(rs, "lastschrift", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_change_form(rs, lastschrift_id)
         code = self.cdeproxy.set_lastschrift(rs, data)
         self.notify_return_code(rs, code)
@@ -1315,7 +1345,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Create a new permit."""
         data['persona_id'] = persona_id
         data = check(rs, "lastschrift", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
         if self.cdeproxy.list_lastschrift(
                 rs, persona_ids=(persona_id,), active=True):
@@ -1329,7 +1359,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("finance_admin", modi={"POST"})
     def lastschrift_revoke(self, rs, lastschrift_id):
         """Disable a permit."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_show(
                 rs, rs.ambience['lastschrift']['persona_id'])
         data = {
@@ -1406,7 +1436,7 @@ class CdEFrontend(AbstractUserFrontend):
         :rtype: str
         """
         sanitized_transactions = check(rs, "sepa_transactions", transactions)
-        if rs.errors:
+        if rs.has_validation_errors():
             return None
         sorted_transactions = {}
         for transaction in sanitized_transactions:
@@ -1432,7 +1462,7 @@ class CdEFrontend(AbstractUserFrontend):
             'payment_date': self._calculate_payment_date(),
         }
         meta = check(rs, "sepa_meta", meta)
-        if rs.errors:
+        if rs.has_validation_errors():
             return None
         sepapain_file = self.fill_template(rs, "other", "pain.008.003.02", {
             'transactions': sorted_transactions, 'meta': meta})
@@ -1447,7 +1477,7 @@ class CdEFrontend(AbstractUserFrontend):
         lastschrift_id is given. If it is None, then this creates the file
         for all open permits (c.f. :py:func:`determine_open_permits`).
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         period = self.cdeproxy.current_period(rs)
         if lastschrift_id is None:
@@ -1515,7 +1545,7 @@ class CdEFrontend(AbstractUserFrontend):
         passed or if that is None, then for all open permits
         (c.f. :py:func:`determine_open_permits`).
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         stati = const.LastschriftTransactionStati
         period = self.cdeproxy.current_period(rs)
@@ -1575,7 +1605,7 @@ class CdEFrontend(AbstractUserFrontend):
         lastschrift page, otherwise return to a general lastschrift
         page.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         success = self.cdeproxy.lastschrift_skip(rs, lastschrift_id)
         if not success:
@@ -1615,7 +1645,7 @@ class CdEFrontend(AbstractUserFrontend):
         lastschrift page, otherwise return to a general lastschrift
         page.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         code = self.lastschrift_process_transaction(rs, transaction_id, status)
         self.notify_return_code(rs, code)
@@ -1632,8 +1662,9 @@ class CdEFrontend(AbstractUserFrontend):
                                           cancelled, failure):
         """Finish many transaction."""
         if sum(1 for s in (success, cancelled, failure) if s) != 1:
-            rs.errors.append((None, ValueError(n_("Wrong number of actions."))))
-        if rs.errors:
+            rs.append_validation_error(
+                (None, ValueError(n_("Wrong number of actions."))))
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         if not transaction_ids:
             rs.notify("warning", n_("No transactions selected."))
@@ -1661,7 +1692,7 @@ class CdEFrontend(AbstractUserFrontend):
         The user can cancel a direct debit transaction after the
         fact. So we have to deal with this possibility.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         tally = -self.conf.SEPA_ROLLBACK_FEE
         code = self.cdeproxy.rollback_lastschrift_transaction(
@@ -1755,7 +1786,7 @@ class CdEFrontend(AbstractUserFrontend):
                                       iban, account_holder):
         """Fill the direct debit authorization template with information."""
 
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_subscription_form_fill(rs)
 
         data = {
@@ -1809,6 +1840,8 @@ class CdEFrontend(AbstractUserFrontend):
         In case of a test run we send only a single mail to the button
         presser.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if period['billing_done']:
@@ -1816,7 +1849,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
 
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_semester(rs)
 
         # The rs parameter shadows the outer request state, making sure that
@@ -1876,6 +1909,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, task, rs)
         worker.start()
+        time.sleep(1)
         rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -1930,6 +1964,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, task, rs)
         worker.start()
+        time.sleep(1)
         rs.notify("success", n_("Started ejection."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -1992,6 +2027,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, task, rs)
         worker.start()
+        time.sleep(1)
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2015,14 +2051,14 @@ class CdEFrontend(AbstractUserFrontend):
         In case of a test run we send only a single mail to the button
         presser.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'cde/show_semester')
+
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         if expuls['addresscheck_done']:
             rs.notify("error", n_("Addresscheck already done."))
             return self.redirect(rs, "cde/show_semester")
-
-        if rs.errors:
-            return self.show_semester(rs)
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
@@ -2037,7 +2073,8 @@ class CdEFrontend(AbstractUserFrontend):
                     persona_id = rrs.user.persona_id
                 if not persona_id or expuls['addresscheck_done']:
                     if not expuls['addresscheck_done']:
-                        self.cdeproxy.finish_expuls_addresscheck(rrs, skip=False)
+                        self.cdeproxy.finish_expuls_addresscheck(rrs,
+                                                                 skip=False)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 address = make_postal_address(persona)
@@ -2073,6 +2110,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             worker = Worker(self.conf, task, rs)
             worker.start()
+            time.sleep(1)
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2081,7 +2119,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Proceed to next expuls."""
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_semester(rs)
         if not expuls['addresscheck_done']:
             rs.notify("error", n_("Addresscheck not done."))
@@ -2171,7 +2209,7 @@ class CdEFrontend(AbstractUserFrontend):
         institution_ids = self.pasteventproxy.list_institutions(rs)
         institutions = self.process_institution_input(
             rs, institution_ids.keys())
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.institution_summary_form(rs)
         code = 1
         for institution_id, institution in institutions.items():
@@ -2277,7 +2315,7 @@ class CdEFrontend(AbstractUserFrontend):
             "qview_past_event_user", QUERY_SPECS['qview_past_event_user'],
             ("personas.id", "given_names", "family_name", "address",
              "address_supplement", "postal_code", "location", "country"),
-            [("pevent_id", QueryOperators.equal, pevent_id),],
+            [("pevent_id", QueryOperators.equal, pevent_id), ],
             (("family_name", True), ("given_names", True),
              ("personas.id", True)))
 
@@ -2331,10 +2369,13 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("institution_id", "id_or_None"))
     def list_past_events(self, rs, institution_id=None):
         """List all concluded events."""
+        if rs.has_validation_errors():
+            rs.notify('warning', n_("Institution parameter got lost."))
         events = self.pasteventproxy.list_past_events(rs)
         shortnames = {
             pevent_id: value['shortname']
-            for pevent_id, value in self.pasteventproxy.get_past_events(rs, events).items()
+            for pevent_id, value in
+            self.pasteventproxy.get_past_events(rs, events).items()
         }
         stats = self.pasteventproxy.past_event_stats(rs)
         institution_ids = self.pasteventproxy.list_institutions(rs)
@@ -2350,7 +2391,8 @@ class CdEFrontend(AbstractUserFrontend):
         # Using idea from http://stackoverflow.com/a/8983196
         years = {}
         for anid in stats_sorter:
-            if institution_id and stats[anid]['institution_id'] != institution_id:
+            if institution_id \
+                    and stats[anid]['institution_id'] != institution_id:
                 continue
             years.setdefault(stats[anid]['tempus'].year, []).append(anid)
 
@@ -2378,7 +2420,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Modify a concluded event."""
         data['id'] = pevent_id
         data = check(rs, "past_event", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
         code = self.pasteventproxy.set_past_event(rs, data)
         self.notify_return_code(rs, code)
@@ -2414,7 +2456,7 @@ class CdEFrontend(AbstractUserFrontend):
                 else:
                     rs.notify("warning", n_("Line %(lineno)s is faulty."),
                               {'lineno': lineno})
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_past_event_form(rs)
         with Atomizer(rs):
             new_id = self.pasteventproxy.create_past_event(rs, data)
@@ -2429,8 +2471,9 @@ class CdEFrontend(AbstractUserFrontend):
     def delete_past_event(self, rs, pevent_id, ack_delete):
         """Remove a past event."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.show_past_event(rs, pevent_id)
 
         code = self.pasteventproxy.delete_past_event(
@@ -2450,7 +2493,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Modify a concluded course."""
         data['id'] = pcourse_id
         data = check(rs, "past_course", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
         code = self.pasteventproxy.set_past_course(rs, data)
         self.notify_return_code(rs, code)
@@ -2467,7 +2510,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Add new concluded course."""
         data['pevent_id'] = pevent_id
         data = check(rs, "past_course", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_past_course_form(rs, pevent_id)
         new_id = self.pasteventproxy.create_past_course(rs, data)
         self.notify_return_code(rs, new_id, success=n_("Course created."))
@@ -2481,8 +2524,9 @@ class CdEFrontend(AbstractUserFrontend):
         This also deletes all participation information w.r.t. this course.
         """
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
         code = self.pasteventproxy.delete_past_course(
@@ -2496,7 +2540,7 @@ class CdEFrontend(AbstractUserFrontend):
     def add_participant(self, rs, pevent_id, pcourse_id, persona_id,
                         is_instructor, is_orga):
         """Add participant to concluded event."""
-        if rs.errors:
+        if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
@@ -2525,7 +2569,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("persona_id", "id"), ("pcourse_id", "id_or_None"))
     def remove_participant(self, rs, pevent_id, persona_id, pcourse_id):
         """Remove participant."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.remove_participant(
             rs, pevent_id, pcourse_id, persona_id)
@@ -2554,10 +2598,11 @@ class CdEFrontend(AbstractUserFrontend):
     def view_cde_log(self, rs, codes, start, stop, persona_id, submitted_by,
                      additional_info, time_start, time_stop):
         """View general activity."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.cdeproxy.retrieve_cde_log(
             rs, codes, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
@@ -2581,10 +2626,11 @@ class CdEFrontend(AbstractUserFrontend):
     def view_finance_log(self, rs, codes, start, stop, persona_id, submitted_by,
                          additional_info, time_start, time_stop):
         """View financial activity."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.cdeproxy.retrieve_finance_log(
             rs, codes, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
@@ -2609,10 +2655,11 @@ class CdEFrontend(AbstractUserFrontend):
     def view_past_log(self, rs, codes, pevent_id, start, stop, persona_id,
                       submitted_by, additional_info, time_start, time_stop):
         """View activities concerning concluded events."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.pasteventproxy.retrieve_past_log(
             rs, codes, pevent_id, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,

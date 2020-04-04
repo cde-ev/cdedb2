@@ -26,6 +26,7 @@ import json
 import logging
 import pathlib
 import re
+import shutil
 import smtplib
 import subprocess
 import tempfile
@@ -49,7 +50,8 @@ from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
-    decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields)
+    decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields,
+    ValidationWarning)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -63,6 +65,7 @@ import cdedb.validation as validate
 import cdedb.database.constants as const
 import cdedb.query as query_mod
 from cdedb.security import secure_token_hex
+import cdedb.ml_type_aux as ml_type
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -171,7 +174,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = params or {}
-        if rs.errors and not rs.notifications:
+        if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
@@ -676,7 +679,7 @@ def keydictsort_filter(value, sortkey, reverse=False):
     return sorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def enum_entries_filter(enum, processing=None, raw=False):
+def enum_entries_filter(enum, processing=None, raw=False, prefix=""):
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -690,6 +693,8 @@ def enum_entries_filter(enum, processing=None, raw=False):
     :type raw: bool
     :param raw: If this is True, the enum entries are passed to processing as
         is, otherwise they are converted to str first.
+    :type prefix: str
+    :param prefix: A prefix to prepend to the string output of every entry.
     :rtype: [(object, object)]
     :return: A list of tuples to be used in the input_checkboxes or
         input_select macros.
@@ -700,7 +705,8 @@ def enum_entries_filter(enum, processing=None, raw=False):
         pre = lambda x: x
     else:
         pre = str
-    return sorted((entry.value, processing(pre(entry))) for entry in enum)
+    return sorted((entry.value, prefix + processing(pre(entry)))
+                  for entry in enum)
 
 
 def dict_entries_filter(items, *args):
@@ -792,8 +798,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
     realm = None
-    #: to be overridden by children
-    used_shards = []
 
     def __init__(self, configpath, *args, **kwargs):
         """
@@ -810,6 +814,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
+            'nbsp': "\u00A0",
             'query_mod': query_mod,
             'glue': glue,
             'enums': ENUMS_DICT,
@@ -824,9 +829,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management':
-                lambda roles: roles & {'core_admin'} | set(
+                lambda roles: roles & ({'core_admin'} | set(
                     "{}_admin".format(realm)
-                    for realm in realm_specific_genesis_fields),
+                    for realm in realm_specific_genesis_fields)),
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,
@@ -848,37 +853,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = ProxyShim(EventBackend(configpath))
         self.mlproxy = ProxyShim(MlBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
-
-        self.shards = [shardcls(self) for shardcls in self.used_shards]
-        for shard in self.shards:
-            self.republish(shard)
-
-    def _republish(self, shard, name, method):
-        """Uninlined code from republish() to avoid late binding."""
-        @functools.wraps(method)
-        def new_meth(obj, rs, *args, **kwargs):
-            method(rs, *args, **kwargs)
-        for attr in ('access_list', 'modi', 'check_anti_csrf', 'cron'):
-            if hasattr(method, attr):
-                setattr(new_meth, attr, getattr(method, attr))
-        # Keep a copy of the originating shard, so we
-        # introspect the source of each published method
-        new_meth.origin = shard
-        setattr(self, name, types.MethodType(new_meth, self))
-
-    def republish(self, shard):
-        """Republish the functionality of a frontend shard.
-
-        This way any user of the frontend can be unaware of the
-        internal split into shards.
-
-        :type shard: AbstractFrontendShard
-        """
-        for name, method in inspect.getmembers(shard, inspect.ismethod):
-            if hasattr(method, 'access_list') or hasattr(method, 'cron'):
-                if hasattr(self, name):
-                    raise RuntimeError("Method already exists", name)
-                self._republish(shard, name, method)
 
     @classmethod
     @abc.abstractmethod
@@ -952,8 +926,28 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 params['ml_id'] = ml_id
             return cdedburl(rs, 'core/show_user', params)
 
+        def _is_warning(parameter_name):
+            """Determine if a given error is a warning.
+
+            They can be suppressed by the user.
+
+            :type parameter_name: str
+            :param parameter_name: of the interesting field
+            """
+            all_errors = rs.retrieve_validation_errors()
+            return all(
+                isinstance(kind, ValidationWarning)
+                for param, kind in all_errors if param == parameter_name)
+
+        def _has_warnings():
+            """Determine if there are any warnings among the errors."""
+            all_errors = rs.retrieve_validation_errors()
+            return any(
+                isinstance(kind, ValidationWarning)
+                for param, kind in all_errors)
+
         errorsdict = {}
-        for key, value in rs.errors:
+        for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
         # here come the always accessible things promised above
 
@@ -963,7 +957,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
             'gettext': rs.gettext,
+            'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
+            'is_warning': _is_warning,
             'lang': rs.lang,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,
@@ -1083,13 +1079,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
                 "method={} ; remote_addr={} ; values={}, ambience={},",
                 "errors={}, time={}").format(
-                rs.request.is_multithread, rs.request.is_multiprocess,
-                rs.request.base_url, rs.request.cookies, rs.request.url,
-                rs.request.is_secure, rs.request.method,
-                rs.request.remote_addr, rs.values, rs.ambience, rs.errors,
-                now())
+                    rs.request.is_multithread, rs.request.is_multiprocess,
+                    rs.request.base_url, rs.request.cookies, rs.request.url,
+                    rs.request.is_secure, rs.request.method,
+                    rs.request.remote_addr, rs.values, rs.ambience,
+                    rs.retrieve_validation_errors(), now())
             params['debugstring'] = debugstring
-        if rs.errors and not rs.notifications:
+        if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
         if self.conf.LOCKDOWN:
             rs.notify("info", n_("The database currently undergoes "
@@ -1339,6 +1335,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Deleting corrupted file {}".format(pdf_path))
                 pdf_path.unlink()
             self.logger.debug("Exception \"{}\" caught and handled.".format(e))
+            if self.conf.CDEDB_DEV:
+                tstamp = round(now().timestamp())
+                backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
+                self.logger.info("Copying source file to {}".format(
+                    backup_path))
+                shutil.copy2(target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
                 "source files and compiling them manually.")
@@ -1471,25 +1473,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 return None
 
 
-class AbstractFrontendShard(metaclass=abc.ABCMeta):
-    """Common base class for all frontend shards.
-
-    These are used to split mostly independent functionality from a
-    frontend into a separate unit.
-
-    The frontend is then responsible to make the functionality of the
-    shard accessible to its users without leaking the implementation
-    details. For this purpose the method
-    `AbstractFrontend.republish()` is used.
-    """
-    def __init__(self, parent, *args, **kwargs):
-        """
-        :type parent: AbstractFrontend
-        """
-        super().__init__(*args, **kwargs)
-        self.parent = parent
-
-
 class Worker(threading.Thread):
     """Customization wrapper around ``threading.Thread``.
 
@@ -1555,8 +1538,10 @@ def reconnoitre_ambience(obj, rs):
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
               'persona', t),
-        # no case_id for genesis cases since they are special and cause
-        # PrivilegeErrors
+        Scout(lambda anid: obj.coreproxy.get_privilege_change(rs, anid), 'privilege_change_id',
+              'privilege_change', t),
+        Scout(lambda anid: obj.coreproxy.genesis_get_case(rs, anid),
+              'genesis_case_id', 'genesis_case', t),
         Scout(lambda anid: obj.cdeproxy.get_lastschrift(rs, anid),
               'lastschrift_id', 'lastschrift', t),
         Scout(lambda anid: obj.cdeproxy.get_lastschrift_transaction(rs, anid),
@@ -1915,10 +1900,10 @@ def request_extractor(rs, args, constraints=None):
     """
     @REQUESTdata(*args)
     def fun(_, rs, **kwargs):
-        if not rs.errors:
+        if not rs.has_validation_errors():
             for checker, error in constraints or []:
                 if not checker(kwargs):
-                    rs.errors.append(error)
+                    rs.append_validation_error(error)
         return kwargs
 
     return fun(None, rs)
@@ -2048,7 +2033,7 @@ def check_validation(rs, assertion, value, name=None, **kwargs):
         ret, errs = checker(value, name, **kwargs)
     else:
         ret, errs = checker(value, **kwargs)
-    rs.errors.extend(errs)
+    rs.extend_validation_errors(errs)
     return ret
 
 

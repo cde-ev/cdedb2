@@ -27,30 +27,32 @@
     {% endif %}
     <dl class="dl-horizontal">
         {% if "past_event" in user.admin_views %}
-            <dt>{% trans -%}Shortname{%- endtrans %}</dt>
-            <dd>{{ ambience['pevent']['shortname'] }}</dd>
+            <dt>{% trans %}Shortname{% endtrans %}</dt>
+            <dd id="shortname">{{ ambience['pevent']['shortname'] }}</dd>
         {% endif %}
-        <dt>{% trans -%}Institution{%- endtrans %}</dt>
-        <dd>{{ institutions[ambience['pevent']['institution']] }}</dd>
+        <dt>{% trans %}Institution{% endtrans %}</dt>
+        <dd id="institution">{{ institutions[ambience['pevent']['institution']] }}</dd>
     </dl>
-    
-    {{ ambience['pevent']['description']|md }}
+
+    <div id="description">
+        {{ ambience['pevent']['description']|md }}
+    </div>
     {% if ambience['pevent']['description'] and ambience['pevent']['notes']%}
     <hr />
     {% endif %}
     {% if ambience['pevent']['notes'] and ("past_event" in user.admin_views or is_participant) %}
         {% if "past_event" in user.admin_views and not is_participant %}
-            <p class="text-info">{{ util.make_icon('info-sign') }}
-                {% trans -%}
+            <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-sign') }}
+                {% trans %}
                     As you are no participant of this past event, you can only
                     see this link because you are admin.
-                {%- endtrans %}
+                {% endtrans %}
             </p>
         {% endif %}
-        {{ ambience['pevent']['notes']|md }}
+       <div id="gallery-link">{{ ambience['pevent']['notes']|md }}</div>
     {% endif %}
     {% if courses or "past_event" in user.admin_views %}
-        <h2>{% trans -%}Courses{%- endtrans %}</h2>
+        <h2>{% trans %}Courses{% endtrans %}</h2>
     {% endif %}
     {% if "past_event" in user.admin_views %}
         <div class="p">
@@ -59,7 +61,7 @@
         </div>
     {% endif %}
     {% if courses %}
-        <ul>
+        <ul id="list-courses">
             {% for anid, acourse in courses|xdictsort('nr', pad=True) %}
                 <li>
                     {{ acourse['nr'] }}.
@@ -69,11 +71,11 @@
         </ul>
     {% endif %}
 
-    <h2>{% trans -%}Participants{%- endtrans %}</h2>
+    <h2>{% trans %}Participants{% endtrans %}</h2>
     {% if "past_event" in user.admin_views %}
         <div class="panel panel-success panel-condensed">
             <div class="panel-heading">
-                <h4 class="panel-title">{{util.make_icon('plus') }} {% trans -%}Add Participant <u>without</u> Course{%- endtrans %}</h4>
+                <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
             </div>
             <div class="panel-body">
                 <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
@@ -85,7 +87,7 @@
                             {{ util.input_text(name="persona_id", placeholder=gettext("DB-XXXX-X"),
                                     anid="input-add-participant", aclass="form-control input-sm",
                                     arialabel=gettext("ID of the new Participant")) }}
-                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                            <script nonce="{{ csp_nonce }}">
                                 $('#input-add-participant').cdedbSearchPerson(
                                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=past_event_user&phrase=%s'|s) }}',
                                     {{ participants.keys()|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
@@ -107,9 +109,9 @@
         </div>
     {% endif %}
     {% if participants %}
-        <ul>
+        <ul id="list-participants">
             {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
-                <li>
+                <li class="hide-hover-container clearfix-after">
 
                     {% if participant['viewable'] %}
                         {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
@@ -128,42 +130,45 @@
                         {% endfor -%}
                         )
                     {% endif %}
-                    {% if participant['is_orga'] %}({% trans -%}Orga{%- endtrans %}){% endif %}
+                    {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
 
                     {# only allow removal of participants without a course #}
                     {% if "past_event" in user.admin_views and None in participant['pcourse_ids'] %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
-                         id="removeparticipantform{{ anid }}" style="display: inline;" class="delete-participant-form">
+                              id="removeparticipantform{{ anid }}" style="display: inline;"
+                              class="delete-participant-form hide-hover display-inline">
                             {{ util.anti_csrf_token('cde/remove_participant') }}
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
-                            {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger",
+                            {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                     value="") }}
                         </form>
                     {% endif %}
                 </li>
             {% endfor %}
             {% if extra_participants %}
-                <li>{% trans count=extra_participants -%}
-                    extra_participants_singular
-                {%- pluralize count -%}
-                    extra_participants_plural
-                {%- endtrans %} …</li>
+                <li id="count-extra-participants">
+                    {% trans count=extra_participants %}
+                        extra_participants_singular
+                    {%- pluralize count -%}
+                        extra_participants_plural
+                    {% endtrans %} …
+                </li>
             {% endif %}
         </ul>
     {% elif extra_participants %}
-        <p>
+        <p id="count-extra-participants">
             <i>
-                {% trans count=extra_participants -%}
+                {% trans count=extra_participants %}
                     {{ count }} Participant
                 {%- pluralize count -%}
                     {{ count }} Participants
-                {%- endtrans %}
+                {% endtrans %}
             </i>
         </p>
     {% else %}
         <p>
-            <i>{% trans -%}This Event had no Participants.{%- endtrans %}</i>
+            <i>{% trans %}This Event had no Participants.{% endtrans %}</i>
         </p>
     {% endif %}
     {% if "past_event" in user.admin_views %}
@@ -181,12 +186,12 @@
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        {% trans -%}Deletes the event, including description, courses and participant information.{%- endtrans %}
+                        {% trans %}Deletes the event, including description, courses and participant information.{% endtrans %}
                     </p>
                 </div>
             </div>
         {% endcall %}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $('#deletepasteventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
             $('#deletepasteventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
             $('.delete-participant-form').cdedbProtectAction("{{ gettext("The Participant will be removed from the Event.") }}");

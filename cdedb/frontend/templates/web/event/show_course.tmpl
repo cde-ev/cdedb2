@@ -6,9 +6,9 @@
 {% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}
-    {% trans course=ambience['course']['shortname'], title=ambience['event']['title'] -%}
+    {% trans course=ambience['course']['shortname'], title=ambience['event']['title'] %}
     	Course {{ course }} ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -19,9 +19,9 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans nr=ambience['course']['nr'], course=ambience['course']['shortname'] -%}
+        {% trans nr=ambience['course']['nr'], course=ambience['course']['shortname'] %}
             Course {{ nr }}: {{ course }}
-        {%- endtrans %}
+        {% endtrans %}
     </h1>
     <div class="subtitle">
         {{ ambience['course']['title'] }}
@@ -34,7 +34,7 @@
                      aclass="btn btn-sm btn-warning", icon="pencil") }}
         {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon="user") }}
-        {{ util.href("mailto:?to=%s"|s|format("; ".join(instructor_emails)), gettext("Email to course instructors"),
+        {{ util.href(util.mailto(to="; ".join(instructor_emails)), gettext("Email to course instructors"),
                             icon="envelope", aclass="btn btn-sm btn-default", readonly=instructor_emails,
                             title=gettext("Send Mail to all course instructors.")) }}
     </div>
@@ -42,9 +42,9 @@
     <div class="row">
         <div class="col-md-6">
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Instructor{%- endtrans %}</dt><dd>{{ ambience['course']['instructors'] }}</dd>
-                <dt>{% trans -%}Maximum Size (excl. instr.){%- endtrans %}</dt><dd>{{ ambience['course']['max_size'] }}</dd>
-                <dt>{% trans -%}Minimum Size (excl. instr.){%- endtrans %}</dt><dd>{{ ambience['course']['min_size'] }}</dd>
+                <dt>{% trans %}Instructor{% endtrans %}</dt><dd>{{ ambience['course']['instructors'] }}</dd>
+                <dt>{% trans %}Maximum Size (excl. instr.){% endtrans %}</dt><dd>{{ ambience['course']['max_size'] }}</dd>
+                <dt>{% trans %}Minimum Size (excl. instr.){% endtrans %}</dt><dd>{{ ambience['course']['min_size'] }}</dd>
             </dl>
 
             <dl class="dl-horizontal">
@@ -88,7 +88,7 @@
         {% endif %}
     </div>
 
-    <h2>{% trans -%}Attendees{%- endtrans %}</h2>
+    <h2>{% trans %}Attendees{% endtrans %}</h2>
     <div class="row">
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                 if track_id in ambience['course']['segments'] %}
@@ -109,30 +109,30 @@
                             {% if ambience['event']['tracks']|length > 1 %}
                                 {{ track['title'] }}
                             {% else %}
-                                {% trans -%}Attendees{%- endtrans %}
+                                {% trans %}Attendees{% endtrans %}
                             {% endif %}
                         </h3>
                     </div>
                     <div class="panel-body">
                         {% if track_id not in ambience['course']['active_segments'] %}
                             <p class="text-danger">
-                                <strong>{% trans -%}Course is cancelled{%- endtrans %}</strong>
+                                <strong>{% trans %}Course is cancelled{% endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['min_size'] != None and
                                 num_track_attendees < ambience['course']['min_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(ambience['course']['min_size'] - num_track_attendees) -%}
+                                    {% trans count=(ambience['course']['min_size'] - num_track_attendees) %}
                                         Course has {{ count }} attendees too few.
-                                    {%- endtrans %}</strong>
+                                    {% endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['max_size'] != None and
                                 num_track_attendees > ambience['course']['max_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(num_track_attendees - ambience['course']['max_size']) -%}
+                                    {% trans count=(num_track_attendees - ambience['course']['max_size']) %}
                                     	Course has {{ count }} attendees too many.
-                                    {%- endtrans %}</strong>
+                                    {% endtrans %}</strong>
                             </p>
                         {% endif %}
                         <ul class="slim">
@@ -159,44 +159,6 @@
     {% call util.bootstrap_panel(title=gettext("Description"), icon="pushpin", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|md }}
     {% endcall %}
-    {% call util.bootstrap_panel(title=gettext("Course Logo"), icon="picture") %}
-        <div class="alert alert-info" role="alert">
-            {% trans -%}
-                This functionality is deprecated and will be removed soon.
-                Do not use it anymore.
-            {%- endtrans %}
-        </div>
-        {% if logo_present %}
-            <embed src="{{ cdedblink('event/get_course_logo') }}#view=Fit&scrollbar=0&toolbar=0"
-                   type="application/pdf" width="150px" height="150px" />
-            <form action="{{ cdedblink('event/set_course_logo') }}" method="POST"
-                    id="removecourselogoform">
-                {{ util.anti_csrf_token('event/set_course_logo') }}
-                {{ util.input_hidden(name="delete", value=True) }}
-                {{ util.input_checkbox("logo_ack_delete", label=gettext("Are you sure?")) }}
-                {{ util.input_submit(value=gettext("Remove Logo"), readonly=is_locked,
-                                     icon='trash', aclass='btn btn-danger') }}
-            </form>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
-                $('#removecourselogoform').cdedbProtectAction("{{ gettext("The course logo will be permanently deleted.") }}");
-                $('#removecourselogoform').find('[name="logo_ack_delete"]').prop('checked', true).parent().hide();
-            </script>
-        {% else %}
-            {% trans -%}No logo set.{%- endtrans %}
-        {% endif %}
-        <form action="{{ cdedblink('event/set_course_logo') }}" method="POST" enctype="multipart/form-data"
-              id="setcourselogoform" {% if "course_logo" in errors %}class="has-error"{% endif %}>
-            {{ util.anti_csrf_token('event/set_course_logo') }}
-            {{ util.input_hidden(name="delete", value=False) }}
-            <div class="input-group">
-                {{ util.input_file(name="course_logo", accept="image/*") }}
-                <div class="input-group-btn">
-                    {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='upload') }}
-                </div>
-            </div>
-            {{ util.output_errors("course_logo") }}
-        </form>
-    {% endcall %}
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">
@@ -212,12 +174,12 @@
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans -%}Delete the Course.{%- endtrans %}
+                    {% trans %}Delete the Course.{% endtrans %}
                 </p>
             </div>
         </div>
     {% endcall %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#deletecourseform').cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}");
         $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
     </script>

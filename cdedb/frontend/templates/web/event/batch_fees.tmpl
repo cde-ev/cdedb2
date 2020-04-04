@@ -3,9 +3,9 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_csv_tools.js') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Enter Money Transfers ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -14,7 +14,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Enter Money Transfers{%- endtrans %}
+        {% trans %}Enter Money Transfers{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -31,83 +31,81 @@
 
         <p class="help-block">
             {{ util.make_icon('info-sign') }}
-            {% trans -%}Enter one dataset per line.{%- endtrans %}
-            {% trans -%}Use the following format:{%- endtrans %}
+            {% trans %}Enter one dataset per line.{% endtrans %}
+            {% trans %}Use the following format:{% endtrans %}
         </p>
         <pre>{{ "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
                 format(_("Amount"), _("CdEDB-ID"), _("Family Name"), _("Given Names"), _("Date"))|s }}</pre>
         <p class="help-block">
-            {% trans -%}e.g.{%- endtrans %} <code>123.00;DB-9-4;Iota;Inga;01.04.2018</code>
+            {% trans %}e.g.{% endtrans %} <code>123.00;DB-9-4;Iota;Inga;01.04.2018</code>
         </p>
         <p class="help-block">
-            {% trans infolink=util.href(docurl("Email_Templates"), gettext("email template list")) -%}
+            {% trans infolink=util.href(docurl("Email_Templates"), gettext("email template list")) %}
                 The template for the notification can be found on the %(infolink)s.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
 
     {% if data %}
-        <h2>{% trans -%}Validation Results{%- endtrans %}</h2>
+        <h2>{% trans %}Validation Results{% endtrans %}</h2>
         {% for dataset in data %}
             <strong>
                 <span  class="row-key" data-row="{{ dataset['lineno'] }}">
-                    {% trans lineno=dataset['lineno'] -%}Line {{ lineno }}{%- endtrans %}
+                    {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans %}
                 </span>:
                 {% trans amount=dataset['amount']|money(lang=lang), given_names=dataset['raw']['given_names'],
                          family_name=dataset['raw']['family_name'] -%}
                     {{ amount }} for {{ given_names }} {{ family_name }}
-                {%- endtrans %}
+                {% endtrans %}
             </strong>
             <div class="batch-line-body">
                 {% if dataset['problems'] or dataset['warnings'] or dataset['infos'] %}
-                    <ul class="list-unstyled">
-                        <div id="line{{ dataset['lineno'] }}_problems">
-                        {% for key, problem in dataset['problems'] %}
-                            <li class="text-danger">
-                                {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
-                                {% if key %}
-                                    <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                        data-col="{{ csvfields.get(key, -1) }}">
-                                        {{ key -}}
-                                    </em>:
-                                {% endif %}
-                                {{ util.format_error(problem) }}
-                            </li>
-                        {% endfor %}
-                        </div>
-                        <div id="line{{ dataset['lineno'] }}_warnings">
-                        {% for key, warning in dataset['warnings'] %}
-                            <li class="text-warning">
-                                {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
-                                {% if key %}
-                                    <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                        data-col="{{ csvfields.get(key, -1) }}">
-                                        {{ key -}}
-                                    </em>:
-                                {% endif %}
-                                {{ util.format_error(warning) }}
-                            </li>
-                        {% endfor %}
-                        </div>
-                        <div id="line{{ dataset['lineno'] }}_infos">
-                        {% for key, info in dataset['infos'] %}
-                            <li class="text-info">
-                                {{ util.make_icon('info-sign', title=gettext("Info")) }}
-                                {% if key %}
-                                    <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                        data-col="{{ csvfields.get(key, -1) }}">
-                                        {{ key -}}
-                                    </em>:
-                                {% endif %}
-                                {{ util.format_error(info) }}
-                            </li>
-                        {% endfor %}
-                        </div>
+                    <ul id="line{{ dataset['lineno'] }}_problems" class="list-unstyled">
+                    {% for key, problem in dataset['problems'] %}
+                        <li class="text-danger">
+                            {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
+                            {% if key %}
+                                <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
+                                    data-col="{{ csvfields.get(key, -1) }}">
+                                    {{ key -}}
+                                </em>:
+                            {% endif %}
+                            {{ util.format_error(problem) }}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    <ul id="line{{ dataset['lineno'] }}_warnings" class="list-unstyled">
+                    {% for key, warning in dataset['warnings'] %}
+                        <li class="text-warning">
+                            {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
+                            {% if key %}
+                                <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
+                                    data-col="{{ csvfields.get(key, -1) }}">
+                                    {{ key -}}
+                                </em>:
+                            {% endif %}
+                            {{ util.format_error(warning) }}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    <ul id="line{{ dataset['lineno'] }}_infos" class="list-unstyled">
+                    {% for key, info in dataset['infos'] %}
+                        <li class="text-info">
+                            {{ util.make_icon('info-sign', title=gettext("Info")) }}
+                            {% if key %}
+                                <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
+                                    data-col="{{ csvfields.get(key, -1) }}">
+                                    {{ key -}}
+                                </em>:
+                            {% endif %}
+                            {{ util.format_error(info) }}
+                        </li>
+                    {% endfor %}
                     </ul>
                 {% endif %}
             </div>
         {% endfor %}
 
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $(function() {
                 var $textinput = $('#input-data');
                 $('.row-col-key').addClass('clickable').click(function() {
@@ -121,13 +119,13 @@
     {% endif %}
 
         {% if saldo %}
-            {% trans -%}Saldo{%- endtrans %}: {{ saldo|money(lang=lang) }}
+            {% trans %}Saldo{% endtrans %}: {{ saldo|money(lang=lang) }}
         {% endif %}
 
         {% if values['checksum'] %}
             <p class="help-block">
                 {{ util.make_icon('info-sign') }}
-                {% trans -%}If the input changed, the validation results will be displayed again.{%- endtrans %}
+                {% trans %}If the input changed, the validation results will be displayed again.{% endtrans %}
             </p>
             {{ util.form_input_submit(value=gettext("Confirm"), horizontal=False) }}
         {% else %}

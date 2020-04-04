@@ -49,6 +49,7 @@ class TestEventBackend(BackendTest):
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
+            'nonmember_surcharge': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
             'use_questionnaire': False,
@@ -67,7 +68,8 @@ class TestEventBackend(BackendTest):
                     'shortname': "first",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
-                    'fee': decimal.Decimal("234.56")},
+                    'fee': decimal.Decimal("234.56"),
+                },
                 -2: {
                     'tracks': {
                         -1: {'title': "Second lecture",
@@ -80,7 +82,8 @@ class TestEventBackend(BackendTest):
                     'shortname': "second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
-                    'fee': decimal.Decimal("0.00")},
+                    'fee': decimal.Decimal("0.00"),
+                },
             },
             'fields': {
                 -1: {
@@ -166,7 +169,8 @@ class TestEventBackend(BackendTest):
             'shortname': "third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
-            'fee': decimal.Decimal("123.40")}
+            'fee': decimal.Decimal("123.40"),
+        }
         changed_part = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
@@ -773,7 +777,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_entity_registration(self, user):
         event_id = 1
-        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100},
+        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2},
                          self.event.list_registrations(self.key, event_id))
         expectation = {
             1: {'amount_paid': decimal.Decimal(0),
@@ -990,7 +994,7 @@ class TestEventBackend(BackendTest):
                 },
             },
             'payment': None,
-            'persona_id': 2,
+            'persona_id': 3,
             'real_persona_id': None
         }
         new_id = self.event.create_registration(self.key, new_reg)
@@ -1016,27 +1020,28 @@ class TestEventBackend(BackendTest):
         new_reg['tracks'][3]['choices'] = []
         self.assertEqual(new_reg,
                          self.event.get_registration(self.key, new_id))
-        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, new_id: 2},
+        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2, new_id: 3},
                          self.event.list_registrations(self.key, event_id))
 
     @as_users("annika", "garcia")
     def test_registration_delete(self, user):
-        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100},
+        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2},
                          self.event.list_registrations(self.key, 1))
         self.assertLess(0, self.event.delete_registration(
             self.key, 1, ("registration_parts", "registration_tracks",
                           "course_choices")))
-        self.assertEqual({2: 5, 3: 7, 4: 9, 5: 100},
+        self.assertEqual({2: 5, 3: 7, 4: 9, 5: 100, 6: 2},
                          self.event.list_registrations(self.key, 1))
 
     @as_users("annika", "garcia")
     def test_course_filtering(self, user):
         event_id = 1
-        expectation={1: 1, 2: 5, 3: 7, 4: 9, 5: 100}
+        expectation={1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
         self.assertEqual(expectation, self.event.registrations_by_course(self.key, event_id))
+        expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100}
         self.assertEqual(expectation, self.event.registrations_by_course(
             self.key, event_id, track_id=3))
-        expectation={1: 1, 2: 5, 3: 7, 4: 9, 5: 100}
+        expectation={1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
         self.assertEqual(expectation, self.event.registrations_by_course(
             self.key, event_id, course_id=1))
         expectation={2: 5, 4: 9, 5: 100}
@@ -1345,6 +1350,19 @@ class TestEventBackend(BackendTest):
              'reg.id': 5,
              'reg.payment': None,
              'reg_fields.xfield_brings_balls': None,
+             'reg_fields.xfield_transportation': 'pedes'},
+            {'birthday': datetime.date(1981, 2, 11),
+             'course1.xfield_room': None,
+             'course2.id': None,
+             'id': 6,
+             'is_cde_realm': True,
+             'lodgement1.id': None,
+             'lodgement2.xfield_contamination': None,
+             'part3.status': -1,
+             'persona.family_name': 'Beispiel',
+             'reg.id': 6,
+             'reg.payment': None,
+             'reg_fields.xfield_brings_balls': None,
              'reg_fields.xfield_transportation': 'pedes'})
         self.assertEqual(expectation, result)
 
@@ -1446,6 +1464,11 @@ class TestEventBackend(BackendTest):
                 "id": 5,
                 "reg.id": 5,
                 'track1.is_course_instructor': None,
+            },
+            {
+                "id": 6,
+                "reg.id": 6,
+                'track1.is_course_instructor': None,
             }
         )
         self.assertEqual(expectation, result)
@@ -1490,6 +1513,37 @@ class TestEventBackend(BackendTest):
                                   'telephone': '+49 (234) 98765',
                                   'title': None,
                                   'username': 'anton@example.cde'},
+                              2: {'address': 'Im Garten 77',
+                                  'address_supplement': 'bei Spielmanns',
+                                  'birthday': datetime.date(1981, 2, 11),
+                                  'country': None,
+                                  'display_name': 'Bertå',
+                                  'family_name': 'Beispiel',
+                                  'gender': 1,
+                                  'given_names': 'Bertålotta',
+                                  'id': 2,
+                                  'is_active': True,
+                                  'is_archived': False,
+                                  'is_assembly_admin': False,
+                                  'is_assembly_realm': True,
+                                  'is_cde_admin': False,
+                                  'is_cde_realm': True,
+                                  'is_core_admin': False,
+                                  'is_event_admin': False,
+                                  'is_event_realm': True,
+                                  'is_finance_admin': False,
+                                  'is_member': True,
+                                  'is_meta_admin': False,
+                                  'is_ml_admin': False,
+                                  'is_ml_realm': True,
+                                  'is_searchable': True,
+                                  'location': 'Utopia',
+                                  'mobile': '0163/123456789',
+                                  'name_supplement': 'MdB',
+                                  'postal_code': '34576',
+                                  'telephone': '+49 (5432) 987654321',
+                                  'title': 'Dr.',
+                                  'username': 'berta@example.cde'},
                               5: {'address': 'Hohle Gasse 13',
                                   'address_supplement': None,
                                   'birthday': datetime.date(2012, 6, 2),
@@ -1515,7 +1569,7 @@ class TestEventBackend(BackendTest):
                                   'is_ml_realm': True,
                                   'is_searchable': False,
                                   'location': 'Wolkenkuckuksheim',
-                                  'mobile': None,
+                                  'mobile': '01577/314159',
                                   'name_supplement': None,
                                   'postal_code': '56767',
                                   'telephone': '+49 (5432) 555666777',
@@ -1611,7 +1665,7 @@ class TestEventBackend(BackendTest):
                                   'location': 'Tokyo',
                                   'mobile': None,
                                   'name_supplement': None,
-                                  'postal_code': '100-8798',
+                                  'postal_code': None,
                                   'telephone': '+81 (314) 159263',
                                   'title': None,
                                   'username': 'akira@example.cde'}
@@ -1948,6 +2002,7 @@ class TestEventBackend(BackendTest):
             'event.events': {1: {'course_room_field': 2,
                                  'description': 'Everybody come!',
                                  'iban': 'DE96370205000008068901',
+                                 'nonmember_surcharge': decimal.Decimal("5.00"),
                                  'id': 1,
                                  'institution': 1,
                                  'is_archived': False,
@@ -2224,7 +2279,28 @@ class TestEventBackend(BackendTest):
                                              'lodgement_id': 1,
                                              'part_id': 3,
                                              'registration_id': 5,
-                                             'status': 2}},
+                                             'status': 2},
+                                         16: {'id': 16,
+                                              'is_reserve': False,
+                                              'lodgement_id': None,
+                                              'part_id': 1,
+                                              'registration_id': 6,
+                                              'status': 2},
+                                         17: {
+                                             'id': 17,
+                                             'is_reserve': False,
+                                             'lodgement_id': None,
+                                             'part_id': 2,
+                                             'registration_id': 6,
+                                             'status': -1},
+                                         18: {
+                                             'id': 18,
+                                             'is_reserve': False,
+                                             'lodgement_id': None,
+                                             'part_id': 3,
+                                             'registration_id': 6,
+                                             'status': -1},
+                                         },
             'event.registration_tracks': {1: {'course_id': None,
                                               'course_instructor': None,
                                               'id': 1,
@@ -2302,7 +2378,25 @@ class TestEventBackend(BackendTest):
                                               'course_instructor': None,
                                               'id': 15,
                                               'registration_id': 5,
-                                              'track_id': 3}},
+                                              'track_id': 3},
+                                          16: {'course_id': None,
+                                               'course_instructor': None,
+                                               'id': 16,
+                                               'registration_id': 6,
+                                               'track_id': 1},
+                                          17: {
+                                              'course_id': None,
+                                              'course_instructor': None,
+                                              'id': 17,
+                                              'registration_id': 6,
+                                              'track_id': 2},
+                                          18: {
+                                              'course_id': None,
+                                              'course_instructor': None,
+                                              'id': 18,
+                                              'registration_id': 6,
+                                              'track_id': 3},
+                                          },
             'event.registrations': {1: {'checkin': None,
                                         'event_id': 1,
                                         'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
@@ -2372,7 +2466,22 @@ class TestEventBackend(BackendTest):
                                         'payment': None,
                                         'persona_id': 100,
                                         'real_persona_id': None,
-                                        'amount_paid': decimal.Decimal(0)}},
+                                        'amount_paid': decimal.Decimal(0)},
+                                    6: {
+                                        'checkin': None,
+                                        'event_id': 1,
+                                        'fields': {'transportation': 'pedes'},
+                                        'id': 6,
+                                        'list_consent': True,
+                                        'mixed_lodging': True,
+                                        'notes': None,
+                                        'orga_notes': None,
+                                        'parental_agreement': True,
+                                        'payment': None,
+                                        'persona_id': 2,
+                                        'real_persona_id': None,
+                                        'amount_paid': decimal.Decimal(0)},
+                       },
             'id': 1,
             'kind': 'full',
             'timestamp': nearly_now()
@@ -2439,7 +2548,7 @@ class TestEventBackend(BackendTest):
             'parental_agreement': True,
             'payment': None,
             'persona_id': 2000,
-            'real_persona_id': 2,
+            'real_persona_id': 3,
             'amount_paid': decimal.Decimal(42)}
         ## registration parts
         new_data['event.registration_parts'][5000] = {
@@ -2556,24 +2665,24 @@ class TestEventBackend(BackendTest):
             'orga_notes': None,
             'parental_agreement': True,
             'payment': None,
-            'persona_id': 2,
+            'persona_id': 3,
             'real_persona_id': None,
             'amount_paid': decimal.Decimal(42)}
-        stored_data['event.registration_parts'][16] = {
-            'id': 16,
+        stored_data['event.registration_parts'][1001] = {
+            'id': 1001,
             'is_reserve': False,
             'lodgement_id': 1001,
             'part_id': 1001,
             'registration_id': 1001,
             'status': 1}
-        stored_data['event.registration_tracks'][16] = {
+        stored_data['event.registration_tracks'][1001] = {
             'course_id': 1001,
             'course_instructor': None,
-            'id': 16,
+            'id': 1001,
             'track_id': 1001,
             'registration_id': 1001}
-        stored_data['event.orgas'][5] = {
-            'event_id': 1, 'id': 5, 'persona_id': 2}
+        stored_data['event.orgas'][1001] = {
+            'event_id': 1, 'id': 1001, 'persona_id': 3}
         stored_data['event.courses'][1001] = {
             'description': 'Spontankurs',
             'event_id': 1,
@@ -2586,15 +2695,15 @@ class TestEventBackend(BackendTest):
             'nr': 'φ',
             'shortname': 'Spontan',
             'title': 'Spontankurs'}
-        stored_data['event.course_segments'][13] = {
-            'course_id': 1001, 'id': 13, 'track_id': 1001, 'is_active': True}
+        stored_data['event.course_segments'][1001] = {
+            'course_id': 1001, 'id': 1001, 'track_id': 1001, 'is_active': True}
         stored_data['event.course_choices'][27] = {
             'course_id': 5, 'id': 27, 'track_id': 3, 'rank': 0, 'registration_id': 4}
         del stored_data['event.course_choices'][28]
-        stored_data['event.course_choices'][37] = {
-            'course_id': 1001, 'id': 37, 'track_id': 1001, 'rank': 0, 'registration_id': 1001}
-        stored_data['event.course_choices'][36] = {
-            'course_id': 4, 'id': 36, 'track_id': 3, 'rank': 1, 'registration_id': 4}
+        stored_data['event.course_choices'][1002] = {
+            'course_id': 1001, 'id': 1002, 'track_id': 1001, 'rank': 0, 'registration_id': 1001}
+        stored_data['event.course_choices'][1001] = {
+            'course_id': 4, 'id': 1001, 'track_id': 3, 'rank': 1, 'registration_id': 4}
         stored_data['event.field_definitions'][1001] = {
             'association': 1,
             'entries': [['good', 'good'],
@@ -2604,10 +2713,10 @@ class TestEventBackend(BackendTest):
             'field_name': 'behaviour',
             'id': 1001,
             'kind': 1}
-        stored_data['event.questionnaire_rows'][7] = {
+        stored_data['event.questionnaire_rows'][1001] = {
             'event_id': 1,
             'field_id': 1001,
-            'id': 7,
+            'id': 1001,
             'info': 'Wie brav wirst Du sein',
             'input_size': None,
             'pos': 1,
@@ -2715,6 +2824,7 @@ class TestEventBackend(BackendTest):
                                                                 ['etc', 'anything else']],
                                                     'kind': 1}},
                       'iban': 'DE96370205000008068901',
+                      'nonmember_surcharge': decimal.Decimal("5.00"),
                       'institution': 1,
                       'is_archived': False,
                       'is_participant_list_visible': False,
@@ -2874,7 +2984,7 @@ class TestEventBackend(BackendTest):
                                               'is_member': False,
                                               'is_orga': False,
                                               'location': 'Wolkenkuckuksheim',
-                                              'mobile': None,
+                                              'mobile': '01577/314159',
                                               'name_supplement': None,
                                               'postal_code': '56767',
                                               'telephone': '+49 (5432) 555666777',
@@ -3015,7 +3125,7 @@ class TestEventBackend(BackendTest):
                                               'location': 'Tokyo',
                                               'mobile': None,
                                               'name_supplement': None,
-                                              'postal_code': '100-8798',
+                                              'postal_code': None,
                                               'telephone': '+81 (314) 159263',
                                               'title': None,
                                               'username': 'akira@example.cde'},
@@ -3027,7 +3137,56 @@ class TestEventBackend(BackendTest):
                                                  'course_instructor': None},
                                              3: {'choices': [1, 4],
                                                  'course_id': 1,
-                                                 'course_instructor': None}}}},
+                                                 'course_instructor': None}}},
+                              6: {'amount_paid': decimal.Decimal(0),
+                                    'checkin': None,
+                                    'fields': {'transportation': 'pedes'},
+                                    'list_consent': True,
+                                    'mixed_lodging': True,
+                                    'notes': None,
+                                    'orga_notes': None,
+                                    'parental_agreement': True,
+                                    'parts': {1: {'is_reserve': False,
+                                                  'lodgement_id': None,
+                                                  'status': 2},
+                                              2: {
+                                                  'is_reserve': False,
+                                                  'lodgement_id': None,
+                                                  'status': -1},
+                                              3: {
+                                                  'is_reserve': False,
+                                                  'lodgement_id': None,
+                                                  'status': -1}},
+                                    'payment': None,
+                                    'persona': {'address': 'Im Garten 77',
+                                                'address_supplement': 'bei Spielmanns',
+                                                'birthday': datetime.date(1981, 2, 11),
+                                                'country': None,
+                                                'display_name': 'Bertå',
+                                                'family_name': 'Beispiel',
+                                                'gender': 1,
+                                                'given_names': 'Bertålotta',
+                                                'id': 2,
+                                                'is_member': True,
+                                                'is_orga': False,
+                                                'location': 'Utopia',
+                                                'mobile': '0163/123456789',
+                                                'name_supplement': 'MdB',
+                                                'postal_code': '34576',
+                                                'telephone': '+49 (5432) 987654321',
+                                                'title': 'Dr.',
+                                                'username': 'berta@example.cde'},
+                                    'tracks': {
+                                        1: {'choices': [],
+                                             'course_id': None,
+                                             'course_instructor': None},
+                                        2: {'choices': [],
+                                             'course_id': None,
+                                             'course_instructor': None},
+                                        3: {'choices': [],
+                                             'course_id': None,
+                                             'course_instructor': None}}},
+                              },
             'timestamp': nearly_now()
         }
         export = self.event.partial_export_event(self.key, 1)
@@ -3261,6 +3420,19 @@ class TestEventBackend(BackendTest):
         self.assertTrue(self.event.check_registration_status(self.key, 5, event_id, stati))
         self.assertFalse(self.event.check_registration_status(self.key, 9, event_id, stati))
 
+    @as_users("garcia", "annika")
+    def test_calculate_fees(self, user):
+        reg_ids = self.event.list_registrations(self.key, event_id=1)
+        expectation = {
+            1: decimal.Decimal("573.99"),
+            2: decimal.Decimal("589.49"),
+            3: decimal.Decimal("584.49"),
+            4: decimal.Decimal("450.99"),
+            5: decimal.Decimal("584.49"),
+            6: decimal.Decimal('10.50'),
+        }
+        self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))
+
     @as_users("annika")
     def test_log(self, user):
         # first generate some data
@@ -3275,6 +3447,7 @@ class TestEventBackend(BackendTest):
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
+            'nonmember_surcharge': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
             'use_questionnaire': False,
@@ -3292,7 +3465,8 @@ class TestEventBackend(BackendTest):
                     'shortname': "First",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
-                    'fee': decimal.Decimal("234.56")},
+                    'fee': decimal.Decimal("234.56"),
+                },
                 -2: {
                     'tracks': {
                         -1: {'title': "Second lecture",
@@ -3304,7 +3478,8 @@ class TestEventBackend(BackendTest):
                     'shortname': "Second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
-                    'fee': decimal.Decimal("0.00")},
+                    'fee': decimal.Decimal("0.00"),
+                },
             },
             'fields': {
                 -1: {
@@ -3360,7 +3535,8 @@ class TestEventBackend(BackendTest):
             'shortname': "Third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
-            'fee': decimal.Decimal("123.40")}
+            'fee': decimal.Decimal("123.40"),
+        }
         changed_part = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
@@ -3451,7 +3627,7 @@ class TestEventBackend(BackendTest):
             },
             'notes': "Some bla.",
             'payment': None,
-            'persona_id': 2,
+            'persona_id': 3,
             'real_persona_id': None}
         new_id = self.event.create_registration(self.key, new_reg)
         data = {
@@ -3568,7 +3744,7 @@ class TestEventBackend(BackendTest):
              'code': 50,
              'ctime': nearly_now(),
              'event_id': 1,
-             'persona_id': 2,
+             'persona_id': 3,
              'submitted_by': user['id']},
             {'additional_info': 'Topos theory for the kindergarden',
              'code': 42,
@@ -3666,12 +3842,6 @@ class TestEventBackend(BackendTest):
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': user['id']},
-            {'additional_info': None,
-             'code': 1,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': user['id']},
             {'additional_info': 'preferred_excursion_date',
              'code': 20,
              'ctime': nearly_now(),
@@ -3719,6 +3889,12 @@ class TestEventBackend(BackendTest):
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 2,
+             'submitted_by': user['id']},
+            {'additional_info': None,
+             'code': 1,
+             'ctime': nearly_now(),
+             'event_id': 1001,
+             'persona_id': None,
              'submitted_by': user['id']},
             {'additional_info': None,
              'code': 50,

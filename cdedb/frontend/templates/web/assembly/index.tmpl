@@ -9,20 +9,30 @@
         {{ util.href(cdedblink("assembly/create_assembly_form"), gettext("Create Assembly"), icon="plus",
                 aclass="btn btn-sm btn-success") }}
     {% else %}
-        {% trans -%}Here You can find the CdE’s general assemblies.{%- endtrans %}
+        {% trans %}Here You can find the CdE’s general assemblies.{% endtrans %}
     {% endif %}
     <h3>{{ gettext("Active Assemblies") }}</h3>
-    <ul>
-        {% for assembly_id, data in assemblies|xdictsort('signup_end') %}
-            {% if data['is_active'] %}
+    <ul class="spaced">
+        {% for assembly_id, assembly in assemblies|xdictsort('signup_end') %}
+            {% if assembly['is_active'] %}
                 <li>
-                    {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
+                    {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': assembly['id']}), assembly['title']) }}
+                    <br />
+                    {% if assembly['does_attend'] %}
+                        {% trans %}
+                            (already attending)
+                        {% endtrans %}
+                    {% else %}
+                        {% trans date=assembly['signup_end']|datetime(lang=lang) %}
+                            (registration possible until {{ date }})
+                        {% endtrans %}
+                    {% endif %}
                 </li>
             {% endif %}
         {% endfor %}
     </ul>
     <h3>{{ gettext("Inactive Assemblies") }}</h3>
-    <ul>
+    <ul class="spaced">
         {% for assembly_id, data in assemblies|xdictsort('signup_end', reverse=True) %}
             {% if not data['is_active'] %}
                 <li>

@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_csv_tools.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='strong' %}
-{% block title %}{% trans -%}Create Accounts{%- endtrans %}{% endblock %}
+{% block title %}{% trans %}Create Accounts{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
@@ -38,8 +38,8 @@
         {{ util.form_input_textarea(name="accounts", label=gettext("Data"), horizontal=False, rows=8, anid='input-data') }}
 
         <p class="help-block">
-            {{ util.make_icon('info-sign') }} {% trans -%}Enter one dataset per line.{%- endtrans %}
-            {% trans -%}Use the following format:{%- endtrans %}
+            {{ util.make_icon('info-sign') }} {% trans %}Enter one dataset per line.{% endtrans %}
+            {% trans %}Use the following format:{% endtrans %}
         </p>
         <pre>{{   "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
                 -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
@@ -50,24 +50,24 @@
                        _("Country"), _("Phone number"), _("Mobilephone number"), _("E-Mail"), _("Birthday"))|s }}
         </pre>
         <p class="help-block">
-            {% trans -%}For Gender enter 1 for male, 2 for female, 3 for other and 0 for not specified.{%- endtrans %}
+            {% trans %}For Gender enter 1 for male, 2 for female, 3 for other and 0 for not specified.{% endtrans %}
         </p>
         <p class="help-block">
-            {% trans -%}The course column first tries to match the course number and if this fails the course title.{%- endtrans %}
+            {% trans %}The course column first tries to match the course number and if this fails the course title.{% endtrans %}
         </p>
 
         {{ ba_submit_button() }}
 
         {% if data %}
-            <h2>{% trans -%}Validation results{%- endtrans %}</h2>
+            <h2>{% trans %}Validation results{% endtrans %}</h2>
             {% for dataset in data %}
                 {{ util.input_hidden("hash{}".format(dataset['lineno'] - 1)) }}
                 <strong>
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
-                        {% trans lineno=dataset['lineno'] -%}Line {{ lineno }}{%- endtrans -%}
+                        {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans -%}
                     </span>:
                     {{ dataset['raw']['given_names'] }} {{ dataset['raw']['family_name'] }}
-                    &lt;{{ dataset['raw']['username'] }}&gt; {% trans -%}born{%- endtrans %} {{ dataset['raw']['birthday'] }}
+                    &lt;{{ dataset['raw']['username'] }}&gt; {% trans %}born{% endtrans %} {{ dataset['raw']['birthday'] }}
                     {% if dataset['pevent_id'] %}
                         ({{ pevents[dataset['pevent_id']] }}
                         {%- if dataset['pcourse_id'] -%}
@@ -107,7 +107,7 @@
                     {% endif %}
                     <div class="row">
                         <div class="col-md-6">
-                            <label>{% trans -%}Action{%- endtrans %}</label>
+                            <label>{% trans %}Action{% endtrans %}</label>
                             <div class="p">
                                 {#- jinja does not support list comprehension ... #}
                                 {%- set myentries = [] %}
@@ -116,7 +116,7 @@
                                     {%- do myentries.append((resolution.value, gettext(resolution|string))) %}
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
-                                        nulloption="", aclass="form-control select-action",
+                                        nulloption="&nbsp;"|s, aclass="form-control select-action",
                                         arialabel=gettext("Operation for line %s")|format(dataset['lineno'])) }}
                             </div>
                         </div>
@@ -124,13 +124,13 @@
                         {% if dataset['doppelgangers'] %}
                             <div class="col-md-6">
                                 <label id="doppelgangers-{{ dataset['lineno'] }}-label">
-                                    {% trans -%}Merge with Account{%- endtrans %}
+                                    {% trans %}Merge with Account{% endtrans %}
                                 </label>
                                 <div class="p strip-space">
                                     {#- jinja does not support list comprehension ... #}
                                     {%- set myentries = [('', '–')] %}
                                     {%- for key, value in dataset['doppelgangers']|dictsort %}
-                                        {%- with description = "%s %s (%s) <%s> (%s %s), %s%s"|s|format(
+                                        {%- with description = "{} {} ({}) <{}> ({} {}), {}{}".format(
                                                 value['given_names'], value['family_name'],
                                                 value['birth_name'] or value['family_name'],
                                                 value['username'], gettext("born"),
@@ -151,7 +151,7 @@
 
             {{ ba_submit_button() }}
 
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $(function() {
                     /* Add csv jumps */
                     var $textinput = $('#input-data');

@@ -7,12 +7,12 @@
 {% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Advanced Management
-    {%- endtrans %}
+    {% trans title=ambience['mailinglist']['title'] %}{{ title }} – Advanced Management
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {% if not ambience['is_active'] %}
+    {% if is_admin %}
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
@@ -20,7 +20,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Advanced Management{%- endtrans %}
+        {% trans %}Advanced Management{% endtrans %}
         <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -28,12 +28,12 @@
 
     <div class="row">
         <div class="col-md-6">
-            <h2>{% trans -%}Forced Subscribers{%- endtrans %} [{{ subscription_overrides|length }}]</h2>
+            <h2>{% trans %}Forced Subscribers{% endtrans %} [{{ subscription_overrides|length }}]</h2>
                 <p class="text-muted">
                     {{ util.make_icon('info-sign') }}
-                    {% trans -%}
+                    {% trans %}
                         Subscribed users who are protected from automatic unsubscription when loosing their means to acces the list.
-                    {%- endtrans %}
+                    {% endtrans %}
                 </p>
             <form action="{{ cdedblink('ml/add_subscription_override') }}" method="POST"
                   id="addmodsubscriberform" class="p">
@@ -42,7 +42,7 @@
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
                     {{ util.input_text(name="modsubscriber_id", anid="input-add-forced", placeholder="DB-XXXX-X",
                                        arialabel=gettext("ID of the new forced subscriber")) }}
-                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    <script nonce="{{ csp_nonce }}">
                         $('#input-add-forced').cdedbSearchPerson(
                             '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
@@ -80,12 +80,12 @@
         </div>
 
         <div class="col-md-6">
-            <h2>{% trans -%}Blocked Users{%- endtrans %} [{{ unsubscription_overrides|length }}]</h2>
+            <h2>{% trans %}Blocked Users{% endtrans %} [{{ unsubscription_overrides|length }}]</h2>
                 <p class="text-muted">
                     {{ util.make_icon('info-sign') }}
-                    {% trans -%}
+                    {% trans %}
                         Users who are blocked from subscribing and requesting subscription. They can see that they are blocked.
-                    {%- endtrans %}
+                    {% endtrans %}
                 </p>
             <form action="{{ cdedblink('ml/add_unsubscription_override') }}" method="POST"
                   id="addmodunsubscriberform" class="p">
@@ -94,7 +94,7 @@
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
                     {{ util.input_text(name="modunsubscriber_id", anid="input-add-blocked", placeholder="DB-XXXX-X",
                                        arialabel=gettext("ID of the new blocked subscriber")) }}
-                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    <script nonce="{{ csp_nonce }}">
                         $('#input-add-blocked').cdedbSearchPerson(
                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
@@ -115,9 +115,9 @@
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
 
                         <form action="{{ cdedblink('ml/remove_unsubscription_override') }}"
-                              method="POST"
+                              method="POST" style="display: inline;"
                               id="removemodunsubscriberform{{ unsubscription_override }}"
-                              style="hide-hover display-inline">
+                              class="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/remove_unsubscription_override') }}
                             {{ util.input_hidden(name="modunsubscriber_id", value=unsubscription_override) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
@@ -131,12 +131,12 @@
         </div>
     </div>
 
-    <h2>{% trans -%}Whitelist{%- endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
+    <h2>{% trans %}Whitelist{% endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-sign') }}
-            {% trans -%}
+            {% trans %}
                 Sender addresses that are not moderated.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     <form action="{{ cdedblink('ml/add_whitelist') }}" method="POST"
           id="addwhitelistform" class="p">
@@ -181,9 +181,9 @@
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans link=util.href(docurl("Workflows", "mailinglist-management"), gettext("subscription state"), title=gettext("Summary of subscription states")) -%}
+                    {% trans link=util.href(docurl("Workflows", "mailinglist-management"), gettext("subscription state"), title=gettext("Summary of subscription states")) %}
                         A download csv file of all users associated with this mailinglist (including name, email address and {{ link }}).
-                    {%- endtrans %}
+                    {% endtrans %}
                 </p>
             </div>
         </div>
