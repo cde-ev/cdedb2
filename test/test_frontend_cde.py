@@ -9,7 +9,7 @@ import time
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
-from cdedb.common import now
+from cdedb.common import now, ADMIN_VIEWS_COOKIE_NAME
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
 
@@ -53,6 +53,59 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("03.04.1933")
         self.assertPresence("Jabberwocky for the win.")
+
+    @as_users("anton")
+    def test_cde_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+
+        self.traverse({'href': '/cde'})
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=False)
+
+        # Test Finance Admin View
+        self.traverse({'href': '/cde/search/user'})
+        self.assertNoLink('/cde/semester/show')
+        self.assertNoLink('/cde/lastschrift/')
+        self.assertNoLink('/cde/log')
+        self.realm_admin_view_profile('berta', 'cde')
+        self.assertNoLink('/lastschrift')
+        self.assertNoLink('/balance/change')
+        self.traverse({'href': '/cde'})
+        self._click_admin_view_button(re.compile(r"Finanz-Administration"),
+                                      current_state=False)
+        self.traverse({'href': '/cde/semester/show'},
+                      {'href': '/cde/log'},
+                      {'href': '/cde/parse'},
+                      {'href': '/cde/lastschrift'},
+                      {'href': '/cde/user/2/lastschrift'},
+                      {'href': '/core/persona/2/show'},
+                      {'href': '/cde/user/2/lastschrift'})
+
+        # Test Past Event Admin View
+        self.traverse({'href': '/cde/past/event/list'})
+        self.assertNoLink('/cde/past/event/create')
+        self.traverse({'href': '/cde/past/event/1/show'})
+        self.assertNoLink('/cde/past/event/1/change')
+        self.assertNoLink('/cde/past/event/1/course/create')
+        self.assertNotIn('addparticipantform', self.response.forms)
+        self.assertNotIn('removeparticipantform3', self.response.forms)
+        self.assertNotIn('deletepasteventform', self.response.forms)
+        self.assertNonPresence('Emilia')
+        self.assertPresence('weitere …')
+        self.traverse({'href': '/cde/past/event/1/course/2/show'})
+
+        self._click_admin_view_button(re.compile(r"Verwaltung verg. Veranst."),
+                                      current_state=False)
+        self.traverse({'href': '/cde/past/event/1/show'},
+                      {'href': '/cde/past/event/1/change'},
+                      {'href': '/cde/past/event/list'},
+                      {'href': '/cde/past/event/create'},
+                      {'href': '/cde/past/event/list'},
+                      {'href': '/cde/past/event/1/show'})
+        self.assertPresence('Emilia')
+        self.assertIn('addparticipantform', self.response.forms)
+        self.assertIn('removeparticipantform3', self.response.forms)
+        self.assertIn('deletepasteventform', self.response.forms)
 
     @as_users("vera")
     def test_validation(self, user):

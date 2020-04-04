@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import csv
+import re
 
 import cdedb.database.constants as const
 from test.common import as_users, USER_DICT, FrontendTest
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.frontend.common import CustomCSVDialect
 
 from cdedb.query import QueryOperators
@@ -85,6 +87,46 @@ class TestMlFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
+
+    @as_users("anton")
+    def test_ml_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+
+        self.traverse({'href': '/ml/'})
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=False)
+
+        # Test Event Management Admin View
+        self.assertNoLink('/ml/log')
+        self.assertNoLink('/ml/mailinglist/list')
+        self.traverse({'href': '/ml/mailinglist/1/show'})
+        self.assertNoLink('/ml/mailinglist/1/change')
+        self.assertNoLink('/ml/mailinglist/1/log')
+        self.assertPresence("Du hast diese Mailingliste abonniert.")
+        self._click_admin_view_button(re.compile(r"Mailinglisten-Verwaltung"),
+                                      current_state=False)
+        self.traverse({'href': '/ml/mailinglist/1/change'})
+        self.assertPresence('Speichern')
+        self.traverse({'href': '/ml/mailinglist/1/log'},
+                      {'href': '/ml/'},
+                      {'href': '/ml/mailinglist/list'},
+                      {'href': '/ml/mailinglist/create'})
+
+        # Test Moderator Controls Admin View
+        self.traverse({'href': '/ml/'},
+                      {'href': '/ml/mailinglist/1/show'})
+        self.assertNoLink('/ml/mailinglist/1/management')
+        self.assertNoLink('/ml/mailinglist/1/management/advanced')
+
+        self._click_admin_view_button(re.compile(r"Mailinglisten-Verwaltung"),
+                                      current_state=True)
+        self._click_admin_view_button(re.compile(r"Moderator-Schaltflächen"),
+                                      current_state=False)
+        self.traverse({'href': '/ml/mailinglist/1/management'},
+                      {'href': '/ml/mailinglist/1/management/advanced'},
+                      {'href': '/ml/mailinglist/1/log'},
+                      {'href': '/ml/mailinglist/1/change'})
+        self.assertNonPresence('Speichern')
 
     @as_users("berta", "charly")
     def test_show_mailinglist(self, user):
