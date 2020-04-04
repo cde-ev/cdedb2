@@ -653,7 +653,7 @@ class TestAssemblyFrontend(FrontendTest):
     @as_users("werner")
     def test_has_voted(self, user):
         self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Kanonische Beispielversammlung'},
+                      {'description': 'Archiv-Sammlung'},
                       {'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
 
@@ -661,7 +661,7 @@ class TestAssemblyFrontend(FrontendTest):
                             div='own-vote', exact=True)
         self.assertNonPresence("Du hast nicht abgestimmt.")
 
-        self.traverse({'description': 'Kanonische Beispielversammlung'})
+        self.traverse({'description': 'Archiv-Sammlung'})
         secret = self._signup()
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
@@ -673,7 +673,7 @@ class TestAssemblyFrontend(FrontendTest):
     @as_users("werner")
     def test_provide_secret(self, user):
         self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Kanonische Beispielversammlung'})
+                      {'description': 'Archiv-Sammlung'})
         secret = self._signup()
         # Create new ballot.
         wait_time = 2
@@ -713,8 +713,8 @@ class TestAssemblyFrontend(FrontendTest):
                             exact=True)
 
         # Conclude assembly.
-        self.traverse({'description': 'Kanonische Beispielversammlung'})
-        self.assertTitle("Kanonische Beispielversammlung")
+        self.traverse({'description': 'Archiv-Sammlung'})
+        self.assertTitle("Archiv-Sammlung")
         f = self.response.forms['concludeassemblyform']
         f['ack_conclude'].checked = True
         self.submit(f)
@@ -754,7 +754,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.login(USER_DICT['werner'])
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Log'})
-        self.assertTitle("\nVersammlungs-Log [0–14]\n")
+        self.assertTitle("\nVersammlungs-Log [0–15]\n")
         f = self.response.forms['logshowform']
         codes = [const.AssemblyLogCodes.assembly_created.value,
                  const.AssemblyLogCodes.assembly_changed.value,

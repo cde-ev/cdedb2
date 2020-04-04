@@ -49,11 +49,16 @@ class TestAssemblyBackend(BackendTest):
             },
             2: {
                 'id': 2,
-                'is_active': True,
-                'signup_end': datetime.datetime(2222, 2, 22, 0, 0,tzinfo=pytz.utc),
+                'is_active': False,
+                'signup_end': datetime.datetime(2020, 2, 22, 0, 0, tzinfo=pytz.utc),
                 'title': 'Kanonische Beispielversammlung'
-            }
-
+            },
+            3: {
+                'id': 3,
+                'is_active': True,
+                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'title': 'Archiv-Sammlung'
+            },
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
         expectation = {
@@ -112,7 +117,13 @@ class TestAssemblyBackend(BackendTest):
                        2: 'Farbe des Logos',
                        3: 'Bester Hof',
                        4: 'Akademie-Nachtisch',
-                       5: 'Lieblingszahl'}
+                       5: 'Lieblingszahl',
+                       11: 'Antrag zur DSGVO 2.0',
+                       12: 'Eine aktuell wichtige Frage',
+                       13: 'Wahl des Innenvorstand',
+                       14: 'Wie sollen Akademien sich in Zukunft finanzieren',
+                       15: 'Welche Sprache ist die Beste?',
+                       }
         self.assertEqual(expectation, self.assembly.list_ballots(self.key,
                                                                  assembly_id))
         expectation = {
@@ -279,6 +290,11 @@ class TestAssemblyBackend(BackendTest):
             3: 'Bester Hof',
             4: 'Akademie-Nachtisch',
             5: 'Lieblingszahl',
+            11: 'Antrag zur DSGVO 2.0',
+            12: 'Eine aktuell wichtige Frage',
+            13: 'Wahl des Innenvorstand',
+            14: 'Wie sollen Akademien sich in Zukunft finanzieren',
+            15: 'Welche Sprache ist die Beste?',
             new_id: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
 
@@ -499,9 +515,12 @@ class TestAssemblyBackend(BackendTest):
             1: {'id': 1, 'is_active': True,
                 'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
                 'title': 'Internationaler Kongress'},
-            2: {'id': 2, 'is_active': True,
-                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+            2: {'id': 2, 'is_active': False,
+                'signup_end': datetime.datetime(2020, 2, 22, 0, 0, tzinfo=pytz.utc),
                 'title': 'Kanonische Beispielversammlung'},
+            3: {'id': 3, 'is_active': True,
+                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'title': 'Archiv-Sammlung'},
             1001: {'id': 1001, 'is_active': True,
                    'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
                    'title': 'Umfrage'}
