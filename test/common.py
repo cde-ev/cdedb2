@@ -644,6 +644,36 @@ class FrontendTest(unittest.TestCase):
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
 
+    def _click_admin_view_button(self, label, current_state=None):
+        """
+        Helper function for checking the disableable admin views
+
+        This function searches one of the buttons in the adminviewstoggleform
+        (by its label), optionally checks this button's state, and submits
+        the form using this button's value to enable/disable the corresponding
+        admin view(s).
+
+        :param label: A regex used to find the correct admin view button
+        :type label: str or re.Pattern
+        :param current_state: If not None, the admin view button's active state
+            is checked to be equal to this boolean
+        :type current_state: bool or None
+        :return: The button element to perform further checks
+        :rtype: BeautifulSoup element
+        """
+        f = self.response.forms['adminviewstoggleform']
+        button = self.response.html\
+            .find(id="adminviewstoggleform")\
+            .find(text=label)\
+            .parent
+        if current_state is not None:
+            if current_state:
+                self.assertIn("active", button['class'])
+            else:
+                self.assertNotIn("active", button['class'])
+        self.submit(f, 'view_specifier', False, value=button['value'])
+        return button
+
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])
 MailTrace = collections.namedtuple(
