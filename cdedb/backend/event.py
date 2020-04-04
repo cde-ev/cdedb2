@@ -464,7 +464,9 @@ class EventBackend(AbstractBackend):
             # We retrieve general course, custom field and track specific info.
             course_table = """
             event.courses AS course
-            {course_fields_table}
+            LEFT OUTER JOIN (
+                {course_fields_table}
+            ) AS course_fields ON course.id = course_fields.id
             {track_tables}
             """
 
@@ -483,60 +485,77 @@ class EventBackend(AbstractBackend):
             if course_field_columns:
                 course_field_columns += ", "
             course_fields_table = \
-            """LEFT OUTER JOIN (
-                SELECT
-                    {course_field_columns}
-                    id
-                FROM
-                    event.courses
-                WHERE
-                    event_id = {event_id}
-            ) AS course_fields ON course.id = course_fields.id""".format(
+            """SELECT
+                {course_field_columns}
+                id
+            FROM
+                event.courses
+            WHERE
+                event_id = {event_id}""".format(
                 course_field_columns=course_field_columns, event_id=event_id)
 
             # Template for retrieving course information for one specific track.
             # We don't use the {base} table from below, because we need
             # the id to be distinct.
-            track_table = \
-            """LEFT OUTER JOIN (
-                (
-                    SELECT id AS base_id
-                    FROM event.courses
-                    WHERE event_id = {event_id}
-                ) AS base
-                {segment_table}
-                {attendees_table}
-                {instructors_table}
-                {choices_tables}
-            ) AS track{track_id} ON course.id = track{track_id}.base_id"""
+            track_table = lambda track: \
+                """LEFT OUTER JOIN (
+                    (
+                        SELECT
+                            id AS base_id
+                        FROM
+                            event.courses
+                        WHERE
+                            event_id = {event_id}
+                    ) AS base
+                    LEFT OUTER JOIN (
+                        {segment_table}
+                    ) AS segment{track_id} ON base_id = segment{track_id}.id
+                    LEFT OUTER JOIN (
+                        {attendees_table}
+                    ) AS attendees{track_id} ON base_id = attendees{track_id}.id
+                    LEFT OUTER JOIN (
+                        {instructors_table}
+                    ) AS instructors{track_id} ON base_id = instructors{track_id}.id
+                    LEFT OUTER JOIN (
+                        {choices_tables}
+                    ) AS choices{track_id} ON base_id = choices{track_id}.id
+                ) AS track{track_id}
+                    ON course.id = track{track_id}.base_id""".format(
+                    event_id=event_id, track_id=track['id'],
+                    segment_table=segment_table(track['id']),
+                    attendees_table=attendees_table(track['id']),
+                    instructors_table=instructors_table(track['id']),
+                    choices_tables=choices_tables(track),  # pass full track.
+                )
 
             # A base table with all course ids we need in the following tables.
             base = "(SELECT id FROM event.courses WHERE event_id = {}) AS c".\
                 format(event_id)
 
             # General course information specific to a track.
-            segment_table = \
-            """LEFT OUTER JOIN (
-                SELECT
-                    c.id, COALESCE(is_active, False) AS takes_place,
-                    is_active IS NOT NULL AS is_offered
-                FROM
-                    {base}
-                    LEFT OUTER JOIN (
-                        SELECT
-                            is_active, course_id
-                        FROM
-                            event.course_segments
-                        WHERE track_id = {track_id}
-                    ) AS segment ON c.id = segment.course_id
-            ) AS segment{track_id} ON base_id = segment{track_id}.id"""
+            segment_table = lambda t_id: \
+            """SELECT
+                id, COALESCE(is_active, False) AS takes_place,
+                is_active IS NOT NULL AS is_offered
+            FROM (
+                {base}
+                LEFT OUTER JOIN (
+                    SELECT
+                        is_active, course_id
+                    FROM
+                        event.course_segments
+                    WHERE track_id = {track_id}
+                ) AS segment ON c.id = segment.course_id
+            ) AS segment""".format(
+                base=base,
+                track_id=t_id,
+            )
 
             # Retrieve attendee count.
-            attendees_table = \
-            """LEFT OUTER JOIN (
-                SELECT
-                    c.id, COUNT(registration_id) AS attendees
-                FROM
+            attendees_table = lambda t_id: \
+                """SELECT
+                    id, COUNT(registration_id) AS attendees
+                FROM (
                     {base}
                     LEFT OUTER JOIN (
                         SELECT
@@ -545,40 +564,51 @@ class EventBackend(AbstractBackend):
                             event.registration_tracks
                         WHERE track_id = {track_id}
                     ) AS rt ON c.id = rt.course_id
+                ) AS attendee_count
                 GROUP BY
-                    c.id
-            ) AS attendees{track_id} ON base_id = attendees{track_id}.id"""
+                    id""".format(
+                    base=base,
+                    track_id=t_id,
+                )
 
             # Retrieve instructor count.
-            instructors_table = \
-            """LEFT OUTER JOIN (
-                SELECT
-                    c.id, COUNT(registration_id) as instructors
-                FROM
-                 {base}
-                 LEFT OUTER JOIN (
-                    SELECT
-                        registration_id, course_instructor
-                    FROM
-                        event.registration_tracks
-                    WHERE
-                        track_id = {track_id}
-                    ) as rt on c.id = rt.course_instructor
-                GROUP BY
-                    c.id
-            ) as instructors{track_id} ON base_id = instructors{track_id}.id"""
-
-            # Retrieve course choice count. Limit to regs with relevant stati.
-            choices_table = \
-            """LEFT OUTER JOIN (
-                SELECT
-                    c.id, COUNT(status.registration_id) AS num_choices{rank}
-                FROM
+            instructors_table = lambda t_id: \
+                """SELECT
+                    id, COUNT(registration_id) as instructors
+                FROM (
                     {base}
                     LEFT OUTER JOIN (
                         SELECT
-                            choices.registration_id, choices.course_id
+                            registration_id, course_instructor
                         FROM
+                            event.registration_tracks
+                        WHERE
+                            track_id = {track_id}
+                        ) as rt on c.id = rt.course_instructor
+                ) AS instructor_count
+                GROUP BY
+                    id""".format(
+                    base=base,
+                    track_id=t_id,
+                )
+
+            # Retrieve course choice count. Limit to regs with relevant stati.
+            stati = {
+                const.RegistrationPartStati.participant,
+                const.RegistrationPartStati.guest,
+                const.RegistrationPartStati.waitlist,
+                const.RegistrationPartStati.applied,
+            }
+            # Template for a specific course choice in a specific track.
+            choices_table = lambda t_id, p_id, rank: \
+                """SELECT
+                    id AS course_id, COUNT(registration_id) AS num_choices{rank}
+                FROM (
+                    {base}
+                    LEFT OUTER JOIN (
+                        SELECT
+                            registration_id, course_id AS c_id
+                        FROM (
                             (
                                 SELECT registration_id, course_id
                                 FROM event.course_choices
@@ -593,49 +623,41 @@ class EventBackend(AbstractBackend):
                                     part_id = {part_id}
                             ) AS reg_part
                             ON choices.registration_id = reg_part.reg_id
+                        ) AS choices
                         WHERE
                             status = ANY({stati})
-                    ) AS status ON c.id = status.course_id
+                    ) AS status ON c.id = status.c_id
+                ) AS choices_count
                 GROUP BY
-                    c.id
-            ) AS choices{track_id}_{rank} ON base_id = choices{track_id}_{rank}.id"""
-            stati = {
-                const.RegistrationPartStati.participant,
-                const.RegistrationPartStati.guest,
-                const.RegistrationPartStati.waitlist,
-                const.RegistrationPartStati.applied,
-            }
-
-            track_tables = " ".join(
-                track_table.format(
-                    segment_table=segment_table.format(
-                        track_id=track['id'], base=base,
-                    ),
-                    attendees_table=attendees_table.format(
-                        track_id=track['id'], base=base,
-                    ),
-                    instructors_table=instructors_table.format(
-                        track_id=track['id'], base=base,
-                    ),
-                    choices_tables=" ".join(
-                        choices_table.format(
-                            rank=rank, track_id=track['id'], base=base,
-                            part_id=track['part_id'],
-                            stati="ARRAY[{}]".format(
-                                ",".join(str(x.value) for x in stati),
-                            ),
-                        )
-                        for rank in range(track['num_choices'])
-                    ),
-                    track_id=track['id'], event_id=event_id,
+                    course_id""".format(
+                    base=base, track_id=t_id, rank=rank, part_id=p_id,
+                    stati="ARRAY[{}]".format(
+                        ",".join(str(x.value) for x in stati)),
                 )
-                for track in event['tracks'].values()
-            )
+            # Combine all the choices for a specific track.
+            choices_tables = lambda track: \
+                base + "\n" + " ".join(
+                    """LEFT OUTER JOIN (
+                        {choices_table}
+                    ) AS choices{track_id}_{rank}
+                        ON c.id = choices{track_id}_{rank}.course_id""".format(
+                        choices_table=choices_table(
+                            track['id'], track['part_id'], rank),
+                        track_id=track['id'],
+                        rank=rank,
+                    )
+                    for rank in range(track['num_choices'])
+                )
+
             view = course_table.format(
                 course_fields_table=course_fields_table,
-                track_tables=track_tables,
+                track_tables=" ".join(
+                    track_table(track)
+                    for track in event['tracks'].values()),
             )
 
+            with open("/cdedb2/qourse_query.sql", "w", encoding="utf8") as f:
+                f.write("SELECT * FROM (\n" + view + ");")
             query.constraints.append(
                 ("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = "id"
