@@ -2256,9 +2256,9 @@ class CdEFrontend(AbstractUserFrontend):
             rs, pevent_id=pevent_id)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
-        # We are privileged to see other participants if we are admin or
-        # participant by ourselves
-        privileged = is_participant or self.is_admin(rs)
+        # We are privileged to see other participants if we are admin (and have
+        # the relevant admin view enabled) or participant by ourselves
+        privileged = is_participant or "past_event" in rs.user.admin_views
         participants = {}
         personas = {}
         extra_participants = 0

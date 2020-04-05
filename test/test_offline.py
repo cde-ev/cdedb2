@@ -5,6 +5,7 @@ import subprocess
 
 import webtest
 
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.frontend.application import Application
 from test.common import FrontendTest
 
@@ -35,6 +36,8 @@ class TestOffline(FrontendTest):
                 'SERVER_PROTOCOL': "HTTP/1.1",
                 'wsgi.url_scheme': 'https'})
             self.app.reset()
+            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME,
+                                ",".join(ALL_ADMIN_VIEWS))
 
             # Test that it's running
             self.get('/')

@@ -602,6 +602,55 @@
     {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, user.persona_id)) }}
 {% endmacro %}
 
+{# Generate a list of admin view toggle buttons. Should be used in the navigation sidebar.
+
+   The properties of the individual buttons are specified through the `views` argument, which is an iterable of
+   3-tuples. Each tuple defines (label, view_names, relevant_views) of one button:
+     * `label` (1st tuple entry) defines the caption of the button. Should be internationalized.
+     * `view_names` (2nd tuple entry) defines a list of admin_views to be toggled by this button together.
+     * `relevant_views` (3rd tuple entry) defines a list of views, which are the subset of `view_names` that is relevant
+       in the current page's context. The button is only displayed, if one of those views is available to the user.
+       For convenience, `relevant_views` may be set to None, in which case all `view_names` are considered relevant.
+       Example: A button in the Core realm may toggle all user admin views (`core_user`, `cde_user, `event_user`, ...),
+       but should only be shown to core admins, i.e. users who have the `core_user` view available.
+ #}
+{% macro admin_views_toggle(views) %}
+    {% set inner = _admin_views_toggle_inner(views) %}
+    {% if inner %}
+        <hr />
+        <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" id="adminviewstoggleform">
+            {% if original_request and original_request.url %}
+                {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
+                                                          original_request.url, timeout=None)) }}
+            {% endif %}
+            <div class="list-group tear-down">
+                {{ inner }}
+            </div>
+        </form>
+    {% endif %}
+{% endmacro %}
+
+{# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
+   jinja #}
+{% macro _admin_views_toggle_inner(views) -%}
+    {% for label, view_names, relevant_views in views -%}
+        {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
+        {% if (relevant_views|set).intersection(user.available_admin_views) %}
+            {# The button is "deactivated" as long as there are more "relevant views" which are available for the
+               user but are not enabled yet. #}
+            {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) -%}
+            <button type="submit"
+                    name="view_specifier"
+                    value="{% if active %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
+                    class="list-group-item list-group-item-info {% if active %}active{% endif %}"
+                    title="{{ (gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label) }}">
+                {{- make_icon('wrench') }} {{ label -}}
+                {% if active %} <span class="sr-only">{% trans %}(enabled){% endtrans %}</span>{% endif -%}
+            </button>
+        {% endif -%}
+    {% endfor -%}
+{% endmacro %}
+
 {#
     Creates a HTML compliant mailto: link (though not neccessarily RFC compliant)
     Additional header such as to, subject, body, cc, or bcc can be passed as kwargs

@@ -9,7 +9,8 @@ import webtest
 from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
-from cdedb.common import now, CDEDB_EXPORT_EVENT_VERSION
+from cdedb.common import (now, CDEDB_EXPORT_EVENT_VERSION,
+    ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.frontend.common import CustomCSVDialect
 import cdedb.database.constants as const
 
@@ -144,6 +145,74 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
         self.assertPresence("12345", div='address')
+
+    @as_users("anton")
+    def test_event_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+
+        self.traverse({'href': '/event'})
+        self._click_admin_view_button(
+            re.compile(r"Benutzer-Administration"), current_state=False)
+
+        # Test Event Management Admin View
+        self.assertNoLink('/event/event/log')
+        self.assertNoLink('/event/event/list')
+        self.traverse({'href': '/event/event/1/show'})
+        self.assertNotIn('deleteeventform', self.response.forms)
+        self.assertNotIn('addorgaform', self.response.forms)
+        self.traverse({'href': '/event/event/1/registration/status'})
+        self._click_admin_view_button(re.compile(r"Veranst.-Verwaltung"),
+                                      current_state=False)
+        self.traverse({'href': '/event/event/1/show'})
+        self.assertIn('deleteeventform', self.response.forms)
+        self.assertIn('addorgaform', self.response.forms)
+        self.traverse({'href': '/event/'},
+                      {'href': '/event/list'},
+                      {'href': '/event/event/create'})
+
+        # Test Orga Controls Admin View
+        self.traverse({'href': '/event/'},
+                      {'href': '/event/event/1/show'})
+        self.assertNoLink('/event/event/1/registration/list')
+        self.assertNoLink('/event/event/1/registration/query')
+        self.assertNoLink('/event/event/1/change')
+        self.assertNoLink('/event/event/1/part/summary')
+        self.assertNoLink('/event/event/1/part/checkin')
+        self.assertNotIn('quickregistrationform', self.response.forms)
+        self.assertNotIn('changeminorformform', self.response.forms)
+        self.assertNotIn('lockform', self.response.forms)
+        self.traverse({'href': '/event/event/1/course/list'})
+        self.assertNoLink('/event/event/1/course/1/show')
+
+        self._click_admin_view_button(re.compile(r"Veranst.-Verwaltung"),
+                                      current_state=True)
+        # Even without the Orga Controls Admin View we should see the Orga
+        # Controls of our own event:
+        self.traverse({'href': '/event/'},
+                      {'href': '/event/event/2/show'},
+                      {'href': '/event/event/2/registration/list'},
+                      {'href': '/event/event/2/registration/query'},
+                      {'href': '/event/event/2/change'},
+                      {'href': '/event/event/2/part/summary'},
+                      {'href': '/event/event/2/show'})
+        self.assertIn('quickregistrationform', self.response.forms)
+        self.assertIn('changeminorformform', self.response.forms)
+        self.assertIn('lockform', self.response.forms)
+
+        self._click_admin_view_button(
+            re.compile(r"Orga-Schaltflächen"), current_state=False)
+        self.traverse({'href': '/event/'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/list'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'href': '/event/event/1/change'},
+                      {'href': '/event/event/1/part/summary'},
+                      {'href': '/event/event/1/course/list'},
+                      {'href': '/event/event/1/course/1/show'},
+                      {'href': '/event/event/1/show'})
+        self.assertIn('quickregistrationform', self.response.forms)
+        self.assertIn('changeminorformform', self.response.forms)
+        self.assertIn('lockform', self.response.forms)
 
     @as_users("annika")
     def test_list_events(self, user):

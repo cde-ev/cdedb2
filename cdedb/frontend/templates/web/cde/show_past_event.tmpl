@@ -2,7 +2,10 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
-    {% if is_admin %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endif %}
+    {% if "past_event" in user.admin_views %}
+        {{ util.cdedb_script('cdedb_searchpersona.js') }}
+        {{ util.cdedb_script('cdedb_helper.js') }}
+    {% endif %}
 {% endblock %}
 {% block title %}{{ ambience['pevent']['title'] }}{% endblock %}
 {% block heading %}
@@ -15,7 +18,7 @@
         ambience['pevent']['title'], icon="calendar", active=True) }}
 {% endblock %}
 {% block content %}
-    {% if is_admin %}
+    {% if "past_event" in user.admin_views %}
         <div class="p">
         {{ util.href(cdedblink('cde/change_past_event_form'), gettext("Edit"), icon="pencil",
                 aclass="btn btn-warning btn-sm") }}
@@ -23,7 +26,7 @@
         </div>
     {% endif %}
     <dl class="dl-horizontal">
-        {% if is_admin %}
+        {% if "past_event" in user.admin_views %}
             <dt>{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['pevent']['shortname'] }}</dd>
         {% endif %}
@@ -37,8 +40,8 @@
     {% if ambience['pevent']['description'] and ambience['pevent']['notes']%}
     <hr />
     {% endif %}
-    {% if ambience['pevent']['notes'] and (is_admin or is_participant) %}
-        {% if is_admin and not is_participant %}
+    {% if ambience['pevent']['notes'] and ("past_event" in user.admin_views or is_participant) %}
+        {% if "past_event" in user.admin_views and not is_participant %}
             <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-sign') }}
                 {% trans %}
                     As you are no participant of this past event, you can only
@@ -48,10 +51,10 @@
         {% endif %}
        <div id="gallery-link">{{ ambience['pevent']['notes']|md }}</div>
     {% endif %}
-    {% if courses or is_admin %}
+    {% if courses or "past_event" in user.admin_views %}
         <h2>{% trans %}Courses{% endtrans %}</h2>
     {% endif %}
-    {% if is_admin %}
+    {% if "past_event" in user.admin_views %}
         <div class="p">
             {{ util.href(cdedblink('cde/create_past_course_form'), gettext("Add Course"), icon="plus",
                     aclass="btn btn-success btn-sm") }}
@@ -69,7 +72,7 @@
     {% endif %}
 
     <h2>{% trans %}Participants{% endtrans %}</h2>
-    {% if is_admin %}
+    {% if "past_event" in user.admin_views %}
         <div class="panel panel-success panel-condensed">
             <div class="panel-heading">
                 <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
@@ -130,7 +133,7 @@
                     {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
 
                     {# only allow removal of participants without a course #}
-                    {% if is_admin and None in participant['pcourse_ids'] %}
+                    {% if "past_event" in user.admin_views and None in participant['pcourse_ids'] %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
                               id="removeparticipantform{{ anid }}" style="display: inline;"
                               class="delete-participant-form hide-hover display-inline">
@@ -168,7 +171,7 @@
             <i>{% trans %}This Event had no Participants.{% endtrans %}</i>
         </p>
     {% endif %}
-    {% if is_admin %}
+    {% if "past_event" in user.admin_views %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">

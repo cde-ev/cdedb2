@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 import datetime
+import re
 import time
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
 
-from cdedb.common import ASSEMBLY_BAR_MONIKER, now
+from cdedb.common import ASSEMBLY_BAR_MONIKER, now, ADMIN_VIEWS_COOKIE_NAME
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
 
@@ -158,6 +159,62 @@ class TestAssemblyFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
+
+    @as_users("anton")
+    def test_assembly_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+
+        self.traverse({'href': '/assembly/'})
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=False)
+
+        # Test Assembly Management Admin View
+        self.assertNoLink('/assembly/log')
+        self.traverse({'href': '/assembly/assembly/1/show'},
+                      {'href': '/assembly/assembly/1/attendees'},
+                      {'href': '/assembly/assembly/1/ballot/list'},
+                      {'href': '/assembly/assembly/1/ballot/2/show'},
+                      {'href': '/assembly/assembly/1/show'})
+        self.assertNoLink('assembly/assembly/1/change')
+        self.assertNoLink('assembly/assembly/1/log')
+        self.assertNotIn('concludeassemblyform', self.response.forms)
+        self._click_admin_view_button(re.compile(r"Versammlungs-Verwaltung"),
+                                      current_state=False)
+        self.assertIn('concludeassemblyform', self.response.forms)
+        self.traverse({'href': 'assembly/assembly/1/change'},
+                      {'href': 'assembly/assembly/1/log'})
+
+        # Test Assembly Configuration Admin View
+        self.traverse({'href': '/assembly/assembly/1/show'})
+        self.assertNoLink('/assembly/assembly/1/attachment/add')
+        self.traverse({'href': '/assembly/assembly/1/ballot/list'})
+        self.assertNoLink('/assembly/assembly/1/ballot/2/change')
+        self.assertNoLink('/assembly/assembly/1/ballot/create')
+        self.traverse({'href': '/assembly/assembly/1/ballot/2/show'})
+        self.assertNoLink('/assembly/assembly/1/ballot/2/change')
+        self.assertNoLink('/assembly/assembly/1/ballot/2/attachment/add')
+        self.assertNotIn('removecandidateform6', self.response.forms)
+        self.assertNotIn('addcandidateform', self.response.forms)
+        self.assertNotIn('deleteballotform', self.response.forms)
+
+        self._click_admin_view_button(re.compile(r"Versammlungs-Verwaltung"),
+                                      current_state=True)
+        self._click_admin_view_button(re.compile(r"Versammlungs-Konfig."),
+                                      current_state=False)
+        self.traverse({'href': '/assembly/assembly/1/show'},
+                      {'href': '/assembly/assembly/1/attachment/add'},
+                      {'href': '/assembly/assembly/1/show'},
+                      {'href': '/assembly/assembly/1/ballot/list'},
+                      {'href': '/assembly/assembly/1/ballot/2/change'},
+                      {'href': '/assembly/assembly/1/ballot/list'},
+                      {'href': '/assembly/assembly/1/ballot/create'},
+                      {'href': '/assembly/assembly/1/ballot/list'},
+                      {'href': '/assembly/assembly/1/ballot/2/show'},
+                      {'href': '/assembly/assembly/1/ballot/2/attachment/add'},
+                      {'href': '/assembly/assembly/1/ballot/2/show'})
+        self.assertIn('removecandidateform6', self.response.forms)
+        self.assertIn('addcandidateform', self.response.forms)
+        self.assertIn('deleteballotform', self.response.forms)
 
     @as_users("annika", "martin", "vera", "werner")
     def test_navigation_one_assembly(self, user):

@@ -9,7 +9,9 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
-                        readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
+                        readonly=not (ambience['event']['is_visible']
+                                      or ambience['event']['id'] in user.orga
+                                      or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
 {{ util.breadcrumb_link(cdedblink("event/course_list"), gettext("Courselist"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -54,7 +56,7 @@
         {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'] %}
             <div class="hide-hover-container">
                 <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
-                {% if ambience['event']['id'] in user.orga or is_admin %}
+                {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
                     <div class="pull-right">
                         {{ util.href(cdedblink('event/show_course', {'course_id' : anid}), gettext("Details"),
                                      readonly=is_locked, icon='list', aclass='btn btn-xs btn-info hide-hover') }}
@@ -63,7 +65,7 @@
                     </div>
                 {% endif %}
                 <p class="heading-supplement">
-                    {% if ambience['event']['id'] in user.orga or is_admin %}
+                    {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
                         <span class="label label-primary">{{ entry['shortname'] }}</span>
                     {% endif %}
                     {% if "event" in user.roles and entry['instructors'] %}

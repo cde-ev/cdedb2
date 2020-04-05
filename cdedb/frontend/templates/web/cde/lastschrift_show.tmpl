@@ -8,7 +8,7 @@
 {%- endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{% if is_admin %}
+{% if "finance" in user.admin_views or ambience['persona']['id'] != user.id %}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorization")) }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
 	"{} {}".format(ambience['persona']['given_names'],
@@ -22,7 +22,7 @@
 {% block content %}
     <div id="active-permit">
     {% if active_permit %}
-        {% if is_admin %}
+        {% if "finance" in user.admin_views %}
             <script nonce="{{ csp_nonce }}">
             $(function() {
                 $('#revokeform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
@@ -52,8 +52,7 @@
             <dl class="dl-horizontal">
                 <dt>{% trans %}Member{% endtrans %}</dt>
                 <dd>{{ util.persona_anchor(personas[values['persona_id']]) }}</dd>
-
-            {% if is_admin %}
+            {% if "finance" in user.admin_views %}
                 <dt>{% trans %}Submitted by{% endtrans %}</dt>
                 <dd id="submitted-by">
                     {{ util.persona_anchor(personas[lastschrift['submitted_by']]) }}
@@ -86,13 +85,13 @@
         {% endwith %}
     {% else %}
         {% trans %}No active Direct Debit Authorization{% endtrans %}
-        {% if is_admin %} – {{ util.href(cdedblink('cde/lastschrift_create_form'), gettext("Create")) }}{% endif %}
+        {% if "finance" in user.admin_views %} – {{ util.href(cdedblink('cde/lastschrift_create_form'), gettext("Create")) }}{% endif %}
     {% endif %}
     </div>
 
     {% if transactions or active_open %}
         <h2>{% trans %}Transactions{% endtrans %}</h2>
-		{% if active_open and is_admin %}
+		{% if active_open and "finance" in user.admin_views %}
             <div class="p">
                 <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
                     id="downloadsepapainform" style="display: inline;">
@@ -143,7 +142,7 @@
                     <td>{{ util.persona_anchor(personas[transaction['submitted_by']]) }}</td>
                     <td class="button-par">
                         {% if transaction['status'] == enums['LastschriftTransactionStati'].issued %}
-                            {% if is_admin %}
+                            {% if "finance" in user.admin_views %}
                                 <form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
                                                 'transaction_id': transaction_id}) }}" method="POST"
@@ -177,7 +176,7 @@
                                 </form>
                             {% endif %}
                         {% elif transaction['status'] == enums['LastschriftTransactionStati'].success %}
-                            {% if is_admin %}
+                            {% if "finance" in user.admin_views %}
                                 <form action="{{ cdedblink('cde/lastschrift_receipt',
                                                            {'lastschrift_id': transaction['lastschrift_id'],
                                                             'transaction_id': transaction_id}) }}"

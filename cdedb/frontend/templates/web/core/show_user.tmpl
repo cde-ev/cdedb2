@@ -119,7 +119,7 @@
                 {% endif %}
             </dl>
 
-            {% if data['id'] == user.persona_id or is_relative_admin or "meta_admin" in user.roles %}
+            {% if data['id'] == user.persona_id or is_relative_admin or "meta_admin" in user.admin_views %}
                 <dl class="dl-horizontal">
                     <dt>{% trans %}Realms{% endtrans %}</dt>
                     <dd id="has-realm">
@@ -135,7 +135,7 @@
                                 {% set tmp = vars.update({'any_realm_not': True}) %}
                             {% endif %}
                         {% endfor %}
-                        {% if 'core_admin' in user.roles
+                        {% if 'core_user' in user.admin_views
                                 and vars['any_realm_not']
                                 and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pencil",
@@ -159,9 +159,9 @@
                             {% endif %}
                         {% endfor %}
                         {% if not vars['any_privilege'] %}
-                            <i>{% trans %}None{% endtrans %}</i>
+                            <i>{% trans -%}None{%- endtrans %}</i>
                         {% endif %}
-                        {% if 'meta_admin' in user.roles and not ambience['persona']['is_archived'] %}
+                        {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pencil",
                                     aclass="btn btn-xs btn-warning") }}
                         {% endif %}
@@ -193,7 +193,7 @@
                 <dt>{% trans %}Balance{% endtrans %}</dt>
                     <dd id="balance">
                         {{ data['balance']|money(lang=lang) }}
-                        {% if "finance_admin" in user.roles %}
+                        {% if "finance" in user.admin_views %}
                             {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pencil",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
@@ -201,8 +201,9 @@
                             {% trans %}and{% endtrans %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("Direct Debit Authorization"), icon="euro",
-                                    readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles)) }}
-                        {% elif "finance_admin" in user.roles %}
+                                    readonly=(data['id'] != user.persona_id
+                                              and "finance" not in user.admin_views)) }}
+                        {% elif "finance" in user.admin_views %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("New Direct Debit Authorization …"), icon="euro") }}
                         {% endif %}
@@ -273,7 +274,7 @@
         <div id="address-information">
             {% if (data['address'] or data['address_supplement'] or data['postal_code']
                         or data['location'] or data['country']) %}
-                <h4 class="heading-underline">{% trans %}Address Information{% endtrans %}</h4>
+                    <h4 class="heading-underline">{% trans %}Address Information{% endtrans %}</h4>
                 <dl class="dl-horizontal">
                     <dt>{% trans %}Address{% endtrans %}</dt>
                     <dd id="address">
@@ -359,7 +360,7 @@
             </tbody>
             </table>
         {% endif %}
-        {%  if is_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
+        {%  if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
             <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
@@ -380,10 +381,9 @@ Mitglied.</pre>
         {% endif %}
     </div>
 
-    {% if data['id'] != user.persona_id and (is_relative_admin or "core_admin" in user.roles) %}
+    {% if data['id'] != user.persona_id and is_relative_admin %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
-                {% if data['id'] != user.persona_id %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
@@ -409,8 +409,6 @@ Mitglied.</pre>
                             </p>
                         </div>
                     </div>
-                {% endif %}
-                {% if is_relative_admin %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
@@ -449,9 +447,8 @@ Mitglied.</pre>
                             </p>
                         </div>
                     </div>
-                {% endif %}
 
-                {% if "core_admin" in user.roles %}
+                {% if "core_user" in user.admin_views %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">

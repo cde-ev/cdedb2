@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 import copy
+import re
+
 import urllib.parse
 from test.common import USER_DICT, FrontendTest, as_users
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 
 import cdedb.database.constants as const
 import webtest
@@ -132,6 +135,65 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("{} {}".format(user['given_names'],
                                         user['family_name']))
         self.assertPresence(user['given_names'], div='title')
+
+    @as_users("vera")
+    def test_toggle_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        # Core Administration
+        self.get('/')
+        self.assertNoLink("/core/meta")
+        # Submit the adminviewstoggleform with the right button
+        self._click_admin_view_button(re.compile(r"Index-Administration"),
+                                      current_state=False)
+        self.traverse({'href': '/core/meta'},
+                      {'href': '/'})
+        self.assertNoLink("/core/search/user")  # Should not have an effect here
+        self._click_admin_view_button(re.compile(r"Index-Administration"),
+                                      current_state=True)
+        self.assertNoLink("/core/meta")
+
+        # No meta administration for vera
+        button = self.response.html\
+            .find(id="adminviewstoggleform") \
+            .find(text=re.compile(r"Admin-Administration"))
+        self.assertIsNone(button)
+
+        # user administration
+        # No adminshowuserform present
+        self.assertNotIn('adminshowuserform', self.response.forms)
+        self.assertNoLink('/core/genesis/list')
+        self.assertNoLink('/core/changelog/list')
+        self.assertNoLink('/core/changelog/view')
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=False)
+
+        self.traverse({'href': '/core/genesis/list'},
+                      {'href': '/core/changelog/list'},
+                      {'href': '/core/changelog/view'},
+                      {'href': '/cde/'},
+                      {'href': '/cde/search/user'})
+        # Now, the adminshowuserform is present, so we can navigate to Berta
+        self.admin_view_profile('berta')
+        # Test some of the admin buttons
+        self.response.click(href='/username/adminchange')
+        self.response.click(href=re.compile(r'\d+/adminchange'))
+        self.response.click(href='/membership/change')
+        # Disable the User admin view. No buttons should be present anymore
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=True)
+        self.assertNoLink('/username/adminchange')
+        self.assertNoLink(re.compile(r'\d+/adminchange'))
+        self.assertNoLink('/membership/change')
+        # We shouldn't even see realms and account balance anymore
+        self.assertNonPresence('Bereiche')
+        self.assertNonPresence('12,50€')
+        self.assertNotIn('activitytoggleform', self.response.forms)
+        self.assertNotIn('sendpasswordresetform', self.response.forms)
+
+        # There should not be any admin toggle buttons for Vera in the assembly
+        # realm
+        self.traverse({'href': '/assembly'})
+        self.assertNotIn('adminviewstoggleform', self.response.forms)
 
     @as_users("vera")
     def test_adminshowuser(self, user):
