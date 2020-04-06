@@ -1463,6 +1463,26 @@ etc;anything else""", f['entries_2'].value)
             self.assertPresence("akira@example.cde", div='contact-email')
 
     @as_users("garcia")
+    def test_cancellation(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertNonPresence("abgesagt", div="notifications")
+
+        self.traverse({'href': '/event/event/1/change'})
+        self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['is_cancelled'].checked = True
+        self.submit(f)
+
+        self.traverse({'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("Diese Veranstaltung wurde abgesagt.",
+                            div="notifications")
+        self.traverse({'href': '/event/event/1/course/list'})
+        self.assertPresence("Diese Veranstaltung wurde abgesagt.",
+                            div="notifications")
+
+    @as_users("garcia")
     def test_batch_fee(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
