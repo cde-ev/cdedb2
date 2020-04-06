@@ -55,15 +55,17 @@
 {# Macro to place a Fontawesome icon
 
    icon       The icon's name. See https://fontawesome.com/icons for a list of available icons.
-              Only the distinguishing part of the icon's CSS class is required.
-              E.g. "ok" instead of "fas fa-ok"
+              Only the distinguishing part of the icon's CSS class is required (e.g. "ok" instead of "fas fa-ok").
+              If the icon contains a space the full class is required. (e.g. "far fa-star")
    aclass     An additonal HTML/CSS class to add to the icon. Useful if you want to access the icon via JavaScript
-   title      A HTML `title` attribute (hover text) to add to the icon. This is also used as arialabel, if you don't
-              provide one explicitly.
-   arialabel  A screenreader-only text to append to the icon. Please make sure, to provide one (or a title) for every
-              semantically important icon in support of a11y. #}
+   title      A HTML `title` attribute (hover text) to add to the icon.
+              This is also used as arialabel, if you don't provide one explicitly.
+   arialabel  A screenreader-only text to append to the icon.
+              Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
 {% macro make_icon(icon, aclass="" title=None, arialabel=None) -%}
-    <span{{ {"class": "fas fa-{} {}".format(icon, aclass), "title": title, "aria-hidden": "true" }|xmlattr }}></span>
+    <span{{ dict(
+        class=(icon if " " in icon else ("fas fa-" + icon)|join(' '), aclass), title=title, aria-hidden="true"
+    )|xmlattr }}></span>
     {%- if arialabel %}<span class="sr-only">{{ arialabel }}</span>{% endif %}
 {%- endmacro%}
 
