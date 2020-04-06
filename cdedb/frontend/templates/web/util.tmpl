@@ -106,7 +106,7 @@
                 {%- if titles[1] %} title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[1] %}{{ titles[1] }}{% endif %}</span>
     {%- elif checked is not none %}
-        <span class="fas fa-times-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="False"
+        <span class="far fa-times-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="False"
                 {%- if titles[0] %} title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[0] %}{{ titles[0] }}{% endif %}</span>
     {%- endif %}
