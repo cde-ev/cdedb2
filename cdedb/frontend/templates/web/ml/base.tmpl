@@ -60,7 +60,7 @@
             <div class="list-group tear-down">
                 {% if 'ml_user' in user.admin_views %}
                     {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
-                            icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
+                            icon="users", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
                 {% endif %}
                 {% if 'ml_mgmt' in user.admin_views %}
                     {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="far fa-list-alt", aclass="list-group-item",

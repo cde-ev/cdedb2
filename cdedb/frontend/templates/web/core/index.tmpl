@@ -32,7 +32,7 @@
     <div class="row">
         {% if "core_user" in user.admin_views %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='user',
+            {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='users',
                                          aclass="panel-warning", anid="adminshowuser-box") %}
                 <form action="{{ cdedblink('core/admin_show_user') }}" method="GET" id="adminshowuserform">
                     <div class="sr-only">{% trans %}Search for Users by ID or Name{% endtrans %}</div>

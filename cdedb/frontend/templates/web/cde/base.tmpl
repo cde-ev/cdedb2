@@ -22,7 +22,7 @@
         {% if user.admin_views.intersection(('cde_user', 'finance')|set) %}
             <div class="list-group tear-down">
                 {% if "cde_user" in user.admin_views %}
-                    {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="user",
+                    {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="users",
                             active=(sidenav_active=='cde_manage_users')) }}
                 {% endif %}
                 {% if "finance" in user.admin_views %}

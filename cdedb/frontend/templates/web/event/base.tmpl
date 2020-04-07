@@ -107,7 +107,7 @@
             <div class="list-group tear-down">
                 {% if 'event_user' in user.admin_views %}
                         {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
-                                     aclass="list-group-item", icon="user", active=(sidenav_active == 'event_users')) }}
+                                     aclass="list-group-item", icon="users", active=(sidenav_active == 'event_users')) }}
                 {% endif %}
                 {% if 'event_mgmt' in user.admin_views %}
                         {{ util.href(cdedblink("event/view_log"), gettext("Log"), aclass="list-group-item", icon="far fa-list-alt",
