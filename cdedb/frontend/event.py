@@ -3550,24 +3550,27 @@ class EventFrontend(AbstractUserFrontend):
             'questionnaire': questionnaire})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("order", "int_csv_list"))
     @event_guard(check_offline=True)
-    def reorder_questionnaire(self, rs, event_id, order):
+    def reorder_questionnaire(self, rs, event_id):
         """Shuffle rows of the orga designed form.
 
         This is strictly speaking redundant functionality, but it's pretty
         laborious to do without.
         """
+        kinds = tuple(x for x in const.QuestionnaireUsages)
+        args = {'order_{}'.format(kind.name): 'int_csv_list' for kind in kinds}
+        data = request_extractor(rs, args.items())
         if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id)
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        new_questionnaire = tuple(
-            self._sanitize_questionnaire_row(questionnaire[i])
-            for i in order)
-        code = self.eventproxy.set_questionnaire(rs, event_id,
-                                                 new_questionnaire)
+        new_questionnaire = {
+            kind: tuple(self._sanitize_questionnaire_row(q[i])
+                        for i in data['order_{}'.format(kind.name)])
+            for kind, q in questionnaire.items()}
+        code = self.eventproxy.set_questionnaire(
+            rs, event_id, new_questionnaire)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/questionnaire_summary_form")
+        return self.redirect(rs, "event/reorder_questionnaire_form")
 
     @access("event")
     @event_guard()

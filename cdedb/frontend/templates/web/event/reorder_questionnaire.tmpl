@@ -21,8 +21,13 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <div class="orderrow-container" id="rowlist">
-        {% for entry in questionnaire %}
+    <form action="{{ cdedblink('event/reorder_questionnaire') }}" method="POST" id="reorderquestionnaireform"
+          class="form-horizontal">
+        {{ util.anti_csrf_token('event/reorder_questionnaire') }}
+        {% for kind, entries in questionnaire.items() %}
+        <h3 class="heading-underline">{{ gettext(kind) }}</h3>
+        <div class="orderrow-container" id="rowlist">
+            {% for entry in entries %}
             <div class="orderrow-outer" data-id="{{ loop.index0 }}" tabindex="0">
                 <div class="orderrow-inner clearfix" draggable="true">
                     <div class="orderrow-indicator"><span class="label label-primary">{{ loop.index0 }}</span></div>
@@ -67,22 +72,20 @@
                     {% endif %}
                 </div>
             </div>
+            {% endfor %}
+        </div>
+        {{ util.form_input_text(name="order_{}".format(kind.name), anid="input-roworder-{}".format(kind.name),
+                                label=gettext("Order"), placeholder=gettext("Nr,Nr,Nr,…"),
+                                defaultvalue=range(0, entries|length)|join(','), small=True) }}
         {% endfor %}
-    </div>
-    <form action="{{ cdedblink('event/reorder_questionnaire') }}" method="POST" id="reorderquestionnaireform"
-          class="form-horizontal">
-        {{ util.anti_csrf_token('event/reorder_questionnaire') }}
-        {{ util.form_input_text(name="order", anid="input-roworder", label=gettext("Order"),
-                                placeholder=gettext("Nr,Nr,Nr,…"), defaultvalue=range(0,questionnaire|length)|join(','),
-                                small=True) }}
         {{ util.form_input_submit(value=gettext("Reorder"), small=True, cancellink=cdedblink('event/configure_questionnaire')) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
-        var input = $('#input-roworder');
-        var form = $('#reorderquestionnaireform');
-        $('#rowlist').cdedbOrderRow(input).find('.orderrow-indicator').hide();
-        form.cdedbProtectChanges();
-        input.closest('.form-group').hide();
-        form.find('.col-sm-offset-2').removeClass('col-sm-offset-2');
-    </script>
+{#    <script type="text/javascript" nonce="{{ csp_nonce }}">#}
+{#        var input = $('#input-roworder');#}
+{#        var form = $('#reorderquestionnaireform');#}
+{#        $('#rowlist').cdedbOrderRow(input).find('.orderrow-indicator').hide();#}
+{#        form.cdedbProtectChanges();#}
+{#        input.closest('.form-group').hide();#}
+{#        form.find('.col-sm-offset-2').removeClass('col-sm-offset-2');#}
+{#    </script>#}
 {% endblock %}
