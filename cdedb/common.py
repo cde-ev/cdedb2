@@ -889,7 +889,7 @@ def schulze_evaluate(votes, candidates):
     for lead, follow in zip(result, result[1:]):
         level = {
             'winner': lead,
-            'looser': follow,
+            'loser': follow,
             'pro_votes': counts[(lead[0], follow[0])],
             'contra_votes': counts[(follow[0], lead[0])]
         }
