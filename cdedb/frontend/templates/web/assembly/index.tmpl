@@ -5,7 +5,7 @@
 {{ util.breadcrumb_link(cdedblink("assembly/index"), gettext("Assemblies"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% if is_admin %}
+    {% if "assembly_mgmt" in user.admin_views %}
         {{ util.href(cdedblink("assembly/create_assembly_form"), gettext("Create Assembly"), icon="plus",
                 aclass="btn btn-sm btn-success") }}
     {% else %}

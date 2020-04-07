@@ -90,7 +90,7 @@
                                         "event users.")) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/show_course")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#changecourseform').cdedbProtectChanges();
         $(function(){
             function updateCheckbox($checkbox, enabled) {

@@ -9,7 +9,7 @@
                          {{ util.input_submit(value=gettext("Delete"), icon="trash-alt", aclass="btn btn-danger") }}
                          {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                      </form>
-                     <script type="text/javascript" nonce="{{ csp_nonce }}">
+                     <script nonce="{{ csp_nonce }}">
                          $(function() {
                              $('#deleteballotform').cdedbProtectAction(
                                  "{{ gettext("This ballot and all its data will be permanently deleted.") }}");
@@ -64,7 +64,7 @@
             {% if now() < ambience['ballot']['vote_begin'] %}
                 <strong>{% trans %}This ballot has not yet begun.{% endtrans %}</strong><br />
                 {% trans %}Admins can still make changes to description, files and candidates.{% endtrans %}
-                {% if is_admin %}
+                {% if "assembly_contents" in user.admin_views %}
                     {% trans %}
                         All CdE-Members and external assembly participants can already
                         see this ballot and all associated information.
@@ -93,9 +93,17 @@
                 {% endif %}
             {% endif %}
         </dd>
+        {% if ambience['ballot']['vote_begin'] < now() %}
+            <dt>{% trans %}Already voted{% endtrans %}</dt>
+            <dd id="already-voted">
+                {% trans count=ambience['ballot']['vote_count'] %}
+                    Until now, {{ count }} attendes had given their vote for this ballot.
+                {% endtrans %}
+            </dd>
+        {% endif %}
     </dl>
 
-    {% if is_admin and ambience['ballot']['notes'] %}
+    {% if "assembly_contents" in user.admin_views and ambience['ballot']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['ballot']['notes']|md }}
         {% endcall %}
@@ -120,7 +128,7 @@
                                 {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
                                         title=gettext("Delete File")) }}
                             </form>
-                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                            <script nonce="{{ csp_nonce }}">
                                 $('#removeattachmentform{{ attachment_id }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
                                 $('#removeattachmentform{{ attachment_id }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
                             </script>

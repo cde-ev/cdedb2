@@ -729,6 +729,7 @@ class TestCoreBackend(BackendTest):
             'id': case_id,
             'case_status': const.GenesisStati.approved,
             'reviewer': user['id'],
+            'realm': "cde",
         }
         self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
         expectation.update(update)
@@ -865,7 +866,7 @@ class TestCoreBackend(BackendTest):
             'username': 'berta@example.cde',
             'weblink': 'https://www.bundestag.cde'})
         self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))
-        expectation['notes'] = None
+        expectation['notes'] = 'Beispielhaft, Besser, Baum.'
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
     @as_users("vera")
@@ -1076,6 +1077,27 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_changelog_meta(self, user):
         expectation = (
+            {'change_note': 'Init.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 18,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 17,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 16,
+             'reviewed_by': None,
+             'submitted_by': 1},
             {'change_note': 'Init.',
              'change_status': 2,
              'ctime': nearly_now(),

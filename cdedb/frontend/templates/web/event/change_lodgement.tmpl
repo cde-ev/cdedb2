@@ -29,7 +29,7 @@
         {{ util.form_input_text(name="capacity", label=gettext("Regular Capacity")) }}
         {{ util.form_input_text(name="reserve", label=gettext("Camping Mat Capacity")) }}
         {{ util.form_input_select(name="group_id", entries=groups, label=gettext("Lodgement Group"),
-                                  nulloption="") }}
+                                  nulloption="&nbsp;"|s) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
 
         <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
@@ -41,7 +41,7 @@
         {% endfor %}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/show_lodgement")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#changelodgementform').cdedbProtectChanges();
     </script>
 {% endblock %}

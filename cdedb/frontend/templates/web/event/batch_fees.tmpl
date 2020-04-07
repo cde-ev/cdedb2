@@ -59,55 +59,53 @@
             </strong>
             <div class="batch-line-body">
                 {% if dataset['problems'] or dataset['warnings'] or dataset['infos'] %}
-                    <ul class="list-unstyled">
-                        <div id="line{{ dataset['lineno'] }}_problems">
-                        {% for key, problem in dataset['problems'] %}
-                            <li class="text-danger">
-                                {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
-                                {% if key %}
-                                    <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                        data-col="{{ csvfields.get(key, -1) }}">
-                                        {{ key -}}
-                                    </em>:
-                                {% endif %}
-                                {{ util.format_error(problem) }}
-                            </li>
-                        {% endfor %}
-                        </div>
-                        <div id="line{{ dataset['lineno'] }}_warnings">
-                        {% for key, warning in dataset['warnings'] %}
-                            <li class="text-warning">
-                                {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
-                                {% if key %}
-                                    <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                        data-col="{{ csvfields.get(key, -1) }}">
-                                        {{ key -}}
-                                    </em>:
-                                {% endif %}
-                                {{ util.format_error(warning) }}
-                            </li>
-                        {% endfor %}
-                        </div>
-                        <div id="line{{ dataset['lineno'] }}_infos">
-                        {% for key, info in dataset['infos'] %}
-                            <li class="text-info">
-                                {{ util.make_icon('info-circle', title=gettext("Info")) }}
-                                {% if key %}
-                                    <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                        data-col="{{ csvfields.get(key, -1) }}">
-                                        {{ key -}}
-                                    </em>:
-                                {% endif %}
-                                {{ util.format_error(info) }}
-                            </li>
-                        {% endfor %}
-                        </div>
+                    <ul id="line{{ dataset['lineno'] }}_problems" class="list-unstyled">
+                    {% for key, problem in dataset['problems'] %}
+                        <li class="text-danger">
+                            {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
+                            {% if key %}
+                                <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
+                                    data-col="{{ csvfields.get(key, -1) }}">
+                                    {{ key -}}
+                                </em>:
+                            {% endif %}
+                            {{ util.format_error(problem) }}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    <ul id="line{{ dataset['lineno'] }}_warnings" class="list-unstyled">
+                    {% for key, warning in dataset['warnings'] %}
+                        <li class="text-warning">
+                            {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
+                            {% if key %}
+                                <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
+                                    data-col="{{ csvfields.get(key, -1) }}">
+                                    {{ key -}}
+                                </em>:
+                            {% endif %}
+                            {{ util.format_error(warning) }}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    <ul id="line{{ dataset['lineno'] }}_infos" class="list-unstyled">
+                    {% for key, info in dataset['infos'] %}
+                        <li class="text-info">
+                            {{ util.make_icon('info-circle', title=gettext("Info")) }}
+                            {% if key %}
+                                <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
+                                    data-col="{{ csvfields.get(key, -1) }}">
+                                    {{ key -}}
+                                </em>:
+                            {% endif %}
+                            {{ util.format_error(info) }}
+                        </li>
+                    {% endfor %}
                     </ul>
                 {% endif %}
             </div>
         {% endfor %}
 
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $(function() {
                 var $textinput = $('#input-data');
                 $('.row-col-key').addClass('clickable').click(function() {

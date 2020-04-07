@@ -2,6 +2,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}{{ error.code }}: {{ error.name }}{% endblock %}
 {% block content %}
+{% set maillink = util.href(util.mailto("cdedb@lists.cde-ev.de", gettext("CdE-Datenbank development team")), "cdedb@lists.cde-ev.de") %}
     <div class="alert alert-danger">
         {{ util.make_icon('times-circle') }}
         {% if error.code == 403 %}
@@ -30,10 +31,7 @@
             <p>{{ gettext(help) }}</p>
         {% endif %}
         <p>
-            {% trans team=gettext("CdE-Datenbank development team"),
-                     mail=("<a href='mailto:%(moniker)s <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>"|s
-                           |format(moniker=gettext("CdE-Datenbank development team"))),
-                     time=now()|datetime(lang=lang) -%}
+            {% trans team=gettext("CdE-Datenbank development team"), mail=maillink, time=now()|datetime(lang=lang) -%}
                 If you think this is an error, please contact the {{ team }} at {{ mail }} with the error message
                 displayed above, the current time ({{ time }}) and a detailed description of your actions: What were you
                 about to do? Which links and buttons did you click to get here? Have you changed any settings before the
@@ -42,9 +40,7 @@
         </p>
     {% elif error.code in (404, 405) %}
         <p>
-            {% trans team=gettext("CdE-Datenbank development team"),
-                     mail=("<a href='mailto:%(moniker)s <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>"|s
-                           |format(moniker=gettext("CdE-Datenbank development team"))) -%}
+            {% trans team=gettext("CdE-Datenbank development team"), mail=maillink -%}
                 If you reached this page via an internal link of the CdE-Datenbank, please contact the {{ team }} at
                 {{ mail }} and describe how you got here.
             {% endtrans %}
@@ -62,10 +58,7 @@
                 <p>{% trans %}First try reloading this page.{% endtrans %}</p>
             {% endif %}
         <p>
-            {% trans team=gettext("CdE-Datenbank development team"),
-                     mail=("<a href='mailto:%(moniker)s <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>"|s
-                           |format(moniker=gettext("CdE-Datenbank development team"))),
-                     time=now()|datetime(lang=lang) -%}
+            {% trans team=gettext("CdE-Datenbank development team"), mail=maillink, time=now()|datetime(lang=lang) -%}
                 If the error persists, you probably found a bug, hidden in our code.
                 Please contact the {{ team }} at {{ mail }} with the error message displayed above, the current time
                 ({{ time }}) and a detailed description of your actions: What were you about to do? Which links and

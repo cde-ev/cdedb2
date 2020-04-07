@@ -39,7 +39,7 @@
                                                 "visible to all CdE-Members and Assembly-Participants.")) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("assembly/show_assembly")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#changeassemblyform').cdedbProtectChanges();
     </script>
 {% endblock %}

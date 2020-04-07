@@ -423,15 +423,18 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         :type ballots: {int: str}
         :rtype: tuple({int: str})
-        :returns: Four dicts mapping ballot ids to ballots grouped by status 
+        :returns: Four dicts mapping ballot ids to ballots grouped by status
           in the order done, extended, current, future.
         """
         ref = now()
 
         future = {k: v for k, v in ballots.items()
                   if v['vote_begin'] > ref}
+        # `current` also contains ballots which wait for
+        # check_voting_priod_extension() being called on them
         current = {k: v for k, v in ballots.items()
-                   if v['vote_begin'] <= ref < v['vote_end']}
+                   if (v['vote_begin'] <= ref < v['vote_end']
+                       or (v['vote_end'] <= ref and v['extended'] is None))}
         extended = {k: v for k, v in ballots.items()
                     if (v['extended']
                         and v['vote_end'] <= ref < v['vote_extension_end'])}
@@ -595,7 +598,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
 
-        If a secret is provided, this will fetch the vote beloging to that
+        If a secret is provided, this will fetch the vote belonging to that
         secret.
         """
         if not self.may_assemble(rs, assembly_id=assembly_id):
@@ -637,6 +640,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_ballot")
         # initial checks done, present the ballot
         ballot['is_voting'] = self.is_ballot_voting(ballot)
+        ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
         result = None
         if ballot['is_tallied']:
             path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
@@ -705,7 +709,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # Currently we don't distinguish between current and extended ballots
         current.update(extended)
         ballot_list = sum((sorted(bdict, key=lambda key: bdict[key]["title"])
-                           for bdict in (done, current, future)), [])
+                           for bdict in (future, current, done)), [])
 
         i = ballot_list.index(ballot_id)
         l = len(ballot_list)

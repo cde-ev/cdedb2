@@ -1,10 +1,13 @@
 /* *********** *
  * Page layout *
  * *********** */
+html, body {
+    height: 100%;
+}
+
 body{
-    margin: 0;
     background-color: #7c868e;
-    background-image: url(bg-pattern.png);
+    background-image: repeating-linear-gradient(135deg, rgba(136,143,150,.4), rgba(126,133,140,.4) 5px, rgba(136,143,150,.4) 10px);
 }
 
 #footer {
@@ -202,12 +205,13 @@ dd>*:first-child {
     .list-group.tear-down {
         margin-bottom: 8px;
     }
-    .list-group.tear-down>.list-group-item {
+    .list-group.tear-down>.list-group-item, .list-group.tear-down>button.list-group-item {
         font-size: .9em;
         border-radius: 4px;
         display: inline-block;
         margin-bottom: 4px;
         padding: 6px 10px;
+        width: auto;
     }
 }
 

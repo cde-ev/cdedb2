@@ -76,7 +76,7 @@
                 {% endif %}
 
                 {% trans select1=select1,
-                        select2=util.input_select(name="course_id", entries=course_entries, nulloption="",
+                        select2=util.input_select(name="course_id", entries=course_entries, nulloption="&nbsp;"|s,
                                 aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Course")),
                         select3=util.input_select(name="position", entries=filter_entries,
                                 aclass="form-control input-slim input-sm", nulloption=gettext("— no Filter —"),
@@ -125,12 +125,12 @@
                             util.input_select(name="assign_action", anid="input-action",
                                               entries=action_entries, arialabel=gettext("Assignment Method")),
                             util.input_select(name="assign_course_id", anid="input-course_id", entries=course_entries,
-                                              nulloption="", arialabel="Assign to Course")),
+                                              nulloption="&nbsp;"|s, arialabel="Assign to Course")),
                         tracks=tracks,
                         submit='<div class="col-md-2">%s</div>'|s|format(util.input_submit(value=gettext("Go!"))) -%}
                 	{{ assign }} {{ participants }} {{ course }} {{ tracks }} {{ submit }}
                 {% endtrans %}
-                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                <script nonce="{{ csp_nonce }}">
                     $(function() {
                         var $actionSelect = $('#input-action');
                         var $courseSelect = $('#input-course_id');
@@ -255,7 +255,7 @@
         </table>
         </div>
 
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $('#course_choice_table').cdedbListSelect();
             var lsObj = $('#course_choice_table').data('listSelect');
             $('#btn-select-all').click(function(){
@@ -270,7 +270,7 @@
             $('#js-button-group').show();
         </script>
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('.event_course_id').dblclick(function() {
             location.href =
                 "{{ cdedblink('event/show_course', magic_placeholders=['course_id']) }}"

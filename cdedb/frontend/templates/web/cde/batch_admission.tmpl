@@ -116,7 +116,7 @@
                                     {%- do myentries.append((resolution.value, gettext(resolution|string))) %}
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
-                                        nulloption="", aclass="form-control select-action",
+                                        nulloption="&nbsp;"|s, aclass="form-control select-action",
                                         arialabel=gettext("Operation for line %s")|format(dataset['lineno'])) }}
                             </div>
                         </div>
@@ -130,7 +130,7 @@
                                     {#- jinja does not support list comprehension ... #}
                                     {%- set myentries = [('', '–')] %}
                                     {%- for key, value in dataset['doppelgangers']|dictsort %}
-                                        {%- with description = "%s %s (%s) <%s> (%s %s), %s%s"|s|format(
+                                        {%- with description = "{} {} ({}) <{}> ({} {}), {}{}".format(
                                                 value['given_names'], value['family_name'],
                                                 value['birth_name'] or value['family_name'],
                                                 value['username'], gettext("born"),
@@ -151,7 +151,7 @@
 
             {{ ba_submit_button() }}
 
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $(function() {
                     /* Add csv jumps */
                     var $textinput = $('#input-data');

@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import copy
-import webtest
+import re
 
-from test.common import as_users, USER_DICT, FrontendTest
-from cdedb.query import QueryOperators
+import urllib.parse
+from test.common import USER_DICT, FrontendTest, as_users
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 
 import cdedb.database.constants as const
+import webtest
+from cdedb.query import QueryOperators
 
 
 class TestCoreFrontend(FrontendTest):
@@ -134,6 +137,65 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(user['given_names'], div='title')
 
     @as_users("vera")
+    def test_toggle_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        # Core Administration
+        self.get('/')
+        self.assertNoLink("/core/meta")
+        # Submit the adminviewstoggleform with the right button
+        self._click_admin_view_button(re.compile(r"Index-Administration"),
+                                      current_state=False)
+        self.traverse({'href': '/core/meta'},
+                      {'href': '/'})
+        self.assertNoLink("/core/search/user")  # Should not have an effect here
+        self._click_admin_view_button(re.compile(r"Index-Administration"),
+                                      current_state=True)
+        self.assertNoLink("/core/meta")
+
+        # No meta administration for vera
+        button = self.response.html\
+            .find(id="adminviewstoggleform") \
+            .find(text=re.compile(r"Admin-Administration"))
+        self.assertIsNone(button)
+
+        # user administration
+        # No adminshowuserform present
+        self.assertNotIn('adminshowuserform', self.response.forms)
+        self.assertNoLink('/core/genesis/list')
+        self.assertNoLink('/core/changelog/list')
+        self.assertNoLink('/core/changelog/view')
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=False)
+
+        self.traverse({'href': '/core/genesis/list'},
+                      {'href': '/core/changelog/list'},
+                      {'href': '/core/changelog/view'},
+                      {'href': '/cde/'},
+                      {'href': '/cde/search/user'})
+        # Now, the adminshowuserform is present, so we can navigate to Berta
+        self.admin_view_profile('berta')
+        # Test some of the admin buttons
+        self.response.click(href='/username/adminchange')
+        self.response.click(href=re.compile(r'\d+/adminchange'))
+        self.response.click(href='/membership/change')
+        # Disable the User admin view. No buttons should be present anymore
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=True)
+        self.assertNoLink('/username/adminchange')
+        self.assertNoLink(re.compile(r'\d+/adminchange'))
+        self.assertNoLink('/membership/change')
+        # We shouldn't even see realms and account balance anymore
+        self.assertNonPresence('Bereiche')
+        self.assertNonPresence('12,50€')
+        self.assertNotIn('activitytoggleform', self.response.forms)
+        self.assertNotIn('sendpasswordresetform', self.response.forms)
+
+        # There should not be any admin toggle buttons for Vera in the assembly
+        # realm
+        self.traverse({'href': '/assembly'})
+        self.assertNotIn('adminviewstoggleform', self.response.forms)
+
+    @as_users("vera")
     def test_adminshowuser(self, user):
         self.admin_view_profile('berta')
         self.assertTitle("Bertålotta Beispiel")
@@ -196,7 +258,7 @@ class TestCoreFrontend(FrontendTest):
         # ml_admins are allowed to do this even if they are no orgas.
         self.get('/core/persona/select'
                  '?kind=mod_ml_user&phrase=@exam&aux=9&variant=20')
-        expectation = (1, 5, 7)
+        expectation = (1, 2, 5)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select'
@@ -636,7 +698,7 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/search/user')
         save = self.response
         self.response = save.click(description="Alle Admins")
-        self.assertPresence("Ergebnis [12]", div='query-results')
+        self.assertPresence("Ergebnis [14]", div='query-results')
         self.assertPresence("Akira", div='query-result')
         self.assertPresence("Anton Armin A.", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
@@ -645,6 +707,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Generalis", div='query-result')
         self.assertPresence("Meister", div='query-result')
         self.assertPresence("Olaf", div='query-result')
+        self.assertPresence("Panther", div='query-result')
+        self.assertPresence("Quintus", div='query-result')
         self.assertPresence("Neubauer", div='query-result')
         self.assertPresence("Olafson", div='query-result')
         self.assertPresence("Vera", div='query-result')
@@ -950,7 +1014,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Ergebnis [10]", div='query-results')
+        self.assertPresence("Ergebnis [13]", div='query-results')
         self.assertPresence("Jalapeño", div='query-result')
 
     @as_users("vera")
@@ -1302,7 +1366,7 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = "Gimme!"
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1434,7 +1498,7 @@ class TestCoreFrontend(FrontendTest):
         # f['notes'] = "Gimme!"  # Do not send this to test upload permanance.
         f['realm'] = "cde"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1585,7 +1649,7 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = "Gimme!"
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "Z-12345"
         f['location'] = "Marcuria"
@@ -1605,7 +1669,7 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = "Gimme!"
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.2222"
+        f['birthday'] = "2222-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1624,7 +1688,7 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = ""
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1662,7 +1726,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1673,11 +1737,23 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['genesismodifyform']
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda")
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
+
+    def test_resolve_api(self):
+        b = urllib.parse.quote_plus('Bertålotta')
+        self.get(
+            '/core/api/resolve?given_names={}&family_name=Beispiel'.format(b),
+            headers={'X-CdEDB-API-token': 'secret'})
+        self.assertEqual(self.response.json, ["berta@example.cde"])
+        self.get(
+            '/core/api/resolve?given_names=Anton&family_name=Administrator',
+            headers={'X-CdEDB-API-token': 'secret'})
+        self.assertEqual(self.response.json, ["anton@example.cde"])
+        self.get('/core/api/resolve', status=403)
 
     def test_log(self):
         # First: generate data

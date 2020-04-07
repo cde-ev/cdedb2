@@ -52,6 +52,7 @@
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink("core/change_password_form"), gettext("Change Password"),
                             aclass="btn btn-warning btn-sm", icon="edit") }}
+                    {{ util.href(docurl('Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-sign") }}
                 {% endif %}
                 {% if is_relative_admin %}
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"), aclass="btn btn-info btn-sm",
@@ -103,77 +104,79 @@
 
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
-        <dl class="dl-horizontal">
-            <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
-            <dd id="cdedb-id">
-                {{ data['id']|cdedbid }}
-            </dd>
-            {% if is_relative_admin %}
-                <dt>{% trans %}Account active{% endtrans %}</dt>
-                <dd id="account-active">
-                    {{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox',
-                                          titles=[gettext("No"), gettext("Yes")]) }}
-                </dd>
-            {% endif %}
-        </dl>
-
-        {% if data['id'] == user.persona_id or is_relative_admin or "meta_admin" in user.roles %}
+        <div id="account">
             <dl class="dl-horizontal">
-                <dt>{% trans %}Realms{% endtrans %}</dt>
-                <dd id="has-realm">
-                    {% set vars = {'any_realm_not': False} %}
-                    {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "graduation-cap"),
-                                               ("is_event_realm", gettext("Events"), "chalkboard-teacher"),
-                                               ("is_ml_realm", gettext("Mailinglists"), "envelope"),
-                                               ("is_assembly_realm", gettext("Assemblies"), "bullhorn"),)%}
-                        {% if data[bit] %}
-                            {{ util.make_icon(icon, title=desc) }}
-                        {% else %}
-                            {# Dirty hack to workaround Jinjas set drawbacks #}
-                            {% set tmp = vars.update({'any_realm_not': True}) %}
-                        {% endif %}
-                    {% endfor %}
-                    {% if 'core_admin' in user.roles
-                            and vars['any_realm_not']
-                            and not ambience['persona']['is_archived'] %}
-                        {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pen",
-                                aclass="btn btn-xs btn-warning") }}
-                    {% endif %}
+                <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
+                <dd id="cdedb-id">
+                    {{ data['id']|cdedbid }}
                 </dd>
-
-                <dt>{% trans %}Admin Privileges{% endtrans %}</dt>
-                <dd id="admin-realms">
-                    {% set vars = {'any_privilege': False} %}
-                    {% for bit, desc, icon in (("is_meta_admin", gettext("Meta-Admin"), "wrench"),
-                                              ("is_core_admin", gettext("Core-Admin"), "user"),
-                                              ("is_cde_admin", gettext("CdE-Admin"), "graduation-cap"),
-                                              ("is_finance_admin", gettext("Finance-Admin"), "euro-sign"),
-                                              ("is_event_admin", gettext("Event-Admin"), "chalkboard-teacher"),
-                                              ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
-                                              ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
-                        {% if data[bit] %}
-                            {{ util.make_icon(icon, title=desc) }}
-                            {% do vars.update({'any_privilege': True}) %}
-                        {% endif %}
-                    {% endfor %}
-                    {% if not vars['any_privilege'] %}
-                        <i>{% trans %}None{% endtrans %}</i>
-                    {% endif %}
-                    {% if 'meta_admin' in user.roles and not ambience['persona']['is_archived'] %}
-                        {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
-                                aclass="btn btn-xs btn-warning") }}
-                    {% endif %}
-                </dd>
-
-                {% if data['notes'] and is_relative_admin %}
-                    <dt>{% trans %}Admin-Notes{% endtrans %}</dt>
-                    <dd>{{ data['notes']|md|linebreaks }}</dd>
+                {% if is_relative_admin %}
+                    <dt>{% trans %}Account active{% endtrans %}</dt>
+                    <dd id="account-active">
+                        {{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox',
+                                              titles=[gettext("No"), gettext("Yes")]) }}
+                    </dd>
                 {% endif %}
             </dl>
-        {% endif %}
+
+            {% if data['id'] == user.persona_id or is_relative_admin or "meta_admin" in user.admin_views %}
+                <dl class="dl-horizontal">
+                    <dt>{% trans %}Realms{% endtrans %}</dt>
+                    <dd id="has-realm">
+                        {% set vars = {'any_realm_not': False} %}
+                        {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "graduation-cap"),
+                                                   ("is_event_realm", gettext("Events"), "chalkboard-teacher"),
+                                                   ("is_ml_realm", gettext("Mailinglists"), "envelope"),
+                                                   ("is_assembly_realm", gettext("Assemblies"), "bullhorn"),)%}
+                            {% if data[bit] %}
+                                {{ util.make_icon(icon, title=desc) }}
+                            {% else %}
+                                {# Dirty hack to workaround Jinjas set drawbacks #}
+                                {% set tmp = vars.update({'any_realm_not': True}) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if 'core_user' in user.admin_views
+                                and vars['any_realm_not']
+                                and not ambience['persona']['is_archived'] %}
+                            {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pen",
+                                    aclass="btn btn-xs btn-warning") }}
+                        {% endif %}
+                    </dd>
+
+                    <dt>{% trans %}Admin Privileges{% endtrans %}</dt>
+                    <dd id="admin-realms">
+                        {% set vars = {'any_privilege': False} %}
+                        {% for bit, desc, icon in (("is_meta_admin", gettext("Meta-Admin"), "wrench"),
+                                                  ("is_core_admin", gettext("Core-Admin"), "user"),
+                                                  ("is_cde_admin", gettext("CdE-Admin"), "graduation-cap"),
+                                                  ("is_finance_admin", gettext("Finance-Admin"), "euro-sign"),
+                                                  ("is_event_admin", gettext("Event-Admin"), "chalkboard-teacher"),
+                                                  ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
+                                                  ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
+                            {% if data[bit] %}
+                                {{ util.make_icon(icon, title=desc) }}
+                                {% do vars.update({'any_privilege': True}) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if not vars['any_privilege'] %}
+                            <i>{% trans -%}None{%- endtrans %}</i>
+                        {% endif %}
+                        {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
+                            {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
+                                    aclass="btn btn-xs btn-warning") }}
+                        {% endif %}
+                    </dd>
+
+                    {% if data['notes'] and is_relative_admin %}
+                        <dt>{% trans %}Admin-Notes{% endtrans %}</dt>
+                        <dd>{{ data['notes']|md|linebreaks }}</dd>
+                    {% endif %}
+                </dl>
+            {% endif %}
+        </div>
 
         {% if data['is_cde_realm'] and (data['id'] == user.persona_id or is_relative_admin) %}
-            <dl class="dl-horizontal">
+            <dl id="cde-membership" class="dl-horizontal">
                 <dt>{% trans %}Membership{% endtrans %}</dt>
                 <dd id="membership">
                     {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
@@ -190,7 +193,7 @@
                 <dt>{% trans %}Balance{% endtrans %}</dt>
                     <dd id="balance">
                         {{ data['balance']|money(lang=lang) }}
-                        {% if "finance_admin" in user.roles %}
+                        {% if "finance" in user.admin_views %}
                             {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
@@ -198,8 +201,9 @@
                             {% trans %}and{% endtrans %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("Direct Debit Authorization"), icon="euro-sign",
-                                    readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles)) }}
-                        {% elif "finance_admin" in user.roles %}
+                                    readonly=(data['id'] != user.persona_id
+                                              and "finance" not in user.admin_views)) }}
+                        {% elif "finance" in user.admin_views %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
                         {% endif %}
@@ -210,7 +214,7 @@
                     <dd id="searchability">
                         {{ util.deko_checkbox(checked=data['is_searchable']) }}
                         {% if data['is_searchable'] %}
-                            <td>{% trans %}Data is visible for other Members.{% endtrans %}</td>
+                            {% trans %}Data is visible for other Members.{% endtrans %}
                         {% else %}
                             {% if not data['decided_search'] %}
                                 {% trans %}Not yet decided. (Data is not visible){% endtrans %}
@@ -228,70 +232,74 @@
         {% endif %}
 
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
-        <dl class="dl-horizontal">
-            <dt>{% trans %}E-Mail{% endtrans %}</dt>
-            <dd id="contact-email">
-                {% if data['username'] %}
-                    {{ util.username_mailto(data) }}
-                {% else %}
-                    —
-                {% endif %}
-                {% if data['id'] == user.persona_id %}
-                    {{ util.href(cdedblink('core/change_username_form'), gettext("Edit"),
-                                 aclass="btn btn-xs btn-warning", icon="pen") }}
-                {% elif is_relative_admin and not ambience['persona']['is_archived'] %}
-                    {{ util.href(cdedblink('core/admin_username_change_form'), gettext("Edit"),
-                                 aclass="btn btn-xs btn-warning", icon="pen") }}
-                {% endif %}
-            </dd>
-            {% if data['telephone'] %}
-                <dt>{% trans %}Phone{% endtrans %}</dt>
-                <dd id="contact-telephone">
-                    {{ util.tel_link(data['telephone']) }}
-                </dd>
-            {% endif %}
-            {% if data['mobile'] %}
-                <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
-                <dd id="contact-mobile">
-                    {{ util.tel_link(data['mobile']) }}
-                </dd>
-            {% endif %}
-            {% if data['weblink'] %}
-                <dt>{% trans %}WWW{% endtrans %}</dt>
-                {# TODO maybe add links or so - must be validated before! #}
-                <dd id="contact-weblink">
-                    {{ util.web_link(data['weblink']) }}
-                </dd>
-            {% endif %}
-        </dl>
-
-        {% if (data['address'] or data['address_supplement'] or data['postal_code']
-                    or data['location'] or data['country']) %}
-            <h4 class="heading-underline">{% trans %}Address Information{% endtrans %}</h4>
+        <div id="contact-information">
             <dl class="dl-horizontal">
-                <dt>{% trans %}Address{% endtrans %}</dt>
-                <dd id="address">
-                    {{ data['address'] }}{% if data['address'] %}<br />{% endif %}
-                    {{ data['address_supplement'] }}{% if data['address_supplement'] %}<br />{% endif %}
-                    {{ data['postal_code'] }} {{ data['location'] }}{% if data['location'] %}<br />{% endif %}
-                    {{ data['country'] }}
+                <dt>{% trans %}E-Mail{% endtrans %}</dt>
+                <dd id="contact-email">
+                    {% if data['username'] %}
+                        {{ util.username_mailto(data) }}
+                    {% else %}
+                        —
+                    {% endif %}
+                    {% if data['id'] == user.persona_id %}
+                        {{ util.href(cdedblink('core/change_username_form'), gettext("Edit"),
+                                     aclass="btn btn-xs btn-warning", icon="pen") }}
+                    {% elif is_relative_admin and not ambience['persona']['is_archived'] %}
+                        {{ util.href(cdedblink('core/admin_username_change_form'), gettext("Edit"),
+                                     aclass="btn btn-xs btn-warning", icon="pen") }}
+                    {% endif %}
                 </dd>
+                {% if data['telephone'] %}
+                    <dt>{% trans %}Phone{% endtrans %}</dt>
+                    <dd id="contact-telephone">
+                        {{ util.tel_link(data['telephone']) }}
+                    </dd>
+                {% endif %}
+                {% if data['mobile'] %}
+                    <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
+                    <dd id="contact-mobile">
+                        {{ util.tel_link(data['mobile']) }}
+                    </dd>
+                {% endif %}
+                {% if data['weblink'] %}
+                    <dt>{% trans %}WWW{% endtrans %}</dt>
+                    {# TODO maybe add links or so - must be validated before! #}
+                    <dd id="contact-weblink">
+                        {{ util.web_link(data['weblink']) }}
+                    </dd>
+                {% endif %}
             </dl>
-        {% endif %}
+        </div>
 
-        {% if (data['address2'] or data['address_supplement2'] or data['postal_code2']
-                or data['location2'] or data['country2']) %}
-            <dl class="dl-horizontal">
-                <dt>{% trans %}Second Address{% endtrans %}</dt>
-                <dd id="address2">
-                    {{ data['address2'] }}{% if data['address2'] %}<br />{% endif %}
-                    {{ data['address_supplement2'] }}{% if data['address_supplement2'] %}<br />{% endif %}
-                    {{ data['postal_code2'] }} {{ data['location2'] }}
-                    {% if data['location2'] %}<br />{% endif %}
-                    {{ data['country2'] }}
-                </dd>
-            </dl>
-        {% endif %}
+        <div id="address-information">
+            {% if (data['address'] or data['address_supplement'] or data['postal_code']
+                        or data['location'] or data['country']) %}
+                    <h4 class="heading-underline">{% trans %}Address Information{% endtrans %}</h4>
+                <dl class="dl-horizontal">
+                    <dt>{% trans %}Address{% endtrans %}</dt>
+                    <dd id="address">
+                        {{ data['address'] }}{% if data['address'] %}<br />{% endif %}
+                        {{ data['address_supplement'] }}{% if data['address_supplement'] %}<br />{% endif %}
+                        {{ data['postal_code'] }} {{ data['location'] }}{% if data['location'] %}<br />{% endif %}
+                        {{ data['country'] }}
+                    </dd>
+                </dl>
+            {% endif %}
+
+            {% if (data['address2'] or data['address_supplement2'] or data['postal_code2']
+                    or data['location2'] or data['country2']) %}
+                <dl class="dl-horizontal">
+                    <dt>{% trans %}Second Address{% endtrans %}</dt>
+                    <dd id="address2">
+                        {{ data['address2'] }}{% if data['address2'] %}<br />{% endif %}
+                        {{ data['address_supplement2'] }}{% if data['address_supplement2'] %}<br />{% endif %}
+                        {{ data['postal_code2'] }} {{ data['location2'] }}
+                        {% if data['location2'] %}<br />{% endif %}
+                        {{ data['country2'] }}
+                    </dd>
+                </dl>
+            {% endif %}
+        </div>
 
         {% if data['specialisation'] or data['affiliation'] or data['timeline'] or data['interests']
                 or data['free_form'] %}
@@ -321,7 +329,7 @@
         {% endif %}
 
         {% if past_events %}
-            <h4 class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
+            <h4 id="past-events" class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
             <table class="table table-hover past-event-table">
             <tbody>
                 {% for pevent_id, pevent in past_events|xdictsort('tempus')|reverse %}
@@ -352,7 +360,7 @@
             </tbody>
             </table>
         {% endif %}
-        {%  if is_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
+        {%  if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
             <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
@@ -373,10 +381,9 @@ Mitglied.</pre>
         {% endif %}
     </div>
 
-    {% if data['id'] != user.persona_id and (is_relative_admin or "core_admin" in user.roles) %}
+    {% if data['id'] != user.persona_id and is_relative_admin %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
-                {% if data['id'] != user.persona_id %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
@@ -402,8 +409,6 @@ Mitglied.</pre>
                             </p>
                         </div>
                     </div>
-                {% endif %}
-                {% if is_relative_admin %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
@@ -442,9 +447,8 @@ Mitglied.</pre>
                             </p>
                         </div>
                     </div>
-                {% endif %}
 
-                {% if "core_admin" in user.roles %}
+                {% if "core_user" in user.admin_views %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
@@ -460,7 +464,7 @@ Mitglied.</pre>
                                     </div>
                                     {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}
                                 </form>
-                                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                                <script nonce="{{ csp_nonce }}">
                                     $('#archivepersonaform').cdedbProtectAction(
                                         "{{ gettext("The Account will be archived.") }}");
                                     $('#archivepersonaform').find('[name="ack_delete"]').prop('checked', true)
@@ -542,7 +546,7 @@ Mitglied.</pre>
                                             aclass="btn btn-danger btn-sm") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                 </form>
-                                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                                <script nonce="{{ csp_nonce }}">
                                     $('#purgepersonaform').cdedbProtectAction(
                                         "{{ gettext("The Account will be deleted.") }}");
                                     $('#purgepersonaform').find('[name="ack_delete"]').prop('checked', true)

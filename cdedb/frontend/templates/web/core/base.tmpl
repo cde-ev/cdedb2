@@ -15,9 +15,9 @@
             {{ util.href(cdedblink("core/view_admins"), gettext("Admin Overview"), aclass="list-group-item",
                     icon="wrench", active=(sidenav_active=='core_admins')) }}
         </div>
-        {% if is_admin or "meta_admin" in user.roles or roles_allow_genesis_management(user.roles) %}
+        {% if user.admin_views.intersection(["core_user", "genesis", "meta_admin"]|set) %}
             <div class="list-group tear-down">
-            {% if is_admin %}
+            {% if "core_user" in user.admin_views %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
                         icon="user", active=(sidenav_active=='core_manage_users')) }}
                 {{ util.href(cdedblink("core/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
@@ -25,26 +25,31 @@
                 {{ util.href(cdedblink("core/list_pending_changes"), gettext("Pending Changes"), aclass="list-group-item",
                         icon="check-square", active=(sidenav_active=='core_pending_changes')) }}
             {% endif %}
-            {% if roles_allow_genesis_management(user.roles) %}
+            {% if "genesis" in user.admin_views %}
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), aclass="list-group-item",
                         icon="flag", active=(sidenav_active=='core_genesis_list')) }}
             {% endif %}
-            {% if "meta_admin" in user.roles %}
+            {% if "meta_admin" in user.admin_views %}
                 {{ util.href(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes"), aclass="list-group-item",
                         icon="wrench", active=(sidenav_active=='core_privilege_changes')) }}
             {% endif %}
-            {% if is_admin %}
+            {% if "core_user" in user.admin_views %}
                 {{ util.href(cdedblink("core/view_log"), gettext("Account Log"), aclass="list-group-item",
                         icon="far fa-list-alt", active=(sidenav_active=='core_log')) }}
                 {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), aclass="list-group-item",
                         icon="far fa-list-alt", active=(sidenav_active=='core_change_log')) }}
-                </div>
-                <div class="list-group tear-down">
-                {{ util.href(cdedblink("core/meta_info_form"), gettext("Metadata"), aclass="list-group-item",
-                        icon="tags", active=(sidenav_active=='core_meta')) }}
             {% endif %}
             </div>
         {% endif %}
+        {% if "core" in user.admin_views %}
+            <div class="list-group tear-down">
+                {{ util.href(cdedblink("core/meta_info_form"), gettext("Metadata"), aclass="list-group-item",
+                        icon="tags", active=(sidenav_active=='core_meta')) }}
+            </div>
+        {% endif %}
+        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["core_user", "genesis"]),
+                                    (gettext("Admin Administration"), ["meta_admin"], None),
+                                    (gettext("Core Administration"), ["core"], None))) }}
+        <hr class="strong visible-xs visible-sm" />
     {% endif %}
-    <hr class="strong visible-xs visible-sm" />
 {% endblock %}

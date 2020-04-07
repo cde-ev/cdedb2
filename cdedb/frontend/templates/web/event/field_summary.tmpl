@@ -131,7 +131,7 @@
             {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
         </p>
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         /* Hide tabs except first one and headings and enable tab switching */
         $('#associations_tabcontent').children('.tab-pane').not(':eq(0)').removeClass('active');
         $('#fieldsummaryform').find('h3').hide();

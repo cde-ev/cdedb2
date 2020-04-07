@@ -49,7 +49,7 @@
                 <label>
                     <input type="checkbox" name="enable_{{ name }}" value="True" class="enable-input"
                            {% if anid %}id="enable_{{ anid }}" data-input="{{ anid }}"{% endif %}
-                           {% if values.get("enable_{}".format(name), False) %}checked="checked"{% endif %} />
+                           {% if values.get("enable_{}".format(name), False) %}checked{% endif %} />
                     <span class="sr-only">
                         {% if label %}
                             {% trans label=label %}
@@ -140,7 +140,7 @@
             {% call form_input_optional("part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
                                         anid="part{}_lodgement_id".format(part_id)) %}
                 {{ util.input_select(name="part{}.lodgement_id".format(part_id),
-                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="",
+                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="&nbsp;"|s,
                                      anid="part{}_lodgement_id".format(part_id)) }}
             {% endcall %}
             {% call form_input_optional("part{}.is_reserve".format(part_id),
@@ -159,7 +159,7 @@
                                                   if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                             anid="track{}_course_id".format(track_id)) %}
                     {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
-                                         nulloption="", anid="track{}_course_id".format(track_id)) }}
+                                         nulloption="&nbsp;"|s, anid="track{}_course_id".format(track_id)) }}
                 {% endcall %}
             {% endfor %}
         {% endfor %}
@@ -188,7 +188,7 @@
                                               if ambience['event']['tracks']|length > 1  else gettext("Instructor of"),
                                         anid="input_track{}_course_instructor".format(track_id)) %}
                 {{ util.input_select(name="track{}.course_instructor".format(track_id),
-                                     entries=course_entries, nulloption="",
+                                     entries=course_entries, nulloption="&nbsp;"|s,
                                      anid="input_track{}_course_instructor".format(track_id)) }}
             {% endcall %}
         {% endfor %}
@@ -207,7 +207,7 @@
 
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/registration_query")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         /**
          * Update disabled state of an input field based on the value of the associated enable-checkbox.
          *

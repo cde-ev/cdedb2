@@ -12,8 +12,7 @@
     {{ util.breadcrumb_link(cdedblink("assembly/create_ballot"), gettext("Create Ballot"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('assembly/create_ballot') }}" method="POST" id="createballotform",
-            class="form-horizontal">
+    <form action="{{ cdedblink('assembly/create_ballot') }}" method="POST" id="createballotform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/create_ballot') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
@@ -23,10 +22,10 @@
                                 placeholder="YYYY-MM-DD hh:ii:ss") }}
         {{ util.form_input_text(name="vote_end", label=gettext("End of voting period"), type="datetime-local",
                                 placeholder="YYYY-MM-DD hh:ii:ss") }}
-        {{ util.form_input_text(name="quorum", label=gettext("Quorum"), defaultvalue="0") }}
+        {{ util.form_input_text(name="quorum", label=gettext("Quorum"), type="number", defaultvalue="0") }}
         {{ util.form_input_text(name="vote_extension_end", label=gettext("End of extension"), type="datetime-local",
                                 placeholder="YYYY-MM-DD hh:ii:ss") }}
-        {{ util.form_input_text(name="votes", label=gettext("Number of votes"),
+        {{ util.form_input_text(name="votes", label=gettext("Number of votes"), type="number",
                                info=gettext("Leave empty for Preferential Vote.")) }}
         {{ util.form_input_checkbox(name="use_bar", label=gettext("Allow rejection")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
@@ -37,7 +36,7 @@
                                                 "visible to all CdE-Members and Assembly-Participants.")) }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('assembly/list_ballots')) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#createballotform').cdedbProtectChanges();
     </script>
 {% endblock %}

@@ -149,6 +149,18 @@
                         </td>
                     {% endif %}
                 </tr>
+            {% else %}
+            {# just to make colspan in header validate #}
+                <tr style="display: none;">
+                    <th></th>
+                    <th></th>
+                    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) -%}
+                        <th colspan="{{ track['num_choices'] + 2 }}"></th>
+                    {%- endfor %}
+                    <th></th>
+                    <th></th>
+                    {% if ambience['event']['tracks']|length < 4 %}<th></th>{% endif %}
+                </tr>
             {% endfor %}
         </tbody>
     </table>

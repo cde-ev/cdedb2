@@ -35,12 +35,13 @@
             <div class="col-md-6">
                 <ul>
                     {% for key in transaction_keys %}
-                        <li>{{ key }}: {{ data["{}{}".format(key, t_id)] }}</li>
-                        {{ util.input_hidden(name="{}{}".format(key, t_id)) }}
+                        <li>
+                            {{ key }}: {{ data["{}{}".format(key, t_id)] }}
+                            {{ util.input_hidden(name="{}{}".format(key, t_id)) }}
+                        </li>
                     {% endfor %}
                 </ul>
-                <ul class="list-unstyled">
-                    <div id="transaction{{ t_id }}_errors">
+                <ul id="transaction{{ t_id }}_errors" class="list-unstyled">
                         {% for key, problem in data["errors{}".format(t_id)] %}
                             <li class="text-danger">
                                 {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
@@ -48,8 +49,8 @@
                                 {{ util.format_error(problem) }}
                             </li>
                         {% endfor %}
-                    </div>
-                    <div id="transaction{{ t_id }}_warnings">
+                </ul>
+                <ul id="transaction{{ t_id }}_warnings" class="list-unstyled">
                         {% for key, problem in data["warnings{}".format(t_id)] %}
                             <li class="text-warning">
                                 {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
@@ -57,7 +58,6 @@
                                 {{ util.format_error(problem) }}
                             </li>
                         {% endfor %}
-                    </div>
                 </ul>
             </div>
             <div class="col-md-6">
@@ -80,7 +80,7 @@
                     <div class="col-md-11">
                         {{ util.form_input_text(name="cdedbid{}".format(t_id), small=True, horizontal=False,
                                     label=gettext("Member"), anid="input-cdedbid-{}".format(t_id)) }}
-                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                            <script nonce="{{ csp_nonce }}">
                                 $('#input-cdedbid-{{ t_id }}').cdedbSearchPerson(
                                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}',
                                     [], false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
@@ -95,7 +95,7 @@
                     </div>
                     <div class="col-md-11">
                         {{ util.form_input_select(name="event_id{}".format(t_id), entries=event_entries, small=True,
-                                    nulloption="", label=gettext("Event"), horizontal=False) }}
+                                    nulloption="&nbsp;"|s, label=gettext("Event"), horizontal=False) }}
                     </div>
                 </div>
             </div>
@@ -139,7 +139,7 @@
             {{ util.input_hidden(name="start") }}
             {{ util.input_hidden(name="end") }}
             {{ util.input_hidden(name="timestamp") }}
-            <p>
+            <div>
             {% if params["has_error"] %}
                 <div id="has_error_summary">
                     {% trans count=params["has_error"]|length %}{{ count }} Transactions with Errors{% endtrans %}
@@ -169,7 +169,7 @@
                     Go to submit buttons.
                 {% endtrans %}
             </a>
-            </p>
+            </div>
             {% for t_id in params["all"] %}
                 {{ print_transaction(t_id) }}
             {% endfor %}

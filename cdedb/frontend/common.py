@@ -26,6 +26,7 @@ import json
 import logging
 import pathlib
 import re
+import shutil
 import smtplib
 import subprocess
 import tempfile
@@ -627,6 +628,17 @@ def md_filter(val):
     return bleach_filter(md.convert(val))
 
 
+def set_filter(value):
+    """
+    A simple filter to construct a Python set from an iterable object. Just
+    like Jinja's builtin "list" filter, but for sets.
+
+    :type value: Iterable
+    :rtype: set
+    """
+    return set(value)
+
+
 def xdictsort_filter(value, attribute, pad=False, reverse=False):
     """Allow sorting by an arbitrary attribute of the value.
 
@@ -772,6 +784,7 @@ JINJA_FILTERS = {
     'enum': enum_filter,
     'xdictsort': xdictsort_filter,
     's': safe_filter,
+    'set': set_filter,
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
@@ -1322,6 +1335,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Deleting corrupted file {}".format(pdf_path))
                 pdf_path.unlink()
             self.logger.debug("Exception \"{}\" caught and handled.".format(e))
+            if self.conf.CDEDB_DEV:
+                tstamp = round(now().timestamp())
+                backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
+                self.logger.info("Copying source file to {}".format(
+                    backup_path))
+                shutil.copy2(target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
                 "source files and compiling them manually.")

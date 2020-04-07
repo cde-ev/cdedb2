@@ -9,7 +9,9 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
-                        readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
+                        readonly=not (ambience['event']['is_visible']
+                                      or ambience['event']['id'] in user.orga
+                                      or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
 {{ util.breadcrumb_link(cdedblink("event/participant_list"), gettext("Participant List"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -70,16 +72,18 @@
 
     {% if registrations and list_consent %}
         {% if ambience['event']['parts']|length > 1 %}
-            <ul class="nav nav-tabs mosp" role="navigation">
-                <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
-                    {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
-                </li>
-                {% for p_id, p in ambience['event']['parts'].items() %}
-                    <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
-                        {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
+            <nav>
+                <ul class="nav nav-tabs mosp">
+                    <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
+                        {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
                     </li>
-                {% endfor %}
-            </ul>
+                    {% for p_id, p in ambience['event']['parts'].items() %}
+                        <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
         {% endif %}
 
 

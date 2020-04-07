@@ -77,7 +77,7 @@
                                 small=True) }}
         {{ util.form_input_submit(value=gettext("Reorder"), small=True, cancellink=cdedblink('event/questionnaire_summary')) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         var input = $('#input-roworder');
         var form = $('#reorderquestionnaireform');
         $('#rowlist').cdedbOrderRow(input).find('.orderrow-indicator').hide();

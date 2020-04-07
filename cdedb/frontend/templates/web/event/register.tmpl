@@ -10,7 +10,9 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
-                        readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
+                        readonly=not (ambience['event']['is_visible']
+                                      or ambience['event']['id'] in user.orga
+                                      or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
 {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -94,7 +96,7 @@
         {% endif %}
 
         {% if not persona["is_member"] and ambience["event"]["nonmember_surcharge"] > 0 %}
-            <div class="heading-underline text-info" id="nonmember-surcharge"><strong>
+            <div class="heading-underline text-info" id="nonmember-surcharge" style="font-weight: bold;">
                 <p>
                 {% trans additional_fee=ambience["event"]["nonmember_surcharge"]|money(lang=lang) %}
                     Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
@@ -108,7 +110,7 @@
                     {% endtrans %}
                     </p>
                 {% endif %}
-            </strong></div>
+            </div>
         {% endif %}
 
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
@@ -128,7 +130,7 @@
                     {% set course_entries = courses|keydictsort(EntitySorter.course)
                                             |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
                     {% for i in range(track['num_choices']) %}
-                        {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="",
+                        {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="&nbsp;"|s,
                                                   label=gettext("%s. Choice")|format(i + 1), entries=course_entries) }}
                     {% endfor %}
 
@@ -192,7 +194,7 @@
         {% endcall %}
         {{ util.form_input_submit(value=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         var $form = $('#registerform');
         $form.cdedbProtectChanges();
         var checkboxes = $form.find('[type="checkbox"][name="parts"]');

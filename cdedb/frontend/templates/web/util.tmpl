@@ -13,13 +13,13 @@
         {%- if script == 'cdedb_queryform.js' %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- elif script == 'selectize/selectize.min.js' %}
-            <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
+            <link rel="stylesheet" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
         {%- elif script == 'cdedb_searchpersona.js' %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- elif script == 'cdedb_manage_participants.js' %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- endif %}
-        <script type="text/javascript" src="{{ staticurl(script) }}"></script>
+        <script  src="{{ staticurl(script) }}"></script>
         {%- do script_files.append(script) %}
     {%- endif %}
 {%- endmacro %}
@@ -124,13 +124,6 @@
         {{ href(show_user_link(persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {}".format(
               persona['given_names'], persona['family_name'])) }}
     {%- endif -%}
-{% endmacro %}
-
-{% macro username_mailto(persona, prefix="") %}
-    {{ href("mailto:%s %s <%s>"|s|format(persona.get("{}given_names".format(prefix), ""),
-                                        persona.get("{}family_name".format(prefix), ""),
-                                        persona.get("{}username".format(prefix), "")),
-            persona.get("{}username".format(prefix), "")) }}
 {% endmacro %}
 
 {% macro output_given_displayname(given_names, display_name) %}
@@ -340,7 +333,8 @@
                     value="{{ values.get(name, defaultvalue) }}"
                 {%- endif %}
             {%- endif %}
-            {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }} />
+            {%- if readonly %} disabled{% endif %} {{ attributes }} />
+            {# TODO use actual readonly and bootstrap styles #}
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
@@ -356,10 +350,10 @@
 
 {% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='', arialabel='') %}
     <input type="file" {%- if aclass %} class="{{ aclass }}"{% endif %}
-            {%- if accept %} class="{{ accept }}"{% endif %}
+            {%- if accept %} accept="{{ accept }}"{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
-            {%- if anid %} id="{{ anid }}"{% endif %} value="{{ values.get(name, defaultvalue) }}"{#-#}
-            name="{{ name }}" {%- if readonly %} disabled="disabled"{% endif %} />
+            {%- if anid %} id="{{ anid }}"{% endif %} {# -#}
+            name="{{ name }}" {%- if readonly %} disabled{% endif %} />
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
@@ -376,7 +370,7 @@
     <textarea {% if aclass %} class="{{ aclass }}"{% endif %} rows="{{ rows }}"
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {# -#}
             name="{{ name }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }}>
+            {%- if readonly %} disabled{% endif %} {{ attributes }}>
         {{- values.get(name, defaultvalue) -}}
     </textarea>
 {%- endmacro %}
@@ -397,10 +391,10 @@
     <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
         <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name }}" value="{{ value }}"
             {%- if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %} {# -#}
-                checked="checked"
+                checked
             {%- endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
-            {%- if readonly %} disabled="disabled"{% endif %} {%- if anid %} id="{{ anid }}"{% endif %}
+            {%- if readonly %} disabled{% endif %} {%- if anid %} id="{{ anid }}"{% endif %}
             {%- if aclass %} class="{{ aclass }}"{% endif %} {{ attributes }} />
         {{ label -}}
     </label>
@@ -409,7 +403,7 @@
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
         arialabeledby="") %}
     <div role="{% if radio %}radio{% endif %}group"
-            {%- if arialabeledby %} aria-labeledby="{{ arialabeledby }}"{% endif %}>
+            {%- if arialabeledby %} aria-labelledby="{{ arialabeledby }}"{% endif %}>
         {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
         {%- for entry_value, entry_label in entries %}
             {% if not inline -%}
@@ -460,16 +454,16 @@
 {% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
         nulloption=None, arialabel='', attributes="") %}
     <select name="{{ name }}" {%- if anid %} id="{{ anid }}"{% endif %}
-            {%- if aclass %} class="{{ aclass }}"{% endif %}{% if readonly %} disabled="disabled"{% endif %}
+            {%- if aclass %} class="{{ aclass }}"{% endif %}{% if readonly %} disabled{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {{ attributes }}>
         {%- if nulloption is not none %}
-            <option value=""{% if values.get(name, defaultvalue) == None %} selected="selected"{% endif %}>
+            <option value=""{% if values.get(name, defaultvalue) == None %} selected{% endif %}>
                 {{- nulloption -}}
             </option>
         {%- endif %}
         {%- for value, label in entries %}
             <option value="{{ value }}"
-              {%- if values.get(name, defaultvalue)|string == value|string %} selected="selected"{% endif %}>
+              {%- if values.get(name, defaultvalue)|string == value|string %} selected{% endif %}>
                 {{- label -}}
             </option>
         {%- endfor %}
@@ -503,7 +497,7 @@
 
 {% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="check",
         readonly=False, title='', arialabel='') %}
-    <button type="submit" name="{{ name }}" {%- if readonly %} disabled="disabled"{% endif %}
+    <button type="submit" name="{{ name }}" {%- if readonly %} disabled{% endif %}
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %}
             {%- if title %} title="{{ title }}"{% endif %} value="True"
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}>
@@ -557,7 +551,7 @@
         {%- set name = "fields.{}".format(fields['field_name']) %}
     {%- endif %}
     {%- if fields['entries'] %}
-        {{- input_select(name=name, entries=fields['entries'], nulloption="",
+        {{- input_select(name=name, entries=fields['entries'], nulloption="&nbsp;"|s,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
@@ -608,3 +602,75 @@
 {% macro anti_csrf_token(target) %}
     {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, user.persona_id)) }}
 {% endmacro %}
+
+{# Generate a list of admin view toggle buttons. Should be used in the navigation sidebar.
+
+   The properties of the individual buttons are specified through the `views` argument, which is an iterable of
+   3-tuples. Each tuple defines (label, view_names, relevant_views) of one button:
+     * `label` (1st tuple entry) defines the caption of the button. Should be internationalized.
+     * `view_names` (2nd tuple entry) defines a list of admin_views to be toggled by this button together.
+     * `relevant_views` (3rd tuple entry) defines a list of views, which are the subset of `view_names` that is relevant
+       in the current page's context. The button is only displayed, if one of those views is available to the user.
+       For convenience, `relevant_views` may be set to None, in which case all `view_names` are considered relevant.
+       Example: A button in the Core realm may toggle all user admin views (`core_user`, `cde_user, `event_user`, ...),
+       but should only be shown to core admins, i.e. users who have the `core_user` view available.
+ #}
+{% macro admin_views_toggle(views) %}
+    {% set inner = _admin_views_toggle_inner(views) %}
+    {% if inner %}
+        <hr />
+        <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" id="adminviewstoggleform">
+            {% if original_request and original_request.url %}
+                {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
+                                                          original_request.url, timeout=None)) }}
+            {% endif %}
+            <div class="list-group tear-down">
+                {{ inner }}
+            </div>
+        </form>
+    {% endif %}
+{% endmacro %}
+
+{# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
+   jinja #}
+{% macro _admin_views_toggle_inner(views) -%}
+    {% for label, view_names, relevant_views in views -%}
+        {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
+        {% if (relevant_views|set).intersection(user.available_admin_views) %}
+            {# The button is "deactivated" as long as there are more "relevant views" which are available for the
+               user but are not enabled yet. #}
+            {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) -%}
+            <button type="submit"
+                    name="view_specifier"
+                    value="{% if active %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
+                    class="list-group-item list-group-item-info {% if active %}active{% endif %}"
+                    title="{{ (gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label) }}">
+                {{- make_icon('wrench') }} {{ label -}}
+                {% if active %} <span class="sr-only">{% trans %}(enabled){% endtrans %}</span>{% endif -%}
+            </button>
+        {% endif -%}
+    {% endfor -%}
+{% endmacro %}
+
+{#
+    Creates a HTML compliant mailto: link (though not neccessarily RFC compliant)
+    Additional header such as to, subject, body, cc, or bcc can be passed as kwargs
+#}
+{% macro mailto(address, name) -%}
+mailto:
+{%- if name is defined %}{{ "{}%3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
+{%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
+{%- endmacro %}
+
+{% macro username_mailto(persona, prefix="") -%}
+{{ href(
+    mailto(
+        address=persona.get("{}username".format(prefix), ""),
+        name="{} {}".format(
+            persona.get("{}given_names".format(prefix), ""),
+            persona.get("{}family_name".format(prefix), "")
+        )
+    ),
+    persona.get("{}username".format(prefix), "")
+) }}
+{%- endmacro %}

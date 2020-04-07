@@ -16,6 +16,7 @@ import sys
 import tempfile
 import operator
 import datetime
+import time
 import dateutil.easter
 
 import psycopg2.extensions
@@ -1908,6 +1909,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, task, rs)
         worker.start()
+        time.sleep(1)
         rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -1962,6 +1964,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, task, rs)
         worker.start()
+        time.sleep(1)
         rs.notify("success", n_("Started ejection."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2024,6 +2027,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, task, rs)
         worker.start()
+        time.sleep(1)
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2106,6 +2110,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             worker = Worker(self.conf, task, rs)
             worker.start()
+            time.sleep(1)
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2251,9 +2256,9 @@ class CdEFrontend(AbstractUserFrontend):
             rs, pevent_id=pevent_id)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
-        # We are privileged to see other participants if we are admin or
-        # participant by ourselves
-        privileged = is_participant or self.is_admin(rs)
+        # We are privileged to see other participants if we are admin (and have
+        # the relevant admin view enabled) or participant by ourselves
+        privileged = is_participant or "past_event" in rs.user.admin_views
         participants = {}
         personas = {}
         extra_participants = 0

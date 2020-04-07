@@ -30,7 +30,7 @@
     {% endif %}
 
     <div class="row">
-        {% if 'core_admin' in user.roles %}
+        {% if "core_user" in user.admin_views %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='user',
                                          aclass="panel-warning", anid="adminshowuser-box") %}
@@ -44,7 +44,7 @@
                         </span>
                     </div>
                 </form>
-                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                <script nonce="{{ csp_nonce }}">
                     var $i = $('#input-showuser-id');
                     $i.cdedbSearchPerson('{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
                                          true, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}");
