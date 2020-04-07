@@ -15,7 +15,7 @@
                         gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
                 {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), gettext("Log"),
-                             aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'ml_ml_log')) }}
+                             aclass="list-group-item", icon="far fa-list-alt", active=(sidenav_active == 'ml_ml_log')) }}
             {% endif %}
         </div>
 {% endmacro %}
@@ -49,7 +49,7 @@
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                         icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
-                {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="list-alt", aclass="list-group-item",
+                {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="far fa-list-alt", aclass="list-group-item",
                         active=(sidenav_active == 'ml_log')) }}
             {% else %}
                 {{ util.href(cdedblink("ml/index"), gettext("Overview"), icon="caret-right", aclass="list-group-item",

@@ -35,9 +35,9 @@
             {% endif %}
             {% if is_admin %}
                 {{ util.href(cdedblink("core/view_log"), gettext("Account Log"), aclass="list-group-item",
-                        icon="list-alt", active=(sidenav_active=='core_log')) }}
+                        icon="far fa-list-alt", active=(sidenav_active=='core_log')) }}
                 {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), aclass="list-group-item",
-                        icon="list-alt", active=(sidenav_active=='core_change_log')) }}
+                        icon="far fa-list-alt", active=(sidenav_active=='core_change_log')) }}
                 </div>
                 <div class="list-group tear-down">
                 {{ util.href(cdedblink("core/meta_info_form"), gettext("Metadata"), aclass="list-group-item",
