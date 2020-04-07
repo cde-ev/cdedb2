@@ -3574,16 +3574,17 @@ class EventBackend(AbstractBackend):
                 del field['id']
             export_event['fields'] = new_fields
             new_fee_modifiers = {
-                mod['modifier_name']: mod
+                mod['modifier_name'] + str(mod['part_id']): mod
                 for mod in export_event['fee_modifiers'].values()
             }
             for mod in new_fee_modifiers.values():
                 del mod['id']
                 del mod['modifier_name']
-                mod['part'] = event['parts'][mod['event_part']]['shortname']
+                mod['part'] = event['parts'][mod['part_id']]['shortname']
                 del mod['part_id']
                 mod['field'] = event['fields'][mod['field_id']]['field_name']
                 del mod['field_id']
+            export_event['fee_modifiers'] = new_fee_modifiers
             ret['event'] = export_event
             # personas
             persona_ids = tuple(reg['persona_id']
