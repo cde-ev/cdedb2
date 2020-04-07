@@ -62,9 +62,12 @@
               This is also used as arialabel, if you don't provide one explicitly.
    arialabel  A screenreader-only text to append to the icon.
               Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
-{% macro make_icon(icon, aclass="", title=None, arialabel=None) -%}
+{% macro make_icon(icon, fixed_width=True, aclass="", title=None, arialabel=None) -%}
     <span{{ dict(
-        class=("fas fa-" if " " not in icon else "") + icon + (" " if aclass else "") + aclass, title=title,
+        class=("fas fa-{}".format(icon) if " " not in icon else icon)
+            + (" fa-fw" if fixed_width else "")
+            + (" {}".format(aclass) if aclass else ""),
+        title=title,
     )|xmlattr }} aria-hidden="true"></span>
     {%- if arialabel %}<span class="sr-only">{{ arialabel }}</span>{% endif %}
 {%- endmacro%}
