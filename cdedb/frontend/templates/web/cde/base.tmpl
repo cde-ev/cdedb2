@@ -32,9 +32,9 @@
                             icon="euro-sign", active=(sidenav_active=='cde_transfers')) }}
                     {{ util.href(cdedblink("cde/show_semester"), gettext("Semester Management"), aclass="list-group-item",
                             icon="hourglass-half", active=(sidenav_active=='cde_semester')) }}
-                    {{ util.href(cdedblink("cde/view_cde_log"), gettext("CdE Log"), aclass="list-group-item", icon="list-alt",
+                    {{ util.href(cdedblink("cde/view_cde_log"), gettext("CdE Log"), aclass="list-group-item", icon=far fa-list-alt",
                             active=(sidenav_active=='cde_log')) }}
-                    {{ util.href(cdedblink("cde/view_finance_log"), gettext("Finance Log"), aclass="list-group-item", icon="list-alt",
+                    {{ util.href(cdedblink("cde/view_finance_log"), gettext("Finance Log"), aclass="list-group-item", icon=far fa-list-alt",
                             active=(sidenav_active=='cde_finance_log')) }}
                 {% endif %}
             </div>
@@ -47,7 +47,7 @@
                 {% if is_admin %}
                     {{ util.href(cdedblink("cde/institution_summary"), gettext("Manage Institutions"), icon="briefcase",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
-                    {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="list-alt",
+                    {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon=far fa-list-alt",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
                     </div>
                     <div class="list-group tear-down">
