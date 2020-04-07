@@ -2747,18 +2747,21 @@
     ],
     "event.fee_modifiers": [
         {
+            "id": 1,
             "amount": "-5.00",
             "field_id": 7,
             "modifier_name": "is_child",
             "part_id": 1
         },
         {
+            "id": 2,
             "amount": "-12.00",
             "field_id": 7,
             "modifier_name": "is_child",
             "part_id": 2
         },
         {
+            "id": 3,
             "amount": "-19.00",
             "field_id": 7,
             "modifier_name": "is_child",
