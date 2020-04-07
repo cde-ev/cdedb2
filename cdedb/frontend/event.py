@@ -2917,34 +2917,41 @@ class EventFrontend(AbstractUserFrontend):
         return reg_titles, reg_choices, course_titles, course_choices, lodgement_titles
 
     @access("event")
-    def register_form(self, rs, event_id):
+    @REQUESTdata(("preview", "bool"))
+    def register_form(self, rs, event_id, preview=False):
         """Render form."""
         event = rs.ambience['event']
         tracks = event['tracks']
         registrations = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
-        if rs.user.persona_id in registrations.values():
-            rs.notify("info", n_("Already registered."))
-            return self.redirect(rs, "event/registration_status")
-        if not event['is_open']:
-            rs.notify("warning", n_("Registration not open."))
-            return self.redirect(rs, "event/show_event")
-        if self.is_locked(event):
-            rs.notify("warning", n_("Event locked."))
-            return self.redirect(rs, "event/show_event")
-        if rs.ambience['event']['is_archived']:
-            rs.notify("error", n_("Event is already archived."))
-            return self.redirect(rs, "event/show_event")
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'],
             event['begin'])
         minor_form_present = (
                 self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
-        if not minor_form_present and age.is_minor():
-            rs.notify("info", n_("No minors may register. "
-                                 "Please contact the Orgateam."))
-            return self.redirect(rs, "event/show_event")
+        rs.ignore_validation_errors()
+        if not preview:
+            if rs.user.persona_id in registrations.values():
+                rs.notify("info", n_("Already registered."))
+                return self.redirect(rs, "event/registration_status")
+            if not event['is_open']:
+                rs.notify("warning", n_("Registration not open."))
+                return self.redirect(rs, "event/show_event")
+            if self.is_locked(event):
+                rs.notify("warning", n_("Event locked."))
+                return self.redirect(rs, "event/show_event")
+            if rs.ambience['event']['is_archived']:
+                rs.notify("error", n_("Event is already archived."))
+                return self.redirect(rs, "event/show_event")
+            if not minor_form_present and age.is_minor():
+                rs.notify("info", n_("No minors may register. "
+                                     "Please contact the Orgateam."))
+                return self.redirect(rs, "event/show_event")
+        else:
+            if event_id not in rs.user.orga and not self.is_admin(rs):
+                raise werkzeug.exceptions.Forbidden(
+                    n_("Must be Orga to use preview."))
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
@@ -2964,7 +2971,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "register", {
             'persona': persona, 'age': age, 'courses': courses,
             'course_choices': course_choices, 'semester_fee': semester_fee,
-            'questionnaire': questionnaire})
+            'questionnaire': questionnaire, 'preview': preview})
 
     @staticmethod
     def process_registration_input(rs, event, courses, questionnaire, parts=None):

@@ -3,9 +3,15 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] %}
-    	Registration for {{ title }}
-    {% endtrans %}
+    {% if preview %}
+        {% trans title=ambience['event']['title'] %}
+            Registration Preview for {{ title }}
+        {% endtrans %}
+    {% else %}
+        {% trans title=ambience['event']['title'] %}
+            Registration for {{ title }}
+        {% endtrans %}
+    {% endif %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -15,7 +21,11 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans %}Registration{% endtrans %}
+        {% if preview %}
+            {% trans %}Registration Preview{% endtrans %}
+        {% else %}
+            {% trans %}Registration{% endtrans %}
+        {% endif %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -36,8 +46,10 @@
         {% endif %}
     </p>
 
+    {% if not preview %}
     <form action="{{ cdedblink('event/register') }}" method="POST" id="registerform" class="form-horizontal">
         {{ util.anti_csrf_token('event/register') }}
+    {% endif %}
 
         {% if ambience['event']['registration_text'] %}
             {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-sign", aclass="panel-info") %}
@@ -198,7 +210,9 @@
                 </p>
             {% endif %}
         {% endcall %}
+        {% if not preview %}
         {{ util.form_input_submit(value=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
+        {% endif %}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         var $form = $('#registerform');
