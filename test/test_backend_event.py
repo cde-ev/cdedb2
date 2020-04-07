@@ -6,6 +6,7 @@ import datetime
 import decimal
 import json
 import pytz
+import psycopg2
 
 from test.common import (
     BackendTest, as_users, USER_DICT, nearly_now, json_keys_to_int)
@@ -490,8 +491,8 @@ class TestEventBackend(BackendTest):
             self.event.set_questionnaire(self.key, 1, questionnaire)
         self.assertIn("Must not duplicate field. (field_id)", cm.exception.args)
 
-        old_event = self.event.get_event(self.key, 2)
-        self.event.set_questionnaire(self.key, old_event['id'], [])
+        old_event = self.event.get_event(self.key, 1)
+        self.event.set_questionnaire(self.key, old_event['id'], None)
         data = {
             'id': old_event['id'],
             'fee_modifiers':
@@ -506,13 +507,13 @@ class TestEventBackend(BackendTest):
             'id': old_event['id'],
             'fee_modifiers': {
                 -1: {
-                    'field_id': list(old_event['fields'])[0],
+                    'field_id': 7,
                     'modifier_name': "is_child",
                     'amount': decimal.Decimal("-8.00"),
                     'part_id': list(old_event['parts'])[0],
                 },
                 -2: {
-                    'field_id': list(old_event['fields'])[0],
+                    'field_id': 7,
                     'modifier_name': "is_child2",
                     'amount': decimal.Decimal("-7.00"),
                     'part_id': list(old_event['parts'])[0],
@@ -1287,14 +1288,13 @@ class TestEventBackend(BackendTest):
         expectation = {
             const.QuestionnaireUsages.registration:
                 [
-
-                    {'field_id': 1,
-                     'default_value': 'True',
-                     'info': 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.',
+                    {'field_id': 7,
+                     'default_value': None,
+                     'info': None,
                      'pos': 0,
-                     'readonly': False,
+                     'readonly': None,
                      'input_size': None,
-                     'title': 'Bälle',
+                     'title': 'Ich bin unter 13 Jahre alt.',
                      'kind': const.QuestionnaireUsages.registration,
                      },
                 ],
@@ -1309,10 +1309,19 @@ class TestEventBackend(BackendTest):
                      'title': 'Unterüberschrift',
                      'kind': const.QuestionnaireUsages.questionnaire,
                      },
+                    {'field_id': 1,
+                     'default_value': 'True',
+                     'info': 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.',
+                     'pos': 1,
+                     'readonly': False,
+                     'input_size': None,
+                     'title': 'Bälle',
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
                     {'field_id': None,
                      'default_value': None,
                      'info': 'nur etwas Text',
-                     'pos': 1,
+                     'pos': 2,
                      'readonly': None,
                      'input_size': None,
                      'title': None,
@@ -1321,7 +1330,7 @@ class TestEventBackend(BackendTest):
                     {'field_id': None,
                      'default_value': None,
                      'info': None,
-                     'pos': 2,
+                     'pos': 3,
                      'readonly': None,
                      'input_size': None,
                      'title': 'Weitere Überschrift',
@@ -1330,7 +1339,7 @@ class TestEventBackend(BackendTest):
                     {'field_id': 2,
                      'default_value': 'etc',
                      'info': None,
-                     'pos': 3,
+                     'pos': 4,
                      'readonly': False,
                      'input_size': None,
                      'title': 'Vehikel',
@@ -1339,7 +1348,7 @@ class TestEventBackend(BackendTest):
                     {'field_id': 3,
                      'default_value': None,
                      'info': None,
-                     'pos': 4,
+                     'pos': 5,
                      'readonly': False,
                      'input_size': 3,
                      'title': 'Hauswunsch',
@@ -1357,7 +1366,7 @@ class TestEventBackend(BackendTest):
             'id': event_id,
             'fields': {
                 -1: {
-                    'field_name': 'is_child',
+                    'field_name': 'solidarity',
                     'kind': const.FieldDatatypes.bool,
                     'association': const.FieldAssociations.registration,
                     'entries': None,
@@ -1412,10 +1421,10 @@ class TestEventBackend(BackendTest):
                 {
                     'field_id': 1001,
                     'default_value': None,
-                    'info': "Fall Du unter 13 Jahre alt bist, bezahlst Du weniger.",
+                    'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige Akademien zu unterstützen.",
                     'readonly': None,
                     'input_size': None,
-                    'title': "Ich bin Kind.",
+                    'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
                 },
             ],
         }
@@ -2128,7 +2137,21 @@ class TestEventBackend(BackendTest):
                                  'shortname': 'TestAka',
                                  'title': 'Große Testakademie 2222',
                                  'use_questionnaire': False}},
-            'event.fee_modifiers': {},
+            'event.fee_modifiers': {1: {'amount': decimal.Decimal("-5.00"),
+                                        'field_id': 7,
+                                        'id': 1,
+                                        'modifier_name': 'is_child',
+                                        'part_id': 1},
+                                    2: {'amount': decimal.Decimal("-12.00"),
+                                        'field_id': 7,
+                                        'id': 2,
+                                        'modifier_name': 'is_child',
+                                        'part_id': 2},
+                                    3: {'amount': decimal.Decimal("-19.00"),
+                                        'field_id': 7,
+                                        'id': 3,
+                                        'modifier_name': 'is_child',
+                                        'part_id': 3}},
             'event.field_definitions': {1: {'association': 1,
                                             'entries': None,
                                             'event_id': 1,
@@ -2170,7 +2193,15 @@ class TestEventBackend(BackendTest):
                                             'event_id': 1,
                                             'field_name': 'contamination',
                                             'id': 6,
-                                            'kind': 1}},
+                                            'kind': 1},
+                                        7: {'association': const.FieldAssociations.registration,
+                                            'entries': None,
+                                            'event_id': 1,
+                                            'field_name': 'is_child',
+                                            'id': 7,
+                                            'kind': const.FieldDatatypes.bool,
+                                            },
+                                        },
             'event.lodgement_groups': {1: {'id': 1,
                                            'event_id': 1,
                                            'moniker': 'Haupthaus'},
@@ -2239,8 +2270,18 @@ class TestEventBackend(BackendTest):
                               'submitted_by': 9}},
             'event.orgas': {1: {'event_id': 1, 'id': 1, 'persona_id': 7}},
             'event.questionnaire_rows': {1: {'event_id': 1,
-                                             'field_id': None,
+                                             'field_id': 7,
                                              'id': 1,
+                                             'info': None,
+                                             'input_size': None,
+                                             'pos': 0,
+                                             'readonly': None,
+                                             'title': 'Ich bin unter 13 Jahre alt.',
+                                             'kind': const.QuestionnaireUsages.registration,
+                                             },
+                                         2: {'event_id': 1,
+                                             'field_id': None,
+                                             'id': 2,
                                              'info': 'mit Text darunter',
                                              'input_size': None,
                                              'pos': 0,
@@ -2248,53 +2289,53 @@ class TestEventBackend(BackendTest):
                                              'title': 'Unterüberschrift',
                                              'kind': const.QuestionnaireUsages.questionnaire,
                                              },
-                                         2: {'event_id': 1,
+                                         3: {'event_id': 1,
                                              'field_id': 1,
-                                             'id': 2,
+                                             'id': 3,
                                              'info': 'Du bringst genug Bälle mit um einen '
                                                      'ganzen Kurs abzuwerfen.',
                                              'input_size': None,
-                                             'pos': 0,
+                                             'pos': 1,
                                              'readonly': False,
                                              'title': 'Bälle',
-                                             'kind': const.QuestionnaireUsages.registration,
-                                             },
-                                         3: {'event_id': 1,
-                                             'field_id': None,
-                                             'id': 3,
-                                             'info': 'nur etwas Text',
-                                             'input_size': None,
-                                             'pos': 1,
-                                             'readonly': None,
-                                             'title': None,
                                              'kind': const.QuestionnaireUsages.questionnaire,
                                              },
                                          4: {'event_id': 1,
                                              'field_id': None,
                                              'id': 4,
-                                             'info': None,
+                                             'info': 'nur etwas Text',
                                              'input_size': None,
                                              'pos': 2,
                                              'readonly': None,
-                                             'title': 'Weitere Überschrift',
+                                             'title': None,
                                              'kind': const.QuestionnaireUsages.questionnaire,
                                              },
                                          5: {'event_id': 1,
-                                             'field_id': 2,
+                                             'field_id': None,
                                              'id': 5,
                                              'info': None,
                                              'input_size': None,
                                              'pos': 3,
+                                             'readonly': None,
+                                             'title': 'Weitere Überschrift',
+                                             'kind': const.QuestionnaireUsages.questionnaire,
+                                             },
+                                         6: {'event_id': 1,
+                                             'field_id': 2,
+                                             'id': 6,
+                                             'info': None,
+                                             'input_size': None,
+                                             'pos': 4,
                                              'readonly': False,
                                              'title': 'Vehikel',
                                              'kind': const.QuestionnaireUsages.questionnaire,
                                              },
-                                         6: {'event_id': 1,
+                                         7: {'event_id': 1,
                                              'field_id': 3,
-                                             'id': 6,
+                                             'id': 7,
                                              'info': None,
                                              'input_size': 3,
-                                             'pos': 4,
+                                             'pos': 5,
                                              'readonly': False,
                                              'title': 'Hauswunsch',
                                              'kind': const.QuestionnaireUsages.questionnaire,
@@ -2739,7 +2780,7 @@ class TestEventBackend(BackendTest):
                 'association': const.FieldAssociations.registration,
                 'entries': None,
                 'event_id': 1,
-                'field_name': "is_child",
+                'field_name': "solidarity",
                 'id': 11001,
                 'kind': const.FieldDatatypes.bool,
             }
@@ -2760,8 +2801,8 @@ class TestEventBackend(BackendTest):
             'id': 13000,
             'part_id': 4000,
             'field_id': 11001,
-            'modifier_name': 'is_child',
-            'amount': decimal.Decimal("-12.50"),
+            'modifier_name': 'solidarity',
+            'amount': decimal.Decimal("+7.50"),
         }
         ## Note that the changes above are not entirely consistent/complete (as
         ## in some stuff is missing and another part may throw an error if we
@@ -2937,16 +2978,16 @@ class TestEventBackend(BackendTest):
                 'association': const.FieldAssociations.registration,
                 'entries': None,
                 'event_id': 1,
-                'field_name': 'is_child',
+                'field_name': 'solidarity',
                 'id': 1002,
                 'kind': const.FieldDatatypes.bool,
             },
         })
         stored_data['event.fee_modifiers'][1001] = {
             'id': 1001,
-            'modifier_name': "is_child",
+            'modifier_name': "solidarity",
             'field_id': 1002,
-            'amount': decimal.Decimal("-12.50"),
+            'amount': decimal.Decimal("7.50"),
             'part_id': 1001,
         }
         stored_data['event.questionnaire_rows'][1001] = {
@@ -3034,7 +3075,15 @@ class TestEventBackend(BackendTest):
                             'title': 'Backup-Kurs'}},
             'event': {'course_room_field': 'transportation',
                       'description': 'Everybody come!',
-                      'fee_modifiers': {},
+                      'fee_modifiers': {'is_child1': {'amount': decimal.Decimal("-5.00"),
+                                                      'field': 'is_child',
+                                                      'part': 'Wu'},
+                                        'is_child2': {'amount': decimal.Decimal("-12.00"),
+                                                      'field': 'is_child',
+                                                      'part': '1.H.'},
+                                        'is_child3': {'amount': decimal.Decimal("-19.00"),
+                                                      'field': 'is_child',
+                                                      'part': '2.H.'},},
                       'fields': {'brings_balls': {'association': 1,
                                                   'entries': None,
                                                   'kind': 2},
@@ -3047,6 +3096,9 @@ class TestEventBackend(BackendTest):
                                                                ['low', 'some radiation'],
                                                                ['none', 'no radiation']],
                                                    'kind': 1},
+                                 'is_child': {'association': 1,
+                                              'entries': None,
+                                              'kind': 2},
                                  'lodge': {'association': 1,
                                            'entries': None,
                                            'kind': 1},
@@ -3659,36 +3711,119 @@ class TestEventBackend(BackendTest):
         self.assertEqual(reg['parts'][3]['status'],
                          const.RegistrationPartStati.rejected)
 
-    @as_users("annika")
-    def test_fee_modifiers(self, user):
+    @as_users("garcia")
+    def test_uniqueness(self, user):
         event_id = 1
-        field_name = 'is_child'
+        unique_name = 'unique_name'
         data = {
             'id': event_id,
             'fields': {
                 -1: {
-                    'field_name': field_name,
                     'association': const.FieldAssociations.registration,
+                    'field_name': unique_name,
+                    'kind': const.FieldDatatypes.bool,
+                    'entries': None,
+                },
+            },
+        }
+        self.event.set_event(self.key, data)
+        # TODO throw an actual backend error here.
+        with self.assertRaises(psycopg2.IntegrityError):
+            self.event.set_event(self.key, data)
+        data = {
+            'id': event_id,
+            'fields': {
+                -1: {
+                    'association': const.FieldAssociations.registration,
+                    'field_name': unique_name + "2",
+                    'kind': const.FieldDatatypes.bool,
+                    'entries': None,
+                },
+            },
+        }
+        self.event.set_event(self.key, data)
+
+        data = {
+            'id': event_id,
+            'fee_modifiers': {
+                -1: {
+                    'amount': decimal.Decimal("1.00"),
+                    'field_id': 1001,
+                    'modifier_name': unique_name,
+                    'part_id': 1,
+                },
+            },
+        }
+        self.event.set_event(self.key, data)
+        data = {
+            'id': event_id,
+            'fee_modifiers': {
+                -1: {
+                    'amount': decimal.Decimal("1.00"),
+                    'field_id': 1001,
+                    'modifier_name': unique_name + "2",
+                    'part_id': 1,
+                },
+            },
+        }
+        # TODO throw an actual backend error here.
+        with self.assertRaises(psycopg2.IntegrityError):
+            self.event.set_event(self.key, data)
+        data = {
+            'id': event_id,
+            'fee_modifiers': {
+                -1: {
+                    'amount': decimal.Decimal("1.00"),
+                    'field_id': 1003,
+                    'modifier_name': unique_name,
+                    'part_id': 1,
+                },
+            },
+        }
+        # TODO throw an actual backend error here.
+        with self.assertRaises(psycopg2.IntegrityError):
+            self.event.set_event(self.key, data)
+        data = {
+            'id': event_id,
+            'fee_modifiers': {
+                -1: {
+                    'amount': decimal.Decimal("1.00"),
+                    'field_id': 1003,
+                    'modifier_name': unique_name + "2",
+                    'part_id': 1,
+                },
+            },
+        }
+        self.event.set_event(self.key, data)
+
+    @as_users("annika")
+    def test_fee_modifiers(self, user):
+        event_id = 1
+        field_name = 'is_child'
+        event = self.event.get_event(self.key, event_id)
+        self.assertEqual(event['fields'][7]['field_name'], field_name)
+        data = {
+            'id': event_id,
+            'fields': {
+                -1: {
+                    'association': const.FieldAssociations.registration,
+                    'field_name': 'solidarity',
                     'kind': const.FieldDatatypes.bool,
                     'entries': None,
                 }
             }
         }
-        self.assertTrue(self.event.set_event(self.key, data))
-        event = self.event.get_event(self.key, event_id)
-        new_field_id = None,
-        for field in event['fields'].values():
-            if field['field_name'] == field_name:
-                new_field_id = field['id']
+        self.event.set_event(self.key, data)
         field_links = ((2, ValueError, "Fee modifier linked to non-bool field."),
                        (5, ValueError, "Fee modifier linked to non-registration field."),
-                       (new_field_id, None, None))
+                       (7, psycopg2.IntegrityError, None),
+                       (1001, None, None))
         for field_id, error, error_msg in field_links:
             data = {
                 'id': event_id,
                 'fee_modifiers': {
                     -1: {
-                        'modifier_name': 'child',
+                        'modifier_name': 'solidarity',
                         'amount': decimal.Decimal("-12.50"),
                         'field_id': field_id,
                         'part_id': 2,
@@ -3698,7 +3833,8 @@ class TestEventBackend(BackendTest):
             if error:
                 with self.assertRaises(error) as cm:
                     self.event.set_event(self.key, data)
-                self.assertEqual(error_msg, cm.exception.args[0])
+                if error_msg is not None:
+                    self.assertEqual(error_msg, cm.exception.args[0])
             else:
                 self.assertTrue(self.event.set_event(self.key, data))
         reg_id = 2
@@ -3712,7 +3848,7 @@ class TestEventBackend(BackendTest):
         }
         self.assertTrue(self.event.set_registration(self.key, data))
         self.assertEqual(self.event.calculate_fee(self.key, reg_id),
-                         decimal.Decimal("576.99"))
+                         decimal.Decimal("553.49"))
 
     @as_users("annika")
     def test_log(self, user):

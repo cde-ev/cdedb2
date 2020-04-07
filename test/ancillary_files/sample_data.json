@@ -2738,7 +2738,7 @@
         },
         {
             "id": 7,
-            "event_id": 2,
+            "event_id": 1,
             "field_name": "is_child",
             "kind": 2,
             "association": 1,
@@ -2747,13 +2747,36 @@
     ],
     "event.fee_modifiers": [
         {
-            "amount": "-7.00",
+            "amount": "-5.00",
             "field_id": 7,
             "modifier_name": "is_child",
-            "part_id": 4
+            "part_id": 1
+        },
+        {
+            "amount": "-12.00",
+            "field_id": 7,
+            "modifier_name": "is_child",
+            "part_id": 2
+        },
+        {
+            "amount": "-19.00",
+            "field_id": 7,
+            "modifier_name": "is_child",
+            "part_id": 3
         }
     ],
     "event.questionnaire_rows": [
+        {
+            "event_id": 1,
+            "field_id": 7,
+            "pos": 0,
+            "title": "Ich bin unter 13 Jahre alt.",
+            "info": null,
+            "input_size": null,
+            "readonly": null,
+            "default_value": null,
+            "kind": 1
+        },
         {
             "event_id": 1,
             "field_id": null,
@@ -2819,17 +2842,6 @@
             "readonly": false,
             "default_value": null,
             "kind": 2
-        },
-        {
-            "event_id": 2,
-            "field_id": 7,
-            "pos": 1,
-            "title": "Ich bin unter 13 Jahre alt.",
-            "info": null,
-            "input_size": null,
-            "readonly": false,
-            "default_value": false,
-            "kind": 1
         }
     ],
     "event.courses": [

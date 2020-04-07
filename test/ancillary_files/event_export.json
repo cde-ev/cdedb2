@@ -1,68 +1,79 @@
 {
     "event.questionnaire_rows": {
-        "2": {
+        "1": {
+            "readonly": null,
+            "event_id": 1,
+            "info": null,
+            "pos": 0,
+            "input_size": null,
+            "field_id": 7,
+            "id": 1,
+            "title": "Ich bin unter 13 Jahre alt.",
+            "kind": 1
+        },
+        "3": {
             "readonly": false,
             "event_id": 1,
             "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
             "pos": 1,
             "input_size": null,
             "field_id": 1,
-            "id": 2,
+            "id": 3,
             "title": "B\u00e4lle",
             "kind": 2
         },
-        "6": {
+        "7": {
             "readonly": false,
             "event_id": 1,
             "info": null,
             "pos": 5,
             "input_size": 3,
             "field_id": 3,
-            "id": 6,
+            "id": 7,
             "title": "Hauswunsch",
             "kind": 2
         },
-        "4": {
+        "5": {
             "readonly": null,
             "event_id": 1,
             "info": null,
             "pos": 3,
             "input_size": null,
             "field_id": null,
-            "id": 4,
+            "id": 5,
             "title": "Weitere \u00dcberschrift",
             "kind": 2
         },
-        "1": {
+        "2": {
             "readonly": null,
             "event_id": 1,
             "info": "mit Text darunter",
             "pos": 0,
             "input_size": null,
             "field_id": null,
-            "id": 1,
+            "id": 2,
             "title": "Unter\u00fcberschrift",
             "kind": 2
         },
-        "3": {
+        "4": {
             "readonly": null,
             "event_id": 1,
             "info": "nur etwas Text",
             "pos": 2,
             "input_size": null,
             "field_id": null,
-            "id": 3,
+            "id": 4,
             "title": null,
             "kind": 2
         },
-        "5": {
+        "6": {
             "readonly": false,
             "event_id": 1,
             "info": null,
             "pos": 4,
             "input_size": null,
             "field_id": 2,
-            "id": 5,
+            "id": 6,
             "title": "Vehikel",
             "kind": 2
         }
@@ -229,7 +240,29 @@
             "persona_id": 100,
             "real_persona_id": null}
     },
-    "event.fee_modifiers": {},
+    "event.fee_modifiers": {
+        "1": {
+            "amount": "-5.00",
+            "field_id": 7,
+            "id": 1,
+            "modifier_name": "is_child",
+            "part_id": 1
+        },
+        "2": {
+            "amount": "-12.00",
+            "field_id": 7,
+            "id": 2,
+            "modifier_name": "is_child",
+            "part_id": 2
+        },
+        "3": {
+            "amount": "-19.00",
+            "field_id": 7,
+            "id": 3,
+            "modifier_name": "is_child",
+            "part_id": 3
+        }
+    },
     "event.field_definitions": {
         "2": {
             "event_id": 1,
@@ -308,6 +341,14 @@
             "id": 5,
             "field_name": "room",
             "association": 2
+        },
+        "7": {
+            "event_id": 1,
+            "entries": null,
+            "kind": 2,
+            "id": 7,
+            "field_name": "is_child",
+            "association": 1
         }
     },
     "CDEDB_EXPORT_EVENT_VERSION": 9,

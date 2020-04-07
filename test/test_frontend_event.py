@@ -653,7 +653,7 @@ class TestEventFrontend(FrontendTest):
         # fields
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
-        self.assertNotIn('field_name_10', f.fields)
+        self.assertNotIn('field_name_8', f.fields)
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
         f['association_-1'] = const.FieldAssociations.registration.value
@@ -681,7 +681,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
-        self.assertNotIn('field_name_7', f.fields)
+        self.assertNotIn('field_name_8', f.fields)
 
     @as_users("garcia")
     def test_event_fields_unique_name(self, user):
@@ -696,7 +696,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Feldname nicht eindeutig.")
         f = self.response.forms['fieldsummaryform']
         self.assertIn('field_name_1', f.fields)
-        self.assertNotIn('field_name_7', f.fields)
+        self.assertNotIn('field_name_8', f.fields)
 
         f = self.response.forms['fieldsummaryform']
         # If the form would be valid in the first turn, we would need the
@@ -1229,28 +1229,33 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
 
     @as_users("anton", "berta")
-    @prepsql("UPDATE event.events SET is_visible = True, "
-             "registration_start = now() WHERE id = 2")
+    @prepsql(
+        "DELETE FROM event.course_choices;"
+        "DELETE FROM event.registration_tracks;"
+        "DELETE FROM event.registration_parts;"
+        "DELETE FROM event.registrations;"
+    )
     def test_register_with_fee_modifier(self, user):
         self.traverse({'description': "Veranstaltungen"},
-                      {'description': "CdE-Party 2050"},
+                      {'description': "Große Testakademie 2222"},
                       {'description': "Anmelden"})
-        self.assertTitle("Anmeldung für CdE-Party 2050")
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
         self.assertPresence("Ich bin unter 13 Jahre alt.")
         f = self.response.forms["registerform"]
         self.assertFalse(f['is_child'].checked)
         f['is_child'].checked = True
+        f['parts'] = [1]
         self.submit(f)
-        self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
-        self.assertPresence("Betrag 8,00 €")
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Betrag 5,50 €")
         self.traverse({'description': "Ändern"})
-        self.assertTitle("Anmeldung für CdE-Party 2050 ändern")
+        self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms["amendregistrationform"]
-        self.assertTrue(f['is_child'].checked == True)
+        self.assertTrue(f['is_child'].checked is True)
         f['is_child'].checked = False
         self.submit(f)
-        self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
-        self.assertPresence("Betrag 15,00 €")
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Betrag 10,50 €")
 
     @as_users("garcia")
     def test_questionnaire(self, user):
@@ -1264,8 +1269,6 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
-        self.assertEqual(True, f['brings_balls'].checked)
-        f['brings_balls'].checked = False
         self.assertEqual("car", f['transportation'].value)
         f['transportation'] = "etc"
         self.assertEqual("", f['lodge'].value)
@@ -1274,7 +1277,6 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
-        self.assertEqual(False, f['brings_balls'].checked)
         self.assertEqual("etc", f['transportation'].value)
         self.assertEqual("Bitte in ruhiger Lage.\nEcht.", f['lodge'].value)
 
@@ -2394,34 +2396,34 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/questionnaire/config'})
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['configurequestionnaireform']
-        self.assertEqual("3", f['field_id_4'].value)
-        self.assertEqual("3", f['input_size_4'].value)
-        f['input_size_4'] = 3
-        self.assertEqual("2", f['field_id_3'].value)
-        f['field_id_3'] = ""
-        self.assertEqual("Weitere Überschrift", f['title_2'].value)
-        f['title_2'] = "Immernoch Überschrift"
+        self.assertEqual("3", f['field_id_5'].value)
+        self.assertEqual("3", f['input_size_5'].value)
+        f['input_size_5'] = 3
+        self.assertEqual("2", f['field_id_4'].value)
+        f['field_id_4'] = ""
+        self.assertEqual("Weitere Überschrift", f['title_3'].value)
+        f['title_3'] = "Immernoch Überschrift"
         self.assertEqual("mit Text darunter", f['info_0'].value)
         f['info_0'] = "mehr Text darunter\nviel mehr"
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['configurequestionnaireform']
-        self.assertEqual("3", f['field_id_4'].value)
-        self.assertEqual("3", f['input_size_4'].value)
-        self.assertEqual("Hauswunsch", f['title_4'].value)
-        self.assertEqual("", f['field_id_3'].value)
-        self.assertEqual("Immernoch Überschrift", f['title_2'].value)
+        self.assertEqual("3", f['field_id_5'].value)
+        self.assertEqual("3", f['input_size_5'].value)
+        self.assertEqual("Hauswunsch", f['title_5'].value)
+        self.assertEqual("", f['field_id_4'].value)
+        self.assertEqual("Immernoch Überschrift", f['title_3'].value)
         self.assertEqual("mehr Text darunter\nviel mehr", f['info_0'].value)
-        f['delete_3'].checked = True
+        f['delete_4'].checked = True
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['configurequestionnaireform']
-        self.assertNotIn("field_id_4", f.fields)
+        self.assertNotIn("field_id_5", f.fields)
         self.assertEqual("Unterüberschrift", f['title_0'].value)
-        self.assertEqual("nur etwas Text", f['info_1'].value)
-        self.assertEqual("3", f['field_id_3'].value)
-        self.assertEqual("3", f['input_size_3'].value)
-        self.assertEqual("Hauswunsch", f['title_3'].value)
+        self.assertEqual("nur etwas Text", f['info_2'].value)
+        self.assertEqual("3", f['field_id_4'].value)
+        self.assertEqual("3", f['input_size_4'].value)
+        self.assertEqual("Hauswunsch", f['title_4'].value)
         f['create_-1'].checked = True
         f['field_id_-1'] = 4
         f['title_-1'] = "Input"
@@ -2430,9 +2432,9 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['configurequestionnaireform']
-        self.assertIn("field_id_4", f.fields)
-        self.assertEqual("4", f['field_id_4'].value)
-        self.assertEqual("Input", f['title_4'].value)
+        self.assertIn("field_id_5", f.fields)
+        self.assertEqual("4", f['field_id_5'].value)
+        self.assertEqual("Input", f['title_5'].value)
 
     @as_users("garcia")
     def test_questionnaire_reorder(self, user):
@@ -2766,7 +2768,15 @@ etc;anything else""", f['entries_2'].value)
                               'title': 'Backup-Kurs'}},
             'event': {'course_room_field': 'transportation',
                       'description': 'Everybody come!',
-                      'fee_modifiers': {},
+                      'fee_modifiers': {'is_child1': {'amount': '-5.00',
+                                                      'field': 'is_child',
+                                                      'part': 'Wu'},
+                                        'is_child2': {'amount': '-12.00',
+                                                      'field': 'is_child',
+                                                      'part': '1.H.'},
+                                        'is_child3': {'amount': '-19.00',
+                                                      'field': 'is_child',
+                                                      'part': '2.H.'}},
                       'fields': {'brings_balls': {'association': 1,
                                                   'entries': None,
                                                   'kind': 2},
@@ -2779,6 +2789,9 @@ etc;anything else""", f['entries_2'].value)
                                                                ['low', 'some radiation'],
                                                                ['none', 'no radiation']],
                                                    'kind': 1},
+                                 'is_child': {'association': 1,
+                                              'entries': None,
+                                              'kind': 2},
                                  'lodge': {'association': 1,
                                            'entries': None,
                                            'kind': 1},
