@@ -15562,6 +15562,15 @@ msgstr "Pro-Stimmen"
 msgid "Contra-Votes"
 msgstr "Kontra-Stimmen"
 
+#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:32
+#, python-format
+msgid ""
+"The following candidates have less votes than the \"Against all Candidates"
+"\" (%(abm)s) choice."
+msgstr ""
+"Die folgenden Kandidaten haben weniger Stimmen, als die \"Gegen alle "
+"Kandidaten\"-Option (%(abm)s)."
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 

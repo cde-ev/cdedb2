@@ -6,11 +6,11 @@
                 <th class="col-md-10">
                     {% trans %}Candidates{% endtrans %}
                 </th>
-                <th class="col-md-2">
-                    {% trans %}Pro-Votes{% endtrans %}
+                <th class="col-md-1">
+                    {{ util.make_icon('plus', title=gettext("Pro-Votes")) }}
                 </th>
-                <th class="col-md-2">
-                    {% trans %}Contra-Votes{% endtrans %}
+                <th class="col-md-1">
+                    {{ util.make_icon('minus', title=gettext("Contra-Votes")) }}
                 </th>
             </tr>
         </thead>
@@ -22,11 +22,9 @@
                 {% for candidate_id in candidate_ids %}
                     {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
                     {% set first_candidate = loop.first %}
-                    <tr>
+                    <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
                         <td>
-                            {% if loop.first %}
-                                {{ count.value }}
-                            {% endif %}
+                            {{ count.value }}.
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['description'] }}
@@ -59,22 +57,33 @@
         {% endif %}
 
         {% if ballot['use_bar'] %}
-            <tr>
+            <tr
+                {% for level in result['counts'] %}
+                    {# it is possible that a candidate is equal to bar. This candidate will be in the winner section.
+                       So, if bar is a winner and not the only winner, we must not print a new level number.
+                       This has to check nonetherless for bar not in level[winner] and not in level[looser], think
+                       of a vote without losers.#}
+                    {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length != 1
+                       or ASSEMBLY_BAR_MONIKER in level['loser'] and level['loser']|length != 1 %}
+                        class="no-upper-border"
+                    {% endif %}
+                {% endfor %}
+            >
                 <td>
                     {% for level in result['counts'] %}
                         {# it is possible that a candidate is equal to bar. This candidate will be in the winner section.
-                           So, if bar is a winner and not the only winner, we must not print a new level number #}
+                           So, if bar is a winner and not the only winner, we must not increase the level number #}
                         {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
                             {% set count.value = count.value + 1 %}
-                            {{ count.value }}
                         {% endif %}
                     {% endfor %}
+                    {{ count.value }}.
                 </td>
                 <td class="text-info">
                     {% if not short %}
                         {% if ballot['votes'] %}
-                            {% trans against_all=gettext("Against all Candidates") %}
-                                The following candidates have less votes than the {{ against_all }} choice.
+                            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                                The following candidates have less votes than the "Against all Candidates" ({{ abm }}) choice.
                             {% endtrans %}
                         {% else %}
                             {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
@@ -112,11 +121,9 @@
                 {% for candidate_id in candidate_ids %}
                     {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
                     {% set first_candidate = loop.first %}
-                    <tr>
+                    <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
                         <td>
-                            {% if loop.first %}
-                                {{ count.value }}
-                            {% endif %}
+                            {{ count.value }}.
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['description'] }}
@@ -153,9 +160,13 @@
 
 {% macro explain_result() %}
     {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
-    Alle Kandidaten ohne eigene Nummer sind auf dem gleichen Platz wie der darüber stehende Kandidat.
-    Die Pro und Kontra Stimmen gelten für alle Kandidaten mit gleicher Platzierung und beziehen sich
-    auf die nächste darunter stehende Platzierung, also "Option x gewinnt gegen Option y mit a pro und b gegen Stimmen".
+        <p>
+            Die Pro (a) und Kontra (b) Stimmen gelten für die jeweilige Platzierung (x) und beziehen sich relativ
+            auf die darunter liegende Platzierung (y).
+        </p>
+        <p>
+            Also: Option x gewinnt gegen Option y mit a Pro und b Kontra Stimmen.
+        </p>
     {% endcall %}
 {% endmacro %}
 
