@@ -28,8 +28,8 @@ import werkzeug.datastructures
 # The following imports are only for re-export. They are not used
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
-from cdedb.ml_subscription_aux import (
-    SubscriptionError, SubscriptionInfo, SubscriptionActions)
+from cdedb.ml_subscription_aux import (SubscriptionActions, SubscriptionError,
+                                       SubscriptionInfo)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -234,70 +234,6 @@ class User:
         self.admin_views = self.available_admin_views & set(enabled_views)
 
 
-def do_singularization(fun):
-    """Perform singularization on a function.
-
-    This is the companion to the @singularize decorator.
-    :type fun: callable
-    :param fun: function with ``fun.singularization_hint`` attribute
-    :rtype: callable
-    :returns: singularized function
-    """
-    hint = fun.singularization_hint
-
-    @functools.wraps(fun)
-    def new_fun(rs, *args, **kwargs):
-        if hint['singular_param_name'] in kwargs:
-            param = kwargs.pop(hint['singular_param_name'])
-            kwargs[hint['array_param_name']] = (param,)
-        else:
-            param = args[0]
-            args = ((param,),) + args[1:]
-        data = fun(rs, *args, **kwargs)
-        if hint['passthrough']:
-            return data
-        else:
-            # raises KeyError if the requested thing does not exist
-            return data[param]
-
-    new_fun.__name__ = hint['singular_function_name']
-    return new_fun
-
-
-def do_batchification(fun):
-    """Perform batchification on a function.
-
-    This is the companion to the @batchify decorator.
-    :type fun: callable
-    :param fun: function with ``fun.batchification_hint`` attribute
-    :rtype: callable
-    :returns: batchified function
-    """
-    hint = fun.batchification_hint
-    # Break cyclic import by importing here
-    from cdedb.database.connection import Atomizer
-
-    @functools.wraps(fun)
-    def new_fun(rs, *args, **kwargs):
-        ret = []
-        with Atomizer(rs):
-            if hint['array_param_name'] in kwargs:
-                param = kwargs.pop(hint['array_param_name'])
-                for datum in param:
-                    new_kwargs = copy.deepcopy(kwargs)
-                    new_kwargs[hint['singular_param_name']] = datum
-                    ret.append(fun(rs, *args, **new_kwargs))
-            else:
-                param = args[0]
-                for datum in param:
-                    new_args = (datum,) + args[1:]
-                    ret.append(fun(rs, *new_args, **kwargs))
-        return ret
-
-    new_fun.__name__ = hint['batch_function_name']
-    return new_fun
-
-
 class ProxyShim:
     """Wrap a backend for some syntactic sugar.
 
@@ -320,18 +256,6 @@ class ProxyShim:
             if hasattr(fun, "access_list") or (
                     internal and hasattr(fun, "internal_access_list")):
                 self._funs[name] = self._wrapit(fun)
-                if hasattr(fun, "singularization_hint"):
-                    hint = fun.singularization_hint
-                    self._funs[hint['singular_function_name']] = self._wrapit(
-                        do_singularization(fun))
-                    setattr(backend, hint['singular_function_name'],
-                            do_singularization(fun))
-                if hasattr(fun, "batchification_hint"):
-                    hint = fun.batchification_hint
-                    self._funs[hint['batch_function_name']] = self._wrapit(
-                        do_batchification(fun))
-                    setattr(backend, hint['batch_function_name'],
-                            do_batchification(fun))
 
     def _wrapit(self, fun):
         """
@@ -1120,7 +1044,8 @@ class CourseFilterPositions(enum.IntEnum):
     instructor = -1  #: Being a course instructor for the course in question.
     any_choice = -5  #: Having chosen the course (in any choice)
     assigned = -6  #: Being in this course either as participant or instructor.
-    anywhere = -7  #: Having chosen the course, being instructor or participant.
+    #: Having chosen the course, being instructor or participant.
+    anywhere = -7
 
 
 @infinite_enum
@@ -1696,8 +1621,8 @@ ALL_ADMIN_VIEWS = {
 
 def roles_to_admin_views(roles):
     """ Get the set of available admin views for a user with given roles.
-    
-    :type roles: {str} 
+
+    :type roles: {str}
     :return: {str}
     """
     result = set()

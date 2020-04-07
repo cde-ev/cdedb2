@@ -6,27 +6,29 @@ variant for external participants.
 
 import collections
 import copy
-import hashlib
 import decimal
+import hashlib
 
-from cdedb.backend.common import (
-    access, affirm_validation as affirm, AbstractBackend, Silencer,
-    affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
-    cast_fields, internal_access)
+import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBackend
-from cdedb.common import (
-    n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
-    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_GROUP_FIELDS,
-    LODGEMENT_FIELDS, COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim,
-    PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
-    COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
-    json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter)
+from cdedb.backend.common import (PYTHON_TO_SQL_MAP, AbstractBackend, Silencer,
+                                  access)
+from cdedb.backend.common import affirm_set_validation as affirm_set
+from cdedb.backend.common import affirm_validation as affirm
+from cdedb.backend.common import cast_fields, internal_access, singularize
+from cdedb.common import (CDEDB_EXPORT_EVENT_VERSION, COURSE_FIELDS,
+                          COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS,
+                          EVENT_FIELDS, EVENT_PART_FIELDS,
+                          FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
+                          LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
+                          REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
+                          REGISTRATION_TRACK_FIELDS, CourseFilterPositions,
+                          PartialImportError, PrivilegeError, ProxyShim,
+                          PsycoJson, glue, implying_realms, json_serialize,
+                          mixed_existence_sorter, n_, now, unwrap)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
-import cdedb.database.constants as const
 from cdedb.validation import parse_date, parse_datetime
-
 
 # This is used for generating the table for general queries for
 # registrations. We moved this rather huge blob here, so it doesn't
@@ -130,6 +132,7 @@ _REGISTRATION_VIEW_TEMPLATE = glue(
     "ON reg.id = reg_fields.reg_id",
 )
 
+
 class EventBackend(AbstractBackend):
     """Take note of the fact that some personas are orgas and thus have
     additional actions available."""
@@ -211,7 +214,6 @@ class EventBackend(AbstractBackend):
             raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
-    @singularize("orga_info")
     def orga_infos(self, rs, ids):
         """List events organized by specific personas.
 
@@ -224,7 +226,8 @@ class EventBackend(AbstractBackend):
                                ids, entity_key="persona_id")
         ret = {}
         for anid in ids:
-            ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
+            ret[anid] = {x['event_id']
+                         for x in data if x['persona_id'] == anid}
         return ret
 
     def event_log(self, rs, code, event_id, persona_id=None,
@@ -391,7 +394,8 @@ class EventBackend(AbstractBackend):
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.lodgement
             }
-            lodge_columns_gen = lambda part_id: ", ".join(
+
+            def lodge_columns_gen(part_id): return ", ".join(
                 ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
                     name, kind)
                  for name, kind in lodgement_fields.items()]
@@ -416,7 +420,8 @@ class EventBackend(AbstractBackend):
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.course
             }
-            course_columns_gen = lambda track_id, identifier: ", ".join(
+
+            def course_columns_gen(track_id, identifier): return ", ".join(
                 ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
                     name, kind)
                  for name, kind in course_fields.items()]
@@ -474,11 +479,13 @@ class EventBackend(AbstractBackend):
                     name, kind)
                  for name, kind in reg_fields.items()]
                 + ["id AS reg_id"])
-            part_table_gen = lambda part_id: part_table_template.format(
+
+            def part_table_gen(part_id): return part_table_template.format(
                 part_id=part_id,
                 lodge_columns=lodge_columns_gen(part_id),
                 event_id=event_id)
-            track_table_gen = lambda track_id: track_table_template.format(
+
+            def track_table_gen(track_id): return track_table_template.format(
                 course_columns=course_columns_gen(track_id, "course"),
                 course_instructor_columns=course_columns_gen(
                     track_id, "course_instructor"),
@@ -525,7 +532,6 @@ class EventBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("anonymous")
-    @singularize("get_event")
     def get_events(self, rs, ids):
         """Retrieve data for some events organized via DB.
 
@@ -577,7 +583,8 @@ class EventBackend(AbstractBackend):
                 rs, "event.orgas", ("persona_id", "event_id"), ids,
                 entity_key="event_id")
             for anid in ids:
-                orgas = {d['persona_id'] for d in data if d['event_id'] == anid}
+                orgas = {d['persona_id']
+                         for d in data if d['event_id'] == anid}
                 assert ('orgas' not in ret[anid])
                 ret[anid]['orgas'] = orgas
             data = self.sql_select(
@@ -593,10 +600,10 @@ class EventBackend(AbstractBackend):
             ret[anid]['end'] = max((p['part_end']
                                     for p in ret[anid]['parts'].values()))
             ret[anid]['is_open'] = (
-                    ret[anid]['registration_start']
-                    and ret[anid]['registration_start'] <= now()
-                    and (ret[anid]['registration_hard_limit'] is None
-                         or ret[anid]['registration_hard_limit'] >= now()))
+                ret[anid]['registration_start']
+                and ret[anid]['registration_start'] <= now()
+                and (ret[anid]['registration_hard_limit'] is None
+                     or ret[anid]['registration_hard_limit'] >= now()))
         return ret
 
     def _get_event_fields(self, rs, event_id):
@@ -675,7 +682,7 @@ class EventBackend(AbstractBackend):
                              {
                                  "type": "course track",
                                  "block": blockers.keys() - cascade,
-                             })
+            })
 
         ret = 1
         with Atomizer(rs):
@@ -746,7 +753,8 @@ class EventBackend(AbstractBackend):
                 "part_id": part_id,
                 **data[x]
             }
-            new_track_id = self.sql_insert(rs, "event.course_tracks", new_track)
+            new_track_id = self.sql_insert(
+                rs, "event.course_tracks", new_track)
             ret *= new_track_id
             self.event_log(
                 rs, const.EventLogCodes.track_added, event_id,
@@ -854,7 +862,7 @@ class EventBackend(AbstractBackend):
     @internal_access("event")
     def set_event_archived(self, rs, data):
         """Wrapper around ``set_event()`` for archiving an event.
-        
+
         This exists to emit the correct log message. It delegates
         everything else (like validation) to the wrapped method.
         """
@@ -863,7 +871,7 @@ class EventBackend(AbstractBackend):
                 self.set_event(rs, data)
             self.event_log(rs, const.EventLogCodes.event_archived,
                            data['id'])
-        
+
     @access("event")
     def set_event(self, rs, data):
         """Update some keys of an event organized via DB.
@@ -1143,7 +1151,8 @@ class EventBackend(AbstractBackend):
             rs, "event.field_definitions", ("id",), (event_id,),
             entity_key="event_id")
         if field_definitions:
-            blockers["field_definitions"] = [e["id"] for e in field_definitions]
+            blockers["field_definitions"] = [e["id"]
+                                             for e in field_definitions]
 
         courses = self.sql_select(
             rs, "event.courses", ("id",), (event_id,), entity_key="event_id")
@@ -1223,7 +1232,7 @@ class EventBackend(AbstractBackend):
                              {
                                  "type": "event",
                                  "block": blockers.keys() - cascade,
-                             })
+            })
 
         ret = 1
         with Atomizer(rs):
@@ -1271,7 +1280,8 @@ class EventBackend(AbstractBackend):
                     ret *= self.sql_delete(
                         rs, "event.event_parts", blockers["event_parts"])
                 if "orgas" in cascade:
-                    ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
+                    ret *= self.sql_delete(rs, "event.orgas",
+                                           blockers["orgas"])
                 if "log" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.log", blockers["log"])
@@ -1298,7 +1308,6 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("anonymous")
-    @singularize("get_course")
     def get_courses(self, rs, ids):
         """Retrieve data for some courses organized via DB.
 
@@ -1446,7 +1455,8 @@ class EventBackend(AbstractBackend):
                     query = glue(
                         "UPDATE event.course_segments SET is_active = False",
                         "WHERE course_id = %s AND track_id = ANY(%s)")
-                    ret *= self.query_exec(rs, query, (data['id'], deactivated))
+                    ret *= self.query_exec(rs, query,
+                                           (data['id'], deactivated))
                 if activated or deactivated:
                     self.event_log(
                         rs, const.EventLogCodes.course_segment_activity_changed,
@@ -1572,7 +1582,7 @@ class EventBackend(AbstractBackend):
                              {
                                  "type": "course",
                                  "block": blockers.keys() - cascade,
-                             })
+            })
 
         ret = 1
         with Atomizer(rs):
@@ -1828,7 +1838,6 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event")
-    @singularize("get_registration")
     def get_registrations(self, rs, ids):
         """Retrieve data for some registrations.
 
@@ -2248,7 +2257,7 @@ class EventBackend(AbstractBackend):
                              {
                                  "type": "registration",
                                  "block": blockers.keys() - cascade,
-                             })
+            })
 
         ret = 1
         with Atomizer(rs):
@@ -2280,7 +2289,6 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    @singularize("calculate_fee")
     def calculate_fees(self, rs, ids):
         """Calculate the total fees for some registrations.
 
@@ -2378,7 +2386,6 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['moniker'] for e in data}
 
     @access("event")
-    @singularize("get_lodgement_group")
     def get_lodgement_groups(self, rs, ids):
         """Retrieve data for some lodgement groups.
 
@@ -2501,7 +2508,7 @@ class EventBackend(AbstractBackend):
                              {
                                  "type": "lodgement group",
                                  "block": blockers.keys() - cascade,
-                             })
+            })
 
         ret = 1
         with Atomizer(rs):
@@ -2547,7 +2554,6 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['moniker'] for e in data}
 
     @access("event")
-    @singularize("get_lodgement")
     def get_lodgements(self, rs, ids):
         """Retrieve data for some lodgements.
 
@@ -2705,7 +2711,7 @@ class EventBackend(AbstractBackend):
                              {
                                  "type": "lodgement",
                                  "block": blockers.keys() - cascade,
-                             })
+            })
 
         ret = 1
         with Atomizer(rs):
@@ -2720,7 +2726,8 @@ class EventBackend(AbstractBackend):
                 blockers = self.delete_lodgement_blockers(rs, lodgement_id)
 
             if not blockers:
-                ret *= self.sql_delete_one(rs, "event.lodgements", lodgement_id)
+                ret *= self.sql_delete_one(rs,
+                                           "event.lodgements", lodgement_id)
                 self.event_log(rs, const.EventLogCodes.lodgement_deleted,
                                event_id, additional_info=lodgement["moniker"])
             else:
@@ -3393,9 +3400,10 @@ class EventBackend(AbstractBackend):
             cmap = {}
             cdelta = {}
             cprevious = {}
-            check_seg = lambda track_id, delta, original: (
-                 (track_id in delta and delta[track_id] is not None)
-                 or (track_id not in delta and track_id in original))
+
+            def check_seg(track_id, delta, original): return (
+                (track_id in delta and delta[track_id] is not None)
+                or (track_id not in delta and track_id in original))
             for course_id in mes(data.get('courses', {}).keys()):
                 new_course = data['courses'][course_id]
                 current = all_current_data['courses'].get(course_id)
@@ -3457,7 +3465,7 @@ class EventBackend(AbstractBackend):
             dup = {
                 old_reg['persona_id']: old_reg['id']
                 for old_reg in old_registrations.values()
-                }
+            }
 
             data_regs = data.get('registrations', {})
             for registration_id in mes(data_regs.keys()):
@@ -3551,3 +3559,11 @@ class EventBackend(AbstractBackend):
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'])
             return result, total_delta
+
+    orga_info = singularize(orga_infos)
+    get_event = singularize(get_events)
+    get_course = singularize(get_courses)
+    get_registration = singularize(get_registrations)
+    calculate_fee = singularize(calculate_fees)
+    get_lodgement_group = singularize(get_lodgement_groups)
+    get_lodgement = singularize(get_lodgements)

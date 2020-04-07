@@ -11,18 +11,17 @@ import collections.abc
 import enum
 import logging
 
-from cdedb.common import (
-    n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
-    PsycoJson)
-from cdedb.database.constants import FieldDatatypes
-from cdedb.validation import parse_date, parse_datetime
-from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
-from cdedb.config import Config
 import cdedb.validation as validate
+from cdedb.common import (ProxyShim, PsycoJson, diacritic_patterns, glue,
+                          make_root_logger, n_, unwrap)
+from cdedb.config import Config
+from cdedb.database.constants import FieldDatatypes
+from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, QueryOperators
+from cdedb.validation import parse_date, parse_datetime
 
 
-def singularize(singular_function_name, array_param_name="ids",
-                singular_param_name="anid", passthrough=False):
+def singularize(function, array_param_name="ids", singular_param_name="anid",
+                passthrough=False):
     """This decorator marks a function for singularization.
 
     The function has to accept an array as parameter and return a dict
@@ -32,12 +31,6 @@ def singularize(singular_function_name, array_param_name="ids",
     element instead and transparently wraps in a list as well as
     unwrapping the returned dict.
 
-    Singularization is performed at the same spot as publishing of the
-    functions with @access decorator, that is in
-    :py:class:`cdedb.common.ProxyShim`.
-
-    :type singular_function_name: str
-    :param singular_function_name: name for the new singularized function
     :type array_param_name: str
     :param array_param_name: name of the parameter to singularize
     :type singular_param_name: str
@@ -48,20 +41,23 @@ def singularize(singular_function_name, array_param_name="ids",
         singular param as a key.
     """
 
-    def wrap(fun):
-        fun.singularization_hint = {
-            'singular_function_name': singular_function_name,
-            'array_param_name': array_param_name,
-            'singular_param_name': singular_param_name,
-            'passthrough': passthrough,
-        }
-        return fun
+    # TODO maybe use functools.wraps to update __doc__ only
+    def singularized(self, rs, *args, **kwargs):
+        if singular_param_name in kwargs:
+            param = kwargs.pop(singular_param_name)
+            kwargs[array_param_name] = (param,)
+        else:
+            args = ((args[0],),) + args[1:]
+        data = function(self, rs, *args, **kwargs)
+        if passthrough:
+            return data
+        else:
+            return data[param]
 
-    return wrap
+    return singularized
 
 
-def batchify(batch_function_name, array_param_name="data",
-             singular_param_name="data"):
+def batchify(function, array_param_name="data", singular_param_name="data"):
     """This decorator marks a function for batchification.
 
     The function has to accept an a singular parameter. The singular
@@ -71,27 +67,33 @@ def batchify(batch_function_name, array_param_name="data",
     wrapping everything in a database transaction. It returns an array of
     all return values.
 
-    Batchification is performed at the same spot as publishing of the
-    functions with @access decorator, that is in
-    :py:class:`cdedb.common.ProxyShim`.
-
-    :type batch_function_name: str
-    :param batch_function_name: name for the new batchified function
     :type array_param_name: str
     :type array_param_name: new name of the batchified parameter
     :type singular_param_name: str
     :type singular_param_name: name of the parameter to batchify
     """
 
-    def wrap(fun):
-        fun.batchification_hint = {
-            'batch_function_name': batch_function_name,
-            'array_param_name': array_param_name,
-            'singular_param_name': singular_param_name,
-        }
-        return fun
+    # Break cyclic import by importing here
+    from cdedb.database.connection import Atomizer
 
-    return wrap
+    # TODO maybe use functools.wraps to update __doc__ only
+    def batchified(self, rs, *args, **kwargs):
+        ret = []
+        with Atomizer(rs):
+            if array_param_name in kwargs:
+                param = kwargs.pop(array_param_name)
+                for datum in param:
+                    new_kwargs = copy.deepcopy(kwargs)
+                    new_kwargs[singular_param_name] = datum
+                    ret.append(function(self, rs, *args, **new_kwargs))
+            else:
+                param = args[0]
+                for datum in param:
+                    new_args = (datum,) + args[1:]
+                    ret.append(function(self, rs, *new_args, **kwargs))
+        return ret
+
+    return batchified
 
 
 def access(*roles):
@@ -511,10 +513,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
-                caser = lambda x: x.lower()
+                def caser(x): return x.lower()
             else:
                 sql_param_str = "{0}"
-                caser = lambda x: x
+                def caser(x): return x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are

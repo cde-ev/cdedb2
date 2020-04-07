@@ -11,28 +11,30 @@ import datetime
 import decimal
 import hmac
 
-from passlib.hash import sha512_crypt
-
-from cdedb.backend.common import AbstractBackend
-from cdedb.backend.common import (
-    access, internal_access, singularize, diacritic_patterns,
-    affirm_validation as affirm, affirm_set_validation as affirm_set)
-from cdedb.common import (
-    n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
-    PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
-    PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
-    PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
-    ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter, genesis_realm_access_bits, ValidationWarning)
-from cdedb.security import secure_token_hex
-from cdedb.config import SecretsConfig
-from cdedb.database.connection import Atomizer
-import cdedb.validation as validate
 import cdedb.database.constants as const
-from cdedb.query import QueryOperators
+import cdedb.validation as validate
+from cdedb.backend.common import AbstractBackend, access
+from cdedb.backend.common import affirm_set_validation as affirm_set
+from cdedb.backend.common import affirm_validation as affirm
+from cdedb.backend.common import (diacritic_patterns, internal_access,
+                                  singularize)
+from cdedb.common import (GENESIS_CASE_FIELDS, PERSONA_ALL_FIELDS,
+                          PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
+                          PERSONA_CORE_FIELDS, PERSONA_DEFAULTS,
+                          PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
+                          PERSONA_STATUS_FIELDS, PRIVILEGE_CHANGE_FIELDS,
+                          ArchiveError, PrivilegeError, PsycoJson,
+                          QuotaException, User, ValidationWarning,
+                          decode_parameter, encode_parameter, extract_realms,
+                          extract_roles, genesis_realm_access_bits, glue,
+                          implied_realms, merge_dicts, n_, now, privilege_tier,
+                          unwrap)
+from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
-from cdedb.database.connection import connection_pool_factory
+from cdedb.database.connection import Atomizer, connection_pool_factory
+from cdedb.query import QueryOperators
+from cdedb.security import secure_token_hex
+from passlib.hash import sha512_crypt
 
 
 class CoreBackend(AbstractBackend):
@@ -133,7 +135,8 @@ class CoreBackend(AbstractBackend):
             "address2", "postal_code2", "location2", "country2", "weblink",
             "specialisation", "affiliation", "timeline", "interests",
             "free_form")
-        values = (str(persona[a]) for a in attributes if persona[a] is not None)
+        values = (str(persona[a])
+                  for a in attributes if persona[a] is not None)
         return " ".join(values)
 
     def core_log(self, rs, code, persona_id, additional_info=None):
@@ -285,7 +288,8 @@ class CoreBackend(AbstractBackend):
             connector = "AND"
             params.append(submitted_by)
         if reviewed_by:
-            condition = glue(condition, "{} reviewed_by = %s".format(connector))
+            condition = glue(
+                condition, "{} reviewed_by = %s".format(connector))
             connector = "AND"
             params.append(reviewed_by)
         if persona_id:
@@ -396,11 +400,11 @@ class CoreBackend(AbstractBackend):
             all_changed_fields = {key for key, value in data.items()
                                   if value != committed_state[key]}
             requires_review = (
-                    (all_changed_fields & fields_requiring_review
-                     or (current_state['change_status']
-                         == const.MemberChangeStati.pending and not diff))
-                    and current_state['is_cde_realm']
-                    and not ({"core_admin", "cde_admin"} & rs.user.roles))
+                (all_changed_fields & fields_requiring_review
+                 or (current_state['change_status']
+                     == const.MemberChangeStati.pending and not diff))
+                and current_state['is_cde_realm']
+                and not ({"core_admin", "cde_admin"} & rs.user.roles))
 
             # prepare for inserting a new changelog entry
             query = glue("SELECT MAX(generation) AS gen FROM core.changelog",
@@ -517,7 +521,6 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("persona")
-    @singularize("changelog_get_generation")
     def changelog_get_generations(self, rs, ids):
         """Retrieve the current generation of the persona ids in the
         changelog. This includes committed and pending changelog entries.
@@ -585,7 +588,6 @@ class CoreBackend(AbstractBackend):
         return {e['generation']: e for e in data}
 
     @internal_access("persona")
-    @singularize("retrieve_persona")
     def retrieve_personas(self, rs, ids, columns=PERSONA_CORE_FIELDS):
         """Helper to access a persona dataset.
 
@@ -741,7 +743,8 @@ class CoreBackend(AbstractBackend):
             if not (data["balance"] is None and "archive" in allow_specials):
                 raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
-            raise PrivilegeError(n_("Modification of email address prevented."))
+            raise PrivilegeError(
+                n_("Modification of email address prevented."))
         if "foto" in data and "foto" not in allow_specials:
             raise PrivilegeError(n_("Modification of foto prevented."))
         if data.get("is_active") and rs.user.persona_id == data['id']:
@@ -867,7 +870,8 @@ class CoreBackend(AbstractBackend):
                     stati=(const.PrivilegeChangeStati.pending,)):
                 raise ValueError(n_("Pending privilege change."))
 
-            persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
+            persona = unwrap(self.get_total_personas(
+                rs, (data['persona_id'],)))
 
             # see also cdedb.frontend.templates.core.change_privileges
             # and change_privileges in cdedb.frontend.core
@@ -1028,7 +1032,6 @@ class CoreBackend(AbstractBackend):
         return {e["id"]: e for e in data}
 
     @access("meta_admin")
-    @singularize("get_privilege_change")
     def get_privilege_changes(self, rs, ids):
         """Retrieve datasets for priviledge changes.
 
@@ -1535,7 +1538,6 @@ class CoreBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, (foto,)))
 
     @access("persona")
-    @singularize("get_persona")
     def get_personas(self, rs, ids):
         """Acquire data sets for specified ids.
 
@@ -1547,7 +1549,6 @@ class CoreBackend(AbstractBackend):
         return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
 
     @access("event")
-    @singularize("get_event_user")
     def get_event_users(self, rs, ids, event_id=None):
         """Get an event view on some data sets.
 
@@ -1603,7 +1604,6 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("cde")
-    @singularize("get_cde_user")
     def get_cde_users(self, rs, ids):
         """Get an cde view on some data sets.
 
@@ -1644,7 +1644,6 @@ class CoreBackend(AbstractBackend):
             return ret
 
     @access("ml")
-    @singularize("get_ml_user")
     def get_ml_users(self, rs, ids):
         """Get an ml view on some data sets.
 
@@ -1659,7 +1658,6 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    @singularize("get_assembly_user")
     def get_assembly_users(self, rs, ids):
         """Get an assembly view on some data sets.
 
@@ -1674,7 +1672,6 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("persona")
-    @singularize("get_total_persona")
     def get_total_personas(self, rs, ids):
         """Acquire data sets for specified ids.
 
@@ -1856,7 +1853,6 @@ class CoreBackend(AbstractBackend):
         return data['num'] == len(ids)
 
     @internal_access("persona")
-    @singularize("get_roles_single")
     def get_roles_multi(self, rs, ids):
         """Resolve ids into roles.
 
@@ -1874,7 +1870,6 @@ class CoreBackend(AbstractBackend):
         return {d['id']: extract_roles(d) for d in data}
 
     @access("persona")
-    @singularize("get_realms_single")
     def get_realms_multi(self, rs, ids):
         """Resolve persona ids into realms (only for active users).
 
@@ -2278,7 +2273,7 @@ class CoreBackend(AbstractBackend):
                              {
                                  "type": "genesis case",
                                  "block": blockers.keys() - cascade,
-                             })
+            })
 
         ret = 1
         with Atomizer(rs):
@@ -2317,7 +2312,7 @@ class CoreBackend(AbstractBackend):
         params = (email, const.GenesisStati.unconfirmed)
         data = self.query_one(rs, query, params)
         return unwrap(data) if data else None
-    
+
     @access("anonymous")
     def genesis_verify(self, rs, case_id):
         """Confirm the new email address and proceed to the next stage.
@@ -2393,9 +2388,7 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
-    @singularize("genesis_get_case")
+    @access("core_admin", "cde_admin", "event_admin", "assembly_admin", "ml_admin")
     def genesis_get_cases(self, rs, ids):
         """Retrieve datasets for persona creation cases.
 
@@ -2473,7 +2466,8 @@ class CoreBackend(AbstractBackend):
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(genesis_realm_access_bits[case['realm']])
-            data = affirm("persona", data, creation=True, _ignore_warnings=True)
+            data = affirm("persona", data, creation=True,
+                          _ignore_warnings=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)
@@ -2663,3 +2657,16 @@ class CoreBackend(AbstractBackend):
             # deescalate
             if orig_conn:
                 rs.conn = orig_conn
+
+    changelog_get_generation = singularize(changelog_get_generations)
+    retrieve_persona = singularize(retrieve_personas)
+    get_privilege_change = singularize(get_privilege_changes)
+    get_persona = singularize(get_personas)
+    get_event_user = singularize(get_event_users)
+    get_cde_user = singularize(get_cde_users)
+    get_ml_user = singularize(get_ml_users)
+    get_assembly_user = singularize(get_assembly_users)
+    get_total_persona = singularize(get_total_personas)
+    get_roles_single = singularize(get_roles_multi)
+    get_realms_single = singularize(get_realms_multi)
+    genesis_get_case = singularize(genesis_get_cases)

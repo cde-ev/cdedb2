@@ -8,21 +8,21 @@ filled by a mailing list software and not a usual persona. This acts as
 if it has moderator privileges for all lists.
 """
 
-from cdedb.backend.common import (
-    access, affirm_validation as affirm, AbstractBackend,
-    affirm_set_validation as affirm_set, singularize,
-    affirm_array_validation as affirm_array, internal_access)
-from cdedb.backend.event import EventBackend
-from cdedb.backend.assembly import AssemblyBackend
-from cdedb.common import (
-    n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,
-    extract_roles, implying_realms, now, ProxyShim,
-    SubscriptionError, SubscriptionInfo,
-    SubscriptionActions)
-from cdedb.query import QueryOperators, Query
-from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.common import AbstractBackend, access
+from cdedb.backend.common import affirm_array_validation as affirm_array
+from cdedb.backend.common import affirm_set_validation as affirm_set
+from cdedb.backend.common import affirm_validation as affirm
+from cdedb.backend.common import internal_access, singularize
+from cdedb.backend.event import EventBackend
+from cdedb.common import (MAILINGLIST_FIELDS, PrivilegeError, ProxyShim,
+                          SubscriptionActions, SubscriptionError,
+                          SubscriptionInfo, extract_roles, glue,
+                          implying_realms, n_, now, unwrap)
+from cdedb.database.connection import Atomizer
+from cdedb.query import Query, QueryOperators
 
 
 class MlBackend(AbstractBackend):
@@ -171,7 +171,6 @@ class MlBackend(AbstractBackend):
                 or ml["id"] in rs.user.moderator)
 
     @access("persona")
-    @singularize("moderator_info")
     def moderator_infos(self, rs, ids):
         """List mailing lists moderated by specific personas.
 
@@ -311,7 +310,6 @@ class MlBackend(AbstractBackend):
                 if self.may_view(rs, mailinglists[k])}
 
     @access("ml")
-    @singularize("get_mailinglist")
     def get_mailinglists(self, rs, ids):
         """Retrieve data for some mailinglists.
 
@@ -349,7 +347,8 @@ class MlBackend(AbstractBackend):
                 assert ('whitelist' not in ret[anid])
                 ret[anid]['whitelist'] = whitelist
             for anid in ids:
-                ret[anid]['domain_str'] = str(const.MailinglistDomain(ret[anid]['domain']))
+                ret[anid]['domain_str'] = str(
+                    const.MailinglistDomain(ret[anid]['domain']))
                 ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
         return ret
 
@@ -603,7 +602,7 @@ class MlBackend(AbstractBackend):
                              {
                                  "type": "mailinglist",
                                  "block": blockers.keys() - cascade,
-                             })
+            })
 
         ret = 1
         with Atomizer(rs):
@@ -668,7 +667,8 @@ class MlBackend(AbstractBackend):
                      "SET subscription_state = EXCLUDED.subscription_state")
             keys = ("subscription_state", "mailinglist_id", "persona_id")
             placeholders = ", ".join(("(%s, %s, %s)",) * len(data))
-            query = query.format(keys=", ".join(keys), placeholders=placeholders)
+            query = query.format(keys=", ".join(
+                keys), placeholders=placeholders)
 
             params = []
             for datum in data:
@@ -885,7 +885,6 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml", "ml_script")
-    @singularize("get_subscription_states", "mailinglist_ids", "mailinglist_id")
     def get_many_subscription_states(self, rs, mailinglist_ids, states=None):
         """Get all users related to a given mailinglist and their sub state.
 
@@ -1029,7 +1028,7 @@ class MlBackend(AbstractBackend):
         ret = {}
         with Atomizer(rs):
             if not self.may_manage(rs, mailinglist_id):
-                    raise PrivilegeError(n_("Not privileged."))
+                raise PrivilegeError(n_("Not privileged."))
 
             subscribers = self.get_subscription_states(
                 rs, mailinglist_id,
@@ -1456,3 +1455,8 @@ class MlBackend(AbstractBackend):
             self.ml_log(rs, const.MlLogCodes.email_trouble, None,
                         persona_id=unwrap(data)['id'], additional_info=line)
             return True
+
+    moderator_info = singularize(moderator_infos)
+    get_mailinglist = singularize(get_mailinglists)
+    get_subscription_states = singularize(
+        get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
