@@ -26,7 +26,7 @@
         {% endif %}
         {% if (data['is_participant_list_visible'] and is_participant) or data['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/participant_list", {"event_id": data['id']}), gettext("Participant list"),
-                         aclass="list-group-item", icon="user", active=(sidenav_active == 'event_participant_list')) }}
+                         aclass="list-group-item", icon="users", active=(sidenav_active == 'event_participant_list')) }}
         {% endif %}
     </div>
 
