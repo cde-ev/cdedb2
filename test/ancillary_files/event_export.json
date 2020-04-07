@@ -351,7 +351,7 @@
             "association": 1
         }
     },
-    "CDEDB_EXPORT_EVENT_VERSION": 9,
+    "CDEDB_EXPORT_EVENT_VERSION": 10,
     "event.registration_parts": {
         "2": {
             "is_reserve": false,
