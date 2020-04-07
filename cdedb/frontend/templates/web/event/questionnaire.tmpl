@@ -24,7 +24,7 @@
                             gettext("Questionnaire"), active=True) }}
 {% else %}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), gettext("Configure Questionnaire")) }}
+    {{ util.breadcrumb_link(cdedblink("event/configure_questionnaire"), gettext("Configure Questionnaire")) }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
                             gettext("Preview Questionnaire"), active=True) }}
 {% endif %}
@@ -48,10 +48,7 @@
         {{ util.anti_csrf_token('event/questionnaire') }}
     {% endif %}
         {% for entry in questionnaire %}
-            {# TODO maybe filter this in python? #}
-            {% if entry['kind'] == enums['QuestionnaireUsages'].questionnaire %}
-                {{ util.print_questionnaire_entry(entry) }}
-            {% endif %}
+            {{ util.print_questionnaire_entry(entry) }}
         {% endfor %}
         {% if not preview %}
             {{ util.form_input_submit(value="Abschicken", cancellink=cdedblink("event/registration_status"),
