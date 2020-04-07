@@ -749,8 +749,8 @@ etc;anything else""", f['entries_2'].value)
     def test_event_fields_change_datatype(self, user):
         # First, remove the "lodge" field from the questionaire and the event's,
         # so it can be deleted
-        self.get("/event/event/1/questionnaire/summary")
-        f = self.response.forms['questionnairesummaryform']
+        self.get("/event/event/1/questionnaire/config")
+        f = self.response.forms['configurequestionnaireform']
         f['delete_5'].checked = True
         self.submit(f)
         self.get("/event/event/1/change")
@@ -799,7 +799,6 @@ etc;anything else""", f['entries_2'].value)
         f['create_-1'].checked = True
         f['field_name_-1'] = "notevil"
         f['association_-1'] = const.FieldAssociations.registration.value
-        f['kind_-1'] = const.FieldDatatypes.bool.value
         f['entries_-1'] = """True;definitely
         False;no way!"""
         self.submit(f)
@@ -809,13 +808,12 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changeeventform']
         f['use_questionnaire'].checked = True
         self.submit(f)
-        self.traverse({'href': '/event/event/1/questionnaire/summary'})
-        f = self.response.forms['questionnairesummaryform']
+        self.traverse({'href': '/event/event/1/questionnaire/config'})
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
-        f['kind_-1'] = const.QuestionnaireUsages.questionnaire.value
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         f = self.response.forms['questionnaireform']
@@ -842,13 +840,12 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changeeventform']
         f['use_questionnaire'].checked = True
         self.submit(f)
-        self.traverse({'href': '/event/event/1/questionnaire/summary'})
-        f = self.response.forms['questionnairesummaryform']
+        self.traverse({'href': '/event/event/1/questionnaire/config'})
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
-        f['kind_-1'] = const.QuestionnaireUsages.questionnaire.value
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         f = self.response.forms['questionnaireform']
@@ -2393,64 +2390,61 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
-        self.assertIn("brings_balls", f.fields)
         self.assertNotIn("may_reserve", f.fields)
-        self.traverse({'href': '/event/event/1/questionnaire/summary'})
+        self.traverse({'href': '/event/event/1/questionnaire/config'})
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
-        f = self.response.forms['questionnairesummaryform']
-        self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("3", f['input_size_5'].value)
-        f['input_size_5'] = 3
-        self.assertEqual("2", f['field_id_4'].value)
-        f['field_id_4'] = ""
-        self.assertEqual("Weitere Überschrift", f['title_3'].value)
-        f['title_3'] = "Immernoch Überschrift"
-        self.assertEqual(False, f['readonly_1'].checked)
-        f['readonly_1'].checked = True
+        f = self.response.forms['configurequestionnaireform']
+        self.assertEqual("3", f['field_id_4'].value)
+        self.assertEqual("3", f['input_size_4'].value)
+        f['input_size_4'] = 3
+        self.assertEqual("2", f['field_id_3'].value)
+        f['field_id_3'] = ""
+        self.assertEqual("Weitere Überschrift", f['title_2'].value)
+        f['title_2'] = "Immernoch Überschrift"
         self.assertEqual("mit Text darunter", f['info_0'].value)
         f['info_0'] = "mehr Text darunter\nviel mehr"
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
-        f = self.response.forms['questionnairesummaryform']
-        self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("3", f['input_size_5'].value)
-        self.assertEqual("", f['field_id_4'].value)
-        self.assertEqual("Immernoch Überschrift", f['title_3'].value)
-        self.assertEqual(True, f['readonly_1'].checked)
+        f = self.response.forms['configurequestionnaireform']
+        self.assertEqual("3", f['field_id_4'].value)
+        self.assertEqual("3", f['input_size_4'].value)
+        self.assertEqual("Hauswunsch", f['title_4'].value)
+        self.assertEqual("", f['field_id_3'].value)
+        self.assertEqual("Immernoch Überschrift", f['title_2'].value)
         self.assertEqual("mehr Text darunter\nviel mehr", f['info_0'].value)
-        f['delete_1'].checked = True
+        f['delete_3'].checked = True
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
-        f = self.response.forms['questionnairesummaryform']
-        self.assertNotIn("field_id_5", f.fields)
+        f = self.response.forms['configurequestionnaireform']
+        self.assertNotIn("field_id_4", f.fields)
         self.assertEqual("Unterüberschrift", f['title_0'].value)
         self.assertEqual("nur etwas Text", f['info_1'].value)
+        self.assertEqual("3", f['field_id_3'].value)
+        self.assertEqual("3", f['input_size_3'].value)
+        self.assertEqual("Hauswunsch", f['title_3'].value)
         f['create_-1'].checked = True
         f['field_id_-1'] = 4
         f['title_-1'] = "Input"
-        f['kind_-1'] = const.QuestionnaireUsages.questionnaire.value
         f['readonly_-1'].checked = True
         f['input_size_-1'] = 2
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
-        f = self.response.forms['questionnairesummaryform']
-        self.assertIn("field_id_5", f.fields)
-        self.assertEqual("4", f['field_id_5'].value)
-        self.assertEqual("Input", f['title_5'].value)
-        self.assertEqual(str(const.QuestionnaireUsages.questionnaire.value),
-                         f['kind_5'].value)
+        f = self.response.forms['configurequestionnaireform']
+        self.assertIn("field_id_4", f.fields)
+        self.assertEqual("4", f['field_id_4'].value)
+        self.assertEqual("Input", f['title_4'].value)
 
     @as_users("garcia")
     def test_questionnaire_reorder(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/questionnaire/summary'},
+                      {'href': '/event/event/1/questionnaire/config'},
                       {'href': '/event/event/1/questionnaire/reorder'})
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
-        f = self.response.forms['questionnairesummaryform']
+        f = self.response.forms['configurequestionnaireform']
         self.assertEqual("3", f['field_id_0'].value)
         self.assertEqual("2", f['field_id_5'].value)
         self.assertEqual("1", f['field_id_2'].value)

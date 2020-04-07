@@ -2900,19 +2900,22 @@ def _questionnaire(val, field_definitions, fee_modifiers, argname=None, *,
     :rtype: ([dict] or None, [(str or None, exception)])
     """
     argname = argname or "questionnaire"
-    val, errs = _iterable(val, argname, _convert=_convert,
-                          _ignore_warnings=_ignore_warnings)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    ret = []
-    fee_modifier_fields = {
-        e['field_id'] for e in fee_modifiers.values()}
-    for value in val:
-        value, e = _mapping(value, argname, _convert=_convert,
-                            _ignore_warnings=_ignore_warnings)
-        if e:
+    ret = {}
+    fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
+    for k, v in copy.deepcopy(val).items():
+        k, e = _enum_questionnaireusages(k, argname, _convert=_convert,
+                                         _ignore_warnings=_ignore_warnings)
+        v, ee = _iterable(v, argname, _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
+        if e or ee:
             errs.extend(e)
+            errs.extend(ee)
         else:
+            ret[k] = []
             mandatory_fields = {
                 'field_id': _id_or_None,
                 'title': _str_or_None,
@@ -2920,37 +2923,55 @@ def _questionnaire(val, field_definitions, fee_modifiers, argname=None, *,
                 'input_size': _int_or_None,
                 'readonly': _bool_or_None,
                 'default_value': _str_or_None,
+            }
+            optional_fields = {
                 'kind': _enum_questionnaireusages,
             }
-            value, e = _examine_dictionary_fields(
-                value, mandatory_fields, {}, _convert=_convert,
-                _ignore_warnings=_ignore_warnings)
-            if e:
-                errs.extend(e)
-                continue
-            if value['field_id'] and value['default_value']:
-                field = field_definitions.get(value['field_id'], None)
-                if not field:
-                    msg = n_("Referenced field does not exist.")
-                    errs.append(('default_value',
-                                 KeyError(msg)))
+            for value in v:
+                value, e = _mapping(value, argname, _convert=_convert,
+                                    _ignore_warnings=_ignore_warnings)
+                if e:
+                    errs.extend(e)
                     continue
-                value['default_value'], e = _by_field_datatype(
-                    value['default_value'], "default_value",
-                    kind=field.get('kind', FieldDatatypes.str),
-                    _convert=_convert, _ignore_warnings=_ignore_warnings)
-                errs.extend(e)
-            field_id = value['field_id']
-            if field_id and field_id in fee_modifier_fields:
-                if not value['kind'].allow_fee_modifier():
-                    msg = n_("Inappropriate questionnaire usage for fee"
-                             " modifier field.")
-                    errs.append(('kind', ValueError(msg)))
-            if value['readonly'] and not value['kind'].allow_readonly():
-                msg = n_("Registration questionnaire rows may not be readonly.")
-                errs.append(('readonly', ValueError(msg)))
-            ret.append(value)
-    for e1, e2 in itertools.combinations(val, 2):
+
+                value, e = _examine_dictionary_fields(
+                    value, mandatory_fields, optional_fields, _convert=_convert,
+                    _ignore_warnings=_ignore_warnings)
+                if 'kind' in value:
+                    if value['kind'] != k:
+                        msg = n_("Incorrect kind for this part of the"
+                                 " questionnaire")
+                        e.append(('kind', ValueError(msg)))
+                else:
+                    value['kind'] = k
+                if e:
+                    errs.extend(e)
+                    continue
+                if value['field_id'] and value['default_value']:
+                    field = field_definitions.get(value['field_id'], None)
+                    if not field:
+                        msg = n_("Referenced field does not exist.")
+                        errs.append(('default_value',
+                                     KeyError(msg)))
+                        continue
+                    value['default_value'], e = _by_field_datatype(
+                        value['default_value'], "default_value",
+                        kind=field.get('kind', FieldDatatypes.str),
+                        _convert=_convert, _ignore_warnings=_ignore_warnings)
+                    errs.extend(e)
+                field_id = value['field_id']
+                if field_id and field_id in fee_modifier_fields:
+                    if not k.allow_fee_modifier():
+                        msg = n_("Inappropriate questionnaire usage for fee"
+                                 " modifier field.")
+                        errs.append(('kind', ValueError(msg)))
+                if value['readonly'] and not k.allow_readonly():
+                    msg = n_("Registration questionnaire rows may not be"
+                             " readonly.")
+                    errs.append(('readonly', ValueError(msg)))
+                ret[k].append(value)
+    all_rows = itertools.chain.from_iterable(ret.values())
+    for e1, e2 in itertools.combinations(all_rows, 2):
         if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
             msg = n_("Must not duplicate field.")
             errs.append(('field_id', ValueError(msg)))

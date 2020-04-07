@@ -141,14 +141,6 @@
 
         <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
 
-        {% if questionnaire %}
-            {% for entry in questionnaire %}
-                {% if entry['kind'] == enums['QuestionnaireUsages'].registration %}
-                    {{ util.print_questionnaire_entry(entry) }}
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-
         {% if not age.may_mix() %}
             {{ util.input_hidden(name="mixed_lodging", value=False) }}
             {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
@@ -181,6 +173,13 @@
             {%- set noteslabel = gettext("Notes for Orgas") %}
         {%- endif %}
         {{ util.form_input_textarea(name="notes", label=noteslabel, rows="5") }}
+
+        {% if questionnaire %}
+            {% for entry in questionnaire %}
+                {{ util.print_questionnaire_entry(entry) }}
+            {% endfor %}
+        {% endif %}
+
         {% call util.form_input_general(displayerrors=False) %}
             {% if ambience['event']['use_questionnaire'] %}
                 <p class="text-info nosp">

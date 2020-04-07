@@ -3109,38 +3109,67 @@ class EventBackend(AbstractBackend):
             constraints.append("kind = ANY(%s)")
             params.append(kinds)
         query += " WHERE " + " AND ".join(c for c in constraints)
-        data = self.query_all(rs, query, params)
-        return sorted(data, key=lambda x: x['pos'])
+        d = self.query_all(rs, query, params)
+        for row in d:
+            row['kind'] = const.QuestionnaireUsages(row['kind'])
+        ret = {
+            k: sorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
+            for k in kinds or const.QuestionnaireUsages
+        }
+        return ret
 
     @access("event")
     def set_questionnaire(self, rs, event_id, data):
-        """Replace current questionnaire rows for a specific event.
+        """Replace current questionnaire rows for a specific event, by kind.
 
-        This superseeds the current questionnaire.
+        This superseeds the current questionnaire for all given kinds.
+        Kinds that are not present in data, will not be touched.
+
+        To delete all questionnaire rows, you can specify data as None.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
-        :type data: [{str: object}]
+        :type data: {int: [{str: object}]} or None
         :rtype: int
         :returns: default return code
         """
         event_id = affirm("id", event_id)
         event = self.get_event(rs, event_id)
-        data = affirm("questionnaire", data, field_definitions=event['fields'],
-                      fee_modifiers=event['fee_modifiers'])
+        if data is not None:
+            current = self.get_questionnaire(rs, event_id)
+            current.update(data)
+            for k, v in current.items():
+                for e in v:
+                    if 'pos' in e:
+                        del e['pos']
+            data = affirm("questionnaire", current,
+                          field_definitions=event['fields'],
+                          fee_modifiers=event['fee_modifiers'])
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
         with Atomizer(rs):
-            self.sql_delete(rs, "event.questionnaire_rows", (event_id,),
-                            entity_key="event_id")
             ret = 1
-            for pos, row in enumerate(data):
-                new_row = copy.deepcopy(row)
-                new_row['pos'] = pos
-                new_row['event_id'] = event_id
-                ret *= self.sql_insert(rs, "event.questionnaire_rows", new_row)
-            self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
+            # Allow deletion of enitre questionnaire by specifying None.
+            if data is None:
+                self.sql_delete(rs, "event.questionnaire_rows", (event_id,),
+                                entity_key="event_id")
+                return 1
+            # Otherwise replace rows for all given kinds.
+            for kind, rows in data.items():
+                query = ("DELETE FROM event.questionnaire_rows"
+                         " WHERE event_id = %s AND kind = %s")
+                params = (event_id, kind)
+                self.query_exec(rs, query, params)
+                for pos, row in enumerate(rows):
+                    new_row = copy.deepcopy(row)
+                    new_row['pos'] = pos
+                    new_row['event_id'] = event_id
+                    new_row['kind'] = kind
+                    ret *= self.sql_insert(
+                        rs, "event.questionnaire_rows", new_row)
+            self.event_log(
+                rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret
 
     @access("event")

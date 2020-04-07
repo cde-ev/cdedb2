@@ -465,9 +465,10 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton")
     def test_event_field_double_link(self, user):
-        questionnaire = [
+        questionnaire = {
+            const.QuestionnaireUsages.questionnaire:
+                [
             {
-                'kind': const.QuestionnaireUsages.questionnaire,
                 'field_id': 1,
                 'title': None,
                 'info': None,
@@ -476,7 +477,6 @@ class TestEventBackend(BackendTest):
                 'default_value': None,
             },
             {
-                'kind': const.QuestionnaireUsages.questionnaire,
                 'field_id': 1,
                 'title': None,
                 'info': None,
@@ -484,7 +484,8 @@ class TestEventBackend(BackendTest):
                 'readonly': False,
                 'default_value': None,
             },
-        ]
+          ],
+        }
         with self.assertRaises(ValueError) as cm:
             self.event.set_questionnaire(self.key, 1, questionnaire)
         self.assertIn("Must not duplicate field. (field_id)", cm.exception.args)
@@ -1283,116 +1284,148 @@ class TestEventBackend(BackendTest):
     @as_users("berta", "emilia")
     def test_get_questionnaire(self, user):
         event_id = 1
-        expectation = [
-            {'field_id': None,
-             'default_value': None,
-             'info': 'mit Text darunter',
-             'pos': 0,
-             'readonly': None,
-             'input_size': None,
-             'title': 'Unterüberschrift',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': 1,
-             'default_value': 'True',
-             'info': 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.',
-             'pos': 1,
-             'readonly': False,
-             'input_size': None,
-             'title': 'Bälle',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': None,
-             'default_value': None,
-             'info': 'nur etwas Text',
-             'pos': 2,
-             'readonly': None,
-             'input_size': None,
-             'title': None,
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': None,
-             'default_value': None,
-             'info': None,
-             'pos': 3,
-             'readonly': None,
-             'input_size': None,
-             'title': 'Weitere Überschrift',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': 2,
-             'default_value': 'etc',
-             'info': None,
-             'pos': 4,
-             'readonly': False,
-             'input_size': None,
-             'title': 'Vehikel',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': 3,
-             'default_value': None,
-             'info': None,
-             'pos': 5,
-             'readonly': False,
-             'input_size': 3,
-             'title': 'Hauswunsch',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-        ]
+        expectation = {
+            const.QuestionnaireUsages.registration:
+                [
+
+                    {'field_id': 1,
+                     'default_value': 'True',
+                     'info': 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.',
+                     'pos': 0,
+                     'readonly': False,
+                     'input_size': None,
+                     'title': 'Bälle',
+                     'kind': const.QuestionnaireUsages.registration,
+                     },
+                ],
+            const.QuestionnaireUsages.questionnaire:
+                [
+                    {'field_id': None,
+                     'default_value': None,
+                     'info': 'mit Text darunter',
+                     'pos': 0,
+                     'readonly': None,
+                     'input_size': None,
+                     'title': 'Unterüberschrift',
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                    {'field_id': None,
+                     'default_value': None,
+                     'info': 'nur etwas Text',
+                     'pos': 1,
+                     'readonly': None,
+                     'input_size': None,
+                     'title': None,
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                    {'field_id': None,
+                     'default_value': None,
+                     'info': None,
+                     'pos': 2,
+                     'readonly': None,
+                     'input_size': None,
+                     'title': 'Weitere Überschrift',
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                    {'field_id': 2,
+                     'default_value': 'etc',
+                     'info': None,
+                     'pos': 3,
+                     'readonly': False,
+                     'input_size': None,
+                     'title': 'Vehikel',
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                    {'field_id': 3,
+                     'default_value': None,
+                     'info': None,
+                     'pos': 4,
+                     'readonly': False,
+                     'input_size': 3,
+                     'title': 'Hauswunsch',
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                ],
+        }
         self.assertEqual(expectation,
                          self.event.get_questionnaire(self.key, event_id))
 
     @as_users("annika", "garcia")
     def test_set_questionnaire(self, user):
         event_id = 1
-        expectation = [
-            {'field_id': None,
-             'default_value': None,
-             'info': None,
-             'readonly': None,
-             'input_size': None,
-             'title': 'Weitere bla Überschrift',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': 2,
-             'default_value': 'etc',
-             'info': None,
-             'readonly': True,
-             'input_size': None,
-             'title': 'Vehikel',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': None,
-             'default_value': None,
-             'info': 'mit Text darunter und so',
-             'readonly': None,
-             'input_size': None,
-             'title': 'Unterüberschrift',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': 3,
-             'default_value': None,
-             'info': None,
-             'readonly': True,
-             'input_size': 5,
-             'title': 'Vehikel',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': None,
-             'default_value': None,
-             'info': 'nur etwas mehr Text',
-             'readonly': None,
-             'input_size': None,
-             'title': None,
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-        ]
-        self.assertLess(0, self.event.set_questionnaire(
-            self.key, event_id, expectation))
-        for pos, entry in enumerate(expectation):
-            entry['pos'] = pos
-        self.assertEqual(expectation,
-                         self.event.get_questionnaire(self.key, event_id))
+        edata = {
+            'id': event_id,
+            'fields': {
+                -1: {
+                    'field_name': 'is_child',
+                    'kind': const.FieldDatatypes.bool,
+                    'association': const.FieldAssociations.registration,
+                    'entries': None,
+                }
+            }
+        }
+        self.event.set_event(self.key, edata)
+        qdata = {
+            const.QuestionnaireUsages.questionnaire: [
+                {
+                    'field_id': None,
+                    'default_value': None,
+                    'info': None,
+                    'readonly': None,
+                    'input_size': None,
+                    'title': 'Weitere bla Überschrift',
+                },
+                {
+                    'field_id': 2,
+                    'default_value': 'etc',
+                    'info': None,
+                    'readonly': True,
+                    'input_size': None,
+                    'title': 'Vehikel',
+                },
+                {
+                    'field_id': None,
+                    'default_value': None,
+                    'info': 'mit Text darunter und so',
+                    'readonly': None,
+                    'input_size': None,
+                    'title': 'Unterüberschrift',
+                },
+                {
+                    'field_id': 3,
+                    'default_value': None,
+                    'info': None,
+                    'readonly': True,
+                    'input_size': 5,
+                    'title': 'Vehikel',
+                },
+                {
+                    'field_id': None,
+                    'default_value': None,
+                    'info': 'nur etwas mehr Text',
+                    'readonly': None,
+                    'input_size': None,
+                    'title': None,
+                },
+            ],
+            const.QuestionnaireUsages.registration: [
+                {
+                    'field_id': 1001,
+                    'default_value': None,
+                    'info': "Fall Du unter 13 Jahre alt bist, bezahlst Du weniger.",
+                    'readonly': None,
+                    'input_size': None,
+                    'title': "Ich bin Kind.",
+                },
+            ],
+        }
+        self.assertLess(0, self.event.set_questionnaire(self.key, event_id, qdata))
+        for k, v in qdata.items():
+            for pos, row in enumerate(v):
+                row['pos'] = pos
+                row['kind'] = k
+        result = self.event.get_questionnaire(self.key, event_id)
+        self.assertEqual(qdata, result)
 
     @as_users("annika", "garcia")
     def test_registration_query(self, user):
@@ -2219,19 +2252,19 @@ class TestEventBackend(BackendTest):
                                              'field_id': 1,
                                              'id': 2,
                                              'info': 'Du bringst genug Bälle mit um einen '
-                                             'ganzen Kurs abzuwerfen.',
+                                                     'ganzen Kurs abzuwerfen.',
                                              'input_size': None,
-                                             'pos': 1,
+                                             'pos': 0,
                                              'readonly': False,
                                              'title': 'Bälle',
-                                             'kind': const.QuestionnaireUsages.questionnaire,
+                                             'kind': const.QuestionnaireUsages.registration,
                                              },
                                          3: {'event_id': 1,
                                              'field_id': None,
                                              'id': 3,
                                              'info': 'nur etwas Text',
                                              'input_size': None,
-                                             'pos': 2,
+                                             'pos': 1,
                                              'readonly': None,
                                              'title': None,
                                              'kind': const.QuestionnaireUsages.questionnaire,
@@ -2241,7 +2274,7 @@ class TestEventBackend(BackendTest):
                                              'id': 4,
                                              'info': None,
                                              'input_size': None,
-                                             'pos': 3,
+                                             'pos': 2,
                                              'readonly': None,
                                              'title': 'Weitere Überschrift',
                                              'kind': const.QuestionnaireUsages.questionnaire,
@@ -2251,7 +2284,7 @@ class TestEventBackend(BackendTest):
                                              'id': 5,
                                              'info': None,
                                              'input_size': None,
-                                             'pos': 4,
+                                             'pos': 3,
                                              'readonly': False,
                                              'title': 'Vehikel',
                                              'kind': const.QuestionnaireUsages.questionnaire,
@@ -2261,7 +2294,7 @@ class TestEventBackend(BackendTest):
                                              'id': 6,
                                              'info': None,
                                              'input_size': 3,
-                                             'pos': 5,
+                                             'pos': 4,
                                              'readonly': False,
                                              'title': 'Hauswunsch',
                                              'kind': const.QuestionnaireUsages.questionnaire,
@@ -3923,48 +3956,51 @@ class TestEventBackend(BackendTest):
         }
         self.event.set_lodgement(self.key, update)
         self.event.delete_lodgement(self.key, new_id)
-        data = [
-            {'field_id': None,
-             'default_value': None,
-             'info': None,
-             'readonly': None,
-             'input_size': None,
-             'title': 'Weitere bla Überschrift',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': 2,
-             'default_value': 'etc',
-             'info': None,
-             'readonly': True,
-             'input_size': None,
-             'title': 'Vehikel',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': None,
-             'default_value': None,
-             'info': 'mit Text darunter und so',
-             'readonly': None,
-             'input_size': None,
-             'title': 'Unterüberschrift',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': 3,
-             'default_value': None,
-             'info': None,
-             'readonly': True,
-             'input_size': 5,
-             'title': 'Vehikel',
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-            {'field_id': None,
-             'default_value': None,
-             'info': 'nur etwas mehr Text',
-             'readonly': None,
-             'input_size': None,
-             'title': None,
-             'kind': const.QuestionnaireUsages.questionnaire,
-             },
-        ]
+        data = {
+            const.QuestionnaireUsages.questionnaire:
+                [
+                    {'field_id': None,
+                     'default_value': None,
+                     'info': None,
+                     'readonly': None,
+                     'input_size': None,
+                     'title': 'Weitere bla Überschrift',
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                    {'field_id': 2,
+                     'default_value': 'etc',
+                     'info': None,
+                     'readonly': True,
+                     'input_size': None,
+                     'title': 'Vehikel',
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                    {'field_id': None,
+                     'default_value': None,
+                     'info': 'mit Text darunter und so',
+                     'readonly': None,
+                     'input_size': None,
+                     'title': 'Unterüberschrift',
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                    {'field_id': 3,
+                     'default_value': None,
+                     'info': None,
+                     'readonly': True,
+                     'input_size': 5,
+                     'title': 'Vehikel',
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                    {'field_id': None,
+                     'default_value': None,
+                     'info': 'nur etwas mehr Text',
+                     'readonly': None,
+                     'input_size': None,
+                     'title': None,
+                     'kind': const.QuestionnaireUsages.questionnaire,
+                     },
+                ],
+        }
         self.event.set_questionnaire(self.key, 1, data)
 
         ## now check it

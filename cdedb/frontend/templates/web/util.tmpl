@@ -654,3 +654,68 @@
         {% endif %}
     {% endif %}
 {% endmacro %}
+
+{# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
+   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
+{% macro print_questionnaire_config(part_id, kind, aclass="", newrow=False) %}
+    <div class="panel panel-default {{ aclass }}">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title"),
+                                            attributes=('data-basename="title_"'|s if newrow else ''),
+                                            aclass='input-title drow-input', horizontal=false) }}
+                    {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),
+                                                attributes=('data-basename="info_"'|s if newrow else ''),
+                                                aclass='input-info drow-input', horizontal=false,
+                                                info=gettext("Supports %(infolink)s for “Text-Only” fields.")|format(
+                                                    infolink=util.href(docurl("Handbuch_Markdown"),
+                                                                       gettext("Markdown"),
+                                                                       title=gettext("Short Markdown summary")))|s) }}
+                </div>
+                <div class="col-md-6">
+                    {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
+                                              entries=registration_fields|keydictsort(EntitySorter.event_field)|dict_entries('id', 'field_name'),
+                                              nulloption=gettext("— Only Text —"),
+                                              attributes=('data-basename="field_id_"'|s if newrow else ''),
+                                              aclass='input-field drow-input', horizontal=False) }}
+                    {{ util.form_input_select(
+                        "input_size_{}".format(part_id), label=gettext("Input Size"), entries=(
+                            (0, gettext("singleline")), (1, gettext("multiline")),
+                            (2, gettext("multiline") + "+"), (3, gettext("multiline") + "++")),
+                        attributes=('data-basename="input_size_"'|s if newrow else ''),
+                        aclass='input-inputsize drow-input', horizontal=False) }}
+                    {{ util.form_input_textarea(
+                        "default_value_{}".format(part_id), label=gettext("Default Value"), rows=2,
+                        attributes=('data-basename="default_value_"'|s if newrow else ''),
+                        aclass='input-defaultvalue drow-input', horizontal=False) }}
+                    <div class="form-group row">
+                        <div class="col-sm-8">
+                            <div class="checkbox">
+                                {{ util.input_checkbox("readonly_{}".format(part_id), label=gettext("read-only"),
+                                                       attributes=('data-basename="readonly_"'|s if newrow else ''),
+                                                       aclass='input-readonly drow-input',
+                                                       readonly=(not values["readonly_{}".format(part_id)]
+                                                                 and (kind and not kind.allow_readonly()))) }}
+                                {{ util.output_errors("readonly_{}".format(part_id), wrapper=True) }}
+                            </div>
+                        </div>
+                        <div class="col-sm-4 text-right">
+                            <span class="drow-buttonspace">
+                                {% if newrow %}
+                                    {{ util.input_checkbox("create_{}".format(part_id), label=gettext("Add"),
+                                                           attributes='data-basename="create_"'|s,
+                                                           aclass='drow-indicator') }}
+                                {% else %}
+                                    {{ util.input_checkbox("delete_{}".format(part_id), label=gettext("Remove"),
+                                                           aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
