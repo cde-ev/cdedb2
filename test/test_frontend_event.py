@@ -2443,10 +2443,13 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/questionnaire/config'},
                       {'href': '/event/event/1/questionnaire/reorder'})
         f = self.response.forms['reorderquestionnaireform']
-        f['order'] = '5,3,1,0,2,4'
+        f['order_registration'] = '0'
+        f['order_questionnaire'] = '5,3,1,0,2,4'
         self.submit(f)
-        self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+        self.assertTitle("Fragebogen umordnen (Große Testakademie 2222)")
+        self.traverse({'description': 'Fragebogen konfigurieren'})
         f = self.response.forms['configurequestionnaireform']
+        self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         self.assertEqual("3", f['field_id_0'].value)
         self.assertEqual("2", f['field_id_5'].value)
         self.assertEqual("1", f['field_id_2'].value)
