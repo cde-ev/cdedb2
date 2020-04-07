@@ -42,8 +42,6 @@
                              aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_stats')) }}
                 {{ util.href(cdedblink("event/course_choices", {"event_id": data['id']}), gettext("Course Assignment"),
                         aclass="list-group-item", icon="screenshot", active=(sidenav_active == 'event_course_choices')) }}
-                {{ util.href(cdedblink("event/course_query", {"event_id": data['id']}), gettext("Course Query"),
-                             aclass="list-group-item", icon="search", active=(sidenav_active == 'event_course_query')) }}
             {% endif %}
             {{ util.href(cdedblink("event/lodgements", {"event_id": data['id']}), gettext("Lodgements"),
                     aclass="list-group-item", icon="home", active=(sidenav_active == 'event_lodgements')) }}
