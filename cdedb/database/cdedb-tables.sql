@@ -681,6 +681,7 @@ CREATE TABLE event.fee_modifiers (
         field_id                integer NOT NULL REFERENCES event.field_definitions(id)
 );
 CREATE UNIQUE INDEX idx_fee_modifiers_part_id ON event.fee_modifiers(part_id, modifier_name);
+CREATE UNIQUE INDEX idx_fee_modifiers_field_id ON event.fee_modifiers(part_id, field_id);
 GRANT INSERT, UPDATE, DELETE ON event.fee_modifiers TO cdb_persona;
 GRANT SELECT ON event.fee_modifiers TO cdb_anonymous;
 GRANT SELECT, UPDATE ON event.fee_modifiers_id_seq TO cdb_persona;
