@@ -1636,6 +1636,7 @@ etc;anything else""", f['entries_2'].value)
     def test_course_query(self, user):
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'},
+                      {'description': 'Kurse'},
                       {'description': 'Kurssuche'})
         self.assertTitle('Kurssuche (Große Testakademie 2222)')
         f = self.response.forms['queryform']
