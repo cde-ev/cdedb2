@@ -5,13 +5,13 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Course Query ({{ title }})
-    {%- endtrans %}    
+    {% endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Courses{%- endtrans %}
+        {% trans %}Courses{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -37,7 +37,7 @@
                             selection_default=selection_default) }}
 
     {% if values['is_search'] %}
-        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
 
         {{ generic.display_query_result(result, query, titles, choices) }}
 
