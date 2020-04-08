@@ -52,9 +52,9 @@ class TestCommon(unittest.TestCase):
         )
         for expectation, spec in tests:
             with self.subTest(spec=spec):
-                self.assertEqual(expectation,
-                                 schulze_evaluate(_ordinary_votes(
-                                     spec, candidates), candidates))
+                condensed, detailed = schulze_evaluate(
+                    _ordinary_votes(spec, candidates), candidates)
+                self.assertEqual(expectation, condensed)
 
     def test_schulze(self):
         candidates = ('0', '1', '2', '3', '4')
@@ -98,8 +98,8 @@ class TestCommon(unittest.TestCase):
         )
         for expectation, addons in tests:
             with self.subTest(addons=addons):
-                self.assertEqual(expectation,
-                                 schulze_evaluate(base+addons, candidates))
+                condensed, detailed = schulze_evaluate(base+addons, candidates)
+                self.assertEqual(expectation, condensed)
 
     def test_schulze_runtime(self):
         ## silly test, since I just realized, that the algorithm runtime is
