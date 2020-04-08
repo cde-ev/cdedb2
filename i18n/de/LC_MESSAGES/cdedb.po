@@ -15553,6 +15553,36 @@ msgid ""
 "pwd@example.cde&gt;) with http authentification information encoded."
 msgstr ""
 
+msgid "Had voted"
+msgstr "Haben abgestimmt"
+
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:98
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:99
+#, python-format
+msgid "Until now, %(count)s attendees had given their vote for this ballot."
+msgstr "Bis jetzt haben %(count)s Teilnehmer über diesen Punkt abgestimmt."
+
+msgid "%(count)s attendees had given their vote for this ballot."
+msgstr "Es stimmten %(count)s Teilnehmer über diesen Punkt ab."
+
+msgid "The bar option %(abm)s."
+msgstr "Die Ablehnungsgrenze %(abm)s."
+
+msgid "Pro-Votes"
+msgstr "Pro-Stimmen"
+
+msgid "Contra-Votes"
+msgstr "Kontra-Stimmen"
+
+#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:32
+#, python-format
+msgid ""
+"The following candidates have less votes than the \"Against all Candidates"
+"\" (%(abm)s) choice."
+msgstr ""
+"Die folgenden Kandidaten haben weniger Stimmen, als die \"Gegen alle "
+"Kandidaten\"-Option (%(abm)s)."
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 
