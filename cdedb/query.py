@@ -127,6 +127,32 @@ class Query:
             "spec={})").format(self.scope, self.fields_of_interest,
                                self.constraints, self.order, self.spec)
 
+    def fix_custom_columns(self):
+        """Custom columns may contain upper case, this wraps them in qoutes."""
+        self.fields_of_interest = [
+            ",".join(
+                ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                         for atom in moniker.split("."))
+                for moniker in column.split(","))
+            for column in self.fields_of_interest]
+        self.constraints = [
+            (",".join(
+                ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                         for atom in moniker.split("."))
+                for moniker in column.split(",")),
+             operator, value)
+            for column, operator, value in self.constraints
+        ]
+        self.order = [
+            (".".join(atom if atom.islower() else '"{}"'.format(atom)
+                      for atom in entry.split(".")),
+             ascending)
+            for entry, ascending in self.order]
+        for field, _, _ in self.constraints:
+            if '"' in field:
+                self.spec[field] = self.spec[field.replace('"', '')]
+                del self.spec[field.replace('"', '')]
+
 
 #: Available query templates. These may be enriched by ext-fields. Order is
 #: important for UI purposes, hence the ordered dicts.
@@ -300,6 +326,19 @@ QUERY_SPECS = {
             ("title", "str"),
             ("name_supplement", "str"),
         ]),
+    "qview_event_course":
+        collections.OrderedDict([
+            ("course.id", "id"),
+            ("course.nr", "str"),
+            ("course.title", "str"),
+            ("course.description", "str"),
+            ("course.shortname", "str"),
+            ("course.instructors", "str"),
+            ("course.min_size", "int"),
+            ("course.max_size", "int"),
+            ("course.notes", "str"),
+            # This will be augmented with additional fields in the fly.
+        ]),
     "qview_core_user":  # query for a general user including past event infos
         collections.OrderedDict([
             ("personas.id", "id"),
@@ -397,6 +436,7 @@ QUERY_PRIMARIES = {
     "qview_event_user": "personas.id",
     "qview_registration": "reg.id",
     "qview_quick_registration": "registrations.id",
+    "qview_event_course": "course.id",
     "qview_core_user": "personas.id",
     "qview_persona": "id",
     "qview_archived_persona": "personas.id",
