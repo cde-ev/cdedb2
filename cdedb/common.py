@@ -808,8 +808,6 @@ def schulze_evaluate(votes, candidates):
     the second is an more extended list, containing every level (descending) as
     dict with some extended information.
     """
-    if not votes:
-        return '='.join(candidates)
     split_votes = tuple(
         tuple(level.split('=') for level in vote.split('>')) for vote in votes)
 
