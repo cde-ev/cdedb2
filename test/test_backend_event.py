@@ -3814,8 +3814,8 @@ class TestEventBackend(BackendTest):
             }
         }
         self.event.set_event(self.key, data)
-        field_links = ((2, ValueError, "Fee modifier linked to non-bool field."),
-                       (5, ValueError, "Fee modifier linked to non-registration field."),
+        field_links = ((2, ValueError, "Fee Modifier linked to non-bool field."),
+                       (5, ValueError, "Fee Modifier linked to non-registration field."),
                        (7, psycopg2.IntegrityError, None),
                        (1001, None, None))
         for field_id, error, error_msg in field_links:
