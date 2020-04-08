@@ -656,8 +656,6 @@ class EventBackend(AbstractBackend):
                     for track in event['tracks'].values()),
             )
 
-            with open("/cdedb2/qourse_query.sql", "w", encoding="utf8") as f:
-                f.write("SELECT * FROM (\n" + view + ");")
             query.constraints.append(
                 ("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = "id"
