@@ -1329,15 +1329,15 @@ class EventBackend(AbstractBackend):
                         field = event_fields.get(fee_modifier['field_id'])
                         if not field:
                             raise ValueError(n_(
-                                "Fee modifier linked to unknown field."))
+                                "Fee Modifier linked to unknown field."))
                         if not field['association'] == \
                                const.FieldAssociations.registration:
                             raise ValueError(n_(
-                                "Fee modifier linked to non-registration "
+                                "Fee Modifier linked to non-registration "
                                 "field."))
                         if not field['kind'] == const.FieldDatatypes.bool:
                             raise ValueError(n_(
-                                "Fee modifier linked to non-bool field."))
+                                "Fee Modifier linked to non-bool field."))
                 # Do the actual work.
                 part_ids = {e['id'] for e in self.sql_select(
                     rs, "event.event_parts", ("id",), (data['id'],),
