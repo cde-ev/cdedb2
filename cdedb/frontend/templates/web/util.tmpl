@@ -638,7 +638,7 @@
 {# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
    jinja #}
 {% macro _admin_views_toggle_inner(views) -%}
-    {% for label, view_names, relevant_views in views -%}
+    {% for label, view_names, relevant_views in views|sort(attribute=0) -%}
         {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
         {% if (relevant_views|set).intersection(user.available_admin_views) %}
             {# The button is "deactivated" as long as there are more "relevant views" which are available for the
