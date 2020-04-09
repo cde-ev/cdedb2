@@ -2407,7 +2407,8 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def change_past_event_form(self, rs, pevent_id):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['pevent'])
         return self.render(rs, "change_past_event", {
             'institutions': institutions})
@@ -2428,7 +2429,8 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def create_past_event_form(self, rs):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         return self.render(rs, "create_past_event", {
             'institutions': institutions})
 

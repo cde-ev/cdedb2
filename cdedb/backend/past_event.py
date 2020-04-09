@@ -135,15 +135,9 @@ class PastEventBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: Mapping of institution ids to titles.
         """
-        query = "SELECT id, moniker, title FROM past_event.institutions"
+        query = "SELECT id, title FROM past_event.institutions"
         data = self.query_all(rs, query, tuple())
-        ret = {
-            e['id']: {
-                'id': e['id'],
-                'title': e['title'],
-                'moniker': e['moniker']
-            } for e in data}
-        return ret
+        return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
     @singularize("get_institution")
