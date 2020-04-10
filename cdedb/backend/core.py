@@ -261,7 +261,7 @@ class CoreBackend(AbstractBackend):
         time_start = affirm("datetime_or_None", time_start)
         time_stop = affirm("datetime_or_None", time_stop)
 
-        length = length or 50
+        length = length or self.conf.DEFAULT_LOG_LENGTH
 
         connector = "WHERE"
         condition = ""

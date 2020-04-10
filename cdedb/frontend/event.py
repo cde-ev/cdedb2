@@ -5414,7 +5414,7 @@ class EventFrontend(AbstractUserFrontend):
     def view_log(self, rs, codes, event_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities concerning events organized via DB."""
-        length = length or 50
+        length = length or self.conf.DEFAULT_LOG_LENGTH
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
@@ -5453,7 +5453,7 @@ class EventFrontend(AbstractUserFrontend):
     def view_event_log(self, rs, codes, event_id, offset, length, persona_id,
                        submitted_by, additional_info, time_start, time_stop):
         """View activities concerning one event organized via DB."""
-        length = length or 50
+        length = length or self.conf.DEFAULT_LOG_LENGTH
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)

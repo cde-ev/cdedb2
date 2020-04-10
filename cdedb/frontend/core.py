@@ -2271,7 +2271,7 @@ class CoreFrontend(AbstractFrontend):
                             submitted_by, additional_info, time_start,
                             time_stop, reviewed_by):
         """View changelog activity."""
-        length = length or 50
+        length = length or self.conf.DEFAULT_LOG_LENGTH
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
@@ -2307,7 +2307,7 @@ class CoreFrontend(AbstractFrontend):
     def view_log(self, rs, codes, offset, length, persona_id, submitted_by,
                  additional_info, time_start, time_stop):
         """View activity."""
-        length = length or 50
+        length = length or self.conf.DEFAULT_LOG_LENGTH
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)

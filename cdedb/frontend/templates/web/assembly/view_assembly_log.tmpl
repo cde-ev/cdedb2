@@ -17,7 +17,6 @@
 {% block content %}
     {% call logging.table(log) %}
         {% for entry in log %}
-            {% set link = None %}
             {{ logging.row(entry, enums['AssemblyLogCodes']) }}
         {% endfor %}
     {% endcall %}

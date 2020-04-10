@@ -230,6 +230,8 @@ _DEFAULTS = {
     # maximum length of personas presented via select persona API for any other
     # user
     "NUM_PREVIEW_PERSONAS": 3,
+    #: Default amount of lines shown in logs shown in the frontend
+    "DEFAULT_LOG_LENGTH": 50,
     # Available languages
     "I18N_LANGUAGES": ("de", "en"),
 

@@ -675,7 +675,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         time_start = affirm_validation("datetime_or_None", time_start)
         time_stop = affirm_validation("datetime_or_None", time_stop)
 
-        length = length or 50
+        length = length or self.conf.DEFAULT_LOG_LENGTH
         additional_columns = additional_columns or tuple()
 
         # First, define the common WHERE filter clauses

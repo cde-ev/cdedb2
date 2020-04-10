@@ -2599,7 +2599,7 @@ class CdEFrontend(AbstractUserFrontend):
     def view_cde_log(self, rs, codes, offset, length, persona_id, submitted_by,
                      additional_info, time_start, time_stop):
         """View general activity."""
-        length = length or 50
+        length = length or self.conf.DEFAULT_LOG_LENGTH
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
@@ -2632,7 +2632,7 @@ class CdEFrontend(AbstractUserFrontend):
     def view_finance_log(self, rs, codes, offset, length, persona_id, submitted_by,
                          additional_info, time_start, time_stop):
         """View financial activity."""
-        length = length or 50
+        length = length or self.conf.DEFAULT_LOG_LENGTH
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
@@ -2666,7 +2666,7 @@ class CdEFrontend(AbstractUserFrontend):
     def view_past_log(self, rs, codes, pevent_id, offset, length, persona_id,
                       submitted_by, additional_info, time_start, time_stop):
         """View activities concerning concluded events."""
-        length = length or 50
+        length = length or self.conf.DEFAULT_LOG_LENGTH
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
