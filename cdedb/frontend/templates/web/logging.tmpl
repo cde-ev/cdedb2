@@ -127,7 +127,7 @@
 {% endmacro %}
 
 {% macro navigation(endpoint, total, length, loglinks) %}
-    <nav class="text-center" aria-label="{% trans %}Log page navigation{% endtrans %}">
+    <nav class="text-center" aria-label="{% trans %}Logbook page navigation{% endtrans %}">
     <ul class="pagination pagination-lg">
         {# How can I properly automate the target? #}
         {% if loglinks["current"]["offset"] < 0 %}
@@ -138,14 +138,14 @@
 
         <li class="page-item">
             <a class="page-link" href="{{ cdedblink(endpoint, loglinks['first']) }}"
-                    aria-label="{% trans %}First{% endtrans %}">
+                    title="{% trans %}First{% endtrans %}">
                 <span aria-hidden="true">&laquo;</span>
             </a>
         </li>
         <li class="page-item {% if loglinks['previous']['offset']|int + length <= 0 %}disabled{% endif %}">
             <a class="page-link" {% if loglinks['previous']['offset']|int + length > 0 %}
                     href="{{ cdedblink(endpoint, loglinks['previous']) }}"{% endif %}
-                    aria-label="{% trans %}Previous{% endtrans %}">
+                    title="{% trans %}Previous{% endtrans %}" aria-label="{% trans %}Previous{% endtrans %}">
                 <span aria-hidden="true">&lsaquo;</span>
             </a>
         </li>
@@ -155,13 +155,13 @@
         <li class="page-item {% if loglinks['next']['offset']|int >= total %}disabled{% endif %}">
             <a class="page-link" {% if loglinks['next']['offset']|int < total %}
                     href="{{ cdedblink(endpoint, loglinks['next']) }}"{% endif %}
-                    aria-label="{% trans %}Next{% endtrans %}">
+                    title="{% trans %}Next{% endtrans %}" aria-label="{% trans %}Next{% endtrans %}">
                 <span aria-hidden="true">&rsaquo;</span>
             </a>
         </li>
         <li class="page-item {% if not values["offset"] %}active" aria-current="page{% endif %}">
             <a class="page-link" href="{{ cdedblink(endpoint, loglinks['last']) }}"
-                    aria-label="{% trans %}Last{% endtrans %}">
+                    title="{% trans %}Last{% endtrans %} aria-label="{% trans %}Last{% endtrans %}"">
                 <span aria-hidden="true">&raquo;</span>
             </a>
         </li>

@@ -34,9 +34,9 @@
                         icon="wrench", active=(sidenav_active=='core_privilege_changes')) }}
             {% endif %}
             {% if is_admin %}
-                {{ util.href(cdedblink("core/view_log"), gettext("Account Log"), aclass="list-group-item",
+                {{ util.href(cdedblink("core/view_log"), gettext("Account Logbook"), aclass="list-group-item",
                         icon="list-alt", active=(sidenav_active=='core_log')) }}
-                {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), aclass="list-group-item",
+                {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Userdata Logbook"), aclass="list-group-item",
                         icon="list-alt", active=(sidenav_active=='core_change_log')) }}
                 </div>
                 <div class="list-group tear-down">

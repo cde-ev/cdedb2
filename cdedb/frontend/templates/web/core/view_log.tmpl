@@ -6,12 +6,12 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans %}Account Log{% endtrans %}
+    {% trans %}Account Logbook{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("core/view_log"), gettext("Account Log"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("core/view_log"), gettext("Account Logbook"), active="True") }}
 {% endblock %}
 {% block content %}
     {% call logging.table(log) %}

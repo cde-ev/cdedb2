@@ -18,7 +18,7 @@
                     {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), gettext("Configuration"),
                             aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
                 {% endif %}
-                    {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}), gettext("Log"),
+                    {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}), gettext("Logbook"),
                             aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'assembly_assembly_log')) }}
             {% endif %}
         </div>
@@ -46,7 +46,7 @@
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("assembly/user_search"), gettext("Manage Users"), icon="user",
                         aclass="list-group-item", active=(sidenav_active == 'assembly_users')) }}
-                {{ util.href(cdedblink("assembly/view_log"), gettext("Log"), icon="list-alt", aclass="list-group-item",
+                {{ util.href(cdedblink("assembly/view_log"), gettext("Logbook"), icon="list-alt", aclass="list-group-item",
                         active=(sidenav_active == 'assembly_log')) }}
             </div>
         {% endif %}
