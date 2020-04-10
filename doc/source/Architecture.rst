@@ -9,7 +9,8 @@ Architecture
    Architecture_Privileges
    Architecture_Events
    Architecture_Mailinglists
-
+   Course_Query
+   Registration_Query
 
 
 

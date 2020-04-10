@@ -1123,7 +1123,8 @@ class AssemblyBackend(AbstractBackend):
                 x['moniker'] for x in ballot['candidates'].values())
             if ballot['use_bar'] or ballot['votes']:
                 monikers += (ASSEMBLY_BAR_MONIKER,)
-            result = schulze_evaluate([e['vote'] for e in votes], monikers)
+            condensed, detailed = schulze_evaluate([e['vote'] for e in votes],
+                                                   monikers)
             update = {
                 'id': ballot_id,
                 'is_tallied': True,
@@ -1157,7 +1158,7 @@ class AssemblyBackend(AbstractBackend):
             result_file = template.substitute({
                 'ASSEMBLY': esc(assembly['title']),
                 'BALLOT': esc(ballot['title']),
-                'RESULT': esc(result),
+                'RESULT': esc(condensed),
                 'CANDIDATES': candidates,
                 'USE_BAR': esc(ballot['use_bar']),
                 'VOTERS': voter_list,

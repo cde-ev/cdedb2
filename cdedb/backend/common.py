@@ -493,6 +493,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :rtype: [{str: object}]
         :returns: all results of the query
         """
+        query.fix_custom_columns()
         self.logger.debug("Performing general query {}.".format(query))
         select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
                            for field in query.fields_of_interest

@@ -94,6 +94,10 @@ body{
     border-top-style: none;
     min-width: 20px;
 }
+tr.no-upper-border {
+   border-top:hidden;
+   -webkit-border-horizontal-spacing: 0;
+}
 ul.slim {
     padding-left: 15px;
 }
