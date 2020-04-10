@@ -8,7 +8,9 @@ template for all services.
 
 import abc
 import collections.abc
+import copy
 import enum
+import functools
 import logging
 
 import cdedb.validation as validate
@@ -41,20 +43,21 @@ def singularize(function, array_param_name="ids", singular_param_name="anid",
         singular param as a key.
     """
 
-    # TODO maybe use functools.wraps to update __doc__ only
-    def singularized(self, rs, *args, **kwargs):
+    @functools.wraps(function)
+    def wrapper(self, rs, *args, **kwargs):
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
             kwargs[array_param_name] = (param,)
         else:
-            args = ((args[0],),) + args[1:]
+            param = args[0]
+            args = ((param,),) + args[1:]
         data = function(self, rs, *args, **kwargs)
         if passthrough:
             return data
         else:
             return data[param]
 
-    return singularized
+    return wrapper
 
 
 def batchify(function, array_param_name="data", singular_param_name="data"):
@@ -76,8 +79,8 @@ def batchify(function, array_param_name="data", singular_param_name="data"):
     # Break cyclic import by importing here
     from cdedb.database.connection import Atomizer
 
-    # TODO maybe use functools.wraps to update __doc__ only
-    def batchified(self, rs, *args, **kwargs):
+    @functools.wraps(function)
+    def wrapper(self, rs, *args, **kwargs):
         ret = []
         with Atomizer(rs):
             if array_param_name in kwargs:
@@ -93,7 +96,7 @@ def batchify(function, array_param_name="data", singular_param_name="data"):
                     ret.append(function(self, rs, *new_args, **kwargs))
         return ret
 
-    return batchified
+    return wrapper
 
 
 def access(*roles):
