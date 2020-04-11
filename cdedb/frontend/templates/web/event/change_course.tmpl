@@ -45,7 +45,8 @@
             {{ util.form_input_checkboxes(name="segments", label=gettext("Course Tracks"),
                                           entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
                                           aclass='checkbox_segment',
-                                          info=gettext("Course tracks, in which the Course was originally offered.")) }}
+                                          info=gettext("Course tracks, in which the Course was originally offered."),
+                                          sort=False) }}
         {% endif %}
 
         <h4 class="heading-underline">{% trans %}Status{% endtrans %}</h4>
@@ -70,7 +71,8 @@
                                               else gettext(
                                                   "This is an orga-internal marker to help with course assignment. To "
                                                   "make cancelled courses public, check Configuration → Visibility of "
-                                                  "cancelled courses.")) }}
+                                                  "cancelled courses."),
+                                          sort=False) }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(

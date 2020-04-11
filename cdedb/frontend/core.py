@@ -450,25 +450,7 @@ class CoreFrontend(AbstractFrontend):
         # Add past event participation info
         past_events = None
         if "cde" in access_levels and {"event", "cde"} & roles:
-            participation_info = self.pasteventproxy.participation_info(
-                rs, persona_id)
-            # Group participation data by pevent_id: First get distinct past
-            # events from participation data, afterwards add dict of courses
-            past_events = {
-                pi['pevent_id']: {
-                    k: pi[k]
-                    for k in ('pevent_id', 'event_name', 'tempus', 'is_orga')}
-                for pi in participation_info}
-            for past_event_id, past_event in past_events.items():
-                past_event['courses'] = {
-                    pi['pcourse_id']: {
-                        k: pi[k]
-                        for k in ('pcourse_id', 'course_name', 'nr',
-                                  'is_instructor')}
-                    for pi in participation_info
-                    if (pi['pevent_id'] == past_event_id and
-                        pi['pcourse_id'] is not None)
-                }
+            past_events = self.pasteventproxy.participation_info(rs, persona_id)
 
         # Check whether we should display an option for using the quota
         quoteable = (not quote_me

@@ -94,12 +94,21 @@
             {% endif %}
         </dd>
         {% if ambience['ballot']['vote_begin'] < now() %}
-            <dt>{% trans %}Already voted{% endtrans %}</dt>
-            <dd id="already-voted">
-                {% trans count=ambience['ballot']['vote_count'] %}
-                    Until now, {{ count }} attendes had given their vote for this ballot.
-                {% endtrans %}
-            </dd>
+            {% if ambience['ballot']['is_tallied'] %}
+                <dt>{% trans %}Had voted{% endtrans %}</dt>
+                <dd id="had-voted">
+                    {% trans count=ambience['ballot']['vote_count'] %}
+                        {{ count }} attendees had given their vote for this ballot.
+                    {% endtrans %}
+                </dd>
+            {% else %}
+                <dt>{% trans %}Already voted{% endtrans %}</dt>
+                <dd id="already-voted">
+                    {% trans count=ambience['ballot']['vote_count'] %}
+                        Until now, {{ count }} attendees had given their vote for this ballot.
+                    {% endtrans %}
+                </dd>
+            {% endif %}
         {% endif %}
     </dl>
 
@@ -114,7 +123,7 @@
     {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         {% if attachments %}
             <ul id="attachments">
-                {% for attachment_id, attachment in attachments|xdictsort("title") %}
+                {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.attachment) %}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
                                 attachment['title']) }}

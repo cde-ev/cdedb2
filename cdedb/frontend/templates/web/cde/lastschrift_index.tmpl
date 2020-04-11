@@ -136,7 +136,7 @@
                         <th>{% trans %}Amount{% endtrans %}</th></tr>
                 </thead>
                 <tbody>
-                {% for transaction_id, transaction in transactions|xdictsort('issued_at') %}
+                {% for transaction_id, transaction in transactions|keydictsort(EntitySorter.transaction) %}
                     <tr class="ls-item">
                         <td>
                             {{ util.input_checkbox(name="transaction_ids", value=transaction_id, aclass="rowSelector") }}

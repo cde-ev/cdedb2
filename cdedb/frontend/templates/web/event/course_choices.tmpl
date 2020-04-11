@@ -80,7 +80,7 @@
                                 aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Course")),
                         select3=util.input_select(name="position", entries=filter_entries,
                                 aclass="form-control input-slim input-sm", nulloption=gettext("— no Filter —"),
-                                arialabel=gettext("Filter: Course Operator"))
+                                arialabel=gettext("Filter: Course Operator"), sort=True)
                         -%}
                     Show only participants who {{ select3 }} the course {{ select2 }} {{ select1 }}
                 {% endtrans %}
@@ -123,7 +123,7 @@
                         participants='<div class="col-md-2">%s</div>'|s|format(gettext("selected participants")),
                         course='<div class="col-md-4"><div class="form-group">%s</div><div class="form-group">%s</div></div>'|s|format(
                             util.input_select(name="assign_action", anid="input-action",
-                                              entries=action_entries, arialabel=gettext("Assignment Method")),
+                                              entries=action_entries, arialabel=gettext("Assignment Method"), sort=True),
                             util.input_select(name="assign_course_id", anid="input-course_id", entries=course_entries,
                                               nulloption="&nbsp;"|s, arialabel="Assign to Course")),
                         tracks=tracks,

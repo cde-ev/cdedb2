@@ -117,7 +117,8 @@
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
                                         nulloption="&nbsp;"|s, aclass="form-control select-action",
-                                        arialabel=gettext("Operation for line %s")|format(dataset['lineno'])) }}
+                                        arialabel=gettext("Operation for line %s")|format(dataset['lineno']),
+                                        sort=True) }}
                             </div>
                         </div>
 
@@ -129,7 +130,7 @@
                                 <div class="p strip-space">
                                     {#- jinja does not support list comprehension ... #}
                                     {%- set myentries = [('', '–')] %}
-                                    {%- for key, value in dataset['doppelgangers']|dictsort %}
+                                    {%- for key, value in dataset['doppelgangers']|keydictsort(EntitySorter.persona) %}
                                         {%- with description = "{} {} ({}) <{}> ({} {}), {}{}".format(
                                                 value['given_names'], value['family_name'],
                                                 value['birth_name'] or value['family_name'],

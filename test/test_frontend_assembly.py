@@ -650,13 +650,13 @@ class TestAssemblyFrontend(FrontendTest):
     def test_tally_and_get_result(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
-                      {'description': 'Abstimmungen'},
-                      {'description': 'Antwort auf die letzte aller Fragen'},)
-        self.assertTitle("Antwort auf die letzte aller Fragen (Internationaler Kongress)")
+                      {'description': 'Abstimmungen'},)
+        self.assertTitle("Internationaler Kongress – Abstimmungen")
         mail = self.fetch_mail()[0]
         text = mail.get_body().get_content()
         self.assertIn('die Abstimmung "Antwort auf die letzte aller Fragen" der Versammlung', text)
-        self.traverse({'description': 'Ergebnisdatei herunterladen'},)
+        self.traverse({'description': 'Antwort auf die letzte aller Fragen'},
+                      {'description': 'Ergebnisdatei herunterladen'},)
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
 

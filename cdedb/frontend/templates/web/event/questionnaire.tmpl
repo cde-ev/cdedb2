@@ -57,7 +57,8 @@
                         {{ util.form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
                                                   label=entry['title'], info=entry['info'],
                                                   readonly=readonly,
-                                                  defaultvalue=entry['default_value'] if not readonly else "") }}
+                                                  defaultvalue=entry['default_value'] if not readonly else "",
+                                                  sort=True) }}
                     {% else %}
                         {% set datatypes = enums['FieldDatatypes'] %}
                         {% if FIELD['kind'] == datatypes.bool %}

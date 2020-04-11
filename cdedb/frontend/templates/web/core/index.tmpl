@@ -111,7 +111,7 @@
             {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='chalkboard-teacher',
                                          aclass='panel-warning', anid="orga-box") %}
                 <ul class="slim spaced">
-                    {% for event_id, event in dashboard['orga']|xdictsort('begin') %}
+                    {% for event_id, event in dashboard['orga']|keydictsort(EntitySorter.event) %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
                                     icon='chalkboard-teacher') }}
@@ -175,7 +175,7 @@
             {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='envelope',
                                          aclass='panel-warning', anid='moderator-box') %}
                 <ul class="slim spaced">
-                    {% for mailinglist_id, mailinglist in dashboard['moderator']|xdictsort('title') %}
+                    {% for mailinglist_id, mailinglist in dashboard['moderator']|keydictsort(EntitySorter.mailinglist) %}
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
                                          mailinglist['title'], icon='envelope') }}
@@ -198,7 +198,7 @@
             {% call util.bootstrap_panel(title=gettext("Current Events"), icon='chalkboard-teacher',
                                          aclass='panel-success', anid='event-box') %}
                 <ul class="slim spaced">
-                    {% for event_id, event in dashboard['events']|xdictsort('begin') %}
+                    {% for event_id, event in dashboard['events']|keydictsort(EntitySorter.event) %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
                                          icon='chalkboard-teacher') }}
@@ -250,7 +250,7 @@
             {% call util.bootstrap_panel(title=gettext("Current Assemblies"), icon='bullhorn',
                                          aclass='panel-success', anid='assembly-box') %}
                 <ul class="slim spaced">
-                    {% for assembly_id, assembly in dashboard['assemblies']|xdictsort('signup_end') %}
+                    {% for assembly_id, assembly in dashboard['assemblies']|keydictsort(EntitySorter.assembly) %}
                         <li>
                             {{ util.href(cdedblink('assembly/show_assembly', {'assembly_id': assembly_id}),
                                          assembly['title'], icon='bullhorn') }}

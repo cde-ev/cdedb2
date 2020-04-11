@@ -131,7 +131,7 @@
             </tr>
 	    </thead>
 	    <tbody>
-            {% for transaction_id, transaction in transactions|xdictsort('issued_at')|reverse %}
+            {% for transaction_id, transaction in transactions|keydictsort(EntitySorter.transaction, reverse=True) %}
                 <tr>
                     <td>{{ transaction['issued_at']|datetime(lang=lang) }}</td>
                     <td>{{ transaction['processed_at']|datetime(lang=lang) }}</td>

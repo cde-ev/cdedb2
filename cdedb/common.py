@@ -585,6 +585,46 @@ class EntitySorter:
     def candidates(candidates):
         return (candidates['moniker'], candidates['id'])
 
+    @staticmethod
+    def assembly(assembly):
+        return (assembly['signup_end'], assembly['id'])
+
+    @staticmethod
+    def ballot(ballot):
+        return (ballot['title'], ballot['id'])
+
+    @staticmethod
+    def attachment(attachment):
+        return (attachment['title'], attachment['id'])
+
+    @staticmethod
+    def past_event(past_event):
+        return (past_event['tempus'], past_event['id'])
+
+    @staticmethod
+    def past_course(past_course):
+        return (pad(past_course['nr']), past_course['title'], past_course['id'])
+
+    @staticmethod
+    def institution(institution):
+        return (institution['moniker'], institution['id'])
+
+    @staticmethod
+    def transaction(transaction):
+        return (transaction['issued_at'], transaction['id'])
+
+    @staticmethod
+    def genesis_case(genesis_case):
+        return (genesis_case['ctime'], genesis_case['id'])
+
+    @staticmethod
+    def changelog(changelog_entry):
+        return (changelog_entry['ctime'], changelog_entry['id'])
+
+    @staticmethod
+    def mailinglist(mailinglist):
+        return (mailinglist['title'], mailinglist['id'])
+
 
 def compute_checkdigit(value):
     """Map an integer to the checksum used for UI purposes.
@@ -803,11 +843,11 @@ def schulze_evaluate(votes, candidates):
     :param candidates: We require that the candidates be explicitly
       passed. This allows for more flexibility (like returning a useful
       result for zero votes).
-    :rtype: str
-    :returns: The aggregated preference list.
+    :rtype: (str, [{}])
+    :returns: The first Element is the aggregated result,
+    the second is an more extended list, containing every level (descending) as
+    dict with some extended information.
     """
-    if not votes:
-        return '='.join(candidates)
     split_votes = tuple(
         tuple(level.split('=') for level in vote.split('>')) for vote in votes)
 
@@ -879,9 +919,21 @@ def schulze_evaluate(votes, candidates):
             break
         winners = _schulze_winners(d, remaining)
         result.append(winners)
-    # Return the aggregate preference list in the same format as the input
+
+    # Return the aggregated preference list in the same format as the input
     # votes are.
-    return ">".join("=".join(level) for level in result)
+    condensed = ">".join("=".join(level) for level in result)
+    detailed = []
+    for lead, follow in zip(result, result[1:]):
+        level = {
+            'winner': lead,
+            'loser': follow,
+            'pro_votes': counts[(lead[0], follow[0])],
+            'contra_votes': counts[(follow[0], lead[0])]
+        }
+        detailed.append(level)
+
+    return condensed, detailed
 
 
 #: Magic value of moniker of the ballot candidate representing the bar.

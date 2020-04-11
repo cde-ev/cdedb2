@@ -13,7 +13,7 @@
 
 <<% endblock %>>
 <<% block content %>>
-    <<% for course_id, course in courses|xdictsort('nr', pad=True) %>>
+    <<% for course_id, course in courses|keydictsort(EntitySorter.course) %>>
         <<% for track_id in tracks_sorted if track_id in course['active_segments'] %>>
         <<% set key = (course_id, track_id) %>>
             \begin{minipage}[c][\logosize\linewidth][c]{0.8\linewidth}

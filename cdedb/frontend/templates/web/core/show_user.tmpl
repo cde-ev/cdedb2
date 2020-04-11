@@ -159,7 +159,7 @@
                             {% endif %}
                         {% endfor %}
                         {% if not vars['any_privilege'] %}
-                            <i>{% trans -%}None{%- endtrans %}</i>
+                            <i>{% trans %}None{% endtrans %}</i>
                         {% endif %}
                         {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
@@ -332,22 +332,22 @@
             <h4 id="past-events" class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
             <table class="table table-hover past-event-table">
             <tbody>
-                {% for pevent_id, pevent in past_events|xdictsort('tempus')|reverse %}
+                {% for pevent_id, pevent in past_events|keydictsort(EntitySorter.past_event, reverse=True) %}
                     <tr>
                         <td>
                             {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
-                                         pevent['event_name'], readonly='member' not in user.roles) -}}
+                                         pevent['title'], readonly='member' not in user.roles) -}}
                         </td>
                         <td>
                             {% if pevent['is_orga'] %}
                                 (Orga) <br />
                             {% endif %}
                             {% if pevent['courses'] -%}
-                                {% for pcourse_id, pcourse in pevent['courses']|xdictsort('nr', pad=True) %}
+                                {% for pcourse_id, pcourse in pevent['courses']|keydictsort(EntitySorter.past_course) %}
                                     {{ pcourse['nr'] }}.
                                     {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent_id,
                                                                                     "pcourse_id": pcourse_id}),
-                                                 pcourse['course_name'], readonly='cde' not in user.roles) }}
+                                                 pcourse['title'], readonly='cde' not in user.roles) }}
                                     {%- if pcourse['is_instructor'] %}
                                         {% trans %}(Instructor){% endtrans %}
                                     {%- endif -%}
@@ -500,16 +500,16 @@ Mitglied.</pre>
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                     Invalidates the users password and terminates their sessions.
                                     They will have to set a new password.
-                                {%- endtrans %}
-                                {% trans -%}
+                                {% endtrans %}
+                                {% trans %}
                                     If the user is an admin, you will need to send them a reset link to do that.
-                                {%- endtrans %}
-                                {% trans -%}
+                                {% endtrans %}
+                                {% trans %}
                                     Please enter your own password to confirm this action.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>

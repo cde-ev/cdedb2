@@ -1367,6 +1367,89 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, result)
 
     @as_users("annika")
+    def test_queries_without_fields(self, user):
+        # Check that the query views work if there are no custom fields.
+        event = self.event.get_event(self.key, 2)
+        self.assertFalse(event["fields"])
+        query = Query(
+            scope="qview_registration",
+            spec=dict(QUERY_SPECS["qview_registration"]),
+            fields_of_interest=["reg.id"],
+            constraints=[],
+            order=[],
+        )
+        result = self.event.submit_general_query(self.key, query, event_id=2)
+        self.assertEqual(tuple(), result)
+        query = Query(
+            scope="qview_event_course",
+            spec=dict(QUERY_SPECS["qview_event_course"]),
+            fields_of_interest=["course.id"],
+            constraints=[],
+            order=[],
+        )
+        result = self.event.submit_general_query(self.key, query, event_id=2)
+        self.assertEqual(tuple(), result)
+
+    @as_users("garcia")
+    def test_course_query(self, user):
+        query = Query(
+            scope="qview_event_course",
+            spec=dict(QUERY_SPECS['qview_event_course']),
+            fields_of_interest=[
+                "course.id",
+                "track1.attendees",
+                "track2.is_offered",
+                "track3.num_choices1",
+                "track3.instructors",
+                "course_fields.xfield_room"],
+            constraints=[],
+            order=[("course.max_size", True), ],
+        )
+        result = self.event.submit_general_query(self.key, query, event_id=1)
+        expectation = (
+            {'course.id': 1,
+             'course_fields.xfield_room': 'Wald',
+             'id': 1,
+             'max_size': 10,
+             'track1.attendees': 0,
+             'track2.is_offered': False,
+             'track3.instructors': 1,
+             'track3.num_choices1': 0},
+            {'course.id': 3,
+             'course_fields.xfield_room': 'Seminarraum 42',
+             'id': 3,
+             'max_size': 14,
+             'track1.attendees': 0,
+             'track3.instructors': 0,
+             'track2.is_offered': True,
+             'track3.num_choices1': 0},
+            {'course.id': 2,
+             'course_fields.xfield_room': 'Theater',
+             'id': 2,
+             'max_size': 20,
+             'track1.attendees': 0,
+             'track2.is_offered': True,
+             'track3.instructors': 0,
+             'track3.num_choices1': 2},
+            {'course.id': 4,
+             'course_fields.xfield_room': 'Seminarraum 23',
+             'id': 4,
+             'max_size': None,
+             'track1.attendees': 0,
+             'track2.is_offered': True,
+             'track3.instructors': 0,
+             'track3.num_choices1': 3},
+            {'course.id': 5,
+             'course_fields.xfield_room': 'Nirwana',
+             'id': 5,
+             'max_size': None,
+             'track1.attendees': 0,
+             'track2.is_offered': True,
+             'track3.instructors': 0,
+             'track3.num_choices1': 0})
+        self.assertEqual(result, expectation)
+
+    @as_users("annika")
     def test_is_instructor_query(self, user):
         registrations = (
             {

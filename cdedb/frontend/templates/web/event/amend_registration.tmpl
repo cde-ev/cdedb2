@@ -40,7 +40,8 @@
             {{ util.form_input_select(name="mixed_lodging", entries=(
                 (True, gettext("I agree to mixed lodging.")),
                 (False, gettext("I want to be lodged seperated by gender."))),
-                label=gettext("Mixed Lodging"), info=mix_info, readonly=readonly) }}
+                label=gettext("Mixed Lodging"), info=mix_info, readonly=readonly,
+                sort=True) }}
         {% endif %}
         {{ util.form_input_checkbox(name="list_consent", label=gettext(
                 "I agree that my data, including my name, address and my email, may be sent "
