@@ -22,6 +22,7 @@ help:
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 PYTHONBIN ?= python3
+PYLINTBIN ?= pylint3
 TESTPATTERN ?=
 
 doc:
@@ -150,13 +151,13 @@ lint:
 	@echo "All of pylint"
 	@echo "================================================================================"
 	@echo ""
-	/usr/lib/python-exec/python3.6/pylint --rcfile='./lint.rc' cdedb || true
+	${PYLINTBIN} --rcfile='./lint.rc' cdedb || true
 	@echo ""
 	@echo "================================================================================"
 	@echo "And now only errors and warnings"
 	@echo "================================================================================"
 	@echo ""
-	/usr/lib/python-exec/python3.6/pylint --rcfile='./lint.rc' --output-format=text cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
+	${PYLINTBIN} --rcfile='./lint.rc' --output-format=text cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
 
 check:
 	make i18n-compile
@@ -187,7 +188,7 @@ xss-check:
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql &>/dev/null
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql &>/dev/null
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
-	python3 -m bin.escape_fuzzing 2>/dev/null
+	${PYTHONBIN}-m bin.escape_fuzzing 2>/dev/null
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 quick-check:
