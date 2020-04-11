@@ -90,6 +90,9 @@ sudo -u cdedb touch /home/cdedb/.bashrc
 echo "" >> /home/cdedb/.bashrc
 echo "export EDITOR=nano" >> /home/cdedb/.bashrc
 echo "" >> /home/cdedb/.bashrc
+sudo -u cdedb touch /home/cdedb/.bash_profile
+echo "cd /cdedb2" >> /home/cdedb/.bash_profile
+echo "" >> /home/cdedb/.bash_profile
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 cat > /etc/motd <<EOF
