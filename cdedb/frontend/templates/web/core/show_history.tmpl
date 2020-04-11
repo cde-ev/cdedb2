@@ -19,7 +19,7 @@
                 enums["MemberChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
                 enums["MemberChangeStati"].nacked: ('nacked', 'ban', gettext("nacked")),
                 enums["MemberChangeStati"].displaced: ('displaced', 'sync', gettext("displaced")),
-                -1: ('complicated','question-sign',gettext("complicated")),} %}
+                -1: ('complicated','question-circle',gettext("complicated")),} %}
 {% macro print_history(f) %}
     {% for c in entries|sort %}
         {% if c not in constants[f] %}

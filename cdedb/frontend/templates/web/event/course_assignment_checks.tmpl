@@ -38,9 +38,9 @@
 {% block content %}
     <div class="row">
         {% for key, heading, icon, panelclass in (
-                ('cancelled_with_p', gettext("Cancelled courses with participants"), 'ban-circle', 'danger'),
-                ('many_p', gettext("Courses with too many attendees"), 'warning-sign', 'warning'),
-                ('few_p', gettext("Courses with too few attendees"), 'warning-sign', 'warning'),
+                ('cancelled_with_p', gettext("Cancelled courses with participants"), 'ban', 'danger'),
+                ('many_p', gettext("Courses with too many attendees"), 'exclamation-triangle', 'warning'),
+                ('few_p', gettext("Courses with too few attendees"), 'exclamation-triangle', 'warning'),
                 ('no_instructor', gettext("Courses without instructor"), 'briefcase', 'warning') )
            if course_problems[key] %}
             <div class="col-md-6">
@@ -65,7 +65,7 @@
         {% endfor %}
 
         {% for key, heading, icon, panelclass in (
-                ('no_course', gettext("Participants without course"), 'question-sign', 'danger'),
+                ('no_course', gettext("Participants without course"), 'question-circle', 'danger'),
                 ('instructor_wrong_course', gettext("Instructors not in their own course"), 'briefcase', 'danger'),
                 ('unchosen', gettext("Assigned to unchosen course"), 'thumbs-down', 'warning') )
            if reg_problems[key] %}
