@@ -204,8 +204,8 @@ coverage: .coverage
 
 test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json test/create_sample_data_sql.py
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
-		; sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
-		; sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py \
+		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
+		&& sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py \
 			-i test/ancillary_files/sample_data.json -o "$${SQLTEMPFILE}" \
-		; cp "$${SQLTEMPFILE}" test/ancillary_files/sample_data.sql \
-		; sudo -u www-data rm "$${SQLTEMPFILE}"
+		&& cp "$${SQLTEMPFILE}" test/ancillary_files/sample_data.sql \
+		&& sudo -u www-data rm "$${SQLTEMPFILE}"
