@@ -28,8 +28,8 @@ import werkzeug.datastructures
 # The following imports are only for re-export. They are not used
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
-from cdedb.ml_subscription_aux import (SubscriptionActions, SubscriptionError,
-                                       SubscriptionInfo)
+from cdedb.ml_subscription_aux import (
+    SubscriptionError, SubscriptionInfo, SubscriptionActions)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1056,8 +1056,7 @@ class CourseFilterPositions(enum.IntEnum):
     instructor = -1  #: Being a course instructor for the course in question.
     any_choice = -5  #: Having chosen the course (in any choice)
     assigned = -6  #: Being in this course either as participant or instructor.
-    #: Having chosen the course, being instructor or participant.
-    anywhere = -7
+    anywhere = -7  #: Having chosen the course, being instructor or participant.
 
 
 @infinite_enum
@@ -1633,8 +1632,8 @@ ALL_ADMIN_VIEWS = {
 
 def roles_to_admin_views(roles):
     """ Get the set of available admin views for a user with given roles.
-
-    :type roles: {str}
+    
+    :type roles: {str} 
     :return: {str}
     """
     result = set()

@@ -8,26 +8,25 @@ import functools
 import gettext
 import inspect
 import pathlib
+import pytz
 import re
+import unittest
 import subprocess
 import tempfile
 import types
-import unittest
+import webtest
 import urllib.parse
 
-import pytz
-import webtest
-
-from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
+from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.common import (ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS,
-                          PrivilegeError, ProxyShim, RequestState, glue,
-                          roles_to_db_role)
+from cdedb.common import (PrivilegeError, ProxyShim, RequestState, glue,
+                          roles_to_db_role, ALL_ADMIN_VIEWS,
+                          ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -138,8 +137,7 @@ class BackendShim(ProxyShim):
             if rs.user.roles & access_list:
                 return fun(rs, *args, **kwargs)
             else:
-                raise PrivilegeError("Not in access list."
-                                     + f"{rs.user.roles} and {access_list} do not intersect")
+                raise PrivilegeError("Not in access list.")
         return new_fun
 
 
@@ -730,8 +728,7 @@ class FrontendTest(unittest.TestCase):
             self.assertNotIn(s.strip(), self.response.text)
         else:
             try:
-                content = self.response.lxml.xpath(
-                    "//*[@id='{}']".format(div))[0]
+                content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
                 self.assertNotIn(s.strip(), content.text_content())
             except IndexError as e:
                 if check_div:

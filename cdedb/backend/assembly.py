@@ -30,19 +30,18 @@ import copy
 import hmac
 import string
 
-import cdedb.database.constants as const
-from cdedb.backend.common import AbstractBackend, Silencer, access
-from cdedb.backend.common import affirm_set_validation as affirm_set
-from cdedb.backend.common import affirm_validation as affirm
-from cdedb.backend.common import internal_access, singularize
-from cdedb.common import (ASSEMBLY_ATTACHMENT_FIELDS, ASSEMBLY_BAR_MONIKER,
-                          ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP,
-                          EntitySorter, PrivilegeError, extract_roles, glue,
-                          implying_realms, json_serialize, n_, now,
-                          schulze_evaluate, unwrap)
-from cdedb.database.connection import Atomizer
-from cdedb.query import QueryOperators
+from cdedb.backend.common import (
+    access, affirm_validation as affirm, affirm_set_validation as affirm_set,
+    Silencer, singularize, AbstractBackend, internal_access)
+from cdedb.common import (
+    n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
+    ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
+    extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
+    implying_realms)
 from cdedb.security import secure_random_ascii
+from cdedb.query import QueryOperators
+from cdedb.database.connection import Atomizer
+import cdedb.database.constants as const
 
 
 class AssemblyBackend(AbstractBackend):
@@ -473,7 +472,7 @@ class AssemblyBackend(AbstractBackend):
                              {
                                  "type": "assembly",
                                  "block": blockers.keys() - cascade,
-            })
+                             })
 
         ret = 1
         with Atomizer(rs):
@@ -762,7 +761,7 @@ class AssemblyBackend(AbstractBackend):
                              {
                                  "type": "ballot",
                                  "block": blockers.keys() - cascade,
-            })
+                             })
 
         ret = 1
         with Atomizer(rs):

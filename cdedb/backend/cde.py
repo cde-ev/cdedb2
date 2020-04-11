@@ -9,17 +9,16 @@ members are also possible.
 import datetime
 import decimal
 
-import cdedb.database.constants as const
-from cdedb.backend.common import AbstractBackend, access
-from cdedb.backend.common import affirm_set_validation as affirm_set
-from cdedb.backend.common import affirm_validation as affirm
-from cdedb.backend.common import batchify, singularize
-from cdedb.common import (EXPULS_PERIOD_FIELDS, LASTSCHRIFT_FIELDS,
-                          LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS,
-                          PrivilegeError, glue, implying_realms, merge_dicts,
-                          n_, now, unwrap)
-from cdedb.database.connection import Atomizer
+from cdedb.backend.common import (
+    access, affirm_validation as affirm, AbstractBackend,
+    affirm_set_validation as affirm_set, singularize, batchify)
+from cdedb.common import (
+    n_, glue, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
+    LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS,
+    implying_realms)
 from cdedb.query import QueryOperators
+from cdedb.database.connection import Atomizer
+import cdedb.database.constants as const
 
 
 class CdEBackend(AbstractBackend):
@@ -656,7 +655,7 @@ class CdEBackend(AbstractBackend):
                 rs, const.CdeLogCodes.semester_ejection, persona_id=None,
                 additional_info="{} inaktive Mitglieder gestrichen."
                                 "{} € Guthaben eingezogen.".format(
-                                    period['ejection_count'], period['ejection_balance']))
+                    period['ejection_count'], period['ejection_balance']))
             return ret
 
     @access("finance_admin")

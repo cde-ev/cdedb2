@@ -6,16 +6,15 @@ concluded events.
 
 import datetime
 
-import cdedb.database.constants as const
-from cdedb.backend.common import AbstractBackend, Silencer, access
-from cdedb.backend.common import affirm_set_validation as affirm_set
-from cdedb.backend.common import affirm_validation as affirm
-from cdedb.backend.common import singularize
+from cdedb.backend.common import (
+    access, affirm_validation as affirm, Silencer, AbstractBackend,
+    affirm_set_validation as affirm_set, singularize)
 from cdedb.backend.event import EventBackend
-from cdedb.common import (INSTITUTION_FIELDS, PAST_COURSE_FIELDS,
-                          PAST_EVENT_FIELDS, PrivilegeError, ProxyShim, glue,
-                          n_, now, unwrap)
+from cdedb.common import (
+    n_, glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
+    unwrap, now, ProxyShim, INSTITUTION_FIELDS)
 from cdedb.database.connection import Atomizer
+import cdedb.database.constants as const
 
 
 class PastEventBackend(AbstractBackend):
@@ -356,7 +355,7 @@ class PastEventBackend(AbstractBackend):
                              {
                                  "type": "past_event",
                                  "block": blockers.keys() - cascade,
-            })
+                             })
 
         ret = 1
         with Atomizer(rs):
@@ -496,7 +495,7 @@ class PastEventBackend(AbstractBackend):
                              {
                                  "type": "past_course",
                                  "block": blockers.keys() - cascade,
-            })
+                             })
 
         ret = 1
         with Atomizer(rs):
@@ -509,8 +508,7 @@ class PastEventBackend(AbstractBackend):
                 blockers = self.delete_past_course_blockers(rs, pcourse_id)
 
             if not blockers:
-                ret *= self.sql_delete_one(rs,
-                                           "past_event.courses", pcourse_id)
+                ret *= self.sql_delete_one(rs, "past_event.courses", pcourse_id)
                 self.past_event_log(
                     rs, const.PastEventLogCodes.course_deleted,
                     pcourse['pevent_id'], additional_info=pcourse['title'])
@@ -671,7 +669,7 @@ class PastEventBackend(AbstractBackend):
         query = glue("SELECT id FROM past_event.courses",
                      "WHERE nr = %s AND pevent_id = %s")
         query2 = glue("SELECT id FROM past_event.courses",
-                      "WHERE title ~* %s AND pevent_id = %s")
+                     "WHERE title ~* %s AND pevent_id = %s")
         query3 = glue("SELECT id FROM past_event.courses",
                       "WHERE similarity(title, %s) > %s AND pevent_id = %s")
         ret = self.query_all(rs, query, (phrase, pevent_id))
@@ -679,12 +677,10 @@ class PastEventBackend(AbstractBackend):
         # retry with less restrictive conditions until we find something or
         # give up
         if len(ret) == 0:
-            warnings.append(
-                ("pcourse_id", ValueError(n_("Only title match."))))
+            warnings.append(("pcourse_id", ValueError(n_("Only title match."))))
             ret = self.query_all(rs, query2, (phrase, pevent_id))
         if len(ret) == 0:
-            warnings.append(
-                ("pcourse_id", ValueError(n_("Only fuzzy match."))))
+            warnings.append(("pcourse_id", ValueError(n_("Only fuzzy match."))))
             ret = self.query_all(rs, query3, (phrase, 0.5, pevent_id))
         if len(ret) == 0:
             return None, [], [

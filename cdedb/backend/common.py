@@ -13,13 +13,14 @@ import enum
 import functools
 import logging
 
-import cdedb.validation as validate
-from cdedb.common import (ProxyShim, PsycoJson, diacritic_patterns, glue,
-                          make_root_logger, n_, unwrap)
-from cdedb.config import Config
+from cdedb.common import (
+    n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
+    PsycoJson)
 from cdedb.database.constants import FieldDatatypes
-from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
+from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
+from cdedb.config import Config
+import cdedb.validation as validate
 
 
 def singularize(function, array_param_name="ids", singular_param_name="anid",
@@ -517,10 +518,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
-                def caser(x): return x.lower()
+                caser = lambda x: x.lower()
             else:
                 sql_param_str = "{0}"
-                def caser(x): return x
+                caser = lambda x: x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are
