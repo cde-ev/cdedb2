@@ -28,7 +28,7 @@
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"),
-                                  entries=institutions|dictsort(by='value')) }}
+                                  entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),

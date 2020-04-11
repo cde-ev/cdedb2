@@ -45,16 +45,17 @@
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
-                                              entries=registration_fields|keydictsort(EntitySorter.event_field)|dict_entries('id', 'field_name'),
+                                              entries=registration_fields.items()|dict_entries('id', 'field_name'),
                                               nulloption=gettext("— Only Text —"),
                                               attributes=('data-basename="field_id_"'|s if newrow else ''),
-                                              aclass='input-field drow-input', horizontal=False) }}
+                                              aclass='input-field drow-input', horizontal=False,
+                                              sort=True) }}
                     {{ util.form_input_select(
                         "input_size_{}".format(part_id), label=gettext("Input Size"), entries=(
                             (0, gettext("singleline")), (1, gettext("multiline")),
                             (2, gettext("multiline") + "+"), (3, gettext("multiline") + "++")),
                         attributes=('data-basename="input_size_"'|s if newrow else ''),
-                        aclass='input-inputsize drow-input', horizontal=False) }}
+                        aclass='input-inputsize drow-input', horizontal=False, sort=True) }}
                     {{ util.form_input_textarea(
                         "default_value_{}".format(part_id), label=gettext("Default Value"), rows=2,
                         attributes=('data-basename="default_value_"'|s if newrow else ''),

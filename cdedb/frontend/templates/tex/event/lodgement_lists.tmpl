@@ -5,8 +5,8 @@
     \pagestyle{empty}
 <<% endblock %>>
 <<% block content %>>
-    <<% for lodgement_id, lodgement in lodgements|xdictsort('moniker') %>>
-        <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
+    <<% for lodgement_id, lodgement in lodgements|keydictsort(EntitySorter.lodgement) %>>
+        <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
                 \begin{center}

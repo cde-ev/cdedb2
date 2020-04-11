@@ -44,7 +44,7 @@
                     <div class="col-sm-5 {% if "kind_{}".format(field_id) in errors %}has-error{% endif %}">
                         {{ util.input_select(name="kind_{}".format(field_id), entries=enums['FieldDatatypes']|enum_entries(processing=gettext),
                             attributes=('data-basename="kind_"'|s if newrow else ''), aclass='drow-input form-control',
-                            anid="input-select-kind_{}".format(field_id)) }}
+                            anid="input-select-kind_{}".format(field_id), sort=True) }}
                         {{ util.output_errors("kind_{}".format(field_id)) }}
                     </div>
                     <div class="col-sm-3">
@@ -67,7 +67,8 @@
                                                   name="association_{}".format(field_id),
                                                   entries=enums['FieldAssociations']|enum_entries(processing=gettext),
                                                   attributes=('data-basename="association_"'|s if newrow else ''),
-                                                  aclass='drow-input form-control association-input')
+                                                  aclass='drow-input form-control association-input',
+                                                  sort=True)
                         }}
                     </div>
                 {% else %}

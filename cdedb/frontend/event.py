@@ -370,7 +370,8 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def change_event_form(self, rs, event_id):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['event'])
         return self.render(rs, "change_event",
                            {'institutions': institutions,
@@ -898,7 +899,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin")
     def create_event_form(self, rs):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         return self.render(rs, "create_event",
                            {'institutions': institutions,
                             'accounts': self.conf.EVENT_BANK_ACCOUNTS})
@@ -4166,7 +4168,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def create_lodgement_form(self, rs, event_id):
         """Render form."""
-        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
@@ -4197,7 +4199,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def change_lodgement_form(self, rs, event_id, lodgement_id):
         """Render form."""
-        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         field_values = {
             "fields.{}".format(key): value
             for key, value in rs.ambience['lodgement']['fields'].items()}

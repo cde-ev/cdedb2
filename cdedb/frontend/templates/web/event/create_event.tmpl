@@ -23,7 +23,7 @@
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort(by='value'),
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title'),
                 defaultvalue=institutions['cde']) }}
         {{ util.form_input_text(name="event_begin", label=gettext("Event Begin"), type="date",
                                 placeholder="YYYY-MM-DD") }}
@@ -37,7 +37,8 @@
                                                 "page.")) }}
 
         <h4 class="heading-underline">{% trans %}Financial{% endtrans %}</h4>
-        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="&nbsp;"|s) }}
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="&nbsp;"|s,
+                                  sort=True) }}
         {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants.")) }}
 
         <h4 class="heading-underline">{% trans %}Orgas{% endtrans %}</h4>

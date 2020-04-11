@@ -134,7 +134,8 @@
                                         anid="part{}_status".format(part_id)) %}
                 {{ util.input_select(name="part{}.status".format(part_id),
                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
-                                     anid="part{}_status".format(part_id)) }}
+                                     anid="part{}_status".format(part_id),
+                                     sort=True) }}
             {% endcall %}
 
             {% call form_input_optional("part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),

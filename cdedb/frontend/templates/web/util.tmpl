@@ -240,6 +240,7 @@
                              has-error
                          {% endif %}">
         {% endif %}
+        {# TODO sort #}
         {%- for error in errors.get(name, []) if error %}
             {% if error.args %}
                 <div class="help-block">
@@ -370,6 +371,7 @@
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {# -#}
             name="{{ name }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {%- if readonly %} disabled{% endif %} {{ attributes }}>
+    {#- TODO sort if this is a list -#}
         {{- values.get(name, defaultvalue) -}}
     </textarea>
 {%- endmacro %}
@@ -400,10 +402,11 @@
 {%- endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
-        arialabeledby="") %}
+        arialabeledby="", sort=False) %}
     <div role="{% if radio %}radio{% endif %}group"
             {%- if arialabeledby %} aria-labelledby="{{ arialabeledby }}"{% endif %}>
         {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
+        {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for entry_value, entry_label in entries %}
             {% if not inline -%}
                 <div class="{% if radio %}radio{% else %}checkbox{% endif %}{% if readonly %} disabled{% endif %}">
@@ -438,20 +441,20 @@
 {%- endmacro %}
 
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-        small=False, radio=False, horizontal=True, aclass='', labelid='', infolink='', differentiate_warnings=True) %}
+        small=False, radio=False, horizontal=True, aclass='', labelid='', infolink='', differentiate_warnings=True, sort=False) %}
     {#- This is the version for multiple checkboxes as opposed to input_checkbox().
        entries is of type [(str, str)]. #}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
     {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass,
-                arialabeledby=labelid) }}
+                arialabeledby=labelid, sort=sort) }}
     {%- endcall %}
 {%- endmacro %}
 
 
 {% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
-        nulloption=None, arialabel='', attributes="") %}
+        nulloption=None, arialabel='', attributes="", sort=False) %}
     <select name="{{ name }}" {%- if anid %} id="{{ anid }}"{% endif %}
             {%- if aclass %} class="{{ aclass }}"{% endif %}{% if readonly %} disabled{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {{ attributes }}>
@@ -460,6 +463,7 @@
                 {{- nulloption -}}
             </option>
         {%- endif %}
+        {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for value, label in entries %}
             <option value="{{ value }}"
               {%- if values.get(name, defaultvalue)|string == value|string %} selected{% endif %}>
@@ -470,12 +474,13 @@
 {%- endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
-        nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="", differentiate_warnings=True) %}
+        nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="", differentiate_warnings=True,
+        sort=False) %}
     {%- if not anid %}{% set anid = "input-select-{}".format(name) %}{% endif %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
-                aclass="form-control " + aclass, attributes=attributes) }}
+                aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
     {%- endcall %}
 {%- endmacro%}
 
@@ -551,7 +556,7 @@
     {%- endif %}
     {%- if fields['entries'] %}
         {{- input_select(name=name, entries=fields['entries'], nulloption="&nbsp;"|s,
-                        readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
+                        readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=True) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
         {%- if fields['kind'] == datatypes.bool %}
@@ -633,7 +638,7 @@
 {# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
    jinja #}
 {% macro _admin_views_toggle_inner(views) -%}
-    {% for label, view_names, relevant_views in views -%}
+    {% for label, view_names, relevant_views in views|sort(attribute=0) -%}
         {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
         {% if (relevant_views|set).intersection(user.available_admin_views) %}
             {# The button is "deactivated" as long as there are more "relevant views" which are available for the

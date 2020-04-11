@@ -56,7 +56,7 @@
                 <div class="col-sm-6">
                     <h4>{% trans %}General Files{% endtrans %}</h4>
                     <ul class="slim" id="attachments">
-                        {% for attachment_id, attachment in attachments|xdictsort("title") %}
+                        {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.attachment) %}
                             <li class="hide-hover-container clearfix-after">
                                 {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
                                         attachment['title']) }}
@@ -91,10 +91,10 @@
             {% if has_ballot_attachments %}
                 <div class="col-sm-6">
                 <h4>{% trans %}Ballot Files{% endtrans %}</h4>
-                    {% for ballot_id, ballot in ballots|xdictsort('title') %}
+                    {% for ballot_id, ballot in ballots|keydictsort(EntitySorter.ballot) %}
                         {% if ballot_attachments[ballot_id] %}
                             <ul class="slim">
-                                {% for battachment_id, battachment in ballot_attachments[ballot_id]|xdictsort('title') %}
+                                {% for battachment_id, battachment in ballot_attachments[ballot_id]|keydictsort(EntitySorter.attachment) %}
                                     <li>
                                         {{ util.href(cdedblink("assembly/get_attachment",
                                                      {'attachment_id': battachment_id, 'ballot_id': ballot_id}),
