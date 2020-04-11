@@ -260,7 +260,7 @@ class EventBackend(AbstractBackend):
             # For more details about this see `doc/Registration_Query`.
             # The template for the final view.
             registration_table = \
-                """event.registrations AS reg
+            """event.registrations AS reg
             LEFT OUTER JOIN
                 core.personas AS persona ON reg.persona_id = persona.id
             {registration_fields_table}
@@ -320,7 +320,7 @@ class EventBackend(AbstractBackend):
 
             # The template for registration part and lodgment information.
             part_table = \
-                """LEFT OUTER JOIN (
+            """LEFT OUTER JOIN (
                 SELECT
                     registration_id, status, lodgement_id, is_reserve
                 FROM
@@ -353,17 +353,17 @@ class EventBackend(AbstractBackend):
             if course_field_columns:
                 course_field_columns += ", "
             course_view = \
-                """SELECT
+            """SELECT
                 {course_field_columns}
                 id, nr, title, shortname, notes, instructors
             FROM
                 event.courses
             WHERE
                 event_id = {event_id}""".format(
-                    event_id=event_id, course_field_columns=course_field_columns)
+                event_id=event_id, course_field_columns=course_field_columns)
 
             track_table = \
-                """LEFT OUTER JOIN (
+            """LEFT OUTER JOIN (
                 SELECT
                     registration_id, course_id, course_instructor,
                     (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
@@ -391,7 +391,7 @@ class EventBackend(AbstractBackend):
 
             # Retrieve creation and modification timestamps from log.
             creation_date_table = \
-                """LEFT OUTER JOIN (
+            """LEFT OUTER JOIN (
                 SELECT
                     persona_id, MAX(ctime) AS creation_time
                 FROM
@@ -401,10 +401,10 @@ class EventBackend(AbstractBackend):
                 GROUP BY
                     persona_id
             ) AS ctime ON reg.persona_id = ctime.persona_id""".format(
-                    event_id=event_id,
-                    reg_create_code=const.EventLogCodes.registration_created.value)
+                event_id=event_id,
+                reg_create_code=const.EventLogCodes.registration_created.value)
             modification_date_table = \
-                """LEFT OUTER JOIN (
+            """LEFT OUTER JOIN (
                 SELECT
                     persona_id, MAX(ctime) AS modification_time
                 FROM
@@ -414,8 +414,8 @@ class EventBackend(AbstractBackend):
                 GROUP BY
                     persona_id
             ) AS mtime ON reg.persona_id = mtime.persona_id""".format(
-                    event_id=event_id,
-                    reg_changed_code=const.EventLogCodes.registration_changed.value)
+                event_id=event_id,
+                reg_changed_code=const.EventLogCodes.registration_changed.value)
 
             view = registration_table.format(
                 registration_fields_table=registration_fields_table,
@@ -484,19 +484,19 @@ class EventBackend(AbstractBackend):
             if course_field_columns:
                 course_field_columns += ", "
             course_fields_table = \
-                """SELECT
+            """SELECT
                 {course_field_columns}
                 id
             FROM
                 event.courses
             WHERE
                 event_id = {event_id}""".format(
-                    course_field_columns=course_field_columns, event_id=event_id)
+                course_field_columns=course_field_columns, event_id=event_id)
 
             # Template for retrieving course information for one specific track.
             # We don't use the {base} table from below, because we need
             # the id to be distinct.
-            def track_table(track): return \
+            track_table = lambda track: \
                 """LEFT OUTER JOIN (
                     (
                         SELECT
@@ -525,15 +525,15 @@ class EventBackend(AbstractBackend):
                     attendees_table=attendees_table(track['id']),
                     instructors_table=instructors_table(track['id']),
                     choices_tables=choices_tables(track),  # pass full track.
-            )
+                )
 
             # A base table with all course ids we need in the following tables.
             base = "(SELECT id FROM event.courses WHERE event_id = {}) AS c".\
                 format(event_id)
 
             # General course information specific to a track.
-            def segment_table(t_id): return \
-                """SELECT
+            segment_table = lambda t_id: \
+            """SELECT
                 id, COALESCE(is_active, False) AS takes_place,
                 is_active IS NOT NULL AS is_offered
             FROM (
@@ -551,7 +551,7 @@ class EventBackend(AbstractBackend):
             )
 
             # Retrieve attendee count.
-            def attendees_table(t_id): return \
+            attendees_table = lambda t_id: \
                 """SELECT
                     id, COUNT(registration_id) AS attendees
                 FROM (
@@ -568,10 +568,10 @@ class EventBackend(AbstractBackend):
                     id""".format(
                     base=base,
                     track_id=t_id,
-            )
+                )
 
             # Retrieve instructor count.
-            def instructors_table(t_id): return \
+            instructors_table = lambda t_id: \
                 """SELECT
                     id, COUNT(registration_id) as instructors
                 FROM (
@@ -589,7 +589,7 @@ class EventBackend(AbstractBackend):
                     id""".format(
                     base=base,
                     track_id=t_id,
-            )
+                )
 
             # Retrieve course choice count. Limit to regs with relevant stati.
             stati = {
@@ -599,8 +599,7 @@ class EventBackend(AbstractBackend):
                 const.RegistrationPartStati.applied,
             }
             # Template for a specific course choice in a specific track.
-
-            def choices_table(t_id, p_id, rank): return \
+            choices_table = lambda t_id, p_id, rank: \
                 """SELECT
                     id AS course_id, COUNT(registration_id) AS num_choices{rank}
                 FROM (
@@ -633,10 +632,9 @@ class EventBackend(AbstractBackend):
                     base=base, track_id=t_id, rank=rank, part_id=p_id,
                     stati="ARRAY[{}]".format(
                         ",".join(str(x.value) for x in stati)),
-            )
+                )
             # Combine all the choices for a specific track.
-
-            def choices_tables(track): return \
+            choices_tables = lambda track: \
                 base + "\n" + " ".join(
                     """LEFT OUTER JOIN (
                         {choices_table}
@@ -648,7 +646,7 @@ class EventBackend(AbstractBackend):
                         rank=rank,
                     )
                     for rank in range(track['num_choices'])
-            )
+                )
 
             view = course_table.format(
                 course_fields_table=course_fields_table,
