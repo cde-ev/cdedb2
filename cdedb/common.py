@@ -253,37 +253,27 @@ class ProxyShim:
         self._internal = internal
         funs = inspect.getmembers(backend, predicate=inspect.isroutine)
         for name, fun in funs:
-            if hasattr(fun, "access_list") or (
-                    internal and hasattr(fun, "internal_access_list")):
+            # TODO make proper boolean implication
+            if hasattr(fun, "access") and (hasattr(fun, "internal") <= internal):
                 self._funs[name] = self._wrapit(fun)
 
-    def _wrapit(self, fun):
+    def _wrapit(self, function):
         """
-        :type fun: callable
+        :type function: callable
         """
-        try:
-            access_list = fun.access_list
-        except AttributeError:
-            if self._internal:
-                access_list = fun.internal_access_list
-            else:
-                raise
 
-        @functools.wraps(fun)
-        def new_fun(rs, *args, **kwargs):
-            if rs.user.roles & access_list:
-                try:
-                    if not self._internal:
-                        # Expose database connection for the backends
-                        rs.conn = rs._conn
-                    return fun(rs, *args, **kwargs)
-                finally:
-                    if not self._internal:
-                        rs.conn = None
-            else:
-                raise PrivilegeError(n_("Not in access list."))
+        @functools.wraps(function)
+        def wrapper(rs, *args, **kwargs):
+            try:
+                if not self._internal:
+                    # Expose database connection for the backends
+                    rs.conn = rs._conn
+                return function(rs, *args, **kwargs)
+            finally:
+                if not self._internal:
+                    rs.conn = None
 
-        return new_fun
+        return wrapper
 
     def __getattr__(self, name):
         if name in {"_funs", "_backend"}:

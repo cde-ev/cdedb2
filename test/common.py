@@ -119,26 +119,17 @@ class BackendShim(ProxyShim):
                 rs, rs.user.persona_id)
         return rs
 
-    def _wrapit(self, fun):
+    def _wrapit(self, function):
         """
-        :type fun: callable
+        :type function: callable
         """
-        try:
-            access_list = fun.access_list
-        except AttributeError:
-            if self._internal:
-                access_list = fun.internal_access_list
-            else:
-                raise
 
-        @functools.wraps(fun)
-        def new_fun(key, *args, **kwargs):
+        @functools.wraps(function)
+        def wrapper(key, *args, **kwargs):
             rs = self._setup_requeststate(key)
-            if rs.user.roles & access_list:
-                return fun(rs, *args, **kwargs)
-            else:
-                raise PrivilegeError("Not in access list.")
-        return new_fun
+            return function(rs, *args, **kwargs)
+
+        return wrapper
 
 
 class MyTextTestResult(unittest.TextTestResult):

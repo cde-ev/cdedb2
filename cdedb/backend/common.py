@@ -15,7 +15,7 @@ import logging
 
 from cdedb.common import (
     n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
-    PsycoJson)
+    PsycoJson, PrivilegeError)
 from cdedb.database.constants import FieldDatatypes
 from cdedb.validation import parse_date, parse_datetime
 from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
@@ -110,28 +110,28 @@ def access(*roles):
     :param roles: required privilege level (any of)
     """
 
-    def decorator(fun):
-        fun.access_list = set(roles)
-        return fun
+    def decorator(function):
+
+        @functools.wraps(function)
+        def wrapper(self, rs, *args, **kwargs):
+            if rs.user.roles.isdisjoint(roles):
+                raise PrivilegeError(f"{rs.user.roles} is disjoint from {roles}")
+            return function(self, rs, *args, **kwargs)
+
+        wrapper.access = True
+        return wrapper
 
     return decorator
 
-
-def internal_access(*roles):
+def internal(function):
     """Mark a function of a backend for internal publication.
 
     It will be accessible via the :py:class:`cdedb.common.ProxyShim` in
     internal mode.
-
-    :type roles: [str]
-    :param roles: required privilege level (any of)
     """
 
-    def decorator(fun):
-        fun.internal_access_list = set(roles)
-        return fun
-
-    return decorator
+    function.internal = True
+    return function
 
 
 class AbstractBackend(metaclass=abc.ABCMeta):

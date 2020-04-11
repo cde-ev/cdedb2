@@ -12,7 +12,7 @@ import decimal
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
     affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
-    cast_fields, internal_access)
+    cast_fields, internal)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
@@ -988,7 +988,8 @@ class EventBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
-    @internal_access("event")
+    @internal
+    @access("event")
     def set_event_archived(self, rs, data):
         """Wrapper around ``set_event()`` for archiving an event.
         
@@ -1830,7 +1831,8 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def check_registration_status(self, rs, persona_id, event_id, stati):
         """Check if any status for a given event matches one of the given stati.
 

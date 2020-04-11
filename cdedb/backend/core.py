@@ -15,7 +15,7 @@ from passlib.hash import sha512_crypt
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
-    access, internal_access, singularize, diacritic_patterns,
+    access, internal, singularize, diacritic_patterns,
     affirm_validation as affirm, affirm_set_validation as affirm_set)
 from cdedb.common import (
     n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
@@ -37,7 +37,7 @@ from cdedb.database.connection import connection_pool_factory
 
 class CoreBackend(AbstractBackend):
     """Access to this is probably necessary from everywhere, so we need
-    ``@internal_access`` quite often. """
+    ``@internal`` quite often. """
     realm = "core"
 
     def __init__(self, configpath):
@@ -162,7 +162,8 @@ class CoreBackend(AbstractBackend):
         return self.query_exec(
             rs, query, (code, rs.user.persona_id, persona_id, additional_info))
 
-    @internal_access("cde")
+    @internal
+    @access("cde")
     def finance_log(self, rs, code, persona_id, delta, new_balance,
                     additional_info=None):
         """Make an entry in the finance log.
@@ -583,7 +584,8 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['generation']: e for e in data}
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def retrieve_personas(self, rs, ids, columns=PERSONA_CORE_FIELDS):
         """Helper to access a persona dataset.
 
@@ -602,7 +604,8 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select(rs, "core.personas", columns, ids)
         return {d['id']: d for d in data}
 
-    @internal_access("ml")
+    @internal
+    @access("ml")
     def list_current_members(self, rs, is_active=False):
         """Helper to list all current members.
 
@@ -663,7 +666,8 @@ class CoreBackend(AbstractBackend):
             self.sql_update(rs, "core.personas", fulltext_update)
         return num
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def set_persona(self, rs, data, generation=None, change_note=None,
                     may_wait=True, allow_specials=tuple()):
         """Internal helper for modifying a persona data set.
@@ -1846,7 +1850,8 @@ class CoreBackend(AbstractBackend):
         data = self.query_one(rs, query, (ids,))
         return data['num'] == len(ids)
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def get_roles_multi(self, rs, ids):
         """Resolve ids into roles.
 

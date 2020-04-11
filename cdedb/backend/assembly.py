@@ -32,7 +32,7 @@ import string
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, affirm_set_validation as affirm_set,
-    Silencer, singularize, AbstractBackend, internal_access)
+    Silencer, singularize, AbstractBackend, internal)
 from cdedb.common import (
     n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
@@ -220,7 +220,8 @@ class AssemblyBackend(AbstractBackend):
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def check_attendance(self, rs, *, assembly_id=None, ballot_id=None,
                          persona_id=None):
         """Check wether a persona attends a specific assembly/ballot.

@@ -11,7 +11,7 @@ if it has moderator privileges for all lists.
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend,
     affirm_set_validation as affirm_set, singularize,
-    affirm_array_validation as affirm_array, internal_access)
+    affirm_array_validation as affirm_array, internal)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.common import (
@@ -638,7 +638,8 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @internal_access("ml")
+    @internal
+    @access("ml")
     def _set_subscriptions(self, rs, data):
         """Change or add ml.subscription_states rows.
 
@@ -676,11 +677,12 @@ class MlBackend(AbstractBackend):
 
         return num
 
-    @internal_access("ml")
+    @internal
+    @access("ml")
     def _set_subscription(self, rs, datum):
         """Maunual singularization of `_set_subscriptions.
 
-        This is required to make the `@internal_access` decorator work.
+        This is required to make the `@internal` decorator work.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type datum: {str: int}
@@ -690,7 +692,8 @@ class MlBackend(AbstractBackend):
 
         return self._set_subscriptions(rs, [datum])
 
-    @internal_access("ml")
+    @internal
+    @access("ml")
     def _remove_subscriptions(self, rs, data):
         """Remove rows from the ml.subscription_states table.
 
@@ -718,11 +721,12 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @internal_access("ml")
+    @internal
+    @access("ml")
     def _remove_subscription(self, rs, datum):
         """Maunual singularization of `_remove_subscriptions.
 
-        This is required to make the `@internal_access` decorator work.
+        This is required to make the `@internal` decorator work.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type datum: {str: int}
