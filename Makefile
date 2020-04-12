@@ -200,7 +200,7 @@ validate-html: /opt/validator/vnu-runtime-image/bin/vnu
 		| grep -v -F 'input type is not supported in all browsers' \
 
 /opt/validator/vnu-runtime-image/bin/vnu: /opt/validator/vnu.linux.zip
-	unzip /opt/validator/vnu.linux.zip -d /opt/validator
+	unzip -D /opt/validator/vnu.linux.zip -d /opt/validator # -D ignores timestamp
 
 /opt/validator/vnu.linux.zip: /opt/validator
 	wget 'https://github.com/validator/validator/releases/download/20.3.16/vnu.linux.zip' -O /opt/validator/vnu.linux.zip
