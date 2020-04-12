@@ -200,11 +200,12 @@ validate-html: /opt/validator/vnu-runtime-image/bin/vnu
 		| grep -v -F 'input type is not supported in all browsers' \
 
 /opt/validator/vnu-runtime-image/bin/vnu: /opt/validator/vnu.linux.zip
-	unzip /opt/validator/vnu.linux.zip -d /opt/validator
+	unzip -D /opt/validator/vnu.linux.zip -d /opt/validator
 
 /opt/validator/vnu.linux.zip: /opt/validator
 	wget 'https://github.com/validator/validator/releases/download/20.3.16/vnu.linux.zip' -O /opt/validator/vnu.linux.zip
 	echo "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 /opt/validator/vnu.linux.zip" | sha1sum -c -
+	touch /opt/validator/vnu.linux.zip # refresh downloaded timestamp
 
 /opt/validator:
 	sudo mkdir /opt/validator
