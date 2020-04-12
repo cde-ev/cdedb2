@@ -27,8 +27,8 @@
         <dd id="realm">
             {% with (icon, caption) = {
                         'ml': ('envelope', gettext("Mailinglists")),
-                        'event': ('blackboard', gettext("Events")),
-                        'cde': ('education', gettext("Members")),
+                        'event': ('chalkboard-teacher', gettext("Events")),
+                        'cde': ('graduation-cap', gettext("Members")),
                         'bullhorn': ('education', gettext("Assemblies"))
                     }.get(ambience['genesis_case']['realm']) %}
                 {{ util.make_icon(icon) }} {{ caption }}
@@ -118,14 +118,14 @@
              id="genesiseventrejectionform" class="rejection-form" style="display: inline;">
                 {{ util.anti_csrf_token('core/genesis_decide') }}
                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                {{ util.input_submit(icon="ban-circle", value=gettext("Reject"),
+                {{ util.input_submit(icon="ban", value=gettext("Reject"),
                                      aclass="btn btn-danger") }}
             </form>
             {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit"),
-                aclass="btn btn-warning", icon="pencil") }}
+                aclass="btn btn-warning", icon="pen") }}
             &emsp;
         {% endif %}
         {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
-                     aclass="btn btn btn-default", icon="remove") }}
+                     aclass="btn btn btn-default", icon="times-circle") }}
     </div>
 {% endblock %}

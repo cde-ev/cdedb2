@@ -10,13 +10,13 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Configuration{% endtrans %}
-        <small>{{ util.make_icon('blackboard', arialabel=gettext("Configuration")) }}
+        <small>{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Configuration")) }}
             {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}

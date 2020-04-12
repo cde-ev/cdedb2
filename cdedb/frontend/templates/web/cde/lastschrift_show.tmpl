@@ -13,7 +13,7 @@
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
 	"{} {}".format(ambience['persona']['given_names'],
 		       ambience['persona']['family_name']),
-	active=True, icon="euro") }}
+	active=True, icon="euro-sign") }}
 {% else %}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
 	gettext("existing Direct Debit Authorization"), active=True) }}
@@ -37,11 +37,11 @@
 
             <div class="p">
             {{ util.href(cdedblink('cde/lastschrift_change_form', {'lastschrift_id': active_permit}), gettext("Edit"),
-                icon="pencil", aclass="btn btn-warning btn-sm") }}
+                icon="pen", aclass="btn btn-warning btn-sm") }}
             <form action="{{ cdedblink('cde/lastschrift_revoke', {'lastschrift_id': active_permit}) }}"
                 method="POST" id="revokeform" style="display: inline;">
                 {{ util.anti_csrf_token('cde/lastschrift_revoke') }}
-                {{ util.input_submit(value=gettext("Revoke Direct Debit Authorization"), icon="remove",
+                {{ util.input_submit(value=gettext("Revoke Direct Debit Authorization"), icon="times-circle",
                     aclass="btn btn-sm btn-danger") }}
             </form>
 	    </div>
@@ -152,7 +152,7 @@
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status",
                                                          value=enums['LastschriftTransactionStati'].success.value) }}
-                                    {{ util.input_submit(value=gettext("Success"), aclass="btn btn-xs btn-success", icon="ok") }}
+                                    {{ util.input_submit(value=gettext("Success"), aclass="btn btn-xs btn-success", icon="check") }}
                                 </form>
                                 <form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
@@ -162,7 +162,7 @@
                                     {{ util.anti_csrf_token('cde/lastschrift_finalize_transaction') }}
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].failure.value) }}
-                                    {{ util.input_submit(value=gettext("Failed"), aclass="btn btn-xs btn-danger", icon="exclamation-sign") }}
+                                    {{ util.input_submit(value=gettext("Failed"), aclass="btn btn-xs btn-danger", icon="exclamation-circle") }}
                                 </form>
                                 <form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
@@ -172,7 +172,7 @@
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status",
                                                          value=enums['LastschriftTransactionStati'].cancelled.value) }}
-                                    {{ util.input_submit(value=gettext("Cancelled"), aclass="btn btn-xs btn-warning", icon="remove") }}
+                                    {{ util.input_submit(value=gettext("Cancelled"), aclass="btn btn-xs btn-warning", icon="times-circle") }}
                                 </form>
                             {% endif %}
                         {% elif transaction['status'] == enums['LastschriftTransactionStati'].success %}
@@ -192,7 +192,7 @@
                                     {{ util.anti_csrf_token('cde/lastschrift_rollback_transaction') }}
                                     {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
                                     {{ util.input_submit(value=gettext("Reverse"), aclass="btn btn-xs btn-warning",
-                                                         icon='transfer') }}
+                                                         icon='exchange-alt') }}
                                 </form>
                             {% endif %}
                         {% endif %}

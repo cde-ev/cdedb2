@@ -9,7 +9,7 @@
         <h3 class="heading-sidebar">{% trans %}Index{% endtrans %}</h3>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("core/index"), gettext("Overview"), aclass="list-group-item",
-                    icon="triangle-right", active=(sidenav_active=='core_index')) }}
+                    icon="caret-right", active=(sidenav_active=='core_index')) }}
             {{ util.href(cdedblink("core/mydata"), gettext("My Data"), aclass="list-group-item",
                     icon="user", active=(sidenav_active=='core_mydata')) }}
             {{ util.href(cdedblink("core/view_admins"), gettext("Admin Overview"), aclass="list-group-item",
@@ -19,11 +19,11 @@
             <div class="list-group tear-down">
             {% if "core_user" in user.admin_views %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
-                        icon="user", active=(sidenav_active=='core_manage_users')) }}
+                        icon="users", active=(sidenav_active=='core_manage_users')) }}
                 {{ util.href(cdedblink("core/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
                         icon="inbox", active=(sidenav_active=='core_manage_archive')) }}
                 {{ util.href(cdedblink("core/list_pending_changes"), gettext("Pending Changes"), aclass="list-group-item",
-                        icon="check", active=(sidenav_active=='core_pending_changes')) }}
+                        icon="check-square", active=(sidenav_active=='core_pending_changes')) }}
             {% endif %}
             {% if "genesis" in user.admin_views %}
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), aclass="list-group-item",
@@ -35,9 +35,9 @@
             {% endif %}
             {% if "core_user" in user.admin_views %}
                 {{ util.href(cdedblink("core/view_log"), gettext("Account Log"), aclass="list-group-item",
-                        icon="list-alt", active=(sidenav_active=='core_log')) }}
+                        icon="far fa-list-alt", active=(sidenav_active=='core_log')) }}
                 {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), aclass="list-group-item",
-                        icon="list-alt", active=(sidenav_active=='core_change_log')) }}
+                        icon="far fa-list-alt", active=(sidenav_active=='core_change_log')) }}
             {% endif %}
             </div>
         {% endif %}

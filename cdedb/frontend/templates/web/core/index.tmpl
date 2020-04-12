@@ -15,7 +15,7 @@
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
         <div class="alert alert-info">
             <p>
-                {{ util.make_icon('info-sign') }} <strong>{% trans %}Info{% endtrans %}</strong>
+                {{ util.make_icon('info-cirlce') }} <strong>{% trans %}Info{% endtrans %}</strong>
                 {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
             </p>
 
@@ -32,7 +32,7 @@
     <div class="row">
         {% if "core_user" in user.admin_views %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='user',
+            {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='users',
                                          aclass="panel-warning", anid="adminshowuser-box") %}
                 <form action="{{ cdedblink('core/admin_show_user') }}" method="GET" id="adminshowuserform">
                     <div class="sr-only">{% trans %}Search for Users by ID or Name{% endtrans %}</div>
@@ -63,7 +63,7 @@
               'privilege_changes' in dashboard and dashboard['privilege_changes'] > 0 %}
 
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Account Management"), icon='check',
+            {% call util.bootstrap_panel(title=gettext("Account Management"), icon='check-square',
                                          aclass='panel-info', anid="accountmanangement-box") %}
                 {% if 'genesis_cases' in dashboard and dashboard['genesis_cases'] > 0 %}
                     <p>
@@ -108,13 +108,13 @@
 
         {% if dashboard['orga'] %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='blackboard',
+            {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='chalkboard-teacher',
                                          aclass='panel-warning', anid="orga-box") %}
                 <ul class="slim spaced">
                     {% for event_id, event in dashboard['orga']|keydictsort(EntitySorter.event) %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
-                                    icon='blackboard') }}
+                                    icon='chalkboard-teacher') }}
                             {% if event['registration_start'] %}
                                 <br />
                                 {% if event['registration_start'] <= dashboard['present'] %}
@@ -156,7 +156,7 @@
                                              gettext("Registrations"), icon='list') }}
                                 &bull;
                                 {{ util.href(cdedblink('event/stats', {'event_id': event_id}),
-                                             gettext("Statistics"), icon='stats') }}
+                                             gettext("Statistics"), icon='chart-bar') }}
                                 {% if event['tracks'] %}
                                     &bull;
                                     {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),
@@ -195,13 +195,13 @@
 
         {% if 'events' in dashboard %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Current Events"), icon='blackboard',
+            {% call util.bootstrap_panel(title=gettext("Current Events"), icon='chalkboard-teacher',
                                          aclass='panel-success', anid='event-box') %}
                 <ul class="slim spaced">
                     {% for event_id, event in dashboard['events']|keydictsort(EntitySorter.event) %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
-                                         icon='blackboard') }}
+                                         icon='chalkboard-teacher') }}
                             <br />
                             {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
                             <br />
@@ -217,7 +217,7 @@
                                 {% endif -%}
                             {% elif event['is_open'] %}
                                 {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
-                                    gettext("Register"), icon='log-in') }}
+                                    gettext("Register"), icon='sing-in-alt') }}
                                 {% if not event['registration_soft_limit'] is none %}
                                     {% if now() <= event['registration_soft_limit'] %}
                                         {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}

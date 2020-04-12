@@ -10,14 +10,14 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
     {{ util.breadcrumb_link(cdedblink("event/create_course"), gettext("Add Course"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Add Course{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -56,7 +56,7 @@
             <p class="text-muted">{% trans %}No custom fields for courses available.{% endtrans %}</p>
         {% endfor %}
 
-        {{ util.form_input_static(aclass='text-info', icon='info-sign',
+        {{ util.form_input_static(aclass='text-info', icon='info-circle',
                           value=gettext("Warning: The description will be publicly visible, once courselist visibility "
                                         "is activated in the configuration. Course instructors will be visible to "
                                         "event users.")) }}

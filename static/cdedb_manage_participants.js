@@ -66,7 +66,7 @@
                 'aria-label': title,
                 'title': title
             });
-            $button.append($('<span></span>', {'class': 'glyphicon glyphicon-minus'}));
+            $button.append($('<span></span>', {'class': 'fas fa-minus'}));
             $button.append($('<span></span>', {'class': 'sr-only'}).append(title));
             $button.click(function () {
                 $(this).toggleClass('active');

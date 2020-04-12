@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
 {{ util.breadcrumb_link(cdedblink("event/show_registration"), "{} {}".
         format(persona['given_names'], persona['family_name']), icon="user") }}
@@ -21,7 +21,7 @@
         {% trans given_names=persona['given_names'], family_name=persona['family_name'] %}
             Edit {{ given_names }} {{ family_name }}
         {% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -50,7 +50,7 @@
 
         <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
         <p class="text-info">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_icon('info-cirlce') }}
             {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) %}
                 The registered people are able to see their current registration status, the payment status and – for
                 minors – the status of the parental consent at “{{ my_registration }}”.

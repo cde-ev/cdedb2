@@ -112,15 +112,15 @@
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select All{% endtrans %}"
                         id="btn-select-all">
-                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
+                    {{ util.make_icon('check-square') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select None{% endtrans %}"
                         id="btn-select-none">
-                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
+                    {{ util.make_icon('square') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}Invert Selection{% endtrans %}"
                         id="btn-select-swap">
-                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
+                    {{ util.make_icon('caret-square-right') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
                 </button>
             </div>
         </div>
@@ -146,7 +146,7 @@
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': persona['id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                             {% if all_lastschrifts[transaction['lastschrift_id']]['revoked_at'] %}
-                                <b class="alert-danger">{{ util.make_icon("warning-sign") }}
+                                <b class="alert-danger">{{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}
                                     This transaction needs to be cancelled!
                                 {% endtrans %}
@@ -176,8 +176,8 @@
 
             {% trans %}All selected:{% endtrans %}
             {{ util.input_submit(value=gettext("Success"), name='success', aclass="btn btn-success") }}
-            {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-sign") }}
-            {{ util.input_submit(value=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="remove",
+            {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-circle") }}
+            {{ util.input_submit(value=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="times-circle",
                     anid="finalization-cancel") }}
         </form>
     {% else %}

@@ -15,9 +15,9 @@
         <div class="subtitle">
             {% if event['is_visible'] %}
                 {% set link = util.href(cdedblink('event/show_event',{'event_id':event['id']}), event['title'],
-                        icon='blackboard') %}
+                        icon='chalkboard-teacher') %}
             {% else %}
-                {% set link = "%s %s"|s|format(util.make_icon('blackboard'), event['title']) %}
+                {% set link = "%s %s"|s|format(util.make_icon('chalkboard-teacher'), event['title']) %}
             {% endif %}
             {% trans link=link %}
                 Mailinglist of Event {{ link }}
@@ -83,7 +83,7 @@
                                       id="resetaddressform" style="display: inline;">
                                     {{ util.anti_csrf_token('ml/change_address') }}
                                     {{ util.input_hidden(name="email", value="") }}
-                                    {{ util.input_submit(value=gettext("Reset email address"), icon="share-alt",
+                                    {{ util.input_submit(value=gettext("Reset email address"), icon="share-square",
                                         aclass="btn btn-warning btn-sm") }}
                                 </form>
                             {% endif %}
@@ -91,13 +91,13 @@
                                   id="unsubscribeform" style="display: inline;">
                                 {{ util.anti_csrf_token('ml/unsubscribe') }}
                                 {{ util.input_submit(value=gettext("Unsubscribe"), aclass="btn btn-danger btn-sm",
-                                                     icon="remove") }}
+                                                     icon="times-circle") }}
                             </form>
                         </div>
 
                         <h4 class="mosp">{% trans %}Change email address{% endtrans %}</h4>
                         <p class="text-muted">
-                            {{ util.make_icon('info-sign') }}
+                            {{ util.make_icon('info-cirlce') }}
                             {% trans %}
                                 To recieve mails from this mailinglist with a different email address,
                                 enter the new address in this form. You will recieve a confirmation mail.
@@ -120,7 +120,7 @@
                         </form>
                     {% else %}
                         <p class="text-muted">
-                            {{ util.make_icon('info-sign') }}
+                            {{ util.make_icon('info-cirlce') }}
                             {% trans link=util.href(cdedblink('core/change_username_form'),
                                                     gettext("corresponding site")) -%}
                                 This mailinglist is mandatory. Therefor you are always subscribed to this list
@@ -140,7 +140,7 @@
                                 id="cancel-request-form">
                             {{ util.anti_csrf_token('ml/cancel_subscription') }}
                             {{ util.input_submit(value=gettext("Cancel request"), aclass="btn btn-sm btn-danger",
-                                    icon="remove") }}
+                                    icon="times-circle") }}
                         </form>
                     {% elif state != enums['SubscriptionStates'].unsubscription_override %}
                         <p><strong>

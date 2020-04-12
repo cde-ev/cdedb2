@@ -34,7 +34,7 @@
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
                         {{ util.anti_csrf_token('assembly/signup') }}
-                        {{ util.input_submit(value=gettext("Participate"), icon="log-in") }}
+                        {{ util.input_submit(value=gettext("Participate"), icon="sign-in-alt") }}
                     </form>
                 {% endif %}
             {% endif %}
@@ -68,7 +68,7 @@
                                             class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('assembly/remove_attachment') }}
                                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash",
+                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
                                                 title=gettext("Delete File")) }}
                                     </form>
                                     <script nonce="{{ csp_nonce }}">
@@ -116,7 +116,7 @@
 
     {% if "assembly_mgmt" in user.admin_views %}
         {% if ambience['assembly']['is_active'] or "vote_begin" not in delete_blockers %}
-            {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+            {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
                 {% if ambience['assembly']['is_active'] %}
                     <div class="row">
                         <div class="col-sm-4">
@@ -124,7 +124,7 @@
                                 <form action="{{ cdedblink('assembly/conclude_assembly') }}" method="POST" id="concludeassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/conclude_assembly') }}
                                     {{ util.input_submit(value=gettext("Archive"), readonly="ballot" in conclude_blockers, aclass="btn btn-danger",
-                                            icon="folder-close", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
+                                            icon="folder", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
                                     {{ util.input_checkbox(name="ack_conclude", label=gettext("Are you sure?")) }}
                                 </form>
                             </div>
@@ -146,7 +146,7 @@
                             <div class="p">
                                 <form action="{{ cdedblink('assembly/delete_assembly') }}" method="POST" id="deleteassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/delete_assembly') }}
-                                    {{ util.input_submit(value=gettext("Delete"), aclass="btn btn-danger", icon="trash") }}
+                                    {{ util.input_submit(value=gettext("Delete"), aclass="btn btn-danger", icon="trash-alt") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                 </form>
                             </div>

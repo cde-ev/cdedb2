@@ -38,7 +38,7 @@
                         {{ util.href(cdedblink('core/genesis_show_case', {'genesis_case_id': genesis_case_id}), gettext("Details"),
                             aclass="btn btn-primary btn-sm", icon="user") }}
                         {{ util.href(cdedblink('core/genesis_modify_form', {'genesis_case_id': genesis_case_id}), gettext("Edit"),
-                            aclass="btn btn-warning btn-sm", icon="pencil") }}
+                            aclass="btn btn-warning btn-sm", icon="pen") }}
                         {% if realm == 'ml' %}
                             {# For mailinglist genesis requrests, there is no additional information to review (apart from
                               that shown on this page. So we allow admins to accept these requests directly. #}
@@ -54,7 +54,7 @@
                                 {{ util.anti_csrf_token('core/genesis_decide') }}
                                 {{ util.input_hidden(name="genesis_case_id", value=genesis_case_id) }}
                                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                                {{ util.input_submit(icon="remove", value=gettext("Reject"),
+                                {{ util.input_submit(icon="times-circle", value=gettext("Reject"),
                                     aclass="btn btn-sm btn-danger") }}
                             </form>
                         {% endif %}

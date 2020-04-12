@@ -10,14 +10,14 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields"), active=True) }}
 {% endblock %}
 {% block heading %}
     {{ util.doclink('Handbuch_Orga_Hinweise') }}
     <h1 class="title">
         {% trans %}Configure Custom Fields{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -159,7 +159,7 @@
                     $(this)
                         .append("&emsp;")
                         .append($('<span class="text-danger">' +
-                            '<span class="glyphicon glyphicon-warning-sign"></span></span>'));
+                            '<span class="fas fa-exclamation-triangle"></span></span>'));
                 }
             });
 
@@ -181,7 +181,7 @@
     </script>
 
     <hr />
-    <p class="text-warning">{{ util.make_icon('warning-sign') }}
+    <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
             Deleting a field includes deletion of all data, which is stored
             in this field in any registration/course/lodgement. Changing
@@ -189,7 +189,7 @@
             to the new type, upon saving.
         {% endtrans %}</p>
     <p class="help-block">
-        {{ util.make_icon('info-sign') }}
+        {{ util.make_icon('info-cirlce') }}
         {% trans format="<br /><code style='padding: 2px 0;'>%(value_one)s1;%(desc_one)s<br />%(value_two)s2;%(desc_two)s<br />…</code><br />"|s|format(
                 value_one=gettext("Value"), desc_one=gettext("Description Text"), value_two=gettext("Value"), desc_two=gettext("Description Text")) -%}
         	Enter Options in the following format:

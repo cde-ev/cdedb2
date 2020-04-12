@@ -40,7 +40,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='', rel='') -%}
+{% macro href(ref, label, readonly=False, icon=None, aclass='', active=False, title='', rel='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {%- if aclass or active or readonly -%}
     class="{{ aclass }}{% if active %} active{% endif -%}
@@ -52,31 +52,32 @@
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
-{# Macro to place a Bootstrap/Glyphicon icon
+{# Macro to place a Fontawesome icon
 
-   icon       The icon's name. See https://getbootstrap.com/docs/3.3/components/#glyphicons for a list of available
-              icons. Only the distinguishing part of the icon's CSS class is required. E.g. "ok" instead of
-              "glyphicon glyphicon-ok"
+   icon       The icon's name. See https://fontawesome.com/icons for a list of available icons.
+              Only the distinguishing part of the icon's CSS class is required (e.g. "ok" instead of "fas fa-ok").
+              If the icon contains a space the full class is required. (e.g. "far fa-star")
    aclass     An additonal HTML/CSS class to add to the icon. Useful if you want to access the icon via JavaScript
-   title      A HTML `title` attribute (hover text) to add to the icon. This is also used as arialabel, if you don't
-              provide one explicitly.
-   arialabel  A screenreader-only text to append to the icon. Please make sure, to provide one (or a title) for every
-              semantically important icon in support of a11y. #}
-{% macro make_icon(icon, aclass='', title='', arialabel='') -%}
-    {% if title and not arialabel %}{% set arialabel = title %}{% endif -%}
-    <span class="glyphicon glyphicon-{{ icon }} {{aclass }}"
-            {%- if title %} title="{{ title }}"{% endif %} aria-hidden="true"></span>
-    {%- if arialabel %}
-        <span class="sr-only">{{ arialabel }}</span>
-    {%- endif %}
-{%- endmacro %}
+   title      A HTML `title` attribute (hover text) to add to the icon.
+              This is also used as arialabel, if you don't provide one explicitly.
+   arialabel  A screenreader-only text to append to the icon.
+              Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
+{% macro make_icon(icon, fixed_width=True, aclass="", title=None, arialabel=None) -%}
+    <span{{ dict(
+        class=("fas fa-{}".format(icon) if " " not in icon else icon)
+            + (" fa-fw" if fixed_width else "")
+            + (" {}".format(aclass) if aclass else ""),
+        title=title,
+    )|xmlattr }} aria-hidden="true"></span>
+    {%- if arialabel %}<span class="sr-only">{{ arialabel }}</span>{% endif %}
+{%- endmacro%}
 
 
 {# ############## #
  # Layout helpers #
  # ############## #}
 
-{% macro bootstrap_panel(title="", aclass="panel-default", icon="", anid="") %}
+{% macro bootstrap_panel(title="", aclass="panel-default", icon=None, anid="") %}
     <div class="panel {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
         {%- if title or icon %}
             <div class="panel-heading">
@@ -104,11 +105,11 @@
               accessible to screen readers by any other means. #}
 {% macro deko_checkbox(checked, anid='', titles=[]) %}
     {%- if checked %}
-        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid }}"{% endif %} data-checked="True"
+        <span class="fas fa-check-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="True"
                 {%- if titles[1] %} title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[1] %}{{ titles[1] }}{% endif %}</span>
     {%- elif checked is not none %}
-        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="False"
+        <span class="far fa-times-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="False"
                 {%- if titles[0] %} title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[0] %}{{ titles[0] }}{% endif %}</span>
     {%- endif %}
@@ -175,7 +176,7 @@
    name/title. In this case the icon should represent the type of the named object. For a complex example, take a look
    at the event/change_course template.
   #}
-{% macro breadcrumb_link(ref, label, icon="", active=False, readonly=False) %}
+{% macro breadcrumb_link(ref, label, icon=None, active=False, readonly=False) %}
     {%- if active or readonly -%}
         <li {% if active %}class="active" aria-current="location"{% endif %}>
             {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label -}}
@@ -191,7 +192,7 @@
    docurl(). #}
 {% macro doclink(topic, anchor=None) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
-        {{ make_icon('question-sign') }}
+        {{ make_icon('question-circle') }}
     {% trans %}
         Help
     {% endtrans %}
@@ -223,7 +224,7 @@
 {% macro output_info(info, link='') %}
     {%- if info %}
         <p class="help-block no-color">
-	    {{ make_icon('info-sign') }} {{ info }}
+	    {{ make_icon('info-cirlce') }} {{ info }}
 	    {% if link %}
 	        {{ link }}
 	    {% endif %}
@@ -244,7 +245,7 @@
         {%- for error in errors.get(name, []) if error %}
             {% if error.args %}
                 <div class="help-block">
-                    {{ make_icon('exclamation-sign') }}
+                    {{ make_icon('exclamation-circle') }}
                     {{ format_error(error) }}
                 </div>
             {% endif %}
@@ -488,7 +489,7 @@
     <div class="form-control-static"{% if anid %}id="{{ anid }}"{% endif %}>{{ value }}</div>
 {%- endmacro %}
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True, aclass='',
-        infolink='', icon='', differentiate_warnings=True) %}
+        infolink='', icon=None, differentiate_warnings=True) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
     {%- call form_input_general(None, label, anid, small, info, False, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
@@ -499,7 +500,7 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="ok",
+{% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="check",
         readonly=False, title='', arialabel='') %}
     <button type="submit" name="{{ name }}" {%- if readonly %} disabled{% endif %}
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %}
@@ -509,7 +510,7 @@
 {%- endmacro %}
 
 {% macro form_input_submit(value="Save", name="submitform", readonly=False, anid='',
-        aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue="Cancel",
+        aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
         small=False, horizontal=True, differentiate_warnings=False) %}
     <div class="form-group mosp">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
@@ -519,7 +520,7 @@
                 {{ input_submit(gettext("Ignore Warnings"), name="ignore_warnings", anid=anid, aclass=aclass, icon=icon, readonly=readonly) }}
             {% endif %}
             {%- if cancellink %}
-                &emsp; {{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
+                &emsp; {{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
             {%- endif %}
         </div>
     </div>

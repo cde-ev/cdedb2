@@ -86,7 +86,7 @@
                         icon="plus", aclass="btn btn-success btn-sm") }}
             </div>
             {% if info %}
-                <p class="text-muted">{{ util.make_icon('info-sign') }} {{ info }}</p>
+                <p class="text-muted">{{ util.make_icon('info-cirlce') }} {{ info }}</p>
             {% endif %}
         </div>
         <div class="col-md-8">
@@ -210,13 +210,13 @@
         'is_member': gettext("CdE-Member"),
         'is_searchable': gettext("Searchable"),
         'is_ml_realm': util.make_icon('envelope', title=gettext("Realm") + ": " + gettext("Mailinglists")),
-        'is_event_realm': util.make_icon('blackboard', title=gettext("Realm") + ": " + gettext("Events")),
+        'is_event_realm': util.make_icon('chalkboard-teacher', title=gettext("Realm") + ": " + gettext("Events")),
         'is_assembly_realm': util.make_icon('bullhorn', title=gettext("Realm") + ": " + gettext("Assemblies")),
-        'is_cde_realm': util.make_icon('education', title=gettext("Realm") + ": " + gettext("cde_realm")),
+        'is_cde_realm': util.make_icon('graduation-cap', title=gettext("Realm") + ": " + gettext("cde_realm")),
         'is_ml_admin': "Admin " + util.make_icon('envelope', title=gettext("Admin") + ": " + gettext("Mailinglists")),
-        'is_event_admin': "Admin " + util.make_icon('blackboard', title=gettext("Admin") + ": " + gettext("Events")),
+        'is_event_admin': "Admin " + util.make_icon('chalkboard-teacher', title=gettext("Admin") + ": " + gettext("Events")),
         'is_assembly_admin': "Admin " + util.make_icon('bullhorn', title=gettext("Admin") + ": " + gettext("Assemblies")),
-        'is_cde_admin': "Admin " + util.make_icon('education', title=gettext("Admin") + ": " + gettext("cde_realm")),
+        'is_cde_admin': "Admin " + util.make_icon('graduation-cap', title=gettext("Admin") + ": " + gettext("cde_realm")),
         'is_core_admin': "Admin " + util.make_icon('user', title=gettext("Admin") + ": " + gettext("Core")),
         'is_meta_admin': "Admin " + util.make_icon('wrench', title=gettext("Admin") + ": " + gettext("Meta")),
     } %}
@@ -245,7 +245,7 @@
                     </li>
                     <li role="presentation">
                         <a href="#tab_qf_js" data-toggle="tab" aria-controls="tab_qf_js" role="tab" id="tab_link_qf_js">
-                            {{ util.make_icon('flash') }} {% trans %}Magic{% endtrans %}
+                            {{ util.make_icon('magic') }} {% trans %}Magic{% endtrans %}
                         </a>
                     </li>
                 </ul>
@@ -259,7 +259,7 @@
                             <table class="query-form-cols table table-superdense">
                             <thead>
                                 <tr>
-                                    <th>{{ util.make_icon('eye-open', title=gettext("show field")) }}</th>
+                                    <th>{{ util.make_icon('eye', title=gettext("show field")) }}</th>
                                     <th>{% trans %}Fields{% endtrans %}</th>
                                     <th colspan="2">{% trans %}Filter{% endtrans %}</th>
                                 </tr>
@@ -380,7 +380,7 @@
                         <div class="row">
                             <div class="col-sm-6">
                                 <h4 class="filter-title">
-                                    {{ util.make_icon('eye-open') }} {% trans %}Displayed Fields{% endtrans %}</h4>
+                                    {{ util.make_icon('eye') }} {% trans %}Displayed Fields{% endtrans %}</h4>
                                 <p class="viewfield-list"></p>
                                 <div class="input-group has-success">
                                     <span class="input-group-addon">
@@ -392,7 +392,7 @@
                             </div>
                             <div class="col-sm-6">
                                 <h4 class="filter-title">
-                                    {{ util.make_icon('sort-by-alphabet') }} {% trans %}Sorting{% endtrans %}</h4>
+                                    {{ util.make_icon('sort-alpha-down') }} {% trans %}Sorting{% endtrans %}</h4>
                                 <ul class="list-group list-group-condensed list-group-hover sortfield-list"></ul>
                                 <div class="input-group has-success queryform-add">
                                     <span class="input-group-addon">
@@ -488,7 +488,7 @@
                                           'title':'{% trans %}show in search mask{% endtrans %}',
                                           'aria-label':'{% trans %}show in search mask{% endtrans %}',
                                           'class': 'btn btn-default btn-xs'})
-                    .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open', 'aria-hidden':'true'}))
+                    .append($('<span></span>',{'class':'fas fa-eye', 'aria-hidden':'true'}))
                     .click(function(){
                         $('#queryform').data('cdedbQueryForm').queryFromURL(url);
                         return false;
@@ -537,21 +537,21 @@
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}select all{% endtrans %}" id="btn-select-all">
-                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans %}all{% endtrans %}</span>
+                    {{ util.make_icon('check-square') }} <span class="hidden-xs">{% trans %}all{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}select none{% endtrans %}" id="btn-select-none">
-                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans %}none{% endtrans %}</span>
+                    {{ util.make_icon('square') }} <span class="hidden-xs">{% trans %}none{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}invert selection{% endtrans %}" id="btn-select-swap">
-                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans %}invert{% endtrans %}</span>
+                    {{ util.make_icon('caret-square-right') }} <span class="hidden-xs">{% trans %}invert{% endtrans %}</span>
                 </button>
             </div>
             <button type="button" class="btn btn-sm btn-info" title="{% trans %}filter for selected rows{% endtrans %}"
                     id="btn-select-filter">
-                {{ util.make_icon('share') }} <span class="hidden-xs">{% trans %}selected only{% endtrans %}</span>
+                {{ util.make_icon('share-square') }} <span class="hidden-xs">{% trans %}selected only{% endtrans %}</span>
             </button>
             <button type="button" class="btn btn-sm btn-trigger-wide" title="{% trans %}widen results table{% endtrans %}">
-                {{ util.make_icon('resize-horizontal', arialabel=gettext("widen results table")) }}
+                {{ util.make_icon('arrows-alt-h', arialabel=gettext("widen results table")) }}
             </button>
         </div>
         <div class="table-container" id="result-container">
@@ -573,7 +573,7 @@
                                         values.get("qord_secondary") == field or
                                         values.get("qord_tertiary") == field %}
                                     <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
-                                        {{ util.make_icon('sort-by-alphabet') }}
+                                        {{ util.make_icon('sort-alpha-down') }}
                                     </span>
                                 {% endif %}
                             </th>

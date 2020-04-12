@@ -14,6 +14,7 @@
 
         <script src="{{ staticurl("jquery-3.min.js") }}"></script>
         <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css") }}" rel="stylesheet" />
+        <link href="{{ staticurl("fontawesome/css/all.min.css") }}" rel="stylesheet" />
         <script src="{{ staticurl("bootstrap-3/js/bootstrap.min.js") }}"></script>
         <script src="{{ staticurl("cdedb-general.js") }}"></script>
         {% if CDEDB_DEV %}
@@ -77,12 +78,12 @@
                     <noscript>
                         {% if jshint == 'strong' %}
                             <div class="jshint pull-right text-danger">
-                                {{ util.make_icon('warning-sign') }}
+                                {{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}This site provides additional functionality with JavaScript enabled.{% endtrans %}
                             </div>
                         {% else %}
                             <div class="jshint pull-right text-warning">
-                                {{ util.make_icon('warning-sign') }}
+                                {{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}This site can be used more easily with JavaScript enabled.{% endtrans %}
                             </div>
                         {% endif %}
@@ -116,14 +117,14 @@
                                     </p>
                                     <button type="submit" name="submitlogout" value="{% trans %}Logout{% endtrans %}"
                                       class="btn navbar-button btn-default" title="{% trans %}Logout{% endtrans %}">
-                                        <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+                                        {{ util.make_icon("power-off") }}
                                         <span class="visible-xs-inline-block">{% trans %}Logout{% endtrans %}</span>
                                     </button>
                                 </form>
                             {% elif not login_form and original_request %}
                                 {{ util.href(cdedblink('core/index', {'wants': encode_parameter("core/index", "wants",
                                                                                                 original_request.url)}),
-                                             gettext("Login"), aclass='btn navbar-button btn-default', icon='off') }}
+                                             gettext("Login"), aclass='btn navbar-button btn-default', icon='power-off') }}
                             {% endif %}
                         </li>
                     </ul>
@@ -134,11 +135,11 @@
                             </li>
                         {% if "cde" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'cde' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("cde/index"), gettext("Members"), icon="education") }}
+                                {{ util.href(cdedblink("cde/index"), gettext("Members"), icon="graduation-cap") }}
                                 </li>
                         {% endif %}
                         <li {% if mainnav_active == 'event' %}class="active" aria-current="page"{% endif %}>
-                            {{ util.href(cdedblink("event/index"), gettext("Events"), icon="blackboard") }}
+                            {{ util.href(cdedblink("event/index"), gettext("Events"), icon="chalkboard-teacher") }}
                         </li>
                         {% if "ml" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'ml' %}class="active" aria-current="page"{% endif %}>
@@ -174,15 +175,15 @@
                     {% endif %}
 
                     <div id="notifications">
-                        {% with icontypes = {"success" : "ok-sign", "info" : "info-sign", "question" : "question-sign",
-                                             "warning" : "exclamation-sign", "error" : "remove-sign"},
+                        {% with icontypes = {"success" : "check-circle", "info" : "info-circle", "question" : "question-circle",
+                                             "warning" : "exclamation-circle", "error" : "times-circle"},
                                 alerttypes = {"success" : "success", "info" : "info", "question" : "info",
                                               "warning" : "warning", "error" : "danger"},
                                 messagetypes = {"success" : _("Success!"), "info" : _("Info!"), "question" : _("Question:"),
                                                 "warning" : _("Warning!"), "error" : _("Error!")} %}
                             {% for ntype, message, params in notifications %}
                                 <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert">
-                                    <span class="glyphicon glyphicon-{{ icontypes[ntype]|s }}" aria-hidden="true"></span>
+                                    {{ util.make_icon( icontypes[ntype] ) }}
                                     <strong>{{ messagetypes[ntype]|s }}</strong>
                                     <span class="notificationMessage">{{ gettext(message)|format(**params) }}</span>
                                 </div>

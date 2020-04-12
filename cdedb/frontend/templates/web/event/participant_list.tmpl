@@ -8,7 +8,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
                         readonly=not (ambience['event']['is_visible']
                                       or ambience['event']['id'] in user.orga
                                       or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
@@ -17,7 +17,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Participant List{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -41,14 +41,16 @@
 
 {% macro display_sorting_header(part_id, sortkey, label) %}
     {% if sortkey == last_sortkey and last_reverse == False %}
-        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': True}),
-                     label + nbsp + "▲", title=gettext("Sort descending.")) }}
-    {% elif sortkey == last_sortkey and last_reverse == True %}
-        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
-                     label + nbsp + "▼", title=gettext("Sort ascending.")) }}
+        {{ util.href(cdedblink('event/participant_list',
+                               {'part_id': part_id, 'sortkey': sortkey, 'reverse': not last_reverse}),
+                     label,
+                     icon="sort-down" if last_reverse else "sort-up",
+                     title=gettext("Sort ascending.") if last_reverse else gettext("Sort descending.")) }}
     {% else %}
         {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
-                     label + nbsp + "♦", title=gettext("Sort ascending.")) }}
+                     label,
+                     icon="sort",
+                     title=gettext("Sort ascending.")) }}
     {% endif %}
 {% endmacro %}
 
@@ -61,7 +63,7 @@
 {% block content %}
     {% if not ambience['event']['is_participant_list_visible'] %}
         <div class="alert alert-info" role="alert">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_icon('info-cirlce') }}
             <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
                 {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
@@ -189,7 +191,7 @@
 
     {% elif not list_consent %}
         <div class="alert alert-info" role="alert">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_icon('info-cirlce') }}
             <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
                 {% trans %}
