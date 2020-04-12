@@ -194,17 +194,21 @@ xss-check:
 dump-html:
 	var SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend make check
 
-validate-html: /opt/vnu-runtime-image/bin/vnu
-	/opt/vnu-runtime-image/bin/vnu /tmp/cdedb/tmp* 2>&1 \
+validate-html: /opt/validator/vnu-runtime-image/bin/vnu
+	/opt/validator/vnu-runtime-image/bin/vnu /tmp/cdedb/tmp* 2>&1 \
 		| grep -v -F 'This document appears to be written in English' \
 		| grep -v -F 'input type is not supported in all browsers' \
 
-/opt/vnu-runtime-image/bin/vnu: /opt/vnu.linux.zip
-	unzip /opt/vnu.linux.zip -d /opt
+/opt/validator/vnu-runtime-image/bin/vnu: /opt/validator/vnu.linux.zip
+	unzip /opt/validator/vnu.linux.zip -d /opt/validator
 
-/opt/vnu.linux.zip:
-	wget 'https://github.com/validator/validator/releases/download/20.3.16/vnu.linux.zip' -O /opt/vnu.linux.zip
-	echo "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 /opt/vnu.linux.zip" | sha1sum -c -
+/opt/validator/vnu.linux.zip: /opt/validator
+	wget 'https://github.com/validator/validator/releases/download/20.3.16/vnu.linux.zip' -O /opt/validator/vnu.linux.zip
+	echo "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 /opt/validator/vnu.linux.zip" | sha1sum -c -
+
+/opt/validator:
+	sudo mkdir /opt/validator
+	sudo chown cdedb:cdedb /opt/validator
 
 quick-check:
 	${PYTHONBIN} -c "from cdedb.frontend.application import Application ; Application(\"`pwd`/test/localconfig.py\")" > /dev/null
