@@ -2668,4 +2668,4 @@ class CoreBackend(AbstractBackend):
     get_realms_single = singularize(get_realms_multi)
     genesis_get_case = singularize(genesis_get_cases)
     changelog_resolve_change = access("core_admin", "cde_admin")(
-        changelog_resolve_change)
+        changelog_resolve_change_unattended)
