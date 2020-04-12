@@ -13,6 +13,7 @@ import pytz
 import re
 import unittest
 import subprocess
+import sys
 import tempfile
 import types
 import webtest
@@ -547,7 +548,7 @@ class FrontendTest(unittest.TestCase):
         if cls.do_scrap:
             # create a temporary directory and print it
             cls.scrap_path = tempfile.mkdtemp()
-            print(cls.scrap_path)
+            print(cls.scrap_path, file=sys.stderr)
 
     @classmethod
     def tearDownClass(cls):
