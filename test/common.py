@@ -7,6 +7,7 @@ import email.policy
 import functools
 import gettext
 import inspect
+import os
 import pathlib
 import pytz
 import re
@@ -542,7 +543,7 @@ class FrontendTest(unittest.TestCase):
             'wsgi.url_scheme': 'https'})
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
-        cls.do_scrap = False
+        cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
         if cls.do_scrap:
             # create a temporary directory and print it
             cls.scrap_path = tempfile.mkdtemp()

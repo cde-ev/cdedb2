@@ -191,6 +191,21 @@ xss-check:
 	${PYTHONBIN} -m bin.escape_fuzzing 2>/dev/null
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
+dump-html:
+	var SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend make check
+
+validate-html: /opt/vnu-runtime-image/bin/vnu
+	/opt/vnu-runtime-image/bin/vnu /tmp/cdedb/tmp* 2>&1 \
+		| grep -v -F 'This document appears to be written in English' \
+		| grep -v -F 'input type is not supported in all browsers' \
+
+/opt/vnu-runtime-image/bin/vnu: /opt/vnu.linux.zip
+	unzip /opt/vnu.linux.zip -d /opt
+
+/opt/vnu.linux.zip:
+	wget 'https://github.com/validator/validator/releases/download/20.3.16/vnu.linux.zip' -O /opt/vnu.linux.zip
+	echo "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 /opt/vnu.linux.zip" | sha1sum -c -
+
 quick-check:
 	${PYTHONBIN} -c "from cdedb.frontend.application import Application ; Application(\"`pwd`/test/localconfig.py\")" > /dev/null
 
@@ -200,7 +215,8 @@ quick-check:
 coverage: .coverage
 	${PYTHONBIN} /usr/bin/coverage report -m --omit='test/*,related/*'
 
-.PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint check single-check .coverage coverage
+.PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint \
+	check single-check .coverage coverage dump-html validate-html
 
 test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json test/create_sample_data_sql.py
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
