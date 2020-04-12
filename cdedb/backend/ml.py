@@ -308,7 +308,7 @@ class MlBackend(AbstractBackend):
         return {k: v for k, v in ret.items()
                 if self.may_view(rs, mailinglists[k])}
 
-    @access("ml")
+    @access("ml", "ml_script")
     def get_mailinglists(self, rs, ids):
         """Retrieve data for some mailinglists.
 

@@ -433,7 +433,7 @@ class CoreBackend(AbstractBackend):
 
             # resolve change if it doesn't require review
             if not requires_review or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                ret = self.changelog_resolve_change(
+                ret = self.changelog_resolve_change_unattended(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
                 ret = -1
@@ -458,8 +458,7 @@ class CoreBackend(AbstractBackend):
                 self.sql_insert(rs, "core.changelog", insert)
         return ret
 
-    @access("core_admin", "cde_admin")
-    def changelog_resolve_change(self, rs, persona_id, generation, ack,
+    def changelog_resolve_change_unattended(self, rs, persona_id, generation, ack,
                                  reviewed=True):
         """Review a currently pending change from the changelog.
 
@@ -2668,3 +2667,5 @@ class CoreBackend(AbstractBackend):
     get_roles_single = singularize(get_roles_multi)
     get_realms_single = singularize(get_realms_multi)
     genesis_get_case = singularize(genesis_get_cases)
+    changelog_resolve_change = access("core_admin", "cde_admin")(
+        changelog_resolve_change)
