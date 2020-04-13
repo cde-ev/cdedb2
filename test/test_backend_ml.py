@@ -236,7 +236,7 @@ class TestMlBackend(BackendTest):
         new_data['assembly_id'] = None
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
 
-    @as_users("anton")
+    @as_users("nina")
     def test_sample_data(self, user):
         ml_ids = self.ml.list_mailinglists(self.key, active_only=False)
 
@@ -271,7 +271,7 @@ class TestMlBackend(BackendTest):
         reality = self.ml.get_mailinglist(self.key, mailinglist_id)
         self.assertEqual(expectation, reality)
 
-    @as_users("anton", "berta")
+    @as_users("nina", "berta")
     def test_subscriptions(self, user):
         # Which lists is Berta subscribed to.
         expectation = {
@@ -859,7 +859,7 @@ class TestMlBackend(BackendTest):
             self._change_sub(user['id'], 11, SA.subscribe,
                              code=None, state=None, kind="error")
 
-    @as_users("anton")
+    @as_users("nina")
     def test_write_subscription_states(self, user):
         # CdE-Member list.
         mailinglist_id = 7
@@ -1530,6 +1530,163 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_subscription(
                              self.key, persona_id=9, mailinglist_id=4))
+
+    @as_users("annika", "werner", "vera", "nina")
+    def test_relevant_admins(self, user):
+        if user['display_name'] in {"Annika", "Nina"}:
+            # Create a new event mailinglist.
+            mldata = {
+                'local_part': "cyber",
+                'domain': const.MailinglistDomain.aka,
+                'description': "Für alle, die nicht ohne Akademien können.",
+                'event_id': None,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'is_active': True,
+                'attachment_policy': const.AttachmentPolicy.forbid,
+                'maxsize': None,
+                'moderators': {user['id']},
+                'subject_prefix': "cyber",
+                'title': "CyberAka",
+                'mod_policy': const.ModerationPolicy.non_subscribers,
+                'notes': None,
+                'registration_stati': [],
+            }
+            new_id = self.ml.create_mailinglist(self.key, mldata)
+            self.assertGreater(new_id, 0)
+
+            # Add self as a subscriber.
+            self.ml.do_subscription_action(
+                self.key, SA.add_subscriber, new_id, user['id'])
+
+            # Modify the new mailinglist.
+            mdata = {
+                'id': new_id,
+                'registration_stati': [
+                    const.RegistrationPartStati.guest,
+                    const.RegistrationPartStati.participant,
+                    const.RegistrationPartStati.applied,
+                    const.RegistrationPartStati.waitlist,
+                ],
+                'event_id': 1,
+                'ml_type': const.MailinglistTypes.event_associated,
+            }
+            self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Attempt to change the mailinglist type.
+            mdata = {
+                'id': new_id,
+                'ml_type': const.MailinglistTypes.member_opt_in,
+            }
+            if user['display_name'] != "Nina":
+                with self.assertRaises(PrivilegeError) as cm:
+                    self.ml.set_mailinglist(self.key, mdata)
+                self.assertEqual(cm.exception.args,
+                                 ("Not privileged to make this change.",))
+            else:
+                self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Delete the mailinglist.
+            self.assertTrue(self.ml.delete_mailinglist(
+                self.key, new_id,
+                cascade=["moderators", "subscriptions", "log"]))
+
+        if user['display_name'] in {"Werner", "Nina"}:
+            # Create a new event mailinglist.
+            mldata = {
+                'local_part': "mgv-ag",
+                'domain': const.MailinglistDomain.lists,
+                'description': "Vor der nächsten MGV müssen wir noch ein paar"
+                               " Dinge klären.",
+                'ml_type': const.MailinglistTypes.assembly_opt_in,
+                'is_active': True,
+                'attachment_policy': const.AttachmentPolicy.forbid,
+                'maxsize': None,
+                'moderators': {user['id']},
+                'subject_prefix': "mgv-ag",
+                'title': "Arbeitsgruppe Mitgliederversammlung",
+                'mod_policy': const.ModerationPolicy.non_subscribers,
+                'notes': None,
+            }
+            new_id = self.ml.create_mailinglist(self.key, mldata)
+            self.assertGreater(new_id, 0)
+
+            # Add self as a subscriber.
+            self.ml.do_subscription_action(
+                self.key, SA.add_subscription_override, new_id, user['id'])
+
+            # Modify the new mailinglist.
+            mdata = {
+                'id': new_id,
+                'assembly_id': 2,
+                'ml_type': const.MailinglistTypes.assembly_associated,
+            }
+            self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Attempt to change the mailinglist type.
+            mdata = {
+                'id': new_id,
+                'ml_type': const.MailinglistTypes.member_opt_in,
+            }
+            if user['display_name'] != "Nina":
+                with self.assertRaises(PrivilegeError) as cm:
+                    self.ml.set_mailinglist(self.key, mdata)
+                self.assertEqual(cm.exception.args,
+                                 ("Not privileged to make this change.",))
+            else:
+                self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Delete the mailinglist.
+            self.assertTrue(self.ml.delete_mailinglist(
+                self.key, new_id,
+                cascade=["moderators", "subscriptions", "log"]))
+        if user['display_name'] in {"Vera", "Nina"}:
+            # Create a new member mailinglist.
+            mldata = {
+                'local_part': "literatir",
+                'domain': const.MailinglistDomain.lists,
+                'description': "Wir reden hier über coole Bücher die wir"
+                               " gelesen haben.",
+                'ml_type': const.MailinglistTypes.member_opt_in,
+                'is_active': True,
+                'attachment_policy': const.AttachmentPolicy.forbid,
+                'maxsize': None,
+                'moderators': {user['id']},
+                'subject_prefix': "literatur",
+                'title': "Buchclub",
+                'mod_policy': const.ModerationPolicy.non_subscribers,
+                'notes': None,
+            }
+            new_id = self.ml.create_mailinglist(self.key, mldata)
+            self.assertGreater(new_id, 0)
+
+            # Add self as a subscriber.
+            self.ml.do_subscription_action(
+                self.key, SA.add_subscription_override, new_id, user['id'])
+
+            # Modify the new mailinglist.
+            mdata = {
+                'id': new_id,
+                'ml_type': const.MailinglistTypes.member_opt_out,
+            }
+            self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Attempt to change the mailinglist type.
+            mdata = {
+                'id': new_id,
+                'ml_type': const.MailinglistTypes.general_opt_in,
+            }
+            if user['display_name'] != "Nina":
+                with self.assertRaises(PrivilegeError) as cm:
+                    self.ml.set_mailinglist(self.key, mdata)
+                self.assertEqual(cm.exception.args,
+                                 ("Not privileged to make this change.",))
+            else:
+                self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Delete the mailinglist.
+            self.assertTrue(self.ml.delete_mailinglist(
+                self.key, new_id,
+                cascade=["moderators", "subscriptions", "log"]))
 
     @as_users("anton")
     def test_log(self, user):

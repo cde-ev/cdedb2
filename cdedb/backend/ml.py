@@ -59,9 +59,18 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int
         :rtype: bool
         """
-        # TODO: for now this is just ml_admin, with the new MailinglistTypes,
-        # this could be other admins as well.
-        return self.is_admin(rs)
+        if mailinglist is None:
+            if mailinglist_id is None:
+                raise ValueError(n_("No mailinglist specified."))
+            atype: ml_type.GeneralMailinglist = self.get_ml_type(
+                rs, mailinglist_id)
+        else:
+            if mailinglist_id is not None:
+                if mailinglist['id'] != mailinglist_id:
+                    raise ValueError(n_("Different mailinglists specified."))
+            atype: ml_type.GeneralMailinglist = ml_type.get_type(
+                mailinglist['ml_type'])
+        return atype.is_relevant_admin(rs)
 
     @staticmethod
     @access("ml")
@@ -530,7 +539,7 @@ class MlBackend(AbstractBackend):
             self.write_subscription_states(rs, new_id)
         return new_id
 
-    @access("ml_admin")
+    @access("ml")
     def delete_mailinglist_blockers(self, rs, mailinglist_id):
         """Determine what blocks a mailinglist from being deleted.
 
@@ -548,6 +557,8 @@ class MlBackend(AbstractBackend):
             are the ids of the blockers.
         """
         mailinglist_id = affirm("id", mailinglist_id)
+        if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
+            raise PrivilegeError(n_("Not privileged."))
         blockers = {}
 
         subscriptions = self.sql_select(
@@ -582,7 +593,7 @@ class MlBackend(AbstractBackend):
 
         return blockers
 
-    @access("ml_admin")
+    @access("ml")
     def delete_mailinglist(self, rs, mailinglist_id, cascade=None):
         """Remove a mailinglist.
 
@@ -595,6 +606,8 @@ class MlBackend(AbstractBackend):
         :returns: default return code
         """
         mailinglist_id = affirm("id", mailinglist_id)
+        if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
+            raise PrivilegeError(n_("Not privileged."))
         blockers = self.delete_mailinglist_blockers(rs, mailinglist_id)
         if not cascade:
             cascade = set()
@@ -840,7 +853,8 @@ class MlBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         email = affirm("email", email)
 
-        if not self.is_admin(rs) and persona_id != rs.user.persona_id:
+        if (not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
+                and persona_id != rs.user.persona_id):
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
@@ -871,7 +885,8 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
 
-        if not self.is_admin(rs) and persona_id != rs.user.persona_id:
+        if (not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
+                and persona_id != rs.user.persona_id):
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
@@ -1140,7 +1155,7 @@ class MlBackend(AbstractBackend):
             rs, persona_id, states=sub_states, mailinglist_id=mailinglist_id)
         return bool(data)
 
-    @access("ml_admin")
+    @access("ml")
     def write_subscription_states(self, rs, mailinglist_id):
         """This takes care of writing implicit subscriptions to the db.
 
@@ -1165,6 +1180,8 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             ml = self.get_mailinglist(rs, mailinglist_id)
             atype = self.get_ml_type(rs, mailinglist_id)
+            if not atype.is_relevant_admin(rs):
+                raise PrivilegeError(n_("Not privileged."))
 
             if not atype.periodic_cleanup(rs, ml):
                 return ret
