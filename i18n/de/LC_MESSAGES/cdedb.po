@@ -1009,11 +1009,11 @@ msgstr "Mitglieder (Nur durch Modeatoren)"
 
 #: cdedb/i18n_additional.py:245 cdedb/i18n_additional.py:248
 msgid "MailinglistTypes.team"
-msgstr "Team (Opt-in)"
+msgstr "Team (Moderiertes Opt-In)"
 
 #: cdedb/i18n_additional.py:246 cdedb/i18n_additional.py:249
 msgid "MailinglistTypes.restricted_team"
-msgstr "Team (Moderiertes Opt-in)"
+msgstr "Team (Nur durch Moderatoren)"
 
 #: cdedb/i18n_additional.py:247 cdedb/i18n_additional.py:250
 msgid "MailinglistTypes.event_associated"
