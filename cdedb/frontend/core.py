@@ -1337,7 +1337,7 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdatadict(
         "title", "name_supplement", "birthday", "gender", "free_form",
         "telephone", "mobile", "address", "address_supplement", "postal_code",
-        "location", "country")
+        "location", "country", "trial_member")
     def promote_user(self, rs, persona_id, target_realm, data):
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
