@@ -197,7 +197,7 @@ dump-html:
 validate-html: /opt/validator/vnu-runtime-image/bin/vnu
 	/opt/validator/vnu-runtime-image/bin/vnu /tmp/tmp* 2>&1 \
 		| grep -v -F 'This document appears to be written in English' \
-		| grep -v -F 'input type is not supported in all browsers' \
+		| grep -v -F 'input type is not supported in all browsers'
 
 /opt/validator/vnu-runtime-image/bin/vnu: /opt/validator/vnu.linux.zip
 	unzip -DD /opt/validator/vnu.linux.zip -d /opt/validator
