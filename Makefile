@@ -192,7 +192,7 @@ xss-check:
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 dump-html:
-	var SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend make check
+	env SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend make check
 
 validate-html: /opt/validator/vnu-runtime-image/bin/vnu
 	/opt/validator/vnu-runtime-image/bin/vnu /tmp/tmp* 2>&1 \
