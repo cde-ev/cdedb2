@@ -103,6 +103,19 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
+    def get_available_types(self, rs):
+        """Get a list of MailinglistTypes, the user is allowed to manage.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: Set[const.MailinglistTypes]
+        """
+        ret = set()
+        for enum_member, atype in ml_type.TYPE_MAP.items():
+            if atype.is_relevant_admin(rs):
+                ret.add(enum_member)
+        return ret
+
+    @access("ml")
     def get_interaction_policy(self, rs, persona_id, *, mailinglist=None,
                                mailinglist_id=None):
         """What may the user do with a mailinglist. Be aware, that this does
