@@ -32,6 +32,9 @@
     </script>
     {% set readonly = 'ml_mgmt' not in user.admin_views %}
     {% if not readonly %}
+        <div class="p">
+            {{ util.href(cdedblink('ml/change_ml_type'), label=gettext('Change Type'), icon="pen", aclass="btn btn-sm btn-warning") }}
+        </div>
         <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
             {{ util.anti_csrf_token('ml/change_mailinglist') }}
     {% else %}
@@ -43,7 +46,7 @@
             {{ util.form_input_text(name="local_part", label=gettext("Address"), readonly=readonly,
                                     addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
             {{ util.form_input_select(name="domain", label=gettext("Domain"), readonly=readonly, defaultvalue=ambience['mailinglist']['domain'].value,
-                        entries=enums['MailinglistDomain']|enum_entries(processing=gettext, prefix="@")) }}
+                        entries=available_domains|enum_entries(processing=gettext, prefix="@")) }}
             {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", readonly=readonly,
                                         info=gettext("Supports %(infolink)s.")|format(
                                             infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
@@ -56,16 +59,16 @@
         <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
             {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"), readonly=readonly,
                     entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"), readonly=readonly,
+            {{ util.input_hidden(name="ml_type") }}
+            {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"), readonly=True,
                     entries=enums['MailinglistTypes']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;"|s, entries=sorted_events,
+            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;"|s, entries=event_entries,
                     readonly=readonly,
                     info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
             {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=readonly,
-                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
-                    info=gettext("No selection results in an orga-list.")) }}
+                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;"|s, readonly=readonly,
-                    entries=sorted_assemblies,
+                    entries=assembly_entries,
                     info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
 
         <h4 class="heading-underline">{% trans %}Mails{% endtrans %}</h4>
