@@ -26,7 +26,7 @@
 {% endblock %}
 {% block content %}
     <p class="text-info">
-        {{ util.make_icon('info-cirlce') }}
+        {{ util.make_icon('info-circle') }}
         {% trans %}
             Note that every change can take up to 15 minutes to take effect.
         {% endtrans %}
@@ -36,7 +36,7 @@
         <div class="col-md-6">
             <h2>{% trans %}Moderators{% endtrans %} [{{ ambience['mailinglist']['moderators']|length }}]</h2>
                 <p class="text-muted">
-                {{ util.make_icon('info-cirlce') }}
+                {{ util.make_icon('info-circle') }}
                     {% trans %}
                         Only users can be moderators.
                     {% endtrans %}
@@ -88,7 +88,7 @@
         <div class="col-md-6">
             <h2>{% trans %}Subscription Requests{% endtrans %}</h2>
                 <p class="text-muted">
-                    {{ util.make_icon('info-cirlce') }}
+                    {{ util.make_icon('info-circle') }}
                     {% trans %}
                         Subscription Requests of other users to this mailinglist.
                     {% endtrans %}
@@ -142,7 +142,7 @@
 
     <h2>{% trans %}Subscribers{% endtrans %} [{{ subscribers|length }}]</h2>
         <p class="text-muted">
-            {{ util.make_icon('info-cirlce') }}
+            {{ util.make_icon('info-circle') }}
             {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) %}
                 Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here.
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.

@@ -42,7 +42,7 @@
     {% endif %}
     {% if ambience['pevent']['notes'] and ("past_event" in user.admin_views or is_participant) %}
         {% if "past_event" in user.admin_views and not is_participant %}
-            <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-cirlce') }}
+            <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-circle') }}
                 {% trans %}
                     As you are no participant of this past event, you can only
                     see this link because you are admin.
