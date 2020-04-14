@@ -1,0 +1,38 @@
+{% set sidenav_active='ml_change' %}
+{% extends "web/ml/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_change_mailinglist.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans title=ambience['mailinglist']['title'] %}
+        {{ title }} – Change Type
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {% if is_admin %}
+        {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/change_mailinglist"), gettext("Configuration")) }}
+    {{ util.breadcrumb_link(cdedblink("ml/change_ml_type"), gettext("Change Type")) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Change Type{% endtrans %}
+        <small>
+            {{- util.make_icon('envelope', arialabel="Mailingliste") }} {{ ambience['mailinglist']['title'] -}}
+        </small>
+    </h1>
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink("ml/change_ml_type") }}" class="form-horizontal" id="changemltypeform" method="POST">
+        {{ util.anti_csrf_token("ml/change_ml_type") }}
+        {{ util.form_input_select(name="ml_type", entries=available_types|enum_entries(processing=gettext), sort=True, label=gettext("Mailinglist Type")) }}
+        {{ util.form_input_select(name="event_id", entries=events, nulloption="&nbsp;"|s, label=gettext("Event")) }}
+        {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=readonly,
+                entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), sort=True) }}
+        {{ util.form_input_select(name="assembly_id", entries=assemblies, nulloption="&nbsp;"|s, label=gettext("Assembly")) }}
+        {{ util.form_input_submit(cancellink=cdedblink("ml/change_mailinglist")) }}
+    </form>
+{% endblock %}
