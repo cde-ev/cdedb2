@@ -18,12 +18,12 @@
     {% if is_relative_admin %}
         {% if not ambience['persona']['is_active'] %}
             <div class="alert alert-info" id="deactivated">
-                {{ util.make_icon('info-cirlce') }} {% trans %}The User is deactivated.{% endtrans %}
+                {{ util.make_icon('info-circle') }} {% trans %}The User is deactivated.{% endtrans %}
             </div>
         {% endif %}
         {% if ambience['persona']['is_archived'] %}
             <div class="alert alert-info" id="archived">
-                {{ util.make_icon('info-cirlce') }} {% trans %}The User is archived.{% endtrans %}
+                {{ util.make_icon('info-circle') }} {% trans %}The User is archived.{% endtrans %}
             </div>
         {% endif %}
     {% endif %}

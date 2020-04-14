@@ -30,7 +30,7 @@
                                     anid="input-data") }}
 
         <p class="help-block">
-            {{ util.make_icon('info-cirlce') }}
+            {{ util.make_icon('info-circle') }}
             {% trans %}Enter one dataset per line.{% endtrans %}
             {% trans %}Use the following format:{% endtrans %}
         </p>
@@ -124,7 +124,7 @@
 
         {% if values['checksum'] %}
             <p class="help-block">
-                {{ util.make_icon('info-cirlce') }}
+                {{ util.make_icon('info-circle') }}
                 {% trans %}If the input changed, the validation results will be displayed again.{% endtrans %}
             </p>
             {{ util.form_input_submit(value=gettext("Confirm"), horizontal=False) }}
