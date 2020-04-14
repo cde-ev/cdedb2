@@ -2012,14 +2012,18 @@ def event_guard(argname="event_id", check_offline=False):
     return wrap
 
 
-def mailinglist_guard(argname="mailinglist_id"):
+def mailinglist_guard(argname="mailinglist_id", allow_moderators=True):
     """This decorator checks the access with respect to a specific
     mailinglist. The list is specified by id which has either to be a
     keyword parameter or the first positional parameter after the
-    request state. Only moderators and privileged users are admitted.
+    request state.
+
+    If `allow_moderators` is True, moderators of the mailinglist are allowed,
+    otherwise we require a relevant admin for the given mailinglist.
 
     :type argname: str
     :param argname: name of the keyword argument specifying the id
+    :type allow_moderators: bool
     """
 
     def wrap(fun):
@@ -2029,10 +2033,16 @@ def mailinglist_guard(argname="mailinglist_id"):
                 arg = kwargs[argname]
             else:
                 arg = args[0]
-            if arg not in rs.user.moderator and not obj.is_admin(rs):
-                raise werkzeug.exceptions.Forbidden(rs.gettext(
-                    "This page can only be accessed by the mailinglist’s "
-                    "moderators."))
+            if allow_moderators:
+                if not obj.mlproxy.may_manage(rs, **{argname: arg}):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "This page can only be accessed by the mailinglist’s "
+                        "moderators."))
+            else:
+                if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "This page can only be accessed by appropriate "
+                        "admins."))
             return fun(obj, rs, *args, **kwargs)
 
         return new_fun
