@@ -596,7 +596,7 @@ class Config(BasicConfig):
             _LOGGER.info(f"Ignored basic config entry {key} in {configpath}.")
 
 
-class SecretsConfig:
+class SecretsConfig(collections.abc.Mapping):
     """Container for secrets (i.e. passwords).
 
     This works like :py:class:`Config`, but is used for secrets. Thus
@@ -631,3 +631,12 @@ class SecretsConfig:
         self._configlookup.add_child(
             primaryconf, secondaryconf, _SECRECTS_DEFAULTS
         )
+
+    def __getitem__(self, key):
+        return self._configlookup.__getitem__(key)
+
+    def __iter__(self):
+        return self._configlookup.__iter__()
+
+    def __len__(self):
+        return self._configlookup.__len__()

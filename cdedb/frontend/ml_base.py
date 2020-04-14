@@ -33,9 +33,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
         self.mailman_create_client = lambda url, user: mailmanclient.Client(
-            url, user, secrets.MAILMAN_PASSWORD)
+            url, user, secrets["MAILMAN_PASSWORD"])
         self.mailman_template_password = (
-            lambda: secrets.MAILMAN_BASIC_AUTH_PASSWORD)
+            lambda: secrets["MAILMAN_BASIC_AUTH_PASSWORD"])
 
     @classmethod
     def is_admin(cls, rs):

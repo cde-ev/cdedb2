@@ -112,11 +112,11 @@ class BaseApp(metaclass=abc.ABCMeta):
             self, configpath))
         self.decode_parameter = (
             lambda target, name, param:
-            decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
+            decode_parameter(secrets["URL_PARAMETER_SALT"], target, name, param))
 
         def local_encode(target, name, param,
                          timeout=self.conf["PARAMETER_TIMEOUT"]):
-            return encode_parameter(secrets.URL_PARAMETER_SALT, target, name,
+            return encode_parameter(secrets["URL_PARAMETER_SALT"], target, name,
                                     param, timeout=timeout)
 
         self.encode_parameter = local_encode

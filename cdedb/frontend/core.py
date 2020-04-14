@@ -54,7 +54,7 @@ class CoreFrontend(AbstractFrontend):
     def __init__(self, configpath):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
-        self.resolve_api_token_check = lambda x: x == secrets.RESOLVE_API_TOKEN
+        self.resolve_api_token_check = lambda x: x == secrets["RESOLVE_API_TOKEN"]
 
     @classmethod
     def is_admin(cls, rs):

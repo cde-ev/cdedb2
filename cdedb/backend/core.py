@@ -51,10 +51,10 @@ class CoreBackend(AbstractBackend):
             secrets, self.conf["DB_PORT"])
         self.generate_reset_cookie = (
             lambda rs, persona_id, timeout: self._generate_reset_cookie(
-                rs, persona_id, secrets.RESET_SALT, timeout=timeout))
+                rs, persona_id, secrets["RESET_SALT"], timeout=timeout))
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
-                rs, persona_id, secrets.RESET_SALT, cookie))
+                rs, persona_id, secrets["RESET_SALT"], cookie))
 
     @classmethod
     def is_admin(cls, rs):
