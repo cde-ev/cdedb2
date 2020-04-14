@@ -8,6 +8,7 @@ here, the site specific global overrides in
 :py:class:`BasicConfig` an invocation specific override.
 """
 
+import collections.abc
 import datetime
 import decimal
 import importlib.util
