@@ -14,7 +14,7 @@
         <div class="col-sm-3">
             {{ util.href(cdedblink("ml/management", {'mailinglist_id': mailinglist_id}), title) }}
             {% if mailinglist_id in subscriptions %}
-                {{ util.make_icon('ok-sign', title=gettext("subscribed")) }}
+                {{ util.make_icon('check-circle', title=gettext("subscribed")) }}
             {% endif %}<br />
             {% if not ml['is_active'] %}
                 <span class="small">{% trans %}inactive{% endtrans %}</span>
@@ -24,7 +24,7 @@
             {{ gettext( enums['MailinglistTypes'](ml['ml_type'])|string) -}}
             {% if ml['event_id'] -%}
                 {% trans link=util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
-                        events[ml['event_id']], icon='blackboard') -%}
+                        events[ml['event_id']], icon='chalkboard-teacher') -%}
                     ; linked with {{ link }}
                 {% endtrans %}
             {%- elif ml['assembly_id'] -%}
@@ -54,7 +54,7 @@
                 aclass="btn btn-sm btn-success") }}
     </div>
      <p class="text-info">
-         {{ util.make_icon('info-sign') }}
+         {{ util.make_icon('info-circle') }}
          {% trans documentation=util.href(docurl('Architecture_Mailinglists'), gettext('documentation')) %}
             Mailinglist types effect who can view, administer, or join a mailinglist. Furthermore, some add implicit
             subscribers. For more information, see the {{ documentation }}.
@@ -64,8 +64,8 @@
         {% if mailinglists[group] %}
             <h3>{{ gettext(group|string) }}</h3>
             <div class="list-group list-group-hover list-group-condensed">
-            {% for mailinglist_id, title in mailinglists[group]|dictsort(False, 'value') %}
-                {{ format_entry(mailinglist_id, title) }}
+            {% for mailinglist_id, ml in mailinglists[group]|keydictsort(EntitySorter.mailinglist) %}
+                {{ format_entry(mailinglist_id, ml['title']) }}
             {% endfor %}
             </div>
         {% endif %}

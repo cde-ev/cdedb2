@@ -5,17 +5,18 @@ This Python script shall test if registration for an event in the new cdedb is s
 took. The main idea is to use Selenium to emulate browser actions and then to performance-test page loading.
 """
 
-from selenium import webdriver
-import selenium.webdriver.support.ui as ui
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.remote.webdriver import WebDriver
-from optparse import OptionParser
-from typing import List, Dict, Union, Tuple
 import datetime
 import logging
-import re
 import multiprocessing as mp
+import re
+from optparse import OptionParser
+from typing import Dict, List, Tuple, Union
+
 import pandas as pd
+import selenium.webdriver.support.ui as ui
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.remote.webdriver import WebDriver
 
 
 class RegistrationResult:
@@ -172,7 +173,7 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
         try:
             # print("registration processing took: {}".format(page_processing_time(driver)))
             notification_area = driver.find_element_by_id("notifications")
-            ok_sign = notification_area.find_element_by_class_name("glyphicon-ok-sign")
+            ok_sign = notification_area.find_element_by_class_name("check-circle")
             print("ok sign exists? {}".format(ok_sign))
             ret.success = True
         except NoSuchElementException:

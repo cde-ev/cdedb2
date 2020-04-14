@@ -415,6 +415,8 @@ class TestMlFrontend(FrontendTest):
         f['is_active'].checked = True
         f['notes'] = "Noch mehr Gemunkel."
         f['moderator_ids'] = "DB-2-7, DB-7-8"
+        f['ml_type'] = 1
+        f['domain'] = 1
         self.submit(f)
         self.assertTitle("Munkelwand")
         self.assertPresence("Beispiel")

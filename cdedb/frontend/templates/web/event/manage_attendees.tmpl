@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='book') }}
     {{ util.breadcrumb_link(cdedblink("event/manage_attendees"), gettext("Manage Attendees"), active=True) }}
@@ -20,7 +20,7 @@
         {% trans course=ambience['course']['shortname'] %}
             Attendees of {{ course }}
         {% endtrans %}
-        <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -74,6 +74,6 @@
             </script>
         </div>
         {{ util.input_submit(value=gettext("Save")) }}&emsp;
-        {{ util.href(cdedblink('event/show_course'), gettext("Cancel"), icon='remove', aclass="btn btn-default") }}
+        {{ util.href(cdedblink('event/show_course'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>
 {% endblock %}

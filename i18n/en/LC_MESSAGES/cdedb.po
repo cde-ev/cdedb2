@@ -999,11 +999,11 @@ msgstr "Members (Invitation only)"
 
 #: cdedb/i18n_additional.py:245
 msgid "MailinglistTypes.team"
-msgstr "Team (Opt-in)"
+msgstr "Team (Moderated Opt-in)"
 
 #: cdedb/i18n_additional.py:246
 msgid "MailinglistTypes.restricted_team"
-msgstr "Team (Moderated Opt-in)"
+msgstr "Team (Invitation only)"
 
 #: cdedb/i18n_additional.py:247
 msgid "MailinglistTypes.event_associated"

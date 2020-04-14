@@ -546,7 +546,7 @@ class CoreBackend(AbstractBackend):
           about the change and the persona
         """
         stati = affirm_set("enum_memberchangestati", stati)
-        query = glue("SELECT persona_id, given_names, family_name,",
+        query = glue("SELECT id, persona_id, given_names, family_name,",
                      "generation, ctime",
                      "FROM core.changelog WHERE change_status = ANY(%s)")
         data = self.query_all(rs, query, (stati,))

@@ -52,7 +52,7 @@
                         {% endif -%}
                     {% elif "event" in user.roles and event['is_open'] %}
                         {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
-                            gettext("Register"), icon='log-in') }}
+                            gettext("Register"), icon='sign-in-alt') }}
                         {% if not event['registration_soft_limit'] is none %}
                             {% if now() <= event['registration_soft_limit'] %}
                                 {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
@@ -96,7 +96,7 @@
                                      gettext("Registrations"), icon='list') }}
                         &bull;
                         {{ util.href(cdedblink('event/stats', {'event_id': event_id}),
-                                     gettext("Statistics"), icon='stats') }}
+                                     gettext("Statistics"), icon='chart-bar') }}
                         {% if entry['tracks'] %}
                             &bull;
                             {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),

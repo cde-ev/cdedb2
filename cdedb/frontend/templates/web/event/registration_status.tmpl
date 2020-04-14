@@ -8,19 +8,19 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Your Registration{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     {% if ambience['event']['use_questionnaire'] %}
         <div class="alert alert-info">
-             {{ util.make_icon('info-sign') }}
+             {{ util.make_icon('info-circle') }}
              {% trans link=util.href(cdedblink('event/questionnaire_form'), gettext("questionnaire")) %}
             	Please fill in the {{ link }} now.
             {% endtrans %}
@@ -121,7 +121,7 @@
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning",
-                         icon='pencil') }}
+                         icon='pen') }}
             {% if not ambience['event']['registration_soft_limit'] is none %}
                 {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
                     Changes can be made until the registration end({{ date }}).

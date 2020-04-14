@@ -39,22 +39,33 @@ class PastEventBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
-        :rtype: {int: [dict]}
-        :returns: Keys are the ids and items are the event lists.
+        :rtype: {int: {int: {}}}
+        :returns: First keys are the ids, second are the pevent_ids.
         """
         ids = affirm_set("id", ids)
         query = glue(
-            "SELECT p.persona_id, p.pevent_id, e.title AS event_name,",
-            "e.tempus, p.pcourse_id, c.title AS course_name, c.nr,",
-            "p.is_instructor, p.is_orga",
+            "SELECT p.persona_id, e.id, e.title, e.tempus, p.is_orga",
             "FROM past_event.participants AS p",
             "INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)",
-            "LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)",
             "WHERE p.persona_id = ANY(%s)")
         pevents = self.query_all(rs, query, (ids,))
+        query = glue(
+            "SELECT p.persona_id, c.id, c.pevent_id, c.title, c.nr,",
+            "p.is_instructor",
+            "FROM past_event.participants AS p",
+            "LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)",
+            "WHERE p.persona_id = ANY(%s)")
+        pcourse = self.query_all(rs, query, (ids,))
         ret = {}
+        course_fields = ('id', 'title', 'is_instructor', 'nr')
+        for pevent in pevents:
+            pevent['courses'] = {
+                c['id']: {k: c[k] for k in course_fields}
+                for c in pcourse if c['persona_id'] == pevent['persona_id']
+                                    and c['pevent_id'] == pevent['id']
+            }
         for anid in ids:
-            ret[anid] = tuple(x for x in pevents if x['persona_id'] == anid)
+            ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}
         return ret
 
     def past_event_log(self, rs, code, pevent_id, persona_id=None,

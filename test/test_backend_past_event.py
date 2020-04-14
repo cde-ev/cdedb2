@@ -17,16 +17,22 @@ class TestPastEventBackend(BackendTest):
     @as_users("vera", "berta")
     def test_participation_infos(self, user):
         participation_infos = self.pastevent.participation_infos(self.key, (1, 2))
-        expectation = {1: tuple(),
-                       2: ({'persona_id': 2,
-                            'is_orga': False,
-                            'is_instructor': True,
-                            'nr': '1a',
-                            'course_name': 'Swish -- und alles ist gut',
-                            'pevent_id': 1,
-                            'event_name': 'PfingstAkademie 2014',
-                            'tempus': datetime.date(2014, 5, 25),
-                            'pcourse_id': 1},)}
+        expectation = {
+            1: dict(),
+            2: {1: {'id': 1,
+                    'persona_id': 2,
+                    'is_orga': False,
+                    'courses': {1: {'id': 1,
+                                    'title': 'Swish -- und alles ist gut',
+                                    'nr': '1a',
+                                    'is_instructor': True,
+                                    }
+                                },
+                    'title': 'PfingstAkademie 2014',
+                    'tempus': datetime.date(2014, 5, 25),
+                    },
+                }
+            }
         self.assertEqual(expectation, participation_infos)
         participation_info = self.pastevent.participation_info(self.key, 1)
         participation_infos = self.pastevent.participation_infos(self.key, (1,))
