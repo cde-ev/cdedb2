@@ -105,7 +105,7 @@ class EventBackend(AbstractBackend):
         # the following does the argument checking
         is_locked = self.is_offline_locked(rs, event_id=event_id,
                                            course_id=course_id)
-        if is_locked != self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
@@ -2498,7 +2498,7 @@ class EventBackend(AbstractBackend):
                 "AND ctime >= now() - interval '24 hours'")
             params = (event_id, const.EventLogCodes.registration_created)
             num = unwrap(self.query_one(rs, query, params))
-        return num < self.conf.ORGA_ADD_LIMIT
+        return num < self.conf["ORGA_ADD_LIMIT"]
 
     @access("event")
     def list_lodgement_groups(self, rs, event_id):
@@ -2932,7 +2932,7 @@ class EventBackend(AbstractBackend):
         # is true, in the offline instance it is the other way around
         update = {
             'id': event_id,
-            'offline_lock': not self.conf.CDEDB_OFFLINE_DEPLOYMENT,
+            'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
         ret = self.sql_update(rs, "event.events", update)
         self.event_log(rs, const.EventLogCodes.event_locked, event_id)
@@ -3109,7 +3109,7 @@ class EventBackend(AbstractBackend):
         data = affirm("serialized_event", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             raise RuntimeError(n_(glue("Imports into an offline instance must",
                                        "happen via shell scripts.")))
         if not self.is_offline_locked(rs, event_id=data['id']):

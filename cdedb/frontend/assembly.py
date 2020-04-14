@@ -117,7 +117,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                           spec=spec, allow_empty=False)
         else:
             query = None
-        default_queries = self.conf.DEFAULT_QUERIES['qview_assembly_user']
+        default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
@@ -327,7 +327,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             subject = "[CdE] Teilnahme an {}".format(
                 rs.ambience['assembly']['title'])
             reply_to = (rs.ambience['assembly']['mail_address'] or
-                        self.conf.ASSEMBLY_ADMIN_ADDRESS)
+                        self.conf["ASSEMBLY_ADMIN_ADDRESS"])
             self.do_mail(
                 rs, "signup",
                 {'To': (persona['username'],),
@@ -506,7 +506,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Retrieve an attachment."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        path = (self.conf.STORAGE_DIR / "assembly_attachment"
+        path = (self.conf["STORAGE_DIR"] / "assembly_attachment"
                 / str(attachment_id))
         return self.send_file(rs, path=path, mimetype="application/pdf",
                               filename=rs.ambience['attachment']['filename'])
@@ -685,12 +685,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         if finished and not ballot['is_tallied'] and not update:
             did_tally = self.assemblyproxy.tally_ballot(rs, ballot['id'])
             if did_tally:
-                path = self.conf.STORAGE_DIR / "ballot_result" / str(ballot['id'])
+                path = self.conf["STORAGE_DIR"] / "ballot_result" / str(ballot['id'])
                 attachment_result = {
                     'path': path,
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
-                to = [self.conf.BALLOT_TALLY_ADDRESS]
+                to = [self.conf["BALLOT_TALLY_ADDRESS"]]
                 if rs.ambience['assembly']['mail_address']:
                     to.append(rs.ambience['assembly']['mail_address'])
                 subject = "Abstimmung '{}' ausgezählt".format(ballot['title'])
@@ -708,7 +708,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Helper to get the result information of a tallied ballot."""
         result = None
         if ballot['is_tallied']:
-            path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot['id'])
+            path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot['id'])
             with open(path) as f:
                 result = json.load(f)
             tiers = tuple(x.split('=') for x in result['result'].split('>'))
@@ -785,7 +785,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def ballot_start_voting(self, rs, assembly_id, ballot_id):
         """Immediately start voting period of a ballot.
         Only possible in CDEDB_DEV mode."""
-        if not self.conf.CDEDB_DEV:
+        if not self.conf["CDEDB_DEV"]:
             raise RuntimeError(
                 n_("Force starting a ballot is only possible in dev mode."))
 
@@ -887,7 +887,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not rs.ambience['ballot']['is_tallied']:
             rs.notify("warning", n_("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)
-        path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
+        path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot_id)
         return self.send_file(rs, path=path, inline=False,
                               filename="ballot_{}_result.json".format(ballot_id))
 

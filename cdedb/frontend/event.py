@@ -81,7 +81,7 @@ class EventFrontend(AbstractUserFrontend):
         :type event: {str: object}
         :rtype: bool
         """
-        return event['offline_lock'] != self.conf.CDEDB_OFFLINE_DEPLOYMENT
+        return event['offline_lock'] != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
 
     @staticmethod
     def event_has_field(event, field_name, association):
@@ -176,7 +176,7 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext if download is None else rs.default_gettext))
         }
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf.DEFAULT_QUERIES['qview_event_user']
+        default_queries = self.conf["DEFAULT_QUERIES"]['qview_event_user']
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
@@ -230,7 +230,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, ml_type.full_address(ml_data))
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
-            params['minor_form_present'] = (self.conf.STORAGE_DIR / 'minor_form'
+            params['minor_form_present'] = (self.conf["STORAGE_DIR"] / 'minor_form'
                                             / str(event_id)).exists()
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(
@@ -375,7 +375,7 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, rs.ambience['event'])
         return self.render(rs, "change_event",
                            {'institutions': institutions,
-                            'accounts': self.conf.EVENT_BANK_ACCOUNTS})
+                            'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 
     @access("event", modi={"POST"})
     @REQUESTdatadict(
@@ -406,7 +406,7 @@ class EventFrontend(AbstractUserFrontend):
                 or self.is_admin(rs)):
             raise werkzeug.exceptions.Forbidden(
                 n_("The event is not published yet."))
-        path = self.conf.STORAGE_DIR / "minor_form" / str(event_id)
+        path = self.conf["STORAGE_DIR"] / "minor_form" / str(event_id)
         return self.send_file(
             rs, mimetype="application/pdf",
             filename="{}_minor_form.pdf".format(
@@ -429,7 +429,7 @@ class EventFrontend(AbstractUserFrontend):
                 ("minor_form", ValueError(n_("Mustn't be empty."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        path = self.conf.STORAGE_DIR / 'minor_form' / str(event_id)
+        path = self.conf["STORAGE_DIR"] / 'minor_form' / str(event_id)
         if delete and not minor_form:
             if path.exists():
                 path.unlink()
@@ -903,7 +903,7 @@ class EventFrontend(AbstractUserFrontend):
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         return self.render(rs, "create_event",
                            {'institutions': institutions,
-                            'accounts': self.conf.EVENT_BANK_ACCOUNTS})
+                            'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
@@ -2077,7 +2077,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['shortname'])
             with open(work_dir / filename, 'w') as f:
                 f.write(tex)
-            src = self.conf.REPOSITORY_PATH / "misc/blank.png"
+            src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil_copy(src, work_dir / "aka-logo.png")
             shutil_copy(src, work_dir / "orga-logo.png")
             shutil_copy(src, work_dir / "minor-pictogram.png")
@@ -2264,11 +2264,11 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['shortname'])
             with open(work_dir / filename, 'w') as f:
                 f.write(tex)
-            src = self.conf.REPOSITORY_PATH / "misc/blank.png"
+            src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil_copy(src, work_dir / "event-logo.png")
             for course_id in courses:
                 dest = work_dir / "course-logo-{}.png".format(course_id)
-                path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
+                path = self.conf["STORAGE_DIR"] / "course_logo" / str(course_id)
                 if path.exists():
                     shutil_copy(path, dest)
                 else:
@@ -2309,7 +2309,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['shortname'])
             with open(work_dir / filename, 'w') as f:
                 f.write(tex)
-            src = self.conf.REPOSITORY_PATH / "misc/blank.png"
+            src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil_copy(src, work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
@@ -2794,7 +2794,7 @@ class EventFrontend(AbstractUserFrontend):
             persona['birthday'],
             event['begin'])
         minor_form_present = (
-                self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
+                self.conf["STORAGE_DIR"] / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
             rs.notify("info", n_("No minors may register. "
                                  "Please contact the Orgateam."))
@@ -2809,7 +2809,7 @@ class EventFrontend(AbstractUserFrontend):
                            or (not event['is_course_state_visible']
                                and track_id in course['segments'])]
             for track_id in tracks}
-        semester_fee = self.conf.MEMBERSHIP_FEE
+        semester_fee = self.conf["MEMBERSHIP_FEE"]
         # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event['parts'])
@@ -2934,7 +2934,7 @@ class EventFrontend(AbstractUserFrontend):
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         minor_form_present = (
-                self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
+                self.conf["STORAGE_DIR"] / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
             rs.notify("error", n_("No minors may register. "
                                   "Please contact the Orgateam."))
@@ -2945,11 +2945,11 @@ class EventFrontend(AbstractUserFrontend):
         new_id = self.eventproxy.create_registration(rs, registration)
         meta_info = self.coreproxy.get_meta_info(rs)
         fee = self.eventproxy.calculate_fee(rs, new_id)
-        semester_fee = self.conf.MEMBERSHIP_FEE
+        semester_fee = self.conf["MEMBERSHIP_FEE"]
 
         subject = "[CdE] Anmeldung für {}".format(rs.ambience['event']['title'])
         reply_to = (rs.ambience['event']['orga_address'] or
-                    self.conf.EVENT_ADMIN_ADDRESS)
+                    self.conf["EVENT_ADMIN_ADDRESS"])
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
@@ -2977,7 +2977,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         meta_info = self.coreproxy.get_meta_info(rs)
         fee = self.eventproxy.calculate_fee(rs, registration_id)
-        semester_fee = self.conf.MEMBERSHIP_FEE
+        semester_fee = self.conf["MEMBERSHIP_FEE"]
         part_order = sorted(
             registration['parts'].keys(),
             key=lambda anid:
@@ -3525,7 +3525,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], skip=skip,
-            do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
+            do_real_persona_id=self.conf["CDEDB_OFFLINE_DEPLOYMENT"])
         if rs.has_validation_errors():
             return self.change_registration_form(rs, event_id, registration_id,
                                                  internal=True)
@@ -3584,7 +3584,7 @@ class EventFrontend(AbstractUserFrontend):
                   ValueError(n_("Already registered."))))
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], do_fields=False,
-            do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
+            do_real_persona_id=self.conf["CDEDB_OFFLINE_DEPLOYMENT"])
         if (not rs.has_validation_errors()
                 and not self.eventproxy.check_orga_addition_limit(
                     rs, event_id)):
@@ -4893,7 +4893,7 @@ class EventFrontend(AbstractUserFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
         default_queries = \
-            self.conf.DEFAULT_QUERIES_REGISTRATION(rs.ambience['event'], spec)
+            self.conf["DEFAULT_QUERIES_REGISTRATION"](rs.ambience['event'], spec)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
@@ -5402,9 +5402,9 @@ class EventFrontend(AbstractUserFrontend):
         spec_additions = {}
         search_additions = []
         event = None
-        num_preview_personas = (self.conf.NUM_PREVIEW_PERSONAS_CORE_ADMIN
+        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
                                 if {"core_admin", "meta_admin"} & rs.user.roles
-                                else self.conf.NUM_PREVIEW_PERSONAS)
+                                else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "orga_registration":
             event = self.eventproxy.get_event(rs, aux)
             if "event_admin" not in rs.user.roles:
@@ -5426,7 +5426,7 @@ class EventFrontend(AbstractUserFrontend):
                     data = [tmp]
 
         # Don't query, if search phrase is too short
-        if not data and len(phrase) < self.conf.NUM_PREVIEW_CHARS:
+        if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:
             return self.send_json(rs, {})
 
         terms = []
@@ -5480,7 +5480,7 @@ class EventFrontend(AbstractUserFrontend):
             # mail address, or the mail address is required to
             # distinguish equally named users
             searched_email = any(
-                '@' in t and len(t) > self.conf.NUM_PREVIEW_CHARS
+                '@' in t and len(t) > self.conf["NUM_PREVIEW_CHARS"]
                 and entry['username'] and t in entry['username']
                 for t in terms)
             if (counter[name(entry)] > 1 or searched_email or

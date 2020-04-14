@@ -40,9 +40,8 @@ def template_url(name):
 class MailmanMixin(MlBaseFrontend):
     def mailman_connect(self):
         """Create a Mailman REST client."""
-        url = "http://{}/3.1".format(self.conf.MAILMAN_HOST)
-        return self.mailman_create_client(
-            url, self.conf.MAILMAN_USER)
+        url = f"http://{self.conf["MAILMAN_HOST"]}/3.1"
+        return self.mailman_create_client(url, self.conf["MAILMAN_USER"])
 
     def mailman_sync_list_meta(self, rs, mailman, db_list, mm_list):
         prefix = ""
@@ -94,7 +93,7 @@ class MailmanMixin(MlBaseFrontend):
                 "Zur Abo-Verwaltung benutze die Datenbank"
                 " (https://db.cde-ev.de/db/ml/)"),
         }
-        store_path = self.conf.STORAGE_DIR / 'mailman_templates'
+        store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
             file_name = "{}__{}".format(db_list['id'], name)
             file_path = store_path / file_name
@@ -111,7 +110,7 @@ class MailmanMixin(MlBaseFrontend):
                     f.write(text)
                 mm_list.set_template(
                     name, template_url(file_name),
-                    username=self.conf.MAILMAN_BASIC_AUTH_USER,
+                    username=self.conf["MAILMAN_BASIC_AUTH_USER"],
                     password=self.mailman_template_password())
 
     def mailman_sync_list_subs(self, rs, mailman, db_list, mm_list):

@@ -94,12 +94,12 @@ class BackendShim(ProxyShim):
         self.sessionproxy = SessionBackend(backend.conf._configpath)
         secrets = SecretsConfig(backend.conf._configpath)
         self.connpool = connection_pool_factory(
-            backend.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, backend.conf.DB_PORT)
+            backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, backend.conf["DB_PORT"])
         self.validate_mlscriptkey = lambda k: k == secrets["ML_SCRIPT_KEY"]
         self.translator = gettext.translation(
             'cdedb', languages=('de',),
-            localedir=str(backend.conf.REPOSITORY_PATH / 'i18n'))
+            localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
 
     def _setup_requeststate(self, key):
         rs = RequestState(

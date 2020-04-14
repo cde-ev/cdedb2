@@ -1495,7 +1495,7 @@ class Worker(threading.Thread):
             rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin)
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
-            conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets, conf.DB_PORT)
+            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets, conf["DB_PORT"])
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
 
         def runner():
@@ -1976,7 +1976,7 @@ def event_guard(argname="event_id", check_offline=False):
                     rs.gettext("This page can only be accessed by orgas."))
             if check_offline:
                 is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
-                if is_locked != obj.conf.CDEDB_OFFLINE_DEPLOYMENT:
+                if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                     raise werkzeug.exceptions.Forbidden(
                         rs.gettext("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
