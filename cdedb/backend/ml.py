@@ -187,6 +187,7 @@ class MlBackend(AbstractBackend):
             ret[anid] = {x['mailinglist_id']
                          for x in data if x['persona_id'] == anid}
         return ret
+    moderator_info = singularize(moderator_infos)
 
     def ml_log(self, rs, code, mailinglist_id, persona_id=None,
                additional_info=None):
@@ -350,6 +351,7 @@ class MlBackend(AbstractBackend):
                 ret[anid]['domain_str'] = str(const.MailinglistDomain(ret[anid]['domain']))
                 ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
         return ret
+    get_mailinglist = singularize(get_mailinglists)
 
     @access("ml")
     def set_moderators(self, rs, mailinglist_id, moderator_ids):
@@ -922,6 +924,8 @@ class MlBackend(AbstractBackend):
                 const.SubscriptionStates(e["subscription_state"])
 
         return ret
+    get_subscription_states = singularize(
+        get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
     @access("ml")
     def get_user_subscriptions(self, rs, persona_id, states=None,
@@ -1453,8 +1457,3 @@ class MlBackend(AbstractBackend):
             self.ml_log(rs, const.MlLogCodes.email_trouble, None,
                         persona_id=unwrap(data)['id'], additional_info=line)
             return True
-
-    moderator_info = singularize(moderator_infos)
-    get_mailinglist = singularize(get_mailinglists)
-    get_subscription_states = singularize(
-        get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
