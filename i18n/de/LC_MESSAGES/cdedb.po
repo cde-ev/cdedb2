@@ -9908,9 +9908,10 @@ msgstr "Absage der Veranstaltung"
 #: cdedb/frontend/templates/web/event/change_event.tmpl:67
 msgid ""
 "If checked, the event is shown as cancelled. This can be undone and has "
-"no further effects."
+"no further effects. Do not do this without consulting the chairmen of the CdE."
 msgstr "Wenn dies ausgewählt ist, wird die Veranstaltung als abgesagt angezeigt. "
-"Dies kann jederzeit rückgängig gemacht werden und hat keine weiteren Auswirkungen."
+"Dies kann jederzeit rückgängig gemacht werden und hat keine weiteren Auswirkungen. "
+"Berate dich mit dem Vorstand, ehe du diese Option setzt."
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:69
 msgid "Registration Start"
