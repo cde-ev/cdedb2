@@ -22,6 +22,7 @@ help:
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 PYTHONBIN ?= python3
+PYLINTBIN ?= pylint3
 TESTPATTERN ?=
 
 doc:
@@ -150,13 +151,13 @@ lint:
 	@echo "All of pylint"
 	@echo "================================================================================"
 	@echo ""
-	/usr/lib/python-exec/python3.6/pylint --rcfile='./lint.rc' cdedb || true
+	${PYLINTBIN} --rcfile='./lint.rc' cdedb || true
 	@echo ""
 	@echo "================================================================================"
 	@echo "And now only errors and warnings"
 	@echo "================================================================================"
 	@echo ""
-	/usr/lib/python-exec/python3.6/pylint --rcfile='./lint.rc' --output-format=text cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
+	${PYLINTBIN} --rcfile='./lint.rc' --output-format=text cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
 
 check:
 	make i18n-compile
@@ -187,8 +188,28 @@ xss-check:
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql &>/dev/null
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql &>/dev/null
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
-	python3 -m bin.escape_fuzzing 2>/dev/null
+	${PYTHONBIN} -m bin.escape_fuzzing 2>/dev/null
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
+
+dump-html:
+	env SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend make check
+
+validate-html: /opt/validator/vnu-runtime-image/bin/vnu
+	/opt/validator/vnu-runtime-image/bin/vnu /tmp/tmp* 2>&1 \
+		| grep -v -F 'This document appears to be written in English' \
+		| grep -v -F 'input type is not supported in all browsers'
+
+/opt/validator/vnu-runtime-image/bin/vnu: /opt/validator/vnu.linux.zip
+	unzip -DD /opt/validator/vnu.linux.zip -d /opt/validator
+
+/opt/validator/vnu.linux.zip: /opt/validator
+	wget 'https://github.com/validator/validator/releases/download/20.3.16/vnu.linux.zip' -O /opt/validator/vnu.linux.zip
+	echo "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 /opt/validator/vnu.linux.zip" | sha1sum -c -
+	touch /opt/validator/vnu.linux.zip # refresh downloaded timestamp
+
+/opt/validator:
+	sudo mkdir /opt/validator
+	sudo chown cdedb:cdedb /opt/validator
 
 quick-check:
 	${PYTHONBIN} -c "from cdedb.frontend.application import Application ; Application(\"`pwd`/test/localconfig.py\")" > /dev/null
@@ -199,12 +220,13 @@ quick-check:
 coverage: .coverage
 	${PYTHONBIN} /usr/bin/coverage report -m --omit='test/*,related/*'
 
-.PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint check single-check .coverage coverage
+.PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint \
+	check single-check .coverage coverage dump-html validate-html
 
-test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json test/create_sample_data_sql.py
+test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json test/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
-		; sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
-		; sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py \
+		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
+		&& sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py \
 			-i test/ancillary_files/sample_data.json -o "$${SQLTEMPFILE}" \
-		; cp "$${SQLTEMPFILE}" test/ancillary_files/sample_data.sql \
-		; sudo -u www-data rm "$${SQLTEMPFILE}"
+		&& cp "$${SQLTEMPFILE}" test/ancillary_files/sample_data.sql \
+		&& sudo -u www-data rm "$${SQLTEMPFILE}"

@@ -3,6 +3,14 @@ Readme
 
 This section provides practical knowledge for development.
 
+Contributing
+------------
+
+Contributions should mainly be done by opening pull requests in Gitea.
+
+We currently do not have any continuous integration so please run the tests
+manually by executing ``bin/check.sh``.
+
 Coding Guidelines
 -----------------
 

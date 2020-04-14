@@ -52,7 +52,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
             group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
-            grouped[group_id][mailinglist_id] = title
+            grouped[group_id][mailinglist_id] = {'title': title, 'id': mailinglist_id}
         return self.render(rs, "index", {
             'groups': MailinglistGroup,
             'mailinglists': grouped,
@@ -132,7 +132,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
             group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
-            grouped[group_id][mailinglist_id] = title
+            grouped[group_id][mailinglist_id] = {'title': title, 'id': mailinglist_id}
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         subs = self.mlproxy.get_many_subscription_states(

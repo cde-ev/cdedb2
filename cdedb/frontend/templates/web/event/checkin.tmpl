@@ -11,12 +11,12 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Checkin{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/checkin"), gettext("Checkin"), active=True) }}
 {% endblock %}
 {% block content %}
@@ -50,7 +50,7 @@
                                     {% if not loop.last %} • {% endif %}
                                 {% endfor %}
                             </span>
-                        {% elif (registration['parts']|dictsort)[0]['status']
+                        {% elif (registration['parts']|keydictsort(EntitySorter.event_part))[0]['status']
                                 == enums['RegistrationPartStati'].guest.value %}
                             ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                         {% endif %}
@@ -72,7 +72,7 @@
                     <div class="col-sm-2">
                         {{ util.href(cdedblink('event/change_registration',
                                                {'registration_id': registration_id, 'skip': 'reg.checkin'}),
-                                     title=gettext("Edit"), icon='pencil', aclass="btn btn-sm btn-warning") }}
+                                     title=gettext("Edit"), icon='pen', aclass="btn btn-sm btn-warning") }}
                         {{ util.href(cdedblink('event/show_registration',
                                                {'registration_id': registration_id}),
                                      title=gettext("Details"), icon='user', aclass="btn btn-sm btn-info") }}

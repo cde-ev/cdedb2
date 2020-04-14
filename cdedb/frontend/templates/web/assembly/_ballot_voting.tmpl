@@ -17,7 +17,7 @@
                                 method="POST" id="removecandidateform{{ candidate_id }}"
                                 class="remove-candiate-form hide-hover display-inline">
                             {{ util.anti_csrf_token('assembly/remove_candidate') }}
-                            {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger list-button-float",
+                            {{ util.input_submit(value="", icon="trash-alt", aclass="btn btn-xs btn-danger list-button-float",
                                                 title=gettext("Remove Candidate")) }}
                         </form>
                     {% endif %}
@@ -70,7 +70,7 @@
                         style="display: inline;">
                     {{ util.anti_csrf_token('assembly/vote') }}
                     {{ util.input_hidden(name="vote", value="special: abstain") }}
-                    {{ util.input_submit(value=gettext("Abstain"), icon="stop") }}
+                    {{ util.input_submit(value=gettext("Abstain"), icon="square") }}
                 </form>
             </div>
         </div>
@@ -96,7 +96,7 @@
                             method="POST" id="removecandidateform{{ candidate_id }}"
                             class="remove-candiate-form hide-hover display-inline">
                             {{ util.anti_csrf_token('assembly/remove_candidate') }}
-                            {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger list-button-float",
+                            {{ util.input_submit(value="", icon="trash-alt", aclass="btn btn-xs btn-danger list-button-float",
                                                 title=gettext("Remove Candidate")) }}
                         </form>
                     {% endif %}
@@ -112,7 +112,7 @@
 {%- endmacro %}
 
 {% macro show_manual_for_text_preferential_voting() -%}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
@@ -202,7 +202,7 @@
 {%- endmacro %}
 
 {% macro show_manual_for_js_preferential_voting() -%}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
@@ -256,13 +256,13 @@
         <li role="presentation" class="active">
             <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab"
                id="tablink-textform">
-                {{ util.make_icon('console') }} {% trans %}Text-based Voting{% endtrans %}
+                {{ util.make_icon('terminal') }} {% trans %}Text-based Voting{% endtrans %}
             </a>
         </li>
         <li role="presentation">
             <a href="#tab-jsform" aria-controls="tab-jsform" role="tab" data-toggle="tab"
                     id="tablink-jsform">
-                {{ util.make_icon('flash') }} {% trans %}Interactive Voting{% endtrans %}
+                {{ util.make_icon('magic') }} {% trans %}Interactive Voting{% endtrans %}
             </a>
         </li>
     </ul>
@@ -298,7 +298,7 @@
             </div>
             <div class="p clearfix">
                 <button class="btn btn-primary" id="button-jsvote">
-                    {{ util.make_icon('ok') }} {% trans %}Vote{% endtrans %}
+                    {{ util.make_icon('check') }} {% trans %}Vote{% endtrans %}
                 </button>
             </div>
             <script nonce="{{ csp_nonce }}">

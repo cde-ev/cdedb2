@@ -159,7 +159,7 @@
 {%- endmacro %}
 
 {% macro explain_result() %}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
         <p>
             Die Pro (a) und Kontra (b) Stimmen gelten für die jeweilige Platzierung (x) und beziehen sich relativ
             auf die darunter liegende Platzierung (y).
@@ -174,7 +174,7 @@
     <pre style="max-width: 500px;">{{ result['result'] }}</pre>
 
     {# info box for preferential votes #}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
                 This vote was a preferential vote. Voters arranged the candidates according to their preference.
@@ -215,13 +215,13 @@
             {% else %}
                 {% if not secret %}
                     <p>
-                        {{ util.make_icon('info-sign') }}
+                        {{ util.make_icon('info-circle') }}
                         {% trans %}The assembly concluded and the votes got encrypted.{% endtrans %}
                         {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
                     </p>
                 {% else %}
                     <p>
-                        {{ util.make_icon('info-sign') }}
+                        {{ util.make_icon('info-circle') }}
                         {% trans %}You entered an invalid secret.{% endtrans %}
                         {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
                     </p>

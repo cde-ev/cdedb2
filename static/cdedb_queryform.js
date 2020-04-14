@@ -175,7 +175,7 @@
                 'type':"button",
                 'title': settings.labels['del_filter'] || ''
             })
-                .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
+                .append($('<span></span>',{'class':'fas fa-minus'}))
                 .click(function() {
                     f.input_filter_op.val('');
                     f.input_filter_value.val('');
@@ -406,7 +406,7 @@
                 'type': "button",
                 'title': settings.labels['del_field'] || ''
             })
-                .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
+                .append($('<span></span>',{'class':'fas fa-minus'}))
                 .click(function() {
                     f.input_select.prop('checked',false);
                     $(this).parent().detach();
@@ -443,7 +443,7 @@
                 'type': "button",
                 'title': settings.labels['del_sort'] || ''
             })
-                .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
+                .append($('<span></span>',{'class':'fas fa-minus'}))
                 .click(function() {
                     $(this).parent().detach();
                     obj.updateSortInputs();

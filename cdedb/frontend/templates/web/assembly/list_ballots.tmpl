@@ -27,15 +27,15 @@
         <div class="row">
             <div class="col-md-8">
                 <ul>
-                    {% for ballot_id, ballot in sample|xdictsort("title") %}
+                    {% for ballot_id, ballot in sample|keydictsort(EntitySorter.ballot) %}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title']) }}
                             {% if ballot_id in votes and show_state %}
                                 ({% if votes[ballot_id] -%}
                                     {% if ">" in votes[ballot_id] -%}
-                                        <span class="text-success">{{ util.make_icon('check') }} {{ gettext("Already voted") }}</span>
+                                        <span class="text-success">{{ util.make_icon('check-square') }} {{ gettext("Already voted") }}</span>
                                     {%- else -%}
-                                        <span class="text-warning">{{ util.make_icon('unchecked') }} {{ gettext("Abstained") }}</span>
+                                        <span class="text-warning">{{ util.make_icon('square') }} {{ gettext("Abstained") }}</span>
                                     {%- endif -%}
                                 {% else -%}
                                     <span class="text-danger">{{ gettext("Not yet voted") }}</span>
@@ -43,7 +43,7 @@
                             {% endif %}
                             {% if "assembly_contents" in user.admin_views and now() < ballot['vote_begin'] %}
                                 {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), gettext("Edit"),
-                                            aclass="btn btn-xs btn-warning list-button-float hide-hover", icon="pencil") }}
+                                            aclass="btn btn-xs btn-warning list-button-float hide-hover", icon="pen") }}
                             {% endif %}
                         </li>
                     {% endfor %}

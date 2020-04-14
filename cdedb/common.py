@@ -509,6 +509,46 @@ class EntitySorter:
     def candidates(candidates):
         return (candidates['moniker'], candidates['id'])
 
+    @staticmethod
+    def assembly(assembly):
+        return (assembly['signup_end'], assembly['id'])
+
+    @staticmethod
+    def ballot(ballot):
+        return (ballot['title'], ballot['id'])
+
+    @staticmethod
+    def attachment(attachment):
+        return (attachment['title'], attachment['id'])
+
+    @staticmethod
+    def past_event(past_event):
+        return (past_event['tempus'], past_event['id'])
+
+    @staticmethod
+    def past_course(past_course):
+        return (pad(past_course['nr']), past_course['title'], past_course['id'])
+
+    @staticmethod
+    def institution(institution):
+        return (institution['moniker'], institution['id'])
+
+    @staticmethod
+    def transaction(transaction):
+        return (transaction['issued_at'], transaction['id'])
+
+    @staticmethod
+    def genesis_case(genesis_case):
+        return (genesis_case['ctime'], genesis_case['id'])
+
+    @staticmethod
+    def changelog(changelog_entry):
+        return (changelog_entry['ctime'], changelog_entry['id'])
+
+    @staticmethod
+    def mailinglist(mailinglist):
+        return (mailinglist['title'], mailinglist['id'])
+
 
 def compute_checkdigit(value):
     """Map an integer to the checksum used for UI purposes.

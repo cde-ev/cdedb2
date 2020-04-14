@@ -12,21 +12,21 @@
 {% block heading %}
     <h1 class="title">
         {{ ambience['pcourse']['nr'] }}. {{ ambience['pcourse']['title'] }}
-        <small>{{ util.make_icon('calendar') }} {{ ambience['pevent']['title'] }}</small>
+        <small>{{ util.make_icon('calendar-alt') }} {{ ambience['pevent']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
-        ambience['pevent']['title'], icon="calendar") }}
+        ambience['pevent']['title'], icon="calendar-alt") }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
         ambience['pcourse']['title'], icon="book", active=True) }}
 {% endblock %}
 {% block content %}
     {% if "past_event" in user.admin_views %}
         <div class="p">
-            {{ util.href(cdedblink('cde/change_past_course_form'), gettext("Edit"), icon="pencil",
+            {{ util.href(cdedblink('cde/change_past_course_form'), gettext("Edit"), icon="pen",
                     aclass="btn btn-warning btn-sm") }}
         </div>
     {% endif %}
@@ -123,14 +123,14 @@
 
 
     {% if "past_event" in user.admin_views %}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
                         <form action="{{ cdedblink('cde/delete_past_course') }}" method="POST"
                                 id="deletecourseform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_course') }}
-                            {{ util.input_submit(value=gettext("Delete Course"), icon="trash", aclass="btn btn-danger") }}
+                            {{ util.input_submit(value=gettext("Delete Course"), icon="trash-alt", aclass="btn btn-danger") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                         </form>
                     </div>
