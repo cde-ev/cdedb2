@@ -530,7 +530,7 @@ class BasicConfig(collections.abc.Mapping):
             import cdedb.localconfig as config
             config = {
                 key: getattr(config, key)
-                for key in _BASIC_DEFAULTS.keys() & dir(config).keys()
+                for key in _BASIC_DEFAULTS.keys() & dir(config)
             }
         except ImportError:
             config = {}
@@ -575,7 +575,7 @@ class Config(BasicConfig):
             spec.loader.exec_module(module)
             primaryconf = {
                 key: getattr(primaryconf, key)
-                for key in _DEFAULTS.keys() & dir(primaryconf).keys()
+                for key in _DEFAULTS.keys() & dir(primaryconf)
             }
         else:
             primaryconf = {}
@@ -584,7 +584,7 @@ class Config(BasicConfig):
             import cdedb.localconfig as secondaryconf
             secondaryconf = {
                 key: getattr(secondaryconf, key)
-                for key in _DEFAULTS.keys() & dir(secondaryconf).keys()
+                for key in _DEFAULTS.keys() & dir(secondaryconf)
             }
         except ImportError:
             secondaryconf = {}
@@ -593,7 +593,7 @@ class Config(BasicConfig):
             primaryconf, secondaryconf, _DEFAULTS, _BASIC_DEFAULTS
         )
 
-        for key in _BASIC_DEFAULTS.keys() & dir(primaryconf).keys():
+        for key in _BASIC_DEFAULTS.keys() & dir(primaryconf):
             _LOGGER.info(f"Ignored basic config entry {key} in {configpath}.")
 
 
@@ -615,7 +615,7 @@ class SecretsConfig(collections.abc.Mapping):
             spec.loader.exec_module(module)
             primaryconf = {
                 key: getattr(primaryconf, key)
-                for key in _SECRECTS_DEFAULTS.keys() & dir(primaryconf).keys()
+                for key in _SECRECTS_DEFAULTS.keys() & dir(primaryconf)
             }
         else:
             primaryconf = {}
@@ -624,7 +624,7 @@ class SecretsConfig(collections.abc.Mapping):
             import cdedb.localconfig as secondaryconf
             secondaryconf = {
                 key: getattr(secondaryconf, key)
-                for key in _SECRECTS_DEFAULTS.keys() & dir(secondaryconf).keys()
+                for key in _SECRECTS_DEFAULTS.keys() & dir(secondaryconf)
             }
         except ImportError:
             secondaryconf = {}
