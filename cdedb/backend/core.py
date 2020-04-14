@@ -533,6 +533,7 @@ class CoreBackend(AbstractBackend):
                         const.MemberChangeStati.committed)
         data = self.query_all(rs, query, (ids, valid_status))
         return {e['persona_id']: e['generation'] for e in data}
+    changelog_get_generation = singularize(changelog_get_generations)
 
     @access("core_admin")
     def changelog_get_changes(self, rs, stati):
@@ -602,6 +603,7 @@ class CoreBackend(AbstractBackend):
             columns += ("id",)
         data = self.sql_select(rs, "core.personas", columns, ids)
         return {d['id']: d for d in data}
+    retrieve_persona = singularize(retrieve_personas)
 
     @internal
     @access("ml")
@@ -1041,6 +1043,7 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select(
             rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, ids)
         return {e["id"]: e for e in data}
+    get_privilege_change = singularize(get_privilege_changes)
 
     @access("persona")
     def list_admins(self, rs, realm):
@@ -1544,6 +1547,7 @@ class CoreBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
+    get_persona = singularize(get_personas)
 
     @access("event")
     def get_event_users(self, rs, ids, event_id=None):
@@ -1599,6 +1603,7 @@ class CoreBackend(AbstractBackend):
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
         return ret
+    get_event_user = singularize(get_event_users)
 
     @access("cde")
     def get_cde_users(self, rs, ids):
@@ -1639,6 +1644,7 @@ class CoreBackend(AbstractBackend):
                                  for e in ret.values()))):
                 raise RuntimeError(n_("Improper access to member data."))
             return ret
+    get_cde_user = singularize(get_cde_users)
 
     @access("ml")
     def get_ml_users(self, rs, ids):
@@ -1653,6 +1659,7 @@ class CoreBackend(AbstractBackend):
         if any(not e['is_ml_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an ml user."))
         return ret
+    get_ml_user = singularize(get_ml_users)
 
     @access("assembly")
     def get_assembly_users(self, rs, ids):
@@ -1667,6 +1674,7 @@ class CoreBackend(AbstractBackend):
         if any(not e['is_assembly_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an assembly user."))
         return ret
+    get_assembly_user = singularize(get_assembly_users)
 
     @access("persona")
     def get_total_personas(self, rs, ids):
@@ -1686,6 +1694,7 @@ class CoreBackend(AbstractBackend):
                         for anid in ids)):
             raise PrivilegeError(n_("Must be privileged."))
         return self.retrieve_personas(rs, ids, columns=PERSONA_ALL_FIELDS)
+    get_total_persona = singularize(get_total_personas)
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
@@ -1866,6 +1875,7 @@ class CoreBackend(AbstractBackend):
         bits = PERSONA_STATUS_FIELDS + ("id",)
         data = self.sql_select(rs, "core.personas", bits, ids)
         return {d['id']: extract_roles(d) for d in data}
+    get_roles_single = singularize(get_roles_multi)
 
     @access("persona")
     def get_realms_multi(self, rs, ids):
@@ -1880,6 +1890,7 @@ class CoreBackend(AbstractBackend):
         roles = self.get_roles_multi(rs, ids)
         all_realms = {"cde", "event", "assembly", "ml"}
         return {key: value & all_realms for key, value in roles.items()}
+    get_realms_single = singularize(get_realms_multi)
 
     @access("persona")
     def verify_personas(self, rs, ids, required_roles=None):
@@ -2403,6 +2414,7 @@ class CoreBackend(AbstractBackend):
                         for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
+    genesis_get_case = singularize(genesis_get_cases)
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
@@ -2654,18 +2666,3 @@ class CoreBackend(AbstractBackend):
             # deescalate
             if orig_conn:
                 rs.conn = orig_conn
-
-    changelog_get_generation = singularize(changelog_get_generations)
-    retrieve_persona = singularize(retrieve_personas)
-    get_privilege_change = singularize(get_privilege_changes)
-    get_persona = singularize(get_personas)
-    get_event_user = singularize(get_event_users)
-    get_cde_user = singularize(get_cde_users)
-    get_ml_user = singularize(get_ml_users)
-    get_assembly_user = singularize(get_assembly_users)
-    get_total_persona = singularize(get_total_personas)
-    get_roles_single = singularize(get_roles_multi)
-    get_realms_single = singularize(get_realms_multi)
-    genesis_get_case = singularize(genesis_get_cases)
-    changelog_resolve_change = access("core_admin", "cde_admin")(
-        changelog_resolve_change_unattended)

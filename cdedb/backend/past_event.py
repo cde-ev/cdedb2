@@ -67,6 +67,7 @@ class PastEventBackend(AbstractBackend):
         for anid in ids:
             ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}
         return ret
+    participation_info = singularize(participation_infos)
 
     def past_event_log(self, rs, code, pevent_id, persona_id=None,
                        additional_info=None):
@@ -150,6 +151,7 @@ class PastEventBackend(AbstractBackend):
         data = self.sql_select(rs, "past_event.institutions",
                                INSTITUTION_FIELDS, ids)
         return {e['id']: e for e in data}
+    get_institution = singularize(get_institutions)
 
     @access("cde_admin", "event_admin")
     def set_institution(self, rs, data):
@@ -275,6 +277,7 @@ class PastEventBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, ids)
         return {e['id']: e for e in data}
+    get_past_event = singularize(get_past_events)
 
     @access("cde_admin", "event_admin")
     def set_past_event(self, rs, data):
@@ -425,6 +428,7 @@ class PastEventBackend(AbstractBackend):
         data = self.sql_select(rs, "past_event.courses", PAST_COURSE_FIELDS,
                                ids)
         return {e['id']: e for e in data}
+    get_past_course = singularize(get_past_courses)
 
     @access("cde_admin", "event_admin")
     def set_past_course(self, rs, data):
@@ -814,8 +818,3 @@ class PastEventBackend(AbstractBackend):
             new_ids = tuple(self.archive_one_part(rs, event, part_id)
                             for part_id in sorted(event['parts']))
         return new_ids, None
-
-    participation_info = singularize(participation_infos)
-    get_institution = singularize(get_institutions)
-    get_past_event = singularize(get_past_events)
-    get_past_course = singularize(get_past_courses)

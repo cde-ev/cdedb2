@@ -123,6 +123,7 @@ class EventBackend(AbstractBackend):
         for anid in ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
+    orga_info = singularize(orga_infos)
 
     def event_log(self, rs, code, event_id, persona_id=None,
                   additional_info=None):
@@ -735,6 +736,7 @@ class EventBackend(AbstractBackend):
                     and (ret[anid]['registration_hard_limit'] is None
                          or ret[anid]['registration_hard_limit'] >= now()))
         return ret
+    get_event = singularize(get_events)
 
     def _get_event_fields(self, rs, event_id):
         """
@@ -1472,6 +1474,7 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
+    get_course = singularize(get_courses)
 
     @access("event")
     def set_course(self, rs, data):
@@ -2052,6 +2055,7 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
+    get_registration = singularize(get_registrations)
 
     @access("event")
     def has_registrations(self, rs, event_id):
@@ -2467,6 +2471,7 @@ class EventBackend(AbstractBackend):
                     fee += event['nonmember_surcharge']
                 ret[reg_id] = fee
         return ret
+    calculate_fee = singularize(calculate_fees)
 
     @access("event")
     def check_orga_addition_limit(self, rs, event_id):
@@ -2538,6 +2543,7 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
+    get_lodgement_group = singularize(get_lodgement_groups)
 
     @access("event")
     def set_lodgement_group(self, rs, data):
@@ -2710,6 +2716,7 @@ class EventBackend(AbstractBackend):
             for entry in ret.values():
                 entry['fields'] = cast_fields(entry['fields'], event_fields)
         return {e['id']: e for e in data}
+    get_lodgement = singularize(get_lodgements)
 
     @access("event")
     def set_lodgement(self, rs, data):
@@ -3685,11 +3692,3 @@ class EventBackend(AbstractBackend):
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'])
             return result, total_delta
-
-    orga_info = singularize(orga_infos)
-    get_event = singularize(get_events)
-    get_course = singularize(get_courses)
-    get_registration = singularize(get_registrations)
-    calculate_fee = singularize(calculate_fees)
-    get_lodgement_group = singularize(get_lodgement_groups)
-    get_lodgement = singularize(get_lodgements)
