@@ -593,7 +593,7 @@ for file_id, file in sorted_files:
                 print("assembly {} does not exist".format(file["assembly_id"]))
                 continue
             new_id = assembly.add_attachment(rs(DEFAULT_ID), file)
-            new_path = assembly.conf.STORAGE_DIR / 'assembly_attachment' / str(
+            new_path = assembly.conf["STORAGE_DIR"] / 'assembly_attachment' / str(
                 new_id)
             shutil.copy(attachment, new_path)
         else:
