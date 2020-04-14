@@ -8,8 +8,8 @@ from cdedb.database.connection import (
 from cdedb.config import BasicConfig, Config, SecretsConfig
 
 _BASICCONF = BasicConfig()
-_CONF = Config(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
-_SECRECTSCONF = SecretsConfig(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
+_CONF = Config(_BASICCONF["REPOSITORY_PATH"] / _BASICCONF["TESTCONFIG_PATH"])
+_SECRECTSCONF = SecretsConfig(_BASICCONF["REPOSITORY_PATH"] / _BASICCONF["TESTCONFIG_PATH"])
 
 class TestDatabase(unittest.TestCase):
     def test_instant_connection(self):

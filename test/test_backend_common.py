@@ -9,7 +9,7 @@ _BASICCONF = BasicConfig()
 
 class TestBackendCommon(unittest.TestCase):
     def test_ProxyShim(self):
-        backend = CoreBackend(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
+        backend = CoreBackend(_BASICCONF["REPOSITORY_PATH"] / _BASICCONF["TESTCONFIG_PATH"])
         shim = ProxyShim(backend)
         self.assertTrue(callable(shim.get_persona))
         self.assertTrue(callable(shim.login))

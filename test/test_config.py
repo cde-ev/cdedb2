@@ -9,7 +9,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 class TestConfig(unittest.TestCase):
     def test_override(self):
         basic = BasicConfig()
-        self.assertEqual(pytz.timezone('CET'), basic.DEFAULT_TIMEZONE)
+        self.assertEqual(pytz.timezone('CET'), basic["DEFAULT_TIMEZONE"])
         config = Config(None)
         self.assertEqual(6432, config.DB_PORT)
         self.assertEqual("cdb", config.CDB_DATABASE_NAME)
@@ -26,5 +26,5 @@ class TestConfig(unittest.TestCase):
         basic = BasicConfig()
         extrasecret = SecretsConfig("test/ancillary_files/extra_config.py")
         self.assertEqual("matrix", extrasecret.ML_SCRIPT_KEY)
-        testsecret = SecretsConfig(basic.TESTCONFIG_PATH)
+        testsecret = SecretsConfig(basic["TESTCONFIG_PATH"])
         self.assertEqual("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3", testsecret.ML_SCRIPT_KEY)

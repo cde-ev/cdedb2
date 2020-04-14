@@ -266,7 +266,7 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
             return val
         return None
     if val.tzinfo is not None:
-        val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)
+        val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
         _LOGGER.warning("Found naive datetime object {}.".format(val))
     if lang:

@@ -17,12 +17,9 @@ import psycopg2.extensions
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 
 from cdedb.common import n_
-from cdedb.config import BasicConfig
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
-
-_BASICCONF = BasicConfig()
 
 _LOGGER = logging.getLogger(__name__)
 

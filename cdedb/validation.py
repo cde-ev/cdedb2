@@ -1253,7 +1253,7 @@ def parse_datetime(val, default_date=None):
     if ret is None:
         ret = datetime.datetime.fromisoformat(val)
     if ret.tzinfo is None:
-        ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
+        ret = _BASICCONF["DEFAULT_TIMEZONE"].localize(ret)
     return ret.astimezone(pytz.utc)
 
 
