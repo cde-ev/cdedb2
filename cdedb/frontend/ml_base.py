@@ -300,8 +300,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
         sorted_events = keydictsort_filter(events, EntitySorter.event)
         event_entries = [(k, v['title']) for k, v in sorted_events]
-        assembly_ids = self.assemblyproxy.list_assemblies(rs)
-        assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
+        assemblies = self.assemblyproxy.list_assemblies(rs)
         sorted_assemblies = keydictsort_filter(assemblies, EntitySorter.assembly)
         assembliy_entries = [(k, v['title']) for k, v in sorted_assemblies]
         atype = TYPE_MAP[rs.ambience['mailinglist']['ml_type']]

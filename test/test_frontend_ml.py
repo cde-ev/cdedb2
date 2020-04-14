@@ -405,6 +405,9 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Munkelwand")
         self.traverse({'href': '/ml/mailinglist/create$'})
         self.assertTitle("Mailingliste anlegen")
+        f = self.response.forms['selectmltypeform']
+        f['ml_type'] = const.MailinglistTypes.member_mandatory.value
+        self.submit(f)
         f = self.response.forms['createlistform']
         f['title'] = "Munkelwand"
         f['local_part'] = "munkelwand"
@@ -415,7 +418,6 @@ class TestMlFrontend(FrontendTest):
         f['is_active'].checked = True
         f['notes'] = "Noch mehr Gemunkel."
         f['moderator_ids'] = "DB-2-7, DB-7-8"
-        f['ml_type'] = 1
         f['domain'] = 1
         self.submit(f)
         self.assertTitle("Munkelwand")
@@ -513,11 +515,16 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Anton Armin A. Administrator")
 
-    def create_mailinglist(self, mdata):
+    def _create_mailinglist(self, mdata):
         self.traverse({'href': '/ml/'},
                       {'href': '/ml/mailinglist/create'})
+        f = self.response.forms['selectmltypeform']
+        f['ml_type'] = mdata['ml_type']
+        self.submit(f)
         f = self.response.forms['createlistform']
         for k, v in mdata.items():
+            if k == 'ml_type':
+                continue
             f[k] = v
         self.submit(f)
         self.assertTitle(mdata['title'])
@@ -537,7 +544,7 @@ class TestMlFrontend(FrontendTest):
                     'event_id': "1",
                     'moderator_ids': user['DB-ID'],
                 }
-                self.create_mailinglist(mdata)
+                self._create_mailinglist(mdata)
                 self.traverse({'href': '/event/'},
                               {'href': '/event/event/1/show'})
                 f = self.response.forms['addorgaform']
