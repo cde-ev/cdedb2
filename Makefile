@@ -223,7 +223,7 @@ coverage: .coverage
 .PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint \
 	check single-check .coverage coverage dump-html validate-html
 
-test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json test/create_sample_data_sql.py
+test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json test/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py \
