@@ -42,7 +42,7 @@
                 {{ util.form_input_static(gettext("User"), value="{} {}".format(p['given_names'], p['family_name']),
                         small=True) }}
                 {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label=gettext("Target Realm"),
-                        radio=True, small=True, sort=True) }}
+                        radio=True, small=True) }}
                 {{ util.form_input_submit(value=gettext("Confirm"), small=True) }}
             </form>
 
@@ -78,7 +78,7 @@
                     {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date",
                             placeholder="YYYY-MM-DD") }}
                     {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                              label=gettext("Gender"), sort=True) }}
+                                              label=gettext("Gender")) }}
                 {% endif %}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
                     {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}

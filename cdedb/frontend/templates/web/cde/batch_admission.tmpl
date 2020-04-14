@@ -117,8 +117,7 @@
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
                                         nulloption="&nbsp;"|s, aclass="form-control select-action",
-                                        arialabel=gettext("Operation for line %s")|format(dataset['lineno']),
-                                        sort=True) }}
+                                        arialabel=gettext("Operation for line %s")|format(dataset['lineno'])) }}
                             </div>
                         </div>
 
