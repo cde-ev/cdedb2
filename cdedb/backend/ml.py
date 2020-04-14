@@ -456,6 +456,23 @@ class MlBackend(AbstractBackend):
                                 mailinglist_id, additional_info=address)
         return ret
 
+    def _ml_type_transition(self, rs, mailinglist_id,
+                            old_type: ml_type.GeneralMailinglist,
+                            new_type: ml_type.GeneralMailinglist):
+        old_type = ml_type.get_type(old_type)
+        new_type = ml_type.get_type(new_type)
+        # implicitly atomized context.
+        # TODO add check for Atomizer from feauture/fee_owed branch.
+        obsolete_fields = (old_type.get_additional_fields() -
+                           new_type.get_additional_fields())
+        if obsolete_fields:
+            query = "UPDATE ml.mailinglists SET {} WHERE id = %s".format(
+                ", ".join("{} = DEFAULT".format(f) for f in obsolete_fields))
+            params = (mailinglist_id,)
+            return self.query_exec(rs, query, params)
+        else:
+            return 1
+
     @access("ml")
     def set_mailinglist(self, rs, data):
         """Update some keys of a mailinglist.
@@ -509,6 +526,10 @@ class MlBackend(AbstractBackend):
                     params = (data['id'], set(const.SubscriptionStates) -
                               const.SubscriptionStates.subscribing_states())
                     ret *= self.query_exec(rs, query, params)
+                if data['ml_type'] != current['ml_type']:
+                    ret *= self._ml_type_transition(
+                        rs, data['id'], old_type=current['ml_type'],
+                        new_type=data['ml_type'])
 
             # Update subscription states.
             ret *= self.write_subscription_states(rs, data['id'])
