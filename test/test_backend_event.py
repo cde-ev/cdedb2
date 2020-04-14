@@ -111,6 +111,7 @@ class TestEventBackend(BackendTest):
         data['courses_in_participant_list'] = False
         data['is_course_list_visible'] = False
         data['is_course_state_visible'] = False
+        data['is_cancelled'] = False
         data['is_visible'] = False
         data['lodge_field'] = None
         data['reserve_field'] = None
@@ -2091,6 +2092,7 @@ class TestEventBackend(BackendTest):
                                  'is_archived': False,
                                  'is_participant_list_visible': False,
                                  'courses_in_participant_list': False,
+                                 'is_cancelled': False,
                                  'is_course_list_visible': True,
                                  'is_course_state_visible': False,
                                  'is_visible': True,
@@ -2912,6 +2914,7 @@ class TestEventBackend(BackendTest):
                       'is_archived': False,
                       'is_participant_list_visible': False,
                       'courses_in_participant_list': False,
+                      'is_cancelled': False,
                       'is_course_list_visible': True,
                       'is_course_state_visible': False,
                       'is_visible': True,

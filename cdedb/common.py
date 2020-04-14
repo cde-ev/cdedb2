@@ -1776,7 +1776,8 @@ def roles_to_admin_views(roles):
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-CDEDB_EXPORT_EVENT_VERSION = 9
+#: If you increment this, it must be incremented in make_offline_vm.py as well.
+CDEDB_EXPORT_EVENT_VERSION = 10
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1891,8 +1892,8 @@ EVENT_FIELDS = (
     "iban", "nonmember_surcharge", "orga_address", "registration_text",
     "mail_text", "use_questionnaire", "notes", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "courses_in_participant_list", "is_archived",
-    "lodge_field", "reserve_field", "course_room_field")
+    "is_participant_list_visible", "courses_in_participant_list", "is_cancelled",
+    "is_archived", "lodge_field", "reserve_field", "course_room_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",

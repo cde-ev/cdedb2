@@ -198,7 +198,7 @@ class EventBackend(AbstractBackend):
         """
         subquery = glue(
             "SELECT e.id, e.registration_start, e.title, e.is_visible,",
-            "e.is_archived, MAX(p.part_end) AS event_end",
+            "e.is_archived, e.is_cancelled, MAX(p.part_end) AS event_end",
             "FROM event.events AS e JOIN event.event_parts AS p",
             "ON p.event_id = e.id",
             "GROUP BY e.id")
@@ -210,9 +210,11 @@ class EventBackend(AbstractBackend):
             params.append(visible)
         if current is not None:
             if current:
-                constraints.append("e.event_end > now()")
+                constraints.append(
+                    "e.event_end > now() AND e.is_cancelled = False")
             else:
-                constraints.append("e.event_end <= now()")
+                constraints.append(
+                    "e.event_end <= now() OR e.is_cancelled = True")
         if archived is not None:
             constraints.append("is_archived = %s")
             params.append(archived)

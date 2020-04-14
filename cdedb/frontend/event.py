@@ -67,8 +67,14 @@ class EventFrontend(AbstractUserFrontend):
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
-            if rs.ambience['event'].get('is_archived'):
+            if (rs.ambience['event'].get('is_archived') and
+                    rs.ambience['event'].get('is_cancelled')):
+                rs.notify("info",
+                    n_("This event was cancelled and has been archived."))
+            elif rs.ambience['event'].get('is_archived'):
                 rs.notify("info", n_("This event has been archived."))
+            elif rs.ambience['event'].get('is_cancelled'):
+                rs.notify("info", n_("This event has been cancelled."))
         return super().render(rs, templatename, params=params)
 
     @classmethod
@@ -385,7 +391,7 @@ class EventFrontend(AbstractUserFrontend):
         "mail_text", "use_questionnaire", "notes", "lodge_field",
         "reserve_field", "is_visible", "is_course_list_visible",
         "is_course_state_visible", "is_participant_list_visible",
-        "courses_in_participant_list", "course_room_field",
+        "courses_in_participant_list", "is_cancelled", "course_room_field",
         "nonmember_surcharge")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
