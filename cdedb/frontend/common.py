@@ -58,6 +58,7 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
+from cdedb.backend.common import AbstractBackend
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -969,6 +970,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 isinstance(kind, ValidationWarning)
                 for param, kind in all_errors)
 
+        def _make_is_relevant_admin(rs, obj, kw):
+            backend: AbstractBackend = getattr(obj, obj.realm + "proxy")
+
+            def _is_relevant_admin(anid):
+                if hasattr(backend, "is_relevant_admin"):
+                    return backend.is_relevant_admin(rs, **{kw: anid})
+                else:
+                    return False
+            return _is_relevant_admin
+
         errorsdict = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
@@ -982,6 +993,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'gettext': rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
+            'is_relevant_admin': _make_is_relevant_admin(rs, self, "mailinglist_id"),
             'is_warning': _is_warning,
             'lang': rs.lang,
             'ngettext': rs.ngettext,
