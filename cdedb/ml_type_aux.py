@@ -22,6 +22,8 @@ def get_type(val):
         val = MailinglistTypes(val)
     if isinstance(val, MailinglistTypes):
         return TYPE_MAP[val]
+    if issubclass(val, GeneralMailinglist):
+        return val
     raise ValueError(n_("Cannot determine ml_type from {}".format(val)))
 
 
@@ -109,6 +111,15 @@ class GeneralMailinglist:
     # Additional fields for validation. See docstring for details.
     mandatory_validation_fields = tuple()
     optional_validation_fields = tuple()
+
+    @classmethod
+    def get_additional_fields(cls):
+        ret = set()
+        for field, validator_str in cls.mandatory_validation_fields:
+            ret.add(field)
+        for field, validator_str in cls.optional_validation_fields:
+            ret.add(field)
+        return ret
 
     viewer_roles = {"ml"}
 
