@@ -126,7 +126,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml")
     def list_mailinglists(self, rs):
         """Show all mailinglists."""
-        mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
+        mailinglists = self.mlproxy.list_mailinglists(
+            rs, active_only=False, managed_only=True)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
@@ -134,7 +135,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
             group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
-            grouped[group_id][mailinglist_id] = {'title': title, 'id': mailinglist_id}
+            grouped[group_id][mailinglist_id] = {
+                'title': title, 'id': mailinglist_id}
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         subs = self.mlproxy.get_many_subscription_states(

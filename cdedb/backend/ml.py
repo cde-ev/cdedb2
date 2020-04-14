@@ -303,7 +303,7 @@ class MlBackend(AbstractBackend):
         return self.general_query(rs, query)
 
     @access("ml")
-    def list_mailinglists(self, rs, active_only=True):
+    def list_mailinglists(self, rs, active_only=True, managed_only=False):
         """List all mailinglists you may view
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -331,8 +331,13 @@ class MlBackend(AbstractBackend):
 
         if self.is_admin(rs):
             return ret
-        return {k: v for k, v in ret.items()
-                if self.may_view(rs, mailinglists[k])}
+        if managed_only:
+            # TODO maybe allow may_mange to take the entire mailinglist.
+            return {k: v for k, v in ret.items()
+                    if self.may_manage(rs, mailinglist_id=k)}
+        else:
+            return {k: v for k, v in ret.items()
+                    if self.may_view(rs, mailinglists[k])}
 
     @access("ml")
     def get_mailinglists(self, rs, ids):
