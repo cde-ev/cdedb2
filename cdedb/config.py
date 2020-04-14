@@ -8,6 +8,7 @@ here, the site specific global overrides in
 :py:class:`BasicConfig` an invocation specific override.
 """
 
+import collections
 import collections.abc
 import datetime
 import decimal
@@ -572,7 +573,7 @@ class Config(BasicConfig):
                 "primaryconf", configpath
             )
             primaryconf = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+            spec.loader.exec_module(primaryconf)
             primaryconf = {
                 key: getattr(primaryconf, key)
                 for key in _DEFAULTS.keys() & dir(primaryconf)
@@ -589,7 +590,7 @@ class Config(BasicConfig):
         except ImportError:
             secondaryconf = {}
 
-        self._configlookup.add_child(
+        self._configlookup = collections.ChainMap(
             primaryconf, secondaryconf, _DEFAULTS, _BASIC_DEFAULTS
         )
 
@@ -612,7 +613,7 @@ class SecretsConfig(collections.abc.Mapping):
                 "primaryconf", configpath
             )
             primaryconf = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+            spec.loader.exec_module(primaryconf)
             primaryconf = {
                 key: getattr(primaryconf, key)
                 for key in _SECRECTS_DEFAULTS.keys() & dir(primaryconf)
@@ -629,7 +630,7 @@ class SecretsConfig(collections.abc.Mapping):
         except ImportError:
             secondaryconf = {}
 
-        self._configlookup.add_child(
+        self._configlookup = collections.ChainMap(
             primaryconf, secondaryconf, _SECRECTS_DEFAULTS
         )
 
