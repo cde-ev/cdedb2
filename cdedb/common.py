@@ -1681,10 +1681,8 @@ DB_ROLE_MAPPING = collections.OrderedDict((
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),
-    ("droid_rklist", "cdb_persona"),
-    ("droid_resolve", "cdb_persona"),
+    ("droid", "cdb_persona"),
 
-    ("droid", "cdb_anonymous"),
     ("anonymous", "cdb_anonymous"),
 ))
 
