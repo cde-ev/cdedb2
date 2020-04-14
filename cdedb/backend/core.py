@@ -815,13 +815,16 @@ class CoreBackend(AbstractBackend):
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
+            ret = self.set_persona(
+                rs, data, may_wait=False,
+                change_note="Bereiche geändert.",
+                allow_specials=("realms", "finance", "membership"))
+            if data.get('trial_member'):
+                ret *= self.change_membership(rs, data['id'], is_member=True)
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
                 additional_info="Bereiche geändert.")
-            return self.set_persona(
-                rs, data, may_wait=False,
-                change_note="Bereiche geändert.",
-                allow_specials=("realms", "finance"))
+            return ret
 
     @access("persona")
     def change_foto(self, rs, persona_id, foto):

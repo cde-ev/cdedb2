@@ -1276,6 +1276,25 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
+        self.assertNonPresence("CdE-Mitglied", "cde-membership")
+        self.assertNonPresence("Probemitgliedschaft", "cde-membership")
+
+        # Do another promotion, this time granting trial membership.
+        self.admin_view_profile('nina')
+        self.traverse({'description': 'Bereich hinzufügen'})
+        self.assertTitle("Bereichsänderung für Nina Neubauer")
+        f = self.response.forms['realmselectionform']
+        self.assertNotIn("event", f['target_realm'].options)
+        f['target_realm'] = "cde"
+        self.submit(f)
+        self.assertTitle("Bereichsänderung für Nina Neubauer")
+        f = self.response.forms['promotionform']
+        f['trial_member'].checked = True
+        self.submit(f)
+        self.assertTitle("Nina Neubauer")
+        self.assertPresence("0,00 €", div='balance')
+        self.assertPresence("CdE-Mitglied", div="cde-membership")
+        self.assertPresence("Probemitgliedschaft", div="cde-membership")
 
     @as_users("vera")
     def test_nontrivial_promotion(self, user):
@@ -1561,6 +1580,14 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = self.fetch_link(mail)
+        self.traverse({'href': '^/$'})
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = "Zelda Zeruda-Hime"
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("0,00 €", div="balance")
+        self.assertPresence("CdE-Mitglied", div="cde-membership")
+        self.assertPresence("Probemitglied", div="cde-membership")
         self.logout()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
