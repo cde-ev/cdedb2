@@ -9,14 +9,16 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
-                        readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
+                        readonly=not (ambience['event']['is_visible']
+                                      or ambience['event']['id'] in user.orga
+                                      or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
 {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Registration{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -40,7 +42,7 @@
         {{ util.anti_csrf_token('event/register') }}
 
         {% if ambience['event']['registration_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-sign", aclass="panel-info") %}
+            {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
                 {{ ambience['event']['registration_text']|md }}
             {% endcall %}
         {% endif %}
@@ -128,7 +130,7 @@
                     {% set course_entries = courses|keydictsort(EntitySorter.course)
                                             |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
                     {% for i in range(track['num_choices']) %}
-                        {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="&nbsp;",
+                        {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="&nbsp;"|s,
                                                   label=gettext("%s. Choice")|format(i + 1), entries=course_entries) }}
                     {% endfor %}
 
@@ -152,7 +154,7 @@
             {{ util.form_input_select(name="mixed_lodging", entries=(
                 (True, gettext("I agree to mixed lodging.")),
                 (False, gettext("I want to be lodged seperated by gender."))),
-                label=gettext("Mixed Lodging"), info=mix_info) }}
+                label=gettext("Mixed Lodging"), info=mix_info, sort=True) }}
         {% endif %}
         {% call util.form_input_general(displayerrors=False) %}
             <p class="nosp">
@@ -175,7 +177,7 @@
         {% call util.form_input_general(displayerrors=False) %}
             {% if ambience['event']['use_questionnaire'] %}
                 <p class="text-info nosp">
-                    {{ util.make_icon('info-sign') }}
+                    {{ util.make_icon('info-cirlce') }}
                     {% trans %}
                         After registration, you will find the ‘Questionnaire’ with further questions of the orga team in
                         the navigation. There you can give more detailed information.
@@ -183,7 +185,7 @@
                 </p>
             {% else %}
                 <p class="text-info nosp">
-                    {{ util.make_icon('info-sign') }}
+                    {{ util.make_icon('info-cirlce') }}
                     {% trans %}
                         The orga team of this event may ask you for further data later, using the ‘Questionaire’.
                     {% endtrans %}

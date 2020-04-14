@@ -223,6 +223,15 @@ class User:
         self.family_name = family_name
         self.orga = orga or []
         self.moderator = moderator or []
+        self.admin_views = set()
+
+    @property
+    def available_admin_views(self):
+        return roles_to_admin_views(self.roles)
+
+    def init_admin_views_from_cookie(self, enabled_views_cookie):
+        enabled_views = enabled_views_cookie.split(',')
+        self.admin_views = self.available_admin_views & set(enabled_views)
 
 
 def do_singularization(fun):
@@ -572,6 +581,50 @@ class EntitySorter:
     def event_field(event_field):
         return (event_field['field_name'], event_field['id'])
 
+    @staticmethod
+    def candidates(candidates):
+        return (candidates['moniker'], candidates['id'])
+
+    @staticmethod
+    def assembly(assembly):
+        return (assembly['signup_end'], assembly['id'])
+
+    @staticmethod
+    def ballot(ballot):
+        return (ballot['title'], ballot['id'])
+
+    @staticmethod
+    def attachment(attachment):
+        return (attachment['title'], attachment['id'])
+
+    @staticmethod
+    def past_event(past_event):
+        return (past_event['tempus'], past_event['id'])
+
+    @staticmethod
+    def past_course(past_course):
+        return (pad(past_course['nr']), past_course['title'], past_course['id'])
+
+    @staticmethod
+    def institution(institution):
+        return (institution['moniker'], institution['id'])
+
+    @staticmethod
+    def transaction(transaction):
+        return (transaction['issued_at'], transaction['id'])
+
+    @staticmethod
+    def genesis_case(genesis_case):
+        return (genesis_case['ctime'], genesis_case['id'])
+
+    @staticmethod
+    def changelog(changelog_entry):
+        return (changelog_entry['ctime'], changelog_entry['id'])
+
+    @staticmethod
+    def mailinglist(mailinglist):
+        return (mailinglist['title'], mailinglist['id'])
+
 
 def compute_checkdigit(value):
     """Map an integer to the checksum used for UI purposes.
@@ -790,11 +843,11 @@ def schulze_evaluate(votes, candidates):
     :param candidates: We require that the candidates be explicitly
       passed. This allows for more flexibility (like returning a useful
       result for zero votes).
-    :rtype: str
-    :returns: The aggregated preference list.
+    :rtype: (str, [{}])
+    :returns: The first Element is the aggregated result,
+    the second is an more extended list, containing every level (descending) as
+    dict with some extended information.
     """
-    if not votes:
-        return '='.join(candidates)
     split_votes = tuple(
         tuple(level.split('=') for level in vote.split('>')) for vote in votes)
 
@@ -866,9 +919,21 @@ def schulze_evaluate(votes, candidates):
             break
         winners = _schulze_winners(d, remaining)
         result.append(winners)
-    # Return the aggregate preference list in the same format as the input
+
+    # Return the aggregated preference list in the same format as the input
     # votes are.
-    return ">".join("=".join(level) for level in result)
+    condensed = ">".join("=".join(level) for level in result)
+    detailed = []
+    for lead, follow in zip(result, result[1:]):
+        level = {
+            'winner': lead,
+            'loser': follow,
+            'pro_votes': counts[(lead[0], follow[0])],
+            'contra_votes': counts[(follow[0], lead[0])]
+        }
+        detailed.append(level)
+
+    return condensed, detailed
 
 
 #: Magic value of moniker of the ballot candidate representing the bar.
@@ -1670,6 +1735,43 @@ def roles_to_db_role(roles):
     for role in DB_ROLE_MAPPING:
         if role in roles:
             return DB_ROLE_MAPPING[role]
+
+
+ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
+
+ALL_ADMIN_VIEWS = {
+    "meta_admin", "core_user", "core", "cde_user", "past_event", "finance",
+    "event_user", "event_mgmt", "event_orga", "ml_user", "ml_mgmt",
+    "ml_moderator", "assembly_user", "assembly_mgmt", "assembly_contents",
+    "genesis"}
+
+
+def roles_to_admin_views(roles):
+    """ Get the set of available admin views for a user with given roles.
+    
+    :type roles: {str} 
+    :return: {str}
+    """
+    result = set()
+    if "meta_admin" in roles:
+        result |= {"meta_admin"}
+    if "core_admin" in roles:
+        result |= {"core_user", "core"}
+    if "cde_admin" in roles:
+        result |= {"cde_user", "past_event"}
+    if "finance_admin" in roles:
+        result |= {"finance"}
+    if "event_admin" in roles:
+        result |= {"event_user", "event_mgmt", "event_orga"}
+    if "ml_admin" in roles:
+        result |= {"ml_user", "ml_mgmt", "ml_moderator"}
+    if "assembly_admin" in roles:
+        result |= {"assembly_user", "assembly_mgmt", "assembly_contents"}
+    if roles & ({'core_admin'} | set(
+            "{}_admin".format(realm)
+            for realm in realm_specific_genesis_fields)):
+        result |= {"genesis"}
+    return result
 
 
 #: Version tag, so we know that we don't run out of sync with exported event

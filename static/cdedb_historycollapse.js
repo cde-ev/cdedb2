@@ -21,7 +21,7 @@
             
             var $hide_button = $('<button></button>',
                     {'type': 'button', 'class': 'btn btn-default btn-sm softhide collapse-button'})
-                .append($('<span></span>', {'class': 'glyphicon glyphicon-triangle-top'}));
+                .append($('<span></span>', {'class': 'fas fa-caret-up'}));
             
             $more_row.click(function(){
                 $crows.show();

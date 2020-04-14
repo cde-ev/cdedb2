@@ -38,7 +38,7 @@
         {{ util.form_input_textarea(name="accounts", label=gettext("Data"), horizontal=False, rows=8, anid='input-data') }}
 
         <p class="help-block">
-            {{ util.make_icon('info-sign') }} {% trans %}Enter one dataset per line.{% endtrans %}
+            {{ util.make_icon('info-cirlce') }} {% trans %}Enter one dataset per line.{% endtrans %}
             {% trans %}Use the following format:{% endtrans %}
         </p>
         <pre>{{   "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
@@ -81,7 +81,7 @@
                         <ul class="list-unstyled">
                             {% for key, problem in dataset['problems'] %}
                                 <li class="text-danger">
-                                    {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
+                                    {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
                                     {% if key %}
                                         <em class="row-col-key" data-row="{{ dataset['lineno'] }}"
                                           data-col="{{ csvfields.get(key, -1) }}">
@@ -93,7 +93,7 @@
                             {% endfor %}
                             {% for key, warning in dataset['warnings'] %}
                                 <li class="text-warning">
-                                    {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
+                                    {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
                                     {% if key %}
                                         <em class="row-col-key" data-row="{{ dataset['lineno'] }}"
                                           data-col="{{ csvfields.get(key, -1) }}">
@@ -116,8 +116,9 @@
                                     {%- do myentries.append((resolution.value, gettext(resolution|string))) %}
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
-                                        nulloption="&nbsp;", aclass="form-control select-action",
-                                        arialabel=gettext("Operation for line %s")|format(dataset['lineno'])) }}
+                                        nulloption="&nbsp;"|s, aclass="form-control select-action",
+                                        arialabel=gettext("Operation for line %s")|format(dataset['lineno']),
+                                        sort=True) }}
                             </div>
                         </div>
 
@@ -129,8 +130,8 @@
                                 <div class="p strip-space">
                                     {#- jinja does not support list comprehension ... #}
                                     {%- set myentries = [('', '–')] %}
-                                    {%- for key, value in dataset['doppelgangers']|dictsort %}
-                                        {%- with description = "{} {} ({}) <{}> ({} {}), {}".format(
+                                    {%- for key, value in dataset['doppelgangers']|keydictsort(EntitySorter.persona) %}
+                                        {%- with description = "{} {} ({}) <{}> ({} {}), {}{}".format(
                                                 value['given_names'], value['family_name'],
                                                 value['birth_name'] or value['family_name'],
                                                 value['username'], gettext("born"),

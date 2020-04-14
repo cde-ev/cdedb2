@@ -2,7 +2,10 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
-    {% if is_admin %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endif %}
+    {% if "past_event" in user.admin_views %}
+        {{ util.cdedb_script('cdedb_searchpersona.js') }}
+        {{ util.cdedb_script('cdedb_helper.js') }}
+    {% endif %}
 {% endblock %}
 {% block title %}{{ ambience['pevent']['title'] }}{% endblock %}
 {% block heading %}
@@ -12,18 +15,18 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
-        ambience['pevent']['title'], icon="calendar", active=True) }}
+        ambience['pevent']['title'], icon="calendar-alt", active=True) }}
 {% endblock %}
 {% block content %}
-    {% if is_admin %}
+    {% if "past_event" in user.admin_views %}
         <div class="p">
-        {{ util.href(cdedblink('cde/change_past_event_form'), gettext("Edit"), icon="pencil",
+        {{ util.href(cdedblink('cde/change_past_event_form'), gettext("Edit"), icon="pen",
                 aclass="btn btn-warning btn-sm") }}
         {{ util.href(cdedblink('cde/download_past_event_participantlist'), gettext("Dokuteam Addresslist"), aclass="btn btn-success btn-sm", icon="download") }}
         </div>
     {% endif %}
     <dl class="dl-horizontal">
-        {% if is_admin %}
+        {% if "past_event" in user.admin_views %}
             <dt>{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['pevent']['shortname'] }}</dd>
         {% endif %}
@@ -37,9 +40,9 @@
     {% if ambience['pevent']['description'] and ambience['pevent']['notes']%}
     <hr />
     {% endif %}
-    {% if ambience['pevent']['notes'] and (is_admin or is_participant) %}
-        {% if is_admin and not is_participant %}
-            <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-sign') }}
+    {% if ambience['pevent']['notes'] and ("past_event" in user.admin_views or is_participant) %}
+        {% if "past_event" in user.admin_views and not is_participant %}
+            <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-cirlce') }}
                 {% trans %}
                     As you are no participant of this past event, you can only
                     see this link because you are admin.
@@ -48,10 +51,10 @@
         {% endif %}
        <div id="gallery-link">{{ ambience['pevent']['notes']|md }}</div>
     {% endif %}
-    {% if courses or is_admin %}
+    {% if courses or "past_event" in user.admin_views %}
         <h2>{% trans %}Courses{% endtrans %}</h2>
     {% endif %}
-    {% if is_admin %}
+    {% if "past_event" in user.admin_views %}
         <div class="p">
             {{ util.href(cdedblink('cde/create_past_course_form'), gettext("Add Course"), icon="plus",
                     aclass="btn btn-success btn-sm") }}
@@ -59,7 +62,7 @@
     {% endif %}
     {% if courses %}
         <ul id="list-courses">
-            {% for anid, acourse in courses|xdictsort('nr', pad=True) %}
+            {% for anid, acourse in courses|keydictsort(EntitySorter.past_course) %}
                 <li>
                     {{ acourse['nr'] }}.
                     {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), acourse['title']) }}
@@ -69,7 +72,7 @@
     {% endif %}
 
     <h2>{% trans %}Participants{% endtrans %}</h2>
-    {% if is_admin %}
+    {% if "past_event" in user.admin_views %}
         <div class="panel panel-success panel-condensed">
             <div class="panel-heading">
                 <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
@@ -117,7 +120,7 @@
                     {% endif %}
                     {% if participant['pcourses'] %}
                         (
-                        {%- for pcourse_id, pcourse in participant['pcourses']|xdictsort('nr', pad=True) %}
+                        {%- for pcourse_id, pcourse in participant['pcourses']|keydictsort(EntitySorter.past_course) %}
                             {%- if pcourse_id -%}
                                 {{ pcourse['nr'] }}.
                                 {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),
@@ -130,7 +133,7 @@
                     {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
 
                     {# only allow removal of participants without a course #}
-                    {% if is_admin and None in participant['pcourse_ids'] %}
+                    {% if "past_event" in user.admin_views and None in participant['pcourse_ids'] %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
                               id="removeparticipantform{{ anid }}" style="display: inline;"
                               class="delete-participant-form hide-hover display-inline">
@@ -168,15 +171,15 @@
             <i>{% trans %}This Event had no Participants.{% endtrans %}</i>
         </p>
     {% endif %}
-    {% if is_admin %}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+    {% if "past_event" in user.admin_views %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
                         <form action="{{ cdedblink('cde/delete_past_event') }}" method="POST"
                                 id="deletepasteventform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_event') }}
-                            {{ util.input_submit(value=gettext("Delete Event"), icon="trash", aclass="btn btn-danger") }}
+                            {{ util.input_submit(value=gettext("Delete Event"), icon="trash-alt", aclass="btn btn-danger") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                         </form>
                     </div>

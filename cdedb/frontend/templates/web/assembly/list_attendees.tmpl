@@ -19,11 +19,11 @@
     {{ util.breadcrumb_link(cdedblink("assembly/list_attendees"), gettext("Participants"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% if is_admin and now() < ambience['assembly']['signup_end'] %}
+    {% if "assembly_contents" in user.admin_views and now() < ambience['assembly']['signup_end'] %}
         {% call util.bootstrap_panel(title=gettext("Add external participants"), aclass='panel-success panel-condensed',
                 icon='plus') %}
             <p class="text-muted">
-                {{ util.make_icon('info-sign') }}
+                {{ util.make_icon('info-cirlce') }}
                 {{ gettext("Current CdE-Members must register for the assembly themselves. "
                            "Only external participants can be added with this form. "
                            "This is only possible within the application deadline.") }}
@@ -71,7 +71,7 @@
     </div>
 
     {% if is_admin %}
-        {% call util.bootstrap_panel(title=gettext("Download"), icon="save-file", aclass="panel-default mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Download"), icon="file-download", aclass="panel-default mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
@@ -80,9 +80,9 @@
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        {% trans -%}
+                        {% trans %}
                             A download TeX-Snipped to generate a participant list in the protocol.
-                        {%- endtrans %}
+                        {% endtrans %}
                     </p>
                 </div>
             </div>

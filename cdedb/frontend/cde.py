@@ -168,8 +168,8 @@ class CdEFrontend(AbstractUserFrontend):
             rs, "query_input",
             mangle_query_input(rs, spec, defaults),
             "query", spec=spec, allow_empty=not is_search, separator=" ")
-        events = {k: v
-                  for k, v in self.pasteventproxy.list_past_events(rs).items()}
+
+        events = self.pasteventproxy.list_past_events(rs)
         pevent_id = None
         if rs.values.get('qval_pevent_id'):
             try:
@@ -178,8 +178,7 @@ class CdEFrontend(AbstractUserFrontend):
                 pass
         courses = tuple()
         if pevent_id:
-            courses = {k: v for k, v in self.pasteventproxy.list_past_courses(
-                rs, pevent_id).items()}
+            courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
         choices = {"pevent_id": events, 'pcourse_id': courses}
         result = None
         count = 0
@@ -2256,9 +2255,9 @@ class CdEFrontend(AbstractUserFrontend):
             rs, pevent_id=pevent_id)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
-        # We are privileged to see other participants if we are admin or
-        # participant by ourselves
-        privileged = is_participant or self.is_admin(rs)
+        # We are privileged to see other participants if we are admin (and have
+        # the relevant admin view enabled) or participant by ourselves
+        privileged = is_participant or "past_event" in rs.user.admin_views
         participants = {}
         personas = {}
         extra_participants = 0
@@ -2408,7 +2407,8 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def change_past_event_form(self, rs, pevent_id):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['pevent'])
         return self.render(rs, "change_past_event", {
             'institutions': institutions})
@@ -2429,7 +2429,8 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def create_past_event_form(self, rs):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         return self.render(rs, "create_past_event", {
             'institutions': institutions})
 

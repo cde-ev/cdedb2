@@ -24,7 +24,8 @@ from cdedb.frontend.common import (
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
-    REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields)
+    REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier)
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
@@ -87,18 +88,18 @@ class CoreFrontend(AbstractFrontend):
             for realm in realm_specific_genesis_fields:
                 if {"core_admin", "{}_admin".format(realm)} & rs.user.roles:
                     genesis_realms.append(realm)
-            if genesis_realms:
+            if genesis_realms and "genesis" in rs.user.admin_views:
                 data = self.coreproxy.genesis_list_cases(
                     rs, stati=(const.GenesisStati.to_review,),
                     realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if self.is_admin(rs):
+            if "core_user" in rs.user.admin_views:
                 data = self.coreproxy.changelog_get_changes(
                     rs, stati=(const.MemberChangeStati.pending,))
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
-            if "meta_admin" in rs.user.roles:
+            if "meta_admin" in rs.user.admin_views:
                 stati = (const.PrivilegeChangeStati.pending,)
                 data = self.coreproxy.list_privilege_changes(
                     rs, stati=stati)
@@ -263,6 +264,44 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Unsupported locale"))
         return rs.response
 
+    @access("persona", modi={"POST"}, check_anti_csrf=False)
+    @REQUESTdata(("view_specifier", "printable_ascii"),
+                 ("wants", "#str_or_None"))
+    def modify_active_admin_views(self, rs, view_specifier, wants):
+        """
+        Enable or disable admin views for the current user.
+
+        A list of possible admin views for the current user is returned by
+        User.available_admin_views. The user may enable or disable any of them.
+
+        :param view_specifier: A "+" or "-", followed by a commaseperated string
+            of admin view names. If prefixed by "+", they are enabled, otherwise
+            they are disabled.
+        :param wants: URL to redirect to (typically URL of the previous page)
+        """
+        if wants:
+            basic_redirect(rs, wants)
+        else:
+            self.redirect(rs, "core/index")
+
+        # Exit early on validation errors
+        if rs.has_validation_errors():
+            return rs.response
+
+        enabled_views = set(rs.request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, "")
+                            .split(','))
+        changed_views = set(view_specifier[1:].split(','))
+        enable = view_specifier[0] == "+"
+        if enable:
+            enabled_views.update(changed_views)
+        else:
+            enabled_views -= changed_views
+        rs.response.set_cookie(
+            ADMIN_VIEWS_COOKIE_NAME,
+            ",".join(enabled_views & ALL_ADMIN_VIEWS),
+            expires=now() + datetime.timedelta(days=10 * 365))
+        return rs.response
+
     @access("persona")
     def mydata(self, rs):
         """Convenience entry point for own data."""
@@ -411,25 +450,7 @@ class CoreFrontend(AbstractFrontend):
         # Add past event participation info
         past_events = None
         if "cde" in access_levels and {"event", "cde"} & roles:
-            participation_info = self.pasteventproxy.participation_info(
-                rs, persona_id)
-            # Group participation data by pevent_id: First get distinct past
-            # events from participation data, afterwards add dict of courses
-            past_events = {
-                pi['pevent_id']: {
-                    k: pi[k]
-                    for k in ('pevent_id', 'event_name', 'tempus', 'is_orga')}
-                for pi in participation_info}
-            for past_event_id, past_event in past_events.items():
-                past_event['courses'] = {
-                    pi['pcourse_id']: {
-                        k: pi[k]
-                        for k in ('pcourse_id', 'course_name', 'nr',
-                                  'is_instructor')}
-                    for pi in participation_info
-                    if (pi['pevent_id'] == past_event_id and
-                        pi['pcourse_id'] is not None)
-                }
+            past_events = self.pasteventproxy.participation_info(rs, persona_id)
 
         # Check whether we should display an option for using the quota
         quoteable = (not quote_me
@@ -439,9 +460,21 @@ class CoreFrontend(AbstractFrontend):
 
         meta_info = self.coreproxy.get_meta_info(rs)
 
+        # Check if the current user has the right admin *views* activated to
+        # show the admin-only information and controls of this persona
+        # This code is basically a modified version of
+        # CoreBackend.is_relative_admin() with a string-replace hack to make
+        # use of cdedb.common.privilege_tier()
+        is_relative_admin_view = any(
+            admin_views <= {v.replace('_user', '_admin')
+                            for v in rs.user.admin_views}
+            for admin_views in privilege_tier(
+                extract_roles(rs.ambience['persona'], introspection_only=True)))
+
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
-            'is_relative_admin': is_relative_admin, 'quoteable': quoteable})
+            'is_relative_admin': is_relative_admin_view,
+            'quoteable': quoteable})
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
@@ -2368,7 +2401,7 @@ class CoreFrontend(AbstractFrontend):
                                       for part in given_names.split())
         constraints = (
             ('given_names', QueryOperators.regex, given_names_regex),
-            ('family_name', QueryOperators.equal, re.escape(family_name)),
+            ('family_name', QueryOperators.equal, family_name),
             ('is_member', QueryOperators.equal, True),
         )
         query = Query("qview_persona", spec, ("username",),

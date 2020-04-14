@@ -56,6 +56,6 @@
     <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="nackprivilegechangeform" style="display: inline;">
         {{ util.anti_csrf_token('core/decide_privilege_change') }}
         {{ util.input_hidden(name="ack", value="False") }}
-        {{ util.input_submit(value=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban-circle") }}
+        {{ util.input_submit(value=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban") }}
     </form>
 {% endblock %}

@@ -10,6 +10,10 @@ to separate orthogonal problems from each other like member register from
 event organization. In the python code this is achieved by different classes
 for each realm and in the SQL code we have different schemas for each realm.
 
+The production instance on the CdE server is pretty similar to the VM image
+provided by the auto-build. So take a look there to see how everything fits
+together.
+
 The python code is state-less and thus easily parallelizable. This is
 exploited in the frontend (where Apache does multithreading). All state is
 kept in the database. For accountability we keep a record of all sessions

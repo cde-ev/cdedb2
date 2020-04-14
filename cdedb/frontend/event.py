@@ -376,7 +376,8 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def change_event_form(self, rs, event_id):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['event'])
         return self.render(rs, "change_event",
                            {'institutions': institutions,
@@ -904,7 +905,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin")
     def create_event_form(self, rs):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         return self.render(rs, "create_event",
                            {'institutions': institutions,
                             'accounts': self.conf.EVENT_BANK_ACCOUNTS})
@@ -4172,7 +4174,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def create_lodgement_form(self, rs, event_id):
         """Render form."""
-        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
@@ -4203,7 +4205,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def change_lodgement_form(self, rs, event_id, lodgement_id):
         """Render form."""
-        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         field_values = {
             "fields.{}".format(key): value
             for key, value in rs.ambience['lodgement']['fields'].items()}
@@ -4709,7 +4711,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         for track_id, track in tracks.items():
             if len(tracks) > 1:
-                prefix = "{title}: ".format(title=track['title'])
+                prefix = "{shortname}: ".format(shortname=track['shortname'])
             else:
                 prefix = ""
             titles.update({
@@ -4814,7 +4816,7 @@ class EventFrontend(AbstractUserFrontend):
             })
         for part_id, part in event['parts'].items():
             if len(event['parts']) > 1:
-                prefix = "{title}: ".format(title=part['title'])
+                prefix = "{shortname}: ".format(shortname=part['shortname'])
             else:
                 prefix = ""
             titles.update({
@@ -4929,6 +4931,180 @@ class EventFrontend(AbstractUserFrontend):
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "registration_query", params)
+
+    @staticmethod
+    def make_course_view_query_spec(event):
+        """Helper to enrich ``QUERY_SPECS['qview_event_course']``.
+
+        Since each event has custom course fields we have to amend the query
+        spec on the fly.
+
+        :type event: {str: object}
+        """
+        tracks = event['tracks']
+        course_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.course
+        }
+
+        # This is an OrderedDict, so order should be respected.
+        spec = copy.deepcopy(QUERY_SPECS["qview_event_course"])
+        spec.update({
+            "course_fields.xfield_{0}".format(field['field_name']):
+                const.FieldDatatypes(field['kind']).name
+            for field in course_fields.values()
+        })
+
+        for track_id, track in tracks.items():
+            spec["track{0}.is_offered".format(track_id)] = "bool"
+            spec["track{0}.takes_place".format(track_id)] = "bool"
+            spec["track{0}.attendees".format(track_id)] = "int"
+            spec["track{0}.instructors".format(track_id)] = "int"
+            for rank in range(track['num_choices']):
+                spec["track{0}.num_choices{1}".format(track_id, rank)] = "int"
+
+        return spec
+
+    @staticmethod
+    def make_course_view_query_aux(rs, event, courses, fixed_gettext=False):
+        """Un-inlined code to prepare input for template.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type event: {str: object}
+        :type courses: {int: {str: object}}
+        :type fixed_gettext: bool
+        :param fixed_gettext: whether or not to use a fixed translation
+            function. True means static, False means localized.
+        :rtype: ({str: dict}, {str: str})
+        :returns: Choices for select inputs and titles for columns.
+        """
+
+        tracks = event['tracks']
+
+        if fixed_gettext:
+            gettext = rs.default_gettext
+            enum_gettext = lambda x: x.name
+        else:
+            gettext = rs.gettext
+            enum_gettext = rs.gettext
+
+        # Construct choices.
+        course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
+        course_choices = OrderedDict(
+            sorted((c["id"], course_identifier(c)) for c in courses.values()))
+        choices = {
+            "course.id": course_choices
+        }
+        course_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.course
+            }
+        if not fixed_gettext:
+            # Course fields value -> description
+            choices.update({
+                "course_fields.xfield_{0}".format(field['field_name']):
+                    OrderedDict(field['entries'])
+                for field in course_fields.values() if field['entries']
+            })
+
+        # Construct titles.
+        titles = {
+            "course.id": gettext("course id"),
+            "course.nr": gettext("course nr"),
+            "course.title": gettext("course title"),
+            "course.description": gettext("course description"),
+            "course.shortname": gettext("course shortname"),
+            "course.instructors": gettext("course instructors"),
+            "course.min_size": gettext("course min size"),
+            "course.max_size": gettext("course max size"),
+            "course.notes": gettext("course notes"),
+        }
+        titles.update({
+            "course_fields.xfield_{}".format(field['field_name']):
+                field['field_name']
+            for field in course_fields.values()
+        })
+        for track_id, track in tracks.items():
+            if len(tracks) > 1:
+                prefix = "{shortname}: ".format(shortname=track['shortname'])
+            else:
+                prefix = ""
+            titles.update({
+                "track{0}.takes_place".format(track_id):
+                    prefix + gettext("takes place"),
+                "track{0}.is_offered".format(track_id):
+                    prefix + gettext("is offered"),
+                "track{0}.attendees".format(track_id):
+                    prefix + gettext("attendees"),
+                "track{0}.instructors".format(track_id):
+                    prefix + gettext("instructors"),
+            })
+            for rank in range(track['num_choices']):
+                titles.update({
+                    "track{0}.num_choices{1}".format(track_id, rank):
+                        prefix + gettext("{}. choices").format(
+                            rank+1),
+                })
+
+        return choices, titles
+
+    @access("event")
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    @event_guard()
+    def course_query(self, rs, event_id, download, is_search):
+
+        spec = self.make_course_view_query_spec(rs.ambience['event'])
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query",
+                          spec=spec, allow_empty=False)
+        else:
+            query = None
+
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        choices, titles = self.make_course_view_query_aux(
+            rs, rs.ambience['event'], courses,
+            fixed_gettext=download is not None)
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+
+        tracks = rs.ambience['event']['tracks']
+        selection_default = ["course.shortname", ]
+        for col in ("is_offered", "takes_place", "attendees"):
+            selection_default += list("track{}.{}".format(t_id, col)
+                                      for t_id in tracks)
+        default_queries = []
+
+        params = {
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'query': query, 'default_queries': default_queries,
+            'titles': titles, 'selection_default': selection_default,
+        }
+
+        if not rs.has_validation_errors() and is_search:
+            query.scope = "qview_event_course"
+            result = self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id)
+            params['result'] = result
+            if download:
+                fields = []
+                for csvfield in query.fields_of_interest:
+                    fields.extend(csvfield.split(','))
+                shortname = rs.ambience['event']['shortname']
+                if download == "csv":
+                    csv_data = csv_output(result, fields, substitutions=choices)
+                    return self.send_csv_file(
+                        rs, data=csv_data, inline=False,
+                        filename="{}_course_result.csv".format(shortname))
+                elif download == "json":
+                    json_data = query_result_to_json(
+                        result, fields, substitutions=choices)
+                    return self.send_file(
+                        rs, data=json_data, inline=False,
+                        filename="{}_course_result.json".format(shortname))
+        else:
+            rs.values['is_search'] = is_search = False
+        return self.render(rs, "course_query", params)
 
     @access("event")
     @event_guard(check_offline=True)

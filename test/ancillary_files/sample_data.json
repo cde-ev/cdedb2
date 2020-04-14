@@ -3996,7 +3996,16 @@
         {
             "id": 2,
             "title": "Kanonische Beispielversammlung",
-            "description": "Wenigstens darauf k\u00f6nnen wir uns einigen.",
+            "description": "Wenigstens darauf können wir uns einigen.",
+            "mail_address": null,
+            "signup_end": "2020-02-22T00:00:00+00:00",
+            "is_active": false,
+            "notes": null
+        },
+        {
+            "id": 3,
+            "title": "Archiv-Sammlung",
+            "description": "Zum Aufbewahren von ganz viel Akten und Papier.",
             "mail_address": null,
             "signup_end": "2222-02-22T00:00:00+00:00",
             "is_active": true,
@@ -4039,6 +4048,12 @@
             "persona_id": 100,
             "assembly_id": 1,
             "secret": "sefnasdfiw"
+        },
+        {
+            "id": 7,
+            "persona_id": 18,
+            "assembly_id": 2,
+            "secret": "asdgeargsd"
         }
     ],
     "assembly.ballots": [
@@ -4119,7 +4134,7 @@
         },
         {
             "id": 6,
-            "assembly_id": 2,
+            "assembly_id": 3,
             "title": "Test-Abstimmung \u2013 bitte ignorieren",
             "description": null,
             "vote_begin": "1999-12-31T22:00:00+00:00",
@@ -4129,6 +4144,141 @@
             "use_bar": false,
             "quorum": 0,
             "votes": 1,
+            "is_tallied": false,
+            "notes": null
+        },
+       {
+            "id": 7,
+            "assembly_id": 2,
+            "title": "Entlastung des Vorstands",
+            "description": "Er hat wahrlich gute Arbeit geleistet!",
+            "vote_begin": "2010-11-11T22:00:00+00:00",
+            "vote_end": "2015-03-20T23:00:00+00:00",
+            "vote_extension_end": null,
+            "extended": null,
+            "use_bar": false,
+            "quorum": 0,
+            "votes": 1,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 8,
+            "assembly_id": 2,
+            "title": "Eine damals wichtige Frage",
+            "description": "Was für ein Logo soll der CdE bekommen?",
+            "vote_begin": "900-09-29T22:00:00+00:00",
+            "vote_end": "1000-01-01T23:00:00+00:00",
+            "vote_extension_end": "1999-09-05T23:00:00+00:00",
+            "extended": null,
+            "use_bar": true,
+            "quorum": 100000,
+            "votes": 1,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 9,
+            "assembly_id": 2,
+            "title": "Wahl des Finanzvorstands",
+            "description": null,
+            "vote_begin": "2019-04-04T22:00:00+00:00",
+            "vote_end": "2020-03-09T23:00:00+00:00",
+            "vote_extension_end": null,
+            "extended": null,
+            "use_bar": true,
+            "quorum": 0,
+            "votes": 2,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 10,
+            "assembly_id": 2,
+            "title": "Wie soll der CdE mit seinem Vermögen umgehen?",
+            "description": "Ein Punkt mit vielen Meinungen.",
+            "vote_begin": "2014-11-20T22:00:00+00:00",
+            "vote_end": "2015-10-04T23:00:00+00:00",
+            "vote_extension_end": "2016-07-31T23:00:00+00:00",
+            "extended": null,
+            "use_bar": false,
+            "quorum": 4444,
+            "votes": null,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 11,
+            "assembly_id": 1,
+            "title": "Antrag zur DSGVO 2.0",
+            "description": "Wir müssen dringend die neuen Regeln umsetzen. Wollen wir den Anhang annehmen?",
+            "vote_begin": "2020-01-30T22:00:00+00:00",
+            "vote_end": "2200-12-01T23:00:10+00:00",
+            "vote_extension_end": null,
+            "extended": null,
+            "use_bar": false,
+            "quorum": 0,
+            "votes": 1,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 12,
+            "assembly_id": 1,
+            "title": "Eine aktuell wichtige Frage",
+            "description": "Welches Wappentier soll der CdE tragen?",
+            "vote_begin": "2001-03-14T22:00:00+00:00",
+            "vote_end": "2100-11-19T23:00:00+00:00",
+            "vote_extension_end": "2101-08-24T23:00:00+00:00",
+            "extended": null,
+            "use_bar": false,
+            "quorum": 4,
+            "votes": 1,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 13,
+            "assembly_id": 1,
+            "title": "Wahl des Innenvorstand",
+            "description": "Wir haben mehr als einen Kandidaten!",
+            "vote_begin": "2020-02-14T22:00:00+00:00",
+            "vote_end": "2040-12-26T23:00:00+00:00",
+            "vote_extension_end": null,
+            "extended": null,
+            "use_bar": true,
+            "quorum": 0,
+            "votes": null,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 14,
+            "assembly_id": 1,
+            "title": "Wie sollen Akademien sich in Zukunft finanzieren",
+            "description": null,
+            "vote_begin": "2019-04-10T22:00:00+00:00",
+            "vote_end": "2090-07-19T23:00:00+00:00",
+            "vote_extension_end": "2100-03-16T23:00:00+00:00",
+            "extended": null,
+            "use_bar": false,
+            "quorum": 3333,
+            "votes": null,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 15,
+            "assembly_id": 1,
+            "title": "Welche Sprache ist die Beste?",
+            "description": "Wir konnten uns einfach nicht einigen.",
+            "vote_begin": "2018-08-03T22:00:00+00:00",
+            "vote_end": "2019-12-13T23:00:00+00:00",
+            "vote_extension_end": "2222-07-28T23:00:00+00:00",
+            "extended": null,
+            "use_bar": false,
+            "quorum": 2000,
+            "votes": null,
             "is_tallied": false,
             "notes": null
         }
@@ -4277,6 +4427,168 @@
             "ballot_id": 5,
             "description": "0",
             "moniker": "0"
+        },
+        {
+            "id": 28,
+            "ballot_id": 11,
+            "description": "Ja",
+            "moniker": "Ja"
+        },
+        {
+            "id": 29,
+            "ballot_id": 11,
+            "description": "Nein",
+            "moniker": "Nein"
+        },
+        {
+            "id": 30,
+            "ballot_id": 12,
+            "description": "Löwe",
+            "moniker": "a"
+        },
+        {
+            "id": 31,
+            "ballot_id": 12,
+            "description": "Adler",
+            "moniker": "b"
+        },
+        {
+            "id": 32,
+            "ballot_id": 12,
+            "description": "Dachs",
+            "moniker": "c"
+        },
+        {
+            "id": 33,
+            "ballot_id": 12,
+            "description": "Schlange",
+            "moniker": "d"
+        },
+        {
+            "id": 34,
+            "ballot_id": 13,
+            "description": "Anton A. Administrator",
+            "moniker": "Anton"
+        },
+        {
+            "id": 35,
+            "ballot_id": 13,
+            "description": "Bertalotta Beispiel",
+            "moniker": "Berta"
+        },
+        {
+            "id": 36,
+            "ballot_id": 13,
+            "description": "Akira Abukara",
+            "moniker": "Akira"
+        },
+        {
+            "id": 37,
+            "ballot_id": 14,
+            "description": "Durch eine erhobene Steuer auf Tee und Schokolade",
+            "moniker": "Steuern"
+        },
+        {
+            "id": 38,
+            "ballot_id": 14,
+            "description": "Durch Spendenbeiträge",
+            "moniker": "Spenden"
+        },
+        {
+            "id": 39,
+            "ballot_id": 14,
+            "description": "Durch Infiltration des BMBF",
+            "moniker": "BMBF"
+        },
+        {
+            "id": 40,
+            "ballot_id": 15,
+            "description": "Sindarin (Elbisch, Herr der Ringe)",
+            "moniker": "Sindarin"
+        },
+        {
+            "id": 41,
+            "ballot_id": 15,
+            "description": "Khuzdul (Zwergisch, Herr der Ringe)",
+            "moniker": "Khuzdul"
+        },
+        {
+            "id": 42,
+            "ballot_id": 15,
+            "description": "Esperanto (Kunstsprache, Erde)",
+            "moniker": "Esperanto"
+        },
+        {
+            "id": 43,
+            "ballot_id": 15,
+            "description": "Klingonisch (Klingonen, Star Trek)",
+            "moniker": "Klingonisch"
+        },
+        {
+            "id": 44,
+            "ballot_id": 7,
+            "description": "Ja",
+            "moniker": "Ja"
+        },
+        {
+            "id": 45,
+            "ballot_id": 7,
+            "description": "Nein",
+            "moniker": "Nein"
+        },
+        {
+            "id": 46,
+            "ballot_id": 8,
+            "description": "Eine Glühbirne mit Schriftzug",
+            "moniker": "Gluehbirne"
+        },
+        {
+            "id": 47,
+            "ballot_id": 8,
+            "description": "Die vier Wappentiere, die den Schriftzug CdE umringen",
+            "moniker": "Wappen"
+        },
+        {
+            "id": 48,
+            "ballot_id": 8,
+            "description": "Ein Baum mit Blättern und Grün!",
+            "moniker": "Baum"
+        },
+        {
+            "id": 49,
+            "ballot_id": 9,
+            "description": "Farin Finanzvorstand",
+            "moniker": "Farin"
+        },
+        {
+            "id": 50,
+            "ballot_id": 9,
+            "description": "Inga Iota",
+            "moniker": "Inga"
+        },
+        {
+            "id": 51,
+            "ballot_id": 9,
+            "description": "Olaf Olafson",
+            "moniker": "Olaf"
+        },
+        {
+            "id": 52,
+            "ballot_id": 10,
+            "description": "Investieren in Aktien und Fonds.",
+            "moniker": "Aktien"
+        },
+        {
+            "id": 53,
+            "ballot_id": 10,
+            "description": "Wir kaufen den Eisenberg!",
+            "moniker": "Eisenberg"
+        },
+        {
+            "id": 54,
+            "ballot_id": 10,
+            "description": "Kostenlose Akademien für alle.",
+            "moniker": "Akademien"
         }
     ],
     "assembly.attachments": [],
@@ -4315,6 +4627,34 @@
             "vote": "Lo>Li=St=Fi=Bu=Go=_bar_",
             "salt": "lkn/4kvj9",
             "hash": "314776ac07ffdd56a53112ae5f5113fb356b82b19f3a43754695aa41bf8e120c0346b45e43d0a0114e2bbc7756e7f34ce41f784000c010570d71e90a5c2ab1f1"
+        },
+        {
+            "id": 6,
+            "ballot_id": 7,
+            "vote": "Nein>Ja=_bar_",
+            "salt": "le4sk502j",
+            "hash": "1b92235ea46875b7fa0c902377f642f80a07646e8ef7528c058e246aa74a9ee34b24b5dcbc52340d04c643b89e035e556b43a84a0332785954b310a30ae49981"
+        },
+        {
+            "id": 7,
+            "ballot_id": 8,
+            "vote": "Wappen>_bar_=Gluehbirne>Baum",
+            "salt": "ikejsoe8p",
+            "hash": "5e74605a867d1bb46cfcdff8901bb42ef2b21b513280efa2dd93a0251d4f3506a1ff1e28c0b3c00d10e6c81d847024280d9312fd76f9abd271829ee729157aa2"
+        },
+        {
+            "id": 8,
+            "ballot_id": 9,
+            "vote": "Farin=Inga>_bar_=Olaf",
+            "salt": "l9tmeid73",
+            "hash": "24a751056614ea223b1af4099d228ee943a3d33507c13fe746a3e6811b78188495ab6015bc9deda17ecb79ced8189ca6bb91e96d17d263bd713997fb4ecb9a88"
+        },
+        {
+            "id": 9,
+            "ballot_id": 10,
+            "vote": "Eisenberg>Akademien>Aktien",
+            "salt": "8ci4wof73",
+            "hash": "ec21445bdd06f5a62a59add324b1f7743a00e9e60f9d546f45199e96a3706af603b114069f3dbbecdd53ab4765522f1eea1bca410a3a91aec48ac97a2b2baddc"
         }
     ],
     "assembly.voter_register": [
@@ -4497,6 +4837,210 @@
             "persona_id": 100,
             "ballot_id": 5,
             "has_voted": false
+        },
+        {
+            "id": 31,
+            "persona_id": 1,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "id": 32,
+            "persona_id": 1,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "id": 33,
+            "persona_id": 1,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "id": 34,
+            "persona_id": 1,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "id": 35,
+            "persona_id": 2,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "id": 36,
+            "persona_id": 2,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "id": 37,
+            "persona_id": 2,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "id": 38,
+            "persona_id": 2,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "id": 39,
+            "persona_id": 9,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "id": 40,
+            "persona_id": 9,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "id": 41,
+            "persona_id": 9,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "id": 42,
+            "persona_id": 9,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "id": 43,
+            "persona_id": 11,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "id": 44,
+            "persona_id": 11,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "id": 45,
+            "persona_id": 11,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "id": 46,
+            "persona_id": 11,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "id": 47,
+            "persona_id": 23,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "id": 48,
+            "persona_id": 23,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "id": 49,
+            "persona_id": 23,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "id": 50,
+            "persona_id": 23,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "id": 51,
+            "persona_id": 100,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "id": 52,
+            "persona_id": 100,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "id": 53,
+            "persona_id": 100,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "id": 54,
+            "persona_id": 100,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "id": 55,
+            "persona_id": 1,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "id": 56,
+            "persona_id": 2,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "id": 57,
+            "persona_id": 9,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "id": 58,
+            "persona_id": 11,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "id": 59,
+            "persona_id": 23,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "id": 60,
+            "persona_id": 100,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "id": 61,
+            "persona_id": 18,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "id": 62,
+            "persona_id": 18,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "id": 63,
+            "persona_id": 18,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "id": 64,
+            "persona_id": 18,
+            "ballot_id": 10,
+            "has_voted": true
         }
     ],
     "assembly.log": [],
@@ -6132,6 +6676,12 @@
             "id": 137,
             "mailinglist_id": 52,
             "persona_id": 16,
+            "subscription_state": 30
+        },
+        {
+            "id": 138,
+            "mailinglist_id": 61,
+            "persona_id": 18,
             "subscription_state": 30
         }
     ],

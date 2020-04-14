@@ -26,7 +26,7 @@
 {% endblock %}
 {% block content %}
     <p class="text-info">
-        {{ util.make_icon('info-sign') }}
+        {{ util.make_icon('info-cirlce') }}
         {% trans %}
             Note that every change can take up to 15 minutes to take effect.
         {% endtrans %}
@@ -36,7 +36,7 @@
         <div class="col-md-6">
             <h2>{% trans %}Moderators{% endtrans %} [{{ ambience['mailinglist']['moderators']|length }}]</h2>
                 <p class="text-muted">
-                {{ util.make_icon('info-sign') }}
+                {{ util.make_icon('info-cirlce') }}
                     {% trans %}
                         Only users can be moderators.
                     {% endtrans %}
@@ -88,7 +88,7 @@
         <div class="col-md-6">
             <h2>{% trans %}Subscription Requests{% endtrans %}</h2>
                 <p class="text-muted">
-                    {{ util.make_icon('info-sign') }}
+                    {{ util.make_icon('info-cirlce') }}
                     {% trans %}
                         Subscription Requests of other users to this mailinglist.
                     {% endtrans %}
@@ -99,7 +99,7 @@
                     {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                            <div class="nowrap">
+                            <div class="nowrap display-inline">
                                 {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
                                 <form action="{{ cdedblink('ml/approve_request') }}"
                                       method="POST"
@@ -107,7 +107,7 @@
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/approve_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="ok", value=gettext("Accept"),
+                                    {{ util.input_submit(icon="check", value=gettext("Accept"),
                                         aclass="btn btn-xs btn-success list-button-float") }}
                                 </form>
                                 <form action="{{ cdedblink('ml/deny_request') }}"
@@ -116,7 +116,7 @@
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/deny_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="remove", value=gettext("Reject"),
+                                    {{ util.input_submit(icon="times-circle", value=gettext("Reject"),
                                         aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
                                 <form action="{{ cdedblink('ml/block_request') }}"
@@ -125,7 +125,7 @@
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/block_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="ban-circle", value=gettext("Block"),
+                                    {{ util.input_submit(icon="ban", value=gettext("Block"),
                                         aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
                             </div>
@@ -142,7 +142,7 @@
 
     <h2>{% trans %}Subscribers{% endtrans %} [{{ subscribers|length }}]</h2>
         <p class="text-muted">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_icon('info-cirlce') }}
             {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) %}
                 Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here.
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
@@ -197,8 +197,9 @@
         {% endfor %}
     </div>
 
-    {% if is_admin %}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+    {# TODO we should move this section to another page, since this page is not included in the "mailinglist management" admin view. #}
+    {% if 'ml_mgmt' in user.admin_views %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
@@ -206,7 +207,7 @@
                             class="display-inline">
                             {{ util.anti_csrf_token('ml/delete_mailinglist') }}
                             {{ util.input_submit(value=gettext("Delete"), readonly=is_locked,
-                                                 aclass="btn btn-danger", icon="trash") }}
+                                                 aclass="btn btn-danger", icon="trash-alt") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                         </form>
                     </div>

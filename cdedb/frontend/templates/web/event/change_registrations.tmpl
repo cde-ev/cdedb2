@@ -10,14 +10,14 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
 {{ util.breadcrumb_link(cdedblink("event/change_registrations_form"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Edit Registrations{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -100,7 +100,7 @@
         <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
 
         <p class="text-info">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_icon('info-cirlce') }}
             {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) %}
                 The registered people are able to see their current registration status, the payment status and – for
                 minors – the status of the parental consent at “{{ my_registration }}”.
@@ -134,13 +134,14 @@
                                         anid="part{}_status".format(part_id)) %}
                 {{ util.input_select(name="part{}.status".format(part_id),
                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
-                                     anid="part{}_status".format(part_id)) }}
+                                     anid="part{}_status".format(part_id),
+                                     sort=True) }}
             {% endcall %}
 
             {% call form_input_optional("part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
                                         anid="part{}_lodgement_id".format(part_id)) %}
                 {{ util.input_select(name="part{}.lodgement_id".format(part_id),
-                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="&nbsp;",
+                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="&nbsp;"|s,
                                      anid="part{}_lodgement_id".format(part_id)) }}
             {% endcall %}
             {% call form_input_optional("part{}.is_reserve".format(part_id),
@@ -159,7 +160,7 @@
                                                   if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                             anid="track{}_course_id".format(track_id)) %}
                     {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
-                                         nulloption="&nbsp;", anid="track{}_course_id".format(track_id)) }}
+                                         nulloption="&nbsp;"|s, anid="track{}_course_id".format(track_id)) }}
                 {% endcall %}
             {% endfor %}
         {% endfor %}
@@ -188,7 +189,7 @@
                                               if ambience['event']['tracks']|length > 1  else gettext("Instructor of"),
                                         anid="input_track{}_course_instructor".format(track_id)) %}
                 {{ util.input_select(name="track{}.course_instructor".format(track_id),
-                                     entries=course_entries, nulloption="&nbsp;",
+                                     entries=course_entries, nulloption="&nbsp;"|s,
                                      anid="input_track{}_course_instructor".format(track_id)) }}
             {% endcall %}
         {% endfor %}

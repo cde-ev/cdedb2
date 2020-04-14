@@ -17,13 +17,13 @@
 {% macro print_transaction(t_id) %}
     {% if data["errors{}".format(t_id)] %}
         {% set aclass="panel-danger" %}
-        {% set anicon="exclamation-sign" %}
+        {% set anicon="exclamation-circle" %}
     {% elif data["warnings{}".format(t_id)] %}
         {% set aclass="panel-warning" %}
-        {% set anicon="warning-sign" %}
+        {% set anicon="exclamation-triangle" %}
     {% else %}
         {% set aclass="panel-default" %}
-        {% set anicon="info-sign" %}
+        {% set anicon="info-circle" %}
     {% endif %}
     {% call util.bootstrap_panel(title=gettext("Line %(lineno)s")|format(lineno=t_id), aclass=aclass,
                                  icon=anicon, anid="transaction-container{}".format(t_id)) %}
@@ -44,7 +44,7 @@
                 <ul id="transaction{{ t_id }}_errors" class="list-unstyled">
                         {% for key, problem in data["errors{}".format(t_id)] %}
                             <li class="text-danger">
-                                {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
+                                {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
                                 <em>{{ key }}</em>:
                                 {{ util.format_error(problem) }}
                             </li>
@@ -53,7 +53,7 @@
                 <ul id="transaction{{ t_id }}_warnings" class="list-unstyled">
                         {% for key, problem in data["warnings{}".format(t_id)] %}
                             <li class="text-warning">
-                                {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
+                                {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
                                 <em>{{ key }}</em>:
                                 {{ util.format_error(problem) }}
                             </li>
@@ -69,7 +69,8 @@
                     <div class="col-md-11">
                         {{ util.form_input_select(name="transaction_type{}".format(t_id),
                                     entries=TransactionType|enum_entries,
-                                    label=gettext("Transaction Type"), horizontal=False, small=True) }}
+                                    label=gettext("Transaction Type"), horizontal=False, small=True,
+                                    sort=True) }}
                     </div>
                 </div>
                 <div class="row">
@@ -95,7 +96,7 @@
                     </div>
                     <div class="col-md-11">
                         {{ util.form_input_select(name="event_id{}".format(t_id), entries=event_entries, small=True,
-                                    nulloption="&nbsp;", label=gettext("Event"), horizontal=False) }}
+                                    nulloption="&nbsp;"|s, label=gettext("Event"), horizontal=False, sort=False) }}
                     </div>
                 </div>
             </div>
@@ -103,14 +104,14 @@
         {% if t_id in params["jump_order"] %}
             {% if params["jump_order"][t_id] %}
                 <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][t_id] }}">
-                    {{ util.make_icon("arrow-down") }}
+                    {{ util.make_icon('arrow-down') }}
                     {% trans %}
                         Go to next Error.
                     {% endtrans %}
                 </a>
             {% else %}
                 <a class="btn btn-default btn-sm" href="#submit-container">
-                    {{ util.make_icon("arrow-down") }}
+                    {{ util.make_icon('arrow-down') }}
                     {% trans %}
                         Go to submit buttons.
                     {% endtrans %}
@@ -157,14 +158,14 @@
             {% endif %}
             {% if params["jump_order"][None] %}
                 <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][None] }}">
-                    {{ util.make_icon("arrow-down") }}
+                    {{ util.make_icon('arrow-down') }}
                     {% trans %}
                         Go to first Error.
                     {% endtrans %}
                 </a>
             {% endif %}
             <a class="btn btn-default btn-sm" href="#submit-container">
-                {{ util.make_icon("arrow-down") }}
+                {{ util.make_icon('arrow-down') }}
                 {% trans %}
                     Go to submit buttons.
                 {% endtrans %}
@@ -177,21 +178,21 @@
             {{ util.form_input_submit(name="validate", value=gettext("Validate"), horizontal=False) }}
             {% if not params["has_error"] %}
                 <button type="submit" name="gnucash" value="gnucash" class="btn btn-primary">
-                    {{ util.make_icon("download") }} {% trans %}GnuCash Download{% endtrans %}
+                    {{ util.make_icon('download') }} {% trans %}GnuCash Download{% endtrans %}
                 </button>
                 {% for account in params["accounts"]|sort %}
                     <button type="submit" name="excel" value="{{ account }}" class="btn btn-primary">
-                        {{ util.make_icon("download") }} {% trans %}Excel Download ({{ account }}){% endtrans %}
+                        {{ util.make_icon('download') }} {% trans %}Excel Download ({{ account }}){% endtrans %}
                     </button>
                 {% endfor %}
                 {% if params["memberships"] %}
                     <button type="submit" name="membership" value="membership" class="btn btn-primary">
-                        {{ util.make_icon("download") }} {% trans %}Download Membership Fees{% endtrans %}
+                        {{ util.make_icon('download') }} {% trans %}Download Membership Fees{% endtrans %}
                     </button>
                 {% endif %}
                 {% for event_id in params["events"] %}
                     <button type="submit" name="event" value="{{ event_id }}" class="btn btn-primary">
-                        {{ util.make_icon("download") }} {% trans shortname=events[event_id] %}Download {{ shortname }}{% endtrans %}
+                        {{ util.make_icon('download') }} {% trans shortname=events[event_id] %}Download {{ shortname }}{% endtrans %}
                     </button>
                 {% endfor %}
             {% endif %}

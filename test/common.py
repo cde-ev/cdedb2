@@ -8,24 +8,25 @@ import functools
 import gettext
 import inspect
 import pathlib
+import pytz
 import re
+import unittest
 import subprocess
 import tempfile
 import types
-import unittest
+import webtest
 import urllib.parse
 
-import pytz
-import webtest
-from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
+from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (PrivilegeError, ProxyShim, RequestState, glue,
-                          roles_to_db_role)
+                          roles_to_db_role, ALL_ADMIN_VIEWS,
+                          ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -561,6 +562,7 @@ class FrontendTest(unittest.TestCase):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
         self.app.reset()
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
         self.response = None  # type: webtest.TestResponse
 
     def basic_validate(self, verbose=False):
@@ -801,6 +803,36 @@ class FrontendTest(unittest.TestCase):
             raise AssertionError(
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
+
+    def _click_admin_view_button(self, label, current_state=None):
+        """
+        Helper function for checking the disableable admin views
+
+        This function searches one of the buttons in the adminviewstoggleform
+        (by its label), optionally checks this button's state, and submits
+        the form using this button's value to enable/disable the corresponding
+        admin view(s).
+
+        :param label: A regex used to find the correct admin view button
+        :type label: str or re.Pattern
+        :param current_state: If not None, the admin view button's active state
+            is checked to be equal to this boolean
+        :type current_state: bool or None
+        :return: The button element to perform further checks
+        :rtype: BeautifulSoup element
+        """
+        f = self.response.forms['adminviewstoggleform']
+        button = self.response.html\
+            .find(id="adminviewstoggleform")\
+            .find(text=label)\
+            .parent
+        if current_state is not None:
+            if current_state:
+                self.assertIn("active", button['class'])
+            else:
+                self.assertNotIn("active", button['class'])
+        self.submit(f, 'view_specifier', False, value=button['value'])
+        return button
 
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])

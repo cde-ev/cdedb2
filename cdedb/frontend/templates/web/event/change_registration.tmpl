@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
 {{ util.breadcrumb_link(cdedblink("event/show_registration"), "{} {}".
         format(persona['given_names'], persona['family_name']), icon="user") }}
@@ -21,7 +21,7 @@
         {% trans given_names=persona['given_names'], family_name=persona['family_name'] %}
             Edit {{ given_names }} {{ family_name }}
         {% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -50,7 +50,7 @@
 
         <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
         <p class="text-info">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_icon('info-cirlce') }}
             {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) %}
                 The registered people are able to see their current registration status, the payment status and – for
                 minors – the status of the parental consent at “{{ my_registration }}”.
@@ -68,9 +68,10 @@
                 <h4>{{ part['title'] }}</h4>
             {% endif %}
             {{ util.form_input_select(name="part{}.status".format(part_id), label=gettext("Status"),
-                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
+                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
+                                      sort=True) }}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
-                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="&nbsp;") }}
+                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="&nbsp;"|s) }}
             {{ util.form_input_checkbox(name="part{}.is_reserve".format(part_id), label=gettext("Uses Camping Mat")) }}
 
             {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['part_id'] == part_id %}
@@ -80,7 +81,7 @@
                                           label=gettext("Course %s")|format(track['title'])
                                                 if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                           entries=course_entries,
-                                          nulloption="&nbsp;") }}
+                                          nulloption="&nbsp;"|s) }}
             {% endfor %}
         {% endfor %}
 
@@ -100,10 +101,10 @@
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label=gettext("Instructor of"),
-                                         entries=course_entries, nulloption="&nbsp;") }}
+                                         entries=course_entries, nulloption="&nbsp;"|s) }}
                 {% for i in range(track['num_choices']) %}
                     {{ util.form_input_select(name="track{}.course_choice_{}".format(track_id, i),
-                                              label=gettext("%s. Choice")|format(i + 1), entries=course_entries, nulloption="&nbsp;") }}
+                                              label=gettext("%s. Choice")|format(i + 1), entries=course_entries, nulloption="&nbsp;"|s) }}
                 {% endfor %}
             {% endif %}
         {% endfor %}

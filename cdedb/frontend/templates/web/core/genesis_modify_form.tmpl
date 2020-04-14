@@ -26,7 +26,7 @@
             {% if "core_admin" in user.roles %}
                 {{ util.form_input_select(
                     name="realm", small=True, entries=realm_options,
-                    label=gettext("Realm"), anid="realm-select") }}
+                    label=gettext("Realm"), anid="realm-select", sort=True) }}
             {% else %}
                 {% with (icon, caption) = {
                         'ml': ('envelope', gettext("Mailinglists")),
@@ -44,12 +44,12 @@
 
              <noscript>
                 <p class="text-muted">
-                    {{ util.make_icon('info-sign') }}
+                    {{ util.make_icon('info-cirlce') }}
                     {% trans %}The following fields are only relevant for Event-Account Requests.{% endtrans %}
                 </p>
             </noscript>
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                      label=gettext("Gender"), small=True, aclass="genesis-realm-specific") }}
+                                      label=gettext("Gender"), small=True, aclass="genesis-realm-specific", sort=True) }}
             {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD",
                                     type="date", small=True, aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), small=True,
