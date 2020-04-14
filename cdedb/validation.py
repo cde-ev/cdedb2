@@ -29,11 +29,11 @@ substitutions to the error string done after i18n.
 
 The parameter ``_convert`` is present in every validator and is usually passed
 along from the original caller to every validation inside. If ``True``,
-validators may try to convert the value into the apporpirate type. For instance
-``_int`` will try to convert the input into an int which woulb be useful for
+validators may try to convert the value into the appropriate type. For instance
+``_int`` will try to convert the input into an int which would be useful for
 string inputs especially.
 
-The paramter ``_ignore_warnings`` is present in every validator. If ``True``,
+The parameter ``_ignore_warnings`` is present in every validator. If ``True``,
 certain Errors of type ``ValidationWarning`` may be ignored instead of returned.
 Think of this like a toggle to enable less strict validation of some constants
 which might change externally like german postal codes.
@@ -632,6 +632,34 @@ def _cdedbid(val, argname=None, *, _convert=True, _ignore_warnings=False):
     if not errs and compute_checkdigit(value) != checkdigit:
         errs.append((argname, ValueError(n_("Checksum failure."))))
     return value, errs
+
+
+@_addvalidator
+def _cdedbids_str(val, argname=None, *, _convert=True, _ignore_warnings=False):
+    """
+    This deals with strings containing multiple cdedbids, like when they are
+    returned from cdedbSearchPerson.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: (int or None, [(str or None, exception)])
+    """
+    val, errs = _str(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
+    if errs:
+        return val, errs
+    cdedbids = set()
+    for substr in val.split(","):
+        substr, errs = _cdedbid(substr.strip(), _convert=_convert,
+                                _ignore_warnings=_ignore_warnings)
+        cdedbids.add(substr)
+
+    if _convert:
+        return cdedbids, errs
+    else:
+        return val, errs
 
 
 _PRINTABLE_ASCII = re.compile('^[ -~]*$')

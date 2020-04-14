@@ -167,14 +167,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         "attachment_policy", "ml_type", "subject_prefix",
         "maxsize", "is_active", "notes", "event_id", "registration_stati",
         "assembly_id")
-    @REQUESTdata(("moderator_ids", "str"))
+    @REQUESTdata(("moderator_ids", "cdedbids_str"))
     def create_mailinglist(self, rs, data, moderator_ids):
         """Make a new list."""
-        if moderator_ids:
-            data["moderators"] = {
-                check(rs, "cdedbid", anid.strip(), "moderator_ids")
-                for anid in moderator_ids.split(",")
-                }
+        data["moderators"] = moderator_ids
         data = check(rs, "mailinglist", data, creation=True)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs)
@@ -431,13 +427,10 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs.ambience['mailinglist']['id']))
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("moderator_ids", "str"))
+    @REQUESTdata(("moderator_ids", "cdedbids_str"))
     @mailinglist_guard()
     def add_moderators(self, rs, mailinglist_id, moderator_ids):
         """Promote personas to moderator."""
-        if moderator_ids:
-            moderator_ids = {check(rs, "cdedbid", anid.strip(), "moderator_ids")
-                             for anid in moderator_ids.split(",")}
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
