@@ -99,7 +99,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         # initialize logging
         if getattr(self, 'realm', None):
             logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"])
+            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
         else:
             logger_name = "cdedb.frontend"
             logger_file = self.conf["FRONTEND_LOG"]
