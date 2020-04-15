@@ -8,11 +8,11 @@
                     {% trans %}Candidates{% endtrans %}
                 </th>
                 <th class="col-md-1">
-                    {{ util.make_icon('plus', title=gettext("Pro-Votes")) }}
+                    {{ util.make_icon('plus', title=gettext("Pro-Votes"), fixed_width=False) }}
                 </th>
             {% if not is_classical_vote %}
                 <th class="col-md-1">
-                    {{ util.make_icon('minus', title=gettext("Contra-Votes")) }}
+                    {{ util.make_icon('minus', title=gettext("Contra-Votes"), fixed_width=False) }}
                 </th>
             {% endif %}
             </tr>
