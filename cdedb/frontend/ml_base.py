@@ -205,8 +205,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
+        mailinglist_ids = [mailinglist_id] if mailinglist_id else None
         total, log = self.mlproxy.retrieve_log(
-            rs, codes, mailinglist_id, _offset, _length, persona_id=persona_id,
+            rs, codes, mailinglist_ids, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -337,7 +338,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         # are lost
         rs.ignore_validation_errors()
         total, log = self.mlproxy.retrieve_log(
-            rs, codes, mailinglist_id, _offset, _length, persona_id=persona_id,
+            rs, codes, [mailinglist_id], _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (

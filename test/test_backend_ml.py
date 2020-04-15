@@ -383,7 +383,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': persona_id
             }
             _, log_entry = self.ml.retrieve_log(
-                self.key, mailinglist_id=mailinglist_id)
+                self.key, mailinglist_ids=[mailinglist_id])
             self.assertIn(expected_log, log_entry)
 
     @as_users("anton", "berta", "ferdinand")
@@ -913,7 +913,7 @@ class TestMlBackend(BackendTest):
 
         # Check that this has been logged
         _, log_entries = self.ml.retrieve_log(
-            self.key, mailinglist_id=mailinglist_id)
+            self.key, mailinglist_ids=[mailinglist_id])
         expected_log = {
             'additional_info': None,
             'code': const.MlLogCodes.cron_removed,
@@ -1628,7 +1628,7 @@ class TestMlBackend(BackendTest):
             self.ml.retrieve_log(self.key, offset=2, length=3))
         self.assertEqual(
             (4, expectation[1][3:7]),
-            self.ml.retrieve_log(self.key, mailinglist_id=new_id))
+            self.ml.retrieve_log(self.key, mailinglist_ids=[new_id]))
         self.assertEqual(
             (2, expectation[1][4:6]),
             self.ml.retrieve_log(

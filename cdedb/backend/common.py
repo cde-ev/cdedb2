@@ -611,7 +611,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_all(rs, q, params)
 
     def generic_retrieve_log(self, rs, code_validator, entity_name, table,
-                             codes=None, entity_id=None, offset=None,
+                             codes=None, entity_ids=None, offset=None,
                              length=None, additional_columns=None,
                              persona_id=None, submitted_by=None,
                              additional_info=None, time_start=None,
@@ -643,7 +643,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type code_validator: str
         :param code_validator: e.g. "enum_mllogcodes"
         :type codes: [int] or None
-        :type entity_id: int or None
+        :type entity_ids: [int] or None
         :type offset: int or None
         :param offset: How many entries to skip at the start.
         :type length: int or None
@@ -664,7 +664,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :rtype: [{str: object}]
         """
         codes = affirm_set_validation(code_validator, codes, allow_None=True)
-        entity_id = affirm_validation("id_or_None", entity_id)
+        entity_ids = affirm_set_validation("id", entity_ids, allow_None=True)
         offset = affirm_validation("non_negative_int_or_None", offset)
         length = affirm_validation("non_negative_int_or_None", length)
         additional_columns = affirm_set_validation(
@@ -684,9 +684,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if codes:
             conditions.append("code = ANY(%s)")
             params.append(codes)
-        if entity_id:
-            conditions.append("{}_id = %s".format(entity_name))
-            params.append(entity_id)
+        if entity_ids:
+            conditions.append("{}_id = ANY(%s)".format(entity_name))
+            params.append(entity_ids)
         if persona_id:
             conditions.append("persona_id = %s")
             params.append(persona_id)

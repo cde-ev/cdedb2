@@ -110,9 +110,11 @@ class PastEventBackend(AbstractBackend):
         :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
+        pevent_id = affirm("id_or_None", pevent_id)
+        pevent_ids = [pevent_id] if pevent_id else None
         return self.generic_retrieve_log(
             rs, "enum_pasteventlogcodes", "pevent", "past_event.log",
-            codes=codes, entity_id=pevent_id, offset=offset, length=length,
+            codes=codes, entity_ids=pevent_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)

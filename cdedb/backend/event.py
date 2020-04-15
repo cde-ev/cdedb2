@@ -281,9 +281,10 @@ class EventBackend(AbstractBackend):
         if (not (event_id and self.is_orga(rs, event_id=event_id))
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
+        event_ids = [event_id] if event_id else None
         return self.generic_retrieve_log(
             rs, "enum_eventlogcodes", "event", "event.log", codes=codes,
-            entity_id=event_id, offset=offset, length=length,
+            entity_ids=event_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)

@@ -186,9 +186,10 @@ class AssemblyBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         assembly_id = affirm("id_or_None", assembly_id)
+        assembly_ids = [assembly_id] if assembly_id else None
         return self.generic_retrieve_log(
-            rs, "enum_assemblylogcodes", "assembly", "assembly.log",
-            codes=codes, entity_id=assembly_id, offset=offset, length=length,
+            rs, "enum_assemblylogcodes", "assembly", "assembly.log", codes,
+            entity_ids=assembly_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)

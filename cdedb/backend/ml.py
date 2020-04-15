@@ -220,18 +220,21 @@ class MlBackend(AbstractBackend):
         return self.sql_insert(rs, "ml.log", new_log)
 
     @access("ml")
-    def retrieve_log(self, rs, codes=None, mailinglist_id=None, offset=None,
+    def retrieve_log(self, rs, codes=None, mailinglist_ids=None, offset=None,
                      length=None, persona_id=None, submitted_by=None,
                      additional_info=None, time_start=None,
                      time_stop=None):
         """Get recorded activity.
+
+        To support relative admins, this is the only retrieve_log function
+        which allows to query a list for entity_ids.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
-        :type mailinglist_id: int or None
+        :type mailinglist_ids: [int] or None
         :type offset: int or None
         :type length: int or None
         :type persona_id: int or None
@@ -241,12 +244,13 @@ class MlBackend(AbstractBackend):
         :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
-        mailinglist_id = affirm("id_or_None", mailinglist_id)
-        if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
+        mailinglist_ids = affirm_set("id", mailinglist_ids, allow_None=True)
+        if not (self.is_admin(rs)
+                or all(self.may_manage(rs, ml_id) for ml_id in mailinglist_ids)):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
             rs, "enum_mllogcodes", "mailinglist", "ml.log", codes=codes,
-            entity_id=mailinglist_id, offset=offset, length=length,
+            entity_ids=mailinglist_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)
