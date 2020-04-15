@@ -24,7 +24,9 @@
                     {% set first_candidate = loop.first %}
                     <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
                         <td>
-                            {{ count.value }}.
+                            {% if loop.first %}
+                                {{ count.value }}.
+                            {% endif %}
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['description'] }}
@@ -70,14 +72,7 @@
                 {% endfor %}
             >
                 <td>
-                    {% for level in result['counts'] %}
-                        {# it is possible that a candidate is equal to bar. This candidate will be in the winner section.
-                           So, if bar is a winner and not the only winner, we must not increase the level number #}
-                        {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
-                            {% set count.value = count.value + 1 %}
-                        {% endif %}
-                    {% endfor %}
-                    {{ count.value }}.
+                    {# We do not count bar as candidate, imagine bar to be an infinitisimal border between candidates. #}
                 </td>
                 <td class="text-info">
                     {% if not short %}
@@ -98,7 +93,8 @@
                 </td>
                 <td>
                     {% for level in result['counts'] %}
-                        {# see above for a detailed explanation #}
+                        {# It is possible that a candidate is equal to bar. This candidate will be in the winner section.
+                           So, if bar is a winner and not the only winner, we do not show the votes. #}
                         {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
                             {{ level['pro_votes'] }}
                         {% endif %}
@@ -123,7 +119,9 @@
                     {% set first_candidate = loop.first %}
                     <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
                         <td>
-                            {{ count.value }}.
+                            {% if loop.first %}
+                                {{ count.value }}.
+                            {% endif %}
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['description'] }}
