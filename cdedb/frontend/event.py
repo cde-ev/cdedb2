@@ -488,8 +488,6 @@ class EventFrontend(AbstractUserFrontend):
         """Create a default mailinglist for the event. Requires ml_admin."""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
-        if "ml_admin" not in rs.user.roles:
-            raise werkzeug.exceptions.Forbidden(n_("Must be ml_admin."))
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
         if not self.mlproxy.verify_existence(rs, ml_type.full_address(ml_data)):
@@ -507,7 +505,7 @@ class EventFrontend(AbstractUserFrontend):
                 }
                 self.eventproxy.set_event(rs, data)
         else:
-            rs.notify("info", n_("Mailinglist %(address)s already exists."),
+            rs.notify("error", n_("Mailinglist %(address)s already exists."),
                       {'address': ml_type.full_address(ml_data)})
         return self.redirect(rs, "event/show_event")
 

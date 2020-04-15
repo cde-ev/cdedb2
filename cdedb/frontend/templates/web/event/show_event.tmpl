@@ -316,51 +316,49 @@
 
     {% if "event_mgmt" in user.admin_views %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
-            {% if "ml_admin" in user.roles %}
-                {% if not ambience['event']['orga_address'] %}
-                    <div class="row" id="create-orga-list">
-                        <div class="col-sm-4">
-                            <div class="p">
-                                <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createorgalistform"
-                                        style="display: inline;">
-                                    {{ util.anti_csrf_token('event/create_event_mailinglist') }}
-                                    {{ util.input_hidden("orgalist", value=True) }}
-                                    {{ util.input_submit(value=gettext("Create Orga-Mailinglist"),
-                                                         aclass="btn btn-success", icon="plus") }}
-                                </form>
-                            </div>
-                        </div>
-                        <div class="col-sm-8">
-                            <p class="text-muted">
-                                {% trans %}
-                                    Create an orga mailinglist for this event with a default configuration.
-                                {% endtrans %}
-                            </p>
+            {% if not ambience['event']['orga_address'] %}
+                <div class="row" id="create-orga-list">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createorgalistform"
+                                    style="display: inline;">
+                                {{ util.anti_csrf_token('event/create_event_mailinglist') }}
+                                {{ util.input_hidden("orgalist", value=True) }}
+                                {{ util.input_submit(value=gettext("Create Orga-Mailinglist"),
+                                                     aclass="btn btn-success", icon="plus") }}
+                            </form>
                         </div>
                     </div>
-                {% endif %}
-                {% if not participant_list %}
-                    <div class="row" id="create-participant-list">
-                        <div class="col-sm-4">
-                            <div class="p">
-                                <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createparticipantlistform"
-                                        style="display: inline;">
-                                    {{ util.anti_csrf_token('event/create_event_mailinglist') }}
-                                    {{ util.input_hidden("orgalist", value=False) }}
-                                    {{ util.input_submit(value=gettext("Create Participant-Mailinglist"),
-                                                         aclass="btn btn-success", icon="plus") }}
-                                </form>
-                            </div>
-                        </div>
-                        <div class="col-sm-8">
-                            <p class="text-muted">
-                                {% trans %}
-                                    Create a participant mailinglist for this event with a default configuration.
-                                {% endtrans %}
-                            </p>
+                    <div class="col-sm-8">
+                        <p class="text-muted">
+                            {% trans %}
+                                Create an orga mailinglist for this event with a default configuration.
+                            {% endtrans %}
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+            {% if not participant_list %}
+                <div class="row" id="create-participant-list">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createparticipantlistform"
+                                    style="display: inline;">
+                                {{ util.anti_csrf_token('event/create_event_mailinglist') }}
+                                {{ util.input_hidden("orgalist", value=False) }}
+                                {{ util.input_submit(value=gettext("Create Participant-Mailinglist"),
+                                                     aclass="btn btn-success", icon="plus") }}
+                            </form>
                         </div>
                     </div>
-                {% endif %}
+                    <div class="col-sm-8">
+                        <p class="text-muted">
+                            {% trans %}
+                                Create a participant mailinglist for this event with a default configuration.
+                            {% endtrans %}
+                        </p>
+                    </div>
+                </div>
             {% endif %}
             {% if "cde_admin" in user.roles and not ambience['event']['is_archived']%}
                 <div class="row" id="archive-event">
