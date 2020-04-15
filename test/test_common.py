@@ -2,7 +2,7 @@
 
 import unittest
 from cdedb.common import (
-    extract_roles, schulze_evaluate, int_to_words)
+    extract_roles, schulze_evaluate, int_to_words, xsorted)
 import cdedb.database.constants as const
 import datetime
 import pytz
@@ -175,3 +175,21 @@ class TestCommon(unittest.TestCase):
         for case in cases:
             with self.subTest(case=case):
                 self.assertEqual(cases[case], int_to_words(case, "de"))
+
+    def test_collation(self):
+        names = [
+            "",
+            "16"
+            "Stránd",
+            "Strassé",
+            "straßenpanther",
+            "Straßenpanther",
+            "Strassenpeter",
+            "Zimmer -30"
+            "Zimmer 20 Das beste Zimmer",
+            "Zimmer 100a",
+            "Zimmer w20a",
+            "Zimmer w100a",
+        ]
+        shuffled_names = random.sample(names, len(names))
+        self.assertEqual(names, xsorted(shuffled_names))

@@ -12,7 +12,7 @@ from cdedb.backend.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     n_, glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
-    unwrap, now, ProxyShim, INSTITUTION_FIELDS)
+    unwrap, now, ProxyShim, INSTITUTION_FIELDS, xsorted)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 
@@ -816,5 +816,5 @@ class PastEventBackend(AbstractBackend):
             self.event.set_event_archived(rs, {'id': event_id,
                                                'is_archived': True})
             new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                            for part_id in sorted(event['parts']))
+                            for part_id in xsorted(event['parts']))
         return new_ids, None

@@ -7,7 +7,7 @@ import pytz
 
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
-from cdedb.common import PERSONA_EVENT_FIELDS
+from cdedb.common import PERSONA_EVENT_FIELDS, xsorted
 import cdedb.database.constants as const
 
 
@@ -245,7 +245,7 @@ class TestPastEventBackend(BackendTest):
         self.event.set_event(self.key, update)
         new_ids, _ = self.pastevent.archive_event(self.key, 1)
         self.assertEqual(3, len(new_ids))
-        pevent_data = sorted(
+        pevent_data = xsorted(
             (self.pastevent.get_past_event(self.key, new_id)
              for new_id in new_ids),
             key=lambda d: d['tempus'])

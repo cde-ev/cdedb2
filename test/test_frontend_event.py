@@ -1497,7 +1497,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': r"\sPostleitzahl, Stadt$"})
         self._sort_appearance([akira, anton, emilia])
         self.traverse({'description': r"\sKurs$"})
-        self._sort_appearance([akira, emilia, anton])
+        self._sort_appearance([anton, akira, emilia])
 
     @as_users("emilia", "garcia")
     def test_participant_list_profile_link(self, user):

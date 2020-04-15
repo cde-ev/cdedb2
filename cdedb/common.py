@@ -10,6 +10,7 @@ import decimal
 import enum
 import functools
 import hmac
+import icu
 import inspect
 import itertools
 import json
@@ -32,6 +33,9 @@ from cdedb.ml_subscription_aux import (
     SubscriptionError, SubscriptionInfo, SubscriptionActions)
 
 _LOGGER = logging.getLogger(__name__)
+
+# Global unified collator to be used when sorting.
+collator = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
 
 
 class RequestState:
@@ -504,14 +508,21 @@ class ValidationWarning(Exception):
     pass
 
 
-def pad(value):
-    """Pad strings to sort numerically.
+def xsorted(iterable, key=None, reverse=False):
+    """Wrapper of sort() to achieve a natural sort. This uses the
+    icu library.
 
-    :type value: object
-    :rtype: str
+    :type iterable: iterable
+    :param key: function to order by
+    :type key: callable
+    :type revser: boolean
+    :rtype: list
     """
-    return ('' if value is None else str(value)).rjust(42, '\0')
-
+    if key is not None:
+        return sorted(iterable, key=lambda x: collator.getSortKey(str(key(x))),
+                      reverse=reverse)
+    else:
+        return sorted(iterable, key=lambda x: collator.getSortKey(str(x)), reverse=reverse)
 
 class EntitySorter:
     """Provide a singular point for common sortkeys.
@@ -558,7 +569,7 @@ class EntitySorter:
 
     @staticmethod
     def course(course):
-        return (pad(course['nr']), course['shortname'], course['id'])
+        return (course['nr'], course['shortname'], course['id'])
 
     @staticmethod
     def lodgement(lodgement):
@@ -603,7 +614,7 @@ class EntitySorter:
 
     @staticmethod
     def past_course(past_course):
-        return (pad(past_course['nr']), past_course['title'], past_course['id'])
+        return (past_course['nr'], past_course['title'], past_course['id'])
 
     @staticmethod
     def institution(institution):
@@ -1298,10 +1309,10 @@ def mixed_existence_sorter(iterable):
 
     :type iterable: [int]
     """
-    for i in sorted(iterable):
+    for i in xsorted(iterable):
         if i >= 0:
             yield i
-    for i in reversed(sorted(iterable)):
+    for i in reversed(xsorted(iterable)):
         if i < 0:
             yield i
 
