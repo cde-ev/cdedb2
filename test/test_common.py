@@ -179,6 +179,7 @@ class TestCommon(unittest.TestCase):
     def test_collation(self):
         names = [
             "",
+            " ",
             "16"
             "Stránd",
             "Strassé",

@@ -412,29 +412,29 @@ class TestCron(CronTest):
             list(xsorted(
                 client.get_domain.return_value.create_list.call_args_list)),
             list(xsorted([umcall('wait'),
-                         umcall('klatsch'),
-                         umcall('aka'),
-                         umcall('opt'),
-                         umcall('werbung'),
-                         umcall('aktivenforum'),
-                         umcall('kongress'),
-                         umcall('participants'),
-                         umcall('party50-all'),
-                         umcall('party50'),
-                         umcall('info'),
-                         umcall('mitgestaltung'),
-                         umcall('all'),
-                         umcall('gutscheine'),
-                         umcall('bau'),
-                         umcall('wal'),
-                         umcall('test-gast'),
-                         umcall('kanonisch'),
-                         umcall('42'),
-                         umcall('dsa'),
-                         umcall('platin'),
-                         umcall('geheim'),
-                         umcall('hogwarts'),
-                         ])))
+                          umcall('klatsch'),
+                          umcall('aka'),
+                          umcall('opt'),
+                          umcall('werbung'),
+                          umcall('aktivenforum'),
+                          umcall('kongress'),
+                          umcall('participants'),
+                          umcall('party50-all'),
+                          umcall('party50'),
+                          umcall('info'),
+                          umcall('mitgestaltung'),
+                          umcall('all'),
+                          umcall('gutscheine'),
+                          umcall('bau'),
+                          umcall('wal'),
+                          umcall('test-gast'),
+                          umcall('kanonisch'),
+                          umcall('42'),
+                          umcall('dsa'),
+                          umcall('platin'),
+                          umcall('geheim'),
+                          umcall('hogwarts'),
+                          ])))
         # Meta update
         expectation = {
             'advertised': True,
@@ -466,8 +466,8 @@ class TestCron(CronTest):
         self.assertEqual(
             list(xsorted(mm_lists['aktivenforum'].add_role.call_args_list)),
             list(xsorted([umcall('nonmember', 'captiankirk@example.cde'),
-                         umcall('nonmember', 'aliens@example.cde'),
-                         umcall('nonmember', 'drwho@example.cde')])))
+                          umcall('nonmember', 'aliens@example.cde'),
+                          umcall('nonmember', 'drwho@example.cde')])))
 
         # Deletion
         self.assertEqual(client.delete_list.call_args_list,

@@ -35,7 +35,7 @@ from cdedb.ml_subscription_aux import (
 _LOGGER = logging.getLogger(__name__)
 
 # Global unified collator to be used when sorting.
-collator = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
+COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
 
 
 class RequestState:
@@ -508,21 +508,26 @@ class ValidationWarning(Exception):
     pass
 
 
-def xsorted(iterable, key=None, reverse=False):
-    """Wrapper of sort() to achieve a natural sort. This uses the
-    icu library.
+def xsorted(iterable, *, key=lambda x: x, reverse=False):
+    """Wrapper of sorted() to achieve a natural sort.
+
+    In particular, this makes sure strings containing diacritics are
+    sorted, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
+    (ints and decimals) are sorted correclty, even in midst of strings
+    as well as negative ones. This is achived by using the icu library.
+
+    For users, the interface of this function should be identical
+    to sorted().
 
     :type iterable: iterable
     :param key: function to order by
     :type key: callable
-    :type revser: boolean
+    :type reverse: boolean
     :rtype: list
     """
-    if key is not None:
-        return sorted(iterable, key=lambda x: collator.getSortKey(str(key(x))),
-                      reverse=reverse)
-    else:
-        return sorted(iterable, key=lambda x: collator.getSortKey(str(x)), reverse=reverse)
+    return sorted(iterable, key=lambda x: COLLATOR.getSortKey(str(key(x))),
+                  reverse=reverse)
+
 
 class EntitySorter:
     """Provide a singular point for common sortkeys.

@@ -628,12 +628,9 @@ def md_filter(val):
     return bleach_filter(md.convert(val))
 
 
-def sort_filter(value, reverse=False, attribute=None):
+def sort_filter(env, value, reverse=False, attribute=None):
     """Sort an iterable using Python's :func:`sorted`.
-    .. sourcecode:: jinja
-        {% for city in cities|sort %}
-            ...
-        {% endfor %}
+
     :param reverse: Sort descending instead of ascending.
     :param attribute: When sorting objects or dicts, an attribute or
         key to sort by. Can use dot notation like ``"address.city"``.
@@ -644,9 +641,10 @@ def sort_filter(value, reverse=False, attribute=None):
 
 
 def dictsort_filter(value, by="key", reverse=False):
-    """Sort a dict and yield (key, value) pairs. Because python dicts are
-    unsorted you may want to use this function to order them by either
-    key or value.
+    """Sort a dict and yield (key, value) pairs.
+
+    Because python dicts are unsorted you may want to use this function to
+    order them by either key or value.
     """
     if by == "key":
         pos = 0

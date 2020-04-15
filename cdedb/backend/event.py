@@ -2049,7 +2049,7 @@ class EventBackend(AbstractBackend):
                            if (e['registration_id'] == anid
                                and e['track_id'] == track_id)}
                     tracks[track_id]['choices'] = xsorted(tmp.keys(),
-                                                         key=tmp.get)
+                                                          key=tmp.get)
                 ret[anid]['tracks'] = tracks
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)

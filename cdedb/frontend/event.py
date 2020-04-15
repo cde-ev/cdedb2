@@ -360,7 +360,7 @@ class EventFrontend(AbstractUserFrontend):
             return (*prim_rank, sec_rank)
 
         ordered = xsorted(registrations.keys(), reverse=reverse,
-                         key=lambda anid: sort_rank(sortkey, anid))
+                          key=lambda anid: sort_rank(sortkey, anid))
         return {
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'ordered': ordered, 'parts': parts,
@@ -1605,7 +1605,7 @@ class EventFrontend(AbstractUserFrontend):
             'courses': courses, 'personas': personas,
             'registrations': OrderedDict(
                 xsorted(registrations.items(),
-                       key=lambda reg: EntitySorter.persona(
+                        key=lambda reg: EntitySorter.persona(
                            personas[reg[1]['persona_id']]))),
             'course_infos': course_infos,
             'corresponding_query': corresponding_query,
@@ -2107,7 +2107,7 @@ class EventFrontend(AbstractUserFrontend):
         event = rs.ambience['event']
         tracks = event['tracks']
         tracks_sorted = [e['id'] for e in xsorted(tracks.values(),
-                                                 key=EntitySorter.course_track)]
+                                                  key=EntitySorter.course_track)]
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
@@ -2171,7 +2171,7 @@ class EventFrontend(AbstractUserFrontend):
                personas[registrations[reg_id]['persona_id']]['birthday'])
         registrations = OrderedDict(
             (reg_id, registrations[reg_id]) for reg_id in xsorted(registrations,
-                                                                 key=key))
+                                                                  key=key))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
@@ -2220,7 +2220,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, 'event/downloads')
         tracks = rs.ambience['event']['tracks']
         tracks_sorted = [e['id'] for e in xsorted(tracks.values(),
-                                                 key=EntitySorter.course_track)]
+                                                  key=EntitySorter.course_track)]
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -2359,7 +2359,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         tracks = rs.ambience['event']['tracks']
         tracks_sorted = [e['id'] for e in xsorted(tracks.values(),
-                                                 key=EntitySorter.course_track)]
+                                                  key=EntitySorter.course_track)]
         tex = self.fill_template(rs, "tex", "expuls", {'courses': courses,
                                                        'tracks': tracks_sorted})
         return self.send_file(
@@ -4010,7 +4010,7 @@ class EventFrontend(AbstractUserFrontend):
                 (lodgement_id, lodgement)
                 for lodgement_id, lodgement
                 in xsorted(lodgements.items(), reverse=reverse,
-                          key=lambda e: sort_lodgement(e, group_id))
+                           key=lambda e: sort_lodgement(e, group_id))
                 if lodgement['group_id'] == group_id
             ]))
             for group_id, group
@@ -4517,7 +4517,7 @@ class EventFrontend(AbstractUserFrontend):
             spec["lodgement{0}.moniker".format(part_id)] = "str"
             spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in xsorted(event['fields'].values(),
-                            key=EntitySorter.event_field):
+                             key=EntitySorter.event_field):
                 if f['association'] == const.FieldAssociations.lodgement:
                     temp = "lodgement{0}.xfield_{1}"
                     kind = const.FieldDatatypes(f['kind']).name
@@ -4536,7 +4536,7 @@ class EventFrontend(AbstractUserFrontend):
                     spec["{1}{0}.shortname".format(track_id, temp)] = "str"
                     spec["{1}{0}.notes".format(track_id, temp)] = "str"
                     for f in xsorted(event['fields'].values(),
-                                    key=EntitySorter.event_field):
+                                     key=EntitySorter.event_field):
                         if f['association'] == const.FieldAssociations.course:
                             key = "{1}{0}.xfield_{2}".format(
                                 track_id, temp, f['field_name'])
@@ -4582,7 +4582,7 @@ class EventFrontend(AbstractUserFrontend):
                 spec[",".join("{1}{0}.notes".format(track_id, temp)
                               for track_id in tracks)] = "str"
                 for f in xsorted(event['fields'].values(),
-                                key=EntitySorter.event_field):
+                                 key=EntitySorter.event_field):
                     if f['association'] == const.FieldAssociations.course:
                         key = ",".join("{1}{0}.xfield_{2}".format(
                             track_id, temp, f['field_name'])
