@@ -211,7 +211,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'mailinglist_id': new_id})
 
     # TODO provide semi-global log for non ml-admins.
-    @access("ml_admin")
+    @access("ml")
     @REQUESTdata(("codes", "[int]"), ("mailinglist_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
