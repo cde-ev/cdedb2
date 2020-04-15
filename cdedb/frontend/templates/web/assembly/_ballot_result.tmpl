@@ -62,7 +62,7 @@
             <tr
                 {% for level in result['counts'] %}
                     {# it is possible that a candidate is equal to bar. This candidate will be in the winner section.
-                       So, if bar is a winner and not the only winner, we must not print a new level number.
+                       So, if bar is a winner and not the only winner, we must not print an upper boarder.
                        This has to check nonetherless for bar not in level[winner] and not in level[looser], think
                        of a vote without losers.#}
                     {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length != 1
@@ -77,13 +77,25 @@
                 <td class="text-info">
                     {% if not short %}
                         {% if ballot['votes'] %}
-                            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                                The following candidates have less votes than the "Against all Candidates" ({{ abm }}) choice.
-                            {% endtrans %}
+                            {% if result['losers'] %}
+                                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                                    The following candidates have less votes than the "Against all Candidates" ({{ abm }}) choice.
+                                {% endtrans %}
+                            {% else %}
+                                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                                    No candidate has less votes than the "Against all Candidates" ({{ abm }}) choice.
+                                {% endtrans %}
+                            {% endif %}
                         {% else %}
-                            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                                The following candidates lost against the bar ({{ abm }}).
-                            {% endtrans %}
+                            {% if result['losers'] %}
+                                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                                    The following candidates lost against the bar ({{ abm }}).
+                                {% endtrans %}
+                            {% else %}
+                                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                                    No candidate lost against the bar ({{ abm }}).
+                                {% endtrans %}
+                            {% endif %}
                         {% endif %}
                     {% else %}
                         {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
