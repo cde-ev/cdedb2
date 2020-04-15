@@ -485,7 +485,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("orgalist", "bool"))
     def create_event_mailinglist(self, rs, event_id, orgalist=False):
-        """Create a default mailinglist for the event. Requires ml_admin."""
+        """Create a default mailinglist for the event."""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
 
