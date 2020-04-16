@@ -29,9 +29,9 @@ class TestApplication(FrontendTest):
 
         with unittest.mock.patch('cdedb.frontend.core.CoreFrontend.index',
                                  new=hander_mock), \
-            unittest.mock.patch.object(self.app.app.conf, 'CDEDB_DEV',
+            unittest.mock.patch.dict(self.app.app.conf, 'CDEDB_DEV',
                                        new=False), \
-            unittest.mock.patch.object(self.app.app.conf, 'CDEDB_TEST',
+            unittest.mock.patch.dict(self.app.app.conf, 'CDEDB_TEST',
                                        new=False):
                 self.get('/', status=500)
                 self.assertTitle("500: Internal Server Error")
