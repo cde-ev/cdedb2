@@ -900,9 +900,11 @@ class CdEFrontend(AbstractUserFrontend):
                  ("event", "id_or_None"),
                  ("membership", "str_or_None"),
                  ("excel", "str_or_None"),
-                 ("gnucash", "str_or_None"))
+                 ("gnucash", "str_or_None"),
+                 ("ignore_warnings", "bool"))
     def parse_download(self, rs, count, start, end, timestamp, validate=None,
-                       event=None, membership=None, excel=None, gnucash=None):
+                       event=None, membership=None, excel=None, gnucash=None,
+                       ignore_warnings=False):
         """
         Provide data as CSV-Download with the given filename.
 
@@ -941,7 +943,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, transactions, start, end, timestamp)
 
         if validate is not None or params["has_error"] \
-                or params["has_warning"]:
+                or (params["has_warning"] and not ignore_warnings):
             return self.parse_statement_form(rs, data, params)
         elif membership is not None:
             filename = "Mitgliedsbeiträge"

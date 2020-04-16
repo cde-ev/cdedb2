@@ -10108,7 +10108,7 @@ msgstr "GnuCash Download"
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:169
 #, python-format
 msgid "Excel Download (%(account)s)"
-msgstr "Excel Donload (%(account)s)"
+msgstr "Excel Download (%(account)s)"
 
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:189
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:174
