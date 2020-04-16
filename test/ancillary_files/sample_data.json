@@ -4638,9 +4638,9 @@
         {
             "id": 7,
             "ballot_id": 8,
-            "vote": "Wappen>_bar_=Gluehbirne>Baum",
+            "vote": "Wappen>_bar_=Gluehbirne=Baum",
             "salt": "ikejsoe8p",
-            "hash": "5e74605a867d1bb46cfcdff8901bb42ef2b21b513280efa2dd93a0251d4f3506a1ff1e28c0b3c00d10e6c81d847024280d9312fd76f9abd271829ee729157aa2"
+            "hash": "eb0eead9670397754d99a53af7ec56e94a5b44144aa2974f5ecd172f434f742b9f51783d9c4e4d2ae016d9fae1be9425621fe2bb91dfbb541ba9cccd34c92b3f"
         },
         {
             "id": 8,
