@@ -192,6 +192,9 @@
         {% endif %}
     </tbody>
     </table>
+    {% trans abstentions=result['abstentions'] %}
+        {{ abstentions }} voters had abstained.
+    {% endtrans %}
 {%- endmacro %}
 
 {% macro explain_result() %}

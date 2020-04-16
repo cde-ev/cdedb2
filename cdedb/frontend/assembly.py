@@ -750,6 +750,13 @@ class AssemblyFrontend(AbstractUserFrontend):
 
             result['counts'] = counts
 
+            # count abstentions for both voting forms
+            abstentions = 0
+            for vote in result['votes']:
+                if '>' not in vote['vote']:
+                    abstentions += 1
+            result['abstentions'] = abstentions
+
         return result
 
     @access("assembly")

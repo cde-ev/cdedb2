@@ -5817,6 +5817,9 @@ msgstr "Kein Kandidat hat gegen die Ablehnungsgrenze (%(abm)s) verloren."
 msgid "The bar option %(abm)s."
 msgstr "Die Ablehnungsgrenze %(abm)s."
 
+msgid "%(abstentions)s voters had abstained."
+msgstr "%(abstentions)s Wähler haben sich enthalten."
+
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:215
 #, python-format
 msgid ""
