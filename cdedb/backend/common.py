@@ -45,7 +45,7 @@ def singularize(function, array_param_name="ids", singular_param_name="anid",
     """
 
     @functools.wraps(function)
-    def wrapper(self, rs, *args, **kwargs):
+    def singularized(self, rs, *args, **kwargs):
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
             kwargs[array_param_name] = (param,)
@@ -58,7 +58,7 @@ def singularize(function, array_param_name="ids", singular_param_name="anid",
         else:
             return data[param]
 
-    return wrapper
+    return singularized
 
 
 def batchify(function, array_param_name="data", singular_param_name="data"):
@@ -81,7 +81,7 @@ def batchify(function, array_param_name="data", singular_param_name="data"):
     from cdedb.database.connection import Atomizer
 
     @functools.wraps(function)
-    def wrapper(self, rs, *args, **kwargs):
+    def batchified(self, rs, *args, **kwargs):
         ret = []
         with Atomizer(rs):
             if array_param_name in kwargs:
@@ -97,7 +97,7 @@ def batchify(function, array_param_name="data", singular_param_name="data"):
                     ret.append(function(self, rs, *new_args, **kwargs))
         return ret
 
-    return wrapper
+    return batchified
 
 
 def access(*roles):
