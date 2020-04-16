@@ -22,6 +22,7 @@ from cdedb.validation import parse_date, parse_datetime
 from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
 from cdedb.config import Config
 import cdedb.validation as validate
+from cdedb.database.connection import Atomizer
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -82,9 +83,6 @@ def batchify(function: F,
     :type singular_param_name: str
     :type singular_param_name: name of the parameter to batchify
     """
-
-    # Break cyclic import by importing here
-    from cdedb.database.connection import Atomizer
 
     @functools.wraps(function)
     def batchified(self, rs, *args, **kwargs):
