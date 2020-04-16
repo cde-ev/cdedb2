@@ -2393,7 +2393,8 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin", "ml_admin")
+    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
+            "ml_admin")
     def genesis_get_cases(self, rs, ids):
         """Retrieve datasets for persona creation cases.
 
