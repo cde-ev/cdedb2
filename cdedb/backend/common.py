@@ -12,6 +12,7 @@ import copy
 import enum
 import functools
 import logging
+import typing
 
 from cdedb.common import (
     n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
@@ -23,16 +24,19 @@ from cdedb.config import Config
 import cdedb.validation as validate
 
 
-def singularize(function, array_param_name="ids", singular_param_name="anid",
-                passthrough=False):
-    """This decorator marks a function for singularization.
+F = TypeVar('F', bound=Callable[..., Any])
 
-    The function has to accept an array as parameter and return a dict
+def singularize(function: F,
+                array_param_name: str = "ids",
+                singular_param_name: str = "anid",
+                passthrough: bool = False): -> F
+    """This takes a function and returns a singularized version.
+
+    The function has to accept an array as a parameter and return a dict
     indexed by this array. This array has either to be a keyword only
-    parameter or the first positional parameter after the request
-    state. Singularization creates a function which accepts a single
-    element instead and transparently wraps in a list as well as
-    unwrapping the returned dict.
+    parameter or the first positional parameter after the request state.
+    Singularization creates a function which accepts a single element instead
+    and transparently wraps in a list as well as unwrapping the returned dict.
 
     :type array_param_name: str
     :param array_param_name: name of the parameter to singularize
@@ -61,15 +65,17 @@ def singularize(function, array_param_name="ids", singular_param_name="anid",
     return singularized
 
 
-def batchify(function, array_param_name="data", singular_param_name="data"):
-    """This decorator marks a function for batchification.
+def batchify(function: F,
+             array_param_name: str = "data",
+             singular_param_name: str = "data"): -> F
+    """This takes a function and returns a batchified version.
 
-    The function has to accept an a singular parameter. The singular
-    parameter has either to be a keyword only parameter or the first
-    positional parameter after the request state. Batchification creates a
-    function which accepts an array instead and loops over this array
-    wrapping everything in a database transaction. It returns an array of
-    all return values.
+    The function has to accept an a singular parameter.
+    The singular parameter has either to be a keyword only parameter
+    or the first positional parameter after the request state.
+    Batchification creates a function which accepts an array instead
+    and loops over this array wrapping everything in a database transaction.
+    It returns an array of all return values.
 
     :type array_param_name: str
     :type array_param_name: new name of the batchified parameter
