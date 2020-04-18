@@ -307,6 +307,9 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type active_only: bool
         :param active_only: Toggle wether inactive lists should be included.
+        :type managed_only: bool
+        :param managed_only: Toggle whether to only list lists the user may
+            manage.
         :rtype: {int: str}
         :returns: Mapping of mailinglist ids to titles.
         """
