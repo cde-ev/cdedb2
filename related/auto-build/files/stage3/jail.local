@@ -11,3 +11,10 @@ port    = http,https
 filter  = cdedb-sessionkey
 logpath  = /log/cdedb-backend-session.log
 maxretry = 5
+
+[cdedb-apitoken]
+enabled = true
+port    = http,https
+filter  = cdedb-apitoken
+logpath  = /log/cdedb-backend-session.log
+maxretry = 5

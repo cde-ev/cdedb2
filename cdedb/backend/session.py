@@ -83,8 +83,8 @@ class SessionBackend:
                         data = cur.fetchone()
                     else:
                         # log message to be picked up by fail2ban
-                        msg = "CdEDB invalid session key from {}".format(ip)
-                        self.logger.warning(msg)
+                        self.logger.warning(
+                            f"CdEDB invalid session key from {ip}")
         if data:
             deactivate = False
             if data["is_active"]:
@@ -163,8 +163,8 @@ class SessionBackend:
             if self.conf.LOCKDOWN and not 'droid_infra' in ret.roles:
                 ret = User()
         else:
-            msg = "CdEDB invalid API token from {}".format(ip)
-            self.logger.warning(msg)
+            # log message to be picked up by fail2ban
+            self.logger.warning(f"CdEDB invalid API token from {ip}")
         return ret
 
 
