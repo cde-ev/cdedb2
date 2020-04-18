@@ -30,7 +30,7 @@ F = TypeVar('F', bound=Callable[..., Any])
 def singularize(function: F,
                 array_param_name: str = "ids",
                 singular_param_name: str = "anid",
-                passthrough: bool = False): -> F
+                passthrough: bool = False) -> F:
     """This takes a function and returns a singularized version.
 
     The function has to accept an array as a parameter and return a dict
@@ -39,11 +39,8 @@ def singularize(function: F,
     Singularization creates a function which accepts a single element instead
     and transparently wraps in a list as well as unwrapping the returned dict.
 
-    :type array_param_name: str
     :param array_param_name: name of the parameter to singularize
-    :type singular_param_name: str
     :param singular_param_name: new name of the singularized parameter
-    :type passthrough: bool
     :param passthrough: Whether or not the return value should be passed through
         directly. If this is false, the output is assumed to be a dict with the
         singular param as a key.
@@ -68,7 +65,7 @@ def singularize(function: F,
 
 def batchify(function: F,
              array_param_name: str = "data",
-             singular_param_name: str = "data"): -> F
+             singular_param_name: str = "data") -> F:
     """This takes a function and returns a batchified version.
 
     The function has to accept an a singular parameter.
@@ -78,10 +75,8 @@ def batchify(function: F,
     and loops over this array wrapping everything in a database transaction.
     It returns an array of all return values.
 
-    :type array_param_name: str
-    :type array_param_name: new name of the batchified parameter
-    :type singular_param_name: str
-    :type singular_param_name: name of the parameter to batchify
+    :param array_param_name: new name of the batchified parameter
+    :param singular_param_name: name of the parameter to batchify
     """
 
     @functools.wraps(function)
