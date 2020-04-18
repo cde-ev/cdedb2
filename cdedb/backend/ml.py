@@ -263,8 +263,9 @@ class MlBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         mailinglist_ids = affirm_set("id", mailinglist_ids, allow_None=True)
-        if not (self.is_admin(rs)
-                or all(self.may_manage(rs, ml_id) for ml_id in mailinglist_ids)):
+        if not (self.is_admin(rs) or (mailinglist_ids
+                and all(self.may_manage(rs, ml_id)
+                        for ml_id in mailinglist_ids))):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
             rs, "enum_mllogcodes", "mailinglist", "ml.log", codes=codes,
