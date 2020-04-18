@@ -485,8 +485,8 @@ class MlBackend(AbstractBackend):
         obsolete_fields = (old_type.get_additional_fields() -
                            new_type.get_additional_fields())
         if obsolete_fields:
-            query = "UPDATE ml.mailinglists SET {} WHERE id = %s".format(
-                ", ".join("{} = DEFAULT".format(f) for f in obsolete_fields))
+            setter = ", ".join(f"{f} = DEFAULT" for f in obsolete_fields)
+            query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"
             params = (mailinglist_id,)
             return self.query_exec(rs, query, params)
         else:
