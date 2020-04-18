@@ -164,6 +164,11 @@ class Application(BaseApp):
                     sessionkey = None
                     user = self.sessionproxy.lookuptoken(apitoken,
                                                          request.remote_addr)
+
+                    # Error early to make debugging easier.
+                    if not 'droid' in user.roles:
+                        raise werkzeug.exceptions.Forbidden(
+                            "API token invalid.")
                 else:
                     user = self.sessionproxy.lookupsession(sessionkey,
                                                            request.remote_addr)
