@@ -45,6 +45,8 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 
+from typing import Callable
+
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
@@ -970,15 +972,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 isinstance(kind, ValidationWarning)
                 for param, kind in all_errors)
 
-        def _make_is_relevant_admin(rs, obj, kw):
-            backend: AbstractBackend = getattr(obj, obj.realm + "proxy")
+        def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
+                                  method_name: str) -> Callable:
+            """Provide a checker from the backend(proxy) for the templates.
 
-            def _is_relevant_admin(anid):
-                if hasattr(backend, "is_relevant_admin"):
-                    return backend.is_relevant_admin(rs, **{kw: anid})
-                else:
-                    return False
-            return _is_relevant_admin
+            This takes a Frontend object and refers the check to the
+            given backend if that backend has a method of the given
+            `method_name`. If no such method exists, the checker
+            will always return False.
+            """
+            try:
+                checker = getattr(backend, method_name)
+                if callable(checker):
+                    return lambda *args, **kwargs: checker(rs, *args, **kwargs)
+            except AttributeError:
+                return lambda *args, **kwargs: False
 
         errorsdict = {}
         for key, value in rs.retrieve_validation_errors():
@@ -993,7 +1001,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'gettext': rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
-            'is_relevant_admin': _make_is_relevant_admin(rs, self, "mailinglist_id"),
+            'is_relevant_admin': _make_backend_checker(
+                rs, self.mlproxy, method_name="is_relevant_admin"),
             'is_warning': _is_warning,
             'lang': rs.lang,
             'ngettext': rs.ngettext,

@@ -7,13 +7,13 @@
             {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': data['id']}), gettext("Overview"),
                     icon="caret-right", aclass="list-group-item", active=(sidenav_active == 'ml_show')) }}
 
-            {% if data['id'] in user.moderator or ('ml_moderator' in user.admin_views and is_relevant_admin(data['id'])) %}
+            {% if data['id'] in user.moderator or ('ml_moderator' in user.admin_views and is_relevant_admin(mailinglist_id=data['id'])) %}
                 {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Management"),
                         aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
                 {{ util.href(cdedblink("ml/show_subscription_details", {'mailinglist_id': data['id']}), gettext("Advanced Management"),
                         aclass="list-group-item", icon="wrench", active=(sidenav_active == 'ml_details')) }}
             {% endif %}
-            {% if data['id'] in user.moderator or (user.admin_views.intersection(('ml_mgmt', 'ml_moderator')) and is_relevant_admin(data['id'])) %}
+            {% if data['id'] in user.moderator or (user.admin_views.intersection(('ml_mgmt', 'ml_moderator')) and is_relevant_admin(mailinglist_id=data['id'])) %}
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
                         gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
