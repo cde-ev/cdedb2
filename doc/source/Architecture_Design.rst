@@ -21,4 +21,4 @@ some realms.
 
 Additionally there are API access accounts which are referred to as
 droids. These do not have an associated session but instead authenticate
-with a token send via header.
+with a token send via the header ``X-CdEDB-API-Token``.
