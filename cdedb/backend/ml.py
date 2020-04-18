@@ -3,6 +3,7 @@
 """The ml backend provides mailing lists. This provides services to the
 event and assembly realm in the form of specific mailing lists.
 """
+from typing import Set
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend,
@@ -14,7 +15,7 @@ from cdedb.common import (
     n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,
     extract_roles, implying_realms, now, ProxyShim,
     SubscriptionError, SubscriptionInfo,
-    SubscriptionActions)
+    SubscriptionActions, RequestState)
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -101,16 +102,15 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
-    def get_available_types(self, rs):
+    def get_available_types(self, rs: RequestState) -> \
+            Set[const.MailinglistTypes]:
         """Get a list of MailinglistTypes, the user is allowed to manage.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: Set[const.MailinglistTypes]
+        :rtype: {const.MailinglistTypes}
         """
-        ret = set()
-        for enum_member, atype in ml_type.TYPE_MAP.items():
-            if atype.is_relevant_admin(rs):
-                ret.add(enum_member)
+        ret = {enum_member for enum_member, atype in ml_type.TYPE_MAP.items()
+               if atype.is_relevant_admin(rs)}
         return ret
 
     @access("ml")
