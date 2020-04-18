@@ -666,7 +666,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         codes = affirm_set_validation(code_validator, codes, allow_None=True)
         entity_ids = affirm_set_validation("id", entity_ids, allow_None=True)
         offset = affirm_validation("non_negative_int_or_None", offset)
-        length = affirm_validation("non_negative_int_or_None", length)
+        length = affirm_validation("positive_int_or_None", length)
         additional_columns = affirm_set_validation(
             "restrictive_identifier", additional_columns, allow_None=True)
         persona_id = affirm_validation("id_or_None", persona_id)

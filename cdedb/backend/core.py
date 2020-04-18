@@ -253,7 +253,7 @@ class CoreBackend(AbstractBackend):
         """
         stati = affirm_set("enum_memberchangestati", stati, allow_None=True)
         offset = affirm("non_negative_int_or_None", offset)
-        length = affirm("non_negative_int_or_None", length)
+        length = affirm("positive_int_or_None", length)
         persona_id = affirm("id_or_None", persona_id)
         submitted_by = affirm("id_or_None", submitted_by)
         additional_info = affirm("regex_or_None", additional_info)
@@ -263,45 +263,37 @@ class CoreBackend(AbstractBackend):
 
         length = length or self.conf.DEFAULT_LOG_LENGTH
 
-        connector = "WHERE"
-        condition = ""
+        conditions = []
         params = []
         if stati:
-            condition = glue(
-                condition, "{} change_status = ANY(%s)".format(connector))
-            connector = "AND"
+            conditions.append("change_status = ANY(%s)")
             params.append(stati)
         if submitted_by:
-            condition = glue(
-                condition, "{} submitted_by = %s".format(connector))
-            connector = "AND"
+            conditions.append("submitted_by = %s")
             params.append(submitted_by)
         if reviewed_by:
-            condition = glue(condition, "{} reviewed_by = %s".format(connector))
-            connector = "AND"
+            conditions.append("reviewed_by = %s")
             params.append(reviewed_by)
         if persona_id:
-            condition = glue(condition, "{} persona_id = %s".format(connector))
-            connector = "AND"
+            conditions.append("persona_id = %s")
             params.append(persona_id)
         if additional_info:
-            condition = glue(condition,
-                             "{} change_note ~* %s".format(connector))
-            connector = "AND"
+            conditions.append("change_note ~* %s")
             params.append(diacritic_patterns(additional_info))
         if time_start and time_stop:
-            condition = glue(condition,
-                             "{} %s <= ctime AND ctime <= %s".format(connector))
-            connector = "AND"
+            conditions.append("%s <= ctime AND ctime <= %s")
             params.extend((time_start, time_stop))
         elif time_start:
-            condition = glue(condition, "{} %s <= ctime".format(connector))
-            connector = "AND"
+            conditions.append("%s <= ctime")
             params.append(time_start)
         elif time_stop:
-            condition = glue(condition, "{} ctime <= %s".format(connector))
-            connector = "AND"
+            cconditions.append("ctime <= %s")
             params.append(time_stop)
+
+        if conditions:
+            condition = "WHERE {}".format(" AND ".join(conditions))
+        else:
+            condition = ""
 
         # First query determines the absolute number of logs existing matching
         # the given criteria
@@ -310,16 +302,16 @@ class CoreBackend(AbstractBackend):
         total = unwrap(self.query_one(rs, query, params))
         if offset and offset > total:
             # Why you do this
-            pass
-        elif not offset and total > length:
-            offset = total - length
+            return total, tuple()
+        elif offset is None and total > length:
+            offset = length * ((total - 1) // length)
 
         # Now, query the actual information
         query = glue(
             "SELECT submitted_by, reviewed_by, ctime, generation, change_note,",
             "change_status, persona_id FROM core.changelog {condition}"
             "ORDER BY id ASC LIMIT {limit}")
-        if offset:
+        if offset is not None:
             query = glue(query, "OFFSET {}".format(offset))
 
         query = query.format(condition=condition, limit=length)
