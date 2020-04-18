@@ -12,7 +12,7 @@ import copy
 import enum
 import functools
 import logging
-import typing
+from typing import Any, Callable, TypeVar
 
 from cdedb.common import (
     n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
