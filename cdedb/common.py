@@ -1485,7 +1485,7 @@ def extract_roles(session, introspection_only=False):
 
 # The following droids are exempt from lockdown to keep our infrastructure
 # working
-INFRASTRUCTURE_DROIDS = {'droid_rklist', 'droid_resolve'}
+INFRASTRUCTURE_DROIDS = {'rklist', 'resolve'}
 
 
 def droid_roles(identity):
@@ -1495,6 +1495,7 @@ def droid_roles(identity):
     future if more API capabilities are added to the DB.
 
     :type identity: str
+    :param identity: The name for the API functionality, e.g. ``rklist``.
     :rtype: {str}
     """
     ret = {'anonymous', 'droid', f'droid_{identity}'}
