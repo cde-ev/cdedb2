@@ -4,9 +4,11 @@
 
 import copy
 import collections
+from typing import Dict, Any, Set
 
 import mailmanclient
 import werkzeug
+from werkzeug import Response
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
@@ -21,7 +23,7 @@ from cdedb.common import (
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
-from cdedb.ml_type_aux import MailinglistGroup, TYPE_MAP, GeneralMailinglist
+from cdedb.ml_type_aux import MailinglistGroup, TYPE_MAP, get_type
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -153,7 +155,8 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml")
     @REQUESTdata(("ml_type", "enum_mailinglisttypes_or_None"))
-    def create_mailinglist_form(self, rs: RequestState, ml_type):
+    def create_mailinglist_form(self, rs: RequestState,
+                                ml_type: const.MailinglistTypes) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
         if ml_type is None:
@@ -193,7 +196,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         "maxsize", "is_active", "notes", "event_id", "registration_stati",
         "assembly_id")
     @REQUESTdata(("ml_type", "enum_mailinglisttypes"), ("moderator_ids", "str"))
-    def create_mailinglist(self, rs, data, ml_type, moderator_ids):
+    def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
+                           ml_type: const.MailinglistTypes,
+                           moderator_ids: Set[Any]) -> Response:
         """Make a new list."""
         if moderator_ids:
             data["moderators"] = {
@@ -294,7 +299,8 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml")
     @mailinglist_guard()
-    def change_mailinglist_form(self, rs, mailinglist_id):
+    def change_mailinglist_form(self, rs: RequestState,
+                                mailinglist_id: int) -> Response:
         """Render form."""
         event_ids = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
@@ -323,8 +329,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         "title", "local_part", "domain", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
         "is_active", "event_id", "assembly_id")
-    def change_mailinglist(self, rs: RequestState, mailinglist_id,
-                           registration_stati, data):
+    def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
+                           registration_stati: Set[const.RegistrationPartStati],
+                           data: Dict[str, Any]) -> Response:
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
         data['registration_stati'] = registration_stati
@@ -340,7 +347,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
-    def change_ml_type_form(self, rs, mailinglist_id):
+    def change_ml_type_form(self, rs: RequestState,
+                            mailinglist_id: int) -> Response:
         """Render form."""
         available_types = self.mlproxy.get_available_types(rs)
         event_ids = self.eventproxy.list_db_events(rs)
@@ -360,11 +368,12 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("ml_type", "enum_mailinglisttypes"))
-    def change_ml_type(self, rs, mailinglist_id, ml_type):
+    def change_ml_type(self, rs: RequestState, mailinglist_id: int,
+                       ml_type: const.MailinglistTypes) -> Response:
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
         ml = rs.ambience['mailinglist']
-        new_type: GeneralMailinglist = TYPE_MAP[ml_type]
+        new_type = get_type(ml_type)
 
         data = {
             'id': mailinglist_id,
