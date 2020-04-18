@@ -1,5 +1,6 @@
 import enum
 from collections import OrderedDict
+from typing import Any
 
 from cdedb.common import extract_roles, PrivilegeError, n_, unwrap
 from cdedb.query import Query, QueryOperators, QUERY_SPECS
@@ -13,18 +14,6 @@ class BackendContainer:
         self.core = core
         self.event = event
         self.assembly = assembly
-
-
-def get_type(val):
-    if isinstance(val, str):
-        val = int(val)
-    if isinstance(val, int):
-        val = MailinglistTypes(val)
-    if isinstance(val, MailinglistTypes):
-        return TYPE_MAP[val]
-    if issubclass(val, GeneralMailinglist):
-        return val
-    raise ValueError(n_("Cannot determine ml_type from {}".format(val)))
 
 
 def full_address(val):
@@ -463,6 +452,18 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
     domains = (MailinglistDomain.cdelokal,
                MailinglistDomain.cdemuenchen)
+
+
+def get_type(val: Any) -> GeneralMailinglist:
+    if isinstance(val, str):
+        val = int(val)
+    if isinstance(val, int):
+        val = MailinglistTypes(val)
+    if isinstance(val, MailinglistTypes):
+        return TYPE_MAP[val]
+    if issubclass(val, GeneralMailinglist):
+        return val
+    raise ValueError(n_("Cannot determine ml_type from {}".format(val)))
 
 
 TYPE_MAP = {

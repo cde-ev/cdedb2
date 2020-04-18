@@ -62,14 +62,12 @@ class MlBackend(AbstractBackend):
         if mailinglist is None:
             if mailinglist_id is None:
                 raise ValueError(n_("No mailinglist specified."))
-            atype: ml_type.GeneralMailinglist = self.get_ml_type(
-                rs, mailinglist_id)
+            atype = self.get_ml_type(rs, mailinglist_id)
         else:
             if mailinglist_id is not None:
                 if mailinglist['id'] != mailinglist_id:
                     raise ValueError(n_("Different mailinglists specified."))
-            atype: ml_type.GeneralMailinglist = ml_type.get_type(
-                mailinglist['ml_type'])
+            atype = ml_type.get_type(mailinglist['ml_type'])
         return atype.is_relevant_admin(rs)
 
     @staticmethod
