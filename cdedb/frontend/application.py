@@ -166,7 +166,7 @@ class Application(BaseApp):
                                                          request.remote_addr)
 
                     # Error early to make debugging easier.
-                    if not 'droid' in user.roles:
+                    if 'droid' not in user.roles:
                         raise werkzeug.exceptions.Forbidden(
                             "API token invalid.")
                 else:
