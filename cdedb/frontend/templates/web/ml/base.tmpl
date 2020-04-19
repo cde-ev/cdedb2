@@ -21,9 +21,6 @@
                              aclass="list-group-item", icon="far fa-list-alt", active=(sidenav_active == 'ml_ml_log')) }}
             {% endif %}
         </div>
-
-    {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),
-                                (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
 {% endmacro %}
 
 {% block breadcrumb %}
@@ -69,10 +66,18 @@
                 {% endif %}
             </div>
         {% endif %}
-
-        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["ml_user"]),
-                                    (gettext("Mailinglist Management"), ["ml_mgmt"], None))) }}
     {% endif %}
 
     <hr class="strong visible-xs visible-sm" />
+{% endblock %}
+
+{% block adminviews %}
+    {% if ambience['mailinglist'] %}
+        {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),
+                                    (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
+    {% else %}
+        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user",
+                                                                      "assembly_user", "genesis"], ["ml_user"]),
+                                    (gettext("Mailinglist Management"), ["ml_mgmt"], None))) }}
+    {% endif %}
 {% endblock %}
