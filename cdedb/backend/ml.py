@@ -67,7 +67,7 @@ class MlBackend(AbstractBackend):
         # this could be other admins as well.
         return self.is_admin(rs)
 
-    @access("ml")
+    @access("ml", "ml_script")
     def is_moderator(self, rs, ml_id):
         """Check for moderator privileges as specified in the ml.moderators
         table.
