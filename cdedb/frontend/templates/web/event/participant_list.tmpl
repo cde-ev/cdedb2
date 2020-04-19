@@ -40,7 +40,7 @@
 
 
 {% macro display_sorting_header(part_id, sortkey, label) %}
-    {% if sortkey == last_sortkey and last_reverse == False %}
+    {% if sortkey == last_sortkey %}
         {{ util.href(cdedblink('event/participant_list',
                                {'part_id': part_id, 'sortkey': sortkey, 'reverse': not last_reverse}),
                      label,
