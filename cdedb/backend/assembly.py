@@ -342,7 +342,6 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    @singularize("get_assembly")
     def get_assemblies(self, rs, ids):
         """Retrieve data for some assemblies.
 
@@ -355,6 +354,7 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
+    get_assembly = singularize(get_assemblies)
 
     @access("assembly_admin")
     def set_assembly(self, rs, data):
@@ -535,7 +535,6 @@ class AssemblyBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
-    @singularize("get_ballot")
     def get_ballots(self, rs, ids):
         """Retrieve data for some ballots,
 
@@ -565,6 +564,7 @@ class AssemblyBackend(AbstractBackend):
                 ret = {k: v for k, v in ret.items()
                        if self.check_attendance(rs, ballot_id=k)}
         return ret
+    get_ballot = singularize(get_ballots)
 
     @access("assembly_admin")
     def set_ballot(self, rs, data):
@@ -1309,7 +1309,6 @@ class AssemblyBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
-    @singularize("get_attachment")
     def get_attachments(self, rs, ids):
         """Retrieve data on attachments
 
@@ -1325,6 +1324,7 @@ class AssemblyBackend(AbstractBackend):
             ret = {k: v for k, v in ret.items() if self.check_attendance(
                 rs, assembly_id=v['assembly_id'], ballot_id=v['ballot_id'])}
         return ret
+    get_attachment = singularize(get_attachments)
 
     @access("assembly_admin")
     def add_attachment(self, rs, data, attachment):

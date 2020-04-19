@@ -109,7 +109,6 @@ class EventBackend(AbstractBackend):
             raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
-    @singularize("orga_info")
     def orga_infos(self, rs, ids):
         """List events organized by specific personas.
 
@@ -124,6 +123,7 @@ class EventBackend(AbstractBackend):
         for anid in ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
+    orga_info = singularize(orga_infos)
 
     def event_log(self, rs, code, event_id, persona_id=None,
                   additional_info=None):
@@ -666,7 +666,6 @@ class EventBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("anonymous")
-    @singularize("get_event")
     def get_events(self, rs, ids):
         """Retrieve data for some events organized via DB.
 
@@ -739,6 +738,7 @@ class EventBackend(AbstractBackend):
                     and (ret[anid]['registration_hard_limit'] is None
                          or ret[anid]['registration_hard_limit'] >= now()))
         return ret
+    get_event = singularize(get_events)
 
     def _get_event_fields(self, rs, event_id):
         """
@@ -1439,7 +1439,6 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("anonymous")
-    @singularize("get_course")
     def get_courses(self, rs, ids):
         """Retrieve data for some courses organized via DB.
 
@@ -1476,6 +1475,7 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
+    get_course = singularize(get_courses)
 
     @access("event")
     def set_course(self, rs, data):
@@ -1969,7 +1969,6 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event")
-    @singularize("get_registration")
     def get_registrations(self, rs, ids):
         """Retrieve data for some registrations.
 
@@ -2056,6 +2055,7 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
+    get_registration = singularize(get_registrations)
 
     @access("event")
     def has_registrations(self, rs, event_id):
@@ -2421,7 +2421,6 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    @singularize("calculate_fee")
     def calculate_fees(self, rs, ids):
         """Calculate the total fees for some registrations.
 
@@ -2472,6 +2471,7 @@ class EventBackend(AbstractBackend):
                     fee += event['nonmember_surcharge']
                 ret[reg_id] = fee
         return ret
+    calculate_fee = singularize(calculate_fees)
 
     @access("event")
     def check_orga_addition_limit(self, rs, event_id):
@@ -2519,7 +2519,6 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['moniker'] for e in data}
 
     @access("event")
-    @singularize("get_lodgement_group")
     def get_lodgement_groups(self, rs, ids):
         """Retrieve data for some lodgement groups.
 
@@ -2544,6 +2543,7 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
+    get_lodgement_group = singularize(get_lodgement_groups)
 
     @access("event")
     def set_lodgement_group(self, rs, data):
@@ -2688,7 +2688,6 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['moniker'] for e in data}
 
     @access("event")
-    @singularize("get_lodgement")
     def get_lodgements(self, rs, ids):
         """Retrieve data for some lodgements.
 
@@ -2717,6 +2716,7 @@ class EventBackend(AbstractBackend):
             for entry in ret.values():
                 entry['fields'] = cast_fields(entry['fields'], event_fields)
         return {e['id']: e for e in data}
+    get_lodgement = singularize(get_lodgements)
 
     @access("event")
     def set_lodgement(self, rs, data):
