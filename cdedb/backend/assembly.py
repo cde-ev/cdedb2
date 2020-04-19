@@ -37,7 +37,7 @@ from cdedb.common import (
     n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
-    implying_realms)
+    implying_realms, xsorted)
 from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -1142,18 +1142,18 @@ class AssemblyBackend(AbstractBackend):
                 self.get_assemblies(rs, (ballot['assembly_id'],)))
             candidates = ",\n        ".join(
                 "{}: {}".format(esc(c['moniker']), esc(c['description']))
-                for c in sorted(ballot['candidates'].values(),
-                                key=lambda x: x['moniker']))
+                for c in xsorted(ballot['candidates'].values(),
+                                 key=lambda x: x['moniker']))
             query = glue("SELECT persona_id FROM assembly.voter_register",
                          "WHERE ballot_id = %s and has_voted = True")
             voter_ids = self.query_all(rs, query, (ballot_id,))
             voters = self.core.get_personas(
                 rs, tuple(unwrap(e) for e in voter_ids))
             voters = ("{} {}".format(e['given_names'], e['family_name'])
-                      for e in sorted(voters.values(),
-                                      key=EntitySorter.persona))
+                      for e in xsorted(voters.values(),
+                                       key=EntitySorter.persona))
             voter_list = ",\n        ".join(esc(v) for v in voters)
-            votes = sorted('{{"vote": {}, "salt": {}, "hash": {}}}'.format(
+            votes = xsorted('{{"vote": {}, "salt": {}, "hash": {}}}'.format(
                 esc(v['vote']), esc(v['salt']), esc(v['hash'])) for v in votes)
             vote_list = ",\n        ".join(v for v in votes)
             result_file = template.substitute({

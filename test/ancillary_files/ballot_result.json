@@ -16,9 +16,9 @@
         "Kalif ibn al-\u1e24asan Karabatschi"
     ],
     "votes": [
+        {"vote": "_bar_>4>3>2>1", "salt": "krcqm\"xdv", "hash": "65ab33a95a367ff3dd07d19ecb9de1311dd3cee5525bae5c7ba6ff46587e79e964e14a246211748f3beb406506b3aa926a66ff5754a69d4c340c98a0f3f5d69d"},
         {"vote": "1>2=3=4>_bar_", "salt": "klw3xjq8s", "hash": "9d59b3a4a6a9eca9613ef2e0710117a8e240e9197f20f2b970288dd93fd6347d657d265033f915c7fa44043315c4a8b834951c4f4e6fc46ea59a795c02af93e7"},
         {"vote": "2>3>_bar_>1=4", "salt": "rxt3x/jnl", "hash": "a3bf0788f1eaa85f5ca979d2ba963b7c60bce02c49ac1c0dfe5d06d5b3950d69c55752df5d963b8de770d353bf795ca07060f7578456b19e18028249bcf51195"},
-        {"vote": "3>2=4>_bar_>1", "salt": "et3[uh{kr", "hash": "f99ade4db2d724c6ae887cffc099c5758927358c99d65aac43e3ce61d212effad5bfbb68e69d6f2669f42d58c74e1fa3f2149a92c7172f2bb9d0e487478e5bb7"},
-        {"vote": "_bar_>4>3>2>1", "salt": "krcqm\"xdv", "hash": "65ab33a95a367ff3dd07d19ecb9de1311dd3cee5525bae5c7ba6ff46587e79e964e14a246211748f3beb406506b3aa926a66ff5754a69d4c340c98a0f3f5d69d"}
+        {"vote": "3>2=4>_bar_>1", "salt": "et3[uh{kr", "hash": "f99ade4db2d724c6ae887cffc099c5758927358c99d65aac43e3ce61d212effad5bfbb68e69d6f2669f42d58c74e1fa3f2149a92c7172f2bb9d0e487478e5bb7"}
     ]
 }

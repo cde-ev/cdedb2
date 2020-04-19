@@ -3307,8 +3307,8 @@ class TestEventBackend(BackendTest):
         CMAP = {
             ('courses', -1): 1002,
             ('lodgement_groups', -1): 1002,
-            ('lodgements', -1): 1003,
-            ('lodgements', -2): 1004,
+            ('lodgements', -2): 1003,
+            ('lodgements', -1): 1004,
             ('registrations', -1): 1002,
         }
         TMAP = {

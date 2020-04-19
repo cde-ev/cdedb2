@@ -24,7 +24,7 @@ from cdedb.common import (
     PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter, genesis_realm_access_bits, ValidationWarning)
+    decode_parameter, genesis_realm_access_bits, ValidationWarning, xsorted)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -2530,7 +2530,7 @@ class CoreBackend(AbstractBackend):
         CUTOFF = 21
         MAX_ENTRIES = 7
         persona_ids = tuple(k for k, v in scores.items() if v > CUTOFF)
-        persona_ids = sorted(persona_ids, key=lambda k: -scores.get(k))
+        persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k))
         persona_ids = persona_ids[:MAX_ENTRIES]
         return self.get_total_personas(rs, persona_ids)
 
