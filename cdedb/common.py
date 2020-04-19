@@ -509,12 +509,12 @@ class ValidationWarning(Exception):
 
 
 def xsorted(iterable, *, key=lambda x: x, reverse=False):
-    """Wrapper of sorted() to achieve a natural sort.
+    """Wrapper for sorted() to achieve a natural sort.
 
     In particular, this makes sure strings containing diacritics are
     sorted, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
-    (ints and decimals) are sorted correclty, even in midst of strings
-    as well as negative ones. This is achived by using the icu library.
+    (ints and decimals) are sorted correctly, even in midst of strings
+    as well as negative ones. This is achieved by using the icu library.
 
     For users, the interface of this function should be identical
     to sorted().

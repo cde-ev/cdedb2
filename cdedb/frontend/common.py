@@ -628,15 +628,19 @@ def md_filter(val):
     return bleach_filter(md.convert(val))
 
 
+@jinja2.environmentfilter
 def sort_filter(env, value, reverse=False, attribute=None):
-    """Sort an iterable using Python's :func:`sorted`.
+    """Sort an iterable using `xsorted`, using correct collation.
+
+    TODO: With Jinja 2.11, make_multi_attrgetter should be used
+    instead, since it allows to provide multiple sorting criteria.
 
     :param reverse: Sort descending instead of ascending.
     :param attribute: When sorting objects or dicts, an attribute or
         key to sort by. Can use dot notation like ``"address.city"``.
         Can be a list of attributes like ``"age,name"``.
     """
-    key_func = jinja2.filters.make_multi_attrgetter(self.jinja_env, attribute)
+    key_func = jinja2.filters.make_attrgetter(env, attribute)
     return xsorted(value, key=key_func, reverse=reverse)
 
 
