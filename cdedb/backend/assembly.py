@@ -1143,7 +1143,7 @@ class AssemblyBackend(AbstractBackend):
             candidates = ",\n        ".join(
                 "{}: {}".format(esc(c['moniker']), esc(c['description']))
                 for c in xsorted(ballot['candidates'].values(),
-                                key=lambda x: x['moniker']))
+                                 key=lambda x: x['moniker']))
             query = glue("SELECT persona_id FROM assembly.voter_register",
                          "WHERE ballot_id = %s and has_voted = True")
             voter_ids = self.query_all(rs, query, (ballot_id,))
@@ -1151,7 +1151,7 @@ class AssemblyBackend(AbstractBackend):
                 rs, tuple(unwrap(e) for e in voter_ids))
             voters = ("{} {}".format(e['given_names'], e['family_name'])
                       for e in xsorted(voters.values(),
-                                      key=EntitySorter.persona))
+                                       key=EntitySorter.persona))
             voter_list = ",\n        ".join(esc(v) for v in voters)
             votes = xsorted('{{"vote": {}, "salt": {}, "hash": {}}}'.format(
                 esc(v['vote']), esc(v['salt']), esc(v['hash'])) for v in votes)
