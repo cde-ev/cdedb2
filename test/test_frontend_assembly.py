@@ -87,7 +87,6 @@ class TestAssemblyFrontend(FrontendTest):
         for s in out:
             self.assertNonPresence(s, div='sidebar')
 
-    @unittest.expectedFailure
     @as_users("kalif")
     def test_showuser(self, user):
         self.traverse({'description': user['display_name']})
