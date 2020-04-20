@@ -10,14 +10,16 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
-                        readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
+                        readonly=not (ambience['event']['is_visible']
+                                      or ambience['event']['id'] in user.orga
+                                      or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
 {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration")) }}
 {{ util.breadcrumb_link(cdedblink("event/amend_registration"), gettext("Change"), active=True) }}
 {% endblock %}{% block heading %}
     <h1 class="title">
         {% trans %}Edit Registration{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -38,7 +40,7 @@
             {% set course_entries = courses|keydictsort(EntitySorter.course)
                                     |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
             {% for i in range(track['num_choices']) %}
-                {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="",
+                {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="&nbsp;"|s,
                                           label=gettext("%s. Choice")|format(i + 1), entries=course_entries,
                                           readonly=readonly, info=(gettext("Optional choice") if i >= track['min_choices'] else "")) }}
             {% endfor %}
@@ -78,7 +80,7 @@
         {{ util.form_input_submit(value=gettext("Save"), readonly=readonly,
                                   cancellink=cdedblink("event/registration_status")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#amendregistrationform').cdedbProtectChanges();
     </script>
 {% endblock %}

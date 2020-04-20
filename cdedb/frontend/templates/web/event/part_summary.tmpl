@@ -13,12 +13,12 @@
         {% trans %}
         	Configure Event-Parts
         {% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts"), active=True) }}
 {% endblock %}
 
@@ -154,7 +154,7 @@
                     </div>
                     {{ util.form_input_text(name="fee_{}".format(part_id), label=gettext("Event-Part Fee"),
                                             attributes=('data-basename="fee_"'|s if newrow else ''),
-                                            aclass='drow-input form-control', anid="input-text-fee_".format(part_id),
+                                            aclass='drow-input form-control', anid="input-text-fee_{}".format(part_id),
                                             addon='€') }}
 
                 </div>
@@ -227,7 +227,7 @@
 {% endmacro %}
 
 {% block content %}
-    <p class="text-warning">{{ util.make_icon('warning-sign') }}
+    <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
             Event parts and course tracks can only be created or deleted if no
             registrations are present yet. Course tracks can only be deleted, if
@@ -260,7 +260,7 @@
         {% endif %}
         {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         function initialize_track_dynrow() {
             $(this).cdedbDynamicRow({
                 addButton: $(this).closest('.panel-body').find('.add-track-button'),

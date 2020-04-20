@@ -345,19 +345,19 @@ class Transaction:
         elif data.get("transaction_type_confidence"):
             self.type_confidence = cl(data["transaction_type_confidence"])
         else:
-            self.type_confidence = None
+            self.type_confidence = cl.Null
         if data.get("persona_id_confirm"):
             self.persona_id_confidence = cl.Full
         elif data.get("persona_id_confidence"):
             self.persona_id_confidence = cl(data["persona_id_confidence"])
         else:
-            self.persona_id_confidence = None
+            self.persona_id_confidence = cl.Null
         if data.get("event_id_confirm"):
             self.event_id_confidence = cl.Full
         elif data.get("event_id_confidence"):
             self.event_id_confidence = cl(data["event_id_confidence"])
         else:
-            self.event_id_confidence = None
+            self.event_id_confidence = cl.Null
 
     @classmethod
     def from_csv(cls, raw):

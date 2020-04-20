@@ -5,6 +5,7 @@ import subprocess
 
 import webtest
 
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.frontend.application import Application
 from test.common import FrontendTest
 
@@ -35,6 +36,8 @@ class TestOffline(FrontendTest):
                 'SERVER_PROTOCOL': "HTTP/1.1",
                 'wsgi.url_scheme': 'https'})
             self.app.reset()
+            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME,
+                                ",".join(ALL_ADMIN_VIEWS))
 
             # Test that it's running
             self.get('/')
@@ -50,7 +53,7 @@ class TestOffline(FrontendTest):
                 'Die Veranstaltung befindet sich im Offline-Modus.')
             self.traverse({'href': 'event/event/1/registration/query'},
                           {'description': 'Alle Anmeldungen'})
-            self.assertPresence('5', 'query-results')
+            self.assertPresence('6', 'query-results')
             self.assertPresence('Inga')
 
             # Test edit of profile

@@ -23,7 +23,7 @@
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort(by='value'),
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title'),
                 defaultvalue=institutions['cde']) }}
         {{ util.form_input_text(name="event_begin", label=gettext("Event Begin"), type="date",
                                 placeholder="YYYY-MM-DD") }}
@@ -31,20 +31,21 @@
                                 placeholder="YYYY-MM-DD") }}
         {{ util.form_input_checkbox(name="create_track", label=gettext("Event with courses")) }}
 
-        {{ util.form_input_static(aclass='text-info', icon='info-sign',
+        {{ util.form_input_static(aclass='text-info', icon='info-circle',
                                   value=gettext("If the event comprises multiple parts or multiple course tracks, they "
                                                 "have to be added later, using the “Event-Parts” configuration "
                                                 "page.")) }}
 
         <h4 class="heading-underline">{% trans %}Financial{% endtrans %}</h4>
-        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="") }}
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="&nbsp;"|s,
+                                  sort=True) }}
         {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants.")) }}
 
         <h4 class="heading-underline">{% trans %}Orgas{% endtrans %}</h4>
         {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $('#input-orgas').cdedbSearchPerson(
                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_admin_user&phrase=%s'|s) }}',
                 [],
@@ -61,7 +62,7 @@
 
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_db_events")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#createeventform').cdedbProtectChanges();
     </script>
 {% endblock %}

@@ -15,7 +15,7 @@
 {% block content %}
    {% if ambience['persona']['is_member'] %}
         <p>
-            {{ util.make_icon("info-sign") }}
+            {{ util.make_icon('info-circle') }}
             {% trans %}Here you can terminate the CdE-membership. This has the following effects:{% endtrans %}
         </p>
         <ul>
@@ -30,7 +30,7 @@
             <div>
                 {{ util.input_hidden(name="is_member", value=False) }}
                 {{ util.input_submit(value=gettext("Terminate Membership"), aclass="btn btn-warning") }}&emsp;
-                {{ util.href(show_user_link(ambience['persona']['id']), gettext("Cancel"), icon="remove",
+                {{ util.href(show_user_link(ambience['persona']['id']), gettext("Cancel"), icon="times-circle",
                         aclass="btn btn-default") }}
             </div>
         </form>
@@ -40,7 +40,7 @@
             <div>
                 {{ util.input_hidden(name="is_member", value=True) }}
                 {{ util.input_submit(value=gettext("Make a Member")) }}&emsp;
-                {{ util.href(show_user_link(ambience['persona']['id']), "Abbrechen", icon="remove",
+                {{ util.href(show_user_link(ambience['persona']['id']), "Abbrechen", icon="times-circle",
                         aclass="btn btn-default") }}
             </div>
         </form>

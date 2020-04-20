@@ -2,7 +2,8 @@
 
 import unittest
 from cdedb.common import (
-    extract_roles, schulze_evaluate, int_to_words)
+    extract_roles, schulze_evaluate, int_to_words, xsorted,
+    mixed_existence_sorter)
 import cdedb.database.constants as const
 import datetime
 import pytz
@@ -10,6 +11,13 @@ import random
 import timeit
 
 class TestCommon(unittest.TestCase):
+    def test_mixed_existence_sorter(self):
+        unsorted = [3, 8, -3, 5, 0, -4]
+        self.assertEqual(list(mixed_existence_sorter(unsorted)),
+                         [0, 3, 5, 8, -3, -4])
+        print(sorted([-3, -4]))
+        print(xsorted([-3, -4]))
+
     def test_extract_roles(self):
         self.assertEqual({
             "anonymous", "persona", "cde", "member", "searchable",
@@ -52,9 +60,9 @@ class TestCommon(unittest.TestCase):
         )
         for expectation, spec in tests:
             with self.subTest(spec=spec):
-                self.assertEqual(expectation,
-                                 schulze_evaluate(_ordinary_votes(
-                                     spec, candidates), candidates))
+                condensed, detailed = schulze_evaluate(
+                    _ordinary_votes(spec, candidates), candidates)
+                self.assertEqual(expectation, condensed)
 
     def test_schulze(self):
         candidates = ('0', '1', '2', '3', '4')
@@ -98,8 +106,8 @@ class TestCommon(unittest.TestCase):
         )
         for expectation, addons in tests:
             with self.subTest(addons=addons):
-                self.assertEqual(expectation,
-                                 schulze_evaluate(base+addons, candidates))
+                condensed, detailed = schulze_evaluate(base+addons, candidates)
+                self.assertEqual(expectation, condensed)
 
     def test_schulze_runtime(self):
         ## silly test, since I just realized, that the algorithm runtime is
@@ -175,3 +183,22 @@ class TestCommon(unittest.TestCase):
         for case in cases:
             with self.subTest(case=case):
                 self.assertEqual(cases[case], int_to_words(case, "de"))
+
+    def test_collation(self):
+        names = [
+            "",
+            " ",
+            "16"
+            "Stránd",
+            "Strassé",
+            "straßenpanther",
+            "Straßenpanther",
+            "Strassenpeter",
+            "Zimmer -30"
+            "Zimmer 20 Das beste Zimmer",
+            "Zimmer 100a",
+            "Zimmer w20a",
+            "Zimmer w100a",
+        ]
+        shuffled_names = random.sample(names, len(names))
+        self.assertEqual(names, xsorted(shuffled_names))

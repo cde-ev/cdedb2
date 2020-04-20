@@ -17,7 +17,7 @@
     </li>
 {% endmacro %}
 {% block content %}
-    {% if is_admin %}
+    {% if 'ml_mgmt' in user.admin_views %}
         <div class="p">
             {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                     aclass="btn btn-sm btn-success") }}
@@ -32,11 +32,11 @@
         {% if mailinglists[group] %}
             <h3>{{ gettext(group|string) }}</h3>
             <div class="row">
-                {% for list in mailinglists[group]|dictsort(False, 'value')
+                {% for list in mailinglists[group]|keydictsort(EntitySorter.mailinglist)
                     |slice(2 if mailinglists[group]|length > 5 else 1) %}
                 <ul class="styleless col-md-6">
-                    {% for mailinglist_id, title in list %}
-                        {{ format_entry(mailinglist_id, title) }}
+                    {% for mailinglist_id, ml in list %}
+                        {{ format_entry(mailinglist_id, ml['title']) }}
                     {% endfor %}
                 </ul>
                 {% endfor %}

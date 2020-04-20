@@ -6,60 +6,63 @@
     \parindent 0pt\relax
     \newcommand\lodgement[5]{
         \section*{#1 (#2)}
-        Kapazität: #3
+        <<% trans %>> Capacity <<% endtrans %>>: #3
         \par
-        Reserve: #4
+        <<% trans %>> Reserve <<% endtrans %>>: #4
         \par
-        Notizen: #5
+        <<% trans %>> Notes <<% endtrans %>>: #5
         \par
         \vspace{.5cm}
         \hrule
         }
-    \newcommand\participant[7]{
+    \newcommand\participant[8]{
         \section*{#1 (#2)}
-        #3 #4 #5~\par
-        #6\par
-	#7
+        #3 #4 #5 #6~\par
+        #7\par
+	#8
         \vspace{.5cm}
         \hrule}
 
     \usepackage[top=.5cm,bottom=.5cm, left=.5cm, right=.5cm]{geometry}
 <<% endblock %>>
 <<% block content %>>
-    <<% for lodgement_id, lodgement in lodgements|xdictsort('moniker') %>>
-        <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
+    <<% for lodgement_id, lodgement in lodgements|keydictsort(EntitySorter.lodgement) %>>
+        <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
             \lodgement{<<< lodgement['moniker']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['capacity']|te >>>}%
                       {<<< lodgement['reserve']|te >>>}{<<< lodgement['notes']|te >>>}
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
     <<% for registration_id, registration in registrations.items() %>> <<# This is already sorted. #>>
-        <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
+        <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %>>
                 \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
                              <<< personas[registration['persona_id']]['family_name']|te >>>}%
                     {<<% if ambience['event']['parts']|length > 1 %>><<< part['title']|te >>>; <<% endif %>>%
                      <<< personas[registration['persona_id']]['birthday'].year|te >>>%
                      <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -%>>
-                        ~[Gast]
+                        ~[<<% trans %>> guest <<% endtrans %>>]
                      <<%- endif %>>}%
-                    {<<% if not registration['mixed_lodging'] %>>getrennt<<% endif %>>}%
+                    {<<< gettext(enums['Genders'](personas[registration['persona_id']]['gender'])|string)|te >>>}%
+                    {<<% if not registration['mixed_lodging'] %>>
+                        <<%- trans %>> separated <<% endtrans -%>>
+                    <<% endif %>>}%
                     {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
                     {<<% if ambience['event']['reserve_field'] and
                             registration['fields'].get(
                                 ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
-                        Isomatte
+                        <<% trans %>> camping mat <<% endtrans %>>
                      <<%- endif %>>}% ID <<< registration_id|te >>>
                     {<<% if ambience['event']['lodge_field']
                             and registration['fields'].get(
                                 ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
-                        Wunsch: <<< registration['fields'].get(
+                        <<% trans %>> Wish <<% endtrans %>>: <<< registration['fields'].get(
                                     ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>
                      <<% endif -%>>}%
                     {<<% if reverse_wish.get(registration_id) -%>>%
-                        Revers-Wunsch-Heuristik: <<< reverse_wish[registration_id]|te >>>
+                        <<% trans %>> Reverse wish heuristic <<% endtrans %>>: <<< reverse_wish[registration_id]|te >>>
                      <<% endif -%>>}
             <<% endif %>>
         <<% endfor %>>

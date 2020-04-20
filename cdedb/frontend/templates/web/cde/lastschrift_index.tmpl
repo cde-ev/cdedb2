@@ -12,7 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"), active="True") }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('.skip-form').cdedbProtectAction(
                 "{{ gettext("This Direct Debit will be skipped for this semster. This cannot be undone.") }}");
@@ -72,7 +72,7 @@
                 </td>
             </tr>
         {% else %}
-            <tr><td colspan="3">{% trans %}No Direct Debits to perform this Semester.{% endtrans %}</td></tr>
+            <tr><td>{% trans %}No Direct Debits to perform this Semester.{% endtrans %}</td></tr>
         {% endfor %}
         </tbody>
     </table>
@@ -112,15 +112,15 @@
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select All{% endtrans %}"
                         id="btn-select-all">
-                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
+                    {{ util.make_icon('check-square') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select None{% endtrans %}"
                         id="btn-select-none">
-                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
+                    {{ util.make_icon('square') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}Invert Selection{% endtrans %}"
                         id="btn-select-swap">
-                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
+                    {{ util.make_icon('caret-square-right') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
                 </button>
             </div>
         </div>
@@ -136,7 +136,7 @@
                         <th>{% trans %}Amount{% endtrans %}</th></tr>
                 </thead>
                 <tbody>
-                {% for transaction_id, transaction in transactions|xdictsort('issued_at') %}
+                {% for transaction_id, transaction in transactions|keydictsort(EntitySorter.transaction) %}
                     <tr class="ls-item">
                         <td>
                             {{ util.input_checkbox(name="transaction_ids", value=transaction_id, aclass="rowSelector") }}
@@ -146,7 +146,7 @@
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': persona['id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                             {% if all_lastschrifts[transaction['lastschrift_id']]['revoked_at'] %}
-                                <b class="alert-danger">{{ util.make_icon("warning-sign") }}
+                                <b class="alert-danger">{{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}
                                     This transaction needs to be cancelled!
                                 {% endtrans %}
@@ -159,7 +159,7 @@
                 {% endfor %}
                 </tbody>
             </table>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#open_lastschrift_table').cdedbListSelect();
                 var lsObj = $('#open_lastschrift_table').data('listSelect');
                 $('#btn-select-all').click(function(){
@@ -176,8 +176,8 @@
 
             {% trans %}All selected:{% endtrans %}
             {{ util.input_submit(value=gettext("Success"), name='success', aclass="btn btn-success") }}
-            {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-sign") }}
-            {{ util.input_submit(value=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="remove",
+            {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-circle") }}
+            {{ util.input_submit(value=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="times-circle",
                     anid="finalization-cancel") }}
         </form>
     {% else %}

@@ -22,7 +22,7 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
     n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
-    ANTI_CSRF_TOKEN_NAME, ProxyShim)
+    ANTI_CSRF_TOKEN_NAME, ProxyShim, ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
     docurl, JINJA_FILTERS, check_validation)
@@ -247,6 +247,8 @@ class Application(BaseApp):
                                                             user.persona_id)
                 user.orga = orga
                 user.moderator = moderator
+                user.init_admin_views_from_cookie(
+                    request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, ''))
 
                 try:
                     ret = handler(rs, **args)

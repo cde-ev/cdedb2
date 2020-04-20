@@ -26,6 +26,7 @@ import json
 import logging
 import pathlib
 import re
+import shutil
 import smtplib
 import subprocess
 import tempfile
@@ -50,7 +51,7 @@ from cdedb.common import (
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
     decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields,
-    ValidationWarning)
+    ValidationWarning, xsorted)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -627,7 +628,50 @@ def md_filter(val):
     return bleach_filter(md.convert(val))
 
 
-def xdictsort_filter(value, attribute, pad=False, reverse=False):
+@jinja2.environmentfilter
+def sort_filter(env, value, reverse=False, attribute=None):
+    """Sort an iterable using `xsorted`, using correct collation.
+
+    TODO: With Jinja 2.11, make_multi_attrgetter should be used
+    instead, since it allows to provide multiple sorting criteria.
+
+    :param reverse: Sort descending instead of ascending.
+    :param attribute: When sorting objects or dicts, an attribute or
+        key to sort by. Can use dot notation like ``"address.city"``.
+        Can be a list of attributes like ``"age,name"``.
+    """
+    key_func = jinja2.filters.make_attrgetter(env, attribute)
+    return xsorted(value, key=key_func, reverse=reverse)
+
+
+def dictsort_filter(value, by="key", reverse=False):
+    """Sort a dict and yield (key, value) pairs.
+
+    Because python dicts are unsorted you may want to use this function to
+    order them by either key or value.
+    """
+    if by == "key":
+        pos = 0
+    elif by == "value":
+        pos = 1
+    else:
+        raise RuntimeError('You can only sort by either "key" or "value"')
+
+    return xsorted(value.items(), key=lambda x: x[pos], reverse=reverse)
+
+
+def set_filter(value):
+    """
+    A simple filter to construct a Python set from an iterable object. Just
+    like Jinja's builtin "list" filter, but for sets.
+
+    :type value: Iterable
+    :rtype: set
+    """
+    return set(value)
+
+
+def xdictsort_filter(value, attribute, reverse=False):
     """Allow sorting by an arbitrary attribute of the value.
 
     Jinja only provides sorting by key or entire value. Also Jinja does
@@ -638,22 +682,12 @@ def xdictsort_filter(value, attribute, pad=False, reverse=False):
     :type value: {object: dict}
     :type attribute: str
     :param attribute: name of the attribute
-    :type pad: bool
-    :param pad: If True the attribute's value is interpreted as string and
-      padded before sorting. The important use-case is numerical sorting.
     :type reverse: bool
     :param reverse: Sort in reversed order
     :rtype: [(object, dict)]
     """
     key = lambda item: item[1].get(attribute)
-    if pad:
-        if not value:
-            return value
-        to_str = lambda val: '' if val is None else str(val)
-        max_len = max(len(to_str(v.get(attribute, ""))) for v in value.values())
-        key = lambda item: to_str(item[1].get(attribute, None)).rjust(max_len,
-                                                                      '\0')
-    return sorted(value.items(), key=key, reverse=reverse)
+    return xsorted(value.items(), key=key, reverse=reverse)
 
 
 def keydictsort_filter(value, sortkey, reverse=False):
@@ -664,7 +698,7 @@ def keydictsort_filter(value, sortkey, reverse=False):
     :type reverse: bool
     :rtype: [(object, dict)]
     """
-    return sorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
+    return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
 def enum_entries_filter(enum, processing=None, raw=False, prefix=""):
@@ -693,7 +727,7 @@ def enum_entries_filter(enum, processing=None, raw=False, prefix=""):
         pre = lambda x: x
     else:
         pre = str
-    return sorted((entry.value, prefix + processing(pre(entry)))
+    return xsorted((entry.value, prefix + processing(pre(entry)))
                   for entry in enum)
 
 
@@ -770,14 +804,17 @@ JINJA_FILTERS = {
     'linebreaks': linebreaks_filter,
     'md': md_filter,
     'enum': enum_filter,
+    'sort': sort_filter,
+    'dictsort': dictsort_filter,
     'xdictsort': xdictsort_filter,
+    'keydictsort': keydictsort_filter,
     's': safe_filter,
+    'set': set_filter,
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
     'dict_entries': dict_entries_filter,
     'xdict_entries': xdict_entries_filter,
-    'keydictsort': keydictsort_filter,
 }
 
 
@@ -1322,6 +1359,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Deleting corrupted file {}".format(pdf_path))
                 pdf_path.unlink()
             self.logger.debug("Exception \"{}\" caught and handled.".format(e))
+            if self.conf.CDEDB_DEV:
+                tstamp = round(now().timestamp())
+                backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
+                self.logger.info("Copying source file to {}".format(
+                    backup_path))
+                shutil.copy2(target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
                 "source files and compiling them manually.")

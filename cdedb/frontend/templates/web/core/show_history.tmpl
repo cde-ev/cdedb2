@@ -16,10 +16,10 @@
 {% endblock %}
 {% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),
                 enums["MemberChangeStati"].committed: ('','',''),
-                enums["MemberChangeStati"].superseded: ('superseded', 'refresh', gettext("superseded")),
-                enums["MemberChangeStati"].nacked: ('nacked', 'ban-circle', gettext("nacked")),
-                enums["MemberChangeStati"].displaced: ('displaced', 'refresh', gettext("displaced")),
-                -1: ('complicated','question-sign',gettext("complicated")),} %}
+                enums["MemberChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
+                enums["MemberChangeStati"].nacked: ('nacked', 'ban', gettext("nacked")),
+                enums["MemberChangeStati"].displaced: ('displaced', 'sync', gettext("displaced")),
+                -1: ('complicated','question-circle',gettext("complicated")),} %}
 {% macro print_history(f) %}
     {% for c in entries|sort %}
         {% if c not in constants[f] %}
@@ -83,7 +83,7 @@
     {% if pending|length > 0 %}
         <p>
             {{ util.href(cdedblink('core/inspect_change', {'persona_id': current['id']}), gettext("Review Changes"),
-                    icon="check", aclass="btn btn-sm btn-info") }}
+                    icon="check-square", aclass="btn btn-sm btn-info") }}
         </p>
     {% endif %}
     {% if not current['is_active'] %}
@@ -97,7 +97,7 @@
         </p>
     {% endif %}
 
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('.history-container').cdedbHistoryCollapse({
                 'more_versions': "{{ gettext("– {num} more versions –") }}",
@@ -148,8 +148,8 @@
         {% call history_field(gettext("Realms")) %}
             {% call(c) print_multifield_history(
                     ['is_cde_realm','is_event_realm', 'is_ml_realm', 'is_assembly_realm']) %}
-                {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "education"),
-                                           ("is_event_realm", gettext("Events"), "blackboard"),
+                {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "graduation-cap"),
+                                           ("is_event_realm", gettext("Events"), "chalkboard-teacher"),
                                            ("is_ml_realm", gettext("Mailinglists"), "envelope"),
                                            ("is_assembly_realm", gettext("Assembly"), "bullhorn"),)%}
                     {% if entries[c][bit] %}
@@ -165,8 +165,8 @@
                 {% set vars = {'any_privilege': False} %}
                 {% for bit, desc, icon in (("is_meta_admin", gettext("Meta-Admin"), "wrench"),
                                           ("is_core_admin", gettext("Core-Admin"), "user"),
-                                          ("is_cde_admin", gettext("CdE-Admin"), "education"),
-                                          ("is_event_admin", gettext("Event-Admin"), "blackboard"),
+                                          ("is_cde_admin", gettext("CdE-Admin"), "graduation-cap"),
+                                          ("is_event_admin", gettext("Event-Admin"), "chalkboard-teacher"),
                                           ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
                                           ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
                     {% if entries[c][bit] %}

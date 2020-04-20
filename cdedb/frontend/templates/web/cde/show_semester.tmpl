@@ -25,7 +25,7 @@
         {% endtrans %}
     </p>
 
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#billform').cdedbProtectAction(
                 "{{ gettext("Payment Requests will be sent.") }}",
@@ -79,7 +79,7 @@
                             <div class="checkbox">
                                 {{ util.input_checkbox("addresscheck", label=gettext("Include Address-Check")) }}
                             </div>
-                            {{ util.input_submit(value=gettext("Send Mails"), icon="send") }}
+                            {{ util.input_submit(value=gettext("Send Mails"), icon="paper-plane") }}
                         </form>
                     {% endif %}
                 </div>
@@ -225,7 +225,7 @@
                                 {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
                             </div>
                             <div class="form-group">
-                            {{ util.input_submit(value=gettext("Send Mails"), icon="send") }}
+                            {{ util.input_submit(value=gettext("Send Mails"), icon="paper-plane") }}
                             </div>
                         </form>
                         <form action="{{ cdedblink('cde/expuls_addresscheck') }}" method="POST"
@@ -233,7 +233,7 @@
                             {{ util.anti_csrf_token('cde/expuls_addresscheck') }}
                             {{ util.input_hidden("skip", value=True) }}
                             {{ util.input_submit(value=gettext("Mark as done"), aclass="btn btn-warning",
-                                    icon="check") }}
+                                    icon="check-square") }}
                         </form>
                     {% endif %}
                 </div>

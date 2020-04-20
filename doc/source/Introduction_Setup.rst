@@ -50,10 +50,11 @@ Use git to clone the code::
 
   git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 
-For this to work you need to send an ssh public key to the administrators
-(``admin@lists.cde-ev.de``) first, to be authorized for access to the
-repository. All commands below assume, that you are in the root directory of
-the repository. Now you can build the documentation by issuing::
+For this to work you need to create an account on the tracker website which
+has then to be granted access to the cdedb repository (send a mail to the db
+list ``cdedb@lists.cde-ev.de``). All commands below assume, that you are in
+the root directory of the repository. Now you can build the documentation by
+issuing::
 
   make doc
 

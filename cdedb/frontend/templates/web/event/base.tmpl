@@ -4,76 +4,79 @@
 
 {% macro one_event_links(data) %}
     <div class="list-group tear-down">
-        {% if data['is_visible'] or data['id'] in user.orga or is_admin %}
+        {% if data['is_visible'] or data['id'] in user.orga or user.admin_views.intersection(('event_mgmt', 'event_orga')) %}
         {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), gettext("Overview"),
-                     aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'event_show')) }}
+                     aclass="list-group-item", icon="caret-right", active=(sidenav_active == 'event_show')) }}
         {% endif %}
-        {% if data['tracks'] and (data['is_course_list_visible'] or data['id'] in user.orga or is_admin) %}
+        {% if data['tracks'] and (data['is_course_list_visible'] or data['id'] in user.orga or 'event_orga' in user.admin_views) %}
             {{ util.href(cdedblink("event/course_list", {"event_id": data['id']}), gettext("Courselist"),
                          aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_list')) }}
         {% endif %}
         {% if is_registered %}
             {{ util.href(cdedblink("event/registration_status", {"event_id": data['id']}), gettext("My Registration"),
-                    aclass="list-group-item", icon="log-in", active=(sidenav_active == 'event_register')) }}
+                    aclass="list-group-item", icon="sign-in-alt", active=(sidenav_active == 'event_register')) }}
             {% if data['use_questionnaire'] %}
                 {{ util.href(cdedblink("event/questionnaire_form", {"event_id": data['id']}), gettext("Questionnaire"),
                         aclass="list-group-item", icon="edit", active=(sidenav_active == 'event_quest')) }}
             {% endif %}
         {% elif data['is_open'] and "event" in user.roles and not data['is_archived'] %}
             {{ util.href(cdedblink("event/register_form", {"event_id": data['id']}), gettext("Register"),
-                    readonly=is_locked, aclass="list-group-item", icon="log-in",
+                    readonly=is_locked, aclass="list-group-item", icon="sign-in-alt",
                     active=(sidenav_active == 'event_register')) }}
         {% endif %}
-        {% if (data['is_participant_list_visible'] and is_participant) or data['id'] in user.orga or is_admin %}
+        {% if (data['is_participant_list_visible'] and is_participant) or data['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/participant_list", {"event_id": data['id']}), gettext("Participant list"),
-                         aclass="list-group-item", icon="user", active=(sidenav_active == 'event_participant_list')) }}
+                         aclass="list-group-item", icon="users", active=(sidenav_active == 'event_participant_list')) }}
         {% endif %}
     </div>
 
-    {% if data['id'] in user.orga or is_admin %}
+    {% if data['id'] in user.orga or 'event_orga' in user.admin_views %}
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/registration_query", {"event_id": data['id']}), gettext("Registrations"),
                     aclass="list-group-item", icon="list", active=(sidenav_active == 'event_registration')) }}
             {{ util.href(cdedblink("event/stats", {"event_id": data['id']}), gettext("Statistics"),
-                    aclass="list-group-item", icon="stats", active=(sidenav_active == 'event_stats')) }}
+                    aclass="list-group-item", icon="chart-bar", active=(sidenav_active == 'event_stats')) }}
 
             {% if data['tracks'] %}
                 {{ util.href(cdedblink("event/course_stats", {"event_id": data['id']}), gettext("Courses"),
                              aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_stats')) }}
                 {{ util.href(cdedblink("event/course_choices", {"event_id": data['id']}), gettext("Course Assignment"),
-                        aclass="list-group-item", icon="screenshot", active=(sidenav_active == 'event_course_choices')) }}
+                        aclass="list-group-item", icon="crosshairs", active=(sidenav_active == 'event_course_choices')) }}
             {% endif %}
             {{ util.href(cdedblink("event/lodgements", {"event_id": data['id']}), gettext("Lodgements"),
                     aclass="list-group-item", icon="home", active=(sidenav_active == 'event_lodgements')) }}
             {{ util.href(cdedblink("event/downloads", {"event_id": data['id']}), gettext("Downloads"), aclass="list-group-item",
-                    icon="save-file", active=(sidenav_active == 'event_downloads')) }}
+                    icon="file-download", active=(sidenav_active == 'event_downloads')) }}
             {{ util.href(cdedblink("event/partial_import_form", {"event_id": data['id']}), gettext("Partial Import"), aclass="list-group-item",
-                    icon="cloud-upload ", active=(sidenav_active == 'partial_import')) }}
+                    icon="cloud-upload-alt", active=(sidenav_active == 'partial_import')) }}
             {{ util.href(cdedblink("event/batch_fees_form", {"event_id": data['id']}), gettext("Enter Money Transfers"),
-                         aclass="list-group-item", icon="euro", readonly=is_locked,
+                         aclass="list-group-item", icon="euro-sign", readonly=is_locked,
                          active=(sidenav_active == 'event_batch_fees')) }}
         </div>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/change_event", {"event_id": data['id']}), gettext("Configuration"),
                          icon='cog', aclass="list-group-item", active=(sidenav_active == 'event_config')) }}
             {{ util.href(cdedblink("event/part_summary", {"event_id": data['id']}), gettext("Event-Parts"),
-                         icon='time', aclass="list-group-item", active=(sidenav_active == 'event_parts')) }}
+                         icon='clock', aclass="list-group-item", active=(sidenav_active == 'event_parts')) }}
             {{ util.href(cdedblink("event/field_summary", {"event_id": data['id']}), gettext("Configure Custom Fields"),
                          icon='tag', aclass="list-group-item", active=(sidenav_active == 'event_field_summary') ) }}
             {{ util.href(cdedblink("event/configure_registration", {"event_id": data['id']}), gettext("Configure Registration"),
                          icon='log-in', aclass="list-group-item", active=(sidenav_active == 'event_config_registration')) }}
             {{ util.href(cdedblink("event/configure_questionnaire_form", {"event_id": data['id']}),
                          gettext("Configure Questionnaire"), aclass="list-group-item",
-                         active=(sidenav_active == 'event_config_quest'), icon='unchecked') }}
+                         active=(sidenav_active == 'event_quest_summary'), icon='square') }}
             {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), gettext("Log"), aclass="list-group-item",
-                         icon="list-alt", active=(sidenav_active == 'event_event_log')) }}
+                         icon="far fa-list-alt", active=(sidenav_active == 'event_event_log')) }}
         </div>
 
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/checkin_form", {"event_id": data['id']}), gettext("Checkin"),
-                    aclass="list-group-item", icon="check", active=(sidenav_active == 'event_checkin')) }}
+                    aclass="list-group-item", icon="check-square", active=(sidenav_active == 'event_checkin')) }}
         </div>
     {% endif %}
+
+    {{ util.admin_views_toggle(((gettext("Event Management"), ["event_mgmt"], None),
+                                (gettext("Orga Controls"), ["event_orga"], None))) }}
 {% endmacro %}
 
 {% block breadcrumb %}
@@ -83,31 +86,40 @@
 {% block navigation %}
     {% if ambience['event'] %}
         <p>
-            {{ util.href(cdedblink("event/index"), gettext("Event-Overview"), icon="circle-arrow-up") }}
+            {{ util.href(cdedblink("event/index"), gettext("Event-Overview"), icon="arrow-alt-circle-up") }}
         </p>
 
-        <h3 class="heading-sidebar">{{ util.make_icon('blackboard', arialabel=gettext("Event")) }}
+        <h3 class="heading-sidebar">{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }}
             {{ ambience['event']['title'] }}</h3>
         {{ one_event_links(ambience['event']) }}
     {% else %}
         <h3 class="heading-sidebar">{% trans %}Events{% endtrans %}</h3>
         <div class="list-group tear-down">
-            {% if is_admin %}
+            {% if 'event_mgmt' in user.admin_views %}
                 {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item",
-                             icon="triangle-right", active=(sidenav_active == 'event_index')) }}
+                             icon="caret-right", active=(sidenav_active == 'event_index')) }}
                 {{ util.href(cdedblink("event/list_db_events"), gettext("Manage Events"),
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
-            </div>
-            <div class="list-group tear-down">
-                {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
-                             aclass="list-group-item", icon="user", active=(sidenav_active == 'event_users')) }}
-                {{ util.href(cdedblink("event/view_log"), gettext("Log"), aclass="list-group-item", icon="list-alt",
-                             active=(sidenav_active == 'event_log')) }}
             {% else %}
-                {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item", icon="triangle-right",
+                {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item", icon="caret-right",
                              active=(sidenav_active == 'event_index')) }}
             {% endif %}
         </div>
+        {% if user.admin_views.intersection(('event_mgmt', 'event_user')) %}
+            <div class="list-group tear-down">
+                {% if 'event_user' in user.admin_views %}
+                        {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
+                                     aclass="list-group-item", icon="users", active=(sidenav_active == 'event_users')) }}
+                {% endif %}
+                {% if 'event_mgmt' in user.admin_views %}
+                        {{ util.href(cdedblink("event/view_log"), gettext("Log"), aclass="list-group-item", icon="far fa-list-alt",
+                                     active=(sidenav_active == 'event_log')) }}
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["event_user"]),
+                                    (gettext("Event Management"), ["event_mgmt"], None))) }}
     {% endif %}
     <hr class="strong visible-xs visible-sm" />
 {% endblock %}

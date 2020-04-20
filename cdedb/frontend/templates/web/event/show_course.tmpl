@@ -12,7 +12,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], active=True,
             icon='book') }}
@@ -31,10 +31,10 @@
 {% block content %}
     <div class="p">
         {{ util.href(cdedblink('event/change_course_form'), gettext("Edit"), readonly=is_locked,
-                     aclass="btn btn-sm btn-warning", icon="pencil") }}
+                     aclass="btn btn-sm btn-warning", icon="pen") }}
         {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=is_locked,
-                     aclass="btn btn-sm btn-warning", icon="user") }}
-        {{ util.href("mailto:?to=%s"|s|format("; ".join(instructor_emails)), gettext("Email to course instructors"),
+                     aclass="btn btn-sm btn-warning", icon="users") }}
+        {{ util.href(util.mailto(to="; ".join(instructor_emails)), gettext("Email to course instructors"),
                             icon="envelope", aclass="btn btn-sm btn-default", readonly=instructor_emails,
                             title=gettext("Send Mail to all course instructors.")) }}
     </div>
@@ -156,10 +156,10 @@
             </div>
         {% endfor %}
     </div>
-    {% call util.bootstrap_panel(title=gettext("Description"), icon="pushpin", aclass="panel-default panel-condensed") %}
+    {% call util.bootstrap_panel(title=gettext("Description"), icon="thumbtack", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|md }}
     {% endcall %}
-    {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+    {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">
                 <div class="p">
@@ -167,7 +167,7 @@
                             style="display: inline;">
                         {{ util.anti_csrf_token('event/delete_course') }}
                         {{ util.input_submit(value=gettext("Delete"), readonly=is_locked or blockers,
-                                             aclass="btn btn-danger", icon="trash", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
+                                             aclass="btn btn-danger", icon="trash-alt", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                     </form>
                 </div>
@@ -179,7 +179,7 @@
             </div>
         </div>
     {% endcall %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#deletecourseform').cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}");
         $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
     </script>

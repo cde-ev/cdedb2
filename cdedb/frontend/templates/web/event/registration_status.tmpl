@@ -8,19 +8,19 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Your Registration{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     {% if ambience['event']['use_questionnaire'] %}
         <div class="alert alert-info">
-             {{ util.make_icon('info-sign') }}
+             {{ util.make_icon('info-circle') }}
              {% trans link=util.href(cdedblink('event/questionnaire_form'), gettext("questionnaire")) %}
             	Please fill in the {{ link }} now.
             {% endtrans %}
@@ -67,7 +67,7 @@
         </table>
 
         {% if "member" not in user.roles %}
-            <div class="text-info" id="nonmember-surcharge"><strong>
+            <div class="text-info" id="nonmember-surcharge" style="font-weight: bold;">
                 <p>
                 {% trans additional_fee=ambience["event"]["nonmember_surcharge"]|money(lang=lang) %}
                     Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
@@ -81,7 +81,7 @@
                     {% endtrans %}
                     </p>
                 {% endif %}
-            </strong></div>
+            </div>
         {% endif %}
     {% else %}
         <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
@@ -121,7 +121,7 @@
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning",
-                         icon='pencil') }}
+                         icon='pen') }}
             {% if not ambience['event']['registration_soft_limit'] is none %}
                 {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
                     Changes can be made until the registration end({{ date }}).
@@ -152,7 +152,7 @@
         </dd>
         <dt>{% trans %}Participant List Consent{% endtrans %}</dt>
         <dd>
-            {% trans consent="<strong>{}</strong> ".format(gettext("do not"))
+            {% trans consent="<strong>%s</strong> "|s|format(gettext("do not"))
                             if not registration['list_consent'] else "" -%}
                 I {{ consent }}agree that my data, including my name, address and my email, may be sent
                 to other participants of this event beforehand.

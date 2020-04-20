@@ -70,7 +70,7 @@
     }}\hskip 0pt\relax}
 <<% endblock %>>
 <<% block content %>>
-    <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') -%>>
+    <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) -%>>
         <<% for registration_id, registration in registrations.items() -%>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() -%>>
                 <<# jinja does not support list comprehension ... -#>>
@@ -93,7 +93,7 @@
                                 <<%- endif -%>>
                             <<%- endfor -%>>
                         <<%- elif registration['persona_id'] in ambience['event']['orgas'] -%>>
-                            \emph{Orga}
+                            \emph{<<% trans %>> Orga <<% endtrans %>>}
                         <<%- endif -%>>
                     }{
                         <<%- if registration['parts'][part_id]['lodgement_id'] -%>>

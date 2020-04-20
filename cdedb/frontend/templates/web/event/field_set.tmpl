@@ -14,12 +14,12 @@
         {% trans field="<em>%s</em>"|s|format(ambience['event']['fields'][values['field_id']|int]['field_name']|e) %}
             Set {{ field }}
         {% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
 {{ util.breadcrumb_link(cdedblink("event/field_set_select"), gettext("Set Field")) }}
 {{ util.breadcrumb_link(cdedblink("event/field_set_form"),
@@ -45,7 +45,7 @@
             {% trans %}No registrations found.{% endtrans %}
         </p>
     {% endif %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#fieldform').cdedbProtectChanges();
     </script>
 {% endblock %}

@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
 {{ util.breadcrumb_link(cdedblink("event/show_registration"),
         "{} {}".format(persona['given_names'], persona['family_name']), active=True, icon="user") }}
@@ -18,13 +18,13 @@
 {% block heading %}
     <h1 class="title">
         {{ persona['given_names'] }} {{ persona['family_name'] }}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     <div class="p">
         {{ util.href(cdedblink("event/change_registration_form"), gettext("Edit"), readonly=is_locked,
-                     aclass="btn btn-warning btn-sm", icon="pencil") }}
+                     aclass="btn btn-warning btn-sm", icon="pen") }}
     </div>
     <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
     <dl class="dl-horizontal">
@@ -273,7 +273,7 @@ Betrag:             {{ fee|money(lang=lang) }}
 Verwendungszweck:   {{ persona['given_names'] }} {{ persona['family_name'] }}, {{ persona['id']|cdedbid }}, {{ ambience['event']['title'] }}
 </pre>
 
-    {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+    {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">
                 <div class="p">
@@ -281,10 +281,10 @@ Verwendungszweck:   {{ persona['given_names'] }} {{ persona['family_name'] }}, {
                           id="deleteregistrationform" style="display: inline;">
                         {{ util.anti_csrf_token('event/delete_registration') }}
                         {{ util.input_submit(gettext("Delete"), readonly=is_locked, aclass="btn btn-sm btn-danger",
-                                             icon='trash') }}
+                                             icon='trash-alt') }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                     </form>
-                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    <script nonce="{{ csp_nonce }}">
                         $('#deleteregistrationform').cdedbProtectAction(
                             "{{ gettext("The registration will be permanently deleted.") }}");
                         $('#deleteregistrationform').find('[name="ack_delete"]').prop('checked', true).parent().hide();

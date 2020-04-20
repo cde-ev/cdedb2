@@ -12,7 +12,7 @@ from cdedb.backend.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     n_, glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
-    unwrap, now, ProxyShim, INSTITUTION_FIELDS)
+    unwrap, now, ProxyShim, INSTITUTION_FIELDS, xsorted)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 
@@ -34,29 +34,40 @@ class PastEventBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("cde", "event")
-    @singularize("participation_info")
     def participation_infos(self, rs, ids):
         """List concluded events visited by specific personas.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
-        :rtype: {int: [dict]}
-        :returns: Keys are the ids and items are the event lists.
+        :rtype: {int: {int: {}}}
+        :returns: First keys are the ids, second are the pevent_ids.
         """
         ids = affirm_set("id", ids)
         query = glue(
-            "SELECT p.persona_id, p.pevent_id, e.title AS event_name,",
-            "e.tempus, p.pcourse_id, c.title AS course_name, c.nr,",
-            "p.is_instructor, p.is_orga",
+            "SELECT p.persona_id, e.id, e.title, e.tempus, p.is_orga",
             "FROM past_event.participants AS p",
             "INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)",
-            "LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)",
             "WHERE p.persona_id = ANY(%s)")
         pevents = self.query_all(rs, query, (ids,))
+        query = glue(
+            "SELECT p.persona_id, c.id, c.pevent_id, c.title, c.nr,",
+            "p.is_instructor",
+            "FROM past_event.participants AS p",
+            "LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)",
+            "WHERE p.persona_id = ANY(%s)")
+        pcourse = self.query_all(rs, query, (ids,))
         ret = {}
+        course_fields = ('id', 'title', 'is_instructor', 'nr')
+        for pevent in pevents:
+            pevent['courses'] = {
+                c['id']: {k: c[k] for k in course_fields}
+                for c in pcourse if c['persona_id'] == pevent['persona_id']
+                                    and c['pevent_id'] == pevent['id']
+            }
         for anid in ids:
-            ret[anid] = tuple(x for x in pevents if x['persona_id'] == anid)
+            ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}
         return ret
+    participation_info = singularize(participation_infos)
 
     def past_event_log(self, rs, code, pevent_id, persona_id=None,
                        additional_info=None):
@@ -129,7 +140,6 @@ class PastEventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
-    @singularize("get_institution")
     def get_institutions(self, rs, ids):
         """Retrieve data for some institutions.
 
@@ -141,6 +151,7 @@ class PastEventBackend(AbstractBackend):
         data = self.sql_select(rs, "past_event.institutions",
                                INSTITUTION_FIELDS, ids)
         return {e['id']: e for e in data}
+    get_institution = singularize(get_institutions)
 
     @access("cde_admin", "event_admin")
     def set_institution(self, rs, data):
@@ -256,7 +267,6 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("cde", "event")
-    @singularize("get_past_event")
     def get_past_events(self, rs, ids):
         """Retrieve data for some concluded events.
 
@@ -267,6 +277,7 @@ class PastEventBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, ids)
         return {e['id']: e for e in data}
+    get_past_event = singularize(get_past_events)
 
     @access("cde_admin", "event_admin")
     def set_past_event(self, rs, data):
@@ -404,7 +415,6 @@ class PastEventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
-    @singularize("get_past_course")
     def get_past_courses(self, rs, ids):
         """Retrieve data for some concluded courses.
 
@@ -418,6 +428,7 @@ class PastEventBackend(AbstractBackend):
         data = self.sql_select(rs, "past_event.courses", PAST_COURSE_FIELDS,
                                ids)
         return {e['id']: e for e in data}
+    get_past_course = singularize(get_past_courses)
 
     @access("cde_admin", "event_admin")
     def set_past_course(self, rs, data):
@@ -805,5 +816,5 @@ class PastEventBackend(AbstractBackend):
             self.event.set_event_archived(rs, {'id': event_id,
                                                'is_archived': True})
             new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                            for part_id in sorted(event['parts']))
+                            for part_id in xsorted(event['parts']))
         return new_ids, None

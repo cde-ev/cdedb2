@@ -3,6 +3,14 @@ Readme
 
 This section provides practical knowledge for development.
 
+Contributing
+------------
+
+Contributions should mainly be done by opening pull requests in Gitea.
+
+We currently do not have any continuous integration so please run the tests
+manually by executing ``bin/check.sh``.
+
 Coding Guidelines
 -----------------
 
@@ -66,6 +74,8 @@ There is a default data set for the development it contains some users
    martin@example.cde      secret     second meta admin to confirm privilege changes   DB-13-2
    nina@example.cde        secret     mailinglist admin and event user                 DB 14-0
    olaf@example.cde        secret     a disabled user (and member and CdE admin)       DB-15-9
+   paulchen@axample.cde    secret     core admin and cde user                          DB-16-7
+   quintus@example.cde     secret     cde admin and not searchable member              DB-17-5
    vera@example.cde        secret     Member, corresponding to Verwaltungsteam         DB-22-1
    werner@example.cde      secret     Member, corresponding to Wahlleitung             DB-23-X
    annika@example.cde      secret     Member, corresponding to Akademieteam            DB-27-2

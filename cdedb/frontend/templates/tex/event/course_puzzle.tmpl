@@ -3,13 +3,13 @@
     \parindent 0pt\relax
     \newcommand\course[7]{
         \section*{#1 (#2)}
-        Kursleiter: #3
+        <<% trans %>> Instructors <<% endtrans %>>: #3
         \par
-        Minimalgröße/Maximalgröße: #4/#5
+        <<% trans %>> Minimum size/maximum size <<% endtrans %>>: #4/#5
         \par
-        Notizen: #6
+        <<% trans %>> Notes <<% endtrans %>>: #6
         \par
-        Erst-/Zweit-/Drittwahlen: #7}
+        <<% trans %>> First/second/third choice <<% endtrans %>>: #7}
     \newcommand\participant[6]{
         \section*{#1 (#2)}
         #3
@@ -18,7 +18,7 @@
         #6}
 <<% endblock %>>
 <<% block content %>>
-    <<% for course_id, course in courses|xdictsort('title') %>>
+    <<% for course_id, course in courses|keydictsort(EntitySorter.course) %>>
         <<% for track_id in tracks_sorted if track_id in course['active_segments'] %>>
             \course{<<< course['title']|te >>>}{<<< ambience['event']['tracks'][track_id]['title']|te >>>}%
                    {<<< course['instructors']|te >>>}{<<< course['min_size']|te >>>}{<<< course['max_size']|te >>>}%
@@ -36,11 +36,11 @@
                                  <<< personas[registration['persona_id']]['family_name']|te >>>}%
                                 {<<< track['title']|te >>>}%
                                 {<<% if registration['tracks'][track_id]['course_instructor'] -%>>
-                                    Kursleiter:
+                                    <<% trans %>> Instructor <<% endtrans %>>:
                                     <<< courses[registration['tracks'][track_id]['course_instructor']]['title']|te >>>
                                     \par
                                 <<%- endif %>>}%
-                    <<% for label in ("Erstwahl", "Zweitwahl", "Drittwahl") -%>>
+                    <<% for label in (gettext("First choice"), gettext("Second choice"), gettext("Third choice")) -%>>
                                 {<<% if registration['tracks'][track_id]['choices']|length > loop.index0 -%>>
                                     <<< label|te >>>:
                                     <<< courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te >>>

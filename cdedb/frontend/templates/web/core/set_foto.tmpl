@@ -21,9 +21,10 @@
         {% if foto %}
             <div class="col-md-5">
                 <h3>{% trans %}Current Picture{% endtrans %}</h3>
-                <img src="{{ cdedblink('core/get_foto', {'foto': foto}) }}" class="profilepic img-thumbnail">
+                <img src="{{ cdedblink('core/get_foto', {'foto': foto}) }}" class="profilepic img-thumbnail"
+                    alt="{% trans %}Current Picture{% endtrans %}">
 
-                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                <script nonce="{{ csp_nonce }}">
                     $(function() {
                         $('#resetfotoform').cdedbProtectAction(
                             "{{ gettext("The Profile Picture will be permanently deleted.") }}");
@@ -33,7 +34,7 @@
                     {{ util.anti_csrf_token('core/set_foto') }}
                     {{ util.input_hidden(name="delete", value=True) }}
                     <div class="form-group">
-                        {{ util.input_submit(value=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash") }}
+                        {{ util.input_submit(value=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash-alt") }}
                     </div>
                 </form>
             </div>

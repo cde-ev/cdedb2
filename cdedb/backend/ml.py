@@ -171,7 +171,6 @@ class MlBackend(AbstractBackend):
                 or ml["id"] in rs.user.moderator)
 
     @access("persona")
-    @singularize("moderator_info")
     def moderator_infos(self, rs, ids):
         """List mailing lists moderated by specific personas.
 
@@ -188,6 +187,7 @@ class MlBackend(AbstractBackend):
             ret[anid] = {x['mailinglist_id']
                          for x in data if x['persona_id'] == anid}
         return ret
+    moderator_info = singularize(moderator_infos)
 
     def ml_log(self, rs, code, mailinglist_id, persona_id=None,
                additional_info=None):
@@ -311,7 +311,6 @@ class MlBackend(AbstractBackend):
                 if self.may_view(rs, mailinglists[k])}
 
     @access("ml")
-    @singularize("get_mailinglist")
     def get_mailinglists(self, rs, ids):
         """Retrieve data for some mailinglists.
 
@@ -352,6 +351,7 @@ class MlBackend(AbstractBackend):
                 ret[anid]['domain_str'] = str(const.MailinglistDomain(ret[anid]['domain']))
                 ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
         return ret
+    get_mailinglist = singularize(get_mailinglists)
 
     @access("ml")
     def set_moderators(self, rs, mailinglist_id, moderator_ids):
@@ -885,7 +885,6 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml", "ml_script")
-    @singularize("get_subscription_states", "mailinglist_ids", "mailinglist_id")
     def get_many_subscription_states(self, rs, mailinglist_ids, states=None):
         """Get all users related to a given mailinglist and their sub state.
 
@@ -925,6 +924,8 @@ class MlBackend(AbstractBackend):
                 const.SubscriptionStates(e["subscription_state"])
 
         return ret
+    get_subscription_states = singularize(
+        get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
     @access("ml")
     def get_user_subscriptions(self, rs, persona_id, states=None,

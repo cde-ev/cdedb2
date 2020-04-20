@@ -44,7 +44,7 @@
 
              <noscript>
                 <p class="text-muted">
-                    {{ util.make_icon('info-sign') }}
+                    {{ util.make_icon('info-circle') }}
                     {% trans %}The following fields are only relevant for Event-Account Requests.{% endtrans %}
                 </p>
             </noscript>
@@ -67,7 +67,7 @@
             {{ util.form_input_text(name="country", label=gettext("Country"), small=True,
                                     aclass="genesis-realm-specific") }}
 
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
                 var $realmSpecificFields = $('.genesis-realm-specific');
                 var fieldsPerRealm = {{ realm_specific_genesis_fields|json|s }};

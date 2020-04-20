@@ -15,7 +15,7 @@
     {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#changedataform').cdedbProtectChanges();
         });
@@ -35,7 +35,7 @@
         {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
         {% if (values['is_cde_realm'] or values['is_event_realm']) and 'event' in admin_bits %}
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                      label=gettext("Gender")) }}
+                                      label=gettext("Gender"), sort=True) }}
             {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD", type="date") }}
         {% endif %}
 

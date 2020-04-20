@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker'], icon='home') }}
     {{ util.breadcrumb_link(cdedblink("event/manage_inhabitants"), gettext("Manage Inhabitants"), active=True) }}
@@ -20,7 +20,7 @@
         {% trans lodgement=ambience['lodgement']['moniker']%}
         	Inhabitants of {{ lodgement }}
         {% endtrans %}
-        <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -57,7 +57,7 @@
                         <label for="input_new_{{ part_id }}">
                             {{ util.make_icon('plus') }} {% trans %}Add Inhabitant{% endtrans %}
                         </label>
-                        <select multiple="multiple" id="input_new_{{ part_id }}" class="form-control"
+                        <select multiple id="input_new_{{ part_id }}" class="form-control"
                                 name="new_{{ part_id }}">
                             <option value="">{% trans %}– none –{% endtrans %}</option>
                             {% for registration_id in without_lodgement[part_id] %}
@@ -70,7 +70,7 @@
                     {% endcall %}
                 </div>
             {% endfor %}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 var lodgement_names = {{ lodgement_names|json|s }};
                 {% for part_id in ambience['event']['parts'] %}
                     $('#input_new_{{ part_id }}').cdedbSearchParticipant(
@@ -80,6 +80,6 @@
             </script>
         </div>
         {{ util.input_submit(value=gettext("Save")) }}&emsp;
-        {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='remove', aclass="btn btn-default") }}
+        {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>
 {% endblock %}

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
+import csv
 import itertools
 import json
-import csv
 import re
-import unittest
 import time
-import webtest
+import unittest
+from test.common import USER_DICT, FrontendTest, as_users
 
-from test.common import as_users, USER_DICT, FrontendTest
-from cdedb.common import now
-from cdedb.query import QueryOperators
 import cdedb.database.constants as const
+import webtest
+from cdedb.common import now, ADMIN_VIEWS_COOKIE_NAME
+from cdedb.query import QueryOperators
 
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta")
@@ -93,6 +93,59 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("03.04.1933", div='personal-information')
         self.assertPresence("Jabberwocky for the win.", div='additional')
 
+    @as_users("anton")
+    def test_cde_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+
+        self.traverse({'href': '/cde'})
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=False)
+
+        # Test Finance Admin View
+        self.traverse({'href': '/cde/search/user'})
+        self.assertNoLink('/cde/semester/show')
+        self.assertNoLink('/cde/lastschrift/')
+        self.assertNoLink('/cde/log')
+        self.realm_admin_view_profile('berta', 'cde')
+        self.assertNoLink('/lastschrift')
+        self.assertNoLink('/balance/change')
+        self.traverse({'href': '/cde'})
+        self._click_admin_view_button(re.compile(r"Finanz-Administration"),
+                                      current_state=False)
+        self.traverse({'href': '/cde/semester/show'},
+                      {'href': '/cde/log'},
+                      {'href': '/cde/parse'},
+                      {'href': '/cde/lastschrift'},
+                      {'href': '/cde/user/2/lastschrift'},
+                      {'href': '/core/persona/2/show'},
+                      {'href': '/cde/user/2/lastschrift'})
+
+        # Test Past Event Admin View
+        self.traverse({'href': '/cde/past/event/list'})
+        self.assertNoLink('/cde/past/event/create')
+        self.traverse({'href': '/cde/past/event/1/show'})
+        self.assertNoLink('/cde/past/event/1/change')
+        self.assertNoLink('/cde/past/event/1/course/create')
+        self.assertNotIn('addparticipantform', self.response.forms)
+        self.assertNotIn('removeparticipantform3', self.response.forms)
+        self.assertNotIn('deletepasteventform', self.response.forms)
+        self.assertNonPresence('Emilia')
+        self.assertPresence('weitere …')
+        self.traverse({'href': '/cde/past/event/1/course/2/show'})
+
+        self._click_admin_view_button(re.compile(r"Verwaltung verg. Veranst."),
+                                      current_state=False)
+        self.traverse({'href': '/cde/past/event/1/show'},
+                      {'href': '/cde/past/event/1/change'},
+                      {'href': '/cde/past/event/list'},
+                      {'href': '/cde/past/event/create'},
+                      {'href': '/cde/past/event/list'},
+                      {'href': '/cde/past/event/1/show'})
+        self.assertPresence('Emilia')
+        self.assertIn('addparticipantform', self.response.forms)
+        self.assertIn('removeparticipantform3', self.response.forms)
+        self.assertIn('deletepasteventform', self.response.forms)
+
     @as_users("vera")
     def test_validation(self, user):
         self.admin_view_profile('berta')
@@ -162,7 +215,6 @@ class TestCdEFrontend(FrontendTest):
                 self.assertPresence("automatisch zurückgesetzt")
                 break
 
-    @unittest.expectedFailure
     @as_users("vera", "berta", "inga")
     def test_member_search(self, user):
         # by family_name and birth_name
@@ -194,17 +246,18 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("Im Garten 77", div='address')
 
-        # by fulltext (this matches wordwise, here on a number in their address)
+        # by fulltext. This matchs only complete words, here on ...
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "1"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertPresence("3 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Akira", div='result')
-        self.assertPresence("Ferdinand", div='result')
-        self.assertPresence("Inga", div='result')
+        self.assertPresence("4 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Anton", div='result')  # ... ID
+        self.assertPresence("Akira", div='result')  # ... Address
+        self.assertPresence("Ferdinand", div='result')  # ... Address
+        self.assertPresence("Inga", div='result')  # ... Address
 
         # by zip: upper
         self.traverse({'description': 'CdE-Mitglied suchen'})
@@ -478,7 +531,7 @@ class TestCdEFrontend(FrontendTest):
             "family_name": "Zeruda-Hime",
             "name_supplement": 'von und zu',
             "display_name": 'Zelda',
-            "birthday": "5.6.1987",
+            "birthday": "1987-06-05",
             "specialisation": "oehm",
             "affiliation": "Hogwarts",
             "timeline": "tja",
@@ -1324,8 +1377,8 @@ class TestCdEFrontend(FrontendTest):
                             div="cdelog_entry2")
         self.assertPresence("0 Probemitgliedschaften beendet",
                             div="cdelog_entry0")
-        self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry2")
-        self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry0")
+        self.assertPresence("32.50 € Guthaben abgebucht.", div="cdelog_entry2")
+        self.assertPresence("30.00 € Guthaben abgebucht.", div="cdelog_entry0")
 
     @as_users("farin")
     def test_expuls(self, user):
@@ -1890,7 +1943,7 @@ class TestCdEFrontend(FrontendTest):
     def test_changelog_meta(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/core/changelog/view'})
-        self.assertTitle("Nutzerdaten-Log [0–20]")
+        self.assertTitle("Nutzerdaten-Log [0–23]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)

@@ -238,6 +238,21 @@
             "parental_agreement": true,
             "payment": null,
             "persona_id": 100,
+            "real_persona_id": null},
+        "6": {
+            "amount_owed": "10.50",
+            "amount_paid": "0.00",
+            "checkin": null,
+            "event_id": 1,
+            "fields": {"transportation": "pedes"},
+            "id": 6,
+            "list_consent": true,
+            "mixed_lodging": true,
+            "notes": null,
+            "orga_notes": null,
+            "parental_agreement": true,
+            "payment": null,
+            "persona_id": 2,
             "real_persona_id": null}
     },
     "event.fee_modifiers": {
@@ -469,7 +484,28 @@
             "lodgement_id": 1,
             "part_id": 3,
             "registration_id": 5,
-            "status": 2}
+            "status": 2},
+        "16": {
+            "id": 16,
+            "is_reserve": false,
+            "lodgement_id": null,
+            "part_id": 1,
+            "registration_id": 6,
+            "status": 2},
+       "17": {
+           "id": 17,
+           "is_reserve": false,
+           "lodgement_id": null,
+           "part_id": 2,
+           "registration_id": 6,
+           "status": -1},
+       "18": {
+           "id": 18,
+           "is_reserve": false,
+           "lodgement_id": null,
+           "part_id": 3,
+           "registration_id": 6,
+           "status": -1}
     },
     "event.registration_tracks": {
         "2": {
@@ -561,19 +597,43 @@
             "course_instructor": null,
             "id": 13,
             "registration_id": 5,
-            "track_id": 1},
+            "track_id": 1
+        },
         "14": {
             "course_id": 2,
             "course_instructor": null,
             "id": 14,
             "registration_id": 5,
-            "track_id": 2},
+            "track_id": 2
+        },
         "15": {
             "course_id": 1,
             "course_instructor": null,
             "id": 15,
             "registration_id": 5,
-            "track_id": 3}
+            "track_id": 3
+        },
+        "16": {
+            "course_id": null,
+            "course_instructor": null,
+            "id": 16,
+            "registration_id": 6,
+            "track_id": 1
+        },
+        "17": {
+            "course_id": null,
+            "course_instructor": null,
+            "id": 17,
+            "registration_id": 6,
+            "track_id": 2
+        },
+        "18": {
+            "course_id": null,
+            "course_instructor": null,
+            "id": 18,
+            "registration_id": 6,
+            "track_id": 3
+        }
     },
     "event.courses": {
         "2": {
@@ -1115,7 +1175,7 @@
             "is_cde_admin": false,
             "is_finance_admin": false,
             "is_assembly_admin": false,
-            "mobile": null,
+            "mobile": "01577/314159",
             "is_event_admin": false,
             "is_meta_admin": false,
             "birthday": "2012-06-02",
@@ -1161,7 +1221,39 @@
             "telephone": "+81 (314) 159263",
             "title": null,
             "username": "akira@example.cde"
-        }
+        },
+        "2": {
+            "address": "Im Garten 77",
+            "address_supplement": "bei Spielmanns",
+            "birthday": "1981-02-11",
+            "country": null,
+            "display_name": "Bertå",
+            "family_name": "Beispiel",
+            "gender": 1,
+            "given_names": "Bertålotta",
+            "id": 2,
+            "is_active": true,
+            "is_archived": false,
+            "is_assembly_admin": false,
+            "is_assembly_realm": true,
+            "is_cde_admin": false,
+            "is_cde_realm": true,
+            "is_core_admin": false,
+            "is_event_admin": false,
+            "is_event_realm": true,
+            "is_finance_admin": false,
+            "is_member": true,
+            "is_meta_admin": false,
+            "is_ml_admin": false,
+            "is_ml_realm": true,
+            "is_searchable": true,
+            "location": "Utopia",
+            "mobile": "0163/123456789",
+            "name_supplement": "MdB",
+            "postal_code": "34576",
+            "telephone": "+49 (5432) 987654321",
+            "title": "Dr.",
+            "username": "berta@example.cde"}
     },
     "event.log": {
         "2": {
@@ -1226,6 +1318,7 @@
             "courses_in_participant_list": false,
             "is_course_list_visible": true,
             "is_course_state_visible": false,
+            "is_cancelled": false,
             "notes": "Todoliste ... just kidding ;)",
             "title": "Gro\u00dfe Testakademie 2222"
         }

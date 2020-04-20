@@ -8,26 +8,28 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Lodgements{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
 {% macro display_sorting_header(part_id, sortkey, label) %}
-    {% if sortkey == last_sortkey.value and part_id == last_sort_part_id and last_reverse == False %}
-        {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': True}),
-                     label + nbsp + "▲", title=gettext("Sort descending.")) }}
-    {% elif sortkey == last_sortkey.value and part_id == last_sort_part_id and last_reverse == True %}
-        {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
-                     label + nbsp + "▼", title=gettext("Sort ascending.")) }}
+    {% if sortkey == last_sortkey.value and part_id == last_sort_part_id %}
+        {{ util.href(cdedblink('event/lodgements',
+                               {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': not last_reverse}),
+                     label,
+                     icon="sort-down" if last_reverse else "sort-up",
+                     title=gettext("Sort ascending.") if last_reverse else gettext("Sort descending.")) }}
     {% else %}
         {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
-                     label + nbsp + "♦", title=gettext("Sort ascending.")) }}
+                     label,
+                     icon="sort",
+                     title=gettext("Sort ascending.")) }}
     {% endif %}
 {% endmacro %}
 
@@ -122,7 +124,7 @@
                         <td class=" text-right" id="lodge_reserve_capacity{{ lodgement_id }}">+ {{ lodgement['reserve'] }}</td>
                         <td class="b-left">
                             {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
-                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
+                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pen',
                                          title=gettext("Edit")) }}
                             {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}),
                                          readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
@@ -158,7 +160,7 @@
         <span class="color-legend course-manyp"></span>&nbsp;{% trans %}Overfull{% endtrans %} &emsp;
         <span class="color-legend course-cancelled"></span>&nbsp;{% trans %}Illegal Gendermix{% endtrans %}
     </p>
-    <p>
+    <div class="p">
         <strong>{% trans %}Sorting:{% endtrans %}</strong> <br />
         {% trans %}
             The lodgements may be sorted according to the following criteria inside their lodgement groups.
@@ -180,5 +182,5 @@
                 {% endtrans %}
             </li>
         </ul>
-    </p>
+    </div>
 {% endblock %}

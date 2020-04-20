@@ -10,14 +10,14 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/configure_questionnaire"), gettext("Configure Questionnaire")) }}
     {{ util.breadcrumb_link(cdedblink("event/reorder_questionnaire"), gettext("Reorder Questionnaire"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Reorder Questionnaire{% endtrans %}
-        <small>{{ util.make_icon('blackboard', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -39,13 +39,13 @@
                             {% endif %}
                             {% if FIELD['entries'] %}
                                 <div class="miniature-text">
-                                    {{ util.make_icon('menu-down', aclass='pull-right') }}
+                                    {{ util.make_icon('angle-down', aclass='pull-right') }}
                                     → [{{ FIELD['field_name'] }}]
                                 </div>
                             {% else %}
                                 {% if FIELD['kind'] == enums['FieldDatatypes'].bool %}
                                     <div class="miniature-checkbox">
-                                        {{ util.make_icon('check') }}
+                                        {{ util.make_icon('check-square') }}
                                         {% if entry['title'] -%}
                                             <b>{{ entry['title']|truncate(50,False,' …') }}</b>
                                         {%- endif %}

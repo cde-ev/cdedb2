@@ -1,73 +1,180 @@
-{% macro show_result() -%}
-    <h3>{% trans %}Result{% endtrans %}</h3>
-    {% if result['winners'] %}
-        <ol id="winners">
+{% macro show_result(ballot, result, short=False) -%}
+    <table class="table">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="col-md-10">
+                    {% trans %}Candidates{% endtrans %}
+                </th>
+                <th class="col-md-1">
+                    {{ util.make_icon('plus', title=gettext("Pro-Votes")) }}
+                </th>
+                <th class="col-md-1">
+                    {{ util.make_icon('minus', title=gettext("Contra-Votes")) }}
+                </th>
+            </tr>
+        </thead>
+    <tbody>
+        {% set count = namespace(value=0) %}
+        {% if result['winners'] %}
             {% for candidate_ids in result['winners'] %}
-                <li value="{{ loop.index }}">
-                    {% for candidate_id in candidate_ids %}
-                        {% if not ambience['ballot']['votes'] %}
-                            <span class="label label-primary">
-                                {{- ambience['ballot']['candidates'][candidate_id]['moniker'] -}}
-                            </span>
-                        {% endif %}
-                        {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
-                        {% if result['counts'] %}
-                            {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
-                            {% trans count=result['counts'][candidate_moniker] %}
-                                ({{ count }} votes)
-                            {% endtrans %}
-                        {% endif %}
+                {% set count.value = count.value + 1 %}
+                {% for candidate_id in candidate_ids %}
+                    {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
+                    {% set first_candidate = loop.first %}
+                    <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
+                        <td>
+                            {{ count.value }}.
+                        </td>
+                        <td>
+                            {{ ballot['candidates'][candidate_id]['description'] }}
+                            {% if not ballot['votes'] and not short %}
+                                <span class="label label-primary">
+                                    {{- candidate_moniker -}}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for level in result['counts'] %}
+                                {% if candidate_moniker in level['winner'] and first_candidate %}
+                                    {{ level['pro_votes'] }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for level in result['counts'] %}
+                                {% if candidate_moniker in level['winner'] and first_candidate %}
+                                    {{ level['contra_votes'] }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
                         {% if not loop.last %}
                             <br /><span class="sr-only">{% trans %}and{% endtrans %}</span>
                         {% endif %}
-                    {% endfor %}
-                </li>
+                    </tr>
+                {% endfor %}
             {% endfor %}
-        </ol>
-    {% endif %}
+        {% endif %}
 
-    {% if ambience['ballot']['use_bar'] and result['losers'] %}
-        <p class="text-info">
-            {% if ambience['ballot']['votes'] %}
-                {% trans against_all=gettext("Against all Candidates") %}
-                    The following candidates have less votes than the {{ against_all }} choice.
-                {% endtrans %}
-            {% else %}
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                    The following candidates lost against the bar ({{ abm }}).
-                {% endtrans %}
-            {% endif %}
-        <ol id="loosers">
-            {% for candidate_ids in result['losers'] %}
-                <li value="{{ (loop.index + result['winners']|length) }}">
-                    {% for candidate_id in candidate_ids %}
-                        {% if not ambience['ballot']['votes'] %}
-                            <span class="label label-primary">
-                                {{- ambience['ballot']['candidates'][candidate_id]['moniker'] -}}
-                            </span>
+        {% if ballot['use_bar'] %}
+            <tr
+                {% for level in result['counts'] %}
+                    {# it is possible that a candidate is equal to bar. This candidate will be in the winner section.
+                       So, if bar is a winner and not the only winner, we must not print a new level number.
+                       This has to check nonetherless for bar not in level[winner] and not in level[looser], think
+                       of a vote without losers.#}
+                    {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length != 1
+                       or ASSEMBLY_BAR_MONIKER in level['loser'] and level['loser']|length != 1 %}
+                        class="no-upper-border"
+                    {% endif %}
+                {% endfor %}
+            >
+                <td>
+                    {% for level in result['counts'] %}
+                        {# it is possible that a candidate is equal to bar. This candidate will be in the winner section.
+                           So, if bar is a winner and not the only winner, we must not increase the level number #}
+                        {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
+                            {% set count.value = count.value + 1 %}
                         {% endif %}
-                        {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
-                        {% if result['counts'] %}
-                            {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
-                            {% trans count=result['counts'][candidate_moniker] %}
-                                ({{ count }} votes)
+                    {% endfor %}
+                    {{ count.value }}.
+                </td>
+                <td class="text-info">
+                    {% if not short %}
+                        {% if ballot['votes'] %}
+                            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                                The following candidates have less votes than the "Against all Candidates" ({{ abm }}) choice.
+                            {% endtrans %}
+                        {% else %}
+                            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                                The following candidates lost against the bar ({{ abm }}).
                             {% endtrans %}
                         {% endif %}
+                    {% else %}
+                        {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                            The bar option {{ abm }}.
+                        {% endtrans %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% for level in result['counts'] %}
+                        {# see above for a detailed explanation #}
+                        {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
+                            {{ level['pro_votes'] }}
+                        {% endif %}
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for level in result['counts'] %}
+                        {# see above for a detailed explanation #}
+                        {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
+                            {{ level['contra_votes'] }}
+                        {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endif %}
+
+        {% if result['losers'] %}
+            {% for candidate_ids in result['losers'] %}
+                {% set count.value = count.value + 1 %}
+                {% for candidate_id in candidate_ids %}
+                    {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
+                    {% set first_candidate = loop.first %}
+                    <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
+                        <td>
+                            {{ count.value }}.
+                        </td>
+                        <td>
+                            {{ ballot['candidates'][candidate_id]['description'] }}
+                            {% if not ballot['votes'] and not short %}
+                                <span class="label label-primary">
+                                    {{- candidate_moniker -}}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for level in result['counts'] %}
+                                {% if candidate_moniker in level['winner'] and first_candidate %}
+                                    {{ level['pro_votes'] }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for level in result['counts'] %}
+                                {% if candidate_moniker in level['winner'] and first_candidate %}
+                                    {{ level['contra_votes'] }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
                         {% if not loop.last %}
                             <br /><span class="sr-only">{% trans %}and{% endtrans %}</span>
                         {% endif %}
-                    {% endfor %}
-                </li>
+                    </tr>
+                {% endfor %}
             {% endfor %}
-        </ol>
-    {% endif %}
+        {% endif %}
+    </tbody>
+    </table>
 {%- endmacro %}
+
+{% macro explain_result() %}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
+        <p>
+            Die Pro (a) und Kontra (b) Stimmen gelten für die jeweilige Platzierung (x) und beziehen sich relativ
+            auf die darunter liegende Platzierung (y).
+        </p>
+        <p>
+            Also: Option x gewinnt gegen Option y mit a Pro und b Kontra Stimmen.
+        </p>
+    {% endcall %}
+{% endmacro %}
 
 {% macro show_summary() -%}
     <pre style="max-width: 500px;">{{ result['result'] }}</pre>
 
     {# info box for preferential votes #}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
                 This vote was a preferential vote. Voters arranged the candidates according to their preference.
@@ -98,7 +205,7 @@
 
 {% macro show_own_vote() -%}
     <h3>{% trans %}Your Vote{% endtrans %}</h3>
-    <p id="own-vote">
+    <div id="own-vote">
         {% set is_active = ambience["assembly"]["is_active"] %}
         {% if not attends %}
             {% trans %}You are not participating in this assembly.{% endtrans %}
@@ -108,13 +215,13 @@
             {% else %}
                 {% if not secret %}
                     <p>
-                        {{ util.make_icon('info-sign') }}
+                        {{ util.make_icon('info-circle') }}
                         {% trans %}The assembly concluded and the votes got encrypted.{% endtrans %}
                         {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
                     </p>
                 {% else %}
                     <p>
-                        {{ util.make_icon('info-sign') }}
+                        {{ util.make_icon('info-circle') }}
                         {% trans %}You entered an invalid secret.{% endtrans %}
                         {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
                     </p>
@@ -157,5 +264,5 @@
                 You voted {{ vote }}.
             {% endtrans -%}
         {% endif %}
-    </p>
+    </div>
 {%- endmacro %}

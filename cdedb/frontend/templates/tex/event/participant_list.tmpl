@@ -19,8 +19,12 @@
 
     \definecolor{design}{HTML}{000000}
 
-    \chead{\Large\textbf{\textsf{Teilnehmerliste <<< ambience['event']['title']|te >>>}}}
-    \cfoot{Seite \thepage{} von \pageref{LastPage}}
+    \chead{\Large\textbf{\textsf{<<% trans title=ambience['event']['title']|te %>>
+        Participant list <<< title >>>
+    <<% endtrans %>>}}}
+    \cfoot{<<% trans curr_page="\thepage{}", total_pages="\pageref{LastPage}" %>>
+        Page <<< curr_page >>> of <<< total_pages >>>
+    <<% endtrans %>>}
 
 <<% endblock %>>
 <<% block content %>>
@@ -39,16 +43,16 @@
     |}
             \hline
             \rowcolor{design}
-			  \head{Vorname}
-			& \head{Nachname}
-			& \head{E-Mail}
-			& \head{PLZ \& Ort}
+			  \head{<<% trans %>> Given Name <<% endtrans %>>}
+			& \head{<<% trans %>> Family Name <<% endtrans %>>}
+			& \head{<<% trans %>> Email Address <<% endtrans %>>}
+			& \head{<<% trans %>> Postal Code, City <<% endtrans %>>}
             % Kursschienen/Eventparts
-            <<% for ep_id, ep in parts|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
+            <<% for ep_id, ep in parts|keydictsort(EntitySorter.event_part) if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
 			    <<% if ep['tracks']|length < 1 -%>>
                     & \head{<<< ep.shortname|te >>>}
                 <<% endif -%>>
-                <<% for t_id, t in ep['tracks']|dictsort('sortkey') -%>>
+                <<% for t_id, t in ep['tracks']|keydictsort(EntitySorter.course_track) -%>>
 				    & \head{<<< t.shortname|te >>>}
 			    <<% endfor -%>>
             <<% endfor -%>>
@@ -71,7 +75,7 @@
                 <<<- personas[registration['persona_id']]['country']|te ->>>
             <<% endif -%>>
             % Kurse
-            <<% for ep_id, ep in parts|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
+            <<% for ep_id, ep in parts|keydictsort(EntitySorter.event_part) if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
                 <<% if ep['tracks']|length < 1 -%>>
                     <<% if registration['parts'][ep_id]['status'] == participant -%>>
                         & \checkmark
@@ -80,7 +84,7 @@
                     <<%- endif -%>>
                     % <<< ep['shortname']|te >>>
                 <<% endif -%>>
-                <<% for t_id, t in ep['tracks']|dictsort('sortkey') -%>>
+                <<% for t_id, t in ep['tracks']|keydictsort(EntitySorter.course_track) -%>>
                     & % <<< t['shortname']|te >>>
                     <<% if registration['parts'][t['part_id']]['status'] == participant -%>>
                         <<% if registration['tracks'][t_id]['course_id'] -%>>
@@ -93,7 +97,7 @@
                                 <<<- courses[registration['tracks'][t_id]['course_id']]['shortname']|te ->>>
                             <<% endif -%>>
                         <<% elif registration['persona_id'] in ambience['event']['orgas'] -%>>
-                            \emph{Orga}
+                            \emph{<<% trans %>> Orga <<% endtrans %>>}
                         <<% else -%>>
                             \checkmark
                         <<% endif -%>>

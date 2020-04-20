@@ -10,13 +10,13 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Configuration{% endtrans %}
-        <small>{{ util.make_icon('blackboard', arialabel=gettext("Configuration")) }}
+        <small>{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Configuration")) }}
             {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -36,7 +36,7 @@
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address"),
                                 info=gettext("This address is visible publicly (without login), if “Visibility of the "
                                              "Event” is set.")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort(by='value')) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
 
         <h4 class="heading-underline">{% trans %}Visibility and Registration Dates{% endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event"),
@@ -63,6 +63,9 @@
                                 info=gettext("If checked, the above mentioned participants list also includes "
                                 "assigned courses. This option is only usefull, if “Visibility of the Participant "
                                 "List” is checked.")) }}
+        {{ util.form_input_checkbox(name="is_cancelled", label=gettext("Cancellation of the event"),
+                                info=gettext("If checked, the event is shown as cancelled. This can be undone and has no "
+                                "further effects. Do not do this without consulting the chairmen of the CdE.")) }}
         {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local',
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
         {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
@@ -78,8 +81,9 @@
                                 "You can configure every part of the questionnaire individually in the questionnaire configuration.")) }}
 
         <h4 class="heading-underline">{% trans %}Additional Information for Registration{% endtrans %}</h4>
-        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="",
-                                info=gettext("Only leave this empty if payment is going to be handled directly by the orgas.")) }}
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="&nbsp;"|s,
+                                info=gettext("Only leave this empty if payment is going to be handled directly by the orgas."),
+                                sort=True) }}
         {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants."), addon='€',
                                 info=gettext("Participants who are not currently members will have to pay this additional fee.")) }}
         {{ util.form_input_textarea(name="registration_text", label=gettext("Registration page free text"), rows="5",
@@ -96,7 +100,7 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the participants’ "
+                                  nulloption="&nbsp;"|s, info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. It is used for the PDF lodgement puzzle "
                                   "download. Fieldtype: Text")) }}
         {#- jinja does not support list comprehension ... #}
@@ -106,7 +110,7 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="reserve_field", label=gettext("Field for Camping Mat"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the participants’ "
+                                  nulloption="&nbsp;"|s, info=gettext("The custom field in which the participants’ "
                                   "willingness to sleep on a camping mat will be saved. It is used for the PDF "
                                   "lodgement puzzle download. Fieldtype: Yes/No")) }}
         {#- jinja does not support list comprehension ... #}
@@ -116,12 +120,12 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course Room"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the course’s "
+                                  nulloption="&nbsp;"|s, info=gettext("The custom field in which the course’s "
                                   "assigned course room will be saved. It is used for PDF participant lists and "
                                   "nametags. Fieldtype: Text")) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#changeeventform').cdedbProtectChanges();
     </script>
 {% endblock %}

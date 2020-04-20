@@ -17,13 +17,14 @@
 {% block breadcrumb %}
 {{ super() }}
 {% if not preview %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
                             readonly=not (ambience['event']['is_visible']
-                                          or ambience['event']['id'] in user.orga or is_admin)) }}
+                                          or ambience['event']['id'] in user.orga
+                                          or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
                             gettext("Questionnaire"), active=True) }}
 {% else %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/configure_questionnaire"), gettext("Configure Questionnaire")) }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
                             gettext("Preview Questionnaire"), active=True) }}
@@ -36,7 +37,7 @@
         {% else %}
             {% trans %}Participant Questionnaire{% endtrans %}
         {% endif %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -58,7 +59,7 @@
         </div>
     {% else %}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#questionnaireform').cdedbProtectChanges();
     </script>
     {% endif %}

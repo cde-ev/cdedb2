@@ -67,11 +67,11 @@ def schulze_evaluate(votes, candidates):
     :param candidates: We require that the candidates be explicitly
       passed. This allows for more flexibility (like returning a useful
       result for zero votes).
-    :rtype: str
-    :returns: The aggregated preference list.
+    :rtype: (str, [{}])
+    :returns: The first Element is the aggregated result,
+    the second is an more extended list, containing every level (descending) as
+    dict with some extended information.
     """
-    if not votes:
-        return '='.join(candidates)
     split_votes = tuple(
         tuple(level.split('=') for level in vote.split('>')) for vote in votes)
 
@@ -144,17 +144,20 @@ def schulze_evaluate(votes, candidates):
         winners = _schulze_winners(d, remaining)
         result.append(winners)
 
-    announce = "Detail:"
-    msg = ("{} Optionen {} gewinnen gegen {}"
-           " mit {} pro und {} contra Stimmen")
-    for lead, follow in zip(result, result[1:]):
-        print(msg.format(announce, lead, follow, counts[(lead[0], follow[0])],
-                         counts[(follow[0], lead[0])]))
-        announce = "       "
-
-    # Return the aggregate preference list in the same format as the input
+    # Return the aggregated preference list in the same format as the input
     # votes are.
-    return ">".join("=".join(level) for level in result)
+    condensed = ">".join("=".join(level) for level in result)
+    detailed = []
+    for lead, follow in zip(result, result[1:]):
+        level = {
+            'winner': lead,
+            'loser': follow,
+            'pro_votes': counts[(lead[0], follow[0])],
+            'contra_votes': counts[(follow[0], lead[0])]
+        }
+        detailed.append(level)
+
+    return condensed, detailed
 
 
 if __name__ == "__main__":
@@ -182,14 +185,25 @@ if __name__ == "__main__":
             "{} ({})".format(value, key)
             for key, value in sorted(data['candidates'].items()))
         print("Optionen: {}".format(candidates))
+
         # ... und zähle neu aus
         votes = [entry['vote'] for entry in data['votes']]
         monikers = list(data['candidates'])
         if data['use_bar']:
             monikers.append("_bar_")
-        result = schulze_evaluate(votes, monikers)
-        print("Ergebnis: {}".format(result))
-        if result != data['result']:
+        condensed, detailed = schulze_evaluate(votes, monikers)
+
+        # zeige schließlich die Ergebnisse an
+        announce = "Detail:"
+        msg = ("{} Optionen {} gewinnen gegen {}"
+               " mit {} pro und {} contra Stimmen")
+        for level in detailed:
+            print(msg.format(announce, level['winner'], level['loser'],
+                             level['pro_votes'], level['contra_votes']))
+            announce = "       "
+
+        print("Ergebnis: {}".format(condensed))
+        if condensed != data['result']:
             print("Übereinstimmung: NEIN ({})".format(data['result']))
         else:
             print("Übereinstimmung: ja")

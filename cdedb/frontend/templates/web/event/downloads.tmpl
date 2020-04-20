@@ -8,12 +8,12 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/downloads"), gettext("Downloads"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans %}Downloads{% endtrans %} <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        {% trans %}Downloads{% endtrans %} <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -126,6 +126,7 @@
                         {% endtrans %}
                     </div>
                 </td>
+                <td></td>
             </tr>
             <tr>
                 <td>
