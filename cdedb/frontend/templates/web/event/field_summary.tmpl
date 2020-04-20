@@ -44,7 +44,7 @@
                     <div class="col-sm-5 {% if "kind_{}".format(field_id) in errors %}has-error{% endif %}">
                         {{ util.input_select(name="kind_{}".format(field_id), entries=enums['FieldDatatypes']|enum_entries(processing=gettext),
                             attributes=('data-basename="kind_"'|s if newrow else ''), aclass='drow-input form-control',
-                            anid="input-select-kind_{}".format(field_id), sort=True) }}
+                            anid="input-select-kind_{}".format(field_id)) }}
                         {{ util.output_errors("kind_{}".format(field_id)) }}
                     </div>
                     <div class="col-sm-3">
@@ -67,8 +67,7 @@
                                                   name="association_{}".format(field_id),
                                                   entries=enums['FieldAssociations']|enum_entries(processing=gettext),
                                                   attributes=('data-basename="association_"'|s if newrow else ''),
-                                                  aclass='drow-input form-control association-input',
-                                                  sort=True)
+                                                  aclass='drow-input form-control association-input')
                         }}
                     </div>
                 {% else %}
@@ -189,7 +188,7 @@
             to the new type, upon saving.
         {% endtrans %}</p>
     <p class="help-block">
-        {{ util.make_icon('info-cirlce') }}
+        {{ util.make_icon('info-circle') }}
         {% trans format="<br /><code style='padding: 2px 0;'>%(value_one)s1;%(desc_one)s<br />%(value_two)s2;%(desc_two)s<br />…</code><br />"|s|format(
                 value_one=gettext("Value"), desc_one=gettext("Description Text"), value_two=gettext("Value"), desc_two=gettext("Description Text")) -%}
         	Enter Options in the following format:

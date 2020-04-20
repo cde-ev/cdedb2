@@ -8,7 +8,7 @@ import numbers
 import unittest.mock
 
 import cdedb.database.constants as const
-from cdedb.common import now
+from cdedb.common import now, xsorted
 
 from test.common import CronTest, prepsql
 
@@ -409,32 +409,32 @@ class TestCron(CronTest):
         umcall = unittest.mock.call
         # Creation
         self.assertEqual(
-            list(sorted(
+            list(xsorted(
                 client.get_domain.return_value.create_list.call_args_list)),
-            list(sorted([umcall('wait'),
-                         umcall('klatsch'),
-                         umcall('aka'),
-                         umcall('opt'),
-                         umcall('werbung'),
-                         umcall('aktivenforum'),
-                         umcall('kongress'),
-                         umcall('participants'),
-                         umcall('party50-all'),
-                         umcall('party50'),
-                         umcall('info'),
-                         umcall('mitgestaltung'),
-                         umcall('all'),
-                         umcall('gutscheine'),
-                         umcall('bau'),
-                         umcall('wal'),
-                         umcall('test-gast'),
-                         umcall('kanonisch'),
-                         umcall('42'),
-                         umcall('dsa'),
-                         umcall('platin'),
-                         umcall('geheim'),
-                         umcall('hogwarts'),
-                         ])))
+            list(xsorted([umcall('wait'),
+                          umcall('klatsch'),
+                          umcall('aka'),
+                          umcall('opt'),
+                          umcall('werbung'),
+                          umcall('aktivenforum'),
+                          umcall('kongress'),
+                          umcall('participants'),
+                          umcall('party50-all'),
+                          umcall('party50'),
+                          umcall('info'),
+                          umcall('mitgestaltung'),
+                          umcall('all'),
+                          umcall('gutscheine'),
+                          umcall('bau'),
+                          umcall('wal'),
+                          umcall('test-gast'),
+                          umcall('kanonisch'),
+                          umcall('42'),
+                          umcall('dsa'),
+                          umcall('platin'),
+                          umcall('geheim'),
+                          umcall('hogwarts'),
+                          ])))
         # Meta update
         expectation = {
             'advertised': True,
@@ -464,10 +464,10 @@ class TestCron(CronTest):
             [umcall('garcia@example.cde', display_name='Garcia G. Generalis')])
         # Whitelist update
         self.assertEqual(
-            list(sorted(mm_lists['aktivenforum'].add_role.call_args_list)),
-            list(sorted([umcall('nonmember', 'captiankirk@example.cde'),
-                         umcall('nonmember', 'aliens@example.cde'),
-                         umcall('nonmember', 'drwho@example.cde')])))
+            list(xsorted(mm_lists['aktivenforum'].add_role.call_args_list)),
+            list(xsorted([umcall('nonmember', 'captiankirk@example.cde'),
+                          umcall('nonmember', 'aliens@example.cde'),
+                          umcall('nonmember', 'drwho@example.cde')])))
 
         # Deletion
         self.assertEqual(client.delete_list.call_args_list,

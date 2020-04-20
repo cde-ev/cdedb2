@@ -41,21 +41,21 @@
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
             {{ util.form_input_select(name="realm", small=True, entries=realm_options,
-                                      label=gettext("Rationale"), anid="realm-select", sort=True) }}
+                                      label=gettext("Rationale"), anid="realm-select") }}
             {{ util.form_input_textarea(name="notes",
                                         label=gettext("Rationale (max. %s Characters)")|format(max_rationale),
                                         small=True, maxlength=max_rationale) }}
 
             <noscript>
                 <p class="text-muted">
-                    {{ util.make_icon('info-cirlce') }}
+                    {{ util.make_icon('info-circle') }}
                     {% trans %}
                         The following fields are only relevant, if you are requesting an account for an event.
                     {% endtrans %}
                 </p>
             </noscript>
             {{ util.form_input_select(name="gender", entries=allowed_genders|enum_entries(processing=gettext),
-                                      label=gettext("Gender"), small=True, aclass="genesis-realm-specific", sort=True) }}
+                                      label=gettext("Gender"), small=True, aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD",
                                     type="date", small=True, aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), small=True,

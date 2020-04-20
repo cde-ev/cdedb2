@@ -154,7 +154,7 @@
             {{ util.form_input_select(name="mixed_lodging", entries=(
                 (True, gettext("I agree to mixed lodging.")),
                 (False, gettext("I want to be lodged seperated by gender."))),
-                label=gettext("Mixed Lodging"), info=mix_info, sort=True) }}
+                label=gettext("Mixed Lodging"), info=mix_info) }}
         {% endif %}
         {% call util.form_input_general(displayerrors=False) %}
             <p class="nosp">
@@ -177,7 +177,7 @@
         {% call util.form_input_general(displayerrors=False) %}
             {% if ambience['event']['use_questionnaire'] %}
                 <p class="text-info nosp">
-                    {{ util.make_icon('info-cirlce') }}
+                    {{ util.make_icon('info-circle') }}
                     {% trans %}
                         After registration, you will find the ‘Questionnaire’ with further questions of the orga team in
                         the navigation. There you can give more detailed information.
@@ -185,7 +185,7 @@
                 </p>
             {% else %}
                 <p class="text-info nosp">
-                    {{ util.make_icon('info-cirlce') }}
+                    {{ util.make_icon('info-circle') }}
                     {% trans %}
                         The orga team of this event may ask you for further data later, using the ‘Questionaire’.
                     {% endtrans %}

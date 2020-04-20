@@ -25,7 +25,7 @@ from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
-    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier)
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier, xsorted)
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
@@ -497,7 +497,7 @@ class CoreFrontend(AbstractFrontend):
             total_const = tuple()
             tmp = []
             already_committed = False
-            for x, y in pairwise(sorted(history.keys())):
+            for x, y in pairwise(xsorted(history.keys())):
                 if history[x]['change_status'] == stati.committed:
                     already_committed = True
                 # Somewhat involved determination of a field being constant.
@@ -532,7 +532,7 @@ class CoreFrontend(AbstractFrontend):
                                if gen not in constants[f]}
                            for f in fields}
         for f in fields:
-            for gen in sorted(history):
+            for gen in xsorted(history):
                 if gen in constants[f]:
                     anchor = max(g for g in eventual_status[f] if g < gen)
                     this_status = history[gen]['change_status']
@@ -760,7 +760,7 @@ class CoreFrontend(AbstractFrontend):
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
-            tmp = sorted(data, key=lambda e: e['id'])
+            tmp = xsorted(data, key=lambda e: e['id'])
             data = tmp[:num_preview_personas]
 
         def name(x):
@@ -773,7 +773,7 @@ class CoreFrontend(AbstractFrontend):
 
         # Generate return JSON list
         ret = []
-        for entry in sorted(data, key=EntitySorter.persona):
+        for entry in xsorted(data, key=EntitySorter.persona):
             result = {
                 'id': entry['id'],
                 'name': name(entry),
@@ -871,7 +871,7 @@ class CoreFrontend(AbstractFrontend):
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
-                sorted(events.items(), key=operator.itemgetter(0)))}
+                xsorted(events.items(), key=operator.itemgetter(0)))}
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_core_user']
         params = {
@@ -920,7 +920,7 @@ class CoreFrontend(AbstractFrontend):
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
-                sorted(events.items(), key=operator.itemgetter(0))),
+                xsorted(events.items(), key=operator.itemgetter(0))),
             'gender': collections.OrderedDict(
                 enum_entries_filter(const.Genders, rs.gettext))
         }
@@ -1060,7 +1060,7 @@ class CoreFrontend(AbstractFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
         for admin in admins:
-            admins[admin] = sorted(
+            admins[admin] = xsorted(
                 admins[admin],
                 key=lambda anid: EntitySorter.persona(personas[anid])
             )
@@ -1188,7 +1188,7 @@ class CoreFrontend(AbstractFrontend):
         personas = self.coreproxy.get_personas(rs, cases.keys())
 
         cases = collections.OrderedDict(
-            sorted(cases.items(),
+            xsorted(cases.items(),
                    key=lambda item: EntitySorter.persona(personas[item[0]])))
 
         return self.render(rs, "list_privilege_changes",
@@ -1319,7 +1319,7 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdatadict(
         "title", "name_supplement", "birthday", "gender", "free_form",
         "telephone", "mobile", "address", "address_supplement", "postal_code",
-        "location", "country")
+        "location", "country", "trial_member")
     def promote_user(self, rs, persona_id, target_realm, data):
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):

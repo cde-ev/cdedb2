@@ -19,7 +19,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter,
-    schulze_evaluate)
+    schulze_evaluate, xsorted)
 from cdedb.database.connection import Atomizer
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -366,7 +366,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         This is un-inlined to provide a download file too."""
         attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
         attendees = collections.OrderedDict(
-            (e['id'], e) for e in sorted(
+            (e['id'], e) for e in xsorted(
                 self.coreproxy.get_assembly_users(rs, attendee_ids).values(),
                 key=EntitySorter.persona))
         return attendees
@@ -645,7 +645,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # Currently we don't distinguish between current and extended ballots
         current.update(extended)
-        ballot_list = sum((sorted(bdict, key=lambda key: bdict[key]["title"])
+        ballot_list = sum((xsorted(bdict, key=lambda key: bdict[key]["title"])
                            for bdict in (future, current, done)), [])
 
         i = ballot_list.index(ballot_id)

@@ -602,6 +602,7 @@ CREATE TABLE event.events (
         is_participant_list_visible boolean NOT NULL DEFAULT False,
         courses_in_participant_list boolean NOT NULL DEFAULT False,
         is_archived                 boolean NOT NULL DEFAULT False,
+        is_cancelled                boolean NOT NULL DEFAULT False,
         -- JSON field for lodgement preference functionality
         lodge_field                 integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         -- JSON field for reserve functionality

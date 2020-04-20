@@ -151,7 +151,6 @@ class CdEBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("member")
-    @singularize("get_lastschrift")
     def get_lastschrifts(self, rs, ids):
         """Retrieve direct debit permits.
 
@@ -166,6 +165,7 @@ class CdEBackend(AbstractBackend):
                 and any(e['persona_id'] != rs.user.persona_id for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
+    get_lastschrift = singularize(get_lastschrifts)
 
     @access("cde_admin")
     def set_lastschrift(self, rs, data):
@@ -259,7 +259,6 @@ class CdEBackend(AbstractBackend):
         return {e['id']: e['lastschrift_id'] for e in data}
 
     @access("member")
-    @singularize("get_lastschrift_transaction")
     def get_lastschrift_transactions(self, rs, ids):
         """Retrieve direct debit transactions.
 
@@ -275,9 +274,9 @@ class CdEBackend(AbstractBackend):
         _ = self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
 
         return {e['id']: e for e in data}
+    get_lastschrift_transaction = singularize(get_lastschrift_transactions)
 
     @access("finance_admin")
-    @batchify("issue_lastschrift_transaction_batch")
     def issue_lastschrift_transaction(self, rs, data, check_unique=False):
         """Make a new direct debit transaction.
 
@@ -320,6 +319,8 @@ class CdEBackend(AbstractBackend):
                 lastschrift['persona_id'], None, None,
                 additional_info=data['amount'])
             return ret
+    issue_lastschrift_transaction_batch = batchify(
+        issue_lastschrift_transaction)
 
     @access("finance_admin")
     def finalize_lastschrift_transaction(self, rs, transaction_id, status,

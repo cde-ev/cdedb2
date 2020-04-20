@@ -40,7 +40,7 @@
 
 
 {% macro display_sorting_header(part_id, sortkey, label) %}
-    {% if sortkey == last_sortkey and last_reverse == False %}
+    {% if sortkey == last_sortkey %}
         {{ util.href(cdedblink('event/participant_list',
                                {'part_id': part_id, 'sortkey': sortkey, 'reverse': not last_reverse}),
                      label,
@@ -63,7 +63,7 @@
 {% block content %}
     {% if not ambience['event']['is_participant_list_visible'] %}
         <div class="alert alert-info" role="alert">
-            {{ util.make_icon('info-cirlce') }}
+            {{ util.make_icon('info-circle') }}
             <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
                 {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
@@ -191,7 +191,7 @@
 
     {% elif not list_consent %}
         <div class="alert alert-info" role="alert">
-            {{ util.make_icon('info-cirlce') }}
+            {{ util.make_icon('info-circle') }}
             <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
                 {% trans %}

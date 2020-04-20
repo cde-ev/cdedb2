@@ -38,7 +38,7 @@
         {{ util.form_input_textarea(name="accounts", label=gettext("Data"), horizontal=False, rows=8, anid='input-data') }}
 
         <p class="help-block">
-            {{ util.make_icon('info-cirlce') }} {% trans %}Enter one dataset per line.{% endtrans %}
+            {{ util.make_icon('info-circle') }} {% trans %}Enter one dataset per line.{% endtrans %}
             {% trans %}Use the following format:{% endtrans %}
         </p>
         <pre>{{   "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
@@ -117,8 +117,7 @@
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
                                         nulloption="&nbsp;"|s, aclass="form-control select-action",
-                                        arialabel=gettext("Operation for line %s")|format(dataset['lineno']),
-                                        sort=True) }}
+                                        arialabel=gettext("Operation for line %s")|format(dataset['lineno'])) }}
                             </div>
                         </div>
 

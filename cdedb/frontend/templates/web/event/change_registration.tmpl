@@ -50,7 +50,7 @@
 
         <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
         <p class="text-info">
-            {{ util.make_icon('info-cirlce') }}
+            {{ util.make_icon('info-circle') }}
             {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) %}
                 The registered people are able to see their current registration status, the payment status and – for
                 minors – the status of the parental consent at “{{ my_registration }}”.
@@ -68,8 +68,7 @@
                 <h4>{{ part['title'] }}</h4>
             {% endif %}
             {{ util.form_input_select(name="part{}.status".format(part_id), label=gettext("Status"),
-                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
-                                      sort=True) }}
+                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
                                       entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="&nbsp;"|s) }}
             {{ util.form_input_checkbox(name="part{}.is_reserve".format(part_id), label=gettext("Uses Camping Mat")) }}

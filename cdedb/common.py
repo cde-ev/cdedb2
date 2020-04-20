@@ -10,6 +10,7 @@ import decimal
 import enum
 import functools
 import hmac
+import icu
 import inspect
 import itertools
 import json
@@ -32,6 +33,9 @@ from cdedb.ml_subscription_aux import (
     SubscriptionError, SubscriptionInfo, SubscriptionActions)
 
 _LOGGER = logging.getLogger(__name__)
+
+# Global unified collator to be used when sorting.
+COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
 
 
 class RequestState:
@@ -234,70 +238,6 @@ class User:
         self.admin_views = self.available_admin_views & set(enabled_views)
 
 
-def do_singularization(fun):
-    """Perform singularization on a function.
-
-    This is the companion to the @singularize decorator.
-    :type fun: callable
-    :param fun: function with ``fun.singularization_hint`` attribute
-    :rtype: callable
-    :returns: singularized function
-    """
-    hint = fun.singularization_hint
-
-    @functools.wraps(fun)
-    def new_fun(rs, *args, **kwargs):
-        if hint['singular_param_name'] in kwargs:
-            param = kwargs.pop(hint['singular_param_name'])
-            kwargs[hint['array_param_name']] = (param,)
-        else:
-            param = args[0]
-            args = ((param,),) + args[1:]
-        data = fun(rs, *args, **kwargs)
-        if hint['passthrough']:
-            return data
-        else:
-            # raises KeyError if the requested thing does not exist
-            return data[param]
-
-    new_fun.__name__ = hint['singular_function_name']
-    return new_fun
-
-
-def do_batchification(fun):
-    """Perform batchification on a function.
-
-    This is the companion to the @batchify decorator.
-    :type fun: callable
-    :param fun: function with ``fun.batchification_hint`` attribute
-    :rtype: callable
-    :returns: batchified function
-    """
-    hint = fun.batchification_hint
-    # Break cyclic import by importing here
-    from cdedb.database.connection import Atomizer
-
-    @functools.wraps(fun)
-    def new_fun(rs, *args, **kwargs):
-        ret = []
-        with Atomizer(rs):
-            if hint['array_param_name'] in kwargs:
-                param = kwargs.pop(hint['array_param_name'])
-                for datum in param:
-                    new_kwargs = copy.deepcopy(kwargs)
-                    new_kwargs[hint['singular_param_name']] = datum
-                    ret.append(fun(rs, *args, **new_kwargs))
-            else:
-                param = args[0]
-                for datum in param:
-                    new_args = (datum,) + args[1:]
-                    ret.append(fun(rs, *new_args, **kwargs))
-        return ret
-
-    new_fun.__name__ = hint['batch_function_name']
-    return new_fun
-
-
 class ProxyShim:
     """Wrap a backend for some syntactic sugar.
 
@@ -320,18 +260,6 @@ class ProxyShim:
             if hasattr(fun, "access_list") or (
                     internal and hasattr(fun, "internal_access_list")):
                 self._funs[name] = self._wrapit(fun)
-                if hasattr(fun, "singularization_hint"):
-                    hint = fun.singularization_hint
-                    self._funs[hint['singular_function_name']] = self._wrapit(
-                        do_singularization(fun))
-                    setattr(backend, hint['singular_function_name'],
-                            do_singularization(fun))
-                if hasattr(fun, "batchification_hint"):
-                    hint = fun.batchification_hint
-                    self._funs[hint['batch_function_name']] = self._wrapit(
-                        do_batchification(fun))
-                    setattr(backend, hint['batch_function_name'],
-                            do_batchification(fun))
 
     def _wrapit(self, fun):
         """
@@ -504,13 +432,25 @@ class ValidationWarning(Exception):
     pass
 
 
-def pad(value):
-    """Pad strings to sort numerically.
+def xsorted(iterable, *, key=lambda x: x, reverse=False):
+    """Wrapper for sorted() to achieve a natural sort.
 
-    :type value: object
-    :rtype: str
+    In particular, this makes sure strings containing diacritics are
+    sorted, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
+    (ints and decimals) are sorted correctly, even in midst of strings
+    as well as negative ones. This is achieved by using the icu library.
+
+    For users, the interface of this function should be identical
+    to sorted().
+
+    :type iterable: iterable
+    :param key: function to order by
+    :type key: callable
+    :type reverse: boolean
+    :rtype: list
     """
-    return ('' if value is None else str(value)).rjust(42, '\0')
+    return sorted(iterable, key=lambda x: COLLATOR.getSortKey(str(key(x))),
+                  reverse=reverse)
 
 
 class EntitySorter:
@@ -558,7 +498,7 @@ class EntitySorter:
 
     @staticmethod
     def course(course):
-        return (pad(course['nr']), course['shortname'], course['id'])
+        return (course['nr'], course['shortname'], course['id'])
 
     @staticmethod
     def lodgement(lodgement):
@@ -603,7 +543,7 @@ class EntitySorter:
 
     @staticmethod
     def past_course(past_course):
-        return (pad(past_course['nr']), past_course['title'], past_course['id'])
+        return (past_course['nr'], past_course['title'], past_course['id'])
 
     @staticmethod
     def institution(institution):
@@ -1298,10 +1238,10 @@ def mixed_existence_sorter(iterable):
 
     :type iterable: [int]
     """
-    for i in sorted(iterable):
+    for i in xsorted(iterable):
         if i >= 0:
             yield i
-    for i in reversed(sorted(iterable)):
+    for i in reversed(xsorted(iterable)):
         if i < 0:
             yield i
 
@@ -1776,7 +1716,8 @@ def roles_to_admin_views(roles):
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-CDEDB_EXPORT_EVENT_VERSION = 9
+#: If you increment this, it must be incremented in make_offline_vm.py as well.
+CDEDB_EXPORT_EVENT_VERSION = 10
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1891,8 +1832,8 @@ EVENT_FIELDS = (
     "iban", "nonmember_surcharge", "orga_address", "registration_text",
     "mail_text", "use_questionnaire", "notes", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "courses_in_participant_list", "is_archived",
-    "lodge_field", "reserve_field", "course_room_field")
+    "is_participant_list_visible", "courses_in_participant_list", "is_cancelled",
+    "is_archived", "lodge_field", "reserve_field", "course_room_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",

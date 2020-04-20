@@ -12,7 +12,7 @@ from cdedb.backend.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     n_, glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
-    unwrap, now, ProxyShim, INSTITUTION_FIELDS)
+    unwrap, now, ProxyShim, INSTITUTION_FIELDS, xsorted)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 
@@ -34,7 +34,6 @@ class PastEventBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("cde", "event")
-    @singularize("participation_info")
     def participation_infos(self, rs, ids):
         """List concluded events visited by specific personas.
 
@@ -68,6 +67,7 @@ class PastEventBackend(AbstractBackend):
         for anid in ids:
             ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}
         return ret
+    participation_info = singularize(participation_infos)
 
     def past_event_log(self, rs, code, pevent_id, persona_id=None,
                        additional_info=None):
@@ -140,7 +140,6 @@ class PastEventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
-    @singularize("get_institution")
     def get_institutions(self, rs, ids):
         """Retrieve data for some institutions.
 
@@ -152,6 +151,7 @@ class PastEventBackend(AbstractBackend):
         data = self.sql_select(rs, "past_event.institutions",
                                INSTITUTION_FIELDS, ids)
         return {e['id']: e for e in data}
+    get_institution = singularize(get_institutions)
 
     @access("cde_admin", "event_admin")
     def set_institution(self, rs, data):
@@ -267,7 +267,6 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("cde", "event")
-    @singularize("get_past_event")
     def get_past_events(self, rs, ids):
         """Retrieve data for some concluded events.
 
@@ -278,6 +277,7 @@ class PastEventBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, ids)
         return {e['id']: e for e in data}
+    get_past_event = singularize(get_past_events)
 
     @access("cde_admin", "event_admin")
     def set_past_event(self, rs, data):
@@ -415,7 +415,6 @@ class PastEventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
-    @singularize("get_past_course")
     def get_past_courses(self, rs, ids):
         """Retrieve data for some concluded courses.
 
@@ -429,6 +428,7 @@ class PastEventBackend(AbstractBackend):
         data = self.sql_select(rs, "past_event.courses", PAST_COURSE_FIELDS,
                                ids)
         return {e['id']: e for e in data}
+    get_past_course = singularize(get_past_courses)
 
     @access("cde_admin", "event_admin")
     def set_past_course(self, rs, data):
@@ -816,5 +816,5 @@ class PastEventBackend(AbstractBackend):
             self.event.set_event_archived(rs, {'id': event_id,
                                                'is_archived': True})
             new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                            for part_id in sorted(event['parts']))
+                            for part_id in xsorted(event['parts']))
         return new_ids, None

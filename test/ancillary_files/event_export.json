@@ -312,7 +312,7 @@
             "association": 2
         }
     },
-    "CDEDB_EXPORT_EVENT_VERSION": 9,
+    "CDEDB_EXPORT_EVENT_VERSION": 10,
     "event.registration_parts": {
         "2": {
             "is_reserve": false,
@@ -1264,6 +1264,7 @@
             "courses_in_participant_list": false,
             "is_course_list_visible": true,
             "is_course_state_visible": false,
+            "is_cancelled": false,
             "notes": "Todoliste ... just kidding ;)",
             "title": "Gro\u00dfe Testakademie 2222"
         }

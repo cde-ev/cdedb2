@@ -24,8 +24,7 @@
         {% endif %}
         {% if realm in ("cde", "event") %}
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                      label=gettext("Gender"), defaultvalue=enums['Genders'].not_specified.value,
-                                      sort=True) }}
+                                      label=gettext("Gender"), defaultvalue=enums['Genders'].not_specified.value) }}
             {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date", placeholder="YYYY-MM-DD") }}
         {% endif %}
 
@@ -86,7 +85,7 @@
                         icon="plus", aclass="btn btn-success btn-sm") }}
             </div>
             {% if info %}
-                <p class="text-muted">{{ util.make_icon('info-cirlce') }} {{ info }}</p>
+                <p class="text-muted">{{ util.make_icon('info-circle') }} {{ info }}</p>
             {% endif %}
         </div>
         <div class="col-md-8">
@@ -316,8 +315,7 @@
                                                             aclass='form-control input-sm filter-value',
                                                             entries=(('',''),(True, gettext("Yes")),(False, gettext("No"))),
                                                             arialabel=(gettext("compare value for %s")
-                                                                       |format(titles.get(field, field))),
-                                                            sort=True) }}
+                                                                       |format(titles.get(field, field)))) }}
                                                 {% else %}
                                                     {{ util.input_text(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
@@ -357,8 +355,7 @@
                                             {{ util.input_select(name + "_ascending", defaultvalue=True,
                                                                  aclass="form-control input-sm sort-order",
                                                                  entries=((True, "A→Z"), (False, "Z→A")),
-                                                                 arialabel=gettext("%s sort order")|format(title),
-                                                                 sort=True) }}
+                                                                 arialabel=gettext("%s sort order")|format(title)) }}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -640,7 +637,7 @@
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ endpoint }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
-                    entries=enum|enum_entries(processing=gettext), small=True, sort=True) }}
+                    entries=enum|enum_entries(processing=gettext), small=True) }}
             {{ util.form_input_text(name="submitted_by", label=gettext("Submitted By"), small=True,
                         anid="input-submitted_by") }}
             {{ util.form_input_text(name="persona_id", label=gettext("Affected"), small=True,
