@@ -19,22 +19,23 @@ class TestApplication(FrontendTest):
         self.get("/core/login", status=405)
         self.assertTitle('405: Method Not Allowed')
 
-    def test_500(self):
+    @unittest.mock.patch('cdedb.config.BasicConfig.__getitem__')
+    @unittest.mock.patch('cdedb.frontend.core.CoreFrontend.index')
+    def test_500(self, hander_mock, config_mock):
         # Replace CoreFrontend.index() function with Mock that raises ValueError
-        hander_mock = unittest.mock.MagicMock(
-            side_effect=ValueError("a really unexpected exception"))
-        hander_mock.modi = {"GET", "HEAD"}
+        hander_mock.side_effect = ValueError("a really unexpected exception")
+        hander_mock.modi = {"GET", "HEAD"} # TODO set modi automatically 
 
-        config_mock = unittest.mock.MagicMock()
-        config_mock.return_value.CDEDB_DEV = False
-        config_mock.return_value.CDEDB_TEST = False
+        def config_mock_getitem(key):
+            if key in ["CDEDB_DEV", "CDEDB_TEST"]:
+                return False
+            return self.app.app.conf._configlookup[key]
+        config_mock.side_effect = config_mock_getitem
 
-        with unittest.mock.patch('cdedb.frontend.core.CoreFrontend.index',
-                                 new=hander_mock), \
-                unittest.mock.patch('cdedb.config.Config', new=config_mock):
-            self.get('/', status=500)
-            self.assertTitle("500: Internal Server Error")
-            self.assertPresence("ValueError")
+        self.get('/', status=500)
+        self.assertTitle("500: Internal Server Error")
+        self.assertPresence("ValueError")
+
 
     def test_error_catching(self):
         """

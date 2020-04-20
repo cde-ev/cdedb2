@@ -536,19 +536,19 @@ class BasicConfig(collections.abc.Mapping):
         except ImportError:
             config = {}
 
-        self._configlookup = collections.ChainMap(
+        self._configchain = collections.ChainMap(
             config,
             _BASIC_DEFAULTS
         )
 
     def __getitem__(self, key):
-        return self._configlookup.__getitem__(key)
+        return self._configchain.__getitem__(key)
 
     def __iter__(self):
-        return self._configlookup.__iter__()
+        return self._configchain.__iter__()
 
     def __len__(self):
-        return self._configlookup.__len__()
+        return self._configchain.__len__()
 
 
 class Config(BasicConfig):
@@ -590,7 +590,7 @@ class Config(BasicConfig):
         except ImportError:
             secondaryconf = {}
 
-        self._configlookup = collections.ChainMap(
+        self._configchain = collections.ChainMap(
             primaryconf, secondaryconf, _DEFAULTS, _BASIC_DEFAULTS
         )
 
@@ -630,15 +630,15 @@ class SecretsConfig(collections.abc.Mapping):
         except ImportError:
             secondaryconf = {}
 
-        self._configlookup = collections.ChainMap(
+        self._configchain = collections.ChainMap(
             primaryconf, secondaryconf, _SECRECTS_DEFAULTS
         )
 
     def __getitem__(self, key):
-        return self._configlookup.__getitem__(key)
+        return self._configchain.__getitem__(key)
 
     def __iter__(self):
-        return self._configlookup.__iter__()
+        return self._configchain.__iter__()
 
     def __len__(self):
-        return self._configlookup.__len__()
+        return self._configchain.__len__()
