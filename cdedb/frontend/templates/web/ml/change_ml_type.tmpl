@@ -26,13 +26,22 @@
     </h1>
 {% endblock %}
 {% block content %}
+    <h3 class="heading-underline">{% trans %}New Mailinglist Type{% endtrans %}</h3>
     <form action="{{ cdedblink("ml/change_ml_type") }}" class="form-horizontal" id="changemltypeform" method="POST">
         {{ util.anti_csrf_token("ml/change_ml_type") }}
         {{ util.form_input_select(name="ml_type", entries=available_types|enum_entries(processing=gettext), sort=True, label=gettext("Mailinglist Type")) }}
-        {{ util.form_input_select(name="event_id", entries=events, nulloption="&nbsp;"|s, label=gettext("Event")) }}
-        {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=readonly,
-                entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), sort=True) }}
-        {{ util.form_input_select(name="assembly_id", entries=assemblies, nulloption="&nbsp;"|s, label=gettext("Assembly")) }}
-        {{ util.form_input_submit(cancellink=cdedblink("ml/change_mailinglist")) }}
+        <div id="additional-fields">
+            <h3 class="heading-underline">{% trans %}Additional Fields{% endtrans %}</h3>
+            <p class="text-info">
+                {% trans %}
+                    The following fields are only relevant for some of the mailinglist types.
+                {% endtrans %}
+            </p>
+            {{ util.form_input_select(name="event_id", entries=events, nulloption="&nbsp;"|s, label=gettext("Event")) }}
+            {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=readonly,
+                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), sort=True) }}
+            {{ util.form_input_select(name="assembly_id", entries=assemblies, nulloption="&nbsp;"|s, label=gettext("Assembly")) }}
+            {{ util.form_input_submit(cancellink=cdedblink("ml/change_mailinglist")) }}
+        </div>
     </form>
 {% endblock %}
