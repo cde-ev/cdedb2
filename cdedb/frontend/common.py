@@ -2220,13 +2220,22 @@ def calculate_loglinks(rs, total, offset, length):
     loglinks = {
         "first": rs.values.copy(),
         "previous": rs.values.copy(),
+        "pre-current": [rs.values.copy() for x in range(3)
+                        if trueoffset - x * length > 0],
         "current": rs.values.copy(),
+        "post-current": [rs.values.copy() for x in range(3)],
         "next": rs.values.copy(),
         "last": rs.values.copy(),
     }
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
+    for x, pre in enumerate(loglinks["pre-current"]):
+        loglinks["pre-current"][x]["offset"] = (
+                trueoffset - (len(loglinks["pre-current"]) - x) * length
+        )
     loglinks["previous"]["offset"] = trueoffset - length
+    for x, post in enumerate(loglinks["post-current"]):
+        loglinks["post-current"][x]["offset"] = trueoffset + (x + 1) * length
     loglinks["next"]["offset"] = trueoffset + length
     loglinks["current"]["offset"] = trueoffset
 
