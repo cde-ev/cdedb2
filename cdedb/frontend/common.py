@@ -2223,7 +2223,8 @@ def calculate_loglinks(rs, total, offset, length):
         "pre-current": [rs.values.copy() for x in range(3)
                         if trueoffset - x * length > 0],
         "current": rs.values.copy(),
-        "post-current": [rs.values.copy() for x in range(3)],
+        "post-current": [rs.values.copy() for x in range(3)
+                         if trueoffset + (x + 1) * length < total],
         "next": rs.values.copy(),
         "last": rs.values.copy(),
     }
