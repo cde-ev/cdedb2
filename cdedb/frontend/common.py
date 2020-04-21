@@ -51,7 +51,7 @@ from cdedb.common import (
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
     decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields,
-    ValidationWarning, xsorted)
+    ValidationWarning, xsorted, unwrap)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -2147,6 +2147,60 @@ def make_transaction_subject(persona):
     return "{}, {}, {}".format(cdedbid_filter(persona['id']),
                                asciificator(persona['family_name']),
                                asciificator(persona['given_names']))
+
+
+def process_modifiable_input(rs, entries, spec, additional=None):
+    """This handles input to modifiable pages.
+
+    Since this covers a variable number of rows, we cannot do this
+    statically. This takes care of validation too.
+
+    :type rs: :py:class:`FrontendRequestState`
+    :type entries: [int]
+    :param entries: ids of existing groups
+    :type spec: {str: str}
+    :param spec: mapping keys which must be provided for every entry (in rs)
+        to validation
+    :type additional: dict
+    :param additional: additional keys which will be present in every output
+        object
+
+    :rtype: {int: {str: object} or None}
+    """
+    delete_flags = request_extractor(
+        rs, ((f"delete_{entry_id}", "bool") for entry_id in entries))
+    deletes = {entry_id for entry_id in entries
+               if delete_flags[f"delete_{entry_id}"]}
+    params = tuple(
+        (f"{key}_{entry_id}", value)
+        for entry_id in entries if entry_id not in deletes
+        for key, value in spec.items())
+    data = request_extractor(rs, params)
+    ret = {
+        entry_id: {key: data[f"{key}_{entry_id}"] for key in spec}
+        for entry_id in entries if entry_id not in deletes
+    }
+    for entry_id in entries:
+        if entry_id in deletes:
+            ret[entries] = None
+        else:
+            ret[entry_id]['id'] = entry_id
+    marker = 1
+    while marker < 2 ** 10:
+        will_create = unwrap(
+            request_extractor(rs, ((f"create_-{marker}", "bool"),)))
+        if will_create:
+            params = tuple((f"{key}_-{marker}", value)
+                           for key, value in spec.items())
+            data = request_extractor(rs, params)
+            ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
+            if additional:
+                ret[-marker].update(additional)
+        else:
+            break
+        marker += 1
+    rs.values['create_last_index'] = marker - 1
+    return ret
 
 
 class CustomCSVDialect(csv.Dialect):

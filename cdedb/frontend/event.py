@@ -29,7 +29,7 @@ from cdedb.frontend.common import (
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     xdictsort_filter, enum_entries_filter, safe_filter, cdedburl,
-    CustomCSVDialect, keydictsort_filter)
+    CustomCSVDialect, keydictsort_filter, process_modifiable_input)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -4057,69 +4057,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "lodgement_group_summary", {
             'lodgement_groups': groups})
 
-    @staticmethod
-    def process_lodgement_group_input(rs, groups, event_id):
-        """This handles input to configure the lodgement groups.
-
-        Since this covers a variable number of rows, we cannot do this
-        statically. This takes care of validation too.
-
-        :type rs: :py:class:`FrontendRequestState`
-        :type groups: [int]
-        :param groups: ids of existing groups
-        :type event_id: int
-        :param event_id: Id of the event to add new lodgement groups to
-        :rtype: {int: {str: object} or None}
-        """
-        # TODO This is nearly duplicate code with process_institution_input,
-        #   maybe, we can merge this into one common frontend function
-        delete_flags = request_extractor(
-            rs, (("delete_{}".format(group_id), "bool") for group_id in groups))
-        deletes = {group_id for group_id in groups if
-                   delete_flags['delete_{}'.format(group_id)]}
-        spec = {'moniker': "str"}
-        params = tuple(
-            ("{}_{}".format(key, group_id), value)
-            for group_id in groups
-            if group_id not in deletes
-            for key, value in spec.items())
-        data = request_extractor(rs, params)
-        ret = {
-            group_id: {key: data["{}_{}".format(key, group_id)]
-                       for key in spec}
-            for group_id in groups
-            if group_id not in deletes}
-        for group_id in groups:
-            if group_id in deletes:
-                ret[group_id] = None
-            else:
-                ret[group_id]['id'] = group_id
-        marker = 1
-        while marker < 2 ** 10:
-            will_create = unwrap(
-                request_extractor(rs, (("create_-{}".format(marker), "bool"),)))
-            if will_create:
-                params = tuple(
-                    ("{}_-{}".format(key, marker), value)
-                    for key, value in spec.items())
-                data = request_extractor(rs, params)
-                ret[-marker] = {
-                    key: data["{}_-{}".format(key, marker)]
-                    for key in spec}
-                ret[-marker]['event_id'] = event_id
-            else:
-                break
-            marker += 1
-        rs.values['create_last_index'] = marker - 1
-        return ret
-
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def lodgement_group_summary(self, rs, event_id):
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = self.process_lodgement_group_input(rs, group_ids.keys(),
-                                                    event_id)
+        groups = process_modifiable_input(rs, group_ids.keys(),
+                                          {'moniker': "str"},
+                                          {'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
         code = 1
