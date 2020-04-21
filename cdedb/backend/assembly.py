@@ -1165,7 +1165,7 @@ class AssemblyBackend(AbstractBackend):
                 'VOTERS': voter_list,
                 'VOTES': vote_list,
             })
-            path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
+            path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot_id)
             with open(path, 'w') as f:
                 f.write(result_file)
         return True
@@ -1349,7 +1349,7 @@ class AssemblyBackend(AbstractBackend):
         self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                           assembly_id, additional_info=data['title'])
 
-        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+        path = (self.conf["STORAGE_DIR"] / 'assembly_attachment'
                 / str(ret))
         with open(str(path), 'wb') as f:
             f.write(attachment)
@@ -1379,7 +1379,7 @@ class AssemblyBackend(AbstractBackend):
         self.assembly_log(rs, const.AssemblyLogCodes.attachment_removed,
                           assembly_id, additional_info=current['title'])
 
-        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+        path = (self.conf["STORAGE_DIR"] / 'assembly_attachment'
                 / str(attachment_id))
         if path.exists():
             path.unlink()

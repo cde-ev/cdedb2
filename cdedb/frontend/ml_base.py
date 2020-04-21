@@ -33,9 +33,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
         self.mailman_create_client = lambda url, user: mailmanclient.Client(
-            url, user, secrets.MAILMAN_PASSWORD)
+            url, user, secrets["MAILMAN_PASSWORD"])
         self.mailman_template_password = (
-            lambda: secrets.MAILMAN_BASIC_AUTH_PASSWORD)
+            lambda: secrets["MAILMAN_BASIC_AUTH_PASSWORD"])
 
     @classmethod
     def is_admin(cls, rs):
@@ -94,7 +94,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                           spec=spec, allow_empty=False)
         else:
             query = None
-        default_queries = self.conf.DEFAULT_QUERIES['qview_ml_user']
+        default_queries = self.conf["DEFAULT_QUERIES"]['qview_ml_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}

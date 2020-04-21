@@ -37,16 +37,16 @@ class CronFrontend(BaseApp):
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
-            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, self.conf.DB_PORT)
+            self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, self.conf["DB_PORT"])
         self.translations = {
             lang: gettext.translation(
                 'cdedb', languages=(lang,),
-                localedir=str(self.conf.REPOSITORY_PATH / 'i18n'))
-            for lang in self.conf.I18N_LANGUAGES}
+                localedir=str(self.conf["REPOSITORY_PATH"] / 'i18n'))
+            for lang in self.conf["I18N_LANGUAGES"]}
         if pathlib.Path("/PRODUCTIONVM").is_file():
             # Sanity checks for the live instance
-            if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 raise RuntimeError(
                     n_("Refusing to start in debug/offline mode."))
 
@@ -96,7 +96,7 @@ class CronFrontend(BaseApp):
                 'tstamp': 0,
                 'period': -1,
             }
-        if (not self.conf.CDEDB_DEV
+        if (not self.conf["CDEDB_DEV"]
                 and base_state['tstamp'] + 10*60 > now().timestamp()):
             print("Last execution at {} skipping this round.".format(
                 base_state['tstamp']))
@@ -113,7 +113,7 @@ class CronFrontend(BaseApp):
                     if jobs and hook.cron['name'] not in jobs:
                         continue
                     if (base_state['period'] % hook.cron['period'] == 0
-                            or self.conf.CDEDB_DEV):
+                            or self.conf["CDEDB_DEV"]):
                         rs.begin = now()
                         state = self.core.get_cron_store(rs, hook.cron['name'])
                         try:

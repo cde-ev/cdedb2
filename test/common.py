@@ -96,12 +96,12 @@ class BackendShim(ProxyShim):
         self.sessionproxy = SessionBackend(backend.conf._configpath)
         secrets = SecretsConfig(backend.conf._configpath)
         self.connpool = connection_pool_factory(
-            backend.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, backend.conf.DB_PORT)
-        self.validate_mlscriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
+            backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, backend.conf["DB_PORT"])
+        self.validate_mlscriptkey = lambda k: k == secrets["ML_SCRIPT_KEY"]
         self.translator = gettext.translation(
             'cdedb', languages=('de',),
-            localedir=str(backend.conf.REPOSITORY_PATH / 'i18n'))
+            localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
 
     def _setup_requeststate(self, key):
         rs = RequestState(
@@ -237,8 +237,8 @@ class BackendUsingTest(unittest.TestCase):
 
     @staticmethod
     def initialize_raw_backend(backendcls):
-        return backendcls(_BASICCONF.REPOSITORY_PATH
-                          / _BASICCONF.TESTCONFIG_PATH)
+        return backendcls(_BASICCONF["REPOSITORY_PATH"]
+                          / _BASICCONF["TESTCONFIG_PATH"])
 
     @staticmethod
     def initialize_backend(backendcls):
@@ -536,8 +536,8 @@ class FrontendTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = Application(_BASICCONF.REPOSITORY_PATH
-                          / _BASICCONF.TESTCONFIG_PATH)
+        app = Application(_BASICCONF["REPOSITORY_PATH"]
+                          / _BASICCONF["TESTCONFIG_PATH"])
         cls.app = webtest.TestApp(app, extra_environ={
             'REMOTE_ADDR': "127.0.0.0",
             'SERVER_PROTOCOL': "HTTP/1.1",
@@ -587,8 +587,8 @@ class FrontendTest(unittest.TestCase):
     def log_generation_time(self, response=None):
         if response is None:
             response = self.response
-        if _BASICCONF.TIMING_LOG:
-            with open(_BASICCONF.TIMING_LOG, 'a') as f:
+        if _BASICCONF["TIMING_LOG"]:
+            with open(_BASICCONF["TIMING_LOG"], 'a') as f:
                 output = "{} {} {} {}\n".format(
                     response.request.path, response.request.method,
                     response.headers.get('X-Generation-Time'),
@@ -876,8 +876,8 @@ class CronTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.cron = CronFrontend(_BASICCONF.REPOSITORY_PATH
-                                / _BASICCONF.TESTCONFIG_PATH)
+        cls.cron = CronFrontend(_BASICCONF["REPOSITORY_PATH"]
+                                / _BASICCONF["TESTCONFIG_PATH"])
         cls.core = CronBackendShim(cls.cron, cls.cron.core.coreproxy)
         cls.cde = CronBackendShim(cls.cron, cls.cron.core.cdeproxy)
         cls.event = CronBackendShim(cls.cron, cls.cron.core.eventproxy)

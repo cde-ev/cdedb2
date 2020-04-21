@@ -47,14 +47,14 @@ class CoreBackend(AbstractBackend):
         super().__init__(configpath, is_core=True)
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
-            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, self.conf.DB_PORT)
+            self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, self.conf["DB_PORT"])
         self.generate_reset_cookie = (
             lambda rs, persona_id, timeout: self._generate_reset_cookie(
-                rs, persona_id, secrets.RESET_SALT, timeout=timeout))
+                rs, persona_id, secrets["RESET_SALT"], timeout=timeout))
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
-                rs, persona_id, secrets.RESET_SALT, cookie))
+                rs, persona_id, secrets["RESET_SALT"], cookie))
 
     @classmethod
     def is_admin(cls, rs):
@@ -431,7 +431,7 @@ class CoreBackend(AbstractBackend):
             self.sql_insert(rs, "core.changelog", insert)
 
             # resolve change if it doesn't require review
-            if not requires_review or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            if not requires_review or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 ret = self.changelog_resolve_change(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
@@ -1628,7 +1628,7 @@ class CoreBackend(AbstractBackend):
             else:
                 num = unwrap(num)
             new = tuple(i == rs.user.persona_id for i in ids).count(False)
-            if (num + new > self.conf.QUOTA_VIEWS_PER_DAY
+            if (num + new > self.conf["QUOTA_VIEWS_PER_DAY"]
                     and not {"cde_admin", "core_admin"} & rs.user.roles):
                 raise QuotaException(n_("Too many queries."))
             if new:
@@ -1782,7 +1782,7 @@ class CoreBackend(AbstractBackend):
             "FROM core.personas",
             "WHERE username = lower(%s) AND is_active = True")
         data = self.query_one(rs, query, (username,))
-        verified = bool(data) and self.conf.CDEDB_OFFLINE_DEPLOYMENT
+        verified = bool(data) and self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
         if not verified and data:
             verified = self.verify_password(password, data["password_hash"])
         if not verified:
@@ -1791,7 +1791,7 @@ class CoreBackend(AbstractBackend):
                 ip, username))
             return None
         else:
-            if self.conf.LOCKDOWN and not (data['is_meta_admin']
+            if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
                                            or data['is_core_admin']):
                 # Short circuit in case of lockdown
                 return None
@@ -2160,7 +2160,7 @@ class CoreBackend(AbstractBackend):
         :returns: The ``bool`` indicates success and the ``str`` is
           either the reset cookie or an error message.
         """
-        timeout = timeout or self.conf.PARAMETER_TIMEOUT
+        timeout = timeout or self.conf["PARAMETER_TIMEOUT"]
         email = affirm("email", email)
         data = self.sql_select_one(rs, "core.personas", ("id", "is_active"),
                                    email, entity_key="username")
@@ -2192,7 +2192,7 @@ class CoreBackend(AbstractBackend):
                                    entity_key="username")
         if not data:
             return False, n_("Nonexistant user.")
-        if self.conf.LOCKDOWN:
+        if self.conf["LOCKDOWN"]:
             return False, n_("Lockdown active.")
         persona_id = unwrap(data)
         success, msg = self.modify_password(
@@ -2220,7 +2220,7 @@ class CoreBackend(AbstractBackend):
 
         if self.verify_existence(rs, data['username']):
             return None
-        if self.conf.LOCKDOWN and not self.is_admin(rs):
+        if self.conf["LOCKDOWN"] and not self.is_admin(rs):
             return None
         data['case_status'] = const.GenesisStati.unconfirmed
         ret = self.sql_insert(rs, "core.genesis_cases", data)
@@ -2252,7 +2252,7 @@ class CoreBackend(AbstractBackend):
 
         case = self.genesis_get_case(rs, case_id)
         if (case["case_status"] == const.GenesisStati.unconfirmed and
-                now() < case["ctime"] + self.conf.PARAMETER_TIMEOUT):
+                now() < case["ctime"] + self.conf["PARAMETER_TIMEOUT"]):
             blockers["unconfirmed"] = case_id
         if case["case_status"] in {const.GenesisStati.to_review,
                                    const.GenesisStati.approved}:

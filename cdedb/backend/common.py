@@ -154,14 +154,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.conf = Config(configpath)
         # initialize logging
         make_root_logger(
-            "cdedb.backend", self.conf.BACKEND_LOG, self.conf.LOG_LEVEL,
-            syslog_level=self.conf.SYSLOG_LEVEL,
-            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+            "cdedb.backend", self.conf["BACKEND_LOG"], self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         make_root_logger(
             "cdedb.backend.{}".format(self.realm),
-            getattr(self.conf, "{}_BACKEND_LOG".format(self.realm.upper())),
-            self.conf.LOG_LEVEL, syslog_level=self.conf.SYSLOG_LEVEL,
-            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+            self.conf[f"{self.realm.upper()}_BACKEND_LOG"],
+            self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
         self.logger.info("Instantiated {} with configpath {}.".format(

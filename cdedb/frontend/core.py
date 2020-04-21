@@ -54,7 +54,7 @@ class CoreFrontend(AbstractFrontend):
     def __init__(self, configpath):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
-        self.resolve_api_token_check = lambda x: x == secrets.RESOLVE_API_TOKEN
+        self.resolve_api_token_check = lambda x: x == secrets["RESOLVE_API_TOKEN"]
 
     @classmethod
     def is_admin(cls, rs):
@@ -75,7 +75,7 @@ class CoreFrontend(AbstractFrontend):
             if wants:
                 rs.values['wants'] = self.encode_parameter(
                     "core/login", "wants", wants,
-                    timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT)
+                    timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
             return self.render(rs, "login", {'meta_info': meta_info})
 
         else:
@@ -256,7 +256,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             self.redirect(rs, "core/index")
 
-        if locale in self.conf.I18N_LANGUAGES:
+        if locale in self.conf["I18N_LANGUAGES"]:
             rs.response.set_cookie(
                 "locale", locale,
                 expires=now() + datetime.timedelta(days=10 * 365))
@@ -658,9 +658,9 @@ class CoreFrontend(AbstractFrontend):
         search_additions = []
         mailinglist = None
         event = None
-        num_preview_personas = (self.conf.NUM_PREVIEW_PERSONAS_CORE_ADMIN
+        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
                                 if {"core_admin"} & rs.user.roles
-                                else self.conf.NUM_PREVIEW_PERSONAS)
+                                else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
             if not {"core_admin", "cde_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -720,7 +720,7 @@ class CoreFrontend(AbstractFrontend):
                         data = [unwrap(tmp)]
 
         # Don't query, if search phrase is too short
-        if not data and len(phrase) < self.conf.NUM_PREVIEW_CHARS:
+        if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:
             return self.send_json(rs, {})
 
         terms = []
@@ -784,7 +784,7 @@ class CoreFrontend(AbstractFrontend):
             # address, or the mail address is required to distinguish equally
             # named users
             searched_email = any(
-                '@' in t and len(t) > self.conf.NUM_PREVIEW_CHARS
+                '@' in t and len(t) > self.conf["NUM_PREVIEW_CHARS"]
                 and entry['username'] and t in entry['username']
                 for t in terms)
             if counter[name(entry)] > 1 or searched_email or \
@@ -873,7 +873,7 @@ class CoreFrontend(AbstractFrontend):
             'pevent_id': collections.OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(0)))}
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
+        default_queries = self.conf["DEFAULT_QUERIES"]['qview_core_user']
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
@@ -925,7 +925,7 @@ class CoreFrontend(AbstractFrontend):
                 enum_entries_filter(const.Genders, rs.gettext))
         }
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf.DEFAULT_QUERIES['qview_archived_persona']
+        default_queries = self.conf["DEFAULT_QUERIES"]['qview_archived_persona']
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
@@ -1278,7 +1278,7 @@ class CoreFrontend(AbstractFrontend):
         if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
             remind = True
         if remind:
-            notify = (self.conf.META_ADMIN_ADDRESS,)
+            notify = (self.conf["META_ADMIN_ADDRESS"],)
             self.do_mail(
                 rs, "privilege_change_remind",
                 {'To': tuple(notify),
@@ -1400,7 +1400,7 @@ class CoreFrontend(AbstractFrontend):
                     subject = ("Einzugsermächtigung zu ausstehender "
                                "Lastschrift widerrufen.")
                     self.do_mail(rs, "pending_lastschrift_revoked",
-                                 {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                                 {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                                   'Subject': subject},
                                  {'persona_id': persona_id})
                 for active_permit in active_permits:
@@ -1456,7 +1456,7 @@ class CoreFrontend(AbstractFrontend):
     @access("cde")
     def get_foto(self, rs, foto):
         """Retrieve profile picture."""
-        path = self.conf.STORAGE_DIR / "foto" / foto
+        path = self.conf["STORAGE_DIR"] / "foto" / foto
         mimetype = magic.from_file(str(path), mime=True)
         return self.send_file(rs, path=path, mimetype=mimetype)
 
@@ -1490,7 +1490,7 @@ class CoreFrontend(AbstractFrontend):
             myhash = hashlib.sha512()
             myhash.update(foto)
             myhash = myhash.hexdigest()
-            path = self.conf.STORAGE_DIR / 'foto' / myhash
+            path = self.conf["STORAGE_DIR"] / 'foto' / myhash
             if not path.exists():
                 with open(str(path), 'wb') as f:
                     f.write(foto)
@@ -1498,7 +1498,7 @@ class CoreFrontend(AbstractFrontend):
             code = self.coreproxy.change_foto(rs, persona_id, foto=myhash)
             if previous:
                 if not self.coreproxy.foto_usage(rs, previous):
-                    path = self.conf.STORAGE_DIR / 'foto' / previous
+                    path = self.conf["STORAGE_DIR"] / 'foto' / previous
                     if path.exists():
                         path.unlink()
         self.notify_return_code(rs, code, success=n_("Foto updated."))
@@ -1596,7 +1596,7 @@ class CoreFrontend(AbstractFrontend):
         admin_exception = False
         try:
             success, message = self.coreproxy.make_reset_cookie(
-                rs, email, self.conf.PARAMETER_TIMEOUT)
+                rs, email, self.conf["PARAMETER_TIMEOUT"])
         except PrivilegeError:
             admin_exception = True
         else:
@@ -1608,7 +1608,7 @@ class CoreFrontend(AbstractFrontend):
                     {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"},
                     {'email': self.encode_parameter(
                         "core/do_password_reset_form", "email", email,
-                        timeout=self.conf.PARAMETER_TIMEOUT),
+                        timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
                 msg = "Sent password reset mail to {} for IP {}."
                 self.logger.info(msg.format(email, rs.request.remote_addr))
@@ -1645,7 +1645,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             email = rs.ambience['persona']['username']
         success, message = self.coreproxy.make_reset_cookie(
-            rs, email, timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
+            rs, email, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
         if not success:
             rs.notify("error", message)
         else:
@@ -1654,7 +1654,7 @@ class CoreFrontend(AbstractFrontend):
                 {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"},
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email,
-                    timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
+                    timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
                     'cookie': message})
             msg = "Sent password reset mail to {} for admin {}."
             self.logger.info(msg.format(email, rs.user.persona_id))
@@ -1837,7 +1837,7 @@ class CoreFrontend(AbstractFrontend):
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in realm_specific_genesis_fields]
         return self.render(rs, "genesis_request", {
-            'max_rationale': self.conf.MAX_RATIONALE,
+            'max_rationale': self.conf["MAX_RATIONALE"],
             'allowed_genders': allowed_genders,
             'realm_specific_genesis_fields': realm_specific_genesis_fields,
             'realm_options': realm_options})
@@ -1860,7 +1860,7 @@ class CoreFrontend(AbstractFrontend):
         if attachment:
             attachment_filename = attachment.filename
             attachment = check(rs, 'pdffile', attachment, 'attachment')
-        attachment_base_path = self.conf.STORAGE_DIR / 'genesis_attachment'
+        attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
         if attachment:
             myhash = hashlib.sha512()
             myhash.update(attachment)
@@ -1886,7 +1886,7 @@ class CoreFrontend(AbstractFrontend):
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
-        if len(data['notes']) > self.conf.MAX_RATIONALE:
+        if len(data['notes']) > self.conf["MAX_RATIONALE"]:
             rs.append_validation_error(
                 ("notes", ValueError(n_("Rationale too long."))))
         # We dont actually want gender == not_specified as a valid option if it
@@ -1987,15 +1987,15 @@ class CoreFrontend(AbstractFrontend):
                 rs, stati=stati, realms=["ml"]))
             assembly_count = len(self.coreproxy.genesis_list_cases(
                 rs, stati=stati, realms=["assembly"]))
-            notify = {self.conf.MANAGEMENT_ADDRESS}
+            notify = {self.conf["MANAGEMENT_ADDRESS"]}
             if cde_count:
-                notify |= {self.conf.CDE_ADMIN_ADDRESS}
+                notify |= {self.conf["CDE_ADMIN_ADDRESS"]}
             if event_count:
-                notify |= {self.conf.EVENT_ADMIN_ADDRESS}
+                notify |= {self.conf["EVENT_ADMIN_ADDRESS"]}
             if ml_count:
-                notify |= {self.conf.ML_ADMIN_ADDRESS}
+                notify |= {self.conf["ML_ADMIN_ADDRESS"]}
             if assembly_count:
-                notify |= {self.conf.ASSEMBLY_ADMIN_ADDRESS}
+                notify |= {self.conf["ASSEMBLY_ADMIN_ADDRESS"]}
             self.do_mail(
                 rs, "genesis_requests_pending",
                 {'To': tuple(notify),
@@ -2018,13 +2018,13 @@ class CoreFrontend(AbstractFrontend):
             rs, stati=stati)
 
         delete = tuple(case["id"] for case in cases.values() if
-                       case["ctime"] < now() - self.conf.PARAMETER_TIMEOUT)
+                       case["ctime"] < now() - self.conf["PARAMETER_TIMEOUT"])
 
         count = 0
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        genesis_attachment_path : pathlib.Path = self.conf.STORAGE_DIR / "genesis_attachment"
+        genesis_attachment_path : pathlib.Path = self.conf["STORAGE_DIR"] / "genesis_attachment"
 
         attachment_count = 0
         for attachment in genesis_attachment_path.iterdir():
@@ -2045,7 +2045,7 @@ class CoreFrontend(AbstractFrontend):
                             if "attachment" in fields))
     def genesis_get_attachment(self, rs, attachment):
         """Retrieve attachment for genesis case."""
-        path = self.conf.STORAGE_DIR / 'genesis_attachment' / attachment
+        path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment
         mimetype = magic.from_file(str(path), mime=True)
         return self.send_file(rs, path=path, mimetype=mimetype)
 
@@ -2156,7 +2156,7 @@ class CoreFrontend(AbstractFrontend):
             return rs.genesis_list_cases(rs)
         if case_status == const.GenesisStati.approved:
             success, cookie = self.coreproxy.make_reset_cookie(
-                rs, case['username'], timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
+                rs, case['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             self.do_mail(
                 rs, "genesis_approved",
                 {'To': (case['username'],),
@@ -2164,7 +2164,7 @@ class CoreFrontend(AbstractFrontend):
                  },
                 {'email': self.encode_parameter(
                      "core/do_password_reset_form", "email", case['username'],
-                     timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
+                     timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
                  'cookie': cookie,
                  })
             rs.notify("success", n_("Case approved."))
@@ -2206,7 +2206,7 @@ class CoreFrontend(AbstractFrontend):
         if remind:
             self.do_mail(
                 rs, "changelog_requests_pending",
-                {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                  'Subject': "Offene CdEDB Accountänderungen"},
                 {'count': len(data)})
             store = {
@@ -2363,7 +2363,7 @@ class CoreFrontend(AbstractFrontend):
         The token parameter cannot contain slashes as this is prevented by
         werkzeug.
         """
-        if not self.conf.CDEDB_DEV:
+        if not self.conf["CDEDB_DEV"]:
             return self.redirect(rs, "core/index")
         filename = pathlib.Path(tempfile.gettempdir(),
                                 "cdedb-mail-{}.txt".format(token))

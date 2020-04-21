@@ -8,9 +8,11 @@ here, the site specific global overrides in
 :py:class:`BasicConfig` an invocation specific override.
 """
 
+import collections
+import collections.abc
 import datetime
 import decimal
-import importlib.machinery
+import importlib.util
 import logging
 import pathlib
 import subprocess
@@ -514,7 +516,7 @@ _SECRECTS_DEFAULTS = {
 }
 
 
-class BasicConfig:
+class BasicConfig(collections.abc.Mapping):
     """Global configuration for elementary options.
 
     This is the global configuration which is the same for all
@@ -526,14 +528,27 @@ class BasicConfig:
 
     def __init__(self):
         try:
-            import cdedb.localconfig as primaryconf
+            import cdedb.localconfig as config
+            config = {
+                key: getattr(config, key)
+                for key in _BASIC_DEFAULTS.keys() & dir(config)
+            }
         except ImportError:
-            primaryconf = None
-        for param in _BASIC_DEFAULTS:
-            try:
-                setattr(self, param, getattr(primaryconf, param))
-            except AttributeError:
-                setattr(self, param, _BASIC_DEFAULTS[param])
+            config = {}
+
+        self._configchain = collections.ChainMap(
+            config,
+            _BASIC_DEFAULTS
+        )
+
+    def __getitem__(self, key):
+        return self._configchain.__getitem__(key)
+
+    def __iter__(self):
+        return self._configchain.__iter__()
+
+    def __len__(self):
+        return self._configchain.__len__()
 
 
 class Config(BasicConfig):
@@ -552,35 +567,38 @@ class Config(BasicConfig):
         super().__init__()
         _LOGGER.debug("Initialising Config with path {}".format(configpath))
         self._configpath = configpath
+
         if configpath:
-            module_id = str(uuid.uuid4())  # otherwise importlib caches wrongly
-            loader = importlib.machinery.SourceFileLoader(module_id,
-                                                          str(configpath))
-            primaryconf = loader.load_module(module_id)
+            spec = importlib.util.spec_from_file_location(
+                "primaryconf", configpath
+            )
+            primaryconf = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(primaryconf)
+            primaryconf = {
+                key: getattr(primaryconf, key)
+                for key in _DEFAULTS.keys() & dir(primaryconf)
+            }
         else:
-            primaryconf = None
+            primaryconf = {}
+
         try:
             import cdedb.localconfig as secondaryconf
+            secondaryconf = {
+                key: getattr(secondaryconf, key)
+                for key in _DEFAULTS.keys() & dir(secondaryconf)
+            }
         except ImportError:
-            secondaryconf = None
-        for param in _DEFAULTS:
-            try:
-                setattr(self, param, getattr(primaryconf, param))
-            except AttributeError:
-                try:
-                    setattr(self, param, getattr(secondaryconf, param))
-                except AttributeError:
-                    setattr(self, param, _DEFAULTS[param])
-        for param in _BASIC_DEFAULTS:
-            try:
-                getattr(primaryconf, param)
-                _LOGGER.info("Ignored basic config entry {} in {}.".format(
-                    param, configpath))
-            except AttributeError:
-                pass
+            secondaryconf = {}
+
+        self._configchain = collections.ChainMap(
+            primaryconf, secondaryconf, _DEFAULTS, _BASIC_DEFAULTS
+        )
+
+        for key in _BASIC_DEFAULTS.keys() & dir(primaryconf):
+            _LOGGER.info(f"Ignored basic config entry {key} in {configpath}.")
 
 
-class SecretsConfig:
+class SecretsConfig(collections.abc.Mapping):
     """Container for secrets (i.e. passwords).
 
     This works like :py:class:`Config`, but is used for secrets. Thus
@@ -589,24 +607,38 @@ class SecretsConfig:
     """
 
     def __init__(self, configpath):
-        _LOGGER.debug("Initialising SecretsConfig with path {}".format(
-            configpath))
+        _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
         if configpath:
-            module_id = str(uuid.uuid4())  # otherwise importlib caches wrongly
-            loader = importlib.machinery.SourceFileLoader(module_id,
-                                                          str(configpath))
-            primaryconf = loader.load_module(module_id)
+            spec = importlib.util.spec_from_file_location(
+                "primaryconf", configpath
+            )
+            primaryconf = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(primaryconf)
+            primaryconf = {
+                key: getattr(primaryconf, key)
+                for key in _SECRECTS_DEFAULTS.keys() & dir(primaryconf)
+            }
         else:
-            primaryconf = None
+            primaryconf = {}
+
         try:
             import cdedb.localconfig as secondaryconf
+            secondaryconf = {
+                key: getattr(secondaryconf, key)
+                for key in _SECRECTS_DEFAULTS.keys() & dir(secondaryconf)
+            }
         except ImportError:
-            secondaryconf = None
-        for param in _SECRECTS_DEFAULTS:
-            try:
-                setattr(self, param, getattr(primaryconf, param))
-            except AttributeError:
-                try:
-                    setattr(self, param, getattr(secondaryconf, param))
-                except AttributeError:
-                    setattr(self, param, _SECRECTS_DEFAULTS[param])
+            secondaryconf = {}
+
+        self._configchain = collections.ChainMap(
+            primaryconf, secondaryconf, _SECRECTS_DEFAULTS
+        )
+
+    def __getitem__(self, key):
+        return self._configchain.__getitem__(key)
+
+    def __iter__(self):
+        return self._configchain.__iter__()
+
+    def __len__(self):
+        return self._configchain.__len__()

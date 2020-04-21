@@ -99,25 +99,24 @@ class BaseApp(metaclass=abc.ABCMeta):
         # initialize logging
         if getattr(self, 'realm', None):
             logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = getattr(self.conf,
-                                  "{}_FRONTEND_LOG".format(self.realm.upper()))
+            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf.FRONTEND_LOG
+            logger_file = self.conf["FRONTEND_LOG"]
         make_root_logger(
-            logger_name, logger_file, self.conf.LOG_LEVEL,
-            syslog_level=self.conf.SYSLOG_LEVEL,
-            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+            logger_name, logger_file, self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
         self.decode_parameter = (
             lambda target, name, param:
-            decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
+            decode_parameter(secrets["URL_PARAMETER_SALT"], target, name, param))
 
         def local_encode(target, name, param,
-                         timeout=self.conf.PARAMETER_TIMEOUT):
-            return encode_parameter(secrets.URL_PARAMETER_SALT, target, name,
+                         timeout=self.conf["PARAMETER_TIMEOUT"]):
+            return encode_parameter(secrets["URL_PARAMETER_SALT"], target, name,
                                     param, timeout=timeout)
 
         self.encode_parameter = local_encode
@@ -143,7 +142,7 @@ class BaseApp(metaclass=abc.ABCMeta):
                                           json_serialize(nparams))
         return self.encode_parameter(
             '_/notification', 'displaynote', message,
-            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT)
+            timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
 
     def decode_notification(self, note):
         """Inverse wrapper to :py:meth:`encode_notification`.
@@ -266,7 +265,7 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
             return val
         return None
     if val.tzinfo is not None:
-        val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)
+        val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
         _LOGGER.warning("Found naive datetime object {}.".format(val))
     if lang:
@@ -830,11 +829,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         super().__init__(configpath, *args, **kwargs)
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
-                str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
+                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None, autoescape=True,
-            auto_reload=self.conf.CDEDB_DEV)
+            auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -844,13 +843,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'enums': ENUMS_DICT,
             'encode_parameter': self.encode_parameter,
             'staticurl': functools.partial(staticurl,
-                                           version=self.conf.GIT_COMMIT[:8]),
+                                           version=self.conf["GIT_COMMIT"][:8]),
             'docurl': docurl,
-            'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
-            'CDEDB_DEV': self.conf.CDEDB_DEV,
+            'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
+            'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
-            'GIT_COMMIT': self.conf.GIT_COMMIT,
-            'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
+            'GIT_COMMIT': self.conf["GIT_COMMIT"],
+            'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management':
                 lambda roles: roles & ({'core_admin'} | set(
@@ -1097,7 +1096,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
-        if 'debugstring' not in params and self.conf.CDEDB_DEV:
+        if 'debugstring' not in params and self.conf["CDEDB_DEV"]:
             debugstring = glue(
                 "We have is_multithreaded={}; is_multiprocess={};",
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
@@ -1111,7 +1110,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['debugstring'] = debugstring
         if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
-        if self.conf.LOCKDOWN:
+        if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
@@ -1177,12 +1176,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type attachments: [{str: object}] or None
         :rtype: :py:class:`email.message.Message`
         """
-        defaults = {"From": self.conf.DEFAULT_SENDER,
-                    "Reply-To": self.conf.DEFAULT_REPLY_TO,
-                    "Return-Path": self.conf.DEFAULT_RETURN_PATH,
+        defaults = {"From": self.conf["DEFAULT_SENDER"],
+                    "Reply-To": self.conf["DEFAULT_REPLY_TO"],
+                    "Return-Path": self.conf["DEFAULT_RETURN_PATH"],
                     "Cc": tuple(),
                     "Bcc": tuple(),
-                    "domain": self.conf.MAIL_DOMAIN,
+                    "domain": self.conf["MAIL_DOMAIN"],
                     }
         merge_dicts(headers, defaults)
         if headers["From"] == headers["Reply-To"]:
@@ -1214,7 +1213,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Subject", "Return-Path"):
             msg[header] = headers[header]
-        msg["Message-ID"] = email.utils.make_msgid(domain=self.conf.MAIL_DOMAIN)
+        msg["Message-ID"] = email.utils.make_msgid(domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
         return msg
 
@@ -1264,8 +1263,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf.CDEDB_DEV:
-            s = smtplib.SMTP(self.conf.MAIL_HOST)
+        if not self.conf["CDEDB_DEV"]:
+            s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
         else:
@@ -1359,7 +1358,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Deleting corrupted file {}".format(pdf_path))
                 pdf_path.unlink()
             self.logger.debug("Exception \"{}\" caught and handled.".format(e))
-            if self.conf.CDEDB_DEV:
+            if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
                 self.logger.info("Copying source file to {}".format(
@@ -1520,7 +1519,7 @@ class Worker(threading.Thread):
             rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin)
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
-            conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets, conf.DB_PORT)
+            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets, conf["DB_PORT"])
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
 
         def runner():
@@ -2001,7 +2000,7 @@ def event_guard(argname="event_id", check_offline=False):
                     rs.gettext("This page can only be accessed by orgas."))
             if check_offline:
                 is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
-                if is_locked != obj.conf.CDEDB_OFFLINE_DEPLOYMENT:
+                if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                     raise werkzeug.exceptions.Forbidden(
                         rs.gettext("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)

@@ -84,7 +84,7 @@ class CdEFrontend(AbstractUserFrontend):
         if "member" in rs.user.roles:
             user_lastschrift = self.cdeproxy.list_lastschrift(
                 rs, persona_ids=(rs.user.persona_id,), active=True)
-            periods_left = data['balance'] // self.conf.MEMBERSHIP_FEE
+            periods_left = data['balance'] // self.conf["MEMBERSHIP_FEE"]
             if data['trial_member']:
                 periods_left += 1
             period = self.cdeproxy.get_period(rs,
@@ -182,7 +182,7 @@ class CdEFrontend(AbstractUserFrontend):
         choices = {"pevent_id": events, 'pcourse_id': courses}
         result = None
         count = 0
-        cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
+        cutoff = self.conf["MAX_MEMBER_SEARCH_RESULTS"]
 
         if rs.has_validation_errors():
             # A little hack to fix displaying of errors: The form uses
@@ -247,7 +247,7 @@ class CdEFrontend(AbstractUserFrontend):
                     rs.gettext if download is None else rs.default_gettext))
         }
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']
+        default_queries = self.conf["DEFAULT_QUERIES"]['qview_cde_user']
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
@@ -600,11 +600,11 @@ class CdEFrontend(AbstractUserFrontend):
                 if datum['resolution'] == LineResolutions.create:
                     success, message = self.coreproxy.make_reset_cookie(
                         rs, datum['raw']['username'],
-                        timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
+                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     email = self.encode_parameter(
                         "core/do_password_reset_form", "email",
                         datum['raw']['username'],
-                        timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
+                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     meta_info = self.coreproxy.get_meta_info(rs)
                     self.do_mail(rs, "welcome",
                                  {'To': (datum['raw']['username'],),
@@ -1105,7 +1105,7 @@ class CdEFrontend(AbstractUserFrontend):
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
                         change_note=note)
-                    if new_balance >= self.conf.MEMBERSHIP_FEE:
+                    if new_balance >= self.conf["MEMBERSHIP_FEE"]:
                         memberships_gained += self.coreproxy.change_membership(
                             rs, datum['persona_id'], is_member=True)
         except psycopg2.extensions.TransactionRollbackError:
@@ -1236,7 +1236,7 @@ class CdEFrontend(AbstractUserFrontend):
             lastschrift_ids = self.cdeproxy.list_lastschrift(rs).keys()
         stati = const.LastschriftTransactionStati
         period = self.cdeproxy.current_period(rs)
-        periods = tuple(range(period - self.conf.PERIODS_PER_YEAR + 1,
+        periods = tuple(range(period - self.conf["PERIODS_PER_YEAR"] + 1,
                               period + 1))
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, lastschrift_ids=lastschrift_ids, periods=periods,
@@ -1378,7 +1378,7 @@ class CdEFrontend(AbstractUserFrontend):
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
             self.do_mail(rs, "pending_lastschrift_revoked",
-                         {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                         {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
                          {'persona_id': persona_id})
         return self.redirect(rs, "cde/lastschrift_show", {
@@ -1389,7 +1389,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         :rtype: datetime.date
         """
-        payment_date = now().date() + self.conf.SEPA_PAYMENT_OFFSET
+        payment_date = now().date() + self.conf["SEPA_PAYMENT_OFFSET"]
 
         # Before anything else: check whether we are on special easter days.
         easter = dateutil.easter.easter(payment_date.year)
@@ -1454,11 +1454,11 @@ class CdEFrontend(AbstractUserFrontend):
                              for key, value in sorted_transactions.items()},
             'count': len(transactions),
             'sender': {
-                'name': self.conf.SEPA_SENDER_NAME,
-                'address': self.conf.SEPA_SENDER_ADDRESS,
-                'country': self.conf.SEPA_SENDER_COUNTRY,
-                'iban': self.conf.SEPA_SENDER_IBAN,
-                'glaeubigerid': self.conf.SEPA_GLAEUBIGERID,
+                'name': self.conf["SEPA_SENDER_NAME"],
+                'address': self.conf["SEPA_SENDER_ADDRESS"],
+                'country': self.conf["SEPA_SENDER_COUNTRY"],
+                'iban': self.conf["SEPA_SENDER_IBAN"],
+                'glaeubigerid': self.conf["SEPA_GLAEUBIGERID"],
             },
             'payment_date': self._calculate_payment_date(),
         }
@@ -1510,10 +1510,10 @@ class CdEFrontend(AbstractUserFrontend):
                 'type': "RCUR",  # TODO remove this, hardcode it in template
             }
             if (lastschrift['granted_at'].date()
-                    >= self.conf.SEPA_INITIALISATION_DATE):
+                    >= self.conf["SEPA_INITIALISATION_DATE"]):
                 transaction['mandate_date'] = lastschrift['granted_at'].date()
             else:
-                transaction['mandate_date'] = self.conf.SEPA_CUTOFF_DATE
+                transaction['mandate_date'] = self.conf["SEPA_CUTOFF_DATE"]
             if lastschrift['account_owner']:
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
@@ -1585,7 +1585,7 @@ class CdEFrontend(AbstractUserFrontend):
                 'account_owner': lastschrift['account_owner'],
                 'mandate_reference': lastschrift_reference(
                     lastschrift['persona_id'], lastschrift['id']),
-                'glaeubiger_id': self.conf.SEPA_GLAEUBIGERID,
+                'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
             }
             subject = "Anstehender Lastschrifteinzug CdE Initiative 25+"
             self.do_mail(rs, "sepa_pre-notification",
@@ -1631,7 +1631,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         tally = None
         if status == const.LastschriftTransactionStati.failure:
-            tally = -self.conf.SEPA_ROLLBACK_FEE
+            tally = -self.conf["SEPA_ROLLBACK_FEE"]
         return self.cdeproxy.finalize_lastschrift_transaction(
             rs, transaction_id, status, tally=tally)
 
@@ -1695,7 +1695,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
-        tally = -self.conf.SEPA_ROLLBACK_FEE
+        tally = -self.conf["SEPA_ROLLBACK_FEE"]
         code = self.cdeproxy.rollback_lastschrift_transaction(
             rs, transaction_id, tally)
         self.notify_return_code(rs, code)
@@ -1706,7 +1706,7 @@ class CdEFrontend(AbstractUserFrontend):
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
             self.do_mail(rs, "pending_lastschrift_revoked",
-                         {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                         {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
                          {'persona_id': persona_id})
         if persona_id:
@@ -1743,7 +1743,7 @@ class CdEFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             with open(work_dir / "lastschrift_receipt.tex", 'w') as f:
                 f.write(tex)
-            logo_src = self.conf.REPOSITORY_PATH / "misc/cde-logo.jpg"
+            logo_src = self.conf["REPOSITORY_PATH"] / "misc/cde-logo.jpg"
             shutil_copy(logo_src, work_dir / "cde-logo.jpg")
             errormsg = n_("LaTeX compiliation failed. "
                           "This might be due to special characters.")
@@ -1880,7 +1880,7 @@ class CdEFrontend(AbstractUserFrontend):
                         persona['id'], lastschrift['id'])
                 address = make_postal_address(persona)
                 transaction_subject = make_transaction_subject(persona)
-                endangered = (persona['balance'] < self.conf.MEMBERSHIP_FEE
+                endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                               and not persona['trial_member']
                               and not lastschrift)
                 if endangered:
@@ -1892,7 +1892,7 @@ class CdEFrontend(AbstractUserFrontend):
                     {'To': (persona['username'],),
                      'Subject': subject},
                     {'persona': persona,
-                     'fee': self.conf.MEMBERSHIP_FEE,
+                     'fee': self.conf["MEMBERSHIP_FEE"],
                      'lastschrift': lastschrift,
                      'open_lastschrift': open_lastschrift,
                      'address': address,
@@ -1941,7 +1941,7 @@ class CdEFrontend(AbstractUserFrontend):
                     'id': period_id,
                     'ejection_state': persona_id,
                 }
-                if (persona['balance'] < self.conf.MEMBERSHIP_FEE
+                if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                         and not persona['trial_member']):
                     self.coreproxy.change_membership(rrs, persona_id,
                                                      is_member=False)
@@ -1956,7 +1956,7 @@ class CdEFrontend(AbstractUserFrontend):
                         {'To': (persona['username'],),
                          'Subject': "Austritt aus dem CdE e.V."},
                         {'persona': persona,
-                         'fee': self.conf.MEMBERSHIP_FEE,
+                         'fee': self.conf["MEMBERSHIP_FEE"],
                          'transaction_subject': transaction_subject,
                          'meta_info': meta_info,
                          })
@@ -1996,7 +1996,7 @@ class CdEFrontend(AbstractUserFrontend):
                     'id': period_id,
                     'balance_state': persona_id,
                 }
-                if (persona['balance'] < self.conf.MEMBERSHIP_FEE
+                if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                         and not persona['trial_member']):
                     # TODO maybe fail more gracefully here?
                     # Maybe set balance to 0 and send a mail or something.
@@ -2014,15 +2014,15 @@ class CdEFrontend(AbstractUserFrontend):
                         period_update['balance_trialmembers'] = \
                             period['balance_trialmembers'] + 1
                     else:
-                        new_b = persona['balance'] - self.conf.MEMBERSHIP_FEE
+                        new_b = persona['balance'] - self.conf["MEMBERSHIP_FEE"]
                         note = "Mitgliedsbeitrag abgebucht ({}).".format(
-                            money_filter(self.conf.MEMBERSHIP_FEE))
+                            money_filter(self.conf["MEMBERSHIP_FEE"]))
                         self.coreproxy.change_persona_balance(
                             rrs, persona_id, new_b,
                             const.FinanceLogCodes.deduct_membership_fee,
                             change_note=note)
                         period_update['balance_total'] = \
-                            period['balance_total'] + self.conf.MEMBERSHIP_FEE
+                            period['balance_total'] + self.conf["MEMBERSHIP_FEE"]
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
@@ -2093,7 +2093,7 @@ class CdEFrontend(AbstractUserFrontend):
                      'Subject': "Adressabfrage für exPuls"},
                     {'persona': persona,
                      'lastschrift': lastschrift,
-                     'fee': self.conf.MEMBERSHIP_FEE,
+                     'fee': self.conf["MEMBERSHIP_FEE"],
                      'address': address,
                      })
                 if testrun:

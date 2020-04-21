@@ -58,17 +58,17 @@ class Application(BaseApp):
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
-            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, self.conf.DB_PORT)
-        self.validate_mlscriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
+            self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, self.conf["DB_PORT"])
+        self.validate_mlscriptkey = lambda k: k == secrets["ML_SCRIPT_KEY"]
         # Construct a reduced Jinja environment for rendering error pages.
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
-                str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
+                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None, autoescape=True,
-            auto_reload=self.conf.CDEDB_DEV)
+            auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.globals.update({
             'now': now,
             'staticurl': staticurl,
@@ -80,11 +80,11 @@ class Application(BaseApp):
         self.translations = {
             lang: gettext.translation(
                 'cdedb', languages=(lang,),
-                localedir=str(self.conf.REPOSITORY_PATH / 'i18n'))
-            for lang in self.conf.I18N_LANGUAGES}
+                localedir=str(self.conf["REPOSITORY_PATH"] / 'i18n'))
+            for lang in self.conf["I18N_LANGUAGES"]}
         if pathlib.Path("/PRODUCTIONVM").is_file():
             # Sanity checks for the live instance
-            if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 raise RuntimeError(
                     n_("Refusing to start in debug/offline mode."))
 
@@ -172,7 +172,7 @@ class Application(BaseApp):
                     params = {
                         'wants': self.encode_parameter(
                             "core/index", "wants", request.url,
-                            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT),
+                            timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"]),
                     }
                     ret = construct_redirect(request,
                                              urls.build("core/index", params))
@@ -295,11 +295,11 @@ class Application(BaseApp):
         except Exception as e:
             # Raise exceptions when in TEST environment to let the test runner
             # catch them.
-            if self.conf.CDEDB_TEST:
+            if self.conf["CDEDB_TEST"]:
                 raise
 
             # debug output if applicable
-            if self.conf.CDEDB_DEV:
+            if self.conf["CDEDB_DEV"]:
                 return Response(cgitb.html(sys.exc_info(), context=7),
                                 mimetype="text/html", status=500)
             # generic errors
@@ -316,13 +316,13 @@ class Application(BaseApp):
         :rtype: str
         """
         if 'locale' in request.cookies \
-                and request.cookies['locale'] in self.conf.I18N_LANGUAGES:
+                and request.cookies['locale'] in self.conf["I18N_LANGUAGES"]:
             return request.cookies['locale']
 
         if 'Accept-Language' in request.headers:
             for lang in request.headers['Accept-Language'].split(','):
                 lang_code = lang.split('-')[0].split(';')[0].strip()
-                if lang_code in self.conf.I18N_LANGUAGES:
+                if lang_code in self.conf["I18N_LANGUAGES"]:
                     return lang_code
 
         return 'de'
