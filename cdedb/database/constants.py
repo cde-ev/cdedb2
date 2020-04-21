@@ -109,8 +109,8 @@ class QuestionnaireUsages(enum.IntEnum):
 
     def get_icon(self):
         icons = {
-            QuestionnaireUsages.registration: "log-in",
-            QuestionnaireUsages.questionnaire: "edit",
+            QuestionnaireUsages.registration: "sign-in-alt",
+            QuestionnaireUsages.questionnaire: "pen",
         }
         return icons.get(self, repr(self))
 
