@@ -435,10 +435,15 @@ class ValidationWarning(Exception):
 def xsorted(iterable, *, key=lambda x: x, reverse=False):
     """Wrapper for sorted() to achieve a natural sort.
 
+    This replaces all strings in possibly nested objects with a sortkey
+    matching an collation from the Unicode Collation Algorithm, provided
+    by the icu library.
+
     In particular, this makes sure strings containing diacritics are
-    sorted, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
-    (ints and decimals) are sorted correctly, even in midst of strings
-    as well as negative ones. This is achieved by using the icu library.
+    sorted correctly, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
+    (ints and decimals) are sorted correctly, even in midst of strings.
+    However, negative numbers in strings are sorted by absolute value, before
+    positive numbers, as minus and hyphens can not be distinguished.
 
     For users, the interface of this function should be identical
     to sorted().
@@ -449,7 +454,17 @@ def xsorted(iterable, *, key=lambda x: x, reverse=False):
     :type reverse: boolean
     :rtype: list
     """
-    return sorted(iterable, key=lambda x: COLLATOR.getSortKey(str(key(x))),
+
+    def collate(sortkey):
+        if isinstance(sortkey, str):
+            return COLLATOR.getSortKey(sortkey)
+        if isinstance(sortkey, collections.abc.Iterable):
+            # Make sure strings in nested Iterables are sorted
+            # correctly as well.
+            return tuple(map(collate, sortkey))
+        return sortkey
+
+    return sorted(iterable, key=lambda x: collate(key(x)),
                   reverse=reverse)
 
 
