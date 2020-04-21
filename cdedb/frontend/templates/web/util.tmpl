@@ -639,7 +639,7 @@
             $('#institutionsummaryform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink(endpoint) }}" method="POST" id="{{ name }}summaryform">
+    <form action="{{ cdedblink(endpoint) }}" method="POST" id="{{ name|lower|replace(' ', '') }}summaryform">
         {{ util.anti_csrf_token(endpoint) }}
         <table class="table table-condensed" id="drow-table">
             <thead>

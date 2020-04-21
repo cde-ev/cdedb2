@@ -1970,7 +1970,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
 
         # First try with invalid (empty name)
-        f = self.response.forms["Lodgement Groupsummaryform"]
+        f = self.response.forms["lodgementgroupsummaryform"]
         self.assertEqual(f['moniker_1'].value, "Haupthaus")
         f['create_-1'] = True
         f['moniker_1'] = "Hauptgebäude"
@@ -1980,7 +1980,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertValidationError('moniker_-1', "Darf nicht leer sein.")
 
         # Now, it should work
-        f = self.response.forms["Lodgement Groupsummaryform"]
+        f = self.response.forms["lodgementgroupsummaryform"]
         f['moniker_-1'] = "Zeltplatz"
         f['create_-2'] = True
         f['moniker_-2'] = "Altes Schloss"
