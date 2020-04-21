@@ -2346,11 +2346,11 @@ class CoreFrontend(AbstractFrontend):
         return self.coreproxy.set_cron_store(rs, name, data)
 
     @access("anonymous")
-    @REQUESTdata(("given_names", "str"), ("family_name", "str"))
-    def api_resolve_name(self, rs, given_names, family_name):
-        """API to resolve member names to email addresses.
+    @REQUESTdata(("username", "email"))
+    def api_resolve_username(self, rs, username):
+        """API to resolve username to that users given names and family name.
 
-        This is a quick and dirty hack and should be deleted as fast as
+        This is still a quick and dirty hack and should be deleted as fast as
         possible.
         """
         token = rs.request.headers.get('X-CdEDB-API-token')
@@ -2360,21 +2360,20 @@ class CoreFrontend(AbstractFrontend):
             raise werkzeug.exceptions.BadRequest(n_("Invalid parameters."))
 
         spec = {
-            "given_names": "str",
-            "family_name": "str",
+            "username": "str",
             "is_member": "bool",
         }
-        given_names_regex = '.*'.join('\m{}\M'.format(re.escape(part))
-                                      for part in given_names.split())
         constraints = (
-            ('given_names', QueryOperators.regex, given_names_regex),
-            ('family_name', QueryOperators.equal, family_name),
-            ('is_member', QueryOperators.equal, True),
+            ('username', QueryOperators.equal, username),
         )
-        query = Query("qview_persona", spec, ("username",),
+        query = Query("qview_persona", spec,
+                      ("given_names", "family_name", "is_member",),
                       constraints, (('id', True),))
         result = self.coreproxy.submit_resolve_api_query(rs, query)
-        json_data = [entry['username'] for entry in result]
+        if not result:
+            json_data = {}
+        else:
+            json_data = unwrap(result)
         return self.send_file(rs, data=json.dumps(json_data),
                               mimetype='text/json')
 
