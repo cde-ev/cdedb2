@@ -2367,7 +2367,7 @@ class CoreFrontend(AbstractFrontend):
             ('username', QueryOperators.equal, username),
         )
         query = Query("qview_persona", spec,
-                      ("given_names", "family_name", "is_member",),
+                      ("given_names", "family_name", "is_member", "username"),
                       constraints, (('id', True),))
         result = self.coreproxy.submit_resolve_api_query(rs, query)
         if not result:

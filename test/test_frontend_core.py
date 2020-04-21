@@ -1684,13 +1684,14 @@ class TestCoreFrontend(FrontendTest):
     def test_resolve_api(self):
         at = urllib.parse.quote_plus('@')
         self.get(
-            '/core/api/resolve?username=berta{}example.cde'.format(at),
+            '/core/api/resolve?username=%20bErTa{}example.CDE%20'.format(at),
             headers={'X-CdEDB-API-token': 'secret'})
         self.assertEqual(self.response.json, {
             "given_names": USER_DICT["berta"]["given_names"],
             "family_name": "Beispiel",
             "is_member": True,
             "id": 2,
+            "username": "berta@example.cde",
         })
         self.get(
             '/core/api/resolve?username=anton{}example.cde'.format(at),
@@ -1700,6 +1701,7 @@ class TestCoreFrontend(FrontendTest):
             "family_name": "Administrator",
             "is_member": True,
             "id": 1,
+            "username": "anton@example.cde",
         })
         self.get('/core/api/resolve', status=403)
 
