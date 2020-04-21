@@ -596,6 +596,82 @@
     {%- endcall %}
 {%- endmacro %}
 
+{# Macro for a general institution row, that can have each role in the DynamicRow workflow.
+   non-deletable rows have a disabled 'delete'-checkbox,
+   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
+
+{% macro print_modifiable_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
+    <tr class="{{ aclass }}" role="group" aria-label="Institution {{ id }}">
+        {% for column in columns %}
+            <td {% if '{}_{}'.format(column['title'], id) in errors %}class="has-error"{% endif %}>
+                {# this is a call for a generic util.input_* macro specified by the caller #}
+                {{ column['func']('{}_{}'.format(column['title'], id),
+                                  aclass='drow-input form-control',
+                                  attributes=('data-basename="{}_"'.format(column['title'])|s if newrow else ''),
+                                  arialabel=gettext(column['lable'])
+                                  ) }}
+                {{ util.output_errors('{}_{}'.format(column['title'], id)) }}
+            </td>
+        {% endfor %}
+
+        <td>
+            <span class="drow-buttonspace">
+                {% if newrow %}
+                    {{ util.input_checkbox("create_{}".format(id), label=gettext("Add"),
+                                           attributes='data-basename="create_"'|s,
+                                           aclass='drow-indicator') }}
+                {% else %}
+                    {{ util.input_checkbox("delete_{}".format(id), label=gettext("Delete"),
+                                           readonly=not deletable, aclass='drow-indicator') }}
+                {% endif %}
+            </span>
+        </td>
+    </tr>
+{% endmacro %}
+
+{% macro print_modifiable_table(name, columns, entries, endpoint, sortkey=None) %}
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#drow-table').cdedbDynamicRow({
+                addButton: $('#drow-addbutton'),
+                delButtonTitle: "{{ gettext("Delete line") }}"});
+            $('#institutionsummaryform').cdedbProtectChanges();
+        });
+    </script>
+    <form action="{{ cdedblink(endpoint) }}" method="POST" id="{{ name }}summaryform">
+        {{ util.anti_csrf_token(endpoint) }}
+        <table class="table table-condensed" id="drow-table">
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                        <th>{% trans title=column['label']%}{{ title }}{% endtrans %}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% set sorted_entries = entries|keydictsort(sortkey) if sortkey else entries|dictsort %}
+                {# Old items, already stored in the database #}
+                {% for id, entry in sorted_entries %}
+                    {{ print_modifiable_row(id, name, columns, id not in is_referenced, 'drow-row') }}
+                {% endfor %}
+                {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+                {% for i in range(1, values.get('create_last_index', 0) + 1) %}
+                    {{ print_modifiable_row(-i, name, columns, False, 'drow-new', newrow=True) }}
+                {% endfor %}
+                {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+                {{ print_modifiable_row(-values.get('create_last_index', 0) - 1, name, columns, False, 'drow-prototype', newrow=True) }}
+            </tbody>
+        </table>
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                {{ util.make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
+            </button>
+        </p>
+        {{ util.input_submit(value=gettext("Save")) }}
+    </form>
+{% endmacro %}
+
 {# Generate an anti CSRF (Cross-Site Request Forgery) token and add it as hidden input to an HTML form.
 
    The frontend application checks the anti CSRF token for every called endpoint which is marked for this check, which

@@ -1498,7 +1498,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Organisationen verwalten'})
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
-        f = self.response.forms['institutionsummaryform']
+        f = self.response.forms['Institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
         self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
         self.assertNotIn("title_3", f.fields)
@@ -1507,7 +1507,7 @@ class TestCdEFrontend(FrontendTest):
         f['moniker_-1'] = "BuB"
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
-        f = self.response.forms['institutionsummaryform']
+        f = self.response.forms['Institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
         self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
         self.assertEqual("Bildung und Begabung", f['title_1001'].value)
@@ -1515,14 +1515,14 @@ class TestCdEFrontend(FrontendTest):
         f['moniker_1'] = "MA"
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
-        f = self.response.forms['institutionsummaryform']
+        f = self.response.forms['Institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
         self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
         self.assertEqual("Bildung und Begabung", f['title_1001'].value)
         f['delete_1001'].checked = True
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
-        f = self.response.forms['institutionsummaryform']
+        f = self.response.forms['Institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
         self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
         self.assertNotIn("title_1001", f.fields)
