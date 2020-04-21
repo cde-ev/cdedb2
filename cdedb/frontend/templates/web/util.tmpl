@@ -605,17 +605,15 @@
     <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
         {% for column in columns %}
             <td {% if '{}_{}'.format(column['name'], id) in errors %}class="has-error"{% endif %}>
-                {% set func = column.pop('func') %}
-                {% set attributes = ('data-basename="{}_"'.format(column['name'])|s if newrow else '') %}
-                {% set name = '{}_{}'.format(column.pop('name'), id) %}
-                {% set arialabel = gettext(column.pop('label')) %}
+                {% set func = column['func'] %}
+                {% set name = '{}_{}'.format(column['name'], id) %}
 
                 {# try to set the remaining items of colum as attributes to func #}
                 {# this is a call for a generic util.input_* macro specified by the caller #}
                 {{ func(name=name,
                         aclass='drow-input form-control',
-                        attributes=attributes,
-                        arialabel= arialabel
+                        attributes=('data-basename="{}_"'.format(column['name'])|s if newrow else ''),
+                        arialabel=gettext(column['label'])
                         ) }}
                 {{ util.output_errors(name) }}
             </td>
