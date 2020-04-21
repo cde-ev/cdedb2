@@ -614,6 +614,7 @@
     {% if entry['field_id'] %}
         {% with FIELD = ambience['event']['fields'][entry['field_id']],
                 readonly = entry['readonly'] or is_locked or ambience['event']['is_archived'] %}
+            <div id="questionnaire_field_entry_{{ FIELD['field_name'] }}">
             {% if FIELD['entries'] %}
                 {{ util.form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
                                           label=entry['title'], info=entry['info'],
@@ -642,6 +643,7 @@
                         readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
                 {% endif %}
             {% endif %}
+            </div>
         {% endwith %}
 
     {# Text-only entry #}

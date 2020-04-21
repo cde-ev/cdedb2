@@ -1326,6 +1326,127 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Betrag 10,50 €")
 
+    @as_users("annika")
+    def test_fee_modifiers(self, user):
+        self.traverse({'description': "Veranstaltungen"},
+                      {'description': "Große Testakademie 2222"},
+                      {'description': "Veranstaltungsteile"})
+        f = self.response.forms['partsummaryform']
+        for part_id in [1, 2, 3]:
+            field_name = f"fee_modifier_create_{part_id}_-1"
+            self.assertNotIn(field_name, f.fields)
+
+        self.traverse({'description': "Veranstaltungen"},
+                      {'description': "Veranstaltungen verwalten"},
+                      {'description': "CdE-Party 2050"})
+        # Create new boolean registration fields.
+        self.traverse({'description': "Datenfelder konfigurieren"})
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "is_child"
+        f['kind_-1'] = const.FieldDatatypes.bool.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        self.submit(f)
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "plus_one"
+        f['kind_-1'] = const.FieldDatatypes.bool.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        self.submit(f)
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "partner"
+        f['kind_-1'] = const.FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        self.submit(f)
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "eats_meats"
+        f['kind_-1'] = const.FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        f['entries_-1'] = """meat;Eat meat everyday!
+        half-vegetarian;Sometimes
+        vegetarian;Meat is Murder!
+        vegan;Milk is Murder too!"""
+        self.submit(f)
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "favorite_day"
+        f['kind_-1'] = const.FieldDatatypes.date.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        self.submit(f)
+
+        self.traverse({'description': "Veranstaltungsteile"})
+        f = self.response.forms['partsummaryform']
+        f['fee_modifier_create_4_-1'].checked = True
+        f['fee_modifier_modifier_name_4_-1'] = "is_child"
+        f['fee_modifier_amount_4_-1'] = "-10"
+        f['fee_modifier_field_id_4_-1'] = 1001
+        self.submit(f)
+        f = self.response.forms['partsummaryform']
+        f['fee_modifier_create_4_-1'].checked = True
+        f['fee_modifier_modifier_name_4_-1'] = "plus_one"
+        f['fee_modifier_amount_4_-1'] = "+14.99"
+        f['fee_modifier_field_id_4_-1'] = 1002
+        self.submit(f)
+
+        self.traverse({'description': "Anmeldung konfigurieren"})
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'].checked = True
+        f['title_-1'] = "Ich bin unter 13 Jahre alt."
+        f['field_id_-1'] = 1001
+        self.submit(f)
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'].checked = True
+        f['title_-1'] = "Ich bringe noch jemanden mit."
+        f['field_id_-1'] = 1002
+        self.submit(f)
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'].checked = True
+        f['title_-1'] = "Name des Partners"
+        f['field_id_-1'] = 1003
+        self.submit(f)
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'].checked = True
+        f['title_-1'] = "Essgewohnheiten"
+        f['field_id_-1'] = 1004
+        self.submit(f)
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'].checked = True
+        f['title_-1'] = "Dein Lieblingstag"
+        f['field_id_-1'] = 1005
+        self.submit(f)
+
+        self.traverse({'description': "Konfiguration"})
+        f = self.response.forms['changeeventform']
+        f['registration_start'] = now().isoformat()
+        f['registration_soft_limit'] = ""
+        f['registration_hard_limit'] = ""
+        self.submit(f)
+
+        self.traverse({'description': "Anmelden"})
+        self.assertTitle("Anmeldung für CdE-Party 2050")
+        f = self.response.forms['registerform']
+        self.assertPresence("Ich bin unter 13 Jahre alt.", "registrationquestionnaire")
+        f['is_child'].checked = True
+        self.assertPresence("Ich bringe noch jemanden mit.", "registrationquestionnaire")
+        f['plus_one'].checked = True
+        self.assertPresence("Name des Partners", "registrationquestionnaire")
+        f['partner'] = ""
+        self.assertPresence("Essgewohnheiten", "registrationquestionnaire")
+        f['eats_meats'] = "vegan"
+        self.assertPresence("Dein Lieblingstag", "registrationquestionnaire")
+        # f['favorite_day'] = now().date().isoformat()
+        self.submit(f, check_notification=False)
+        f = self.response.forms['registerform']
+        self.assertPresence("Darf nicht leer sein.", "questionnaire_field_entry_partner")
+        f['partner'] = "Antonai Akademieleitfaden"
+        self.assertPresence("Kein Datum gefunden.", "questionnaire_field_entry_favorite_day")
+        f['favorite_day'] = now().date().isoformat()
+        self.submit(f)
+        self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
+        self.assertPresence("19,99 €", "registrationsummary")
+
     @as_users("garcia")
     def test_questionnaire(self, user):
         self.traverse({'href': '/event/$'},

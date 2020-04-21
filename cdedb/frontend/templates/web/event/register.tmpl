@@ -183,9 +183,11 @@
                 "to other participants of this event beforehand.")) }}
 
         {% if questionnaire %}
-            {% for entry in questionnaire %}
-                {{ util.print_questionnaire_entry(entry) }}
-            {% endfor %}
+            <div id="registrationquestionnaire">
+                {% for entry in questionnaire %}
+                    {{ util.print_questionnaire_entry(entry) }}
+                {% endfor %}
+            </div>
         {% endif %}
 
         {%- if course_list %}

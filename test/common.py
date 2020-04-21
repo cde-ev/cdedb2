@@ -596,7 +596,7 @@ class FrontendTest(unittest.TestCase):
                 f.write(output)
 
     def get(self, *args, verbose=False, **kwargs):
-        self.response = self.app.get(*args, **kwargs)
+        self.response: webtest.TestResponse = self.app.get(*args, **kwargs)
         self.basic_validate(verbose=verbose)
 
     def follow(self, **kwargs):
