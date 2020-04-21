@@ -604,14 +604,20 @@
 {% macro print_modifiable_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
     <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
         {% for column in columns %}
-            <td {% if '{}_{}'.format(column['title'], id) in errors %}class="has-error"{% endif %}>
+            <td {% if '{}_{}'.format(column['name'], id) in errors %}class="has-error"{% endif %}>
+                {% set func = column.pop('func') %}
+                {% set attributes = ('data-basename="{}_"'.format(column['name'])|s if newrow else '') %}
+                {% set name = '{}_{}'.format(column.pop('name'), id) %}
+                {% set arialabel = gettext(column.pop('label')) %}
+
+                {# try to set the remaining items of colum as attributes to func #}
                 {# this is a call for a generic util.input_* macro specified by the caller #}
-                {{ column['func']('{}_{}'.format(column['title'], id),
-                                  aclass='drow-input form-control',
-                                  attributes=('data-basename="{}_"'.format(column['title'])|s if newrow else ''),
-                                  arialabel=gettext(column['lable'])
-                                  ) }}
-                {{ util.output_errors('{}_{}'.format(column['title'], id)) }}
+                {{ func(name=name,
+                        aclass='drow-input form-control',
+                        attributes=attributes,
+                        arialabel= arialabel
+                        ) }}
+                {{ util.output_errors(name) }}
             </td>
         {% endfor %}
 
