@@ -29,7 +29,7 @@ class TestApplication(FrontendTest):
         def config_mock_getitem(key):
             if key in ["CDEDB_DEV", "CDEDB_TEST"]:
                 return False
-            return self.app.app.conf._configlookup[key]
+            return self.app.app.conf._configchain[key]
         config_mock.side_effect = config_mock_getitem
 
         self.get('/', status=500)
