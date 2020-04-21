@@ -12521,7 +12521,7 @@ msgstr "Datenfelder konfigurieren"
 #: cdedb/frontend/templates/web/event/configure_registration.tmpl:18
 #: cdedb/frontend/templates/web/event/configure_registration.tmpl:22
 msgid "Configure Registration"
-msgstr "Anmeldung konfigurieren."
+msgstr "Anmeldung konfigurieren"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:66
 #: cdedb/frontend/templates/web/event/configure_questionnaire.tmpl:18

@@ -23,6 +23,7 @@ import datetime
 import magic
 import psycopg2.extensions
 import werkzeug.exceptions
+from werkzeug import Response
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
@@ -37,7 +38,7 @@ from cdedb.common import (
     unwrap, now, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
-    LodgementsSortkeys, xsorted)
+    LodgementsSortkeys, xsorted, RequestState)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -3551,30 +3552,48 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def reorder_questionnaire_form(self, rs, event_id):
+    @REQUESTdata(("kind", "enum_questionnaireusages"))
+    def reorder_questionnaire_form(self, rs: RequestState, event_id: int,
+                                   kind: const.QuestionnaireUsages) -> Response:
         """Render form."""
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        if rs.has_validation_errors():
+            kind = const.QuestionnaireUsages.questionnaire
+            rs.notify(
+                "error", n_("Unknown questionnaire kind. Defaulted to {kind}."),
+                {'kind': kind})
+        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+            rs, event_id, kinds=(kind,)))
+        redirects = {
+            const.QuestionnaireUsages.registration:
+                "event/configure_registration",
+            const.QuestionnaireUsages.questionnaire:
+                "event/configure_questionnaire",
+        }
+        if not questionnaire:
+            rs.notify("info", n_("No questionnaire rows of this kind found."))
+            if kind in redirects:
+                return self.redirect(rs, redirects[kind])
         return self.render(rs, "reorder_questionnaire", {
-            'questionnaire': questionnaire})
+            'questionnaire': questionnaire,
+            'kind': kind})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def reorder_questionnaire(self, rs, event_id):
+    @REQUESTdata(("order", "inst_csv_list"))
+    def reorder_questionnaire(self, rs: RequestState, event_id: int,
+                              kind: const.QuestionnaireUsages):
         """Shuffle rows of the orga designed form.
 
         This is strictly speaking redundant functionality, but it's pretty
         laborious to do without.
         """
-        kinds = tuple(x for x in const.QuestionnaireUsages)
-        args = {'order_{}'.format(kind.name): 'int_csv_list' for kind in kinds}
-        data = request_extractor(rs, args.items())
         if rs.has_validation_errors():
-            return self.reorder_questionnaire_form(rs, event_id)
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+            return self.reorder_questionnaire_form(rs, event_id, kind)
+        questionnaire = self.eventproxy.get_questionnaire(
+            rs, event_id, kinds=(kind,))
         new_questionnaire = {
-            kind: tuple(self._sanitize_questionnaire_row(q[i])
-                        for i in data['order_{}'.format(kind.name)])
-            for kind, q in questionnaire.items()}
+            kind: tuple(self._sanitize_questionnaire_row(questionnaire[i])
+                        for i in order)}
         code = self.eventproxy.set_questionnaire(
             rs, event_id, new_questionnaire)
         self.notify_return_code(rs, code)

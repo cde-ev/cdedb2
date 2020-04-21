@@ -61,10 +61,10 @@
             {{ util.href(cdedblink("event/field_summary", {"event_id": data['id']}), gettext("Configure Custom Fields"),
                          icon='tag', aclass="list-group-item", active=(sidenav_active == 'event_field_summary') ) }}
             {{ util.href(cdedblink("event/configure_registration", {"event_id": data['id']}), gettext("Configure Registration"),
-                         icon='log-in', aclass="list-group-item", active=(sidenav_active == 'event_config_registration')) }}
+                         icon='sign-in-alt', aclass="list-group-item", active=(sidenav_active == 'event_configure_registration')) }}
             {{ util.href(cdedblink("event/configure_questionnaire_form", {"event_id": data['id']}),
                          gettext("Configure Questionnaire"), aclass="list-group-item",
-                         active=(sidenav_active == 'event_quest_summary'), icon='square') }}
+                         active=(sidenav_active == 'event_configure_questionnaire'), icon='square') }}
             {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), gettext("Log"), aclass="list-group-item",
                          icon="far fa-list-alt", active=(sidenav_active == 'event_event_log')) }}
         </div>
