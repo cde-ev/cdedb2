@@ -3579,7 +3579,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata(("order", "inst_csv_list"))
+    @REQUESTdata(("order", "int_csv_list"))
     def reorder_questionnaire(self, rs: RequestState, event_id: int,
                               kind: const.QuestionnaireUsages):
         """Shuffle rows of the orga designed form.
