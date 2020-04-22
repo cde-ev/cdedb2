@@ -12,7 +12,7 @@ import copy
 import enum
 import functools
 import logging
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, Set, Union, Iterable
 
 from cdedb.common import (
     n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
@@ -26,11 +26,13 @@ from cdedb.database.connection import Atomizer
 
 
 F = TypeVar('F', bound=Callable[..., Any])
+G = TypeVar('G', bound=Callable[..., Any])
+
 
 def singularize(function: F,
                 array_param_name: str = "ids",
                 singular_param_name: str = "anid",
-                passthrough: bool = False) -> F:
+                passthrough: bool = False) -> G:
     """This takes a function and returns a singularized version.
 
     The function has to accept an array as a parameter and return a dict
@@ -65,7 +67,7 @@ def singularize(function: F,
 
 def batchify(function: F,
              array_param_name: str = "data",
-             singular_param_name: str = "data") -> F:
+             singular_param_name: str = "data") -> G:
     """This takes a function and returns a batchified version.
 
     The function has to accept an a singular parameter.
@@ -759,12 +761,8 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def affirm_validation(assertion, value, **kwargs):
+def affirm_validation(assertion: str, value: Any, **kwargs) -> Any:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
-
-    :type assertion: str
-    :type value: object
-    :rtype: object
     """
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
@@ -786,7 +784,9 @@ def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
     return tuple(checker(value, **kwargs) for value in values)
 
 
-def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
+def affirm_set_validation(assertion: str, values: Iterable[Any],
+                          allow_None: bool = False,
+                          **kwargs) -> Union[None, Set[Any]]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
 
     :type assertion: str

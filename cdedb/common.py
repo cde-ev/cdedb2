@@ -22,7 +22,7 @@ import shutil
 import string
 import sys
 import hashlib
-from typing import Any
+from typing import Any, Iterable, Sized
 
 import psycopg2.extras
 import pytz
@@ -906,7 +906,7 @@ def schulze_evaluate(votes, candidates):
 ASSEMBLY_BAR_MONIKER = "_bar_"
 
 
-def unwrap(single_element_list, keys=False):
+def unwrap(single_element_list: Sized, keys: bool = False) -> Any:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -923,7 +923,8 @@ def unwrap(single_element_list, keys=False):
     :rtype: object or None
     """
     if (not isinstance(single_element_list, collections.abc.Iterable)
-            or len(single_element_list) != 1):
+            or (isinstance(single_element_list, collections.abc.Sized)
+                and len(single_element_list) != 1)):
         raise RuntimeError(n_("Unable to unwrap!"))
     if isinstance(single_element_list, collections.abc.Mapping):
         if keys:
