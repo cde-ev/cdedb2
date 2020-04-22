@@ -492,8 +492,10 @@ class AssemblyBackend(AbstractBackend):
                                            blockers["attendees"])
                 if "attachments" in cascade:
                     with Silencer(rs):
+                        attachment_cascade = {"versions"}
                         for attachment_id in blockers["attachments"]:
-                            ret *= self.remove_attachment(rs, attachment_id)
+                            ret *= self.delete_attachment(
+                                rs, attachment_id, attachment_cascade)
                 if "log" in cascade:
                     ret *= self.sql_delete(rs, "assembly.log", blockers["log"])
                 if "mailinglists" in cascade:
@@ -780,8 +782,10 @@ class AssemblyBackend(AbstractBackend):
                         rs, "assembly.candidates", blockers["candidates"])
                 if "attachments" in cascade:
                     with Silencer(rs):
+                        attachment_cascade = {"versions"}
                         for attachment_id in blockers["attachments"]:
-                            ret *= self.remove_attachment(rs, attachment_id)
+                            ret *= self.delete_attachment(
+                                rs, attachment_id, attachment_cascade)
                 if "voters" in cascade:
                     ret *= self.sql_delete(
                         rs, "assembly.voter_register", blockers["voters"])
