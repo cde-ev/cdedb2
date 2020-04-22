@@ -68,6 +68,9 @@ cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/11/main/
 systemctl restart postgresql
 sleep 10
 
+# First create the nobody account which does have no rights, but enables us
+# to connect to postgres
+sudo -u postgres psql -U postgres -c "CREATE USER nobody PASSWORD 'nobody'"
 make sql
 
 systemctl stop pgbouncer
