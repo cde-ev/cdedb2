@@ -29,6 +29,8 @@ do it.
 import copy
 import hmac
 import string
+from typing import Any, Set, Dict, List, Union
+from pathlib import Path
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, affirm_set_validation as affirm_set,
@@ -37,7 +39,8 @@ from cdedb.common import (
     n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
-    implying_realms, xsorted)
+    implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
+    get_hash)
 from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -48,12 +51,19 @@ class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
     realm = "assembly"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attachment_base_path: Path = (
+                self.conf['STORAGE_DIR'] / "assembly_attachment")
+
+    # TODO this does nothing?
     @classmethod
-    def is_admin(cls, rs):
+    def is_admin(cls, rs: RequestState):
         return super().is_admin(rs)
 
-    def may_assemble(self, rs, *, assembly_id=None, ballot_id=None,
-                     persona_id=None):
+    def may_assemble(self, rs: RequestState, *, assembly_id:int = None,
+                     ballot_id: int = None, attachment_id: int = None,
+                     persona_id: int = None) -> bool:
         """Helper to check authorization.
 
         The deal is that members may access anything and assembly users
@@ -64,18 +74,13 @@ class AssemblyBackend(AbstractBackend):
 
         Exactly one of the two id parameters has to be provided
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type ballot_id: int
-        :type persona_id: int or None
         :param persona_id: If not provided the current user is used.
-        :rtype: bool
         """
         if "member" in rs.user.roles:
             return True
         return self.check_attendance(
             rs, assembly_id=assembly_id, ballot_id=ballot_id,
-            persona_id=persona_id)
+            attachment_id=attachment_id, persona_id=persona_id)
 
     @access("persona")
     def may_view(self, rs, assembly_id, persona_id=None):
@@ -221,8 +226,29 @@ class AssemblyBackend(AbstractBackend):
         return self.general_query(rs, query)
 
     @internal_access("persona")
-    def check_attendance(self, rs, *, assembly_id=None, ballot_id=None,
-                         persona_id=None):
+    def get_assembly_id(self, rs: RequestState, *, ballot_id: int = None,
+                        attachment_id: int = None) -> int:
+        if ballot_id is None and attachment_id is None:
+            raise ValueError(n_("Not input specified."))
+        elif ballot_id and attachment_id:
+            raise ValueError(n_("Too many inputs."))
+        assembly_id = None
+        if attachment_id:
+            attachment_id = affirm("id", attachment_id)
+            data = self.sql_select_one(
+                rs, "assembly.attachments", ("assembly_id", "ballot_id"),
+                attachment_id)
+            assembly_id, ballot_id = data['assembly_id'], data['ballot_id']
+        if ballot_id:
+            ballot_id = affirm("id", ballot_id)
+            assembly_id = unwrap(self.sql_select_one(
+                rs, "assembly.ballots", ("assembly_id",), ballot_id))
+        return assembly_id
+
+    @internal_access("persona")
+    def check_attendance(self, rs: RequestState, *, assembly_id: int =None,
+                         ballot_id: int = None, attachment_id: int = None,
+                         persona_id: int = None) -> bool:
         """Check wether a persona attends a specific assembly/ballot.
 
         Exactly one of the inputs assembly_id and ballot_id has to be
@@ -231,23 +257,19 @@ class AssemblyBackend(AbstractBackend):
         This does not check for authorization since it is used during
         the authorization check.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int or None
-        :type ballot_id: int or None
-        :type persona_id: int or None
         :param persona_id: If not provided the current user is used.
-        :rtype: bool
         """
-        if assembly_id is None and ballot_id is None:
+        inputs = sum(1 for x in (assembly_id, ballot_id, attachment_id) if x)
+        if inputs < 1:
             raise ValueError(n_("No input specified."))
-        if assembly_id is not None and ballot_id is not None:
+        if inputs > 1:
             raise ValueError(n_("Too many inputs specified."))
         if persona_id is None:
             persona_id = rs.user.persona_id
         with Atomizer(rs):
-            if ballot_id is not None:
-                assembly_id = unwrap(self.sql_select_one(
-                    rs, "assembly.ballots", ("assembly_id",), ballot_id))
+            if assembly_id is None:
+                assembly_id = self.get_assembly_id(
+                    rs, ballot_id=ballot_id, attachment_id=attachment_id)
             query = glue("SELECT id FROM assembly.attendees",
                          "WHERE assembly_id = %s and persona_id = %s")
             return bool(self.query_one(
@@ -1272,20 +1294,315 @@ class AssemblyBackend(AbstractBackend):
                     {"block": blockers.keys()})
         return ret
 
+    @internal_access("assembly")
+    def check_attachment_access(
+            self, rs: RequestState, attachment_ids: Set[int]) -> bool:
+        attachment_ids = affirm_set("id", attachment_ids)
+        with Atomizer(rs):
+            attachment_data = self.sql_select(
+                rs, "assembly.attachments", ASSEMBLY_ATTACHMENT_FIELDS,
+                attachment_ids)
+            assembly_ids = {e["assembly_id"] for e in attachment_data
+                            if e["assembly_id"]}
+            ballot_ids = {e["ballot_id"] for e in attachment_data
+                          if e["ballot_id"]}
+            if ballot_ids:
+                ballot_data = self.sql_select(rs, "assembly.ballots",
+                                              ("assembly_id",), ballot_ids)
+                assembly_ids.update({e["assembly_id"] for e in ballot_data})
+            if len(assembly_ids) != 1:
+                raise ValueError(n_("Can only access attachments from exactly "
+                                    "one assembly at a time."))
+            return self.may_assemble(rs, assembly_id=unwrap(assembly_ids))
+
+    @internal_access("assembly")
+    def check_attachment_locked(self, rs: RequestState,
+                              attachment_id: int) -> bool:
+        attachment_id = affirm("id", attachment_id)
+        with Atomizer(rs):
+            attachment = self.get_attachment(rs, attachment_id)
+            if attachment['ballot_id']:
+                ballot = self.get_ballot(rs, attachment['ballot_id'])
+                if ballot['vote_begin'] < now():
+                    return True
+                assembly_id = ballot['assembly_id']
+            else:
+                assembly_id = attachment['assembly_id']
+            assembly = self.get_assembly(rs, assembly_id)
+            if not assembly['is_active']:
+                return True
+
+            return False
+
     @access("assembly")
-    def list_attachments(self, rs, *, assembly_id=None, ballot_id=None):
+    def get_attachment_histories(self, rs: RequestState,
+                                 attachment_ids: Set[int]) -> \
+            Dict[int, Dict[int, Any]]:
+        """Retrieve all version information for given attachments."""
+        attachment_ids: Dict[int, Dict[int, Any]] = affirm_set(
+            "id", attachment_ids)
+        ret = {anid: {} for anid in attachment_ids}
+        with Atomizer(rs):
+            if not self.check_attachment_access(rs, attachment_ids):
+                raise PrivilegeError(n_("Not privileged."))
+            data = self.sql_select(
+                rs, "assembly.attachment_versions",
+                ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
+                entity_key="attachment_id")
+            for entry in data:
+                ret[entry["attachment_id"]][entry["version"]] = entry
+
+        return ret
+
+    get_attachment_history = singularize(
+        get_attachment_histories, "attachment_ids", "attachment_id")
+
+    @access("assembly_admin")
+    def add_attachment(self, rs: RequestState, data: Dict[str, Any],
+                       content: bytes) -> int:
+        data = affirm("assembly_attachment", data, creation=True)
+        with Atomizer(rs):
+            attachment = {k: v for k, v in data.items()
+                          if k in ASSEMBLY_ATTACHMENT_FIELDS}
+            new_id = self.sql_insert(rs, "assembly.attachments", attachment)
+            version = {k: v for k, v in data.items()
+                            if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+            version['version'] = 1
+            version['attachment_id'] = new_id
+            version['file_hash'] = get_hash(content)
+            code = self.sql_insert(rs, "assembly.attachment_versions", version)
+            if not code:
+                raise RuntimeError(n_("Something went wrong."))
+            path = self.attachment_base_path / f"{new_id}_v1"
+            if path.exists():
+                raise RuntimeError(n_("File already exists."))
+            with open(path, "wb") as f:
+                f.write(content)
+            assembly_id = data.get('assembly_id') or self.get_assembly_id(
+                rs, ballot_id=data['ballot_id'])
+            # TODO addtional info?
+            self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
+                              assembly_id=assembly_id)
+            return new_id
+
+    @access("assembly_admin")
+    def change_attachment(self, rs: RequestState, data: Dict[str, Any]) -> int:
+        data = affirm("assembly_attachment", data)
+        with Atomizer(rs):
+            # Do some checks to make sure we are not illegaly modifying ballots.
+            locked_msg = n_("Unable to change attachment once voting has begun"
+                            " or the assembly has been concluded.")
+            attachment = self.get_attachment(rs, data['id'])
+            old_assembly_id = self.get_assembly_id(rs, attachment_id=data['id'])
+            new_assembly_id = data.get('assembly_id') or self.get_assembly_id(
+                rs, ballot_id=data['ballot_id'])
+            if old_assembly_id != new_assembly_id:
+                raise ValueError(n_("Cannot change to a different assembly."))
+            assembly = self.get_assembly(rs, old_assembly_id)
+            if not assembly['is_active']:
+                raise ValueError(locked_msg)
+            old_ballot_id = attachment['ballot_id']
+            new_ballot_id = data['ballot_id']
+            ballot_ids = set(x for x in (old_ballot_id, new_ballot_id) if x)
+            ballots = self.get_ballots(rs, ballot_ids).values()
+            for ballot in ballots:
+                if ballot['vote_begin'] < now():
+                    raise ValueError(locked_msg)
+
+            # Actually perform the change.
+            ret = self.sql_update(rs, "assembly.attachments", data)
+            self.assembly_log(rs, const.AssemblyLogCodes.attachment_changed,
+                              assembly_id=old_assembly_id,
+                              additional_info=data['id'])
+            return ret
+
+    @access("assembly_admin")
+    def delete_attachment_blockers(self, rs: RequestState, attachment_id: int) \
+            -> Dict[str, Union[List[int], str]]:
+        attachment_id = affirm("id", attachment_id)
+        blockers = {}
+
+        versions = self.get_attachment_history(rs, attachment_id)
+        blockers["versions"] = [v for v in versions]
+
+        attachment = self.get_attachment(rs, attachment_id)
+        if attachment['ballot_id']:
+            ballot = self.get_ballot(rs, attachment['ballot_id'])
+            if ballot['vote_begin'] < now():
+                blockers["vote_begin"] = ballot["vote_begin"]
+            assembly = self.get_assembly(rs, ballot["assembly_id"])
+        else:
+            assembly = self.get_assembly(rs, attachment["assembly_id"])
+        if not assembly["is_active"]:
+            blockers["is_active"] = assembly["id"]
+
+        return blockers
+
+    @access("assembly_admin")
+    def delete_attachment(self, rs: RequestState, attachment_id: int,
+                          cascade: Set[str] = None) -> int:
+        attachment_id = affirm("id", attachment_id)
+        blockers = self.delete_attachment_blockers(rs, attachment_id)
+        if blockers.keys() & {"vote_begin", "is_active"}:
+            raise ValueError(n_("Unable to delete attachment once voting has "
+                                "begun or the assembly has been concluded."))
+        cascade = affirm("str", cascade or set()) & blockers.keys()
+
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "assembly attachment",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        with Atomizer(rs):
+            if cascade:
+                if "versions" in cascade:
+                    ret *= self.sql_delete(rs, "assembly.attachment_versions",
+                                           (attachment_id,), "attachment_id")
+                    for version in blockers["versions"]:
+                        filename = f"{attachment_id}_v{version}"
+                        path = self.attachment_base_path / filename
+                        if path.exists():
+                            ret *= path.unlink()
+
+                blockers = self.delete_attachment_blockers(rs, attachment_id)
+            if not blockers:
+                assembly_id = self.get_assembly_id(
+                    rs, attachment_id=attachment_id)
+                ret *= self.sql_delete_one(
+                    rs, "assembly.attachments", attachment_id)
+                self.assembly_log(rs, const.AssemblyLogCodes, assembly_id,
+                                  additional_info=attachment_id)
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "assembly", "block": blockers.keys()})
+        return ret
+
+    @access("assembly")
+    def get_current_versions(self, rs: RequestState,
+                             attachment_ids: Set[int]) -> Dict[int, int]:
+        attachment_ids = affirm_set("id", attachment_ids)
+        with Atomizer(rs):
+            if not self.check_attachment_access(rs, attachment_ids):
+                raise PrivilegeError(n_("Not privileged."))
+            query = "SELECT attachment_id, MAX(version) as version FROM" \
+                    " assembly.attachment_versions" \
+                    " WHERE attachment_id = ANY(%s) GROUP BY attachment_id"
+            params = (attachment_ids,)
+            data = self.query_all(rs, query, params)
+            return {e["attachment_id"]: e["version"] for e in data}
+    get_current_version = singularize(
+        get_current_versions, "attachment_ids", "attachment_id")
+
+    @access("assembly_admin")
+    def add_attachment_version(self, rs: RequestState,
+                               data: Dict[str, Any], content: bytes) -> int:
+        data: dict = affirm("assembly_attachment_version", data, creation=True)
+        content = affirm("bytes", content)
+        attachment_id = data['attachment_id']
+        with Atomizer(rs):
+            if self.check_attachment_locked(rs, attachment_id):
+                raise ValueError(n_(
+                    "Unable to change attachment once voting has begun or the "
+                    "assembly has been concluded."))
+            version = self.get_current_version(rs, attachment_id) + 1
+            data['version'] = version
+            data['file_hash'] = get_hash(content)
+            ret = self.sql_insert(rs, "assembly.attachment_versions", data)
+            path = self.attachment_base_path / f"{attachment_id}_v{version}"
+            if path.exists():
+                raise ValueError(n_("File already exists."))
+            with open(path, "wb") as f:
+                f.write(content)
+            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+            self.assembly_log(
+                rs, const.AssemblyLogCodes.attachement_version_added,
+                assembly_id, additional_info=f"Version {version}")
+        return ret
+
+    @access("assembly_admin")
+    def change_attachment_version(self, rs: RequestState,
+                                  data: Dict[str, Any]) -> int:
+        data: dict = affirm("assembly_attachment_version", data)
+        attachment_id = data.pop('attachment_id')
+        version = data.pop('version')
+        with Atomizer(rs):
+            if self.check_attachment_locked(rs, attachment_id):
+                raise ValueError(n_(
+                    "Unable to change attachment once voting has begun or the "
+                    "assembly has been concluded."))
+            keys = tuple(data.keys())
+            setters = ", ".join(f"{k} = %s" for k in keys)
+            query = f"UPDATE assembly.attachment_versions SET {setters}" \
+                    f" WHERE attachment_id = %s AND version = %s"
+            params = tuple(data[k] for k in keys) + (attachment_id, version)
+            return self.query_exec(rs, query, params)
+
+    @access("assembly_admin")
+    def remove_attachment_version(self, rs: RequestState, attachment_id: int,
+                                  version: int) -> int:
+        attachment_id = affirm("id", attachment_id)
+        version = affirm("id", version)
+        with Atomizer(rs):
+            if self.check_attachment_locked(rs, attachment_id):
+                raise ValueError(n_(
+                    "Unable to change attachment once voting has begun or the "
+                    "assembly has been concluded."))
+            deletor = {
+                'attachment_id': attachment_id,
+                'version': version,
+                'dtime': now(),
+                'title': None,
+                'authors': None,
+                'filename': None,
+            }
+
+            keys = tuple(deletor.keys())
+            setters = ", ".join(f"{k} = %s" for k in keys)
+            query = f"UPDATE assembly.attachment_versions SET {setters}" \
+                    f" WHERE attachment_id = %s AND version = %s"
+            params = tuple(deletor[k] for k in keys) + (attachment_id, version)
+            ret = self.query_exec(rs, query, params)
+
+            if ret:
+                path = self.attachment_base_path / f"{attachment_id}_v{version}"
+                if path.exists():
+                    path.unlink()
+                assembly_id = self.get_assembly_id(
+                    rs, attachment_id=attachment_id)
+                self.assembly_log(
+                    rs, const.AssemblyLogCodes.attachement_version_removed,
+                    assembly_id, additional_info=f"Version {version}")
+            return ret
+
+    @access("assembly")
+    def get_attachment_content(self, rs: RequestState, attachment_id: int,
+                               version: int = None) -> Union[bytes, None]:
+        attachment_id = affirm("id", attachment_id)
+        if not self.check_attachment_access(rs, (attachment_id,)):
+            raise PrivilegeError(n_("Not privileged."))
+        version = affirm("id_or_None", version) or self.get_current_version(
+            rs, attachment_id)
+        path = self.attachment_base_path / f"{attachment_id}_v{version}"
+        if path.exists():
+            with open(path, "rb") as f:
+                content = f.read()
+        else:
+            content = None
+        return content
+
+    @access("assembly")
+    def list_attachments(self, rs: RequestState, *, assembly_id: int = None,
+                         ballot_id: int = None) -> Set[int]:
         """List all files attached to an assembly/ballot.
 
         Files can either be attached to an assembly or ballot, but not
         to both at the same time.
 
         Exactly one of the inputs has to be provided.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int or None
-        :type ballot_id: int or None
-        :rtype: {int: str}
-        :returns: dict mapping attachment ids to titles
         """
         if assembly_id is None and ballot_id is None:
             raise ValueError(n_("No input specified."))
@@ -1304,84 +1621,21 @@ class AssemblyBackend(AbstractBackend):
             column = "ballot_id"
             key = ballot_id
 
-        data = self.sql_select(rs, "assembly.attachments", ("id", "title"),
+        data = self.sql_select(rs, "assembly.attachments", ("id",),
                                (key,), entity_key=column)
-        return {e['id']: e['title'] for e in data}
+        return {e['id'] for e in data}
 
     @access("assembly")
-    def get_attachments(self, rs, ids):
-        """Retrieve data on attachments
+    def get_attachments(self, rs: RequestState,
+                        attachment_ids: Set[int]) -> Dict[int, Dict[str, int]]:
+        """Retrieve data on attachments"""
+        attachment_ids = affirm_set("id", attachment_ids)
+        with Atomizer(rs):
+            if not self.check_attachment_access(rs, attachment_ids):
+                raise PrivilegeError(n_("Not privileged."))
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
-        """
-        ids = affirm_set("id", ids)
-        data = self.sql_select(rs, "assembly.attachments",
-                               ASSEMBLY_ATTACHMENT_FIELDS, ids)
-        ret = {e['id']: e for e in data}
-        if "member" not in rs.user.roles:
-            ret = {k: v for k, v in ret.items() if self.check_attendance(
-                rs, assembly_id=v['assembly_id'], ballot_id=v['ballot_id'])}
-        return ret
+            data = self.sql_select(rs, "assembly.attachments",
+                                   ASSEMBLY_ATTACHMENT_FIELDS, attachment_ids)
+            ret = {e['id']: e for e in data}
+            return ret
     get_attachment = singularize(get_attachments)
-
-    @access("assembly_admin")
-    def add_attachment(self, rs, data, attachment):
-        """Create a new attachment.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :type attachment: bytes
-        :rtype: int
-        :returns: id of the new attachment
-        """
-        data = affirm("assembly_attachment", data)
-        if data.get('ballot_id'):
-            ballot = unwrap(self.get_ballots(rs, (data['ballot_id'],)))
-            if now() > ballot['vote_begin']:
-                raise ValueError(n_("Unable to modify active ballot."))
-        ret = self.sql_insert(rs, "assembly.attachments", data)
-        assembly_id = data.get('assembly_id')
-        if not assembly_id:
-            ballot = unwrap(self.get_ballots(rs, (data['ballot_id'],)))
-            assembly_id = ballot['assembly_id']
-        self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
-                          assembly_id, additional_info=data['title'])
-
-        path = (self.conf["STORAGE_DIR"] / 'assembly_attachment'
-                / str(ret))
-        with open(str(path), 'wb') as f:
-            f.write(attachment)
-
-        return ret
-
-    @access("assembly_admin")
-    def remove_attachment(self, rs, attachment_id):
-        """Delete an attachment.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type attachment_id: int
-        :rtype: int
-        :returns: default return code
-        """
-        attachment_id = affirm("id", attachment_id)
-        current = unwrap(self.get_attachments(rs, (attachment_id,)))
-        if current['ballot_id']:
-            ballot = unwrap(self.get_ballots(rs, (current['ballot_id'],)))
-            if now() > ballot['vote_begin']:
-                raise ValueError(n_("Unable to modify active ballot."))
-        ret = self.sql_delete_one(rs, "assembly.attachments", attachment_id)
-        assembly_id = current['assembly_id']
-        if not assembly_id:
-            ballot = unwrap(self.get_ballots(rs, (current['ballot_id'],)))
-            assembly_id = ballot['assembly_id']
-        self.assembly_log(rs, const.AssemblyLogCodes.attachment_removed,
-                          assembly_id, additional_info=current['title'])
-
-        path = (self.conf["STORAGE_DIR"] / 'assembly_attachment'
-                / str(attachment_id))
-        if path.exists():
-            path.unlink()
-
-        return ret

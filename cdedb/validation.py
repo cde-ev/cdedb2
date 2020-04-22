@@ -3837,22 +3837,25 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-_ASSEMBLY_ATTACHMENT_COMMON_FIELDS = {
-    "title": _str,
-    "filename": _identifier,
+_ASSEMBLY_ATTACHMENT_FIELDS = lambda: {
+    'assembly_id': _id_or_None,
+    'ballot_id': _id_or_None,
 }
-_ASSEMBLY_ATTACHMENT_OPTIONAL_FIELDS = {
-    "assembly_id": _id,
-    "ballot_id": _id,
+
+_ASSEMBLY_ATTACHMENT_VERSION_FIELDS = lambda: {
+    'title': _str,
+    'authors': _str_or_None,
+    'filename': _str,
 }
 
 
 @_addvalidator
-def _assembly_attachment(val, argname=None, *, _convert=True,
+def _assembly_attachment(val, argname=None, *, creation=False, _convert=True,
                          _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
+    :type creation: bool
     :type _convert: bool
     :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
@@ -3862,19 +3865,52 @@ def _assembly_attachment(val, argname=None, *, _convert=True,
                          _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    mandatory_fields = _ASSEMBLY_ATTACHMENT_COMMON_FIELDS
-    optional_fields = _ASSEMBLY_ATTACHMENT_OPTIONAL_FIELDS
+    if creation:
+        mandatory_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
+        optional_fields = _ASSEMBLY_ATTACHMENT_FIELDS()
+    else:
+        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_FIELDS(), id=_id)
+        optional_fields = {}
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    if "assembly_id" in val and "ballot_id" in val:
+    if val.get("assembly_id") and val.get("ballot_id"):
         errs.append((argname, ValueError(n_("Only one host allowed."))))
-    if "assembly_id" not in val and "ballot_id" not in val:
+    if not val.get("assembly_id") and not val.get("ballot_id"):
         errs.append((argname, ValueError(n_("No host given."))))
     if errs:
         return None, errs
+    return val, errs
+
+
+@_addvalidator
+def _assembly_attachment_version(val, argname=None, *, creation=False,
+                                 _convert=True, _ignore_warnings=False):
+    """
+    :type val: object
+    :type argname: str or None
+    :type creation: bool
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "assembly_attachment_version"
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_VERSION_FIELDS(),
+                                attachment_id=_id)
+        optional_fields = {}
+    else:
+        mandatory_fields = {'attachment_id': _id, 'version': _id}
+        optional_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     return val, errs
 
 
