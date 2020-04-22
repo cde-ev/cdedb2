@@ -1538,6 +1538,20 @@ def _privilege_change(val, argname=None, *, _convert=True,
 
 
 @_addvalidator
+def _bytes(val, argname=None, *, _convert=True, _ignore_warnings=False):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: (bytes or None, [(str or None, exception)])
+    """
+    if not isinstance(val, bytes):
+        return None, [(argname, TypeError(n_("Not a bytes object.")))]
+    return val, []
+
+
+@_addvalidator
 def _input_file(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
