@@ -232,7 +232,7 @@ class TestAssemblyBackend(BackendTest):
             'id': 2,
             'use_bar': True,
             'candidates': {
-                6: {'description': 'Teracotta', 'moniker': 'terra'},
+                6: {'description': 'Teracotta', 'moniker': 'terra', 'id': 6},
                 7: None,
                 -1: {'description': 'Aquamarin', 'moniker': 'aqua'},
             },
