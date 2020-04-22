@@ -2182,7 +2182,7 @@ def process_modifiable_input(rs, entries, spec, additional=None):
     }
     for entry_id in entries:
         if entry_id in deletes:
-            ret[entries] = None
+            ret[entry_id] = None
         else:
             ret[entry_id]['id'] = entry_id
     marker = 1
