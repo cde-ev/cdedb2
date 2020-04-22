@@ -21,6 +21,8 @@ import re
 import shutil
 import string
 import sys
+import hashlib
+from typing import Any
 
 import psycopg2.extras
 import pytz
@@ -378,6 +380,13 @@ def merge_dicts(*dicts):
                     dicts[0].setlist(key, adict[key])
                 else:
                     dicts[0][key] = adict[key]
+
+
+def get_hash(obj: Any) -> str:
+    """Helper to calculate a hexadecimal has of an arbitrary object."""
+    hasher = hashlib.sha512()
+    hasher.update(obj)
+    return hasher.hexdigest()
 
 
 def now():

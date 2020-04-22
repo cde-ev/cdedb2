@@ -25,7 +25,7 @@ from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
-    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier, xsorted)
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier, xsorted, get_hash)
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
@@ -1487,9 +1487,7 @@ class CoreFrontend(AbstractFrontend):
         previous = self.coreproxy.get_cde_user(rs, persona_id)['foto']
         myhash = None
         if foto:
-            myhash = hashlib.sha512()
-            myhash.update(foto)
-            myhash = myhash.hexdigest()
+            myhash = get_hash(foto)
             path = self.conf["STORAGE_DIR"] / 'foto' / myhash
             if not path.exists():
                 with open(str(path), 'wb') as f:
