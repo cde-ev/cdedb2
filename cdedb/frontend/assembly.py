@@ -934,4 +934,4 @@ class AssemblyFrontend(AbstractUserFrontend):
         }
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)
-        return self.show_ballot(rs, assembly_id, ballot_id)
+        return self.redirect(rs, "assembly/show_ballot")
