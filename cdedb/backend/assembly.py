@@ -29,7 +29,7 @@ do it.
 import copy
 import hmac
 import string
-from typing import Any, Set, Dict, List, Union, Iterable
+from typing import Any, Set, Dict, List, Union, Iterable, Callable
 from pathlib import Path
 from os import PathLike
 
@@ -183,7 +183,8 @@ class AssemblyBackend(AbstractBackend):
             time_stop=time_stop)
 
     @access("assembly_admin")
-    def submit_general_query(self, rs: RequestState, query: Query):
+    def submit_general_query(self, rs: RequestState,
+                             query: Query) -> List[Dict[str, Any]]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
@@ -212,6 +213,7 @@ class AssemblyBackend(AbstractBackend):
     @internal_access("persona")
     def get_assembly_id(self, rs: RequestState, *, ballot_id: int = None,
                         attachment_id: int = None) -> int:
+        """Helper to retrieve a corresponding assembly id."""
         if ballot_id is None and attachment_id is None:
             raise ValueError(n_("Not input specified."))
         elif ballot_id and attachment_id:
@@ -356,7 +358,7 @@ class AssemblyBackend(AbstractBackend):
     get_assembly = singularize(get_assemblies)
 
     @access("assembly_admin")
-    def set_assembly(self, rs: RequestState, data: Dict[str, Any]):
+    def set_assembly(self, rs: RequestState, data: Dict[str, Any]) -> int:
         """Update some keys of an assembly.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -452,7 +454,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_assembly(self, rs: RequestState, assembly_id: int,
-                        cascade: Set[str] = None):
+                        cascade: Set[str] = None) -> int:
         """Remove an assembly.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -1248,6 +1250,7 @@ class AssemblyBackend(AbstractBackend):
     @internal_access("assembly")
     def check_attachment_access(
             self, rs: RequestState, attachment_ids: Iterable[int]) -> bool:
+        """Helper to check whether the user may access the given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
             attachment_data = self.sql_select(
@@ -1269,6 +1272,7 @@ class AssemblyBackend(AbstractBackend):
     @internal_access("assembly")
     def check_attachment_locked(self, rs: RequestState,
                                 attachment_id: int) -> bool:
+        """Helper to check, whether a attachment may be modified."""
         attachment_id = affirm("id", attachment_id)
         with Atomizer(rs):
             attachment = self.get_attachment(rs, attachment_id)
@@ -1304,12 +1308,19 @@ class AssemblyBackend(AbstractBackend):
 
         return ret
 
-    get_attachment_history = singularize(
-        get_attachment_histories, "attachment_ids", "attachment_id")
+    get_attachment_history: Callable[[RequestState, int], Dict[int, Any]] = \
+        singularize(get_attachment_histories, "attachment_ids", "attachment_id")
 
     @access("assembly_admin")
     def add_attachment(self, rs: RequestState, data: Dict[str, Any],
                        content: bytes) -> int:
+        """Add a new attachment.
+
+        Note that it is not allowed to add an attachment to a ballot that
+        has started voting or to an assembly that has been concluded.
+
+        :returns: The id of the new attachment.
+        """
         data = affirm("assembly_attachment", data, creation=True)
         with Atomizer(rs):
             attachment = {k: v for k, v in data.items()
@@ -1337,6 +1348,17 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def change_attachment(self, rs: RequestState, data: Dict[str, Any]) -> int:
+        """Change the association of an attachment.
+
+        It is not allowed to modify an attachment of a ballot that
+        has started voting or of an assembly that has been concluded.
+
+        It is not allowed to change the associated ballot to a ballot that has
+        started voting.
+
+        It is not allowed to change the (indirectly) associated assembly of
+        an attachment.
+        """
         data = affirm("assembly_attachment", data)
         with Atomizer(rs):
             # Do some checks to make sure we are not illegaly modifying ballots.
@@ -1369,6 +1391,18 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly_admin")
     def delete_attachment_blockers(self, rs: RequestState, attachment_id: int) \
             -> Dict[str, Union[List[int], str]]:
+        """Determine what keeps an attachment from being deleted.
+
+        Possible blockers:
+
+        * versions: All version entries for the attachment including versions,
+            that were deleted.
+        * vote_begin: The associated ballot has begun voting. Prevents deletion.
+        * is_active: The associated assembly has concluded. Prevents deletion.
+
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
         attachment_id = affirm("id", attachment_id)
         blockers = {}
 
@@ -1391,6 +1425,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly_admin")
     def delete_attachment(self, rs: RequestState, attachment_id: int,
                           cascade: Set[str] = None) -> int:
+        """Remove an attachment."""
         attachment_id = affirm("id", attachment_id)
         blockers = self.delete_attachment_blockers(rs, attachment_id)
         if blockers.keys() & {"vote_begin", "is_active"}:
@@ -1434,6 +1469,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_current_versions(self, rs: RequestState,
                              attachment_ids: Set[int]) -> Dict[int, int]:
+        """Get the most recent version numbers for the given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
             if not self.check_attachment_access(rs, attachment_ids):
@@ -1444,12 +1480,17 @@ class AssemblyBackend(AbstractBackend):
             params = (attachment_ids,)
             data = self.query_all(rs, query, params)
             return {e["attachment_id"]: e["version"] for e in data}
-    get_current_version = singularize(
-        get_current_versions, "attachment_ids", "attachment_id")
+    get_current_version: Callable[[RequestState, int], int] = \
+        singularize(get_current_versions, "attachment_ids", "attachment_id")
 
     @access("assembly_admin")
     def add_attachment_version(self, rs: RequestState,
                                data: Dict[str, Any], content: bytes) -> int:
+        """Add a new version of an attachment.
+
+        This is not allowed if the associated ballot has begun voting or if
+        the (indirectly) associated assembly has concluded.
+        """
         data: dict = affirm("assembly_attachment_version", data, creation=True)
         content = affirm("bytes", content)
         attachment_id = data['attachment_id']
@@ -1476,6 +1517,11 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly_admin")
     def change_attachment_version(self, rs: RequestState,
                                   data: Dict[str, Any]) -> int:
+        """Alter a version of an attachment.
+
+        This is not allowed if the associated ballot has begun voting or if
+        the (indirectly) associated assembly has concluded.
+        """
         data: dict = affirm("assembly_attachment_version", data)
         attachment_id = data.pop('attachment_id')
         version = data.pop('version')
@@ -1494,6 +1540,11 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly_admin")
     def remove_attachment_version(self, rs: RequestState, attachment_id: int,
                                   version: int) -> int:
+        """Remove a version of an attachment. Leaves other versions intact.
+
+        This is not allowed if the associated ballot has begun voting or if
+        the (indirectly) associated assembly has concluded.
+        """
         attachment_id = affirm("id", attachment_id)
         version = affirm("id", version)
         with Atomizer(rs):
@@ -1531,6 +1582,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_attachment_content(self, rs: RequestState, attachment_id: int,
                                version: int = None) -> Union[bytes, None]:
+        """Get the content of an attachment. Defaults to most recent version."""
         attachment_id = affirm("id", attachment_id)
         if not self.check_attachment_access(rs, (attachment_id,)):
             raise PrivilegeError(n_("Not privileged."))
@@ -1588,4 +1640,5 @@ class AssemblyBackend(AbstractBackend):
                                    ASSEMBLY_ATTACHMENT_FIELDS, attachment_ids)
             ret = {e['id']: e for e in data}
             return ret
-    get_attachment = singularize(get_attachments)
+    get_attachment: Callable[[RequestState, int], Dict[str, int]] = \
+        singularize(get_attachments, "attachment_ids", "attachment_id")
