@@ -187,10 +187,6 @@ class AssemblyBackend(AbstractBackend):
                              query: Query) -> List[Dict[str, Any]]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type query: :py:class:`cdedb.query.Query`
-        :rtype: [{str: object}]
         """
         query = affirm("query", query)
         if query.scope == "qview_persona":
@@ -286,11 +282,6 @@ class AssemblyBackend(AbstractBackend):
 
         As assembly attendees are public to all assembly users, this does not
         check for any privileges,
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :type assembly_id: int
-        :rtype: bool
         """
         persona_id = affirm("id", persona_id)
         assembly_id = affirm("id", assembly_id)
@@ -344,12 +335,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_assemblies(self, rs: RequestState,
                        ids: Iterable[int]) -> Dict[int, Dict[str, Any]]:
-        """Retrieve data for some assemblies.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
-        """
+        """Retrieve data for some assemblies."""
         ids = affirm_set("id", ids)
         if not all(self.may_assemble(rs, assembly_id=anid) for anid in ids):
             raise PrivilegeError(n_("Not privileged."))
@@ -361,9 +347,6 @@ class AssemblyBackend(AbstractBackend):
     def set_assembly(self, rs: RequestState, data: Dict[str, Any]) -> int:
         """Update some keys of an assembly.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
         :returns: default return code
         """
         data = affirm("assembly", data)
@@ -379,9 +362,6 @@ class AssemblyBackend(AbstractBackend):
     def create_assembly(self, rs: RequestState, data: Dict[str, Any]) -> int:
         """Make a new assembly.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
         :returns: the id of the new assembly
         """
         data = affirm("assembly", data, creation=True)
@@ -406,9 +386,6 @@ class AssemblyBackend(AbstractBackend):
                         references will be removed, but the lists won't be
                         deleted.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -457,12 +434,8 @@ class AssemblyBackend(AbstractBackend):
                         cascade: Set[str] = None) -> int:
         """Remove an assembly.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type cascade: {str} or None
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :rtype: int
         :returns: default return code
         """
         assembly_id = affirm("id", assembly_id)
@@ -592,9 +565,6 @@ class AssemblyBackend(AbstractBackend):
         .. note:: It is forbidden to modify a ballot after voting has
           started.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
         :returns: default return code
         """
         data = affirm("ballot", data)
@@ -654,9 +624,6 @@ class AssemblyBackend(AbstractBackend):
 
         This has to take care to keep the voter register consistent.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
         :returns: the id of the new event
         """
         data = affirm("ballot", data, creation=True)
@@ -750,12 +717,8 @@ class AssemblyBackend(AbstractBackend):
         .. note:: As with :py:func:`remove_attachment` the frontend has to take
           care of the actual file manipulation for attachments.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ballot_id: int
-        :type cascade: {str} or None
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :rtype: int
         :returns: default return code
         """
         ballot_id = affirm("id", ballot_id)
@@ -819,10 +782,6 @@ class AssemblyBackend(AbstractBackend):
         automatically by everybody when viewing a ballot. It is not
         allowed to call this before the normal voting period has
         expired.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ballot_id: int
-        :rtype: bool
         """
         ballot_id = affirm("id", ballot_id)
 
@@ -912,9 +871,6 @@ class AssemblyBackend(AbstractBackend):
 
         This has to take care to keep the voter register consistent.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :rtype: str or None
         :returns: The secret if a new secret was generated or None if we
           already attend.
         """
@@ -1002,12 +958,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def count_votes(self, rs: RequestState, ballot_id: int) -> int:
-        """Look up how many attendees had already voted in a ballot.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ballot_id: int
-        :rtype: int
-        """
+        """Look up how many attendees had already voted in a ballot."""
         ballot_id = affirm("id", ballot_id)
 
         query = glue("SELECT COUNT(*) AS count FROM assembly.voter_register",
@@ -1024,12 +975,8 @@ class AssemblyBackend(AbstractBackend):
 
         It is only allowed to call this if we attend the ballot.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ballot_id: int
-        :type secret: str or None
         :param secret: The secret of this user. May be None to signal that the
           stored secret should be used.
-        :rtype: str or None
         :returns: The vote if we have voted or None otherwise. Note, that
           this also returns None, if the secret has been purged after an
           assembly has concluded.
@@ -1154,9 +1101,6 @@ class AssemblyBackend(AbstractBackend):
         * signup_end: An Assembly may only be concluded when signup is over.
         * ballot: An Assembly may only be concluded when all ballots are
                   tallied.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
         """
         assembly_id = affirm("id", assembly_id)
         blockers = {}
@@ -1188,12 +1132,8 @@ class AssemblyBackend(AbstractBackend):
         This mainly purges the secrets which are no longer required for
         updating votes, so that they do not leak in the future.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type cascade: {str} or None
         :param cascade: Specify which conclusion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :rtype: int
         :returns: default return code
         """
         assembly_id = affirm("id", assembly_id)
