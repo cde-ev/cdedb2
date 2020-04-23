@@ -476,7 +476,7 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": None,
             "ballot_id": 2,
         }
-        self.assertEqual(expectation, self.assembly.get_attachment(self.key, new_id))
+        self.assertEqual(expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
         data = {
             "id": new_id,
             "ballot_id": None,
