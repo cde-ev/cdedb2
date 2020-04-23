@@ -2378,19 +2378,13 @@ class CoreFrontend(AbstractFrontend):
     def set_cron_store(self, rs, name, data):
         return self.coreproxy.set_cron_store(rs, name, data)
 
-    @access("anonymous")
+    @access("droid_resolve")
     @REQUESTdata(("given_names", "str"), ("family_name", "str"))
     def api_resolve_name(self, rs, given_names, family_name):
-        """API to resolve member names to email addresses.
-
-        This is a quick and dirty hack and should be deleted as fast as
-        possible.
-        """
-        token = rs.request.headers.get('X-CdEDB-API-token')
-        if not self.resolve_api_token_check(token):
-            raise werkzeug.exceptions.Forbidden(n_("Not authorized."))
+        """API to resolve member names to email addresses."""
         if rs.has_validation_errors():
-            raise werkzeug.exceptions.BadRequest(n_("Invalid parameters."))
+            err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
+            return self.send_json(rs, err)
 
         spec = {
             "given_names": "str",
@@ -2407,7 +2401,5 @@ class CoreFrontend(AbstractFrontend):
         query = Query("qview_persona", spec, ("username",),
                       constraints, (('id', True),))
         result = self.coreproxy.submit_resolve_api_query(rs, query)
-        json_data = [entry['username'] for entry in result]
-        return self.send_file(rs, data=json.dumps(json_data),
-                              mimetype='text/json')
-
+        output = [entry['username'] for entry in result]
+        return self.send_json(rs, output)

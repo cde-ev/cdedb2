@@ -12,10 +12,15 @@ Each persona can have the following privileges:
 * membership
 * searchability
 
-Note that some of the combinations are not very useful and my thus be
+Note that some of the combinations are not very useful and may thus be
 untested (for example by default access to the cde realm is linked to access
 to all other realms). Former members are those with cde realm but not
 membership privileges.
+
+Each droid can have the following privileges:
+
+* per droid identity privilege
+* infrastructure toggle
 
 In the database they are mapped onto four tiers
 

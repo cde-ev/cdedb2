@@ -60,7 +60,6 @@ class Application(BaseApp):
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
             secrets, self.conf["DB_PORT"])
-        self.validate_mlscriptkey = lambda k: k == secrets["ML_SCRIPT_KEY"]
         # Construct a reduced Jinja environment for rendering error pages.
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
@@ -156,31 +155,37 @@ class Application(BaseApp):
                 # note time for performance measurement
                 begin = now()
                 sessionkey = request.cookies.get("sessionkey")
+                # TODO remove ml script key backwards compatibility code
+                apitoken = (request.headers.get("X-CdEDB-API-Token")
+                            or request.headers.get("MLSCRIPTKEY"))
                 urls = self.urlmap.bind_to_environ(request.environ)
                 endpoint, args = urls.match()
-                mlscriptkey = request.headers.get("MLSCRIPTKEY")
-                user = self.sessionproxy.lookupsession(sessionkey,
-                                                       request.remote_addr)
-                if self.validate_mlscriptkey(mlscriptkey):
-                    # Special case the access of the mailing list software
-                    # since it's not tied to an actual persona. Note that
-                    # this is not affected by the LOCKDOWN configuration.
-                    user.roles.add("ml_script")
+                if apitoken:
+                    sessionkey = None
+                    user = self.sessionproxy.lookuptoken(apitoken,
+                                                         request.remote_addr)
+                    # Error early to make debugging easier.
+                    if 'droid' not in user.roles:
+                        raise werkzeug.exceptions.Forbidden(
+                            "API token invalid.")
+                else:
+                    user = self.sessionproxy.lookupsession(sessionkey,
+                                                           request.remote_addr)
 
-                # Check for timed out / invalid sessionkey
-                if sessionkey and not user.persona_id:
-                    params = {
-                        'wants': self.encode_parameter(
-                            "core/index", "wants", request.url,
-                            timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"]),
-                    }
-                    ret = construct_redirect(request,
-                                             urls.build("core/index", params))
-                    ret.delete_cookie("sessionkey")
-                    notifications = json.dumps([self.encode_notification(
-                        "error", n_("Session expired."))])
-                    ret.set_cookie("displaynote", notifications)
-                    return ret
+                    # Check for timed out / invalid sessionkey
+                    if sessionkey and not user.persona_id:
+                        params = {
+                            'wants': self.encode_parameter(
+                                "core/index", "wants", request.url,
+                                timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
+                        }
+                        ret = construct_redirect(
+                            request, urls.build("core/index", params))
+                        ret.delete_cookie("sessionkey")
+                        notifications = json.dumps([self.encode_notification(
+                            "error", n_("Session expired."))])
+                        ret.set_cookie("displaynote", notifications)
+                        return ret
                 coders = {
                     "encode_parameter": self.encode_parameter,
                     "decode_parameter": self.decode_parameter,
@@ -189,10 +194,10 @@ class Application(BaseApp):
                 }
                 lang = self.get_locale(request)
                 rs = RequestState(
-                    sessionkey=sessionkey, user=user, request=request,
-                    response=None, notifications=[], mapadapter=urls,
-                    requestargs=args, errors=[], values={}, lang=lang,
-                    gettext=self.translations[lang].gettext,
+                    sessionkey=sessionkey, apitoken=apitoken, user=user,
+                    request=request, response=None, notifications=[],
+                    mapadapter=urls, requestargs=args, errors=[], values={},
+                    lang=lang, gettext=self.translations[lang].gettext,
                     ngettext=self.translations[lang].ngettext,
                     coders=coders, begin=begin,
                     default_gettext=self.translations["en"].gettext,
@@ -225,7 +230,7 @@ class Application(BaseApp):
                             request.method))
 
                 # Check anti CSRF token (if required by the endpoint)
-                if handler.check_anti_csrf:
+                if handler.check_anti_csrf and 'droid' not in user.roles:
                     okay, error = check_anti_csrf(rs, component, action)
                     if not okay:
                         rs.csrf_alert = True

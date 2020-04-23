@@ -502,8 +502,6 @@ _SECRECTS_DEFAULTS = {
     # salting value used for verifying password reset authorization
     "RESET_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
 
-    # key to use by mailing list software for authentification
-    "ML_SCRIPT_KEY": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
 
     # mailman REST API password
     "MAILMAN_PASSWORD": "secret",
@@ -511,8 +509,14 @@ _SECRECTS_DEFAULTS = {
     # password for mailman to retrieve templates
     "MAILMAN_BASIC_AUTH_PASSWORD": "secret",
 
-    # provisional API token for resolve API
-    "RESOLVE_API_TOKEN": "secret",
+    # fixed tokens for API access
+    "API_TOKENS": {
+        # key to use by mailing list software for authentification
+        "rklist": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
+
+        # API token for resolve API
+        "resolve": "a1o2e3u4i5d6h7t8n9s0",
+    }
 }
 
 

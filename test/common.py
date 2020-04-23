@@ -98,7 +98,6 @@ class BackendShim(ProxyShim):
         self.connpool = connection_pool_factory(
             backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
             secrets, backend.conf["DB_PORT"])
-        self.validate_mlscriptkey = lambda k: k == secrets["ML_SCRIPT_KEY"]
         self.translator = gettext.translation(
             'cdedb', languages=('de',),
             localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
@@ -108,11 +107,13 @@ class BackendShim(ProxyShim):
             key, None, None, None, [], None, None,
             [], {}, "de", self.translator.gettext,
             self.translator.ngettext, None, None, key)
-        rs.user = self.sessionproxy.lookupsession(key, "127.0.0.0")
+        user = self.sessionproxy.lookupsession(key, "127.0.0.0")
+        if key and user.roles == {'anonymous'}:
+            u = self.sessionproxy.lookuptoken(key, "127.0.0.0")
+            if u.roles != {'anonymous'}:
+                user = u
+        rs.user = user
         rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
-        if self.validate_mlscriptkey(key):
-            rs.user.roles.add("ml_script")
-            rs._conn = self.connpool["cdb_persona"]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
             rs.user.orga = self._backend.orga_info(rs, rs.user.persona_id)
