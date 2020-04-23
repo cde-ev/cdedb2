@@ -3,6 +3,7 @@
 import datetime
 import decimal
 import time
+import json
 
 import pytz
 
@@ -415,7 +416,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertTrue(self.assembly.tally_ballot(self.key, 1))
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
             with open("/tmp/cdedb-store/ballot_result/1", 'rb') as g:
-                self.assertEqual(f.read(), g.read())
+                self.assertEqual(json.load(f), json.load(g))
 
     @as_users("werner")
     def test_conclusion(self, user):

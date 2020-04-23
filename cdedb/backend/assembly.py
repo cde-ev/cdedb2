@@ -1094,24 +1094,6 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm("id", ballot_id)
 
-        # We do not use jinja here as it is currently only used in the
-        # frontend.
-        template = string.Template("""{
-    "assembly": ${ASSEMBLY},
-    "ballot": ${BALLOT},
-    "result": ${RESULT},
-    "candidates": {
-        ${CANDIDATES}
-    },
-    "use_bar": ${USE_BAR},
-    "voters": [
-        ${VOTERS}
-    ],
-    "votes": [
-        ${VOTES}
-    ]
-}
-""")
         if not self.may_assemble(rs, ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
@@ -1151,34 +1133,32 @@ class AssemblyBackend(AbstractBackend):
             esc = json_serialize
             assembly = unwrap(
                 self.get_assemblies(rs, (ballot['assembly_id'],)))
-            candidates = ",\n        ".join(
-                "{}: {}".format(esc(c['moniker']), esc(c['description']))
+            candidates = {
+                c['moniker']: c['description']
                 for c in xsorted(ballot['candidates'].values(),
-                                 key=lambda x: x['moniker']))
+                                 key=lambda x: x['moniker'])
+            }
             query = glue("SELECT persona_id FROM assembly.voter_register",
                          "WHERE ballot_id = %s and has_voted = True")
             voter_ids = self.query_all(rs, query, (ballot_id,))
             voters = self.core.get_personas(
                 rs, tuple(unwrap(e) for e in voter_ids))
-            voters = ("{} {}".format(e['given_names'], e['family_name'])
-                      for e in xsorted(voters.values(),
-                                       key=EntitySorter.persona))
-            voter_list = ",\n        ".join(esc(v) for v in voters)
-            votes = xsorted('{{"vote": {}, "salt": {}, "hash": {}}}'.format(
-                esc(v['vote']), esc(v['salt']), esc(v['hash'])) for v in votes)
-            vote_list = ",\n        ".join(v for v in votes)
-            result_file = template.substitute({
-                'ASSEMBLY': esc(assembly['title']),
-                'BALLOT': esc(ballot['title']),
-                'RESULT': esc(condensed),
-                'CANDIDATES': candidates,
-                'USE_BAR': esc(ballot['use_bar']),
-                'VOTERS': voter_list,
-                'VOTES': vote_list,
-            })
+            voters = list("{} {}".format(e['given_names'], e['family_name'])
+                          for e in xsorted(voters.values(),
+                                           key=EntitySorter.persona))
+            votes = xsorted(votes, key=lambda v: json_serialize(v))
+            result = {
+                "assembly": assembly['title'],
+                "ballot": ballot['title'],
+                "result": condensed,
+                "candidates": candidates,
+                "use_bar": ballot['use_bar'],
+                "voters": voters,
+                "votes": votes,
+            }
             path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot_id)
             with open(path, 'w') as f:
-                f.write(result_file)
+                f.write(json_serialize(result))
         return True
 
     @access("assembly_admin")
