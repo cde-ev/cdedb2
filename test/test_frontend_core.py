@@ -1292,28 +1292,41 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
 
-    def test_genesis_event(self):
-        user = USER_DICT['vera']
+    def _genesis_request(self, data):
         self.get('/')
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "event"
-        f['gender'] = "1"
-        f['birthday'] = "1987-06-05"
-        f['address'] = "An der Eiche"
-        f['postal_code'] = "12345"
-        f['location'] = "Marcuria"
-        f['country'] = "Arkadien"
+        for field, entry in data.items():
+            f[field] = entry
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = self.fetch_link(mail)
         self.get(link)
         self.follow()
+        return None
+
+    ML_GENESIS_DATA = {
+        'given_names': "Zelda", 'family_name': "Zeruda-Hime",
+        'username': "zelda@example.cde", 'notes': "Gimme!", 'realm': "ml"
+    }
+
+    EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
+    EVENT_GENESIS_DATA.update({
+        'realm': "event", 'gender': 1, 'birthday': "1987-06-05",
+        'address': "An der Eiche", 'postal_code': "12345",
+        'location': "Marcuria", 'country': "Arkadien"
+    })
+
+    CDE_GENESIS_DATA = EVENT_GENESIS_DATA.copy()
+    CDE_GENESIS_DATA.update({
+        'realm': "cde"
+    })
+
+    def test_genesis_event(self):
+        self._genesis_request(self.EVENT_GENESIS_DATA)
+
+        user = USER_DICT['vera']
         self.login(user)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
@@ -1377,20 +1390,7 @@ class TestCoreFrontend(FrontendTest):
 
     def test_genesis_ml(self):
         user = USER_DICT['vera']
-        self.get('/')
-        self.traverse({'description': 'Account anfordern'})
-        self.assertTitle("Account anfordern")
-        f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "ml"
-        self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        self.get(link)
-        self.follow()
+        self._genesis_request(self.ML_GENESIS_DATA)
         self.login(user)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
@@ -1429,18 +1429,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Account anfordern")
         self.assertPresence("Die maximale Dateigröße ist 8 MB.")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['birth_name'] = "Ganondorf"
-        f['username'] = "zelda@example.cde"
-        # f['notes'] = "Gimme!"  # Do not send this to test upload permanance.
-        f['realm'] = "cde"
-        f['gender'] = "1"
-        f['birthday'] = "1987-06-05"
-        f['address'] = "An der Eiche"
-        f['postal_code'] = "12345"
-        f['location'] = "Marcuria"
-        f['country'] = "Arkadien"
+        for field, entry in self.CDE_GENESIS_DATA.items():
+            f[field] = entry
+        f['notes'] = ""  # Do not send this to test upload permanance.
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['attachment'] = webtest.Upload(
@@ -1528,11 +1519,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "ml"
+        for field, entry in self.ML_GENESIS_DATA.items():
+            f[field] = entry
         # Submit once
         self.submit(f)
         # Submit twice
@@ -1565,11 +1553,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "ml"
+        for field, entry in self.ML_GENESIS_DATA.items():
+            f[field] = entry
         self.submit(f)
         self.assertGreater(len(self.fetch_mail()), 0)
         self.submit(f)
@@ -1581,16 +1566,10 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "event"
-        f['gender'] = "1"
-        f['birthday'] = "1987-06-05"
-        f['address'] = "An der Eiche"
+        for field, entry in self.EVENT_GENESIS_DATA.items():
+            f[field] = entry
+        f['country'] = ""
         f['postal_code'] = "Z-12345"
-        f['location'] = "Marcuria"
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl.")
         f['country'] = "Arkadien"
@@ -1601,16 +1580,9 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "event"
-        f['gender'] = "1"
+        for field, entry in self.EVENT_GENESIS_DATA.items():
+            f[field] = entry
         f['birthday'] = "2222-06-05"
-        f['address'] = "An der Eiche"
-        f['postal_code'] = "12345"
-        f['location'] = "Marcuria"
         self.submit(f, check_notification=False)
         self.assertPresence(
             "Ein Geburtsdatum muss in der Vergangenheit liegen.")
@@ -1620,34 +1592,14 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
+        for field, entry in self.EVENT_GENESIS_DATA.items():
+            f[field] = entry
         f['notes'] = ""
-        f['realm'] = "event"
-        f['gender'] = "1"
-        f['birthday'] = "1987-06-05"
-        f['address'] = "An der Eiche"
-        f['postal_code'] = "12345"
-        f['location'] = "Marcuria"
         self.submit(f, check_notification=False)
         self.assertPresence("Notwendige Angabe fehlt.")
 
     def test_genesis_modify(self):
-        self.get('/')
-        self.traverse({'description': 'Account anfordern'})
-        self.assertTitle("Account anfordern")
-        f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "ml"
-        self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        self.get(link)
-        self.follow()
+        self._genesis_request(self.ML_GENESIS_DATA)
 
         admin = USER_DICT["vera"]
         self.login(admin)
