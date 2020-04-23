@@ -850,10 +850,6 @@ class AssemblyBackend(AbstractBackend):
 
         This has to take care to keep the voter register consistent.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type persona_id: int
-        :rtype: str or None
         :returns: The secret if a new secret was generated or None if we
           already attend.
         """
@@ -892,10 +888,6 @@ class AssemblyBackend(AbstractBackend):
         Those are not allowed to subscribe themselves, but must be added
         by an admin. On the other hand we disallow this action for members.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type persona_id: int
-        :rtype: str or None
         :returns: The secret if a new secret was generated or None if we
           already attend.
         """
@@ -935,13 +927,8 @@ class AssemblyBackend(AbstractBackend):
 
         This does not accept a persona_id on purpose.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ballot_id: int
-        :type vote: str
-        :type secret: str or None
         :param secret: The secret of this user. May be None to signal that the
           stored secret should be used.
-        :rtype: int
         :returns: default return code
         """
         ballot_id = affirm("id", ballot_id)
@@ -999,10 +986,6 @@ class AssemblyBackend(AbstractBackend):
         """Look up whether the user has voted in a ballot.
 
         It is only allowed to call this if we attend the ballot.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ballot_id: int
-        :rtype: bool
         """
         ballot_id = affirm("id", ballot_id)
 
@@ -1086,9 +1069,6 @@ class AssemblyBackend(AbstractBackend):
         We use the Schulze method as documented in
         :py:func:`cdedb.common.schulze_evaluate`.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ballot_id: int
-        :rtype: bool
         :returns: True if a new result file was generated and False if the
           ballot was already tallied.
         """
