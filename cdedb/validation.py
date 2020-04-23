@@ -634,34 +634,6 @@ def _cdedbid(val, argname=None, *, _convert=True, _ignore_warnings=False):
     return value, errs
 
 
-@_addvalidator
-def _cdedbids_str(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    This deals with strings containing multiple cdedbids, like when they are
-    returned from cdedbSearchPerson.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (int or None, [(str or None, exception)])
-    """
-    val, errs = _str(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
-    cdedbids = set()
-    for substr in val.split(","):
-        substr, errs = _cdedbid(substr.strip(), _convert=_convert,
-                                _ignore_warnings=_ignore_warnings)
-        cdedbids.add(substr)
-
-    if _convert:
-        return cdedbids, errs
-    else:
-        return val, errs
-
-
 _PRINTABLE_ASCII = re.compile('^[ -~]*$')
 
 
@@ -821,6 +793,35 @@ def _csv_identifier(val, argname=None, *, _convert=True,
     return val, errs
 
 
+def _to_csv_list(val, validator, argname=None, *, _convert=True,
+                 _ignore_warnings=False):
+    """
+    Generic function to convert strings to csvs.
+    :type val: object
+    :type validator: callable
+    :param validator: validator function to call to validate substrings
+    :type argname: str or None
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: ([int] or None, [(str or None, exception)])
+    """
+    if isinstance(val, str):
+        vals = val.split(",")
+        val = []
+        for entry in vals:
+            if not entry:
+                # skip empty entries which can be produced by Javscript
+                continue
+            entry, errs = validator(entry.strip(), argname, _convert=_convert,
+                                    _ignore_warnings=_ignore_warnings)
+            if errs:
+                return val, errs
+            val.append(entry)
+        return val, []
+    else:
+        return val, []
+
+
 @_addvalidator
 def _int_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
@@ -831,23 +832,38 @@ def _int_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
     :rtype: ([int] or None, [(str or None, exception)])
     """
     if _convert:
-        if isinstance(val, str):
-            vals = val.split(",")
-            val = []
-            for entry in vals:
-                if not entry:
-                    # skip empty entries which can be produced by Javscript
-                    continue
-                entry, errs = _int(entry, argname, _convert=_convert,
-                                   _ignore_warnings=_ignore_warnings)
-                if errs:
-                    return val, errs
-                val.append(entry)
+        return _to_csv_list(val, _int, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if not isinstance(val, collections.abc.Sequence):
         return None, [(argname, TypeError(n_("Must be sequence.")))]
     for entry in val:
         if not isinstance(entry, int):
             return None, [(argname, TypeError(n_("Must contain integers.")))]
+    return val, []
+
+
+@_addvalidator
+def _cdedbid_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
+    """
+    This deals with strings containing multiple cdedbids, like when they are
+    returned from cdedbSearchPerson.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: ([int] or None, [(str or None, exception)])
+    """
+    if _convert:
+        return _to_csv_list(val, _cdedbid, argname, _convert=_convert,
+                            _ignore_warnings=_ignore_warnings)
+    if not isinstance(val, collections.abc.Sequence):
+        return None, [(argname, TypeError(n_("Must be sequence.")))]
+    for entry in val:
+        entry, errs = _cdedbid(entry, argname, _convert=_convert,
+                               _ignore_warnings=_ignore_warnings)
+        if errs:
+            return None, [(argname, TypeError(n_("Must contain cdedbids.")))]
     return val, []
 
 
