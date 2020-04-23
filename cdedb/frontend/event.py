@@ -732,7 +732,7 @@ class EventFrontend(AbstractUserFrontend):
             """
             return (
                 ("fee_modifier_{}_{}_{}".format(k, part_id, fee_modifier_id), t)
-                for k, t in (('modifier_name', 'str'),
+                for k, t in (('modifier_name', 'restrictive_identifier'),
                              ('amount', 'decimal'),
                              ('field_id', 'id')))
 
@@ -796,20 +796,35 @@ class EventFrontend(AbstractUserFrontend):
             for mod in fee_modifiers.values()}
 
         # Check for duplicate fields in the same part.
-        msg = n_("Must not have multiple fee modifiers linked to the same"
-                 " field in one event part.")
+        field_msg = n_("Must not have multiple fee modifiers linked to the same"
+                       " field in one event part.")
+        name_msg = n_("Must not have multiple fee modifiers witht he same name "
+                      "in one event part.")
         used_fields = {}
+        used_names = {}
+        if len(ret_fee_modifiers) == 1:
+            f = unwrap(ret_fee_modifiers)
+            used_fields[f['part_id']] = {f['field_id']}
+            used_names[f['part_id']] = {f['modifier_name']}
         for e1, e2 in itertools.combinations(
                 filter(None, ret_fee_modifiers.values()), 2):
             used_fields.setdefault(e1['part_id'], set()).add(e1['field_id'])
             used_fields.setdefault(e2['part_id'], set()).add(e2['field_id'])
-            if e1['field_id'] == e2['field_id']:
-                if e1['part_id'] == e2['part_id']:
+            used_names.setdefault(e1['part_id'], set()).add(e1['modifier_name'])
+            used_names.setdefault(e2['part_id'], set()).add(e2['modifier_name'])
+            if e1['part_id'] == e2['part_id']:
+                if e1['field_id'] == e2['field_id']:
                     base_key = "fee_modifier_field_id_{}_{}"
                     key1 = base_key.format(e1['part_id'], e1['id'])
-                    rs.add_validation_error((key1, ValueError(msg)))
+                    rs.add_validation_error((key1, ValueError(field_msg)))
                     key2 = base_key.format(e2['part_id'], e2['id'])
-                    rs.add_validation_error((key2, ValueError(msg)))
+                    rs.add_validation_error((key2, ValueError(field_msg)))
+                if e1['modifier_name'] == e2['modifier_name']:
+                    base_key = "fee_modifier_modifier_name_{}_{}"
+                    key1 = base_key.format(e1['part_id'], e1['id'])
+                    rs.add_validation_error((key1, ValueError(name_msg)))
+                    key2 = base_key.format(e2['part_id'], e2['id'])
+                    rs.add_validation_error((key2, ValueError(name_msg)))
 
         for part_id in parts:
             marker = 1
@@ -832,7 +847,13 @@ class EventFrontend(AbstractUserFrontend):
                         rs.add_validation_error(
                             ("fee_modifier_field_id_{}_{}".format(
                                 part_id, -marker),
-                             ValueError(msg)))
+                             ValueError(field_msg)))
+                    if new_fee_modifier['modifier_name'] in used_names.get(
+                            part_id, set()):
+                        rs.add_validation_error(
+                            ("fee_modifier_modifier_name_{}_{}".format(
+                                part_id, -marker),
+                             ValueError(name_msg)))
                     used_fields.setdefault(part_id, set()).add(
                         new_fee_modifier['field_id'])
                 else:

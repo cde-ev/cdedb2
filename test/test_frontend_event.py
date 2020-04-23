@@ -1327,7 +1327,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Betrag 10,50 €")
 
     @as_users("annika")
-    def test_fee_modifiers(self, user):
+    def test_registration_questionnaire(self, user):
         self.traverse({'description': "Veranstaltungen"},
                       {'description': "Große Testakademie 2222"},
                       {'description': "Veranstaltungsteile"})
@@ -1469,6 +1469,78 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['questionnaireform']
         self.assertEqual("etc", f['transportation'].value)
         self.assertEqual("Bitte in ruhiger Lage.\nEcht.", f['lodge'].value)
+
+    def _create_event_field(self, fdata):
+        self.traverse({'description': "Datenfelder konfigurieren"})
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        for k, v in fdata.items():
+            f[k + "_-1"] = v
+        self.submit(f)
+
+    @as_users("annika")
+    def test_fee_modifiers(self, user):
+        self.traverse({'description': "Veranstaltungen"},
+                      {'description': "Veranstaltungen verwalten"},
+                      {'description': "CdE-Party 2050"})
+        self._create_event_field({
+            "field_name": "is_child",
+            "kind": const.FieldDatatypes.bool.value,
+            "association": const.FieldAssociations.registration.value,
+        })  # id 1001
+        self._create_event_field({
+            "field_name": "is_child2",
+            "kind": const.FieldDatatypes.str.value,
+            "association": const.FieldAssociations.registration.value,
+        })  # id 1002
+        self._create_event_field({
+            "field_name": "is_child3",
+            "kind": const.FieldDatatypes.bool.value,
+            "association": const.FieldAssociations.course.value,
+        })  # id 1003
+        self.traverse({'description': "Veranstaltungsteile"})
+        f: webtest.Form = self.response.forms["partsummaryform"]
+        f['fee_modifier_create_4_-1'].checked = True
+        f['fee_modifier_modifier_name_4_-1'] = "Ich bin Unter 13 Jahre alt."
+        f['fee_modifier_amount_4_-1'] = "abc"
+        self.assertEqual([x[0] for x in f['fee_modifier_field_id_4_-1'].options], ['', '1001'])
+        f['fee_modifier_field_id_4_-1'].force_value(1002)
+        self.submit(f, check_notification=False)
+        self.assertPresence("Ungültige Eingabe für eine Dezimalzahl", "feemodifierrow_4_-1")
+        f['fee_modifier_modifier_name_4_-1'] = "is_child"
+        f['fee_modifier_amount_4_-1'] = "-5"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Beitragsmodifikator mit Nicht-Ja/Nein-Feld verbunden", "feemodifierrow_4_-1")
+        f['fee_modifier_field_id_4_-1'].force_value(1003)
+        self.submit(f, check_notification=False)
+        self.assertPresence("Beitragsmodifikator mit Nicht-Anmeldungsfeld verbunden", "feemodifierrow_4_-1")
+        f['fee_modifier_field_id_4_-1'] = ''
+        self.submit(f, check_notification=False)
+        self.assertPresence("Ungültige Eingabe für eine Ganzzahl", "feemodifierrow_4_-1")
+        f['fee_modifier_field_id_4_-1'] = '1001'
+        self.submit(f)
+
+        self.traverse({'description': "Datenfelder konfigurieren"})
+        f = self.response.forms['fieldsummaryform']
+        f['kind_1002'] = const.FieldDatatypes.bool.value
+        f['association_1003'] = const.FieldAssociations.registration.value
+        self.submit(f)
+        self.traverse({'description': "Veranstaltungsteile"})
+        f = self.response.forms['partsummaryform']
+        f['fee_modifier_create_4_-1'].checked = True
+        f['fee_modifier_modifier_name_4_-1'] = "is_child"
+        f['fee_modifier_amount_4_-1'] = "-7"
+        f['fee_modifier_field_id_4_-1'] = 1001
+        self.submit(f, check_notification=False)
+        self.assertPresence("Nicht mehr als ein Beitragsmodifikator pro "
+                            "Veranstaltungsteil darf mit dem gleichen Feld "
+                            "verbunden sein.", "feemodifierrow_4_-1")
+        self.assertPresence("Nicht mehr als ein Beitragsmodifikator pro "
+                            "Veranstaltungsteil darf den selben "
+                            "Bezeichner haben.", "feemodifierrow_4_-1")
+        f['fee_modifier_modifier_name_4_-1'] = "is_child2"
+        f['fee_modifier_field_id_4_-1'] = 1002
+        self.submit(f)
 
     def test_participant_list(self):
         # first, check non-visibility for all participants

@@ -23,7 +23,7 @@
 {% endblock %}
 
 {% macro print_fee_modifier(part_id, fee_modifier_id, aclass="", newrow=False) %}
-    <tr class="{{ aclass }}">
+    <tr class="{{ aclass }}" id="feemodifierrow_{{ part_id }}_{{ fee_modifier_id }}">
         <td {% if "fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text(name="fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id), aclass='drow-input1 form-control',
                                attributes=('data-basename="fee_modifier_modifier_name_" data-basename1="_"'|s if newrow else ''),

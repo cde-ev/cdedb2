@@ -1708,8 +1708,11 @@ msgid ""
 "Must not have multiple fee modifiers linked to the same field in one "
 "event part."
 msgstr ""
-"Nicht mehr als ein Beitragsmodifikator pro Veranstaltungsteils darf mit "
+"Nicht mehr als ein Beitragsmodifikator pro Veranstaltungsteil darf mit "
 "dem gleichen Feld verbunden sein."
+
+msgid "Must not have multiple fee modifiers witht he same name in one event part."
+msgstr "Nicht mehr als ein Beitragsmodifikator pro Veranstaltungsteil darf den selben Bezeichner haben."
 
 #: cdedb/frontend/event.py:671 cdedb/validation.py:2345
 msgid "Must be less or equal than total Course Choices."
