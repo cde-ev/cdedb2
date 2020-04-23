@@ -5786,31 +5786,33 @@ msgstr "und"
 #, python-format
 msgid ""
 "The following candidates have less votes than the \"Against all "
-"Candidates\" (%(abm)s) choice."
+"Candidates\" choice."
 msgstr ""
 "Die folgenden Kandidaten haben weniger Stimmen als die \"Gegen alle "
-"Kandidaten\"-Option (%(abm)s)."
+"Kandidaten\"-Option."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:96
 #, python-format
 msgid ""
-"No candidate has less votes than the \"Against all Candidates\" (%(abm)s)"
-" choice."
+"No candidate has less votes than the \"Against all Candidates\" choice."
 msgstr ""
 "Kein Kandidat hat weniger Stimmen als die \"Gegen alle "
-"Kandidaten\"-Option (%(abm)s)."
+"Kandidaten\"-Option."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:102
 #, python-format
-msgid "The following candidates lost against the bar (%(abm)s)."
+msgid "The following candidates lost against the rejection limit."
 msgstr ""
-"Die folgenden Kandidaten haben gegen die Ablehnungsgrenze (%(abm)s) "
+"Die folgenden Kandidaten haben gegen die Ablehnungsgrenze "
 "verloren."
+
+msgid "Rejection limit."
+msgstr "Ablehnungsgrenze."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:106
 #, python-format
-msgid "No candidate lost against the bar (%(abm)s)."
-msgstr "Kein Kandidat hat gegen die Ablehnungsgrenze (%(abm)s) verloren."
+msgid "No candidate lost against the rejection limit."
+msgstr "Kein Kandidat hat gegen die Ablehnungsgrenze verloren."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:112
 #, python-format
@@ -5859,9 +5861,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:232
 #, python-format
 msgid ""
-"Additionally the moniker %(abm)s shows where in the rejection bar was "
-"ranked in the overall preference list. Should no candidate have won "
-"against the bar, the board may take additional measures."
+"Additionally the moniker %(abm)s shows where in the election the rejection "
+"limit was ranked. Should no candidate have won against the rejection limit, "
+"the board may take additional measures."
 msgstr ""
 "Außerdem gibt %(abm)s an, wo in der gesamten Präferenzliste die\n"
 "Ablehnungsgrenze eingeordnet wurde. Sollte in der Auszählung kein "
@@ -5919,6 +5921,9 @@ msgstr "Du hast Dich enthalten."
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:290
 msgid "You voted against all candidates."
 msgstr "Du hast Dich gegen alle Kandidaten entschieden."
+
+msgid "Against all Candidates."
+msgstr "Gegen alle Kanidaten."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:292
 msgid "You voted for the following candidates:"

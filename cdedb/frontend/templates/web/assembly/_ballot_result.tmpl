@@ -86,32 +86,38 @@
                     {# We do not count bar as candidate, imagine bar to be an infinitisimal border between candidates. #}
                 </td>
                 <td class="text-info">
-                    {% if not short %}
-                        {% if is_classical_vote %}
-                            {% if result['losers'] %}
-                                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                                    The following candidates have less votes than the "Against all Candidates" ({{ abm }}) choice.
-                                {% endtrans %}
-                            {% else %}
-                                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                                    No candidate has less votes than the "Against all Candidates" ({{ abm }}) choice.
-                                {% endtrans %}
-                            {% endif %}
+                    {% if is_classical_vote %}
+                        {% if short %}
+                            {% trans %}
+                                Against all Candidates.
+                            {% endtrans %}
                         {% else %}
                             {% if result['losers'] %}
-                                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                                    The following candidates lost against the bar ({{ abm }}).
+                                {% trans %}
+                                    The following candidates have less votes than the "Against all Candidates" choice.
                                 {% endtrans %}
                             {% else %}
-                                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                                    No candidate lost against the bar ({{ abm }}).
+                                {% trans %}
+                                    No candidate has less votes than the "Against all Candidates" choice.
                                 {% endtrans %}
                             {% endif %}
                         {% endif %}
                     {% else %}
-                        {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                            The bar option {{ abm }}.
-                        {% endtrans %}
+                        {% if short %}
+                            {% trans %}
+                                Rejection limit.
+                            {% endtrans %}
+                        {% else %}
+                            {% if result['losers'] %}
+                                {% trans %}
+                                    The following candidates lost against the rejection limit.
+                                {% endtrans %}
+                            {% else %}
+                                {% trans %}
+                                    No candidate lost against the rejection limit.
+                                {% endtrans %}
+                            {% endif %}
+                        {% endif %}
                     {% endif %}
                 </td>
             {% if is_classical_vote %}
@@ -233,9 +239,8 @@
         {% if ambience['ballot']['use_bar'] %}
             <p>
                 {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                    Additionally the moniker {{ abm }} shows where in the rejection bar was ranked in the
-                    overall preference list.
-                    Should no candidate have won against the bar, the board may take additional measures.
+                    Additionally the moniker {{ abm }} shows where in the election the rejection limit was ranked.
+                    Should no candidate have won against the rejection limit, the board may take additional measures.
                 {% endtrans %}
             </p>
         {% endif %}
