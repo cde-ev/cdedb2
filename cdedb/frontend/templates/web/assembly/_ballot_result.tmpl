@@ -203,15 +203,36 @@
     {% endtrans %}
 {%- endmacro %}
 
-{% macro explain_result() %}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
-        <p>
-            Die Pro (a) und Kontra (b) Stimmen gelten für die jeweilige Platzierung (x) und beziehen sich relativ
-            auf die darunter liegende Platzierung (y).
-        </p>
-        <p>
-            Also: Option x gewinnt gegen Option y mit a Pro und b Kontra Stimmen.
-        </p>
+{% macro explain_result(classical=false, preferential=false, use_bar=false) %}
+    {% call util.bootstrap_panel(title=gettext("Hilfe zum Stimmen auszählen"), icon='info-circle', aclass='panel-default mosp') %}
+        {% if classical and preferential %}
+            <b>Klassische Wahl</b></br>
+        {% endif %}
+        {% if classical %}
+            <p>
+                Die Pro-Stimmen sind die Summe aller Stimmen für diesen Kandidaten. Aufgrund des Wahlsystems kann es
+                intrinsisch keine Kontra-Stimmen gegen einzelne Kandidaten geben.
+            </p>
+            {% if use_bar %}
+                <p>
+                    Mit der "Gegen alle Kandidaten" Option ist es möglich, sich gegen alle Kandidaten auszusprechen.
+                    Diese Option konnte nur allein gewählt werden, eventuell weitere vorhandene Stimmen verfielen.
+                </p>
+            {% endif %}
+        {% endif %}
+        {% if classical and preferential %}
+            <b>Präferenzwahl</b></br>
+        {% endif %}
+        {% if preferential %}
+            <p>
+                Die Pro-Stimmen (etwa 5) und Kontra-Stimmen (etwa 2) gelten für die jeweilige Platzierung
+                (etwa 3.) und beziehen sich relativ auf die darunter liegende Platzierung.
+                Dabei können mehrere Kandidaten gleich Platziert sein.
+            </p>
+            <p>
+                Also: Alle Kandidaten der 3. Plazierung gewinnen gegen alle Kandidaten der 4. Platzierung mit 5 Pro und 2 Kontra Stimmen.
+            </p>
+        {% endif %}
     {% endcall %}
 {% endmacro %}
 

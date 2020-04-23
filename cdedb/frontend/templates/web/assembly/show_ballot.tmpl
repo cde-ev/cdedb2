@@ -21,6 +21,8 @@
 {% endblock %}
 {% block content %}
     {% set edit_mode = "assembly_contents" in user.admin_views and now() < ambience['ballot']['vote_begin'] %}
+    {% set classical = ambience['ballot']['votes'] %}
+    {% set preferential = not ambience['ballot']['votes'] %}
 
     {# Admin modification options (delete and edit) #}
     {% if edit_mode %}
@@ -47,10 +49,10 @@
     {% if ambience['ballot']['is_tallied'] %}
         <h3>{% trans %}Result{% endtrans %}</h3>
         {{ ballot_result.show_result(ambience['ballot'], result) }}
-        {{ ballot_result.explain_result() }}
+        {{ ballot_result.explain_result(classical=classical, preferential=preferential, use_bar=ambience['ballot']['use_bar']) }}
 
         <h4>{% trans %}Summary{% endtrans %}</h4>
-        {% if not ambience['ballot']['votes'] %}
+        {% if preferential  %}
             {{ ballot_result.show_summary() }}
         {% endif %}
         <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
@@ -62,7 +64,7 @@
         {% endif %}
 
         {# Classical voting, not tallied #}
-        {% if ambience['ballot']['votes'] %}
+        {% if classical %}
             {% if ambience['ballot']['is_voting'] and attends %}
                 {{ ballot_voting.show_classical_voting() }}
             {% else %}
