@@ -2,15 +2,15 @@
 
 {% macro counter(total, offset, length) %}
     {% if offset|int > 0 %}
-        [{{ offset|int + 1 }}–{{ offset|int + length }}/{{ total }}]
+        [{{ offset|int + 1 }}–{{ offset|int + length }} {% trans %}of{% endtrans %} {{ total }}]
     {% elif offset %}
-        [1–{{ length }}/{{ total }}]
+        [1–{{ length }} {% trans %}of{% endtrans %} {{ total }}]
     {% else %}
         {% set start = length*((total - 1) // length)|int + 1 %}
         {% if start < 0 %}
             {% set start = 0 %}
         {% endif %}
-        [{{ start }}–{{ total }}/{{ total }}]
+        [{{ start }}–{{ total }} {% trans %}of{% endtrans %} {{ total }}]
     {% endif %}
 {% endmacro %}
 

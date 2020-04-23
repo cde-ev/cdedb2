@@ -39,6 +39,9 @@ msgstr "Nicht im unterstützten Bereich."
 msgid "Not supported."
 msgstr "Operation nicht unterstützt."
 
+msgid "of"
+msgstr "von"
+
 #: cdedb/common.py:813
 msgid "Not in list."
 msgstr "Nicht in der Liste enthalten."
