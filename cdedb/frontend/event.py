@@ -24,6 +24,7 @@ import magic
 import psycopg2.extensions
 import werkzeug.exceptions
 from werkzeug import Response
+from typing import Sequence
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
@@ -3579,9 +3580,11 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata(("order", "int_csv_list"))
+    @REQUESTdata(("order", "int_csv_list"),
+                 ("kind", "enum_questionnaireusages"))
     def reorder_questionnaire(self, rs: RequestState, event_id: int,
-                              kind: const.QuestionnaireUsages):
+                              kind: const.QuestionnaireUsages,
+                              order: Sequence[int]) -> Response:
         """Shuffle rows of the orga designed form.
 
         This is strictly speaking redundant functionality, but it's pretty
@@ -3589,8 +3592,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id, kind)
-        questionnaire = self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(kind,))
+        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+            rs, event_id, kinds=(kind,)))
         new_questionnaire = {
             kind: tuple(self._sanitize_questionnaire_row(questionnaire[i])
                         for i in order)}

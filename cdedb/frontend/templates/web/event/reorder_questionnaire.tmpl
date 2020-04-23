@@ -28,6 +28,7 @@
     <form action="{{ cdedblink('event/reorder_questionnaire') }}" method="POST" id="reorderquestionnaireform"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/reorder_questionnaire') }}
+        {{ util.input_hidden(name="kind") }}
         <div class="orderrow-container" id="rowlist">
             {% for entry in questionnaire %}
             <div class="orderrow-outer" data-id="{{ loop.index0 }}" tabindex="0">
