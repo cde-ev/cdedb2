@@ -2149,42 +2149,44 @@ def make_transaction_subject(persona):
                                asciificator(persona['given_names']))
 
 
-def process_modifiable_input(rs, entries, spec, additional=None):
-    """This handles input to modifiable pages.
+def process_modifiable_input(rs, existing, spec, additional=None):
+    """Retrieve information provided by modifiable input tables.
 
-    Since this covers a variable number of rows, we cannot do this
-    statically. This takes care of validation too.
+    This returns a data dict to update the database which includes:
+    - extract all input fields (from spec) for every existing and validate them
+    - extract existing which were marked to be deleted and map them to None
+    - extract new entries to be created, collect their input fields (from spec)
+        and validate them
+
+    This takes care of validation too.
 
     :type rs: :py:class:`FrontendRequestState`
-    :type entries: [int]
-    :param entries: ids of existing groups
+    :type existing: [int]
+    :param existing: ids of already existent objects
     :type spec: {str: str}
-    :param spec: mapping keys which must be provided for every entry (in rs)
-        to validation
+    :param spec: name of input fields, mapped to their validation
     :type additional: dict
-    :param additional: additional keys which will be present in every output
-        object
+    :param additional: additional keys added to each output object
 
     :rtype: {int: {str: object} or None}
     """
     delete_flags = request_extractor(
-        rs, ((f"delete_{entry_id}", "bool") for entry_id in entries))
-    deletes = {entry_id for entry_id in entries
-               if delete_flags[f"delete_{entry_id}"]}
+        rs, ((f"delete_{anid}", "bool") for anid in existing))
+    deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
     params = tuple(
-        (f"{key}_{entry_id}", value)
-        for entry_id in entries if entry_id not in deletes
+        (f"{key}_{anid}", value)
+        for anid in existing if anid not in deletes
         for key, value in spec.items())
     data = request_extractor(rs, params)
     ret = {
-        entry_id: {key: data[f"{key}_{entry_id}"] for key in spec}
-        for entry_id in entries if entry_id not in deletes
+        anid: {key: data[f"{key}_{anid}"] for key in spec}
+        for anid in existing if anid not in deletes
     }
-    for entry_id in entries:
-        if entry_id in deletes:
-            ret[entry_id] = None
+    for anid in existing:
+        if anid in deletes:
+            ret[anid] = None
         else:
-            ret[entry_id]['id'] = entry_id
+            ret[anid]['id'] = anid
     marker = 1
     while marker < 2 ** 10:
         will_create = unwrap(
