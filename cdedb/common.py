@@ -22,7 +22,7 @@ import shutil
 import string
 import sys
 import hashlib
-from typing import Any, Iterable, Sized
+from typing import Any, Iterable, Sized, TypeVar, Mapping, Union, Collection
 
 import psycopg2.extras
 import pytz
@@ -905,8 +905,20 @@ def schulze_evaluate(votes, candidates):
 #: Magic value of moniker of the ballot candidate representing the bar.
 ASSEMBLY_BAR_MONIKER = "_bar_"
 
+T = TypeVar("T")
 
-def unwrap(single_element_list: Sized, keys: bool = False) -> Any:
+
+# The following two functions are different versions of unwrap, to make
+# the typechecker happy.
+def unwrap_values(mapping: Mapping[Any, T]) -> T:
+    return next(i for i in mapping.values())
+
+
+def unwrap_keys(mapping: Mapping[T, Any]) -> T:
+    return next(i for i in mapping.keys())
+
+
+def unwrap(single_element_list: Collection[T], keys: bool = False) -> T:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -916,11 +928,8 @@ def unwrap(single_element_list: Sized, keys: bool = False) -> Any:
     In case of an error (e.g. wrong number of elements) this raises an
     error.
 
-    :type single_element_list: [obj]
-    :type keys: bool
     :param keys: If a mapping is input, this toggles between returning
       the key or value.
-    :rtype: object or None
     """
     if (not isinstance(single_element_list, collections.abc.Iterable)
             or (isinstance(single_element_list, collections.abc.Sized)
