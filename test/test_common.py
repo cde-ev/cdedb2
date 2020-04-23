@@ -177,16 +177,18 @@ class TestCommon(unittest.TestCase):
                 self.assertEqual(cases[case], int_to_words(case, "de"))
 
     def test_collation(self):
+        # Test correct plain string sorting
         names = [
             "",
             " ",
-            "16"
+            "16",
             "Stránd",
             "Strassé",
             "straßenpanther",
             "Straßenpanther",
             "Strassenpeter",
-            "Zimmer -30"
+            "Zimmer -30",
+            "Zimmer -40",
             "Zimmer 20 Das beste Zimmer",
             "Zimmer 100a",
             "Zimmer w20a",
@@ -194,3 +196,36 @@ class TestCommon(unittest.TestCase):
         ]
         shuffled_names = random.sample(names, len(names))
         self.assertEqual(names, xsorted(shuffled_names))
+
+        # Test correct sorting of complex objects with sortkeys
+        # Also tests that negative ints are not sorted lexicographically
+        dicts = [
+            {
+                'id': 2,
+                'string': 'Erster String',
+                'neg': -3,
+            },
+            {
+                'id': 1,
+                'string': 'Weiterer String',
+                'neg': -2,
+            },
+            {
+                'id': 0,
+                'string': 'Z-String',
+                'neg': -1,
+            }
+        ]
+        shuffled_dicts = random.sample(dicts, len(dicts))
+        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['string']))
+        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['id'], reverse=True))
+        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['neg'], reverse=False))
+        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: str(x['neg']), reverse=True))
+
+        # Test correct sorting of tuples, which would be sorted differently as string
+        tuples = [
+            ("Corona ", 2020),
+            ("Corona", 2020),
+        ]
+        self.assertEqual(list(reversed(tuples)), xsorted(tuples))
+        self.assertEqual(tuples, xsorted(tuples, key=lambda x: str(x)))
