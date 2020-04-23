@@ -1323,8 +1323,20 @@ class AssemblyBackend(AbstractBackend):
         """
         data = affirm("assembly_attachment", data, creation=True)
         with Atomizer(rs):
+            locked_msg = n_("Unable to change attachment once voting has begun"
+                            " or the assembly has been concluded.")
             attachment = {k: v for k, v in data.items()
                           if k in ASSEMBLY_ATTACHMENT_FIELDS}
+            if attachment.get('ballot_id'):
+                ballot = self.get_ballot(rs, attachment['ballot_id'])
+                if ballot['vote_begin'] < now():
+                    raise ValueError(locked_msg)
+                assembly_id = ballot['assembly_id']
+            else:
+                assembly_id = attachment['assembly_id']
+            assembly = self.get_assembly(rs, assembly_id)
+            if not assembly['is_active']:
+                raise ValueError(locked_msg)
             new_id = self.sql_insert(rs, "assembly.attachments", attachment)
             version = {k: v for k, v in data.items()
                             if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
