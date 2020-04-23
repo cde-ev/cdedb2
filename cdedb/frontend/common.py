@@ -33,6 +33,7 @@ import tempfile
 import threading
 import types
 import urllib.parse
+from typing import Union
 
 import markdown
 import babel.dates
@@ -870,7 +871,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         )
         self.jinja_env.policies['ext.i18n.trimmed'] = True
         # Always provide all backends -- they are cheap
-        self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
+        self.assemblyproxy: Union[AssemblyBackend, ProxyShim] = \
+            ProxyShim(AssemblyBackend(configpath))
         self.cdeproxy = ProxyShim(CdEBackend(configpath))
         self.coreproxy = ProxyShim(CoreBackend(configpath))
         self.eventproxy = ProxyShim(EventBackend(configpath))
