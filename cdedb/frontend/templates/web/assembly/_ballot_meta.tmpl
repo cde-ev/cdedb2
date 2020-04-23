@@ -93,6 +93,40 @@
                 {% endif %}
             {% endif %}
         </dd>
+        <dt>{% trans %}Voting Modality{% endtrans %}</dt>
+        <dd>
+            {% if ambience['ballot']['votes'] == 1 %}
+                {% if ambience['ballot']['use_bar'] %}
+                    {% trans votes=ambience['ballot']['votes'] %}
+                        Classical voting with {{ votes }} vote and "Against all" option.
+                    {% endtrans %}
+                {% else %}
+                    {% trans votes=ambience['ballot']['votes'] %}
+                        Classical voting with {{ votes }} vote.
+                    {% endtrans %}
+                {% endif %}
+            {% elif ambience['ballot']['votes'] %}
+                {% if ambience['ballot']['use_bar'] %}
+                    {% trans votes=ambience['ballot']['votes'] %}
+                        Classical voting with {{ votes }} votes and "Against all" option.
+                    {% endtrans %}
+                {% else %}
+                    {% trans votes=ambience['ballot']['votes'] %}
+                        Classical voting with {{ votes }} votes.
+                    {% endtrans %}
+                {% endif %}
+            {% else %}
+                {% if ambience['ballot']['use_bar'] %}
+                    {% trans %}
+                        Preferential voting with bar option.
+                    {% endtrans %}
+                {% else %}
+                    {% trans %}
+                        Preferential voting without bar option.
+                    {% endtrans %}
+                {% endif %}
+            {% endif %}
+        </dd>
         {% if ambience['ballot']['vote_begin'] < now() %}
             {% if ambience['ballot']['is_tallied'] %}
                 <dt>{% trans %}Had voted{% endtrans %}</dt>

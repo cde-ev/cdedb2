@@ -727,12 +727,35 @@ class AssemblyFrontend(AbstractUserFrontend):
             result['winners'] = winners
             result['losers'] = losers
 
-            votes = [e['vote'] for e in result['votes']]
-            candidates = [k for k, v in result['candidates'].items()]
-            if ballot['use_bar'] or ballot['votes']:
-                candidates += (ASSEMBLY_BAR_MONIKER,)
-            condensed, detailed = schulze_evaluate(votes, candidates)
-            result['counts'] = detailed
+            # vote count for classical vote ballots
+            if ballot['votes']:
+                counts = {e['moniker']: 0
+                          for e in ballot['candidates'].values()}
+                if ballot['use_bar']:
+                    counts[ASSEMBLY_BAR_MONIKER] = 0
+                for vote in result['votes']:
+                    raw = vote['vote']
+                    if '>' in raw:
+                        selected = raw.split('>')[0].split('=')
+                        for s in selected:
+                            counts[s] += 1
+                result['counts'] = counts
+            # vote count for preferential vote ballots
+            else:
+                votes = [e['vote'] for e in result['votes']]
+                candidates = [k for k, v in result['candidates'].items()]
+                if ballot['use_bar']:
+                    candidates += (ASSEMBLY_BAR_MONIKER,)
+                condensed, counts = schulze_evaluate(votes, candidates)
+
+            result['counts'] = counts
+
+            # count abstentions for both voting forms
+            abstentions = 0
+            for vote in result['votes']:
+                if '>' not in vote['vote']:
+                    abstentions += 1
+            result['abstentions'] = abstentions
 
         return result
 
