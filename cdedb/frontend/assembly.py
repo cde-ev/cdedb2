@@ -15,7 +15,7 @@ import werkzeug.exceptions
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
     check_validation as check, request_extractor, query_result_to_json,
-    process_modifiable_input
+    process_flux_input
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
@@ -907,7 +907,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         :type assembly_id: int
         :type ballot_id: int
         """
-        candidates = process_modifiable_input(
+        candidates = process_flux_input(
             rs, rs.ambience['ballot']['candidates'].keys(),
             {'moniker': "restrictive_identifier", 'description': "str"})
 

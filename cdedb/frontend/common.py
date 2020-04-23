@@ -2149,7 +2149,7 @@ def make_transaction_subject(persona):
                                asciificator(persona['given_names']))
 
 
-def process_modifiable_input(rs, existing, spec, additional=None):
+def process_flux_input(rs, existing, spec, additional=None):
     """Retrieve information provided by modifiable input tables.
 
     This returns a data dict to update the database which includes:

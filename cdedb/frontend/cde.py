@@ -35,7 +35,7 @@ from cdedb.frontend.common import (
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
-    process_modifiable_input
+    process_flux_input
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
@@ -2159,8 +2159,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
         spec = {'title': "str", 'moniker': "str"}
-        institutions = process_modifiable_input(rs, institution_ids.keys(),
-                                                spec)
+        institutions = process_flux_input(rs, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
         code = 1

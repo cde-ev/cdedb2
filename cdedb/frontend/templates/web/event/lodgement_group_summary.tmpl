@@ -25,5 +25,5 @@
 {% block content %}
     {% set columns =  [dict(name="moniker", label="Name", func=util.input_text)] %}
 
-    {{ util.print_modifiable_table("Lodgement Group", columns, lodgement_groups, 'event/lodgement_group_summary', sortkey=EntitySorter.lodgement_group) }}
+    {{ util.print_flux_table("Lodgement Group", columns, lodgement_groups, 'event/lodgement_group_summary', sortkey=EntitySorter.lodgement_group) }}
 {% endblock %}

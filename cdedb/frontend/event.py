@@ -29,7 +29,7 @@ from cdedb.frontend.common import (
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     xdictsort_filter, enum_entries_filter, safe_filter, cdedburl,
-    CustomCSVDialect, keydictsort_filter, process_modifiable_input)
+    CustomCSVDialect, keydictsort_filter, process_flux_input)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -4062,9 +4062,8 @@ class EventFrontend(AbstractUserFrontend):
     def lodgement_group_summary(self, rs, event_id):
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = process_modifiable_input(rs, group_ids.keys(),
-                                          {'moniker': "str"},
-                                          {'event_id': event_id})
+        groups = process_flux_input(rs, group_ids.keys(), {'moniker': "str"},
+                                    {'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
         code = 1

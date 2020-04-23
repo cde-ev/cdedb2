@@ -601,7 +601,7 @@
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 
-{% macro print_modifiable_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
+{% macro print_flux_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
     <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
         {% for column in columns %}
             <td {% if '{}_{}'.format(column['name'], id) in errors %}class="has-error"{% endif %}>
@@ -634,7 +634,7 @@
     </tr>
 {% endmacro %}
 
-{% macro print_modifiable_table(name, columns, entries, endpoint, locked_entries=[], sortkey=None) %}
+{% macro print_flux_table(name, columns, entries, endpoint, locked_entries=[], sortkey=None) %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#drow-table').cdedbDynamicRow({
@@ -657,14 +657,14 @@
                 {% set sorted_entries = entries|keydictsort(sortkey) if sortkey else entries|dictsort %}
                 {# Old items, already stored in the database #}
                 {% for id, entry in sorted_entries %}
-                    {{ print_modifiable_row(id, name, columns, id not in locked_entries, 'drow-row') }}
+                    {{ print_flux_row(id, name, columns, id not in locked_entries, 'drow-row') }}
                 {% endfor %}
                 {# Items that were added by the user but failed validation. They are still new and have no official id. #}
                 {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                    {{ print_modifiable_row(-i, name, columns, False, 'drow-new', newrow=True) }}
+                    {{ print_flux_row(-i, name, columns, False, 'drow-new', newrow=True) }}
                 {% endfor %}
                 {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-                {{ print_modifiable_row(-values.get('create_last_index', 0) - 1, name, columns, False, 'drow-prototype', newrow=True) }}
+                {{ print_flux_row(-values.get('create_last_index', 0) - 1, name, columns, False, 'drow-prototype', newrow=True) }}
             </tbody>
         </table>
         <p>

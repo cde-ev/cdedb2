@@ -315,5 +315,5 @@
     {% set columns =  [dict(name="moniker", label="Shortname", func=util.input_text),
                        dict(name="description", label="Description", func=util.input_text)] %}
 
-    {{ util.print_modifiable_table("Candidates", columns, ambience['ballot']['candidates'], 'assembly/edit_candidates', sortkey=EntitySorter.candidate) }}
+    {{ util.print_flux_table("Candidates", columns, ambience['ballot']['candidates'], 'assembly/edit_candidates', sortkey=EntitySorter.candidate) }}
 {%- endmacro %}
