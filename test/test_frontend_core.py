@@ -1646,19 +1646,38 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/api/resolve', status=403)
 
     def test_log(self):
+        user = USER_DICT['vera']
         # First: generate data
-        self.test_genesis_event()
-        self.logout()
-        self.test_nontrivial_promotion()
-        self.logout()
-        self.test_admin_username_change()
-        self.logout()
+        # request and create two new accounts
+        self._genesis_request(self.ML_GENESIS_DATA)
+        self._genesis_request(self.EVENT_GENESIS_DATA)
+        self.login(user)
+        self.traverse({'description': 'Accountanfragen'})
+        f = self.response.forms['genesismlapprovalform1']
+        self.submit(f)
+        f = self.response.forms['genesiseventapprovalform1']
+        self.submit(f)
+
+        # make janis assembly user
+        self.admin_view_profile('janis')
+        self.traverse({'description': 'Bereich hinzufügen'})
+        f = self.response.forms['realmselectionform']
+        f['target_realm'] = "assembly"
+        self.submit(f)
+        f = self.response.forms['promotionform']
+        self.submit(f)
+
+        # change berta's user name
+        self.admin_view_profile('berta')
+        self.traverse({'href': '/username/adminchange'})
+        f = self.response.forms['usernamechangeform']
+        f['new_username'] = "bertalotta@example.cde"
+        self.submit(f)
 
         # Now check it
-        self.login(USER_DICT['vera'])
         self.traverse({'description': 'Index'},
-                      {'href': '/core/log'})
-        self.assertTitle("Account-Log [0–7]")
+                      {'description': 'Account-Log'})
+        self.assertTitle("Account-Log [1–12 von 12]")
         f = self.response.forms["logshowform"]
         f["codes"] = [const.CoreLogCodes.genesis_verified.value,
                       const.CoreLogCodes.realm_change.value,
