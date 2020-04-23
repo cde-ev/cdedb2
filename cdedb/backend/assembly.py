@@ -41,7 +41,7 @@ from cdedb.common import (
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-    get_hash, unwrap_values)
+    get_hash, unwrap_values, mixed_existence_sorter)
 from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
@@ -618,7 +618,7 @@ class AssemblyBackend(AbstractBackend):
                 deleted = {x for x in data['candidates']
                            if x > 0 and data['candidates'][x] is None}
                 # new
-                for x in new:
+                for x in mixed_existence_sorter(new):
                     new_candidate = copy.deepcopy(data['candidates'][x])
                     new_candidate['ballot_id'] = data['id']
                     ret *= self.sql_insert(rs, "assembly.candidates",
@@ -628,7 +628,7 @@ class AssemblyBackend(AbstractBackend):
                         current['assembly_id'],
                         additional_info=data['candidates'][x]['moniker'])
                 # updated
-                for x in updated:
+                for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(data['candidates'][x])
                     update['id'] = x
                     ret *= self.sql_update(rs, "assembly.candidates", update)
@@ -639,7 +639,7 @@ class AssemblyBackend(AbstractBackend):
                 # deleted
                 if deleted:
                     ret *= self.sql_delete(rs, "assembly.candidates", deleted)
-                    for x in deleted:
+                    for x in mixed_existence_sorter(deleted):
                         self.assembly_log(
                             rs, const.AssemblyLogCodes.candidate_removed,
                             current['assembly_id'],
