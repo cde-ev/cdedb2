@@ -8,7 +8,7 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_orderrow.js') }}{% endblock %}
 {% block title %}
-    {% trans kind=gettext(kind), title=ambience['event']['title'] %}
+    {% trans kind=gettext(kind|string), title=ambience['event']['title'] %}
         Reorder Questionnaire ({{ kind }}) ({{ title }})
     {% endtrans %}
 {% endblock %}
@@ -20,7 +20,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans kind=gettext(kind) %}Reorder Questionnaire ({{ kind }}){% endtrans %}
+        {% trans kind=gettext(kind|string) %}Reorder Questionnaire ({{ kind }}){% endtrans %}
         <small>{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}

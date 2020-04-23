@@ -183,6 +183,9 @@ I18N_STRINGS = (
     n_("PrivilegeChangeStati.successful"),
     n_("PrivilegeChangeStati.rejected"),
 
+    n_("QuestionnaireUsages.registration"),
+    n_("QuestionnaireUsages.questionnaire"),
+
     n_("RegistrationPartStati.not_applied"),
     n_("RegistrationPartStati.applied"),
     n_("RegistrationPartStati.participant"),

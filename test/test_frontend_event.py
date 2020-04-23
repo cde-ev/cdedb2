@@ -2680,7 +2680,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
         self.submit(f)
-        self.assertTitle("Fragebogen umordnen (Große Testakademie 2222)")
+        self.assertTitle("Fragebogen umordnen (Zusätzlicher Fragebogen) (Große Testakademie 2222)")
         self.traverse({'description': 'Fragebogen konfigurieren'})
         f = self.response.forms['configurequestionnaireform']
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
