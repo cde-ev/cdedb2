@@ -2150,15 +2150,12 @@ def make_transaction_subject(persona):
 
 
 def process_flux_input(rs, existing, spec, additional=None):
-    """Retrieve information provided by modifiable input tables.
+    """Retrieve information provided by flux tables.
 
-    This returns a data dict to update the database which includes:
-    - extract all input fields (from spec) for every existing and validate them
-    - extract existing which were marked to be deleted and map them to None
-    - extract new entries to be created, collect their input fields (from spec)
-        and validate them
-
-    This takes care of validation too.
+    This returns a data dict to update the database, which includes:
+    - existing, mapped to their (validated) input fields (from spec)
+    - existing, mapped to None (if they were marked to be deleted)
+    - new entries, mapped to their (validated) input fields (from spec)
 
     :type rs: :py:class:`FrontendRequestState`
     :type existing: [int]

@@ -640,7 +640,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if ballot['use_bar']:
             candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
                 "bar (options below this are declined)")
-        # this is used for the modifiable candidate table
+        # this is used for the flux candidate table
         current = {
             f"{key}_{candidate_id}": value
             for candidate_id, candidate in ballot['candidates'].items()

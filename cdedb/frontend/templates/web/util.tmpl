@@ -596,11 +596,11 @@
     {%- endcall %}
 {%- endmacro %}
 
-{# Macro for a general row, that can have each role in the DynamicRow workflow.
+{# Macro for a general row, used in a flux table.
+
    non-deletable rows have a disabled 'delete'-checkbox,
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-
 {% macro print_flux_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
     <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
         {% for column in columns %}
@@ -608,7 +608,7 @@
                 {% set func = column['func'] %}
                 {% set name = '{}_{}'.format(column['name'], id) %}
 
-                {# try to set the remaining items of colum as attributes to func #}
+                {# TODO set the remaining items of colum as attributes to func #}
                 {# this is a call for a generic util.input_* macro specified by the caller #}
                 {{ func(name=name,
                         aclass='drow-input form-control',
@@ -634,7 +634,16 @@
     </tr>
 {% endmacro %}
 
-{% macro print_flux_table(name, columns, entries, endpoint, locked_entries=[], sortkey=None) %}
+{# This macro creates a table which entries can be added, deleted and modified by the user.
+
+   name:     the name of the table
+   columns:  List of dicts. Each dict must contain a 'func' key, specifing the util.input_* macro for this column,
+             the 'name' (mapping the input to a db field) and a 'label'.
+   existing: a dict of already existing entries.
+   endpoint: the rule to the python method which will process the input
+   locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
+   sortkey:  to sort existing #}
+{% macro print_flux_table(name, columns, existing, endpoint, locked=[], sortkey=None) %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#drow-table').cdedbDynamicRow({
@@ -654,10 +663,10 @@
                 </tr>
             </thead>
             <tbody>
-                {% set sorted_entries = entries|keydictsort(sortkey) if sortkey else entries|dictsort %}
+                {% set sorted_existing = existing|keydictsort(sortkey) if sortkey else existing|dictsort %}
                 {# Old items, already stored in the database #}
-                {% for id, entry in sorted_entries %}
-                    {{ print_flux_row(id, name, columns, id not in locked_entries, 'drow-row') }}
+                {% for id, entry in sorted_existing %}
+                    {{ print_flux_row(id, name, columns, id not in locked, 'drow-row') }}
                 {% endfor %}
                 {# Items that were added by the user but failed validation. They are still new and have no official id. #}
                 {% for i in range(1, values.get('create_last_index', 0) + 1) %}
