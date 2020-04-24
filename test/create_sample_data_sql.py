@@ -21,7 +21,7 @@ def prepare_aux():
 
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
-    rs_maker = setup(1, "nobody", "nobody")
+    rs_maker = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")
     ret["rs"] = rs_maker()
     ret["core"] = make_backend("core", proxy=False)
 
