@@ -11,19 +11,20 @@ def read_input(infile):
     return ret
 
 
-def prepare_aux():
+def prepare_aux(data):
     ret = {}
 
     # Set up the database connection.
     sys.path.insert(0, "/cdedb2")
 
     from cdedb.script import setup, make_backend
+    from cdedb.backend.core import CoreBackend
 
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
-    rs_maker = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")
+    rs_maker = setup(1, "nobody", "nobody")
     ret["rs"] = rs_maker()
-    ret["core"] = make_backend("core", proxy=False)
+    ret["core"] = CoreBackend  # No need to instantiate, we only use statics.
 
     # Extract some data about the databse tables using the database connection.
 
@@ -33,20 +34,7 @@ def prepare_aux():
         "cde.expuls_period",
     ]
 
-    # Next we query for all 'id' columns that do not have a default for the next
-    # value, which should give us all tables that DO have a sequential id.
-    query = "SELECT table_schema, table_name FROM information_schema.columns " \
-            "WHERE column_name = %s AND column_default IS NOT NULL;"
-    params = ("id",)
-    full_table = lambda e: e["table_schema"] + "." + e["table_name"]
-
-    # Jus to be safe we remove the known tables without a sequential id again.
-    ret["seq_id_tables"] = [
-        full_table(e)
-        for e in ret["core"].query_all(rs_maker(), query, params)
-        if full_table(e) not in non_seq_id_tables
-    ]
-
+    ret["seq_id_tables"] = [t for t in data if t not in non_seq_id_tables]
     # Prepare some constants for special casing.
 
     # This maps full table names to a list of column names in that table that
@@ -172,7 +160,7 @@ def main():
     args = parser.parse_args()
 
     data = read_input(args.infile)
-    aux = prepare_aux()
+    aux = prepare_aux(data)
     commands = build_commands(data, aux)
     write_output(commands, args.outfile)
 
