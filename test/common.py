@@ -103,8 +103,9 @@ class BackendShim(ProxyShim):
             localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
 
     def _setup_requeststate(self, key):
+        # TODO add droid mode
         rs = RequestState(
-            key, None, None, None, [], None, None,
+            key, None, None, None, None, None, [], None, None,
             [], {}, "de", self.translator.gettext,
             self.translator.ngettext, None, None, key)
         user = self.sessionproxy.lookupsession(key, "127.0.0.0")
