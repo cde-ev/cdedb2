@@ -1771,15 +1771,27 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
 
     def test_resolve_api(self):
-        b = urllib.parse.quote_plus('Bertålotta')
+        at = urllib.parse.quote_plus('@')
         self.get(
-            '/core/api/resolve?given_names={}&family_name=Beispiel'.format(b),
+            '/core/api/resolve?username=%20bErTa{}example.CDE%20'.format(at),
             headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
-        self.assertEqual(self.response.json, ["berta@example.cde"])
+        self.assertEqual(self.response.json, {
+            "given_names": USER_DICT["berta"]["given_names"],
+            "family_name": "Beispiel",
+            "is_member": True,
+            "id": 2,
+            "username": "berta@example.cde",
+        })
         self.get(
-            '/core/api/resolve?given_names=Anton&family_name=Administrator',
+            '/core/api/resolve?username=anton{}example.cde'.format(at),
             headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
-        self.assertEqual(self.response.json, ["anton@example.cde"])
+        self.assertEqual(self.response.json, {
+            "given_names": "Anton Armin A.",
+            "family_name": "Administrator",
+            "is_member": True,
+            "id": 1,
+            "username": "anton@example.cde",
+        })
         self.get('/core/api/resolve', status=403)
 
     def test_log(self):
