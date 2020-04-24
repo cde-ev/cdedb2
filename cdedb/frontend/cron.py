@@ -76,7 +76,7 @@ class CronFrontend(BaseApp):
         urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/",
                                 url_scheme="https")
         rs = RequestState(
-            None, user, None, None, [], urls, {},
+            None, None, user, None, None, [], urls, {},
             [], {}, lang,
             self.translations[lang].gettext,
             self.translations[lang].ngettext, coders, None,
