@@ -3185,9 +3185,13 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['parts'][anid]['part_begin'])
         registration['parts'] = OrderedDict(
             (part_id, registration['parts'][part_id]) for part_id in part_order)
+        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+            rs, event_id, (const.QuestionnaireUsages.registration,)))
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
-            'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee})
+            'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
+            'questionnaire': questionnaire,
+        })
 
     @access("event")
     def amend_registration_form(self, rs, event_id):

@@ -116,6 +116,36 @@
         {% endfor %}
     </dl>
 
+    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
+        {% set reg_track = registration['tracks'][track_id] %}
+        {% if enums['RegistrationPartStati'](registration['parts'][track['part_id']]['status']).is_involved() %}
+            <h4>
+                {% trans %}Course Choices for{% endtrans %}
+                {% if ambience['event']['tracks']|length > 1 %}
+                    {{ track['title'] }}
+                {% endif %}
+            </h4>
+
+            <dl class="dl-horizontal">
+                {% if reg_track['course_instructor'] %}
+                    <dt>{% trans %}Instructor of{% endtrans %}</dt>
+                    <dd><em>{{ courses[reg_track['course_instructor']]['title'] }}</em>.</dd>
+                {% endif %}
+                {% for i in range(track['num_choices']) %}
+                    <dt>{{ gettext("{}. choice").format(i + 1) }}</dt>
+                    <dd>
+                        {% if reg_track['choices']|length > i %}
+                            {{ courses[reg_track['choices'][i]]['nr'] }}.
+                            {{ courses[reg_track['choices'][i]]['title'] }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+                {% endfor %}
+            </dl>
+        {% endif %}
+    {% endfor %}
+
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
     {% if ambience['event']['registration_soft_limit'] is none or
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
@@ -159,6 +189,17 @@
             {% endtrans %}
         </dd>
     </dl>
+
+    {% if questionnaire %}
+        <dl class="dl-horizontal" id="questionnaire_results">
+        {% for entry in questionnaire %}
+            {% if entry['field_id'] %}
+                {{ util.print_questionnaire_result(entry, registration) }}
+            {% endif %}
+        {% endfor %}
+        </dl>
+    {% endif %}
+
     {% if registration['notes'] %}
         <dl class="dl-horizontal">
             <dt>{% trans %}Notes{% endtrans %}</dt>
@@ -167,34 +208,4 @@
             </dd>
         </dl>
     {% endif %}
-
-    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
-        {% set reg_track = registration['tracks'][track_id] %}
-        {% if enums['RegistrationPartStati'](registration['parts'][track['part_id']]['status']).is_involved() %}
-            <h4>
-                {% trans %}Course Choices for{% endtrans %}
-                {% if ambience['event']['tracks']|length > 1 %}
-                    {{ track['title'] }}
-                {% endif %}
-            </h4>
-
-            <dl class="dl-horizontal">
-                {% if reg_track['course_instructor'] %}
-                    <dt>{% trans %}Instructor of{% endtrans %}</dt>
-                    <dd><em>{{ courses[reg_track['course_instructor']]['title'] }}</em>.</dd>
-                {% endif %}
-                {% for i in range(track['num_choices']) %}
-                    <dt>{{ gettext("{}. choice").format(i + 1) }}</dt>
-                    <dd>
-                        {% if reg_track['choices']|length > i %}
-                            {{ courses[reg_track['choices'][i]]['nr'] }}.
-                            {{ courses[reg_track['choices'][i]]['title'] }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </dd>
-                {% endfor %}
-            </dl>
-        {% endif %}
-    {% endfor %}
 {% endblock %}
