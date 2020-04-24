@@ -1270,6 +1270,12 @@ class EventBackend(AbstractBackend):
           'parts'. Deletion of parts implicitly deletes the dependent
           tracks and fee modifiers.
 
+          Note that due to allowing only subsets of the existing fields,
+          fee modifiers, parts and tracks to be given, there are some invalid
+          combinations that cannot currently be detected at this point,
+          e.g. trying to create a field with a `field_name` that already
+          exists for this event. See Issue #1140.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
