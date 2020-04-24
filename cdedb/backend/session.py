@@ -36,7 +36,7 @@ class SessionBackend:
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
 
-        lookup = {v: k for k, v in secrets.API_TOKENS.items()}
+        lookup = {v: k for k, v in secrets['API_TOKENS'].items()}
         self.api_token_lookup = lambda token: lookup.get(token)
 
         make_root_logger(
@@ -160,7 +160,7 @@ class SessionBackend:
             ret = User(persona_id=None, username=None, given_names=None,
                        display_name=None, family_name=None,
                        roles=droid_roles(identity))
-            if self.conf.LOCKDOWN and not 'droid_infra' in ret.roles:
+            if self.conf['LOCKDOWN'] and not 'droid_infra' in ret.roles:
                 ret = User()
         else:
             # log message to be picked up by fail2ban
