@@ -5659,11 +5659,11 @@ msgid "Attach File"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:195
-msgid "Previous Ballot"
+msgid "Previous"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:199
-msgid "Next Ballot"
+msgid "Next"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:8

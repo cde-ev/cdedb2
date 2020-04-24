@@ -8033,16 +8033,16 @@ msgstr "Datei anhängen"
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:144
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:141
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:195
-msgid "Previous Ballot"
-msgstr "Vorherige Abstimmung"
+msgid "Previous"
+msgstr "Vorherige"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:156
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:153
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:148
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:145
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:199
-msgid "Next Ballot"
-msgstr "Nächste Abstimmung"
+msgid "Next"
+msgstr "Nächste"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:16
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:52

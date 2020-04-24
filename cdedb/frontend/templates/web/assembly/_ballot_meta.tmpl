@@ -192,11 +192,11 @@
         <ul class="pager">
             {% if prev_ballot %}
                 <li class="previous">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": prev_ballot["id"]}),
-                         '<span aria-hidden="true">&larr;</span> '|s + gettext("Previous Ballot"), title=prev_ballot["title"]) }}</li>
+                         '<span aria-hidden="true">&larr;</span> '|s + gettext("Previous"), title=prev_ballot["title"]) }}</li>
             {% endif %}
             {%  if next_ballot %}
                 <li class="next">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": next_ballot["id"]}),
-                         gettext("Next Ballot") + ' <span aria-hidden="true">&rarr;</span>'|s, title=next_ballot["title"]) }}</li>
+                         gettext("Next") + ' <span aria-hidden="true">&rarr;</span>'|s, title=next_ballot["title"]) }}</li>
             {% endif %}
         </ul>
     </nav>
