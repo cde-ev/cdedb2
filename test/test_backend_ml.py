@@ -818,7 +818,7 @@ class TestMlBackend(BackendTest):
                     'persona_id': user_id,
                     'subscription_state': SS.unsubscribed,
                 }
-                self.ml._set_subscription(datum)
+                self.ml._set_subscription(self.key, datum)
 
         # Make sure moderator functions do not tell you anything.
         # Garcia (7) is listed implicitly, explicitly or not at all on these
