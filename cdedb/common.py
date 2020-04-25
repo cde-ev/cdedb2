@@ -22,7 +22,9 @@ import shutil
 import string
 import sys
 import hashlib
-from typing import Any, Iterable, Sized, TypeVar, Mapping, Union, Collection
+from typing import (
+    Any, TypeVar, Mapping, Collection, Dict, List
+)
 
 import psycopg2.extras
 import pytz
@@ -38,6 +40,21 @@ _LOGGER = logging.getLogger(__name__)
 
 # Global unified collator to be used when sorting.
 COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
+
+# Pseudo objects like assembly, event, course, event part, etc.
+CdEDBObject = Mapping[str, Any]
+# Dict-like list of pseudo objects, indexed by their id, as returned by
+# `get_events`, event["parts"], etc.
+CdEDBObjectList = Mapping[int, CdEDBObject]
+# An integer with special semantics. Positive return values indicate success,
+# a return of zero signals an error, a negative return value indicates some
+# special case like a change pending review.
+DefaultReturnCode = int
+# Return value for `delete_foo_blockers` part of the deletion interface.
+# The key specifies the kind of blocker, the value is a list of blocking ids.
+# For some blockers the value might have a different type, mostly when that
+# blocker blocks deletion without the option to cascadingly delete.
+DeletionBlockers = Dict[str, List[int]]
 
 
 class RequestState:

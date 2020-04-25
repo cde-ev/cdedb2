@@ -28,8 +28,9 @@ do it.
 
 import copy
 import hmac
-import string
-from typing import Any, Set, Dict, List, Union, Iterable, Callable
+from typing import (
+    Set, Dict, List, Union, Iterable, Callable
+)
 from pathlib import Path
 from os import PathLike
 
@@ -41,7 +42,9 @@ from cdedb.common import (
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-    get_hash, unwrap_values, mixed_existence_sorter)
+    get_hash, unwrap_values, mixed_existence_sorter,
+    CdEDBObject, CdEDBObjectList, DefaultReturnCode, DeletionBlockers
+)
 from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
@@ -109,7 +112,7 @@ class AssemblyBackend(AbstractBackend):
         return h.hexdigest()
 
     def retrieve_vote(self, rs: RequestState, ballot_id: int,
-                      secret: str) -> Dict[str, Any]:
+                      secret: str) -> CdEDBObject:
         """Low level function for looking up a vote.
 
         This is a brute force algorithm checking each vote, whether it
@@ -131,7 +134,7 @@ class AssemblyBackend(AbstractBackend):
     def assembly_log(self, rs: RequestState, code: const.AssemblyLogCodes,
                      assembly_id: Union[int, None],
                      persona_id: Union[int, None] = None,
-                     additional_info: str = None) -> int:
+                     additional_info: str = None) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -184,7 +187,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def submit_general_query(self, rs: RequestState,
-                             query: Query) -> List[Dict[str, Any]]:
+                             query: Query) -> List[CdEDBObject]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
@@ -208,7 +211,7 @@ class AssemblyBackend(AbstractBackend):
 
     @internal_access("persona")
     def get_assembly_id(self, rs: RequestState, *, ballot_id: int = None,
-                        attachment_id: int = None) -> int:
+                        attachment_id: int = None) -> DefaultReturnCode:
         """Helper to retrieve a corresponding assembly id."""
         if ballot_id is None and attachment_id is None:
             raise ValueError(n_("Not input specified."))
@@ -308,7 +311,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("persona")
     def list_assemblies(self, rs: RequestState,
-                        is_active: bool = None) -> Dict[int, Dict[str, Any]]:
+                        is_active: bool = None) -> CdEDBObjectList:
         """List all assemblies.
 
         :param is_active: If not None list only assemblies which have this
@@ -334,7 +337,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_assemblies(self, rs: RequestState,
-                       ids: Iterable[int]) -> Dict[int, Dict[str, Any]]:
+                       ids: Iterable[int]) -> CdEDBObjectList:
         """Retrieve data for some assemblies."""
         ids = affirm_set("id", ids)
         if not all(self.may_assemble(rs, assembly_id=anid) for anid in ids):
@@ -344,7 +347,7 @@ class AssemblyBackend(AbstractBackend):
     get_assembly = singularize(get_assemblies)
 
     @access("assembly_admin")
-    def set_assembly(self, rs: RequestState, data: Dict[str, Any]) -> int:
+    def set_assembly(self, rs: RequestState, data: CdEDBObject) -> int:
         """Update some keys of an assembly.
 
         :returns: default return code
@@ -359,7 +362,7 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly_admin")
-    def create_assembly(self, rs: RequestState, data: Dict[str, Any]) -> int:
+    def create_assembly(self, rs: RequestState, data: CdEDBObject) -> int:
         """Make a new assembly.
 
         :returns: the id of the new assembly
@@ -371,7 +374,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_assembly_blockers(self, rs: RequestState,
-                                 assembly_id: int) -> Dict[str, List[int]]:
+                                 assembly_id: int) -> DeletionBlockers:
         """Determine whether an assembly is deletable.
 
         Possible blockers:
@@ -431,7 +434,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_assembly(self, rs: RequestState, assembly_id: int,
-                        cascade: Set[str] = None) -> int:
+                        cascade: Iterable[str] = None) -> int:
         """Remove an assembly.
 
         :param cascade: Specify which deletion blockers to cascadingly
@@ -515,7 +518,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_ballots(self, rs: RequestState,
-                    ids: Iterable[int]) -> Dict[int, Dict[str, Any]]:
+                    ids: Iterable[int]) -> CdEDBObjectList:
         """Retrieve data for some ballots,
 
         They do not need to be associated to the same assembly. This has an
@@ -547,7 +550,7 @@ class AssemblyBackend(AbstractBackend):
     get_ballot = singularize(get_ballots)
 
     @access("assembly_admin")
-    def set_ballot(self, rs: RequestState, data: Dict[str, Any]) -> int:
+    def set_ballot(self, rs: RequestState, data: CdEDBObject) -> int:
         """Update some keys of ballot.
 
         If the key 'candidates' is present, the associated dict mapping the
@@ -619,7 +622,7 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly_admin")
-    def create_ballot(self, rs: RequestState, data: Dict[str, Any]) -> int:
+    def create_ballot(self, rs: RequestState, data: CdEDBObject) -> int:
         """Make a new ballot
 
         This has to take care to keep the voter register consistent.
@@ -666,7 +669,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_ballot_blockers(self, rs: RequestState,
-                               ballot_id: int) -> Dict[str, List[int]]:
+                               ballot_id: int) -> DeletionBlockers:
         """Determine whether a ballot is deletable.
 
         Possible blockers:
@@ -708,7 +711,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_ballot(self, rs: RequestState, ballot_id: int,
-                      cascade: Set[int] = None) -> int:
+                      cascade: Iterable[str] = None) -> DefaultReturnCode:
         """Remove a ballot.
 
         .. note:: As with modification of ballots this is forbidden
@@ -880,7 +883,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def vote(self, rs: RequestState, ballot_id: int, vote: str,
-             secret: str) -> int:
+             secret: str) -> DefaultReturnCode:
         """Submit a vote.
 
         This does not accept a persona_id on purpose.
@@ -1092,7 +1095,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def conclude_assembly_blockers(self, rs: RequestState,
-                                   assembly_id: int) -> Dict[str, Any]:
+                                   assembly_id: int) -> DeletionBlockers:
         """Determine whether an assembly may be concluded.
 
         Possible blockers:
@@ -1231,8 +1234,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_attachment_histories(self, rs: RequestState,
-                                 attachment_ids: Set[int]) -> \
-            Dict[int, Dict[int, Any]]:
+                                 attachment_ids: Iterable[int]) -> \
+            CdEDBObjectList:
         """Retrieve all version information for given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         ret = {anid: {} for anid in attachment_ids}
@@ -1248,12 +1251,12 @@ class AssemblyBackend(AbstractBackend):
 
         return ret
 
-    get_attachment_history: Callable[[RequestState, int], Dict[int, Any]] = \
+    get_attachment_history: Callable[[RequestState, int], CdEDBObject] = \
         singularize(get_attachment_histories, "attachment_ids", "attachment_id")
 
     @access("assembly_admin")
-    def add_attachment(self, rs: RequestState, data: Dict[str, Any],
-                       content: bytes) -> int:
+    def add_attachment(self, rs: RequestState, data: CdEDBObject,
+                       content: bytes) -> DefaultReturnCode:
         """Add a new attachment.
 
         Note that it is not allowed to add an attachment to a ballot that
@@ -1299,7 +1302,8 @@ class AssemblyBackend(AbstractBackend):
             return new_id
 
     @access("assembly_admin")
-    def change_attachment(self, rs: RequestState, data: Dict[str, Any]) -> int:
+    def change_attachment(self, rs: RequestState, data: CdEDBObject) -> \
+            DefaultReturnCode:
         """Change the association of an attachment.
 
         It is not allowed to modify an attachment of a ballot that
@@ -1342,7 +1346,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_attachment_blockers(self, rs: RequestState, attachment_id: int) \
-            -> Dict[str, Union[List[int], str]]:
+            -> DeletionBlockers:
         """Determine what keeps an attachment from being deleted.
 
         Possible blockers:
@@ -1376,7 +1380,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_attachment(self, rs: RequestState, attachment_id: int,
-                          cascade: Set[str] = None) -> int:
+                          cascade: Iterable[str] = None) -> DefaultReturnCode:
         """Remove an attachment."""
         attachment_id = affirm("id", attachment_id)
         blockers = self.delete_attachment_blockers(rs, attachment_id)
@@ -1420,7 +1424,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_current_versions(self, rs: RequestState,
-                             attachment_ids: Set[int]) -> Dict[int, int]:
+                             attachment_ids: Iterable[int]) -> Dict[int, int]:
         """Get the most recent version numbers for the given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
@@ -1436,8 +1440,8 @@ class AssemblyBackend(AbstractBackend):
         singularize(get_current_versions, "attachment_ids", "attachment_id")
 
     @access("assembly_admin")
-    def add_attachment_version(self, rs: RequestState,
-                               data: Dict[str, Any], content: bytes) -> int:
+    def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
+                               content: bytes) -> DefaultReturnCode:
         """Add a new version of an attachment.
 
         This is not allowed if the associated ballot has begun voting or if
@@ -1467,8 +1471,8 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly_admin")
-    def change_attachment_version(self, rs: RequestState,
-                                  data: Dict[str, Any]) -> int:
+    def change_attachment_version(self, rs: RequestState, data: CdEDBObject) \
+            -> DefaultReturnCode:
         """Alter a version of an attachment.
 
         This is not allowed if the associated ballot has begun voting or if
@@ -1491,7 +1495,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def remove_attachment_version(self, rs: RequestState, attachment_id: int,
-                                  version: int) -> int:
+                                  version: int) -> DefaultReturnCode:
         """Remove a version of an attachment. Leaves other versions intact.
 
         This is not allowed if the associated ballot has begun voting or if
@@ -1580,8 +1584,8 @@ class AssemblyBackend(AbstractBackend):
         return {e['id'] for e in data}
 
     @access("assembly")
-    def get_attachments(self, rs: RequestState,
-                        attachment_ids: Set[int]) -> Dict[int, Dict[str, int]]:
+    def get_attachments(self, rs: RequestState, attachment_ids: Iterable[int]) \
+            -> CdEDBObjectList:
         """Retrieve data on attachments"""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
