@@ -117,9 +117,10 @@ class BackendShim(ProxyShim):
             apitoken = key
 
         rs = RequestState(
-            sessionkey, apitoken, user, None, None, None, [], None, None,
-            [], {}, "de", self.translator.gettext,
-            self.translator.ngettext, None, None, key)
+            sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
+            response=None, notifications=[], mapadapter=None, requestargs=None,
+            errors=[], values={}, lang="de", gettext=self.translator.gettext,
+            ngettext=self.translator.ngettext, coders=None, begin=None)
         rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
