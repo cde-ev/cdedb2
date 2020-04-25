@@ -103,17 +103,23 @@ class BackendShim(ProxyShim):
             localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
 
     def _setup_requeststate(self, key):
-        # TODO add droid mode
+        sessionkey = None
+        apitoken = None
+
+        # we only use one slot to transport the key (for simplicity and
+        # probably for historic reasons); the following lookup process
+        # mimicks the one in frontend/application.py
+        user = self.sessionproxy.lookuptoken(key, "127.0.0.0")
+        if user.roles == {'anonymous'}:
+            user = self.sessionproxy.lookupsession(key, "127.0.0.0")
+            sessionkey = key
+        else:
+            apitoken = key
+
         rs = RequestState(
-            key, None, None, None, None, None, [], None, None,
+            sessionkey, apitoken, user, None, None, None, [], None, None,
             [], {}, "de", self.translator.gettext,
             self.translator.ngettext, None, None, key)
-        user = self.sessionproxy.lookupsession(key, "127.0.0.0")
-        if key and user.roles == {'anonymous'}:
-            u = self.sessionproxy.lookuptoken(key, "127.0.0.0")
-            if u.roles != {'anonymous'}:
-                user = u
-        rs.user = user
         rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
