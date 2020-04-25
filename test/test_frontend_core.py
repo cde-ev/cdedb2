@@ -252,38 +252,52 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
-    @as_users("berta", "janis")
+    @as_users("quintus")
+    def test_selectpersona_two(self, user):
+        # Quintus is unsearchable, but this should not matter here.
+        self.get('/core/persona/select?kind=admin_persona&phrase=din')
+        expectation = (4, 6)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("berta", "martin", "nina", "vera", "werner", "annika")
     def test_selectpersona_403(self, user):
         # These can not be done by Berta no matter what.
-        self.get('/core/persona/select?kind=admin_persona&phrase=@exam',
-                 status=403)
-        self.assertTitle('403: Forbidden')
-        self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
-                 status=403)
-        self.assertTitle('403: Forbidden')
-        self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
-                 status=403)
-        self.assertTitle('403: Forbidden')
-        self.get('/core/persona/select?kind=ml_admin_user&phrase=@exam',
-                 status=403)
-        self.assertTitle('403: Forbidden')
-        self.get('/core/persona/select?kind=event_admin_user&phrase=@exam',
-                 status=403)
-        self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Vera":
+            self.get('/core/persona/select?kind=admin_persona&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Werner":
+            self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Nina":
+            self.get('/core/persona/select?kind=ml_admin_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Annika":
+            self.get('/core/persona/select?kind=event_admin_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
 
         # These can be done by Berta for other values of aux.
-        self.get('/core/persona/select'
-                 '?kind=orga_event_user&phrase=@exam&aux=1',
-                 status=403)
-        self.assertTitle('403: Forbidden')
-        self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=57&variant=20',
-                 status=403)
-        self.assertTitle('403: Forbidden')
-        self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=57',
-                 status=403)
-        self.assertTitle('403: Forbidden')
+        if (user['display_name'] in
+                {"Berta", "Martin", "Vera", "Werner"}):
+            self.get('/core/persona/select'
+                     '?kind=orga_event_user&phrase=@exam&aux=1',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select'
+                     '?kind=mod_ml_user&phrase=@exam&aux=57&variant=20',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select'
+                     '?kind=mod_ml_user&phrase=@exam&aux=57',
+                     status=403)
+            self.assertTitle('403: Forbidden')
 
 
     @as_users("garcia", "nina")
