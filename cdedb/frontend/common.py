@@ -1514,7 +1514,7 @@ class Worker(threading.Thread):
         :type rs: :py:class:`RequestState`
         """
         rrs = RequestState(
-            rs.sessionkey, rs.user, rs.request, None, [], rs.urls,
+            rs.sessionkey, rs.apitoken, rs.user, rs.request, None, [], rs.urls,
             rs.requestargs, [], copy.deepcopy(rs.values),
             rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin)
         secrets = SecretsConfig(conf._configpath)
