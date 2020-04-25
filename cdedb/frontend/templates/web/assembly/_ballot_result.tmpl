@@ -204,33 +204,41 @@
 {%- endmacro %}
 
 {% macro explain_result(classical=false, preferential=false, use_bar=false) %}
-    {% call util.bootstrap_panel(title=gettext("Hilfe zum Stimmen auszählen"), icon='info-circle', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help for tallying"), icon='info-circle', aclass='panel-default mosp') %}
         {% if classical and preferential %}
-            <b>Klassische Wahl</b></br>
+            <b>Classical vote</b><br />
         {% endif %}
         {% if classical %}
             <p>
-                Die Pro-Stimmen sind die Summe aller Stimmen für diesen Kandidaten. Aufgrund des Wahlsystems kann es
-                intrinsisch keine Kontra-Stimmen gegen einzelne Kandidaten geben.
+                {% trans %}
+                    Pro votes are the sum of all votes in favor of this candidate. Votes against candidates are not
+                    possible in this voting system.
+                {% endtrans %}
             </p>
             {% if use_bar %}
                 <p>
-                    Mit der "Gegen alle Kandidaten" Option ist es möglich, sich gegen alle Kandidaten auszusprechen.
-                    Diese Option konnte nur allein gewählt werden, eventuell weitere vorhandene Stimmen verfielen.
+                    {% trans %}
+                        Using the "Against all candidates" option it is possible to vote against all candidates.
+                        This option can only be exclusively chosen, potential other votes expire.
+                    {% endtrans %}
                 </p>
             {% endif %}
         {% endif %}
         {% if classical and preferential %}
-            <b>Präferenzwahl</b></br>
+            <b>Preferential vote</b><br />
         {% endif %}
         {% if preferential %}
             <p>
-                Die Pro-Stimmen (etwa 5) und Kontra-Stimmen (etwa 2) gelten für die jeweilige Platzierung
-                (etwa 3.) und beziehen sich relativ auf die darunter liegende Platzierung.
-                Dabei können mehrere Kandidaten gleich Platziert sein.
+                {% trans %}
+                    Pro votes (i.e. 5) and Contra votes (i.e. 2) are valid for the given position and are relative to
+                    the next lower position (i.e. 3.). Multiple candidates can share the same position in the ranking.
+                {% endtrans %}
             </p>
             <p>
-                Also: Alle Kandidaten der 3. Plazierung gewinnen gegen alle Kandidaten der 4. Platzierung mit 5 Pro und 2 Kontra Stimmen.
+                {% trans %}
+                    Therefore, all candidates on 3rd place win against all candidates on fourth place with 5 Pro votes
+                    and 2 Contra votes.
+                {% endtrans %}
             </p>
         {% endif %}
     {% endcall %}
