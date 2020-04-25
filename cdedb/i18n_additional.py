@@ -39,8 +39,14 @@ I18N_STRINGS = (
     n_("AudiencePolicy.require_event"),
     n_("AudiencePolicy.require_member"),
 
-    n_("CdeLogCodes.advance_semester"),
-    n_("CdeLogCodes.advance_expuls"),
+    n_("CdeLogCodes.semester_advance"),
+    n_("CdeLogCodes.expuls_advance"),
+    n_("CdeLogCodes.semester_bill"),
+    n_("CdeLogCodes.semester_bill_with_addresscheck"),
+    n_("CdeLogCodes.semester_ejection"),
+    n_("CdeLogCodes.semester_balance_update"),
+    n_("CdeLogCodes.expuls_addresscheck"),
+    n_("CdeLogCodes.expuls_addresscheck_skipped"),
 
     n_("CoreLogCodes.persona_creation"),
     n_("CoreLogCodes.persona_change"),
