@@ -17,14 +17,14 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(42, extraconfig["DB_PORT"])
         self.assertEqual("skynet", extraconfig["CDB_DATABASE_NAME"])
         secret = SecretsConfig(None)
-        self.assertEqual("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3", secret["ML_SCRIPT_KEY"])
+        self.assertEqual("aoeuidhtns9KT6AOR2kNjq2zO", secret["URL_PARAMETER_SALT"])
         extrasecret = SecretsConfig("test/ancillary_files/extra_config.py")
-        self.assertEqual("matrix", extrasecret["ML_SCRIPT_KEY"])
+        self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])
 
     def test_caching(self):
         ## this is a regression test
         basic = BasicConfig()
         extrasecret = SecretsConfig("test/ancillary_files/extra_config.py")
-        self.assertEqual("matrix", extrasecret["ML_SCRIPT_KEY"])
+        self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])
         testsecret = SecretsConfig(basic["TESTCONFIG_PATH"])
-        self.assertEqual("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3", testsecret["ML_SCRIPT_KEY"])
+        self.assertEqual("aoeuidhtns9KT6AOR2kNjq2zO", testsecret["URL_PARAMETER_SALT"])
