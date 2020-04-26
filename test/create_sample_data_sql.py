@@ -22,7 +22,7 @@ def prepare_aux(data):
 
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
-    rs_maker = setup(1, "nobody", "nobody")
+    rs_maker = setup(1, "nobody", "nobody", dbname="nobody")
     ret["rs"] = rs_maker()
     ret["core"] = CoreBackend  # No need to instantiate, we only use statics.
 
