@@ -1,7 +1,7 @@
 .. _orga-specific-hints:
 
-Spezielle Hinweis für Orgas
-===========================
+Spezielle Hinweise für Orgas
+============================
 
 Neue Anmeldungen in der Offline-VM hinzufügen
 ---------------------------------------------
@@ -50,19 +50,28 @@ Einstellen von variablen Teilnehmerbeiträgen (Beitragsmodifikatoren)
 Für Situationen in denen die Teilnehmer unterschiedlich hohe Teilnehmerbeiträge
 bezahlen sollen, gibt es die sog. "Betragsmodifikatoren".
 
-Jeder Beitragsmodifikator ist mit einem Veranstaltungsteil verbunden, gibt es mehrere Veranstaltungsteile, müssen ggf. mehrere Beitragsmodifikatoren angelegt werden.
+Jeder Beitragsmodifikator ist mit einem Veranstaltungsteil verbunden, gibt es
+mehrere Veranstaltungsteile, müssen ggf. mehrere Beitragsmodifikatoren angelegt
+werden.
 
-Ein Beitragsmodifikator wird abhänging von einem Ja/Nein-Anmeldungsdatenfeld autmatisch auf den zu zahlenden Teilnahmebeitrag addiert. Er kann sowohl positiv als auch negativ sein.
+Ein Beitragsmodifikator wird abhängig von einem Ja/Nein-Anmeldungsdatenfeld
+autmatisch auf den zu zahlenden Teilnahmebeitrag addiert. Er kann sowohl positiv
+als auch negativ sein.
 
-Das Einstellen von Beitragsmodifikatoren sei hier anhand von zwei Beispielen erläutert:
+Das Einstellen von Beitragsmodifikatoren sei hier anhand von zwei Beispielen
+erläutert:
 
 Beispiel 1
 ++++++++++
 
-Für einer PfingstAkademie sollen reguläre Teilnehmer 90 Euro Beitrag bezahlen. Kinder unter 13 Jahren kosten beim Feriendorf weniger, daher müssen sie 15 Euro weniger bezahlen.
-Finanziell besser situierte Teilnehmer sollen die Möglichkeit bekommen, mit einem "Solidarzusatzbeitrag" in öhe von 9 Euro den Verein und kukünftige Veranstaltungen zu unterstützen.
+Für eine PfingstAkademie sollen reguläre Teilnehmer 90 Euro Beitrag bezahlen.
+Kinder unter 13 Jahren kosten beim Feriendorf weniger, daher müssen sie
+15 Euro weniger bezahlen. Finanziell besser situierte Teilnehmer sollen die
+Möglichkeit bekommen, mit einem "Solidarzusatzbeitrag" in Höhe von 9 Euro den
+Verein und zukünftige Veranstaltungen zu unterstützen.
 
-Zunächst müssen dafür unter "Datenfelder konfigurieren" zwei neue **Anmeldungsfelder** angelegt werden:
+Zunächst müssen dafür unter "Datenfelder konfigurieren" zwei neue
+**Anmeldungsfelder** angelegt werden:
 
 1. * Feldname: "is_child"
    * Datentyp: "Ja/Nein"
@@ -72,7 +81,9 @@ Zunächst müssen dafür unter "Datenfelder konfigurieren" zwei neue **Anmeldung
    * Datentyp: "Ja/Nein"
    * Optionen: *(Feld leer lassen)*
 
-Anschließend können unter "Veranstaltungsteile" bei dem entsprechenden Veranstaltungsteil (In diesem Beispiel gibt es nur einen Veranstaltungsteil) zwei neue Beitragsmodifikatoren angelegt werden.
+Anschließend können unter "Veranstaltungsteile" bei dem entsprechenden
+Veranstaltungsteil (In diesem Beispiel gibt es nur einen
+Veranstaltungsteil) zwei neue Beitragsmodifikatoren angelegt werden.
 
 1. * Veranstaltungsteil: "PfingstAka"
    * Kurzname: "Pfingsten"
@@ -88,7 +99,9 @@ Anschließend können unter "Veranstaltungsteile" bei dem entsprechenden Veranst
    * Betrag: "9.00"
    * Verbundenes Feld: "solidarity"
 
-Zuletzt müssen noch Einträge im Anmeldungsfragebogen angelegt werden, damit die Teilnehmer bei der Anmeldung angeben können was auf sie zutrifft. Das geht unter "Anmeldung konfigurieren":
+Zuletzt müssen noch Einträge im Anmeldungsfragebogen angelegt werden, damit
+die Teilnehmer bei der Anmeldung angeben können was auf sie zutrifft. Das
+geht unter "Anmeldung konfigurieren":
 
 1. * Titel: "Ich bin unter 13 Jahre alt."
    * Abfrage: "is_child"
@@ -102,14 +115,21 @@ Zuletzt müssen noch Einträge im Anmeldungsfragebogen angelegt werden, damit di
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein
 
-Speichern und fertig! Während der Anmeldung bekommen alle Teilnehmer nun zwei Checkboxen angezeigt, wo sie jeweils auswählen können, dass sie unter 13 Jahre alt sind oder den Solidarzuschlag zahlen wollen. Der gesamte Teilnahmebeitrag wird automatisch entsprechend berechnet.
+Speichern und fertig! Während der Anmeldung bekommen alle Teilnehmer nun zwei
+Checkboxen angezeigt, wo sie jeweils auswählen können, dass sie unter 13 Jahre
+alt sind oder den Solidarzuschlag zahlen wollen. Der gesamte Teilnahmebeitrag
+wird automatisch entsprechend berechnet.
 
 Beispiel 2
 ++++++++++
 
-Bei einer WinterAkademie mit zwei Hälften soll es auf beiden Hälften die Option geben einen "Solidarzusatzbeitrag" von 8 Euro zu bezahlen. Außerdem können Teilnehmer der zweiten Hälfte für einen Zusatzbeitrag von 40 Euro als Silvestergast einen Tag früher anreisen.
+Bei einer WinterAkademie mit zwei Hälften soll es auf beiden Hälften die Option
+geben einen "Solidarzusatzbeitrag" von 8 Euro zu bezahlen. Außerdem können
+Teilnehmer der zweiten Hälfte für einen Zusatzbeitrag von 40 Euro als
+Silvestergast einen Tag früher anreisen.
 
-Zunächst werden wieder unter "Datenfelder konfigurieren" **zwei Anmeldungsfelder** angelegt.
+Zunächst werden wieder unter "Datenfelder konfigurieren"
+**zwei Anmeldungsfelder** angelegt.
 
 1. * Feldname: "solidarity"
    * Datentyp: "Ja/Nein"
@@ -119,7 +139,8 @@ Zunächst werden wieder unter "Datenfelder konfigurieren" **zwei Anmeldungsfelde
    * Datentyp: "Ja/Nein"
    * Optionen: *(Feld leer lassen)*
 
-Unter "Veranstaltungsteile" müssen diesmal zwei Veranstaltungsteile angelegt werden und insgesamt drei Beitragsmodifikatoren:
+Unter "Veranstaltungsteile" müssen diesmal zwei Veranstaltungsteile angelegt
+werden und insgesamt drei Beitragsmodifikatoren:
 
 1. * Veranstaltungsteil: "Erste Hälfte"
    * Kurzname: "1. H"
@@ -145,9 +166,13 @@ Unter "Veranstaltungsteile" müssen diesmal zwei Veranstaltungsteile angelegt we
    * Betrag: "40.00"
    * Verbundenes Feld: "silvester"
 
-*Man beachte, dass zwei Beitragsmodifikatoren mit demselben Feld verknüpft wurden. Das geht nur, wenn die Modifikatoren mit verschiedenen Veranstaltungsteilen verknüpft sind.*
+*Man beachte, dass zwei Beitragsmodifikatoren mit demselben Feld verknüpft
+wurden. Das geht nur, wenn die Modifikatoren mit verschiedenen
+Veranstaltungsteilen verknüpft sind.*
 
-Zuletzt müssen unter "Anmeldung konfigurieren" noch Einträge im Anmeldungsfragebogen angelegt werden, damit die Teilnehmer bei der Anmeldung angeben können was auf sie zutrifft:
+Zuletzt müssen unter "Anmeldung konfigurieren" noch Einträge im
+Anmeldungsfragebogen angelegt werden, damit die Teilnehmer bei der Anmeldung
+angeben können, was auf sie zutrifft:
 
 1. * Titel: "Ich möchte den Solidarzusatzbeitrag bezahlen."
    * Abfrage: "solidarity"
