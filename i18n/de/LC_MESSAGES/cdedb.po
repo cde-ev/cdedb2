@@ -293,7 +293,7 @@ msgstr "exPuls Addresscheck übersprungen"
 
 #: cdedb/i18n_additional.py:49
 msgid "CdeLogCodes.expuls_advance"
-msgstr "Nächster Expuls"
+msgstr "Nächster exPuls"
 
 #: cdedb/i18n_additional.py:51
 msgid "CoreLogCodes.persona_creation"
@@ -2122,11 +2122,11 @@ msgstr "Das aktuelle Semester ist noch nicht abgeschlossen."
 
 #: cdedb/backend/cde.py:724
 msgid "Only able to modify current expuls."
-msgstr "Nur der aktuelle Expuls kann bearbeitet werden."
+msgstr "Nur der aktuelle exPuls kann bearbeitet werden."
 
 #: cdedb/backend/cde.py:739
 msgid "Current expuls not finalized."
-msgstr "Der aktuelle Expuls ist noch nicht abgeschlossen."
+msgstr "Der aktuelle exPuls ist noch nicht abgeschlossen."
 
 #: cdedb/backend/cde.py:800 cdedb/backend/cde.py:814 cdedb/backend/event.py:444
 msgid "Admin only."
@@ -2929,7 +2929,7 @@ msgstr "Adressabfrage noch nicht erledigt."
 
 #: cdedb/frontend/cde.py:2129
 msgid "New expuls started."
-msgstr "Nächster Expuls initialisiert."
+msgstr "Nächster exPuls initialisiert."
 
 #: cdedb/frontend/cde.py:2374
 msgid "Institution parameter got lost."

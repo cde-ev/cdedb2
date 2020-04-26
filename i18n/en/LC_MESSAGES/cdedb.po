@@ -317,7 +317,7 @@ msgstr "Password reset"
 
 #: cdedb/i18n_additional.py:56
 msgid "CoreLogCodes.password_invalidated"
-msgstr ""
+msgstr "Password invalidated"
 
 #: cdedb/i18n_additional.py:57
 msgid "CoreLogCodes.genesis_request"
@@ -481,15 +481,15 @@ msgstr "Partial Import"
 
 #: cdedb/i18n_additional.py:98
 msgid "EventLogCodes.lodgement_group_created"
-msgstr ""
+msgstr "Lodgement group created"
 
 #: cdedb/i18n_additional.py:99
 msgid "EventLogCodes.lodgement_group_changed"
-msgstr ""
+msgstr "Lodgement group changed"
 
 #: cdedb/i18n_additional.py:100
 msgid "EventLogCodes.lodgement_group_deleted"
-msgstr ""
+msgstr "Lodgement group deleted"
 
 #: cdedb/i18n_additional.py:102
 msgid "FinanceLogCodes.new_member"
