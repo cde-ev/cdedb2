@@ -5421,8 +5421,8 @@ msgid "Apply"
 msgstr "Anwenden"
 
 #: cdedb/frontend/templates/web/logging.tmpl:130
-msgid "Logbook page navigation"
-msgstr "Logbuch-Seitennavigation"
+msgid "Log page navigation"
+msgstr "Log-Seitennavigation"
 
 #: cdedb/frontend/templates/web/logging.tmpl:141
 msgid "First"
@@ -6242,8 +6242,8 @@ msgstr "Konfiguration"
 #: cdedb/frontend/templates/web/ml/base.tmpl:52
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:14
 #: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:18
-msgid "Logbook"
-msgstr "Logbuch"
+msgid "Log"
+msgstr "Log"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:33
 msgid "Assembly-Overview"
@@ -6618,12 +6618,12 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/view_assembly_log.tmpl:9
 #, python-format
-msgid "%(title)s: Logbook"
-msgstr "%(title)s: Logbuch"
+msgid "%(title)s: Log"
+msgstr "%(title)s: Log"
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:9
-msgid "Assembly Logbook"
-msgstr "Versammlungs-Logbuch"
+msgid "Assembly Log"
+msgstr "Versammlungs-Log"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:14
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:4
@@ -6664,14 +6664,14 @@ msgstr "Semesterverwaltung"
 #: cdedb/frontend/templates/web/cde/base.tmpl:35
 #: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:9
 #: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:14
-msgid "CdE Logbook"
-msgstr "CdE-Logbuch"
+msgid "CdE Log"
+msgstr "CdE-Log"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:37
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:9
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:14
-msgid "Finance Logbook"
-msgstr "Finanz-Logbuch"
+msgid "Finance Log"
+msgstr "Finanz-Log"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:45
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:13
@@ -6692,8 +6692,8 @@ msgstr "Organisationen verwalten"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:50
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:9
-msgid "Past Events Logbook"
-msgstr "Verg.-Veranstaltungen-Logbuch"
+msgid "Past Events Log"
+msgstr "Verg.-Veranstaltungen-Log"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:6
 msgid "Create Accounts"
@@ -8153,14 +8153,14 @@ msgstr "Admin-Änderungen"
 #: cdedb/frontend/templates/web/core/base.tmpl:37
 #: cdedb/frontend/templates/web/core/view_log.tmpl:9
 #: cdedb/frontend/templates/web/core/view_log.tmpl:14
-msgid "Account Logbook"
-msgstr "Account-Logbuch"
+msgid "Account Log"
+msgstr "Account-Log"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:39
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:9
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:14
-msgid "Userdata Logbook"
-msgstr "Nutzerdaten-Logbuch"
+msgid "Userdata Log"
+msgstr "Nutzerdaten-Log"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:43
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:6
@@ -12113,11 +12113,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/view_event_log.tmpl:9
 #: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:9
 #, python-format
-msgid "%(title)s Logbook"
-msgstr "%(title)s: Logbuch"
+msgid "%(title)s Log"
+msgstr "%(title)s: Log"
 
 #: cdedb/frontend/templates/web/event/view_log.tmpl:9
-msgid "Event Logbook"
+msgid "Event Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:10
@@ -12591,8 +12591,8 @@ msgid "This search will only show pure Mailinglist-Users."
 msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:9
-msgid "Mailinglists Logbook"
-msgstr "Mailinglisten-Logbuch"
+msgid "Mailinglists Log"
+msgstr "Mailinglisten-Log"
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
@@ -14807,6 +14807,6 @@ msgstr "Mailinglisten-Logbuch"
 #~ msgid "Entries"
 #~ msgstr "Einträge"
 
-#~ msgid "Events Logbook"
+#~ msgid "Events Log"
 #~ msgstr "Veranstaltungs-Logsbuch"
 

@@ -63,7 +63,7 @@
             {{ util.href(cdedblink("event/questionnaire_summary", {"event_id": data['id']}),
                          gettext("Configure Questionnaire"), aclass="list-group-item",
                          active=(sidenav_active == 'event_quest_summary'), icon='unchecked') }}
-            {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), gettext("Logbook"), aclass="list-group-item",
+            {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), gettext("Log"), aclass="list-group-item",
                          icon="list-alt", active=(sidenav_active == 'event_event_log')) }}
         </div>
 
@@ -99,7 +99,7 @@
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
                              aclass="list-group-item", icon="user", active=(sidenav_active == 'event_users')) }}
-                {{ util.href(cdedblink("event/view_log"), gettext("Logbook"), aclass="list-group-item", icon="list-alt",
+                {{ util.href(cdedblink("event/view_log"), gettext("Log"), aclass="list-group-item", icon="list-alt",
                              active=(sidenav_active == 'event_log')) }}
             {% else %}
                 {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item", icon="triangle-right",

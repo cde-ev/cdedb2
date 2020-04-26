@@ -6,12 +6,12 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans %}Assembly Logbook{% endtrans %}
+    {% trans %}Assembly Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("assembly/view_log"), gettext("Logbook"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/view_log"), gettext("Log"), active=True) }}
 {% endblock %}
 {% block content %}
     {% call logging.table(log, keytitle='Assembly') %}

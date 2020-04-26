@@ -5340,7 +5340,7 @@ msgid "Apply"
 msgstr ""
 
 #: cdedb/frontend/templates/web/logging.tmpl:130
-msgid "Logbook page navigation"
+msgid "Log page navigation"
 msgstr ""
 
 #: cdedb/frontend/templates/web/logging.tmpl:141
@@ -6072,7 +6072,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/base.tmpl:52
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:14
 #: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:18
-msgid "Logbook"
+msgid "Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:33
@@ -6427,11 +6427,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/view_assembly_log.tmpl:9
 #, python-format
-msgid "%(title)s: Logbook"
+msgid "%(title)s: Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:9
-msgid "Assembly Logbook"
+msgid "Assembly Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:14
@@ -6473,13 +6473,13 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/base.tmpl:35
 #: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:9
 #: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:14
-msgid "CdE Logbook"
+msgid "CdE Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:37
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:9
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:14
-msgid "Finance Logbook"
+msgid "Finance Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:45
@@ -6501,7 +6501,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:50
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:9
-msgid "Past Events Logbook"
+msgid "Past Events Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:6
@@ -7859,13 +7859,13 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/base.tmpl:37
 #: cdedb/frontend/templates/web/core/view_log.tmpl:9
 #: cdedb/frontend/templates/web/core/view_log.tmpl:14
-msgid "Account Logbook"
+msgid "Account Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:39
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:9
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:14
-msgid "Userdata Logbook"
+msgid "Userdata Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:43
@@ -11530,11 +11530,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/view_event_log.tmpl:9
 #: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:9
 #, python-format
-msgid "%(title)s Logbook"
+msgid "%(title)s Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/view_log.tmpl:9
-msgid "Event Logbook"
+msgid "Event Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:10
@@ -11979,7 +11979,7 @@ msgid "This search will only show pure Mailinglist-Users."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:9
-msgid "Mailinglists Logbook"
+msgid "Mailinglists Log"
 msgstr ""
 
 #~ msgid " MlLogCodes.request_blocked"

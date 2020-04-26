@@ -6,12 +6,12 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans %}CdE Logbook{% endtrans %}
+    {% trans %}CdE Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/view_cde_log"), gettext("CdE Logbook"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("cde/view_cde_log"), gettext("CdE Log"), active="True") }}
 {% endblock %}
 {% block content %}
     {% call logging.table(log) %}

@@ -6,12 +6,12 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans %}Userdata Logbook{% endtrans %}
+    {% trans %}Userdata Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("core/view_changelog_meta"), gettext("Userdata Logbook"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), active="True") }}
 {% endblock %}
 {% block content %}
     {{ logging.filterlink() }}

@@ -127,7 +127,7 @@
 {% endmacro %}
 
 {% macro navigation(endpoint, total, length, loglinks) %}
-    <nav class="text-center" aria-label="{% trans %}Logbook page navigation{% endtrans %}">
+    <nav class="text-center" aria-label="{% trans %}Log page navigation{% endtrans %}">
     <ul class="pagination pagination-lg">
         {# How can I properly automate the target? #}
         {% if loglinks["current"]["offset"] < 0 %}
