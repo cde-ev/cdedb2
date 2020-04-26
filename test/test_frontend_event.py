@@ -1530,10 +1530,16 @@ etc;anything else""", f['entries_2'].value)
             # orga of this event
             self.assertPresence("akira@example.cde", div='contact-email')
 
-    @as_users("garcia")
+    @as_users("annika", "garcia")
     def test_cancellation(self, user):
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
+        self.traverse({'href': '/event/$'})
+        self.assertNonPresence("abgesagt")
+        if user['display_name'] == "garcia":
+            self.traverse({'href': '/event/event/list'})
+            self.assertPresence("(3 Teile)")
+            self.assertNonPresence("abgesagt")
+
+        self.traverse({'href': '/event/event/1/show'})
         self.assertNonPresence("abgesagt", div="notifications")
 
         self.traverse({'href': '/event/event/1/change'})
@@ -1549,6 +1555,17 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/course/list'})
         self.assertPresence("Diese Veranstaltung wurde abgesagt.",
                             div="notifications")
+
+        if user['display_name'] == "annika":
+            # Make sure the index shows it as cancelled.
+            # Orgas only see it as Organized event now.
+            self.traverse({'href': '/event'})
+            self.assertPresence("02.02.2222–30.11.2222, wurde abgesagt.")
+
+            # Make sure the management page shows it as cancelled
+            self.traverse({'href': '/event/event/list'})
+            self.assertPresence("(3 Teile, wurde abgesagt)")
+
 
     @as_users("garcia")
     def test_batch_fee(self, user):

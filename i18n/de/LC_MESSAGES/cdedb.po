@@ -11155,8 +11155,8 @@ msgid "Other Events"
 msgstr "Weitere Veranstaltungen"
 
 #: cdedb/frontend/templates/web/event/index.tmpl:120
-msgid ", is cancelled."
-msgstr ", wurde abgesagt."
+msgid "is cancelled"
+msgstr "wurde abgesagt"
 
 #: cdedb/frontend/templates/web/event/index.tmpl:130
 #, python-format

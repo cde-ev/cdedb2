@@ -10646,7 +10646,7 @@ msgid "Other Events"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/index.tmpl:120
-msgid ", is cancelled."
+msgid "is cancelled"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/index.tmpl:130
