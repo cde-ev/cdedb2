@@ -535,6 +535,8 @@ class FrontendTest(unittest.TestCase):
     def setUpClass(cls):
         app = Application(_BASICCONF.REPOSITORY_PATH
                           / _BASICCONF.TESTCONFIG_PATH)
+        lang = "de"
+        cls.gettext = app.translations[lang].gettext
         cls.app = webtest.TestApp(app, extra_environ={
             'REMOTE_ADDR': "127.0.0.0",
             'SERVER_PROTOCOL': "HTTP/1.1",
