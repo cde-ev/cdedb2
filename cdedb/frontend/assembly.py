@@ -629,11 +629,12 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("attachment_ack_delete", "bool"))
+    @REQUESTdata(("version", "id_or_None"), ("attachment_ack_delete", "bool"))
     # ballot_id is optional, but comes semantically before attachment_id
-    def remove_attachment(self, rs: RequestState, assembly_id: int,
+    def delete_attachment(self, rs: RequestState, assembly_id: int,
                           attachment_id: int, attachment_ack_delete: bool,
-                          ballot_id: int = None) -> Response:
+                          version: int = None, ballot_id: int = None) \
+            -> Response:
         """Delete an attachment."""
         if not attachment_ack_delete:
             rs.append_validation_error(
@@ -643,11 +644,16 @@ class AssemblyFrontend(AbstractUserFrontend):
                 return self.show_ballot(rs, assembly_id, ballot_id)
             else:
                 return self.show_assembly(rs, assembly_id)
-        with Atomizer(rs):
+        if version is None:
             cascade = {"versions"}
             code = self.assemblyproxy.delete_attachment(
                 rs, attachment_id, cascade)
             self.notify_return_code(rs, code)
+        else:
+            code = self.assemblyproxy.remove_attachment_version(
+                rs, attachment_id, version)
+            self.notify_return_code(
+                rs, code, error=n_("Unknown version."))
         if ballot_id:
             return self.redirect(rs, "assembly/show_ballot")
         else:
