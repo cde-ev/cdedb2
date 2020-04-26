@@ -9,7 +9,7 @@ import pathlib
 import collections
 import datetime
 import time
-from typing import Any, Set, Dict, List, Iterable, Tuple, Union
+from typing import Any, Set, Dict, List, Iterable, Tuple, Union, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -546,20 +546,45 @@ class AssemblyFrontend(AbstractUserFrontend):
                               filename=history[version]['filename'])
 
     @access("assembly_admin")
+    @REQUESTdata(("attachment_id", "id_or_None"))
     def add_attachment_form(self, rs: RequestState, assembly_id: int,
-                            ballot_id: int = None) -> Response:
+                            ballot_id: int = None, attachment_id: int = None) \
+            -> Response:
         """Render form."""
+        rs.ignore_validation_errors()
         if ballot_id and now() > rs.ambience['ballot']['vote_begin']:
             rs.notify("warning", n_("Voting has already begun."))
             return self.redirect(rs, "assembly/show_ballot")
-        return self.render(rs, "add_attachment")
+        self.logger.warning(attachment_id)
+        if attachment_id:
+            attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+            if (attachment['ballot_id'] != ballot_id or
+                    (attachment['assembly_id']
+                     and attachment['assembly_id'] != assembly_id)):
+                rs.notify("error", n_("Invalid attachment specified."))
+                if ballot_id:
+                    return self.redirect(rs, "assembly/show_ballot")
+                else:
+                    return self.redirect(rs, "assembly/show_assembly")
+            history = self.assemblyproxy.get_attachment_history(
+                rs, attachment_id)
+        else:
+            history = None
+        return self.render(
+            rs, "add_attachment", {
+                'attachment_id': attachment_id,
+                'history': history,
+            })
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("title", "str"), ("filename", "identifier_or_None"))
+    @REQUESTdata( ("attachment_id", "id_or_None"), ("title", "str"),
+                  ("authors", "str_or_None"),
+                  ("filename", "identifier_or_None"),)
     @REQUESTfile("attachment")
     # ballot_id is optional, but comes semantically after assembly_id
     def add_attachment(self, rs: RequestState, assembly_id: int, title: str,
-                       filename: str, attachment: werkzeug.FileStorage,
+                       attachment_id: Optional[int], filename: Optional[str],
+                       attachment: werkzeug.FileStorage, authors: Optional[str],
                        ballot_id: int = None) -> Response:
         """Create a new attachment.
 
@@ -570,20 +595,25 @@ class AssemblyFrontend(AbstractUserFrontend):
             filename = check(rs, "identifier", tmp, 'filename')
         attachment = check(rs, "pdffile", attachment, 'attachment')
         if rs.has_validation_errors():
-            return self.add_attachment_form(rs, assembly_id=assembly_id,
-                                            ballot_id=ballot_id)
+            return self.add_attachment_form(
+                rs, assembly_id=assembly_id, ballot_id=ballot_id,
+                attachment_id=attachment_id)
         data = {
             'title': title,
             'filename': filename,
-            'authors': "",
+            'authors': authors,
         }
-        if ballot_id:
-            data['ballot_id'] = ballot_id
+        if attachment_id:
+            data['attachment_id'] = attachment_id
+            code = self.assemblyproxy.add_attachment_version(
+                rs, data, attachment)
         else:
-            data['assembly_id'] = assembly_id
-        attachment_id = self.assemblyproxy.add_attachment(rs, data, attachment)
-        self.notify_return_code(rs, attachment_id,
-                                success=n_("Attachment added."))
+            if ballot_id:
+                data['ballot_id'] = ballot_id
+            else:
+                data['assembly_id'] = assembly_id
+            code = self.assemblyproxy.add_attachment(rs, data, attachment)
+        self.notify_return_code(rs, code, success=n_("Attachment added."))
         if ballot_id:
             return self.redirect(rs, "assembly/show_ballot")
         else:
