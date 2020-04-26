@@ -25,7 +25,7 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (PrivilegeError, ProxyShim, RequestState, glue,
-                          roles_to_db_role)
+                          roles_to_db_role, unwrap)
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -803,6 +803,82 @@ class FrontendTest(unittest.TestCase):
             raise AssertionError(
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
+
+    def log_pagination(self, title, logs):
+        """Helper function to test the logic of the log pagination.
+
+        This should be called from every frontend log, to ensure our pagination
+        works.
+
+        :type title: str
+        :param title: of the Log page, like "Userdata-Log"
+        :type logs: [{id: LogCode}]
+        :param logs: list of log entries mapped to their LogCode
+        """
+        # check the landing page
+        f = self.response.forms['logshowform']
+        total = len(logs)
+        start = 1
+        end = total if total < 50 else 50
+        self._log_subroutine(title, logs, start, end)
+
+        # check a combinations of offset and length with 0th page
+        length = total // 3
+        if length % 2 == 0:
+            length -= 1
+        offset = 1
+
+        f['length'] = length
+        f['offset'] = offset
+        self.submit(f)
+
+        # starting at the 0th page ...
+        self.traverse({'linkid': 'pagination-0'})
+        start = 1
+        end = length - offset - 1
+
+        # ... iterate over all pages
+        while end < total:
+            self._log_subroutine(title, logs, start=start, end=end)
+            self.traverse({'linkid': 'pagination-next'})
+            start = end + 1
+            end = end + length
+        self._log_subroutine(title, logs, start=start, end=end)
+
+        # check first-page button (result in offset = None)
+        self.traverse({'linkid': 'pagination-first'})
+        start = 1
+        end = length
+        self._log_subroutine(title, logs, start=start, end=end)
+
+        # there must not be a 0th page, because length is a multiple of offset
+        self.assertNonPresence("0", div='log-pagination')
+
+        # check last-page button (results in offset = 0)
+        self.traverse({'linkid': 'pagination-last'})
+        start = total - length + 1
+        end = total
+        self._log_subroutine(title, logs, start=start, end=end)
+
+        # tidy up the form
+        f["offset"] = None
+        f["length"] = None
+        self.submit(f)
+
+    def _log_subroutine(self, title, all_logs, start, end):
+        total = len(all_logs)
+        self.assertTitle(f"{title} [{start}–{end} von {total}]")
+
+        if end > total:
+            end = total
+
+        # adapt slicing to our count of log entries
+        logs = all_logs[start-1:end]
+        for index, log in enumerate(logs, start=1):
+            log_id = unwrap(log, keys=True)
+            log_code = unwrap(log)
+            log_code_str = self.gettext(str(log_code))
+            self.assertPresence(log_code_str, div=f"{index}: {log_id}")
 
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])

@@ -1647,16 +1647,34 @@ class TestCoreFrontend(FrontendTest):
 
     def test_log(self):
         user = USER_DICT['vera']
+        logs = []
         # First: generate data
-        # request and create two new accounts
+        # request two new accounts
         self._genesis_request(self.ML_GENESIS_DATA)
-        self._genesis_request(self.EVENT_GENESIS_DATA)
+        logs.append({1001: const.CoreLogCodes.genesis_request})
+        logs.append({1002: const.CoreLogCodes.genesis_verified})
+
+        event_genesis = self.EVENT_GENESIS_DATA.copy()
+        event_genesis['username'] = "tester@example.cde"
+        self._genesis_request(event_genesis)
+        logs.append({1003: const.CoreLogCodes.genesis_request})
+        logs.append({1004: const.CoreLogCodes.genesis_verified})
+
+        # approve the account requests
         self.login(user)
         self.traverse({'description': 'Accountanfragen'})
         f = self.response.forms['genesismlapprovalform1']
         self.submit(f)
-        f = self.response.forms['genesiseventapprovalform1']
+        logs.append({1005: const.CoreLogCodes.genesis_approved})
+        logs.append({1006: const.CoreLogCodes.persona_creation})
+        logs.append({1007: const.CoreLogCodes.password_reset_cookie})
+
+        self.traverse({'href': 'core/genesis/1002/show'})
+        f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
+        logs.append({1008: const.CoreLogCodes.genesis_approved})
+        logs.append({1009: const.CoreLogCodes.persona_creation})
+        logs.append({1010: const.CoreLogCodes.password_reset_cookie})
 
         # make janis assembly user
         self.admin_view_profile('janis')
@@ -1666,6 +1684,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         f = self.response.forms['promotionform']
         self.submit(f)
+        logs.append({1011: const.CoreLogCodes.realm_change})
 
         # change berta's user name
         self.admin_view_profile('berta')
@@ -1673,11 +1692,12 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['new_username'] = "bertalotta@example.cde"
         self.submit(f)
+        logs.append(({1012: const.CoreLogCodes.username_change}))
 
         # Now check it
         self.traverse({'description': 'Index'},
                       {'description': 'Account-Log'})
-        self.assertTitle("Account-Log [1–12 von 12]")
+        self.log_pagination("Account-Log", logs)
         f = self.response.forms["logshowform"]
         f["codes"] = [const.CoreLogCodes.genesis_verified.value,
                       const.CoreLogCodes.realm_change.value,
@@ -1686,4 +1706,3 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Bereiche geändert.")
         self.assertPresence("zelda@example.cde")
         self.assertPresence("bertalotta@example.cde")
-        self.assertTitle("Account-Log [0–2]")
