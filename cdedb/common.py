@@ -403,7 +403,15 @@ def merge_dicts(*dicts):
 
 
 def get_hash(obj: Any) -> str:
-    """Helper to calculate a hexadecimal has of an arbitrary object."""
+    """Helper to calculate a hexadecimal hash of an arbitrary object.
+
+    This uses SHA512. Use this function to assure the same hash is used
+    everywhere.
+
+    Note that this is not a replacement for the cryptographic hashing with
+    salts used in assembly votes, but rather for identifying and
+    differentiating files, like attachments and profile pictures.
+    """
     hasher = hashlib.sha512()
     hasher.update(obj)
     return hasher.hexdigest()
