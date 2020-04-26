@@ -28,7 +28,7 @@
                     label="{} {}".format(personas[entry['persona_id']]['given_names'], personas[entry['persona_id']]['family_name']))
                 %}
             {% endif %}
-            {{ logging.row(entry, enums['EventLogCodes'], 'event_id', link, personalink) }}
+            {{ logging.row(entry, enums['EventLogCodes'], loop.index, 'event_id', link, personalink) }}
         {% endfor %}
     {% endcall %}
 

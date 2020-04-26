@@ -725,7 +725,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         # Now, query the actual information
         query = glue(
-            "SELECT ctime, code, submitted_by, {entity}_id, persona_id,",
+            "SELECT id, ctime, code, submitted_by, {entity}_id, persona_id,",
             "additional_info {extra_columns} FROM {table} {condition}",
             "ORDER BY id ASC LIMIT {limit}")
         if offset is not None:

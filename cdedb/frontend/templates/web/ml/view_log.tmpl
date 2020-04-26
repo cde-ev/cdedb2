@@ -21,7 +21,7 @@
                 {% set link = util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id' : entry['mailinglist_id']}),
                                         mailinglists[entry['mailinglist_id']]['title']) %}
             {% endif %}
-            {{ logging.row(entry, enums['MlLogCodes'], 'mailinglist_id', link) }}
+            {{ logging.row(entry, enums['MlLogCodes'], loop.index, 'mailinglist_id', link) }}
         {% endfor %}
     {% endcall %}
 

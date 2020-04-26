@@ -21,7 +21,7 @@
                 {% set link = util.href(cdedblink('assembly/show_assembly', {'assembly_id': entry['assembly_id']}),
                                         assemblies[entry['assembly_id']]['title']) %}
             {% endif %}
-            {{ logging.row(entry, enums['AssemblyLogCodes'], 'assembly_id', link) }}
+            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index, 'assembly_id', link) }}
         {% endfor %}
     {% endcall %}
 

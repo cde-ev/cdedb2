@@ -17,7 +17,7 @@
 {% block content %}
     {% call logging.table(log) %}
         {% for entry in log %}
-            {{ logging.row(entry, enums['AssemblyLogCodes']) }}
+            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index) }}
         {% endfor %}
     {% endcall %}
 

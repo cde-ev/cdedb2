@@ -21,7 +21,7 @@
     {% call logging.table(log) %}
         {% for entry in log %}
             {# The ml_id parameter makes this complicated, so we can not use logging.row() here. #}
-            <tr>
+            <tr id="{{ loop.index }}: {{ entry['id'] }}">
                 <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
                 <td>{{ gettext(enums['MlLogCodes'](entry['code'])|string) }}</td>
                 <td>
