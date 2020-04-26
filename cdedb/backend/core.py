@@ -1549,7 +1549,7 @@ class CoreBackend(AbstractBackend):
         return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
     get_persona = singularize(get_personas)
 
-    @access("event")
+    @access("event", "droid")
     def get_event_users(self, rs, ids, event_id=None):
         """Get an event view on some data sets.
 
@@ -1584,7 +1584,8 @@ class CoreBackend(AbstractBackend):
             is_orga = False
         if (ids != {rs.user.persona_id}
                 and not (rs.user.roles
-                         & {"event_admin", "cde_admin", "core_admin"})):
+                         & {"event_admin", "cde_admin", "core_admin",
+                            "droid_quick_partial_export"})):
             query = ("SELECT DISTINCT regs.id, regs.persona_id"
                      " FROM event.registrations AS regs"
                      " LEFT OUTER JOIN event.registration_parts AS rparts"

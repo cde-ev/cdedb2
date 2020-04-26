@@ -71,6 +71,17 @@ class TestOffline(FrontendTest):
             self.assertTitle("Anton Armin A. Administrator")
             self.assertPresence("03.04.1933")
 
+            # Test quick partial export
+            self.logout()
+            self.get(
+                '/event/offline/partial',
+                headers={'X-CdEDB-API-token': 'y1f2i3d4x5b6'})
+            expectation = {
+                'message': "success",
+                'data': {},
+            }
+            self.assertEqual(self.response.json, expectation)
+
             # Additional tests can be added here.
             # Due to the expensive setup of this test these should not
             # be split out.

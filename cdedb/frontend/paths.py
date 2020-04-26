@@ -328,6 +328,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="create_event"),
             rule("/event/log", methods=_GET,
                  endpoint="view_log"),
+            rule("/offline/partial", methods=_GET,
+                 endpoint="download_quick_partial_export"),
             sub('/event/<int:event_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_event"),

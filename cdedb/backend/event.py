@@ -3166,7 +3166,7 @@ class EventBackend(AbstractBackend):
             self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
             return ret
 
-    @access("event")
+    @access("event", "droid_quick_partial_export")
     def partial_export_event(self, rs, event_id):
         """Export an event for third-party applications.
 
@@ -3179,7 +3179,12 @@ class EventBackend(AbstractBackend):
         :returns: dict holding all data of the exported event
         """
         event_id = affirm("id", event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        access_ok = (
+            self.conf["CDEDB_OFFLINE_DEPLOYMENT"]  # this grants access for
+                                                   # the droid
+            or self.is_orga(rs, event_id=event_id)
+            or not self.is_admin(rs))
+        if not access_ok:
             raise PrivilegeError(n_("Not privileged."))
 
         def list_to_dict(alist):
