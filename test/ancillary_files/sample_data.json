@@ -3389,7 +3389,7 @@
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": "{\"lodge\": \"Die \\u00fcblichen Verd\\u00e4chtigen :)\"}"
+            "fields": {"lodge": "Die \\u00fcblichen Verd\\u00e4chtigen :)", "is_child": false}
         },
         {
             "id": 2,
@@ -3405,7 +3405,7 @@
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": "{\"brings_balls\": true, \"transportation\": \"pedes\"}"
+            "fields": {"brings_balls": true, "transportation": "pedes", "is_child": false}
         },
         {
             "id": 3,
@@ -3421,7 +3421,7 @@
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": false,
-            "fields": "{\"transportation\": \"car\"}"
+            "fields": {"transportation": "car", "is_child": false}
         },
         {
             "id": 4,
@@ -3437,7 +3437,7 @@
             "mixed_lodging": false,
             "checkin": null,
             "list_consent": false,
-            "fields": "{\"may_reserve\": true, \"brings_balls\": false, \"transportation\": \"etc\"}"
+            "fields": {"may_reserve": true, "brings_balls": false, "transportation": "etc", "is_child": true}
         },
         {
             "id": 5,
@@ -3453,7 +3453,7 @@
             "mixed_lodging": false,
             "checkin": null,
             "list_consent": true,
-            "fields": "{\"transportation\": \"pedes\"}"
+            "fields": {"transportation": "pedes", "is_child": false}
         },
         {
             "id": 6,
@@ -3469,7 +3469,7 @@
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": "{\"transportation\": \"pedes\"}"
+            "fields": {"transportation": "pedes", "is_child": false}
         }
     ],
     "event.registration_parts": [
