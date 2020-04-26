@@ -9,7 +9,6 @@ import copy
 import csv
 import decimal
 import functools
-import hashlib
 import itertools
 import json
 import operator
@@ -37,7 +36,7 @@ from cdedb.common import (
     unwrap, now, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
-    LodgementsSortkeys, xsorted)
+    LodgementsSortkeys, xsorted, get_hash)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -2019,7 +2018,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.batch_fees_form(rs, event_id, data=data,
                                         csvfields=fields)
 
-        current_checksum = hashlib.md5(fee_data.encode()).hexdigest()
+        current_checksum = get_hash(fee_data.encode())
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
             return self.batch_fees_form(rs, event_id, data=data,
@@ -3000,7 +2999,7 @@ class EventFrontend(AbstractUserFrontend):
         event = rs.ambience['event']
         tracks = event['tracks']
         registration_id = unwrap(self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id), keys=True)
+            rs, event_id, persona_id=rs.user.persona_id).keys())
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
@@ -3055,7 +3054,7 @@ class EventFrontend(AbstractUserFrontend):
         purpose. For this they have to communicate with the orgas.
         """
         registration_id = unwrap(self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id), keys=True)
+            rs, event_id, persona_id=rs.user.persona_id).keys())
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")

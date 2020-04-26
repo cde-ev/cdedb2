@@ -3,7 +3,6 @@
 """Services for the assembly realm."""
 
 import copy
-import hashlib
 import json
 import pathlib
 import collections
@@ -783,13 +782,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                 if rs.ambience['assembly']['mail_address']:
                     to.append(rs.ambience['assembly']['mail_address'])
                 subject = "Abstimmung '{}' ausgezählt".format(ballot['title'])
-                hasher = hashlib.sha512()
                 with open(path, 'rb') as resultfile:
-                    hasher.update(resultfile.read())
+                    my_hash = get_hash(resultfile.read())
                 self.do_mail(
                     rs, "ballot_tallied", {'To': to, 'Subject': subject},
                     attachments=(attachment_result,),
-                    params={'sha': hasher.hexdigest(), 'title': ballot['title']})
+                    params={'sha': my_hash, 'title': ballot['title']})
                 update = True
         return update
 

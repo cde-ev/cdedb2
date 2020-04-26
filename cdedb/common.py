@@ -402,7 +402,7 @@ def merge_dicts(*dicts):
                     dicts[0][key] = adict[key]
 
 
-def get_hash(obj: Any) -> str:
+def get_hash(*args: Any) -> str:
     """Helper to calculate a hexadecimal hash of an arbitrary object.
 
     This uses SHA512. Use this function to assure the same hash is used
@@ -413,7 +413,8 @@ def get_hash(obj: Any) -> str:
     differentiating files, like attachments and profile pictures.
     """
     hasher = hashlib.sha512()
-    hasher.update(obj)
+    for obj in args:
+        hasher.update(obj)
     return hasher.hexdigest()
 
 

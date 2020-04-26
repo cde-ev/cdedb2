@@ -4,7 +4,6 @@
 
 import collections
 import copy
-import hashlib
 import json
 import pathlib
 import quopri
@@ -1860,9 +1859,7 @@ class CoreFrontend(AbstractFrontend):
             attachment = check(rs, 'pdffile', attachment, 'attachment')
         attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
         if attachment:
-            myhash = hashlib.sha512()
-            myhash.update(attachment)
-            myhash = myhash.hexdigest()
+            myhash = get_hash(attachment)
             path = attachment_base_path / myhash
             if not path.exists():
                 with open(path, 'wb') as f:

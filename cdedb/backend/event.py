@@ -6,7 +6,6 @@ variant for external participants.
 
 import collections
 import copy
-import hashlib
 import decimal
 
 from cdedb.backend.common import (
@@ -21,7 +20,7 @@ from cdedb.common import (
     PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter, xsorted)
+    mixed_existence_sorter, xsorted, get_hash)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -3680,12 +3679,10 @@ class EventBackend(AbstractBackend):
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious
 
-            m = hashlib.sha512()
-            m.update(json_serialize(total_previous, sort_keys=True).encode(
-                'utf-8'))
-            m.update(json_serialize(total_delta, sort_keys=True).encode(
-                'utf-8'))
-            result = m.hexdigest()
+            result = get_hash(
+                json_serialize(total_delta, sort_keys=True).encode('utf-8'),
+                json_serialize(total_previous, sort_keys=True).encode('utf-8')
+            )
             if token is not None and result != token:
                 raise PartialImportError("The delta changed.")
             if not dryrun:
