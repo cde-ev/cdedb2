@@ -344,7 +344,8 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
-    get_assembly = singularize(get_assemblies)
+    get_assembly: Callable[[RequestState, int], CdEDBObject] = \
+        singularize(get_assemblies)
 
     @access("assembly_admin")
     def set_assembly(self, rs: RequestState, data: CdEDBObject) -> int:
@@ -547,7 +548,8 @@ class AssemblyBackend(AbstractBackend):
                 ret = {k: v for k, v in ret.items()
                        if self.check_attendance(rs, ballot_id=k)}
         return ret
-    get_ballot = singularize(get_ballots)
+    get_ballot: Callable[[RequestState, int], CdEDBObject] = \
+        singularize(get_ballots)
 
     @access("assembly_admin")
     def set_ballot(self, rs: RequestState, data: CdEDBObject) -> int:
