@@ -5,6 +5,7 @@ import re
 import time
 import webtest
 import unittest
+import json
 
 from test.common import as_users, USER_DICT, FrontendTest
 
@@ -485,7 +486,7 @@ class TestAssemblyFrontend(FrontendTest):
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         self.response = saved_response
-        f = self.response.forms['removeattachmentform1002']
+        f = self.response.forms['deleteattachmentform1002']
         f['attachment_ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
@@ -659,7 +660,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'description': 'Antwort auf die letzte aller Fragen'},
                       {'description': 'Ergebnisdatei herunterladen'},)
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
-            self.assertEqual(f.read(), self.response.body)
+            self.assertEqual(json.load(f), json.loads(self.response.body))
 
     @as_users("werner")
     def test_extend(self, user):
