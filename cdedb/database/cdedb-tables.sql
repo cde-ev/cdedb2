@@ -991,7 +991,7 @@ CREATE TABLE assembly.attachment_versions (
         file_hash               varchar NOT NULL
 );
 CREATE INDEX idx_attachment_versions_attachment_id ON assembly.attachment_versions(attachment_id);
-CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachement_id, version);
+CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version);
 GRANT SELECT ON assembly.attachment_versions TO cdb_member;
 GRANT INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_admin;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_admin;
