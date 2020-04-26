@@ -1,5 +1,7 @@
 {% set sidenav_active='assembly_show' %}
 {% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/util.tmpl" as assembly_util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}{{ ambience['assembly']['title'] }}{% endblock %}
@@ -56,26 +58,10 @@
                 <div class="col-sm-6">
                     <h4>{% trans %}General Files{% endtrans %}</h4>
                     <ul class="slim" id="attachments">
-                        {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.attachment) %}
+                        {% for attachment_id, history in attachments.items() %}
                             <li class="hide-hover-container clearfix-after">
-                                {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
-                                        attachment['title']) }}
-                                {% if "assembly_contents" in user.admin_views %}
-                                    <form action="{{ cdedblink('assembly/remove_attachment',
-                                                               {'attachment_id': attachment_id}) }}"
-                                            method="POST"
-                                            id="removeattachmentform{{ attachment_id }}"
-                                            class="hide-hover display-inline">
-                                        {{ util.anti_csrf_token('assembly/remove_attachment') }}
-                                        {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
-                                                title=gettext("Delete File")) }}
-                                    </form>
-                                    <script nonce="{{ csp_nonce }}">
-                                        $('#removeattachmentform{{ attachment_id }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
-                                        $('#removeattachmentform{{ attachment_id }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
-                                    </script>
-                                {% endif %}
+                                {{ assembly_util.print_attachment(
+                                        history, edit=("assembly_contents" in user.admin_views)) }}
                             </li>
                         {% endfor %}
                     </ul>
@@ -94,15 +80,9 @@
                     {% for ballot_id, ballot in ballots|keydictsort(EntitySorter.ballot) %}
                         {% if ballot_attachments[ballot_id] %}
                             <ul class="slim">
-                                {% for battachment_id, battachment in ballot_attachments[ballot_id]|keydictsort(EntitySorter.attachment) %}
+                                {% for battachment_id, bhistory in ballot_attachments[ballot_id].items() %}
                                     <li>
-                                        {{ util.href(cdedblink("assembly/get_attachment",
-                                                     {'attachment_id': battachment_id, 'ballot_id': ballot_id}),
-                                                     battachment['title']) }}
-                                        (<small class="text-muted">
-                                            {{- util.make_icon('thumbs-up', arialabel=gettext("ballot_file_arialabel")) }}
-                                            {{ ballot['title'] -}}
-                                         </small>)
+                                        {{ assembly_util.print_attachment(bhistory, ballot=ballot) }}
                                     </li>
                                 {% endfor %}
                             </ul>

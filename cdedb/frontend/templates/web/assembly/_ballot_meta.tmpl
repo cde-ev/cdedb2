@@ -1,3 +1,5 @@
+{% import "web/assembly/util.tmpl" as assembly_util with context %}
+
 {% macro ballot_action_panel() -%}
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">
@@ -157,25 +159,9 @@
     {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         {% if attachments %}
             <ul id="attachments">
-                {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.attachment) %}
+                {% for attachment_id, history in attachments.items() %}
                     <li class="hide-hover-container clearfix-after">
-                        {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
-                                attachment['title']) }}
-                        {% if edit_mode %}
-                            <form action="{{ cdedblink('assembly/remove_attachment',
-                                                       {'attachment_id': attachment_id}) }}"
-                                    method="POST" id="removeattachmentform{{ attachment_id }}"
-                                    class="hide-hover display-inline">
-                                {{ util.anti_csrf_token('assembly/remove_attachment') }}
-                                {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                                {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
-                                        title=gettext("Delete File")) }}
-                            </form>
-                            <script nonce="{{ csp_nonce }}">
-                                $('#removeattachmentform{{ attachment_id }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
-                                $('#removeattachmentform{{ attachment_id }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
-                            </script>
-                        {% endif %}
+                        {{ assembly_util.print_attachment(history, edit=edit_mode) }}
                     </li>
                 {% endfor %}
             </ul>
