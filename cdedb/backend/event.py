@@ -210,11 +210,11 @@ class EventBackend(AbstractBackend):
             params.append(visible)
         if current is not None:
             if current:
-                constraints.append(
-                    "e.event_end > now() AND e.is_cancelled = False")
+                constraints.append("e.event_end > now()")
+                constraints.append("e.is_cancelled = False")
             else:
                 constraints.append(
-                    "e.event_end <= now() OR e.is_cancelled = True")
+                    "(e.event_end <= now() OR e.is_cancelled = True)")
         if archived is not None:
             constraints.append("is_archived = %s")
             params.append(archived)
