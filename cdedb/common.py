@@ -581,6 +581,10 @@ class EntitySorter:
         return (attachment['title'], attachment['id'])
 
     @staticmethod
+    def attachment_version(version):
+        return (version['attachment_id'], version['version'])
+
+    @staticmethod
     def past_event(past_event):
         return (past_event['tempus'], past_event['id'])
 
