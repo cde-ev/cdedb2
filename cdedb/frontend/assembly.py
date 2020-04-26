@@ -21,7 +21,8 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter,
-    schulze_evaluate, xsorted, RequestState)
+    schulze_evaluate, xsorted, RequestState, get_hash
+)
 from cdedb.database.connection import Atomizer
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -604,6 +605,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             'authors': authors,
         }
         if attachment_id:
+            history = self.assemblyproxy.get_attachment_history(
+                rs, attachment_id)
+            file_hash = get_hash(attachment)
+            if any(v["file_hash"] == file_hash for v in history.values()):
+                # TODO maybe display some kind of warning here?
+                # Currently this would mean that you need to reupload the file.
+                pass
+
             data['attachment_id'] = attachment_id
             code = self.assemblyproxy.add_attachment_version(
                 rs, data, attachment)
