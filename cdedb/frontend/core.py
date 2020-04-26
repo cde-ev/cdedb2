@@ -1079,7 +1079,7 @@ class CoreFrontend(AbstractFrontend):
         case_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
         if case_ids:
             rs.notify("error", n_("Resolve pending privilege change first."))
-            case_id = unwrap(case_ids, keys=True)
+            case_id = unwrap(case_ids.keys())
             return self.redirect(
                 rs, "core/show_privilege_change", {"case_id": case_id})
 
@@ -1103,7 +1103,7 @@ class CoreFrontend(AbstractFrontend):
         case_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
         if case_ids:
             rs.notify("error", n_("Resolve pending privilege change first."))
-            case_id = unwrap(case_ids, keys=True)
+            case_id = unwrap(case_ids.keys())
             return self.redirect(
                 rs, "core/show_privilege_change", {"case_id": case_id})
 

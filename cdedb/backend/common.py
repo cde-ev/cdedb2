@@ -12,7 +12,7 @@ import copy
 import enum
 import functools
 import logging
-from typing import Any, Callable, TypeVar, Set, Union, Iterable
+from typing import Any, Callable, TypeVar, Set, Union, Iterable, Tuple
 
 from cdedb.common import (
     n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
@@ -761,22 +761,23 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def affirm_validation(assertion: str, value: Any, **kwargs) -> Any:
+T = TypeVar('T')
+
+
+def affirm_validation(assertion: str, value: T, **kwargs: Any) -> Union[T, None]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
     """
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
 
 
-def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
+def affirm_array_validation(assertion: str, values: Union[Iterable[T], None],
+                            allow_None: bool = False, **kwargs: Any) -> \
+        Union[Tuple[T], None]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
-    :type assertion: str
-    :type allow_None: bool
     :param allow_None: Since we don't have the luxury of an automatic
       '_or_None' variant like with other validators we have this parameter.
-    :type values: [object] (or None)
-    :rtype: [object]
     """
     if allow_None and values is None:
         return None
@@ -784,9 +785,9 @@ def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
     return tuple(checker(value, **kwargs) for value in values)
 
 
-def affirm_set_validation(assertion: str, values: Iterable[Any],
-                          allow_None: bool = False,
-                          **kwargs) -> Union[None, Set[Any]]:
+def affirm_set_validation(assertion: str, values: Union[Iterable[T], None],
+                          allow_None: bool = False, **kwargs: Any) -> \
+        Union[Set[T], None]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
 
     :type assertion: str

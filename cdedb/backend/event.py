@@ -1862,7 +1862,7 @@ class EventBackend(AbstractBackend):
             rs, event_id, persona_id)
         if not registration_ids:
             return False
-        reg_id = unwrap(registration_ids, keys=True)
+        reg_id = unwrap(registration_ids.keys())
         reg = self.get_registration(rs, reg_id)
         return any(part['status'] in stati for part in reg['parts'].values())
 

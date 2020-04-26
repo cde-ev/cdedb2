@@ -23,7 +23,7 @@ import string
 import sys
 import hashlib
 from typing import (
-    Any, TypeVar, Mapping, Collection, Dict, List
+    Any, TypeVar, Mapping, Collection, Dict, List, overload, Union, Sequence
 )
 
 import psycopg2.extras
@@ -929,17 +929,17 @@ ASSEMBLY_BAR_MONIKER = "_bar_"
 T = TypeVar("T")
 
 
-# The following two functions are different versions of unwrap, to make
-# the typechecker happy.
-def unwrap_values(mapping: Mapping[Any, T]) -> T:
-    return next(i for i in mapping.values())
+@overload
+def unwrap(single_element_list: Sequence[T]) -> T:
+    pass
 
 
-def unwrap_keys(mapping: Mapping[T, Any]) -> T:
-    return next(i for i in mapping.keys())
+@overload
+def unwrap(single_element_list: Mapping[Any, T]) -> T:
+    pass
 
 
-def unwrap(single_element_list: Collection[T], keys: bool = False) -> T:
+def unwrap(single_element_list):
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -949,18 +949,16 @@ def unwrap(single_element_list: Collection[T], keys: bool = False) -> T:
     In case of an error (e.g. wrong number of elements) this raises an
     error.
 
-    :param keys: If a mapping is input, this toggles between returning
-      the key or value.
+    Beware, that this behaves differently for mappings, than other iterations,
+    in that it uses the values instaed of the keys. To unwrap the keys pass
+    `data.keys()` instead.
     """
     if (not isinstance(single_element_list, collections.abc.Iterable)
             or (isinstance(single_element_list, collections.abc.Sized)
                 and len(single_element_list) != 1)):
         raise RuntimeError(n_("Unable to unwrap!"))
     if isinstance(single_element_list, collections.abc.Mapping):
-        if keys:
-            single_element_list = single_element_list.keys()
-        else:
-            single_element_list = single_element_list.values()
+        single_element_list = single_element_list.values()
     return next(i for i in single_element_list)
 
 

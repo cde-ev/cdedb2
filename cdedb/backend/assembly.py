@@ -42,7 +42,7 @@ from cdedb.common import (
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-    get_hash, unwrap_values, mixed_existence_sorter,
+    get_hash, mixed_existence_sorter,
     CdEDBObject, CdEDBObjectList, DefaultReturnCode, DeletionBlockers
 )
 from cdedb.security import secure_random_ascii
@@ -354,7 +354,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: default return code
         """
         data = affirm("assembly", data)
-        assembly = unwrap_values(self.get_assemblies(rs, (data['id'],)))
+        assembly = unwrap(self.get_assemblies(rs, (data['id'],)))
         if not assembly['is_active']:
             raise ValueError(n_("Assembly already concluded."))
         ret = self.sql_update(rs, "assembly.assemblies", data)
@@ -576,7 +576,7 @@ class AssemblyBackend(AbstractBackend):
 
         ret = 1
         with Atomizer(rs):
-            current = unwrap_values(self.get_ballots(rs, (data['id'],)))
+            current = unwrap(self.get_ballots(rs, (data['id'],)))
             if now() > current['vote_begin']:
                 raise ValueError(n_("Unable to modify active ballot."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
@@ -634,7 +634,7 @@ class AssemblyBackend(AbstractBackend):
         data = affirm("ballot", data, creation=True)
 
         with Atomizer(rs):
-            assembly = unwrap_values(
+            assembly = unwrap(
                 self.get_assemblies(rs, (data['assembly_id'],)))
             if not assembly['is_active']:
                 raise ValueError(n_("Assembly already concluded."))
@@ -791,7 +791,7 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm("id", ballot_id)
 
         with Atomizer(rs):
-            ballot = unwrap_values(self.get_ballots(rs, (ballot_id,)))
+            ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
             if ballot['extended'] is not None:
                 return ballot['extended']
             if now() < ballot['vote_end']:
@@ -824,7 +824,7 @@ class AssemblyBackend(AbstractBackend):
                                      persona_id=persona_id):
                 # already signed up
                 return None
-            assembly = unwrap_values(self.get_assemblies(rs, (assembly_id,)))
+            assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
             if now() > assembly['signup_end']:
                 raise ValueError(n_("Signup already ended."))
 
@@ -898,7 +898,7 @@ class AssemblyBackend(AbstractBackend):
         secret = affirm("printable_ascii_or_None", secret)
 
         with Atomizer(rs):
-            ballot = unwrap_values(self.get_ballots(rs, (ballot_id,)))
+            ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
             vote = affirm("vote", vote, ballot=ballot)
             if not self.check_attendance(rs, ballot_id=ballot_id):
                 raise ValueError(n_("Must attend to vote."))
@@ -997,7 +997,7 @@ class AssemblyBackend(AbstractBackend):
             if not has_voted:
                 return None
             if secret is None:
-                ballot = unwrap_values(self.get_ballots(rs, (ballot_id,)))
+                ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
                 query = glue("SELECT secret FROM assembly.attendees",
                              "WHERE assembly_id = %s and persona_id = %s")
                 secret = unwrap(self.query_one(
@@ -1032,7 +1032,7 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
-            ballot = unwrap_values(self.get_ballots(rs, (ballot_id,)))
+            ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
             if ballot['is_tallied']:
                 return False
             if ballot['extended'] is None:
@@ -1065,7 +1065,7 @@ class AssemblyBackend(AbstractBackend):
 
             # now generate the result file
             esc = json_serialize
-            assembly = unwrap_values(
+            assembly = unwrap(
                 self.get_assemblies(rs, (ballot['assembly_id'],)))
             candidates = {
                 c['moniker']: c['description']
