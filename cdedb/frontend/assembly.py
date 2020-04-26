@@ -520,16 +520,30 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_id})
 
     @access("assembly")
+    @REQUESTdata(("version", "int"))
     # ballot_id is optional, but comes semantically before attachment_id
     def get_attachment(self, rs: RequestState, assembly_id: int,
-                       attachment_id: int, ballot_id: int = None) -> Response:
-        """Retrieve an attachment."""
+                       attachment_id: int, ballot_id: int = None,
+                       version: int = None) -> Response:
+        """Retrieve an attachment. Default to most recent version."""
+        if rs.has_validation_errors():
+            version = None
         if not self.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        path = (self.conf["STORAGE_DIR"] / "assembly_attachment"
-                / str(attachment_id))
-        return self.send_file(rs, path=path, mimetype="application/pdf",
-                              filename=rs.ambience['attachment']['filename'])
+        history = self.assemblyproxy.get_attachment_history(
+            rs, attachment_id)
+        version = version or self.assemblyproxy.get_current_version(
+            rs, attachment_id)
+        content = self.assemblyproxy.get_attachment_content(
+            rs, attachment_id, version)
+        if not content:
+            rs.notify("error", n_("File not found."))
+            if ballot_id:
+                return self.redirect(rs, "assembly/show_ballot")
+            else:
+                return self.redirect(rs, "assembly/show_assembly")
+        return self.send_file(rs, data=content, mimetype="application/pdf",
+                              filename=history[version]['filename'])
 
     @access("assembly_admin")
     def add_attachment_form(self, rs: RequestState, assembly_id: int,
