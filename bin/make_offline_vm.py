@@ -260,6 +260,10 @@ def work(args):
     print("Protecting data from accidental reset")
     subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
 
+    print("Installing fonts for template renderer")
+    subprocess.run(["sudo", "apt-get", "-y", "install", "texlive-fonts-extra"],
+                   check=True)
+
     print("Restarting application to make offline mode effective")
     subprocess.run(["make", "reload"], check=True, cwd=args.repopath)
 
