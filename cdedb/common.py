@@ -43,13 +43,16 @@ COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Mapping[str, Any]
-# Dict-like list of pseudo objects, indexed by their id, as returned by
+
+# Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
-CdEDBObjectList = Mapping[int, CdEDBObject]
+CdEDBObjectMap = Mapping[int, CdEDBObject]
+
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
 # special case like a change pending review.
 DefaultReturnCode = int
+
 # Return value for `delete_foo_blockers` part of the deletion interface.
 # The key specifies the kind of blocker, the value is a list of blocking ids.
 # For some blockers the value might have a different type, mostly when that

@@ -43,7 +43,7 @@ from cdedb.common import (
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
     get_hash, mixed_existence_sorter,
-    CdEDBObject, CdEDBObjectList, DefaultReturnCode, DeletionBlockers
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers
 )
 from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators, Query
@@ -311,7 +311,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("persona")
     def list_assemblies(self, rs: RequestState,
-                        is_active: bool = None) -> CdEDBObjectList:
+                        is_active: bool = None) -> CdEDBObjectMap:
         """List all assemblies.
 
         :param is_active: If not None list only assemblies which have this
@@ -337,7 +337,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_assemblies(self, rs: RequestState,
-                       ids: Iterable[int]) -> CdEDBObjectList:
+                       ids: Iterable[int]) -> CdEDBObjectMap:
         """Retrieve data for some assemblies."""
         ids = affirm_set("id", ids)
         if not all(self.may_assemble(rs, assembly_id=anid) for anid in ids):
@@ -519,7 +519,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_ballots(self, rs: RequestState,
-                    ids: Iterable[int]) -> CdEDBObjectList:
+                    ids: Iterable[int]) -> CdEDBObjectMap:
         """Retrieve data for some ballots,
 
         They do not need to be associated to the same assembly. This has an
@@ -1239,7 +1239,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_attachment_histories(self, rs: RequestState,
                                  attachment_ids: Iterable[int]) -> \
-            Dict[int, CdEDBObjectList]:
+            Dict[int, CdEDBObjectMap]:
         """Retrieve all version information for given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         ret = {anid: {} for anid in attachment_ids}
@@ -1254,7 +1254,7 @@ class AssemblyBackend(AbstractBackend):
                 ret[entry["attachment_id"]][entry["version"]] = entry
 
         return ret
-    get_attachment_history: Callable[[RequestState, int], CdEDBObjectList] = \
+    get_attachment_history: Callable[[RequestState, int], CdEDBObjectMap] = \
         singularize(get_attachment_histories, "attachment_ids", "attachment_id")
 
     @access("assembly_admin")
@@ -1589,7 +1589,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_attachments(self, rs: RequestState, attachment_ids: Iterable[int]) \
-            -> CdEDBObjectList:
+            -> CdEDBObjectMap:
         """Retrieve data on attachments"""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
