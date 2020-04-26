@@ -1239,7 +1239,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_attachment_histories(self, rs: RequestState,
                                  attachment_ids: Iterable[int]) -> \
-            CdEDBObjectList:
+            Dict[int, CdEDBObjectList]:
         """Retrieve all version information for given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         ret = {anid: {} for anid in attachment_ids}
@@ -1254,8 +1254,7 @@ class AssemblyBackend(AbstractBackend):
                 ret[entry["attachment_id"]][entry["version"]] = entry
 
         return ret
-
-    get_attachment_history: Callable[[RequestState, int], CdEDBObject] = \
+    get_attachment_history: Callable[[RequestState, int], CdEDBObjectList] = \
         singularize(get_attachment_histories, "attachment_ids", "attachment_id")
 
     @access("assembly_admin")
