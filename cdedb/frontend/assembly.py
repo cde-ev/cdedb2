@@ -521,7 +521,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_id})
 
     @access("assembly")
-    @REQUESTdata(("version", "int"))
+    @REQUESTdata(("version", "id_or_None"))
     # ballot_id is optional, but comes semantically before attachment_id
     def get_attachment(self, rs: RequestState, assembly_id: int,
                        attachment_id: int, ballot_id: int = None,
