@@ -128,7 +128,7 @@
 
 {% macro navigation(endpoint, total, length, loglinks) %}
     <nav class="text-center" aria-label="{% trans %}Log page navigation{% endtrans %}">
-    <ul class="pagination pagination-lg">
+    <ul class="pagination pagination-lg", id="log-pagination">
         {# How can I properly automate the target? #}
         {% if loglinks["current"]["offset"] < 0 %}
             {% set page = 0 %}
@@ -138,40 +138,51 @@
 
         <li class="page-item">
             <a class="page-link" href="{{ cdedblink(endpoint, loglinks['first']) }}"
-                    title="{% trans %}First{% endtrans %}">
+               title="{% trans %}First{% endtrans %}"
+               id="pagination-first">
                 <span aria-hidden="true">&laquo;</span>
             </a>
         </li>
         <li class="page-item {% if loglinks['previous']['offset']|int + length <= 0 %}disabled{% endif %}">
             <a class="page-link" {% if loglinks['previous']['offset']|int + length > 0 %}
-                    href="{{ cdedblink(endpoint, loglinks['previous']) }}"{% endif %}
-                    title="{% trans %}Previous{% endtrans %}" aria-label="{% trans %}Previous{% endtrans %}">
+               href="{{ cdedblink(endpoint, loglinks['previous']) }}"{% endif %}
+               title="{% trans %}Previous{% endtrans %}" aria-label="{% trans %}Previous{% endtrans %}"
+               id="pagination-previous">
                 <span aria-hidden="true">&lsaquo;</span>
             </a>
         </li>
         {% for link in loglinks["pre-current"] %}
+            {% set page_number = page|int - loop.revindex %}
             <li class="page-item">
-                <a class="page-link" href="{{ cdedblink(endpoint, link) }}">{{ page|int - loop.revindex }}</a>
+                <a class="page-link" href="{{ cdedblink(endpoint, link) }}" id="pagination-{{ page_number }}">
+                    {{ page_number }}
+                </a>
             </li>
         {% endfor %}
         <li class="page-item {% if values["offset"] %}active" aria-current="page{% endif %}">
-            <a class="page-link" href="{{ cdedblink(endpoint, loglinks['current']) }}">{{ page|int }}</a>
+            <a class="page-link" href="{{ cdedblink(endpoint, loglinks['current']) }}" id="pagination-{{ page|int }}">
+                {{ page|int }}</a>
         </li>
         {% for link in loglinks["post-current"] %}
+            {% set page_number = page|int + loop.index %}
             <li class="page-item">
-                <a class="page-link" href="{{ cdedblink(endpoint, link) }}">{{ page|int + loop.index }}</a>
+                <a class="page-link" href="{{ cdedblink(endpoint, link) }}" id="pagination-{{ page_number }}">
+                    {{ page_number }}
+                </a>
             </li>
         {% endfor %}
         <li class="page-item {% if loglinks['next']['offset']|int >= total %}disabled{% endif %}">
             <a class="page-link" {% if loglinks['next']['offset']|int < total %}
-                    href="{{ cdedblink(endpoint, loglinks['next']) }}"{% endif %}
-                    title="{% trans %}Next{% endtrans %}" aria-label="{% trans %}Next{% endtrans %}">
+               href="{{ cdedblink(endpoint, loglinks['next']) }}"{% endif %}
+               title="{% trans %}Next{% endtrans %}" aria-label="{% trans %}Next{% endtrans %}"
+               id="pagination-next">
                 <span aria-hidden="true">&rsaquo;</span>
             </a>
         </li>
         <li class="page-item {% if not values["offset"] %}active" aria-current="page{% endif %}">
             <a class="page-link" href="{{ cdedblink(endpoint, loglinks['last']) }}"
-                    title="{% trans %}Last{% endtrans %} aria-label="{% trans %}Last{% endtrans %}"">
+               title="{% trans %}Last{% endtrans %}" aria-label="{% trans %}Last{% endtrans %}"
+               id="pagination-last">
                 <span aria-hidden="true">&raquo;</span>
             </a>
         </li>
