@@ -18,12 +18,14 @@ def prepare_aux():
     sys.path.insert(0, "/cdedb2")
 
     from cdedb.script import setup, make_backend
+    from cdedb.backend.common import PsycoJson
 
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
     rs_maker = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")
     ret["rs"] = rs_maker()
     ret["core"] = make_backend("core", proxy=False)
+    ret["PsycoJson"] = PsycoJson
 
     # Extract some data about the databse tables using the database connection.
 
@@ -106,6 +108,8 @@ def build_commands(data, aux):
             for k in keys:
                 if k not in entry:
                     entry[k] = None
+                if isinstance(entry[k], dict):
+                    entry[k] = aux["PsycoJson"](entry[k])
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
             params.extend(entry[k] for k in keys)
