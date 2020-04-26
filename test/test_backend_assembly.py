@@ -461,7 +461,7 @@ class TestAssemblyBackend(BackendTest):
     def test_entity_attachments(self, user):
         expectation = set()
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
-        self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=1))
+        self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=2))
         data = {
             "ballot_id": 2,
             "title": "Rechenschaftsbericht",
@@ -629,6 +629,9 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
         self.assertEqual(history_expectation, self.assembly.get_attachment_histories(self.key, (1001, 1002, 1003)))
+        self.assertTrue(self.assembly.delete_attachment(self.key, 1001, {"versions"}))
+        del expectation[1001]
+        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies

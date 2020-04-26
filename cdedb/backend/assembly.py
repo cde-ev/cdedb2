@@ -1209,7 +1209,9 @@ class AssemblyBackend(AbstractBackend):
                 ballot_data = self.sql_select(rs, "assembly.ballots",
                                               ("assembly_id",), ballot_ids)
                 assembly_ids.update({e["assembly_id"] for e in ballot_data})
-            if len(assembly_ids) != 1:
+            if not assembly_ids:
+                return True
+            if len(assembly_ids) > 1:
                 raise ValueError(n_("Can only access attachments from exactly "
                                     "one assembly at a time."))
             return self.may_assemble(rs, assembly_id=unwrap(assembly_ids))
@@ -1365,7 +1367,8 @@ class AssemblyBackend(AbstractBackend):
         blockers = {}
 
         versions = self.get_attachment_history(rs, attachment_id)
-        blockers["versions"] = [v for v in versions]
+        if versions:
+            blockers["versions"] = [v for v in versions]
 
         attachment = self.get_attachment(rs, attachment_id)
         if attachment['ballot_id']:
@@ -1389,7 +1392,7 @@ class AssemblyBackend(AbstractBackend):
         if blockers.keys() & {"vote_begin", "is_active"}:
             raise ValueError(n_("Unable to delete attachment once voting has "
                                 "begun or the assembly has been concluded."))
-        cascade = affirm("str", cascade or set()) & blockers.keys()
+        cascade = affirm_set("str", cascade or set()) & blockers.keys()
 
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -1408,9 +1411,9 @@ class AssemblyBackend(AbstractBackend):
                         filename = f"{attachment_id}_v{version}"
                         path = self.attachment_base_path / filename
                         if path.exists():
-                            ret *= path.unlink()
-
+                            path.unlink()
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
+
             if not blockers:
                 assembly_id = self.get_assembly_id(
                     rs, attachment_id=attachment_id)
