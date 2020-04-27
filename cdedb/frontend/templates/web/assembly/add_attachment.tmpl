@@ -39,7 +39,13 @@
         {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Attach File"), active=True) }}
+    {% if attachment_id %}
+        {{ util.breadcrumb_link("", history[history.keys()|max]['title'], icon="file") }}
+        {{ util.breadcrumb_link(cdedblink("assembly/add_attachment", {'attachment_id': attachment_id}),
+                                gettext("Add Version"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Attach File"), active=True) }}
+    {% endif %}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/add_attachment') }}" method="POST" enctype="multipart/form-data"
