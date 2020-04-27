@@ -4,8 +4,8 @@
             {{ print_attachment_link(current_version, edit, ballot) }}
             {% if history|length > 1 %}
                 <ul>
-                    {% for i, version in history|keydictsort(EntitySorter.attachment_version) %}
-                        {% if not loop.last %}
+                    {% for i, version in history|keydictsort(EntitySorter.attachment_version)|reverse %}
+                        {% if not loop.first %}
                             <li>
                                 {{ print_attachment_link(version, edit) }}
                             </li>
