@@ -1263,22 +1263,6 @@ def n_(x):
     return x
 
 
-def deep_update(adict, update):
-    """Update a dict with multiple layers.
-
-    :type adict: dict
-    :type update: collections.abc.Mapping
-    :rtype: dict
-    """
-    new_dict = copy.deepcopy(adict)
-    for k, v in update.items():
-        if isinstance(v, collections.abc.Mapping):
-            new_dict[k] = deep_update(new_dict.get(k, {}), v)
-        else:
-            new_dict[k] = v
-    return new_dict
-
-
 def asciificator(s):
     """Pacify a string.
 
