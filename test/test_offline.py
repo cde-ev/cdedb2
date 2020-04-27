@@ -25,7 +25,7 @@ class TestOffline(FrontendTest):
             stderr=subprocess.DEVNULL)
         try:
             subprocess.run(
-                ['bin/make_offline_vm.py', '--test',
+                ['bin/make_offline_vm.py', '--test', '--no-extra-packages',
                  'test/ancillary_files/event_export.json'],
                 cwd=base, check=True, stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL)
