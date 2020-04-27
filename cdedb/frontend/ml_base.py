@@ -176,6 +176,12 @@ class MlBaseFrontend(AbstractUserFrontend):
                 for anid in moderator_ids.split(",")
                 }
         data = check(rs, "mailinglist", data, creation=True)
+        # Check if mailinglist address is unique
+        try:
+            self.mlproxy.construct_address(rs, data)
+        except ValueError as e:
+            rs.extend_validation_errors([("local_part", e), ("domain", e)])
+
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs)
 
@@ -287,6 +293,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         data['id'] = mailinglist_id
         data['registration_stati'] = registration_stati
         data = check(rs, "mailinglist", data)
+        # Check if mailinglist address is unique
+        try:
+            self.mlproxy.construct_address(rs, data)
+        except ValueError as e:
+            rs.extend_validation_errors([("local_part", e), ("domain", e)])
+
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         code = self.mlproxy.set_mailinglist(rs, data)
