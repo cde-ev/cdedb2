@@ -51,7 +51,7 @@ from cdedb.common import (
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
     decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields,
-    ValidationWarning, xsorted)
+    ValidationWarning, xsorted, unwrap)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -2148,6 +2148,59 @@ def make_transaction_subject(persona):
     return "{}, {}, {}".format(cdedbid_filter(persona['id']),
                                asciificator(persona['family_name']),
                                asciificator(persona['given_names']))
+
+
+def process_flux_input(rs, existing, spec, additional=None):
+    """Retrieve information provided by flux tables.
+
+    This returns a data dict to update the database, which includes:
+    - existing, mapped to their (validated) input fields (from spec)
+    - existing, mapped to None (if they were marked to be deleted)
+    - new entries, mapped to their (validated) input fields (from spec)
+
+    :type rs: :py:class:`FrontendRequestState`
+    :type existing: [int]
+    :param existing: ids of already existent objects
+    :type spec: {str: str}
+    :param spec: name of input fields, mapped to their validation
+    :type additional: dict
+    :param additional: additional keys added to each output object
+
+    :rtype: {int: {str: object} or None}
+    """
+    delete_flags = request_extractor(
+        rs, ((f"delete_{anid}", "bool") for anid in existing))
+    deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
+    params = tuple(
+        (f"{key}_{anid}", value)
+        for anid in existing if anid not in deletes
+        for key, value in spec.items())
+    data = request_extractor(rs, params)
+    ret = {
+        anid: {key: data[f"{key}_{anid}"] for key in spec}
+        for anid in existing if anid not in deletes
+    }
+    for anid in existing:
+        if anid in deletes:
+            ret[anid] = None
+        else:
+            ret[anid]['id'] = anid
+    marker = 1
+    while marker < 2 ** 10:
+        will_create = unwrap(
+            request_extractor(rs, ((f"create_-{marker}", "bool"),)))
+        if will_create:
+            params = tuple((f"{key}_-{marker}", value)
+                           for key, value in spec.items())
+            data = request_extractor(rs, params)
+            ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
+            if additional:
+                ret[-marker].update(additional)
+        else:
+            break
+        marker += 1
+    rs.values['create_last_index'] = marker - 1
+    return ret
 
 
 class CustomCSVDialect(csv.Dialect):

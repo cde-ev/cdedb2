@@ -14,7 +14,9 @@ import werkzeug.exceptions
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
-    check_validation as check, request_extractor, query_result_to_json)
+    check_validation as check, request_extractor, query_result_to_json,
+    process_flux_input
+)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
@@ -638,6 +640,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         if ballot['use_bar']:
             candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
                 "bar (options below this are declined)")
+        # this is used for the flux candidate table
+        current = {
+            f"{key}_{candidate_id}": value
+            for candidate_id, candidate in ballot['candidates'].items()
+            for key, value in candidate.items() if key != 'id'}
+        merge_dicts(rs.values, current)
 
         ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
@@ -915,42 +923,37 @@ class AssemblyFrontend(AbstractUserFrontend):
                               filename="ballot_{}_result.json".format(ballot_id))
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("moniker", "restrictive_identifier"), ("description", "str"))
-    def add_candidate(self, rs, assembly_id, ballot_id, moniker, description):
-        """Create a new option for a ballot."""
-        monikers = {c['moniker']
-                    for c in rs.ambience['ballot']['candidates'].values()}
-        if moniker in monikers:
-            rs.append_validation_error(
-                ("moniker", ValueError(n_("Duplicate moniker."))))
-        if moniker == ASSEMBLY_BAR_MONIKER:
-            rs.append_validation_error(
-                ("moniker", ValueError(n_("Mustn’t be the bar moniker."))))
-        if rs.has_validation_errors():
-            return self.show_ballot(rs, assembly_id, ballot_id)
-        data = {
-            'id': ballot_id,
-            'candidates': {
-                -1: {
-                    'moniker': moniker,
-                    'description': description,
-                }
-            }
-        }
-        code = self.assemblyproxy.set_ballot(rs, data)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "assembly/show_ballot")
+    def edit_candidates(self, rs, assembly_id, ballot_id):
+        """Create, edit and delete candidates of ballot.
 
-    @access("assembly_admin", modi={"POST"})
-    def remove_candidate(self, rs, assembly_id, ballot_id, candidate_id):
-        """Delete an option from a ballot."""
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type ballot_id: int
+        """
+        candidates = process_flux_input(
+            rs, rs.ambience['ballot']['candidates'].keys(),
+            {'moniker': "restrictive_identifier", 'description': "str"})
+
+        monikers = set()
+        for candidate_id, candidate in candidates.items():
+            if candidate and candidate['moniker'] == ASSEMBLY_BAR_MONIKER:
+                rs.append_validation_error(
+                    (f"moniker_{candidate_id}",
+                     ValueError(n_("Mustn’t be the bar moniker.")))
+                )
+            if candidate and candidate['moniker'] in monikers:
+                rs.append_validation_error(
+                    (f"moniker_{candidate_id}",
+                     ValueError(n_("Duplicate moniker.")))
+                )
+            if candidate:
+                monikers.add(candidate['moniker'])
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
+
         data = {
             'id': ballot_id,
-            'candidates': {
-                candidate_id: None
-            }
+            'candidates': candidates
         }
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)

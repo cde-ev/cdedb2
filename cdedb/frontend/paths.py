@@ -588,10 +588,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="add_attachment_form"),
                     rule("/attachment/add", methods=_POST,
                          endpoint="add_attachment"),
-                    rule("/candidate/add", methods=_POST,
-                         endpoint="add_candidate"),
-                    rule("/candidate/<int:candidate_id>/remove", methods=_POST,
-                         endpoint="remove_candidate"),)),)),
+                    rule("/candidates/edit", methods=_POST,
+                         endpoint="edit_candidates"),)),)),
         )),)),
     werkzeug.routing.EndpointPrefix('ml/', (
         sub('/ml', (

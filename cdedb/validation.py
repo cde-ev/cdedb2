@@ -3811,7 +3811,7 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True,
         mandatory_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
         optional_fields = {}
     else:
-        mandatory_fields = {}
+        mandatory_fields = {'id': _id}
         optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,

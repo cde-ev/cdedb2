@@ -34,7 +34,9 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
-    enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect)
+    enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
+    process_flux_input
+)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
 import cdedb.frontend.parse_statement as parse
@@ -2152,64 +2154,12 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "institution_summary", {
             'institutions': institutions, 'is_referenced': is_referenced})
 
-    @staticmethod
-    def process_institution_input(rs, institutions):
-        """This handles input to configure the institutions.
-
-        Since this covers a variable number of rows, we cannot do this
-        statically. This takes care of validation too.
-
-        :type rs: :py:class:`FrontendRequestState`
-        :type institutions: [int]
-        :param institutions: ids of existing institutions
-        :rtype: {int: {str: object} or None}
-        """
-        delete_flags = request_extractor(
-            rs, (("delete_{}".format(institution_id), "bool")
-                 for institution_id in institutions))
-        deletes = {institution_id for institution_id in institutions
-                   if delete_flags['delete_{}'.format(institution_id)]}
-        spec = {
-            'title': "str",
-            'moniker': "str",
-        }
-        params = tuple(("{}_{}".format(key, institution_id), value)
-                       for institution_id in institutions
-                       if institution_id not in deletes
-                       for key, value in spec.items())
-        data = request_extractor(rs, params)
-        ret = {
-            institution_id: {key: data["{}_{}".format(key, institution_id)]
-                             for key in spec}
-            for institution_id in institutions if institution_id not in deletes
-        }
-        for institution_id in institutions:
-            if institution_id in deletes:
-                ret[institution_id] = None
-            else:
-                ret[institution_id]['id'] = institution_id
-        marker = 1
-        while marker < 2 ** 10:
-            will_create = unwrap(request_extractor(
-                rs, (("create_-{}".format(marker), "bool"),)))
-            if will_create:
-                params = tuple(("{}_-{}".format(key, marker), value)
-                               for key, value in spec.items())
-                data = request_extractor(rs, params)
-                ret[-marker] = {key: data["{}_-{}".format(key, marker)]
-                                for key in spec}
-            else:
-                break
-            marker += 1
-        rs.values['create_last_index'] = marker - 1
-        return ret
-
     @access("cde_admin", modi={"POST"})
     def institution_summary(self, rs):
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
-        institutions = self.process_institution_input(
-            rs, institution_ids.keys())
+        spec = {'title': "str", 'moniker': "str"}
+        institutions = process_flux_input(rs, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
         code = 1
