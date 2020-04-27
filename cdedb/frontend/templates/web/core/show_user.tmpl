@@ -96,7 +96,8 @@
                 <dt>{% trans %}Birthday{% endtrans %}</dt>
                 <dd>{{ data['birthday']|date(lang=lang) }}</dd>
             {% endif %}
-            {% if data['gender'] %}
+            {# Gender is privileged information. #}
+            {% if data['gender'] and is_relative_admin %}
                 <dt>{% trans %}Gender{% endtrans %}</dt>
                 <dd>{{ gettext(enums['Genders'](data['gender'])|string) }}</dd>
             {% endif %}
