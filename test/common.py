@@ -818,11 +818,10 @@ class FrontendTest(unittest.TestCase):
         # check the landing page
         f = self.response.forms['logshowform']
         total = len(logs)
-        start = 1
-        end = total if total < 50 else 50
-        self._log_subroutine(title, logs, start, end)
+        self._log_subroutine(title, logs, start=1,
+                             end=total if total < 50 else 50)
 
-        # check a combinations of offset and length with 0th page
+        # check a combination of offset and length with 0th page
         length = total // 3
         if length % 2 == 0:
             length -= 1
@@ -832,33 +831,48 @@ class FrontendTest(unittest.TestCase):
         f['offset'] = offset
         self.submit(f)
 
-        # starting at the 0th page ...
+        # starting at the 0th page, ...
         self.traverse({'linkid': 'pagination-0'})
-        start = 1
-        end = length - offset - 1
+        # we store the absolute values of start and end in an array, because
+        # they must not change when we iterate in different ways
+        starts = [1]
+        ends = [length - offset - 1]
 
-        # ... iterate over all pages
-        while end < total:
-            self._log_subroutine(title, logs, start=start, end=end)
+        # ... iterate over all pages:
+        # - by using the 'next' button
+        while ends[-1] < total:
+            self._log_subroutine(title, logs, start=starts[-1], end=ends[-1])
             self.traverse({'linkid': 'pagination-next'})
-            start = end + 1
-            end = end + length
-        self._log_subroutine(title, logs, start=start, end=end)
+            starts.append(ends[-1] + 1)
+            ends.append(ends[-1] + length)
+        self.assertNoLink(content='›')
+        self._log_subroutine(title, logs, start=starts[-1], end=ends[-1])
 
-        # check first-page button (result in offset = None)
+        # - by using the 'previous' button
+        for start, end in zip(starts[:0:-1], ends[:0:-1]):
+            self._log_subroutine(title, logs, start=start, end=end)
+            self.traverse({'linkid': 'pagination-previous'})
+        self.assertNoLink(content='‹')
+        self._log_subroutine(title, logs, start=starts[0], end=ends[0])
+
+        # - by using the page number buttons
+        for page, (start, end) in enumerate(zip(starts, ends)):
+            self.traverse({'linkid': f'pagination-{page}'})
+            self._log_subroutine(title, logs, start=start, end=end)
+        self.assertNoLink(content='›')
+
+        # check first-page button (result in offset = 0)
         self.traverse({'linkid': 'pagination-first'})
-        start = 1
-        end = length
-        self._log_subroutine(title, logs, start=start, end=end)
+        self.assertNoLink(content='‹')
+        self._log_subroutine(title, logs, start=1, end=length)
 
         # there must not be a 0th page, because length is a multiple of offset
         self.assertNonPresence("0", div='log-pagination')
 
-        # check last-page button (results in offset = 0)
+        # check last-page button (results in offset = None)
         self.traverse({'linkid': 'pagination-last'})
-        start = total - length + 1
-        end = total
-        self._log_subroutine(title, logs, start=start, end=end)
+        self.assertNoLink(content='›')
+        self._log_subroutine(title, logs, start=total - length + 1, end=total)
 
         # tidy up the form
         f["offset"] = None
