@@ -1,7 +1,7 @@
 {% extends "web/event/base.tmpl" %}
 {% if kind == enums['QuestionnaireUsages'].registration %}
     {% set sidenav_active='event_configure_registration' %}
-{% elif kind == enums['QuestionnaireUsages'].questionnaire %}
+{% elif kind == enums['QuestionnaireUsages'].additional %}
     {% set sidenav_active='event_configure_questionnaire' %}
 {% endif %}
 {% import "web/util.tmpl" as util with context %}

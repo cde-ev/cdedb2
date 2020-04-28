@@ -3308,7 +3308,7 @@ class EventFrontend(AbstractUserFrontend):
     def configure_questionnaire_form(self, rs, event_id):
         """Render form."""
         questionnaire, reg_fields = self._prepare_questionnaire_form(
-            rs, event_id, const.QuestionnaireUsages.questionnaire)
+            rs, event_id, const.QuestionnaireUsages.additional)
         return self.render(rs, "configure_questionnaire", {
             'questionnaire': questionnaire,
             'registration_fields': reg_fields})
@@ -3349,7 +3349,7 @@ class EventFrontend(AbstractUserFrontend):
         This allows the orgas to design a form without interaction with an
         administrator.
         """
-        kind = const.QuestionnaireUsages.questionnaire
+        kind = const.QuestionnaireUsages.additional
         code = self._set_questionnaire(rs, event_id, kind)
         if code is None:
             return self.configure_questionnaire_form(rs, event_id)
@@ -3414,7 +3414,7 @@ class EventFrontend(AbstractUserFrontend):
             if not rs.ambience['event']['use_questionnaire']:
                 rs.notify("info", n_("Questionnaire is not enabled yet."))
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(const.QuestionnaireUsages.questionnaire,)))
+            rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
         return self.render(rs, "questionnaire", {
             'questionnaire': questionnaire,
             'preview': preview})
@@ -3445,7 +3445,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(const.QuestionnaireUsages.questionnaire,)))
+            rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params = tuple(
             (f(entry)['field_name'],
@@ -3583,7 +3583,7 @@ class EventFrontend(AbstractUserFrontend):
                                    kind: const.QuestionnaireUsages) -> Response:
         """Render form."""
         if rs.has_validation_errors():
-            kind = const.QuestionnaireUsages.questionnaire
+            kind = const.QuestionnaireUsages.additional
             rs.notify(
                 "error", n_("Unknown questionnaire kind. Defaulted to {kind}."),
                 {'kind': kind})
@@ -3592,7 +3592,7 @@ class EventFrontend(AbstractUserFrontend):
         redirects = {
             const.QuestionnaireUsages.registration:
                 "event/configure_registration",
-            const.QuestionnaireUsages.questionnaire:
+            const.QuestionnaireUsages.additional:
                 "event/configure_questionnaire",
         }
         if not questionnaire:

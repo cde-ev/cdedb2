@@ -1300,7 +1300,7 @@ class TestEventBackend(BackendTest):
                      'kind': const.QuestionnaireUsages.registration,
                      },
                 ],
-            const.QuestionnaireUsages.questionnaire:
+            const.QuestionnaireUsages.additional:
                 [
                     {'field_id': None,
                      'default_value': None,
@@ -1309,7 +1309,7 @@ class TestEventBackend(BackendTest):
                      'readonly': None,
                      'input_size': None,
                      'title': 'Unterüberschrift',
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                     {'field_id': 1,
                      'default_value': 'True',
@@ -1318,7 +1318,7 @@ class TestEventBackend(BackendTest):
                      'readonly': False,
                      'input_size': None,
                      'title': 'Bälle',
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                     {'field_id': None,
                      'default_value': None,
@@ -1327,7 +1327,7 @@ class TestEventBackend(BackendTest):
                      'readonly': None,
                      'input_size': None,
                      'title': None,
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                     {'field_id': None,
                      'default_value': None,
@@ -1336,7 +1336,7 @@ class TestEventBackend(BackendTest):
                      'readonly': None,
                      'input_size': None,
                      'title': 'Weitere Überschrift',
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                     {'field_id': 2,
                      'default_value': 'etc',
@@ -1345,7 +1345,7 @@ class TestEventBackend(BackendTest):
                      'readonly': False,
                      'input_size': None,
                      'title': 'Vehikel',
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                     {'field_id': 3,
                      'default_value': None,
@@ -1354,7 +1354,7 @@ class TestEventBackend(BackendTest):
                      'readonly': False,
                      'input_size': 3,
                      'title': 'Hauswunsch',
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                 ],
         }
@@ -1377,7 +1377,7 @@ class TestEventBackend(BackendTest):
         }
         self.event.set_event(self.key, edata)
         qdata = {
-            const.QuestionnaireUsages.questionnaire: [
+            const.QuestionnaireUsages.additional: [
                 {
                     'field_id': None,
                     'default_value': None,
@@ -2422,7 +2422,7 @@ class TestEventBackend(BackendTest):
                                              'pos': 0,
                                              'readonly': None,
                                              'title': 'Unterüberschrift',
-                                             'kind': const.QuestionnaireUsages.questionnaire,
+                                             'kind': const.QuestionnaireUsages.additional,
                                              },
                                          3: {'event_id': 1,
                                              'field_id': 1,
@@ -2433,7 +2433,7 @@ class TestEventBackend(BackendTest):
                                              'pos': 1,
                                              'readonly': False,
                                              'title': 'Bälle',
-                                             'kind': const.QuestionnaireUsages.questionnaire,
+                                             'kind': const.QuestionnaireUsages.additional,
                                              },
                                          4: {'event_id': 1,
                                              'field_id': None,
@@ -2443,7 +2443,7 @@ class TestEventBackend(BackendTest):
                                              'pos': 2,
                                              'readonly': None,
                                              'title': None,
-                                             'kind': const.QuestionnaireUsages.questionnaire,
+                                             'kind': const.QuestionnaireUsages.additional,
                                              },
                                          5: {'event_id': 1,
                                              'field_id': None,
@@ -2453,7 +2453,7 @@ class TestEventBackend(BackendTest):
                                              'pos': 3,
                                              'readonly': None,
                                              'title': 'Weitere Überschrift',
-                                             'kind': const.QuestionnaireUsages.questionnaire,
+                                             'kind': const.QuestionnaireUsages.additional,
                                              },
                                          6: {'event_id': 1,
                                              'field_id': 2,
@@ -2463,7 +2463,7 @@ class TestEventBackend(BackendTest):
                                              'pos': 4,
                                              'readonly': False,
                                              'title': 'Vehikel',
-                                             'kind': const.QuestionnaireUsages.questionnaire,
+                                             'kind': const.QuestionnaireUsages.additional,
                                              },
                                          7: {'event_id': 1,
                                              'field_id': 3,
@@ -2473,7 +2473,7 @@ class TestEventBackend(BackendTest):
                                              'pos': 5,
                                              'readonly': False,
                                              'title': 'Hauswunsch',
-                                             'kind': const.QuestionnaireUsages.questionnaire,
+                                             'kind': const.QuestionnaireUsages.additional,
                                              }},
             'event.registration_parts': {1: {'id': 1,
                                              'is_reserve': False,
@@ -2992,7 +2992,7 @@ class TestEventBackend(BackendTest):
             'pos': 1,
             'readonly': True,
             'title': 'Vorsätze',
-            'kind': const.QuestionnaireUsages.questionnaire,
+            'kind': const.QuestionnaireUsages.additional,
         }
         new_data['event.fee_modifiers'][13000] = {
             'id': 13000,
@@ -3204,7 +3204,7 @@ class TestEventBackend(BackendTest):
             'pos': 1,
             'readonly': True,
             'title': 'Vorsätze',
-            'kind': const.QuestionnaireUsages.questionnaire,
+            'kind': const.QuestionnaireUsages.additional,
         }
 
         result = self.event.export_event(self.key, 1)
@@ -4349,7 +4349,7 @@ class TestEventBackend(BackendTest):
         self.event.set_lodgement(self.key, update)
         self.event.delete_lodgement(self.key, new_id)
         data = {
-            const.QuestionnaireUsages.questionnaire:
+            const.QuestionnaireUsages.additional:
                 [
                     {'field_id': None,
                      'default_value': None,
@@ -4357,7 +4357,7 @@ class TestEventBackend(BackendTest):
                      'readonly': None,
                      'input_size': None,
                      'title': 'Weitere bla Überschrift',
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                     {'field_id': 2,
                      'default_value': 'etc',
@@ -4365,7 +4365,7 @@ class TestEventBackend(BackendTest):
                      'readonly': True,
                      'input_size': None,
                      'title': 'Vehikel',
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                     {'field_id': None,
                      'default_value': None,
@@ -4373,7 +4373,7 @@ class TestEventBackend(BackendTest):
                      'readonly': None,
                      'input_size': None,
                      'title': 'Unterüberschrift',
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                     {'field_id': 3,
                      'default_value': None,
@@ -4381,7 +4381,7 @@ class TestEventBackend(BackendTest):
                      'readonly': True,
                      'input_size': 5,
                      'title': 'Vehikel',
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                     {'field_id': None,
                      'default_value': None,
@@ -4389,7 +4389,7 @@ class TestEventBackend(BackendTest):
                      'readonly': None,
                      'input_size': None,
                      'title': None,
-                     'kind': const.QuestionnaireUsages.questionnaire,
+                     'kind': const.QuestionnaireUsages.additional,
                      },
                 ],
         }

@@ -97,11 +97,11 @@ class FieldDatatypes(enum.IntEnum):
 class QuestionnaireUsages(enum.IntEnum):
     """Where a questionnaire row will be displayed."""
     registration = 1
-    questionnaire = 2
+    additional = 2
 
     def allow_readonly(self):
         """Whether or not rows with this usage are allowed to be readonly."""
-        return self == QuestionnaireUsages.questionnaire
+        return self == QuestionnaireUsages.additional
 
     def allow_fee_modifier(self):
         """Whether or not rows with this usage may use fee modifier fields."""
@@ -110,7 +110,7 @@ class QuestionnaireUsages(enum.IntEnum):
     def get_icon(self):
         icons = {
             QuestionnaireUsages.registration: "sign-in-alt",
-            QuestionnaireUsages.questionnaire: "pen",
+            QuestionnaireUsages.additional: "pen",
         }
         return icons.get(self, repr(self))
 

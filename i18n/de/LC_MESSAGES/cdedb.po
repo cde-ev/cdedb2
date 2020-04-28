@@ -788,7 +788,7 @@ msgid "QuestionnaireUsages.registration"
 msgstr "Anmeldungs-Fragebogen"
 
 #: cdedb/i18n_additional.py:187
-msgid "QuestionnaireUsages.questionnaire"
+msgid "QuestionnaireUsages.additional"
 msgstr "Zusätzlicher Fragebogen"
 
 #: cdedb/i18n_additional.py:189
