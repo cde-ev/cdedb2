@@ -987,7 +987,7 @@ CREATE TABLE assembly.attachment_versions (
         filename                varchar,
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         dtime                   timestamp WITH TIME ZONE DEFAULT NULL,
-        -- Store the hash of the file for comparison and prove.
+        -- Store the hash of the file for comparison and proof.
         file_hash               varchar NOT NULL
 );
 CREATE INDEX idx_attachment_versions_attachment_id ON assembly.attachment_versions(attachment_id);
