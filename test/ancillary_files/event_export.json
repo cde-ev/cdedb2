@@ -158,7 +158,8 @@
             "list_consent": true,
             "fields": {
                 "brings_balls": true,
-                "transportation": "pedes"
+                "transportation": "pedes",
+                "is_child": false
             },
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "payment": "2014-02-02",
@@ -176,7 +177,8 @@
             "persona_id": 1,
             "list_consent": true,
             "fields": {
-                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)"
+                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
+                "is_child": false
             },
             "orga_notes": null,
             "payment": null,
@@ -194,7 +196,8 @@
             "persona_id": 7,
             "list_consent": false,
             "fields": {
-                "transportation": "car"
+                "transportation": "car",
+                "is_child": false
             },
             "orga_notes": null,
             "payment": "2014-03-03",
@@ -205,7 +208,7 @@
             "real_persona_id": null
         },
         "4": {
-            "amount_owed": "450.99",
+            "amount_owed": "431.99",
             "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
@@ -214,7 +217,8 @@
             "fields": {
                 "brings_balls": false,
                 "may_reserve": true,
-                "transportation": "etc"
+                "transportation": "etc",
+                "is_child": true
             },
             "orga_notes": null,
             "payment": "2014-04-04",
@@ -229,7 +233,10 @@
             "amount_paid": "0.00",
             "checkin": null,
             "event_id": 1,
-            "fields": {"transportation": "pedes"},
+            "fields": {
+                "transportation": "pedes",
+                "is_child": false
+            },
             "id": 5,
             "list_consent": true,
             "mixed_lodging": false,
@@ -244,7 +251,10 @@
             "amount_paid": "0.00",
             "checkin": null,
             "event_id": 1,
-            "fields": {"transportation": "pedes"},
+            "fields": {
+                "transportation": "pedes",
+                "is_child": false
+            },
             "id": 6,
             "list_consent": true,
             "mixed_lodging": true,

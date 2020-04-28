@@ -468,7 +468,7 @@ class TestEventBackend(BackendTest):
     @as_users("anton")
     def test_event_field_double_link(self, user):
         questionnaire = {
-            const.QuestionnaireUsages.questionnaire:
+            const.QuestionnaireUsages.additional:
                 [
             {
                 'field_id': 1,
@@ -554,6 +554,7 @@ class TestEventBackend(BackendTest):
         expectation = {
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
             'lodge': 'Die üblichen Verdächtigen :)',
+            'is_child': False,
         }
         self.assertEqual(expectation, data['fields'])
 
@@ -740,7 +741,7 @@ class TestEventBackend(BackendTest):
             'amount_owed': decimal.Decimal("589.49"),
             'checkin': None,
             'event_id': 1,
-            'fields': {'brings_balls': True, 'transportation': 'pedes'},
+            'fields': {'brings_balls': True, 'transportation': 'pedes', 'is_child': False},
             'list_consent': True,
             'id': 2,
             'mixed_lodging': True,
@@ -874,7 +875,10 @@ class TestEventBackend(BackendTest):
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
                 'event_id': 1,
-                'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
+                'fields': {
+                    'lodge': 'Die üblichen Verdächtigen :)',
+                    'is_child': False,
+                },
                 'list_consent': True,
                 'id': 1,
                 'mixed_lodging': True,
@@ -920,7 +924,11 @@ class TestEventBackend(BackendTest):
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
                 'event_id': 1,
-                'fields': {'brings_balls': True, 'transportation': 'pedes'},
+                'fields': {
+                    'brings_balls': True,
+                    'transportation': 'pedes',
+                    'is_child': False,
+                },
                 'list_consent': True,
                 'id': 2,
                 'mixed_lodging': True,
@@ -962,13 +970,16 @@ class TestEventBackend(BackendTest):
                 'payment': datetime.date(2014, 2, 2),
                 'persona_id': 5,
                 'real_persona_id': None},
-            4: {'amount_owed': decimal.Decimal("450.99"),
+            4: {'amount_owed': decimal.Decimal("431.99"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
                 'event_id': 1,
-                'fields': {'brings_balls': False,
-                           'may_reserve': True,
-                           'transportation': 'etc'},
+                'fields': {
+                    'brings_balls': False,
+                   'may_reserve': True,
+                   'transportation': 'etc',
+                    'is_child': True,
+                },
                 'list_consent': False,
                 'id': 4,
                 'mixed_lodging': False,
@@ -1046,7 +1057,7 @@ class TestEventBackend(BackendTest):
         expectation[4]['fields'].update(data['fields'])
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
         expectation[4]['checkin'] = nearly_now()
-        expectation[4]['amount_owed'] = decimal.Decimal("10.50")
+        expectation[4]['amount_owed'] = decimal.Decimal("5.50")
         for key, value in expectation[4]['parts'].items():
             if key in data['parts']:
                 value.update(data['parts'][key])
@@ -2687,7 +2698,10 @@ class TestEventBackend(BackendTest):
                                           },
             'event.registrations': {1: {'checkin': None,
                                         'event_id': 1,
-                                        'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
+                                        'fields': {
+                                            'lodge': 'Die üblichen Verdächtigen :)',
+                                            'is_child': False,
+                                        },
                                         'list_consent': True,
                                         'id': 1,
                                         'mixed_lodging': True,
@@ -2702,8 +2716,11 @@ class TestEventBackend(BackendTest):
                                         },
                                     2: {'checkin': None,
                                         'event_id': 1,
-                                        'fields': {'brings_balls': True,
-                                                   'transportation': 'pedes'},
+                                        'fields': {
+                                            'brings_balls': True,
+                                            'transportation': 'pedes',
+                                            'is_child': False,
+                                        },
                                         'list_consent': True,
                                         'id': 2,
                                         'mixed_lodging': True,
@@ -2719,7 +2736,10 @@ class TestEventBackend(BackendTest):
                                         },
                                     3: {'checkin': None,
                                         'event_id': 1,
-                                        'fields': {'transportation': 'car'},
+                                        'fields': {
+                                            'transportation': 'car',
+                                            'is_child': False,
+                                        },
                                         'list_consent': False,
                                         'id': 3,
                                         'mixed_lodging': True,
@@ -2734,9 +2754,12 @@ class TestEventBackend(BackendTest):
                                         },
                                     4: {'checkin': None,
                                         'event_id': 1,
-                                        'fields': {'brings_balls': False,
-                                                   'may_reserve': True,
-                                                   'transportation': 'etc'},
+                                        'fields': {
+                                            'brings_balls': False,
+                                            'may_reserve': True,
+                                            'transportation': 'etc',
+                                            'is_child': True,
+                                        },
                                         'list_consent': False,
                                         'id': 4,
                                         'mixed_lodging': False,
@@ -2747,11 +2770,14 @@ class TestEventBackend(BackendTest):
                                         'persona_id': 9,
                                         'real_persona_id': None,
                                         'amount_paid': decimal.Decimal("0.00"),
-                                        'amount_owed': decimal.Decimal("450.99"),
+                                        'amount_owed': decimal.Decimal("431.99"),
                                         },
                                     5: {'checkin': None,
                                         'event_id': 1,
-                                        'fields': {'transportation': 'pedes'},
+                                        'fields': {
+                                            'transportation': 'pedes',
+                                            'is_child': False,
+                                        },
                                         'id': 5,
                                         'list_consent': True,
                                         'mixed_lodging': False,
@@ -2767,7 +2793,10 @@ class TestEventBackend(BackendTest):
                                     6: {
                                         'checkin': None,
                                         'event_id': 1,
-                                        'fields': {'transportation': 'pedes'},
+                                        'fields': {
+                                            'transportation': 'pedes',
+                                            'is_child': False,
+                                        },
                                         'id': 6,
                                         'list_consent': True,
                                         'mixed_lodging': True,
@@ -3407,7 +3436,10 @@ class TestEventBackend(BackendTest):
             'registrations': {1: {'amount_owed': decimal.Decimal("573.99"),
                                   'amount_paid': decimal.Decimal("0.00"),
                                   'checkin': None,
-                                  'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
+                                  'fields': {
+                                      'lodge': 'Die üblichen Verdächtigen :)',
+                                      'is_child': False,
+                                  },
                                   'list_consent': True,
                                   'mixed_lodging': True,
                                   'notes': None,
@@ -3453,8 +3485,11 @@ class TestEventBackend(BackendTest):
                               2: {'amount_owed': decimal.Decimal("589.49"),
                                   'amount_paid': decimal.Decimal("0.00"),
                                   'checkin': None,
-                                  'fields': {'brings_balls': True,
-                                             'transportation': 'pedes'},
+                                  'fields': {
+                                      'brings_balls': True,
+                                      'transportation': 'pedes',
+                                      'is_child': False,
+                                  },
                                   'list_consent': True,
                                   'mixed_lodging': True,
                                   'notes': 'Extrawünsche: Meerblick, Weckdienst und '
@@ -3501,7 +3536,10 @@ class TestEventBackend(BackendTest):
                               3: {'amount_owed': decimal.Decimal("584.49"),
                                   'amount_paid': decimal.Decimal("0.00"),
                                   'checkin': None,
-                                  'fields': {'transportation': 'car'},
+                                  'fields': {
+                                      'transportation': 'car',
+                                      'is_child': False,
+                                  },
                                   'list_consent': False,
                                   'mixed_lodging': True,
                                   'notes': None,
@@ -3544,12 +3582,15 @@ class TestEventBackend(BackendTest):
                                              3: {'choices': [2, 4],
                                                  'course_id': None,
                                                  'course_instructor': None}}},
-                              4: {'amount_owed': decimal.Decimal("450.99"),
+                              4: {'amount_owed': decimal.Decimal("431.99"),
                                   'amount_paid': decimal.Decimal("0.00"),
                                   'checkin': None,
-                                  'fields': {'brings_balls': False,
-                                             'may_reserve': True,
-                                             'transportation': 'etc'},
+                                  'fields': {
+                                      'brings_balls': False,
+                                      'may_reserve': True,
+                                      'transportation': 'etc',
+                                      'is_child': True,
+                                  },
                                   'list_consent': False,
                                   'mixed_lodging': False,
                                   'notes': None,
@@ -3595,7 +3636,10 @@ class TestEventBackend(BackendTest):
                               5: {'amount_owed': decimal.Decimal("584.49"),
                                   'amount_paid': decimal.Decimal("0.00"),
                                   'checkin': None,
-                                  'fields': {'transportation': 'pedes'},
+                                  'fields': {
+                                      'transportation': 'pedes',
+                                      'is_child': False,
+                                  },
                                   'list_consent': True,
                                   'mixed_lodging': False,
                                   'notes': None,
@@ -3643,7 +3687,10 @@ class TestEventBackend(BackendTest):
                               6: {'amount_owed': decimal.Decimal("10.50"),
                                   'amount_paid': decimal.Decimal(0),
                                   'checkin': None,
-                                  'fields': {'transportation': 'pedes'},
+                                  'fields': {
+                                      'transportation': 'pedes',
+                                      'is_child': False,
+                                  },
                                   'list_consent': True,
                                   'mixed_lodging': True,
                                   'notes': None,
@@ -3932,7 +3979,7 @@ class TestEventBackend(BackendTest):
                 1: decimal.Decimal("573.99"),
                 2: decimal.Decimal("589.49"),
                 3: decimal.Decimal("584.49"),
-                4: decimal.Decimal("450.99"),
+                4: decimal.Decimal("431.99"),
                 5: decimal.Decimal("584.49"),
                 6: decimal.Decimal("10.50"),
             }

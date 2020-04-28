@@ -3389,7 +3389,7 @@
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": {"lodge": "Die \\u00fcblichen Verd\\u00e4chtigen :)", "is_child": false}
+            "fields": {"lodge": "Die üblichen Verdächtigen :)", "is_child": false}
         },
         {
             "id": 2,
@@ -3431,7 +3431,7 @@
             "notes": null,
             "orga_notes": null,
             "payment": "2014-04-04",
-            "amount_owed": "450.99",
+            "amount_owed": "431.99",
             "amount_paid": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
