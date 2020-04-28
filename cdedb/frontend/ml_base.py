@@ -301,7 +301,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
-            return self.management(rs, mailinglist_id)
+            return self.show_mailinglist(rs, mailinglist_id)
 
         code = self.mlproxy.delete_mailinglist(
             rs, mailinglist_id, cascade={"subscriptions", "log", "addresses",

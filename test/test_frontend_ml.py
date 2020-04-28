@@ -461,8 +461,8 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_delete_ml(self, user):
-        self.get("/ml/mailinglist/2/management")
-        self.assertTitle("Werbung – Verwaltung")
+        self.get("/ml/mailinglist/2/show")
+        self.assertTitle("Werbung")
         f = self.response.forms["deletemlform"]
         f["ack_delete"].checked = True
         self.submit(f)
