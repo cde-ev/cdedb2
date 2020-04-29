@@ -1725,7 +1725,7 @@ def roles_to_admin_views(roles):
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-CDEDB_EXPORT_EVENT_VERSION = 10
+CDEDB_EXPORT_EVENT_VERSION = 11
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
