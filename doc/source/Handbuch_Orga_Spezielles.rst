@@ -55,7 +55,7 @@ mehrere Veranstaltungsteile, müssen ggf. mehrere Beitragsmodifikatoren angelegt
 werden.
 
 Ein Beitragsmodifikator wird abhängig von einem Ja/Nein-Anmeldungsdatenfeld
-autmatisch auf den zu zahlenden Teilnahmebeitrag addiert. Er kann sowohl positiv
+automatisch auf den zu zahlenden Teilnahmebeitrag addiert. Er kann sowohl positiv
 als auch negativ sein.
 
 Das Einstellen von Beitragsmodifikatoren sei hier anhand von zwei Beispielen
