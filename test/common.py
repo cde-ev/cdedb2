@@ -893,7 +893,7 @@ class FrontendTest(unittest.TestCase):
             log_id = unwrap(log, keys=True)
             log_code = unwrap(log)
             log_code_str = self.gettext(str(log_code))
-            self.assertPresence(log_code_str, div=f"{index}: {log_id}")
+            self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])

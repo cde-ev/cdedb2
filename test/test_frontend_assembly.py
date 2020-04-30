@@ -754,7 +754,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.login(USER_DICT['werner'])
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Log'})
-        self.assertTitle("\nVersammlungs-Log [0–14]\n")
+        self.assertTitle("Versammlungs-Log [1–15 von 15]")
         f = self.response.forms['logshowform']
         codes = [const.AssemblyLogCodes.assembly_created.value,
                  const.AssemblyLogCodes.assembly_changed.value,
@@ -764,19 +764,16 @@ class TestAssemblyFrontend(FrontendTest):
                  const.AssemblyLogCodes.ballot_tallied.value]
         f['codes'] = codes
         f['assembly_id'] = 1
-        f['start'] = 1
-        f['stop'] = 10
         self.submit(f)
-        self.assertTitle("\nVersammlungs-Log [1–6]\n")
+        self.assertTitle("Versammlungs-Log [1–7 von 7]")
 
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Drittes CdE-Konzil'},
                       {'description': 'Log'})
-        self.assertTitle("\nDrittes CdE-Konzil: Log [0–6]\n")
+        self.assertTitle("Drittes CdE-Konzil: Log [1–7 von 7]")
 
         f = self.response.forms['logshowform']
         f['codes'] = codes
-        f['start'] = 1
-        f['stop'] = 10
+        f['offset'] = 2
         self.submit(f)
-        self.assertTitle("\nDrittes CdE-Konzil: Log [1–4]\n")
+        self.assertTitle("Drittes CdE-Konzil: Log [3–52 von 5]")

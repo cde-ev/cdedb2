@@ -1121,7 +1121,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['logshowform']
         f['reviewed_by'] = 'DB-22-1'
         self.submit(f)
-        self.assertTitle('Nutzerdaten-Log [0–0]')
+        self.assertTitle('Nutzerdaten-Log [1–1 von 1]')
         self.assertPresence("Bertålotta Ganondorf")
         self.logout()
         user = USER_DICT["berta"]
@@ -1431,6 +1431,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisform']
         for field, entry in self.CDE_GENESIS_DATA.items():
             f[field] = entry
+        f['birth_name'] = "Ganondorf"
         f['notes'] = ""  # Do not send this to test upload permanance.
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
             data = datafile.read()
@@ -1546,7 +1547,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['logshowform']
         f['codes'] = [20]
         self.submit(f)
-        self.assertTitle("Account-Log [0–0]")
+        self.assertTitle("Account-Log [1–1 von 1]")
 
     def test_genesis_verification_mail_resend(self):
         self.get('/')

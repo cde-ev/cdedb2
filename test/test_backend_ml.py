@@ -382,9 +382,12 @@ class TestMlBackend(BackendTest):
                 'persona_id': persona_id,
                 'submitted_by': persona_id
             }
-            _, log_entry = self.ml.retrieve_log(
+            _, log_entries = self.ml.retrieve_log(
                 self.key, mailinglist_ids=[mailinglist_id])
-            self.assertIn(expected_log, log_entry)
+            # its a bit annoying to check always the correct log id
+            log_entries = [{k: v for k, v in log.items() if k != 'id'}
+                           for log in log_entries]
+            self.assertIn(expected_log, log_entries)
 
     @as_users("anton", "berta", "ferdinand")
     def test_opt_in(self, user):
@@ -915,6 +918,7 @@ class TestMlBackend(BackendTest):
         _, log_entries = self.ml.retrieve_log(
             self.key, mailinglist_ids=[mailinglist_id])
         expected_log = {
+            'id': 1001,
             'additional_info': None,
             'code': const.MlLogCodes.cron_removed,
             'ctime': nearly_now(),
@@ -923,16 +927,6 @@ class TestMlBackend(BackendTest):
             'submitted_by': user['id']
         }
         self.assertIn(expected_log, log_entries)
-        expected_log = {
-            'additional_info': None,
-            'code': const.MlLogCodes.cron_removed,
-            'ctime': nearly_now(),
-            'mailinglist_id': mailinglist_id,
-            'persona_id': 5,
-            'submitted_by': user['id']
-        }
-        self.assertIn(expected_log, log_entries)
-
 
         # Now test lists with implicit subscribers.
         # First for events.
@@ -1573,49 +1567,57 @@ class TestMlBackend(BackendTest):
 
         # now check it
         expectation = (8, (
-            {'additional_info': None,
+            {'id': 1001,
+             'additional_info': None,
              'code': const.MlLogCodes.unsubscribed,
              'ctime': nearly_now(),
              'mailinglist_id': 2,
              'persona_id': 1,
              'submitted_by': user['id']},
-            {'additional_info': 'devnull@example.cde',
+            {'id': 1002,
+             'additional_info': 'devnull@example.cde',
              'code': const.MlLogCodes.subscription_changed,
              'ctime': nearly_now(),
              'mailinglist_id': 4,
              'persona_id': 1,
              'submitted_by': user['id']},
-            {'additional_info': None,
+            {'id': 1003,
+             'additional_info': None,
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
              'mailinglist_id': 7,
              'persona_id': 1,
              'submitted_by': user['id']},
-            {'additional_info': None,
+            {'id': 1004,
+             'additional_info': None,
              'code': const.MlLogCodes.list_created,
              'ctime': nearly_now(),
              'mailinglist_id': new_id,
              'persona_id': None,
              'submitted_by': user['id']},
-            {'additional_info': None,
+            {'id': 1005,
+             'additional_info': None,
              'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
              'mailinglist_id': new_id,
              'persona_id': 1,
              'submitted_by': user['id']},
-            {'additional_info': None,
+            {'id': 1006,
+             'additional_info': None,
              'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
              'mailinglist_id': new_id,
              'persona_id': 2,
              'submitted_by': user['id']},
-            {'additional_info': 'che@example.cde',
+            {'id': 1007,
+             'additional_info': 'che@example.cde',
              'code': const.MlLogCodes.whitelist_added,
              'ctime': nearly_now(),
              'mailinglist_id': new_id,
              'persona_id': None,
              'submitted_by': user['id']},
-            {'additional_info': 'Witz des Tages (witz@lists.cde-ev.de)',
+            {'id': 1008,
+             'additional_info': 'Witz des Tages (witz@lists.cde-ev.de)',
              'code': const.MlLogCodes.list_deleted,
              'ctime': nearly_now(),
              'mailinglist_id': None,

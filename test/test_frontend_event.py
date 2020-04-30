@@ -3290,25 +3290,23 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT['annika'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen-Log [0–15]")
+        self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
-        f['start'] = 1
-        f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Veranstaltungen-Log [1–1]")
+        self.assertTitle("Veranstaltungen-Log [1–2 von 2]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
-        self.assertTitle("Große Testakademie 2222: Log [0–5]")
+        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen-Log [0–15]")
+        self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-5-1"
         f['submitted_by'] = "DB-1-9"
         self.submit(f)
-        self.assertTitle("Veranstaltungen-Log")
+        self.assertTitle("Veranstaltungen-Log [0–0 von 0]")

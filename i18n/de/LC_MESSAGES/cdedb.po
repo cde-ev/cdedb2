@@ -12118,7 +12118,7 @@ msgstr "%(title)s: Log"
 
 #: cdedb/frontend/templates/web/event/view_log.tmpl:9
 msgid "Event Log"
-msgstr ""
+msgstr "Veranstaltungen-Log"
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:10
 #: cdedb/frontend/templates/web/ml/management.tmpl:19

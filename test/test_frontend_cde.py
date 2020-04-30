@@ -1312,21 +1312,14 @@ class TestCdEFrontend(FrontendTest):
 
         # Verify Log
         self.traverse({'description': 'CdE-Log'})
-        f = self.response.forms['logshowform']
-        f['codes'] = [const.CdeLogCodes.semester_ejection.value,
-                      const.CdeLogCodes.semester_balance_update.value]
-        self.submit(f)
-        self.assertTitle("CdE-Log [0–3]")
-        self.assertPresence("0 inaktive Mitglieder gestrichen.",
-                            div="cdelog_entry3")
-        self.assertPresence("3 inaktive Mitglieder gestrichen.",
-                            div="cdelog_entry1")
-        self.assertPresence("3 Probemitgliedschaften beendet",
-                            div="cdelog_entry2")
-        self.assertPresence("0 Probemitgliedschaften beendet",
-                            div="cdelog_entry0")
-        self.assertPresence("32.50 € Guthaben abgebucht.", div="cdelog_entry2")
-        self.assertPresence("30.00 € Guthaben abgebucht.", div="cdelog_entry0")
+        self.assertTitle("CdE-Log [1–8 von 8]")
+        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="2-1002")
+        self.assertPresence("3 Probemitgliedschaften beendet", div="3-1003")
+        self.assertPresence("32.50 € Guthaben abgebucht.", div="3-1003")
+
+        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="6-1006")
+        self.assertPresence("0 Probemitgliedschaften beendet", div="7-1007")
+        self.assertPresence("30.00 € Guthaben abgebucht.", div="7-1007")
 
     @as_users("farin")
     def test_expuls(self, user):
@@ -1427,19 +1420,19 @@ class TestCdEFrontend(FrontendTest):
                       const.CdeLogCodes.expuls_addresscheck_skipped.value,
                       const.CdeLogCodes.expuls_advance.value]
         self.submit(f)
-        self.assertTitle("CdE-Log [0–3]")
+        self.assertTitle("CdE-Log [1–4 von 4]")
         f = self.response.forms['logshowform']
         f['codes'] = [const.CdeLogCodes.expuls_advance.value]
         self.submit(f)
-        self.assertTitle("CdE-Log [0–1]")
+        self.assertTitle("CdE-Log [1–2 von 2]")
         f = self.response.forms['logshowform']
         f['codes'] = [const.CdeLogCodes.expuls_addresscheck.value]
         self.submit(f)
-        self.assertTitle("CdE-Log [0–0]")
+        self.assertTitle("CdE-Log [1–1 von 1]")
         f = self.response.forms['logshowform']
         f['codes'] = [const.CdeLogCodes.expuls_addresscheck_skipped.value]
         self.submit(f)
-        self.assertTitle("CdE-Log [0–0]")
+        self.assertTitle("CdE-Log [1–1 von 1]")
 
     @as_users("vera")
     def test_institutions(self, user):
@@ -2012,15 +2005,15 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['farin'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/finances'})
-        self.assertTitle("Finanz-Log [0–1]")
+        self.assertTitle("Finanz-Log [1–2 von 2]")
 
     @as_users("vera")
     def test_changelog_meta(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/core/changelog/view'})
-        self.assertTitle("Nutzerdaten-Log [0–23]")
+        self.assertTitle("Nutzerdaten-Log [1–24 von 24]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)
-        self.assertTitle("Nutzerdaten-Log [0–0]")
+        self.assertTitle("Nutzerdaten-Log [1–1 von 1]")
         self.assertPresence("Bertålotta Beispiel")

@@ -825,7 +825,7 @@ class TestMlFrontend(FrontendTest):
         # TODO check that form elements are readonly
 
         self.traverse({"href": "ml/mailinglist/3/log"})
-        self.assertTitle("Witz des Tages: Log")
+        self.assertTitle("Witz des Tages: Log [0–0 von 0]")
 
     def test_log(self):
         ## First: generate data
@@ -838,17 +838,16 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
-        self.assertTitle("Mailinglisten-Log [0–8]")
+        self.assertTitle("Mailinglisten-Log [1–9 von 9]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4
-        f['start'] = 1
-        f['stop'] = 10
+
         self.submit(f)
-        self.assertTitle("Mailinglisten-Log [1–3]")
+        self.assertTitle("Mailinglisten-Log [1–4 von 4]")
 
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})
-        self.assertTitle("Klatsch und Tratsch: Log [0–5]")
+        self.assertTitle("Klatsch und Tratsch: Log [1–6 von 6]")

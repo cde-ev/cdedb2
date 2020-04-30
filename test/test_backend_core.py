@@ -146,6 +146,7 @@ class TestCoreBackend(BackendTest):
         ret, _ = self.core.change_username(self.key, persona_id, newaddress, password=None)
         self.assertTrue(ret)
         expected_log = {
+            'id': 1001,
             'ctime': nearly_now(),
             'persona_id': persona_id,
             'code': const.CoreLogCodes.username_change,
@@ -423,6 +424,7 @@ class TestCoreBackend(BackendTest):
         merge_dicts(data, persona)
         self.assertLess(0, self.core.change_persona_realms(self.key, data))
         log_entry = {
+            'id': 1001,
             'ctime': nearly_now(),
             'code': const.CoreLogCodes.realm_change,
             'persona_id': persona_id,
@@ -537,6 +539,7 @@ class TestCoreBackend(BackendTest):
 
         genesis_deleted = const.CoreLogCodes.genesis_deleted
         log_entry_expectation = {
+            'id': 1004,
             'additional_info': case_data['username'],
             'code': genesis_deleted,
             'ctime': nearly_now(),
@@ -944,6 +947,7 @@ class TestCoreBackend(BackendTest):
         core_log_expectation = (3, (
             # Finalizing the privilege process.
             {
+                'id': 1001,
                 'additional_info': "Änderung der Admin-Privilegien angestoßen.",
                 'code': const.CoreLogCodes.privilege_change_pending.value,
                 'ctime': nearly_now(),
@@ -952,6 +956,7 @@ class TestCoreBackend(BackendTest):
             },
             # Starting the privilege change process.
             {
+                'id': 1002,
                 'additional_info': "Änderung der Admin-Privilegien bestätigt.",
                 'code': const.CoreLogCodes.privilege_change_approved.value,
                 'ctime': nearly_now(),
@@ -960,6 +965,7 @@ class TestCoreBackend(BackendTest):
             },
             # Password invalidation.
             {
+                'id': 1003,
                 'additional_info': None,
                 'code': const.CoreLogCodes.password_invalidated,
                 'ctime': nearly_now(),
@@ -1054,22 +1060,26 @@ class TestCoreBackend(BackendTest):
         self.core.change_password(self.key, user['password'], newpass)
 
         expectation = (4, (
-            {'additional_info': None,
+            {'id': 1001,
+             'additional_info': None,
              'code': const.CoreLogCodes.persona_creation,
              'ctime': nearly_now(),
              'persona_id': 1001,
              'submitted_by': user['id']},
-            {'additional_info': 'zeldax@example.cde',
+            {'id': 1002,
+             'additional_info': 'zeldax@example.cde',
              'code': const.CoreLogCodes.genesis_request,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': None},
-            {'additional_info': 'zeldax@example.cde',
+            {'id': 1003,
+             'additional_info': 'zeldax@example.cde',
              'code': const.CoreLogCodes.genesis_approved,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': user['id']},
-            {'additional_info': None,
+            {'id': 1004,
+             'additional_info': None,
              'code': const.CoreLogCodes.password_change,
              'ctime': nearly_now(),
              'persona_id': 22,
