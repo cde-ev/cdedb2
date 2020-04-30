@@ -25,7 +25,7 @@
     {% call logging.table(log) %}
         {% for entry in log %}
             {# The event_id parameter makes this complicated, so we can not use logging.row() here. #}
-            <tr id="{{ loop.index }}: {{ entry['id'] }}">
+            <tr id="{{ loop.index }}-{{ entry['id'] }}">
                 <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
                 <td>{{ gettext(enums['EventLogCodes'](entry['code'])|string) }}</td>
                 <td>

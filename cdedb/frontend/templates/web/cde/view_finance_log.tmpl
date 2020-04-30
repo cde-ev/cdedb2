@@ -31,7 +31,7 @@
         </thead>
         <tbody>
             {% for entry in log %}
-                <tr>
+                <tr id="{{ loop.index }}-{{ entry['id'] }}">
                     <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
                     <td>{{ gettext(enums['FinanceLogCodes'](entry['code'])|string) }}</td>
                     <td>

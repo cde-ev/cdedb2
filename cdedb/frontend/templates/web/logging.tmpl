@@ -42,7 +42,7 @@
 {% endmacro %}
 
 {% macro row(entry, enum, iteration, key='', link=None, personalink=None) %}
-    <tr id="{{ iteration }}: {{ entry['id'] }}">
+    <tr id="{{ iteration }}-{{ entry['id'] }}">
         <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
         <td>{{ gettext(enum(entry['code'])|string) }}</td>
         <td>
