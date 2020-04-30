@@ -13,5 +13,5 @@
     {% set columns =  [dict(name="title", label="Name", func=util.input_text),
                        dict(name="moniker", label="Shortname", func=util.input_text)] %}
 
-    {{ util.print_flux_table("Institution", columns, institutions, 'cde/institution_summary', locked_entries=is_referenced, sortkey=EntitySorter.institution) }}
+    {{ util.print_flux_table("Institution", columns, institutions, 'cde/institution_summary', locked=is_referenced, sortkey=EntitySorter.institution) }}
 {% endblock %}
