@@ -808,7 +808,7 @@ class FrontendTest(unittest.TestCase):
         """Helper function to test the logic of the log pagination.
 
         This should be called from every frontend log, to ensure our pagination
-        works.
+        works. Logs must contain at least 9 log entries.
 
         :type title: str
         :param title: of the Log page, like "Userdata-Log"
@@ -872,7 +872,8 @@ class FrontendTest(unittest.TestCase):
         # check last-page button (results in offset = None)
         self.traverse({'linkid': 'pagination-last'})
         self.assertNoLink(content='›')
-        self._log_subroutine(title, logs, start=total - length + 1, end=total)
+        self._log_subroutine(
+            title, logs, start=length * ((total - 1) // length) + 1, end=total)
 
         # tidy up the form
         f["offset"] = None
