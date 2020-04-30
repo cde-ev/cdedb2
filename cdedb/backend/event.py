@@ -21,114 +21,12 @@ from cdedb.common import (
     PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter)
+    mixed_existence_sorter, xsorted)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
 from cdedb.validation import parse_date, parse_datetime
 
-
-# This is used for generating the table for general queries for
-# registrations. We moved this rather huge blob here, so it doesn't
-# disfigure the query code.
-#
-# The end result may look something like the following::
-"""
-event.registrations AS reg
-JOIN core.personas AS persona ON reg.persona_id = persona.id
-LEFT OUTER JOIN (SELECT registration_id, status, lodgement_id, is_reserve
-                 FROM event.registration_parts WHERE part_id = 1)
-    AS part1 ON reg.id = part1.registration_id
-LEFT OUTER JOIN (SELECT (fields->>\'contamination\')::varchar
-                    AS "xfield_contamination",
-                 id, moniker, notes
-                 FROM event.lodgements WHERE event_id=1)
-    AS lodgement1 ON part1.lodgement_id = lodgement1.id
-LEFT OUTER JOIN (SELECT registration_id, status, lodgement_id, is_reserve
-                 FROM event.registration_parts WHERE part_id = 2)
-    AS part2 ON reg.id = part2.registration_id
-LEFT OUTER JOIN (SELECT (fields->>\'contamination\')::varchar
-                     AS "xfield_contamination",
-                 id, moniker, notes
-                 FROM event.lodgements WHERE event_id=1)
-    AS lodgement2 ON part2.lodgement_id = lodgement2.id
-LEFT OUTER JOIN (SELECT registration_id, status, lodgement_id, is_reserve
-                 FROM event.registration_parts WHERE part_id = 3)
-    AS part3 ON reg.id = part3.registration_id
-LEFT OUTER JOIN (SELECT (fields->>\'contamination\')::varchar
-                     AS "xfield_contamination",
-                 id, moniker, notes
-                 FROM event.lodgements WHERE event_id=1)
-    AS lodgement3 ON part3.lodgement_id = lodgement3.id
-LEFT OUTER JOIN (SELECT registration_id, course_id, course_instructor,
-                 (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
-                  AND course_id = course_instructor) AS is_course_instructor
-                 FROM event.registration_tracks WHERE track_id = 1)
-    AS track1 ON reg.id = track1.registration_id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
-                 id, nr, title, shortname, notes
-                 FROM event.courses WHERE event_id=1)
-    AS course1 ON track1.course_id = course1.id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
-                 id, nr, title, shortname, notes
-                 FROM event.courses WHERE event_id=1)
-    AS course_instructor1 ON track1.course_instructor = course_instructor1.id
-LEFT OUTER JOIN (SELECT registration_id, course_id, course_instructor,
-                 (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
-                  AND course_id = course_instructor) AS is_course_instructor
-                 FROM event.registration_tracks WHERE track_id = 2)
-    AS track2 ON reg.id = track2.registration_id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
-                 id, nr, title, shortname, notes
-                 FROM event.courses WHERE event_id=1)
-    AS course2 ON track2.course_id = course2.id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
-                 id, nr, title, shortname, notes
-                 FROM event.courses WHERE event_id=1)
-    AS course_instructor2 ON track2.course_instructor = course_instructor2.id
-LEFT OUTER JOIN (SELECT registration_id, course_id, course_instructor,
-                 (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
-                  AND course_id = course_instructor) AS is_course_instructor
-                 FROM event.registration_tracks WHERE track_id = 3)
-    AS track3 ON reg.id = track3.registration_id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
-                 id, nr, title, shortname, notes
-                 FROM event.courses WHERE event_id=1)
-    AS course3 ON track3.course_id = course3.id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
-                 id, nr, title, shortname, notes
-                 FROM event.courses WHERE event_id=1)
-    AS course_instructor3 ON track3.course_instructor = course_instructor3.id
-LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS creation_time
-                 FROM event.log WHERE event_id = 1 AND code = 50
-                 GROUP BY persona_id)
-    AS ctime ON ctime.persona_id = reg.persona_id
-LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS modification_time
-                 FROM event.log WHERE event_id = 1 AND code = 51
-                 GROUP BY persona_id)
-    AS mtime ON mtime.persona_id = reg.persona_id
-LEFT OUTER JOIN (SELECT (fields->>\'brings_balls\')::boolean
-                    AS "xfield_brings_balls",
-                 (fields->>\'transportation\')::varchar
-                    AS "xfield_transportation",
-                 (fields->>\'lodge\')::varchar AS "xfield_lodge",
-                 (fields->>\'may_reserve\')::boolean AS "xfield_may_reserve",
-                 id AS reg_id
-                 FROM event.registrations WHERE event_id=1)
-    AS reg_fields ON reg.id = reg_fields.reg_id
-"""
-
-_REGISTRATION_VIEW_TEMPLATE = glue(
-    "event.registrations AS reg",
-    "JOIN core.personas AS persona ON reg.persona_id = persona.id",
-    "{part_tables}",  # per part details will be filled in here
-    "{track_tables}",  # per track details will be filled in here
-    "{creation_date}",
-    "{modification_date}",
-    "LEFT OUTER JOIN (SELECT {reg_columns} FROM",
-    "event.registrations WHERE event_id={event_id}) AS reg_fields",
-    "ON reg.id = reg_fields.reg_id",
-)
 
 class EventBackend(AbstractBackend):
     """Take note of the fact that some personas are orgas and thus have
@@ -207,11 +105,10 @@ class EventBackend(AbstractBackend):
         # the following does the argument checking
         is_locked = self.is_offline_locked(rs, event_id=event_id,
                                            course_id=course_id)
-        if is_locked != self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
-    @singularize("orga_info")
     def orga_infos(self, rs, ids):
         """List events organized by specific personas.
 
@@ -226,6 +123,7 @@ class EventBackend(AbstractBackend):
         for anid in ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
+    orga_info = singularize(orga_infos)
 
     def event_log(self, rs, code, event_id, persona_id=None,
                   additional_info=None):
@@ -302,7 +200,7 @@ class EventBackend(AbstractBackend):
         """
         subquery = glue(
             "SELECT e.id, e.registration_start, e.title, e.is_visible,",
-            "e.is_archived, MAX(p.part_end) AS event_end",
+            "e.is_archived, e.is_cancelled, MAX(p.part_end) AS event_end",
             "FROM event.events AS e JOIN event.event_parts AS p",
             "ON p.event_id = e.id",
             "GROUP BY e.id")
@@ -315,8 +213,10 @@ class EventBackend(AbstractBackend):
         if current is not None:
             if current:
                 constraints.append("e.event_end > now()")
+                constraints.append("e.is_cancelled = False")
             else:
-                constraints.append("e.event_end <= now()")
+                constraints.append(
+                    "(e.event_end <= now() OR e.is_cancelled = True)")
         if archived is not None:
             constraints.append("is_archived = %s")
             params.append(archived)
@@ -361,141 +261,175 @@ class EventBackend(AbstractBackend):
                     and "ml_admin" not in rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
-            # Fix for custom fields with uppercase letters so they do not
-            # get misinterpreted by postgres
-            query.fields_of_interest = [
-                ",".join(
-                    ".".join(atom if atom.islower() else '"{}"'.format(atom)
-                             for atom in moniker.split("."))
-                    for moniker in column.split(","))
-                for column in query.fields_of_interest]
-            query.constraints = [
-                (",".join(
-                    ".".join(atom if atom.islower() else '"{}"'.format(atom)
-                             for atom in moniker.split("."))
-                    for moniker in column.split(",")),
-                 operator, value)
-                for column, operator, value in query.constraints
-            ]
-            query.order = [
-                (".".join(atom if atom.islower() else '"{}"'.format(atom)
-                          for atom in entry.split(".")),
-                 ascending)
-                for entry, ascending in query.order]
-            for field, _, _ in query.constraints:
-                if '"' in field:
-                    query.spec[field] = query.spec[field.replace('"', '')]
-                    del query.spec[field.replace('"', '')]
 
-            lodgement_fields = {
-                e['field_name']:
-                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
-                for e in event['fields'].values()
-                if e['association'] == const.FieldAssociations.lodgement
-            }
-            lodge_columns_gen = lambda part_id: ", ".join(
-                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
-                    name, kind)
-                 for name, kind in lodgement_fields.items()]
-                + [col for col in ("id", "moniker", "notes")]
-            )
-            part_table_template = glue(
-                # first the per part table
-                "LEFT OUTER JOIN (SELECT registration_id, status,",
-                "lodgement_id, is_reserve",
-                "FROM event.registration_parts WHERE part_id = {part_id})",
-                "AS part{part_id} ON reg.id = part{part_id}.registration_id",
-                # second the associated lodgement fields
-                "LEFT OUTER JOIN (SELECT {lodge_columns} FROM",
-                "event.lodgements WHERE event_id={event_id})",
-                "AS lodgement{part_id}",
-                "ON part{part_id}.lodgement_id",
-                "= lodgement{part_id}.id",
-            )
-            course_fields = {
-                e['field_name']:
-                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
-                for e in event['fields'].values()
-                if e['association'] == const.FieldAssociations.course
-            }
-            course_columns_gen = lambda track_id, identifier: ", ".join(
-                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
-                    name, kind)
-                 for name, kind in course_fields.items()]
-                + [col for col in ("id", "nr", "title", "shortname", "notes")]
-            )
-            track_table_template = glue(
-                # first the per track table
-                "LEFT OUTER JOIN (SELECT registration_id, course_id,",
-                "course_instructor, ",
-                "(NOT(course_id IS NULL AND course_instructor IS NOT NULL)",
-                "AND course_id = course_instructor)",
-                "AS is_course_instructor",
-                "FROM event.registration_tracks WHERE track_id = {track_id})",
-                "AS track{track_id} ON",
-                "reg.id = track{track_id}.registration_id",
-                # second the associated course fields
-                "LEFT OUTER JOIN (SELECT {course_columns} FROM",
-                "event.courses WHERE event_id={event_id})",
-                "AS course{track_id}",
-                "ON track{track_id}.course_id",
-                "= course{track_id}.id",
-                # third the fields for the instructed course
-                "LEFT OUTER JOIN (SELECT {course_instructor_columns} FROM",
-                "event.courses WHERE event_id={event_id})",
-                "AS course_instructor{track_id}",
-                "ON track{track_id}.course_instructor",
-                "= course_instructor{track_id}.id",
-            )
-            creation_date = glue(
-                "LEFT OUTER JOIN",
-                "(SELECT persona_id, MAX(ctime) AS creation_time",
-                "FROM event.log",
-                "WHERE event_id = {event_id} AND code = {reg_create_code}",
-                "GROUP BY persona_id)",
-                "AS ctime ON ctime.persona_id = reg.persona_id").format(
-                event_id=event_id,
-                reg_create_code=const.EventLogCodes.registration_created)
-            modification_date = glue(
-                "LEFT OUTER JOIN",
-                "(SELECT persona_id, MAX(ctime) AS modification_time",
-                "FROM event.log",
-                "WHERE event_id = {event_id} AND code = {reg_mod_code}",
-                "GROUP BY persona_id)",
-                "AS mtime ON mtime.persona_id = reg.persona_id").format(
-                event_id=event_id,
-                reg_mod_code=const.EventLogCodes.registration_changed)
+            # For more details about this see `doc/Registration_Query`.
+            # The template for the final view.
+            registration_table = \
+            """event.registrations AS reg
+            LEFT OUTER JOIN
+                core.personas AS persona ON reg.persona_id = persona.id
+            {registration_fields_table}
+            {part_tables}
+            {track_tables}
+            {creation_date_table}
+            {modification_date_table}"""
+
+            # Dynamically construct columns for custom registration datafields.
             reg_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.registration
             }
-            reg_columns = ", ".join(
+            reg_field_columns = ", ".join(
                 ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
                     name, kind)
-                 for name, kind in reg_fields.items()]
-                + ["id AS reg_id"])
-            part_table_gen = lambda part_id: part_table_template.format(
-                part_id=part_id,
-                lodge_columns=lodge_columns_gen(part_id),
-                event_id=event_id)
-            track_table_gen = lambda track_id: track_table_template.format(
-                course_columns=course_columns_gen(track_id, "course"),
-                course_instructor_columns=course_columns_gen(
-                    track_id, "course_instructor"),
-                track_id=track_id, event_id=event_id)
-            view = _REGISTRATION_VIEW_TEMPLATE.format(
-                event_id=event_id,
-                part_tables=" ".join(part_table_gen(part_id)
-                                     for part_id in event['parts']),
-                track_tables=" ".join(track_table_gen(track_id)
-                                      for part in event['parts'].values()
-                                      for track_id in part['tracks']),
-                creation_date=creation_date,
-                modification_date=modification_date,
-                reg_columns=reg_columns,
+                    for name, kind in reg_fields.items()])
+
+            if reg_field_columns:
+                reg_field_columns += ", "
+            registration_fields_table = \
+                """LEFT OUTER JOIN (
+                    SELECT
+                        {reg_field_columns}
+                        id
+                    FROM
+                        event.registrations
+                    WHERE
+                        event_id = {event_id}
+                ) AS reg_fields ON reg.id = reg_fields.id""".format(
+                    event_id=event_id, reg_field_columns=reg_field_columns)
+
+            # Dynamically construct the columns for custom lodgement fields.
+            lodgement_fields = {
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.lodgement
+            }
+            lodge_field_columns = ", ".join(
+                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
+                 for name, kind in lodgement_fields.items()]
             )
+            if lodge_field_columns:
+                lodge_field_columns += ", "
+            lodge_view = """SELECT
+                {lodge_field_columns}
+                moniker, notes, id
+            FROM
+                event.lodgements
+            WHERE
+                event_id = {event_id}""".format(
+                event_id=event_id, lodge_field_columns=lodge_field_columns)
+
+            # The template for registration part and lodgment information.
+            part_table = \
+            """LEFT OUTER JOIN (
+                SELECT
+                    registration_id, status, lodgement_id, is_reserve
+                FROM
+                    event.registration_parts
+                WHERE
+                    part_id = {part_id}
+            ) AS part{part_id} ON reg.id = part{part_id}.registration_id
+            LEFT OUTER JOIN (
+                {lodge_view}
+            ) AS lodgement{part_id}
+            ON part{part_id}.lodgement_id = lodgement{part_id}.id"""
+
+            part_tables = " ".join(
+                part_table.format(
+                    part_id=part['id'], lodge_view=lodge_view)
+                for part in event['parts'].values()
+            )
+            # Dynamically construct columns for custom course fields.
+            course_fields = {
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.course
+            }
+            course_field_columns = ", ".join(
+                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
+                 for name, kind in course_fields.items()]
+            )
+            if course_field_columns:
+                course_field_columns += ", "
+            course_view = \
+            """SELECT
+                {course_field_columns}
+                id, nr, title, shortname, notes, instructors
+            FROM
+                event.courses
+            WHERE
+                event_id = {event_id}""".format(
+                event_id=event_id, course_field_columns=course_field_columns)
+
+            track_table = \
+            """LEFT OUTER JOIN (
+                SELECT
+                    registration_id, course_id, course_instructor,
+                    (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
+                     AND course_id = course_instructor) AS is_course_instructor
+                FROM
+                    event.registration_tracks
+                WHERE
+                    track_id = {track_id}
+            ) AS track{track_id} ON reg.id = track{track_id}.registration_id
+            LEFT OUTER JOIN (
+                {course_view}
+            ) AS course{track_id}
+            ON track{track_id}.course_id = course{track_id}.id
+            LEFT OUTER JOIN (
+                {course_view}
+            ) AS course_instructor{track_id}
+            ON track{track_id}.course_instructor = course_instructor{track_id}.id"""
+
+            track_tables = " ".join(
+                track_table.format(
+                    track_id=track['id'], course_view=course_view,
+                )
+                for track in event['tracks'].values()
+            )
+
+            # Retrieve creation and modification timestamps from log.
+            creation_date_table = \
+            """LEFT OUTER JOIN (
+                SELECT
+                    persona_id, MAX(ctime) AS creation_time
+                FROM
+                    event.log
+                WHERE
+                    event_id = {event_id} AND code = {reg_create_code}
+                GROUP BY
+                    persona_id
+            ) AS ctime ON reg.persona_id = ctime.persona_id""".format(
+                event_id=event_id,
+                reg_create_code=const.EventLogCodes.registration_created.value)
+            modification_date_table = \
+            """LEFT OUTER JOIN (
+                SELECT
+                    persona_id, MAX(ctime) AS modification_time
+                FROM
+                    event.log
+                WHERE
+                    event_id = {event_id} AND code = {reg_changed_code}
+                GROUP BY
+                    persona_id
+            ) AS mtime ON reg.persona_id = mtime.persona_id""".format(
+                event_id=event_id,
+                reg_changed_code=const.EventLogCodes.registration_changed.value)
+
+            view = registration_table.format(
+                registration_fields_table=registration_fields_table,
+                part_tables=part_tables,
+                track_tables=track_tables,
+                creation_date_table=creation_date_table,
+                modification_date_table=modification_date_table,
+            )
+
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
@@ -522,12 +456,218 @@ class EventBackend(AbstractBackend):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
                 query.spec["is_{}_realm".format(realm)] = "bool"
+        elif query.scope == "qview_event_course":
+            event_id = affirm("id", event_id)
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+            event = self.get_event(rs, event_id)
+
+            # Template for the final view.
+            # For more in depth information see `doc/Course_Query`.
+            # We retrieve general course, custom field and track specific info.
+            course_table = """
+            event.courses AS course
+            LEFT OUTER JOIN (
+                {course_fields_table}
+            ) AS course_fields ON course.id = course_fields.id
+            {track_tables}
+            """
+
+            # Dynamically construct the custom field view.
+            course_fields = {
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.course
+            }
+            course_field_columns = ", ".join(
+                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
+                 for name, kind in course_fields.items()]
+            )
+            if course_field_columns:
+                course_field_columns += ", "
+            course_fields_table = \
+            """SELECT
+                {course_field_columns}
+                id
+            FROM
+                event.courses
+            WHERE
+                event_id = {event_id}""".format(
+                course_field_columns=course_field_columns, event_id=event_id)
+
+            # Template for retrieving course information for one specific track.
+            # We don't use the {base} table from below, because we need
+            # the id to be distinct.
+            track_table = lambda track: \
+                """LEFT OUTER JOIN (
+                    (
+                        SELECT
+                            id AS base_id
+                        FROM
+                            event.courses
+                        WHERE
+                            event_id = {event_id}
+                    ) AS base
+                    LEFT OUTER JOIN (
+                        {segment_table}
+                    ) AS segment{track_id} ON base_id = segment{track_id}.id
+                    LEFT OUTER JOIN (
+                        {attendees_table}
+                    ) AS attendees{track_id} ON base_id = attendees{track_id}.id
+                    LEFT OUTER JOIN (
+                        {instructors_table}
+                    ) AS instructors{track_id} ON base_id = instructors{track_id}.id
+                    LEFT OUTER JOIN (
+                        {choices_tables}
+                    ) AS choices{track_id} ON base_id = choices{track_id}.id
+                ) AS track{track_id}
+                    ON course.id = track{track_id}.base_id""".format(
+                    event_id=event_id, track_id=track['id'],
+                    segment_table=segment_table(track['id']),
+                    attendees_table=attendees_table(track['id']),
+                    instructors_table=instructors_table(track['id']),
+                    choices_tables=choices_tables(track),  # pass full track.
+                )
+
+            # A base table with all course ids we need in the following tables.
+            base = "(SELECT id FROM event.courses WHERE event_id = {}) AS c".\
+                format(event_id)
+
+            # General course information specific to a track.
+            segment_table = lambda t_id: \
+            """SELECT
+                id, COALESCE(is_active, False) AS takes_place,
+                is_active IS NOT NULL AS is_offered
+            FROM (
+                {base}
+                LEFT OUTER JOIN (
+                    SELECT
+                        is_active, course_id
+                    FROM
+                        event.course_segments
+                    WHERE track_id = {track_id}
+                ) AS segment ON c.id = segment.course_id
+            ) AS segment""".format(
+                base=base,
+                track_id=t_id,
+            )
+
+            # Retrieve attendee count.
+            attendees_table = lambda t_id: \
+                """SELECT
+                    id, COUNT(registration_id) AS attendees
+                FROM (
+                    {base}
+                    LEFT OUTER JOIN (
+                        SELECT
+                            registration_id, course_id
+                        FROM
+                            event.registration_tracks
+                        WHERE track_id = {track_id}
+                    ) AS rt ON c.id = rt.course_id
+                ) AS attendee_count
+                GROUP BY
+                    id""".format(
+                    base=base,
+                    track_id=t_id,
+                )
+
+            # Retrieve instructor count.
+            instructors_table = lambda t_id: \
+                """SELECT
+                    id, COUNT(registration_id) as instructors
+                FROM (
+                    {base}
+                    LEFT OUTER JOIN (
+                        SELECT
+                            registration_id, course_instructor
+                        FROM
+                            event.registration_tracks
+                        WHERE
+                            track_id = {track_id}
+                        ) as rt on c.id = rt.course_instructor
+                ) AS instructor_count
+                GROUP BY
+                    id""".format(
+                    base=base,
+                    track_id=t_id,
+                )
+
+            # Retrieve course choice count. Limit to regs with relevant stati.
+            stati = {
+                const.RegistrationPartStati.participant,
+                const.RegistrationPartStati.guest,
+                const.RegistrationPartStati.waitlist,
+                const.RegistrationPartStati.applied,
+            }
+            # Template for a specific course choice in a specific track.
+            choices_table = lambda t_id, p_id, rank: \
+                """SELECT
+                    id AS course_id, COUNT(registration_id) AS num_choices{rank}
+                FROM (
+                    {base}
+                    LEFT OUTER JOIN (
+                        SELECT
+                            registration_id, course_id AS c_id
+                        FROM (
+                            (
+                                SELECT registration_id, course_id
+                                FROM event.course_choices
+                                WHERE rank = {rank} AND track_id = {track_id}
+                            ) AS choices
+                            LEFT OUTER JOIN (
+                                SELECT
+                                    registration_id AS reg_id, status
+                                FROM
+                                    event.registration_parts
+                                WHERE
+                                    part_id = {part_id}
+                            ) AS reg_part
+                            ON choices.registration_id = reg_part.reg_id
+                        ) AS choices
+                        WHERE
+                            status = ANY({stati})
+                    ) AS status ON c.id = status.c_id
+                ) AS choices_count
+                GROUP BY
+                    course_id""".format(
+                    base=base, track_id=t_id, rank=rank, part_id=p_id,
+                    stati="ARRAY[{}]".format(
+                        ",".join(str(x.value) for x in stati)),
+                )
+            # Combine all the choices for a specific track.
+            choices_tables = lambda track: \
+                base + "\n" + " ".join(
+                    """LEFT OUTER JOIN (
+                        {choices_table}
+                    ) AS choices{track_id}_{rank}
+                        ON c.id = choices{track_id}_{rank}.course_id""".format(
+                        choices_table=choices_table(
+                            track['id'], track['part_id'], rank),
+                        track_id=track['id'],
+                        rank=rank,
+                    )
+                    for rank in range(track['num_choices'])
+                )
+
+            view = course_table.format(
+                course_fields_table=course_fields_table,
+                track_tables=" ".join(
+                    track_table(track)
+                    for track in event['tracks'].values()),
+            )
+
+            query.constraints.append(
+                ("event_id", QueryOperators.equal, event_id))
+            query.spec['event_id'] = "id"
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, view=view)
 
     @access("anonymous")
-    @singularize("get_event")
     def get_events(self, rs, ids):
         """Retrieve data for some events organized via DB.
 
@@ -600,6 +740,7 @@ class EventBackend(AbstractBackend):
                     and (ret[anid]['registration_hard_limit'] is None
                          or ret[anid]['registration_hard_limit'] >= now()))
         return ret
+    get_event = singularize(get_events)
 
     def _get_event_fields(self, rs, event_id):
         """
@@ -743,7 +884,7 @@ class EventBackend(AbstractBackend):
         deleted = {x for x in data
                    if x > 0 and data[x] is None}
         # new
-        for x in reversed(sorted(new)):
+        for x in reversed(xsorted(new)):
             new_track = {
                 "part_id": part_id,
                 **data[x]
@@ -1300,7 +1441,6 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("anonymous")
-    @singularize("get_course")
     def get_courses(self, rs, ids):
         """Retrieve data for some courses organized via DB.
 
@@ -1337,6 +1477,7 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
+    get_course = singularize(get_courses)
 
     @access("event")
     def set_course(self, rs, data):
@@ -1830,7 +1971,6 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event")
-    @singularize("get_registration")
     def get_registrations(self, rs, ids):
         """Retrieve data for some registrations.
 
@@ -1911,12 +2051,13 @@ class EventBackend(AbstractBackend):
                     tmp = {e['course_id']: e['rank'] for e in choices
                            if (e['registration_id'] == anid
                                and e['track_id'] == track_id)}
-                    tracks[track_id]['choices'] = sorted(tmp.keys(),
-                                                         key=tmp.get)
+                    tracks[track_id]['choices'] = xsorted(tmp.keys(),
+                                                          key=tmp.get)
                 ret[anid]['tracks'] = tracks
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
+    get_registration = singularize(get_registrations)
 
     @access("event")
     def has_registrations(self, rs, event_id):
@@ -2282,7 +2423,6 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    @singularize("calculate_fee")
     def calculate_fees(self, rs, ids):
         """Calculate the total fees for some registrations.
 
@@ -2333,6 +2473,7 @@ class EventBackend(AbstractBackend):
                     fee += event['nonmember_surcharge']
                 ret[reg_id] = fee
         return ret
+    calculate_fee = singularize(calculate_fees)
 
     @access("event")
     def check_orga_addition_limit(self, rs, event_id):
@@ -2361,7 +2502,7 @@ class EventBackend(AbstractBackend):
                 "AND ctime >= now() - interval '24 hours'")
             params = (event_id, const.EventLogCodes.registration_created)
             num = unwrap(self.query_one(rs, query, params))
-        return num < self.conf.ORGA_ADD_LIMIT
+        return num < self.conf["ORGA_ADD_LIMIT"]
 
     @access("event")
     def list_lodgement_groups(self, rs, event_id):
@@ -2380,7 +2521,6 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['moniker'] for e in data}
 
     @access("event")
-    @singularize("get_lodgement_group")
     def get_lodgement_groups(self, rs, ids):
         """Retrieve data for some lodgement groups.
 
@@ -2405,6 +2545,7 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
+    get_lodgement_group = singularize(get_lodgement_groups)
 
     @access("event")
     def set_lodgement_group(self, rs, data):
@@ -2549,7 +2690,6 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['moniker'] for e in data}
 
     @access("event")
-    @singularize("get_lodgement")
     def get_lodgements(self, rs, ids):
         """Retrieve data for some lodgements.
 
@@ -2578,6 +2718,7 @@ class EventBackend(AbstractBackend):
             for entry in ret.values():
                 entry['fields'] = cast_fields(entry['fields'], event_fields)
         return {e['id']: e for e in data}
+    get_lodgement = singularize(get_lodgements)
 
     @access("event")
     def set_lodgement(self, rs, data):
@@ -2746,7 +2887,7 @@ class EventBackend(AbstractBackend):
             ("field_id", "pos", "title", "info", "input_size", "readonly",
              "default_value"),
             (event_id,), entity_key="event_id")
-        return sorted(data, key=lambda x: x['pos'])
+        return xsorted(data, key=lambda x: x['pos'])
 
     @access("event")
     def set_questionnaire(self, rs, event_id, data):
@@ -2795,7 +2936,7 @@ class EventBackend(AbstractBackend):
         # is true, in the offline instance it is the other way around
         update = {
             'id': event_id,
-            'offline_lock': not self.conf.CDEDB_OFFLINE_DEPLOYMENT,
+            'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
         ret = self.sql_update(rs, "event.events", update)
         self.event_log(rs, const.EventLogCodes.event_locked, event_id)
@@ -2972,7 +3113,7 @@ class EventBackend(AbstractBackend):
         data = affirm("serialized_event", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             raise RuntimeError(n_(glue("Imports into an offline instance must",
                                        "happen via shell scripts.")))
         if not self.is_offline_locked(rs, event_id=data['id']):
@@ -3129,7 +3270,7 @@ class EventBackend(AbstractBackend):
                     tmp = {e['course_id']: e['rank'] for e in choices
                            if (e['registration_id'] == track['registration_id']
                                and e['track_id'] == track_id)}
-                    track['choices'] = sorted(tmp.keys(), key=tmp.get)
+                    track['choices'] = xsorted(tmp.keys(), key=tmp.get)
                     del track['registration_id']
                     del track['track_id']
                 registration['tracks'] = tracks

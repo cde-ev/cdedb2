@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import datetime
+import re
 import time
 import webtest
+import unittest
 
 from test.common import as_users, USER_DICT, FrontendTest
 
-from cdedb.common import ASSEMBLY_BAR_MONIKER, now
+from cdedb.common import ASSEMBLY_BAR_MONIKER, now, ADMIN_VIEWS_COOKIE_NAME
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
 
@@ -53,10 +55,12 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({"description": "Abstimmungen"},
                       {"description": bdata['title']})
         if candidates:
-            f = self.response.forms["addcandidateform"]
+
             for candidate in candidates:
+                f = self.response.forms["candidatessummaryform"]
                 for k, v in candidate.items():
-                    f[k] = v
+                    f[f'{k}_-1'] = v
+                f['create_-1'].checked = True
                 self.submit(f)
 
     @as_users("werner", "berta", "kalif")
@@ -158,6 +162,61 @@ class TestAssemblyFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
+
+    @as_users("anton")
+    def test_assembly_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+
+        self.traverse({'href': '/assembly/'})
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=False)
+
+        # Test Assembly Management Admin View
+        self.assertNoLink('/assembly/log')
+        self.traverse({'href': '/assembly/assembly/1/show'},
+                      {'href': '/assembly/assembly/1/attendees'},
+                      {'href': '/assembly/assembly/1/ballot/list'},
+                      {'href': '/assembly/assembly/1/ballot/2/show'},
+                      {'href': '/assembly/assembly/1/show'})
+        self.assertNoLink('assembly/assembly/1/change')
+        self.assertNoLink('assembly/assembly/1/log')
+        self.assertNotIn('concludeassemblyform', self.response.forms)
+        self._click_admin_view_button(re.compile(r"Versammlungs-Verwaltung"),
+                                      current_state=False)
+        self.assertIn('concludeassemblyform', self.response.forms)
+        self.traverse({'href': 'assembly/assembly/1/change'},
+                      {'href': 'assembly/assembly/1/log'})
+
+        # Test Assembly Configuration Admin View
+        self.traverse({'href': '/assembly/assembly/1/show'})
+        self.assertNoLink('/assembly/assembly/1/attachment/add')
+        self.traverse({'href': '/assembly/assembly/1/ballot/list'})
+        self.assertNoLink('/assembly/assembly/1/ballot/2/change')
+        self.assertNoLink('/assembly/assembly/1/ballot/create')
+        self.traverse({'href': '/assembly/assembly/1/ballot/2/show'})
+        self.assertNoLink('/assembly/assembly/1/ballot/2/change')
+        self.assertNoLink('/assembly/assembly/1/ballot/2/attachment/add')
+        self.assertNotIn('removecandidateform6', self.response.forms)
+        self.assertNotIn('addcandidateform', self.response.forms)
+        self.assertNotIn('deleteballotform', self.response.forms)
+
+        self._click_admin_view_button(re.compile(r"Versammlungs-Verwaltung"),
+                                      current_state=True)
+        self._click_admin_view_button(re.compile(r"Versammlungs-Konfig."),
+                                      current_state=False)
+        self.traverse({'href': '/assembly/assembly/1/show'},
+                      {'href': '/assembly/assembly/1/attachment/add'},
+                      {'href': '/assembly/assembly/1/show'},
+                      {'href': '/assembly/assembly/1/ballot/list'},
+                      {'href': '/assembly/assembly/1/ballot/2/change'},
+                      {'href': '/assembly/assembly/1/ballot/list'},
+                      {'href': '/assembly/assembly/1/ballot/create'},
+                      {'href': '/assembly/assembly/1/ballot/list'},
+                      {'href': '/assembly/assembly/1/ballot/2/show'},
+                      {'href': '/assembly/assembly/1/ballot/2/attachment/add'},
+                      {'href': '/assembly/assembly/1/ballot/2/show'})
+        self.assertIn('candidatessummaryform', self.response.forms)
+        self.assertIn('deleteballotform', self.response.forms)
 
     @as_users("annika", "martin", "vera", "werner")
     def test_navigation_one_assembly(self, user):
@@ -495,7 +554,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
         f = self.response.forms['voteform']
-        tmp = {f.get('vote', index=1).value, f.get('vote', index=4).value}
+        tmp = {f.get('vote', index=3).value, f.get('vote', index=4).value}
         self.assertEqual({"W", "S"}, tmp)
         self.assertEqual(None, f.get('vote', index=2).value)
         f['vote'] = [ASSEMBLY_BAR_MONIKER]
@@ -593,13 +652,13 @@ class TestAssemblyFrontend(FrontendTest):
     def test_tally_and_get_result(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
-                      {'description': 'Abstimmungen'},
-                      {'description': 'Antwort auf die letzte aller Fragen'},)
-        self.assertTitle("Antwort auf die letzte aller Fragen (Internationaler Kongress)")
+                      {'description': 'Abstimmungen'},)
+        self.assertTitle("Internationaler Kongress – Abstimmungen")
         mail = self.fetch_mail()[0]
         text = mail.get_body().get_content()
         self.assertIn('die Abstimmung "Antwort auf die letzte aller Fragen" der Versammlung', text)
-        self.traverse({'description': 'Ergebnisdatei herunterladen'},)
+        self.traverse({'description': 'Antwort auf die letzte aller Fragen'},
+                      {'description': 'Ergebnisdatei herunterladen'},)
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
 
@@ -638,22 +697,46 @@ class TestAssemblyFrontend(FrontendTest):
                       {'description': 'Abstimmungen'},
                       {'description': 'Farbe des Logos'},)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertNonPresence("Dunkelaquamarin")
-        f = self.response.forms['addcandidateform']
-        f['moniker'] = 'aqua'
-        f['description'] = 'Dunkelaquamarin'
+        f = self.response.forms['candidatessummaryform']
+        self.assertEqual("rot", f['moniker_6'].value)
+        self.assertEqual("gelb", f['moniker_7'].value)
+        self.assertEqual("gruen", f['moniker_8'].value)
+        self.assertNotIn("Dunkelaquamarin", f.fields)
+        f['create_-1'].checked = True
+        f['moniker_-1'] = "aqua"
+        f['description_-1'] = "Dunkelaquamarin"
         self.submit(f)
+
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertPresence("Dunkelaquamarin", div='preferential-candidates')
-        f = self.response.forms['removecandidateform1001']
+        f = self.response.forms['candidatessummaryform']
+        self.assertEqual("aqua", f['moniker_1001'].value)
+        f['moniker_7'] = "rot"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Farbe des Logos (Internationaler Kongress)")
+        f = self.response.forms['candidatessummaryform']
+        f['moniker_7'] = "gelb"
+        f['moniker_8'] = "_bar_"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Farbe des Logos (Internationaler Kongress)")
+        f = self.response.forms['candidatessummaryform']
+        f['moniker_8'] = "farbe"
+        f['description_6'] = "lila"
+        f['delete_7'].checked = True
         self.submit(f)
+
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertNonPresence("Dunkelaquamarin")
+        self.assertEqual("rot", f['moniker_6'].value)
+        self.assertEqual("lila", f['description_6'].value)
+        self.assertEqual("farbe", f['moniker_8'].value)
+        self.assertEqual("aqua", f['moniker_1001'].value)
+        self.assertNotIn("gelb", f.fields)
 
     @as_users("werner")
     def test_has_voted(self, user):
         self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Kanonische Beispielversammlung'},
+                      {'description': 'Archiv-Sammlung'},
                       {'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
 
@@ -661,7 +744,7 @@ class TestAssemblyFrontend(FrontendTest):
                             div='own-vote', exact=True)
         self.assertNonPresence("Du hast nicht abgestimmt.")
 
-        self.traverse({'description': 'Kanonische Beispielversammlung'})
+        self.traverse({'description': 'Archiv-Sammlung'})
         secret = self._signup()
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
@@ -673,7 +756,7 @@ class TestAssemblyFrontend(FrontendTest):
     @as_users("werner")
     def test_provide_secret(self, user):
         self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Kanonische Beispielversammlung'})
+                      {'description': 'Archiv-Sammlung'})
         secret = self._signup()
         # Create new ballot.
         wait_time = 2
@@ -713,8 +796,8 @@ class TestAssemblyFrontend(FrontendTest):
                             exact=True)
 
         # Conclude assembly.
-        self.traverse({'description': 'Kanonische Beispielversammlung'})
-        self.assertTitle("Kanonische Beispielversammlung")
+        self.traverse({'description': 'Archiv-Sammlung'})
+        self.assertTitle("Archiv-Sammlung")
         f = self.response.forms['concludeassemblyform']
         f['ack_conclude'].checked = True
         self.submit(f)
@@ -754,7 +837,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.login(USER_DICT['werner'])
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Log'})
-        self.assertTitle("Versammlungs-Log [1–15 von 15]")
+        self.assertTitle("Versammlungs-Log [1–16 von 16]")
         f = self.response.forms['logshowform']
         codes = [const.AssemblyLogCodes.assembly_created.value,
                  const.AssemblyLogCodes.assembly_changed.value,

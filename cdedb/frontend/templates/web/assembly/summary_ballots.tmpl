@@ -1,0 +1,45 @@
+{% set sidenav_active='assembly_summary' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/_ballot_result.tmpl" as ballot_result with context %}
+{% set jshint = 'weak' %}
+{% block title %}{{ gettext("Summary") }} ({{ ambience['assembly']['title'] }}){% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {{ gettext("Summary") }}
+        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
+    </h1>
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/summary_ballots"), gettext("Summary"), active=True) }}
+{% endblock %}
+{% block content %}
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="col-md-4">{% trans %}Ballot{% endtrans %}</th>
+                <th class="col-md-8">{% trans %}Result{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ballot_id, ballot in ballots.items() %}
+            <tr>
+                <td>
+                    <b>
+                        {{ util.href(cdedblink("assembly/show_ballot", {'assembly_id': ambience['assembly']['id'], 'ballot_id': ballot_id}),
+                                     ballot['title']) }}
+                    </b>
+                    {{ ballot['description']|md }}
+                </td>
+                <td>{{ ballot_result.show_result(ballot, result[ballot_id], short=True) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {{ ballot_result.explain_result(classical=True, preferential=True, use_bar=True) }}
+
+{% endblock %}

@@ -151,7 +151,6 @@ class CdEBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("member")
-    @singularize("get_lastschrift")
     def get_lastschrifts(self, rs, ids):
         """Retrieve direct debit permits.
 
@@ -166,6 +165,7 @@ class CdEBackend(AbstractBackend):
                 and any(e['persona_id'] != rs.user.persona_id for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
+    get_lastschrift = singularize(get_lastschrifts)
 
     @access("cde_admin")
     def set_lastschrift(self, rs, data):
@@ -259,7 +259,6 @@ class CdEBackend(AbstractBackend):
         return {e['id']: e['lastschrift_id'] for e in data}
 
     @access("member")
-    @singularize("get_lastschrift_transaction")
     def get_lastschrift_transactions(self, rs, ids):
         """Retrieve direct debit transactions.
 
@@ -275,9 +274,9 @@ class CdEBackend(AbstractBackend):
         _ = self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
 
         return {e['id']: e for e in data}
+    get_lastschrift_transaction = singularize(get_lastschrift_transactions)
 
     @access("finance_admin")
-    @batchify("issue_lastschrift_transaction_batch")
     def issue_lastschrift_transaction(self, rs, data, check_unique=False):
         """Make a new direct debit transaction.
 
@@ -320,6 +319,8 @@ class CdEBackend(AbstractBackend):
                 lastschrift['persona_id'], None, None,
                 additional_info=data['amount'])
             return ret
+    issue_lastschrift_transaction_batch = batchify(
+        issue_lastschrift_transaction)
 
     @access("finance_admin")
     def finalize_lastschrift_transaction(self, rs, transaction_id, status,
@@ -376,14 +377,14 @@ class CdEBackend(AbstractBackend):
             if status == const.LastschriftTransactionStati.success:
                 code = const.FinanceLogCodes.lastschrift_transaction_success
                 current = self.core.get_cde_user(rs, persona_id)
-                fee = self.conf.PERIODS_PER_YEAR * self.conf.MEMBERSHIP_FEE
+                fee = self.conf["PERIODS_PER_YEAR"] * self.conf["MEMBERSHIP_FEE"]
                 delta = min(tally, fee)
                 new_balance = current['balance'] + delta
                 ret *= self.core.change_persona_balance(
                     rs, persona_id, new_balance,
                     const.FinanceLogCodes.lastschrift_transaction_success,
                     change_note="Erfolgreicher Lastschrifteinzug.")
-                if new_balance >= self.conf.MEMBERSHIP_FEE:
+                if new_balance >= self.conf["MEMBERSHIP_FEE"]:
                     self.core.change_membership(rs, persona_id, is_member=True)
                 # Return early since change_persona_balance does the logging
                 return ret
@@ -434,7 +435,7 @@ class CdEBackend(AbstractBackend):
             }
             ret = self.sql_update(rs, "cde.lastschrift_transactions", update)
             persona_id = lastschrift['persona_id']
-            fee = self.conf.PERIODS_PER_YEAR * self.conf.MEMBERSHIP_FEE
+            fee = self.conf["PERIODS_PER_YEAR"] * self.conf["MEMBERSHIP_FEE"]
             delta = min(transaction['tally'], fee)
             current = self.core.get_cde_user(rs, persona_id)
             new_balance = current['balance'] - delta
@@ -465,7 +466,7 @@ class CdEBackend(AbstractBackend):
             return True
         with Atomizer(rs):
             period = self.current_period(rs)
-            cutoff = period - 3 * self.conf.PERIODS_PER_YEAR + 1
+            cutoff = period - 3 * self.conf["PERIODS_PER_YEAR"] + 1
             relevant_periods = tuple(range(cutoff, period + 1))
             ids = self.list_lastschrift_transactions(
                 rs, lastschrift_ids=(lastschrift['id'],),
@@ -529,7 +530,7 @@ class CdEBackend(AbstractBackend):
                          "WHERE is_member = True AND balance < %s",
                          "AND trial_member = False")
             ret['low_balance_members'] = unwrap(self.query_one(
-                rs, query, (self.conf.MEMBERSHIP_FEE,)))
+                rs, query, (self.conf["MEMBERSHIP_FEE"],)))
             query = glue("SELECT COUNT(*) FROM core.personas",
                          "WHERE is_member = True AND trial_member = True")
             ret['trial_members'] = unwrap(self.query_one(rs, query, tuple()))
@@ -538,7 +539,7 @@ class CdEBackend(AbstractBackend):
                          "WHERE p.is_member = True AND p.balance < %s",
                          "AND p.trial_member = False AND l.revoked_at IS NULL")
             ret['lastschrift_low_balance_members'] = unwrap(self.query_one(
-                rs, query, (self.conf.MEMBERSHIP_FEE,)))
+                rs, query, (self.conf["MEMBERSHIP_FEE"],)))
             return ret
 
     @access("cde")

@@ -7,7 +7,7 @@ import pytz
 
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
-from cdedb.common import PERSONA_EVENT_FIELDS
+from cdedb.common import PERSONA_EVENT_FIELDS, xsorted
 import cdedb.database.constants as const
 
 
@@ -17,16 +17,22 @@ class TestPastEventBackend(BackendTest):
     @as_users("vera", "berta")
     def test_participation_infos(self, user):
         participation_infos = self.pastevent.participation_infos(self.key, (1, 2))
-        expectation = {1: tuple(),
-                       2: ({'persona_id': 2,
-                            'is_orga': False,
-                            'is_instructor': True,
-                            'nr': '1a',
-                            'course_name': 'Swish -- und alles ist gut',
-                            'pevent_id': 1,
-                            'event_name': 'PfingstAkademie 2014',
-                            'tempus': datetime.date(2014, 5, 25),
-                            'pcourse_id': 1},)}
+        expectation = {
+            1: dict(),
+            2: {1: {'id': 1,
+                    'persona_id': 2,
+                    'is_orga': False,
+                    'courses': {1: {'id': 1,
+                                    'title': 'Swish -- und alles ist gut',
+                                    'nr': '1a',
+                                    'is_instructor': True,
+                                    }
+                                },
+                    'title': 'PfingstAkademie 2014',
+                    'tempus': datetime.date(2014, 5, 25),
+                    },
+                }
+            }
         self.assertEqual(expectation, participation_infos)
         participation_info = self.pastevent.participation_info(self.key, 1)
         participation_infos = self.pastevent.participation_infos(self.key, (1,))
@@ -247,7 +253,7 @@ class TestPastEventBackend(BackendTest):
         self.event.set_event(self.key, update)
         new_ids, _ = self.pastevent.archive_event(self.key, 1)
         self.assertEqual(3, len(new_ids))
-        pevent_data = sorted(
+        pevent_data = xsorted(
             (self.pastevent.get_past_event(self.key, new_id)
              for new_id in new_ids),
             key=lambda d: d['tempus'])

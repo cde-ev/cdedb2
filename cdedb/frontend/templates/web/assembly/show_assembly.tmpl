@@ -10,7 +10,7 @@
 {% endblock %}
 {% block content %}
     <div class="p">
-        {% if is_admin and ambience['assembly']['is_active'] %}
+        {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['is_active'] %}
             {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
                          icon="cog") }}
         {% endif %}
@@ -34,14 +34,14 @@
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
                         {{ util.anti_csrf_token('assembly/signup') }}
-                        {{ util.input_submit(value=gettext("Participate"), icon="log-in") }}
+                        {{ util.input_submit(value=gettext("Participate"), icon="sign-in-alt") }}
                     </form>
                 {% endif %}
             {% endif %}
         </dd>
     </dl>
 
-    {% if is_admin and ambience['assembly']['notes'] %}
+    {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             <div id="notes">
                 {{ ambience['assembly']['notes']|md }}
@@ -49,25 +49,26 @@
         {% endcall %}
     {% endif %}
 
-    {% if attachments or is_admin or has_ballot_attachments %}
+    {% if attachments or "assembly_contents" in user.admin_views or has_ballot_attachments %}
         {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         <div class="row">
-            {% if attachments or is_admin %}
+            {% if attachments or "assembly_contents" in user.admin_views %}
                 <div class="col-sm-6">
                     <h4>{% trans %}General Files{% endtrans %}</h4>
                     <ul class="slim" id="attachments">
-                        {% for attachment_id, attachment in attachments|xdictsort("title") %}
+                        {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.attachment) %}
                             <li class="hide-hover-container clearfix-after">
                                 {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
                                         attachment['title']) }}
-                                {% if is_admin %}
-                                    <form action="{{ cdedblink('assembly/remove_attachment', {'attachment_id': attachment_id}) }}"
+                                {% if "assembly_contents" in user.admin_views %}
+                                    <form action="{{ cdedblink('assembly/remove_attachment',
+                                                               {'attachment_id': attachment_id}) }}"
                                             method="POST"
                                             id="removeattachmentform{{ attachment_id }}"
                                             class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('assembly/remove_attachment') }}
                                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash",
+                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
                                                 title=gettext("Delete File")) }}
                                     </form>
                                     <script nonce="{{ csp_nonce }}">
@@ -78,7 +79,7 @@
                             </li>
                         {% endfor %}
                     </ul>
-                    {% if is_admin %}
+                    {% if "assembly_contents" in user.admin_views %}
                         <div class="p">
                             {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Attach File"),
                                          aclass="btn btn-success btn-sm", icon="plus") }}
@@ -90,10 +91,10 @@
             {% if has_ballot_attachments %}
                 <div class="col-sm-6">
                 <h4>{% trans %}Ballot Files{% endtrans %}</h4>
-                    {% for ballot_id, ballot in ballots|xdictsort('title') %}
+                    {% for ballot_id, ballot in ballots|keydictsort(EntitySorter.ballot) %}
                         {% if ballot_attachments[ballot_id] %}
                             <ul class="slim">
-                                {% for battachment_id, battachment in ballot_attachments[ballot_id]|xdictsort('title') %}
+                                {% for battachment_id, battachment in ballot_attachments[ballot_id]|keydictsort(EntitySorter.attachment) %}
                                     <li>
                                         {{ util.href(cdedblink("assembly/get_attachment",
                                                      {'attachment_id': battachment_id, 'ballot_id': ballot_id}),
@@ -113,9 +114,9 @@
         {% endcall %}
     {% endif %}
 
-    {% if is_admin %}
+    {% if "assembly_mgmt" in user.admin_views %}
         {% if ambience['assembly']['is_active'] or "vote_begin" not in delete_blockers %}
-            {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+            {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
                 {% if ambience['assembly']['is_active'] %}
                     <div class="row">
                         <div class="col-sm-4">
@@ -123,7 +124,7 @@
                                 <form action="{{ cdedblink('assembly/conclude_assembly') }}" method="POST" id="concludeassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/conclude_assembly') }}
                                     {{ util.input_submit(value=gettext("Archive"), readonly="ballot" in conclude_blockers, aclass="btn btn-danger",
-                                            icon="folder-close", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
+                                            icon="folder", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
                                     {{ util.input_checkbox(name="ack_conclude", label=gettext("Are you sure?")) }}
                                 </form>
                             </div>
@@ -145,7 +146,7 @@
                             <div class="p">
                                 <form action="{{ cdedblink('assembly/delete_assembly') }}" method="POST" id="deleteassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/delete_assembly') }}
-                                    {{ util.input_submit(value=gettext("Delete"), aclass="btn btn-danger", icon="trash") }}
+                                    {{ util.input_submit(value=gettext("Delete"), aclass="btn btn-danger", icon="trash-alt") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                 </form>
                             </div>

@@ -17,12 +17,9 @@ import psycopg2.extensions
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 
 from cdedb.common import n_
-from cdedb.config import BasicConfig
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
-
-_BASICCONF = BasicConfig()
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -93,7 +90,7 @@ def connection_pool_factory(dbname, roles, secrets, port,
                 raise ValueError(n_("role %(role)s not available"),
                                  {'role': role})
             return _create_connection(
-                dbname, role, secrets.CDB_DATABASE_ROLES[role], port,
+                dbname, role, secrets["CDB_DATABASE_ROLES"][role], port,
                 isolation_level)
 
         def __delitem__(self, key):

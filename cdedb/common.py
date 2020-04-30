@@ -10,6 +10,7 @@ import decimal
 import enum
 import functools
 import hmac
+import icu
 import inspect
 import itertools
 import json
@@ -33,6 +34,9 @@ from cdedb.ml_subscription_aux import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Global unified collator to be used when sorting.
+COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
+
 
 class RequestState:
     """Container for request info. Besides this and db accesses the python
@@ -41,12 +45,13 @@ class RequestState:
     enough to not be non-nice).
     """
 
-    def __init__(self, sessionkey, user, request, response, notifications,
-                 mapadapter, requestargs, errors, values, lang, gettext,
-                 ngettext, coders, begin, default_gettext=None,
+    def __init__(self, sessionkey, apitoken, user, request, response,
+                 notifications, mapadapter, requestargs, errors, values, lang,
+                 gettext, ngettext, coders, begin, default_gettext=None,
                  default_ngettext=None):
         """
         :type sessionkey: str or None
+        :type apitoken: str or None
         :type user: :py:class:`User`
         :type request: :py:class:`werkzeug.wrappers.Request`
         :type response: :py:class:`werkzeug.wrappers.Response` or None
@@ -93,6 +98,7 @@ class RequestState:
         """
         self.ambience = {}
         self.sessionkey = sessionkey
+        self.apitoken = apitoken
         self.user = user
         self.request = request
         self.response = response
@@ -223,70 +229,15 @@ class User:
         self.family_name = family_name
         self.orga = orga or []
         self.moderator = moderator or []
+        self.admin_views = set()
 
+    @property
+    def available_admin_views(self):
+        return roles_to_admin_views(self.roles)
 
-def do_singularization(fun):
-    """Perform singularization on a function.
-
-    This is the companion to the @singularize decorator.
-    :type fun: callable
-    :param fun: function with ``fun.singularization_hint`` attribute
-    :rtype: callable
-    :returns: singularized function
-    """
-    hint = fun.singularization_hint
-
-    @functools.wraps(fun)
-    def new_fun(rs, *args, **kwargs):
-        if hint['singular_param_name'] in kwargs:
-            param = kwargs.pop(hint['singular_param_name'])
-            kwargs[hint['array_param_name']] = (param,)
-        else:
-            param = args[0]
-            args = ((param,),) + args[1:]
-        data = fun(rs, *args, **kwargs)
-        if hint['passthrough']:
-            return data
-        else:
-            # raises KeyError if the requested thing does not exist
-            return data[param]
-
-    new_fun.__name__ = hint['singular_function_name']
-    return new_fun
-
-
-def do_batchification(fun):
-    """Perform batchification on a function.
-
-    This is the companion to the @batchify decorator.
-    :type fun: callable
-    :param fun: function with ``fun.batchification_hint`` attribute
-    :rtype: callable
-    :returns: batchified function
-    """
-    hint = fun.batchification_hint
-    # Break cyclic import by importing here
-    from cdedb.database.connection import Atomizer
-
-    @functools.wraps(fun)
-    def new_fun(rs, *args, **kwargs):
-        ret = []
-        with Atomizer(rs):
-            if hint['array_param_name'] in kwargs:
-                param = kwargs.pop(hint['array_param_name'])
-                for datum in param:
-                    new_kwargs = copy.deepcopy(kwargs)
-                    new_kwargs[hint['singular_param_name']] = datum
-                    ret.append(fun(rs, *args, **new_kwargs))
-            else:
-                param = args[0]
-                for datum in param:
-                    new_args = (datum,) + args[1:]
-                    ret.append(fun(rs, *new_args, **kwargs))
-        return ret
-
-    new_fun.__name__ = hint['batch_function_name']
-    return new_fun
+    def init_admin_views_from_cookie(self, enabled_views_cookie):
+        enabled_views = enabled_views_cookie.split(',')
+        self.admin_views = self.available_admin_views & set(enabled_views)
 
 
 class ProxyShim:
@@ -311,18 +262,6 @@ class ProxyShim:
             if hasattr(fun, "access_list") or (
                     internal and hasattr(fun, "internal_access_list")):
                 self._funs[name] = self._wrapit(fun)
-                if hasattr(fun, "singularization_hint"):
-                    hint = fun.singularization_hint
-                    self._funs[hint['singular_function_name']] = self._wrapit(
-                        do_singularization(fun))
-                    setattr(backend, hint['singular_function_name'],
-                            do_singularization(fun))
-                if hasattr(fun, "batchification_hint"):
-                    hint = fun.batchification_hint
-                    self._funs[hint['batch_function_name']] = self._wrapit(
-                        do_batchification(fun))
-                    setattr(backend, hint['batch_function_name'],
-                            do_batchification(fun))
 
     def _wrapit(self, fun):
         """
@@ -495,13 +434,40 @@ class ValidationWarning(Exception):
     pass
 
 
-def pad(value):
-    """Pad strings to sort numerically.
+def xsorted(iterable, *, key=lambda x: x, reverse=False):
+    """Wrapper for sorted() to achieve a natural sort.
 
-    :type value: object
-    :rtype: str
+    This replaces all strings in possibly nested objects with a sortkey
+    matching an collation from the Unicode Collation Algorithm, provided
+    by the icu library.
+
+    In particular, this makes sure strings containing diacritics are
+    sorted correctly, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
+    (ints and decimals) are sorted correctly, even in midst of strings.
+    However, negative numbers in strings are sorted by absolute value, before
+    positive numbers, as minus and hyphens can not be distinguished.
+
+    For users, the interface of this function should be identical
+    to sorted().
+
+    :type iterable: iterable
+    :param key: function to order by
+    :type key: callable
+    :type reverse: boolean
+    :rtype: list
     """
-    return ('' if value is None else str(value)).rjust(42, '\0')
+
+    def collate(sortkey):
+        if isinstance(sortkey, str):
+            return COLLATOR.getSortKey(sortkey)
+        if isinstance(sortkey, collections.abc.Iterable):
+            # Make sure strings in nested Iterables are sorted
+            # correctly as well.
+            return tuple(map(collate, sortkey))
+        return sortkey
+
+    return sorted(iterable, key=lambda x: collate(key(x)),
+                  reverse=reverse)
 
 
 class EntitySorter:
@@ -549,7 +515,7 @@ class EntitySorter:
 
     @staticmethod
     def course(course):
-        return (pad(course['nr']), course['shortname'], course['id'])
+        return (course['nr'], course['shortname'], course['id'])
 
     @staticmethod
     def lodgement(lodgement):
@@ -571,6 +537,50 @@ class EntitySorter:
     @staticmethod
     def event_field(event_field):
         return (event_field['field_name'], event_field['id'])
+
+    @staticmethod
+    def candidates(candidates):
+        return (candidates['moniker'], candidates['id'])
+
+    @staticmethod
+    def assembly(assembly):
+        return (assembly['signup_end'], assembly['id'])
+
+    @staticmethod
+    def ballot(ballot):
+        return (ballot['title'], ballot['id'])
+
+    @staticmethod
+    def attachment(attachment):
+        return (attachment['title'], attachment['id'])
+
+    @staticmethod
+    def past_event(past_event):
+        return (past_event['tempus'], past_event['id'])
+
+    @staticmethod
+    def past_course(past_course):
+        return (past_course['nr'], past_course['title'], past_course['id'])
+
+    @staticmethod
+    def institution(institution):
+        return (institution['moniker'], institution['id'])
+
+    @staticmethod
+    def transaction(transaction):
+        return (transaction['issued_at'], transaction['id'])
+
+    @staticmethod
+    def genesis_case(genesis_case):
+        return (genesis_case['ctime'], genesis_case['id'])
+
+    @staticmethod
+    def changelog(changelog_entry):
+        return (changelog_entry['ctime'], changelog_entry['id'])
+
+    @staticmethod
+    def mailinglist(mailinglist):
+        return (mailinglist['title'], mailinglist['id'])
 
 
 def compute_checkdigit(value):
@@ -790,11 +800,11 @@ def schulze_evaluate(votes, candidates):
     :param candidates: We require that the candidates be explicitly
       passed. This allows for more flexibility (like returning a useful
       result for zero votes).
-    :rtype: str
-    :returns: The aggregated preference list.
+    :rtype: (str, [{}])
+    :returns: The first Element is the aggregated result,
+    the second is an more extended list, containing every level (descending) as
+    dict with some extended information.
     """
-    if not votes:
-        return '='.join(candidates)
     split_votes = tuple(
         tuple(level.split('=') for level in vote.split('>')) for vote in votes)
 
@@ -866,9 +876,21 @@ def schulze_evaluate(votes, candidates):
             break
         winners = _schulze_winners(d, remaining)
         result.append(winners)
-    # Return the aggregate preference list in the same format as the input
+
+    # Return the aggregated preference list in the same format as the input
     # votes are.
-    return ">".join("=".join(level) for level in result)
+    condensed = ">".join("=".join(level) for level in result)
+    detailed = []
+    for lead, follow in zip(result, result[1:]):
+        level = {
+            'winner': lead,
+            'loser': follow,
+            'pro_votes': counts[(lead[0], follow[0])],
+            'contra_votes': counts[(follow[0], lead[0])]
+        }
+        detailed.append(level)
+
+    return condensed, detailed
 
 
 #: Magic value of moniker of the ballot candidate representing the bar.
@@ -1233,10 +1255,10 @@ def mixed_existence_sorter(iterable):
 
     :type iterable: [int]
     """
-    for i in sorted(iterable):
+    for i in xsorted(iterable):
         if i >= 0:
             yield i
-    for i in reversed(sorted(iterable)):
+    for i in reversed(xsorted(iterable)):
         if i < 0:
             yield i
 
@@ -1477,6 +1499,27 @@ def extract_roles(session, introspection_only=False):
     return ret
 
 
+# The following droids are exempt from lockdown to keep our infrastructure
+# working
+INFRASTRUCTURE_DROIDS = {'rklist', 'resolve'}
+
+
+def droid_roles(identity):
+    """Resolve droid identity to a complete set of roles.
+
+    Currently this is rather trivial, but could be more involved in the
+    future if more API capabilities are added to the DB.
+
+    :type identity: str
+    :param identity: The name for the API functionality, e.g. ``rklist``.
+    :rtype: {str}
+    """
+    ret = {'anonymous', 'droid', f'droid_{identity}'}
+    if identity in INFRASTRUCTURE_DROIDS:
+        ret.add('droid_infra')
+    return ret
+
+
 # The following dict defines the hierarchy of realms. This has direct impact on
 # the admin privileges: An admin of a specific realm can only query and edit
 # members of that realm, who are not member of another realm implying that
@@ -1655,7 +1698,7 @@ DB_ROLE_MAPPING = collections.OrderedDict((
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),
-    ("ml_script", "cdb_persona"),
+    ("droid", "cdb_persona"),
 
     ("anonymous", "cdb_anonymous"),
 ))
@@ -1672,9 +1715,47 @@ def roles_to_db_role(roles):
             return DB_ROLE_MAPPING[role]
 
 
+ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
+
+ALL_ADMIN_VIEWS = {
+    "meta_admin", "core_user", "core", "cde_user", "past_event", "finance",
+    "event_user", "event_mgmt", "event_orga", "ml_user", "ml_mgmt",
+    "ml_moderator", "assembly_user", "assembly_mgmt", "assembly_contents",
+    "genesis"}
+
+
+def roles_to_admin_views(roles):
+    """ Get the set of available admin views for a user with given roles.
+    
+    :type roles: {str} 
+    :return: {str}
+    """
+    result = set()
+    if "meta_admin" in roles:
+        result |= {"meta_admin"}
+    if "core_admin" in roles:
+        result |= {"core_user", "core"}
+    if "cde_admin" in roles:
+        result |= {"cde_user", "past_event"}
+    if "finance_admin" in roles:
+        result |= {"finance"}
+    if "event_admin" in roles:
+        result |= {"event_user", "event_mgmt", "event_orga"}
+    if "ml_admin" in roles:
+        result |= {"ml_user", "ml_mgmt", "ml_moderator"}
+    if "assembly_admin" in roles:
+        result |= {"assembly_user", "assembly_mgmt", "assembly_contents"}
+    if roles & ({'core_admin'} | set(
+            "{}_admin".format(realm)
+            for realm in realm_specific_genesis_fields)):
+        result |= {"genesis"}
+    return result
+
+
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-CDEDB_EXPORT_EVENT_VERSION = 9
+#: If you increment this, it must be incremented in make_offline_vm.py as well.
+CDEDB_EXPORT_EVENT_VERSION = 10
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1789,8 +1870,8 @@ EVENT_FIELDS = (
     "iban", "nonmember_surcharge", "orga_address", "registration_text",
     "mail_text", "use_questionnaire", "notes", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "courses_in_participant_list", "is_archived",
-    "lodge_field", "reserve_field", "course_room_field")
+    "is_participant_list_visible", "courses_in_participant_list", "is_cancelled",
+    "is_archived", "lodge_field", "reserve_field", "course_room_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",

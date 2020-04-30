@@ -814,14 +814,16 @@ class TestMlBackend(BackendTest):
                 self.ml.do_subscription_action(
                     self.key, SA.approve_request, mailinglist_id=ml_id,
                     persona_id=user_id)
-            # You had never the chance to actually change something anyway.
-            with self.assertRaises(PrivilegeError):
-                datum = {
-                    'mailinglist_id': ml_id,
-                    'persona_id': user_id,
-                    'subscription_state': SS.unsubscribed,
-                }
-                self.ml._set_subscription(datum)
+            # You had never the chance to actually change something anyway, trying to
+            # change the subscription state of someone else.
+            if user['id'] != user_id:
+                with self.assertRaises(PrivilegeError):
+                    datum = {
+                        'mailinglist_id': ml_id,
+                        'persona_id': user_id,
+                        'subscription_state': SS.unsubscribed,
+                    }
+                    self.ml._set_subscription(self.key, datum)
 
         # Make sure moderator functions do not tell you anything.
         # Garcia (7) is listed implicitly, explicitly or not at all on these

@@ -51,7 +51,7 @@ from cdedb.common import (
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
     decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields,
-    ValidationWarning)
+    ValidationWarning, xsorted, unwrap)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -99,25 +99,24 @@ class BaseApp(metaclass=abc.ABCMeta):
         # initialize logging
         if getattr(self, 'realm', None):
             logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = getattr(self.conf,
-                                  "{}_FRONTEND_LOG".format(self.realm.upper()))
+            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf.FRONTEND_LOG
+            logger_file = self.conf["FRONTEND_LOG"]
         make_root_logger(
-            logger_name, logger_file, self.conf.LOG_LEVEL,
-            syslog_level=self.conf.SYSLOG_LEVEL,
-            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+            logger_name, logger_file, self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
         self.decode_parameter = (
             lambda target, name, param:
-            decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
+            decode_parameter(secrets["URL_PARAMETER_SALT"], target, name, param))
 
         def local_encode(target, name, param,
-                         timeout=self.conf.PARAMETER_TIMEOUT):
-            return encode_parameter(secrets.URL_PARAMETER_SALT, target, name,
+                         timeout=self.conf["PARAMETER_TIMEOUT"]):
+            return encode_parameter(secrets["URL_PARAMETER_SALT"], target, name,
                                     param, timeout=timeout)
 
         self.encode_parameter = local_encode
@@ -143,7 +142,7 @@ class BaseApp(metaclass=abc.ABCMeta):
                                           json_serialize(nparams))
         return self.encode_parameter(
             '_/notification', 'displaynote', message,
-            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT)
+            timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
 
     def decode_notification(self, note):
         """Inverse wrapper to :py:meth:`encode_notification`.
@@ -266,7 +265,7 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
             return val
         return None
     if val.tzinfo is not None:
-        val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)
+        val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
         _LOGGER.warning("Found naive datetime object {}.".format(val))
     if lang:
@@ -628,7 +627,50 @@ def md_filter(val):
     return bleach_filter(md.convert(val))
 
 
-def xdictsort_filter(value, attribute, pad=False, reverse=False):
+@jinja2.environmentfilter
+def sort_filter(env, value, reverse=False, attribute=None):
+    """Sort an iterable using `xsorted`, using correct collation.
+
+    TODO: With Jinja 2.11, make_multi_attrgetter should be used
+    instead, since it allows to provide multiple sorting criteria.
+
+    :param reverse: Sort descending instead of ascending.
+    :param attribute: When sorting objects or dicts, an attribute or
+        key to sort by. Can use dot notation like ``"address.city"``.
+        Can be a list of attributes like ``"age,name"``.
+    """
+    key_func = jinja2.filters.make_attrgetter(env, attribute)
+    return xsorted(value, key=key_func, reverse=reverse)
+
+
+def dictsort_filter(value, by="key", reverse=False):
+    """Sort a dict and yield (key, value) pairs.
+
+    Because python dicts are unsorted you may want to use this function to
+    order them by either key or value.
+    """
+    if by == "key":
+        pos = 0
+    elif by == "value":
+        pos = 1
+    else:
+        raise RuntimeError('You can only sort by either "key" or "value"')
+
+    return xsorted(value.items(), key=lambda x: x[pos], reverse=reverse)
+
+
+def set_filter(value):
+    """
+    A simple filter to construct a Python set from an iterable object. Just
+    like Jinja's builtin "list" filter, but for sets.
+
+    :type value: Iterable
+    :rtype: set
+    """
+    return set(value)
+
+
+def xdictsort_filter(value, attribute, reverse=False):
     """Allow sorting by an arbitrary attribute of the value.
 
     Jinja only provides sorting by key or entire value. Also Jinja does
@@ -639,22 +681,12 @@ def xdictsort_filter(value, attribute, pad=False, reverse=False):
     :type value: {object: dict}
     :type attribute: str
     :param attribute: name of the attribute
-    :type pad: bool
-    :param pad: If True the attribute's value is interpreted as string and
-      padded before sorting. The important use-case is numerical sorting.
     :type reverse: bool
     :param reverse: Sort in reversed order
     :rtype: [(object, dict)]
     """
     key = lambda item: item[1].get(attribute)
-    if pad:
-        if not value:
-            return value
-        to_str = lambda val: '' if val is None else str(val)
-        max_len = max(len(to_str(v.get(attribute, ""))) for v in value.values())
-        key = lambda item: to_str(item[1].get(attribute, None)).rjust(max_len,
-                                                                      '\0')
-    return sorted(value.items(), key=key, reverse=reverse)
+    return xsorted(value.items(), key=key, reverse=reverse)
 
 
 def keydictsort_filter(value, sortkey, reverse=False):
@@ -665,7 +697,7 @@ def keydictsort_filter(value, sortkey, reverse=False):
     :type reverse: bool
     :rtype: [(object, dict)]
     """
-    return sorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
+    return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
 def enum_entries_filter(enum, processing=None, raw=False, prefix=""):
@@ -694,7 +726,7 @@ def enum_entries_filter(enum, processing=None, raw=False, prefix=""):
         pre = lambda x: x
     else:
         pre = str
-    return sorted((entry.value, prefix + processing(pre(entry)))
+    return xsorted((entry.value, prefix + processing(pre(entry)))
                   for entry in enum)
 
 
@@ -771,14 +803,17 @@ JINJA_FILTERS = {
     'linebreaks': linebreaks_filter,
     'md': md_filter,
     'enum': enum_filter,
+    'sort': sort_filter,
+    'dictsort': dictsort_filter,
     'xdictsort': xdictsort_filter,
+    'keydictsort': keydictsort_filter,
     's': safe_filter,
+    'set': set_filter,
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
     'dict_entries': dict_entries_filter,
     'xdict_entries': xdict_entries_filter,
-    'keydictsort': keydictsort_filter,
 }
 
 
@@ -794,11 +829,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         super().__init__(configpath, *args, **kwargs)
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
-                str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
+                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None, autoescape=True,
-            auto_reload=self.conf.CDEDB_DEV)
+            auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -808,13 +843,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'enums': ENUMS_DICT,
             'encode_parameter': self.encode_parameter,
             'staticurl': functools.partial(staticurl,
-                                           version=self.conf.GIT_COMMIT[:8]),
+                                           version=self.conf["GIT_COMMIT"][:8]),
             'docurl': docurl,
-            'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
-            'CDEDB_DEV': self.conf.CDEDB_DEV,
+            'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
+            'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
-            'GIT_COMMIT': self.conf.GIT_COMMIT,
-            'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
+            'GIT_COMMIT': self.conf["GIT_COMMIT"],
+            'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management':
                 lambda roles: roles & ({'core_admin'} | set(
@@ -1061,7 +1096,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
-        if 'debugstring' not in params and self.conf.CDEDB_DEV:
+        if 'debugstring' not in params and self.conf["CDEDB_DEV"]:
             debugstring = glue(
                 "We have is_multithreaded={}; is_multiprocess={};",
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
@@ -1075,7 +1110,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['debugstring'] = debugstring
         if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
-        if self.conf.LOCKDOWN:
+        if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
@@ -1141,12 +1176,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type attachments: [{str: object}] or None
         :rtype: :py:class:`email.message.Message`
         """
-        defaults = {"From": self.conf.DEFAULT_SENDER,
-                    "Reply-To": self.conf.DEFAULT_REPLY_TO,
-                    "Return-Path": self.conf.DEFAULT_RETURN_PATH,
+        defaults = {"From": self.conf["DEFAULT_SENDER"],
+                    "Reply-To": self.conf["DEFAULT_REPLY_TO"],
+                    "Return-Path": self.conf["DEFAULT_RETURN_PATH"],
                     "Cc": tuple(),
                     "Bcc": tuple(),
-                    "domain": self.conf.MAIL_DOMAIN,
+                    "domain": self.conf["MAIL_DOMAIN"],
                     }
         merge_dicts(headers, defaults)
         if headers["From"] == headers["Reply-To"]:
@@ -1178,7 +1213,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Subject", "Return-Path"):
             msg[header] = headers[header]
-        msg["Message-ID"] = email.utils.make_msgid(domain=self.conf.MAIL_DOMAIN)
+        msg["Message-ID"] = email.utils.make_msgid(domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
         return msg
 
@@ -1228,8 +1263,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf.CDEDB_DEV:
-            s = smtplib.SMTP(self.conf.MAIL_HOST)
+        if not self.conf["CDEDB_DEV"]:
+            s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
         else:
@@ -1323,7 +1358,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Deleting corrupted file {}".format(pdf_path))
                 pdf_path.unlink()
             self.logger.debug("Exception \"{}\" caught and handled.".format(e))
-            if self.conf.CDEDB_DEV:
+            if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
                 self.logger.info("Copying source file to {}".format(
@@ -1479,12 +1514,12 @@ class Worker(threading.Thread):
         :type rs: :py:class:`RequestState`
         """
         rrs = RequestState(
-            rs.sessionkey, rs.user, rs.request, None, [], rs.urls,
+            rs.sessionkey, rs.apitoken, rs.user, rs.request, None, [], rs.urls,
             rs.requestargs, [], copy.deepcopy(rs.values),
             rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin)
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
-            conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets, conf.DB_PORT)
+            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets, conf["DB_PORT"])
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
 
         def runner():
@@ -1623,7 +1658,9 @@ def access(*roles, modi=None, check_anti_csrf=None):
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
-                if rs.user.roles == {"anonymous"}:
+                expects_persona = any('droid' not in role
+                                      for role in access_list)
+                if rs.user.roles == {"anonymous"} and expects_persona:
                     params = {
                         'wants': rs._coders['encode_parameter'](
                             "core/index", "wants", rs.request.url,
@@ -1965,7 +2002,7 @@ def event_guard(argname="event_id", check_offline=False):
                     rs.gettext("This page can only be accessed by orgas."))
             if check_offline:
                 is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
-                if is_locked != obj.conf.CDEDB_OFFLINE_DEPLOYMENT:
+                if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                     raise werkzeug.exceptions.Forbidden(
                         rs.gettext("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
@@ -2111,6 +2148,59 @@ def make_transaction_subject(persona):
     return "{}, {}, {}".format(cdedbid_filter(persona['id']),
                                asciificator(persona['family_name']),
                                asciificator(persona['given_names']))
+
+
+def process_flux_input(rs, existing, spec, additional=None):
+    """Retrieve information provided by flux tables.
+
+    This returns a data dict to update the database, which includes:
+    - existing, mapped to their (validated) input fields (from spec)
+    - existing, mapped to None (if they were marked to be deleted)
+    - new entries, mapped to their (validated) input fields (from spec)
+
+    :type rs: :py:class:`FrontendRequestState`
+    :type existing: [int]
+    :param existing: ids of already existent objects
+    :type spec: {str: str}
+    :param spec: name of input fields, mapped to their validation
+    :type additional: dict
+    :param additional: additional keys added to each output object
+
+    :rtype: {int: {str: object} or None}
+    """
+    delete_flags = request_extractor(
+        rs, ((f"delete_{anid}", "bool") for anid in existing))
+    deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
+    params = tuple(
+        (f"{key}_{anid}", value)
+        for anid in existing if anid not in deletes
+        for key, value in spec.items())
+    data = request_extractor(rs, params)
+    ret = {
+        anid: {key: data[f"{key}_{anid}"] for key in spec}
+        for anid in existing if anid not in deletes
+    }
+    for anid in existing:
+        if anid in deletes:
+            ret[anid] = None
+        else:
+            ret[anid]['id'] = anid
+    marker = 1
+    while marker < 2 ** 10:
+        will_create = unwrap(
+            request_extractor(rs, ((f"create_-{marker}", "bool"),)))
+        if will_create:
+            params = tuple((f"{key}_-{marker}", value)
+                           for key, value in spec.items())
+            data = request_extractor(rs, params)
+            ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
+            if additional:
+                ret[-marker].update(additional)
+        else:
+            break
+        marker += 1
+    rs.values['create_last_index'] = marker - 1
+    return ret
 
 
 class CustomCSVDialect(csv.Dialect):

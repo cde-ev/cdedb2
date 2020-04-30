@@ -15,11 +15,12 @@ import werkzeug.exceptions
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
     check_validation as check, request_extractor, query_result_to_json,
-    calculate_db_logparams, calculate_loglinks)
+    calculate_db_logparams, calculate_loglinks, process_flux_input)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter)
+    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter,
+    schulze_evaluate, xsorted)
 from cdedb.database.connection import Atomizer
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -117,7 +118,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                           spec=spec, allow_empty=False)
         else:
             query = None
-        default_queries = self.conf.DEFAULT_QUERIES['qview_assembly_user']
+        default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
@@ -156,7 +157,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def view_log(self, rs, codes, assembly_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
-        length = length or self.conf.DEFAULT_LOG_LENGTH
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
@@ -194,7 +195,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def view_assembly_log(self, rs, codes, assembly_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
-        length = length or self.conf.DEFAULT_LOG_LENGTH
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
@@ -337,7 +338,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             subject = "[CdE] Teilnahme an {}".format(
                 rs.ambience['assembly']['title'])
             reply_to = (rs.ambience['assembly']['mail_address'] or
-                        self.conf.ASSEMBLY_ADMIN_ADDRESS)
+                        self.conf["ASSEMBLY_ADMIN_ADDRESS"])
             self.do_mail(
                 rs, "signup",
                 {'To': (persona['username'],),
@@ -376,7 +377,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         This is un-inlined to provide a download file too."""
         attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
         attendees = collections.OrderedDict(
-            (e['id'], e) for e in sorted(
+            (e['id'], e) for e in xsorted(
                 self.coreproxy.get_assembly_users(rs, attendee_ids).values(),
                 key=EntitySorter.persona))
         return attendees
@@ -469,13 +470,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
         # Check for extensions before grouping ballots.
-        ref = now()
-        update = False
-        for ballot_id, ballot in ballots.items():
-            if ballot['extended'] is None and ref > ballot['vote_end']:
-                self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
-                update = True
-        if update:
+        if any([self._update_ballot_state(rs, ballot)
+                for id, ballot in ballots.items()]):
             return self.redirect(rs, "assembly/list_ballots")
 
         done, extended, current, future = self.group_ballots(ballots)
@@ -521,7 +517,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Retrieve an attachment."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        path = (self.conf.STORAGE_DIR / "assembly_attachment"
+        path = (self.conf["STORAGE_DIR"] / "assembly_attachment"
                 / str(attachment_id))
         return self.send_file(rs, path=path, mimetype="application/pdf",
                               filename=rs.ambience['attachment']['filename'])
@@ -618,26 +614,100 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
-        timestamp = now()
-        # check whether we need to initiate extension
-        if (ballot['extended'] is None
-                and timestamp > ballot['vote_end']):
-            self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
+        if self._update_ballot_state(rs, ballot):
             return self.redirect(rs, "assembly/show_ballot")
+
+        # initial checks done, present the ballot
+        ballot['is_voting'] = self.is_ballot_voting(ballot)
+        ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
+        result = self.get_online_result(ballot)
+        attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
+        has_voted = False
+        own_vote = None
+        if attends:
+            has_voted = self.assemblyproxy.has_voted(rs, ballot_id)
+            if has_voted:
+                try:
+                    own_vote = self.assemblyproxy.get_vote(
+                        rs, ballot_id, secret=secret)
+                except ValueError:
+                    own_vote = None
+        merge_dicts(rs.values, {'vote': own_vote})
+        split_vote = None
+        if own_vote:
+            split_vote = tuple(x.split('=') for x in own_vote.split('>'))
+        if ballot['votes'] and split_vote:
+            if len(split_vote) == 1:
+                # abstention
+                rs.values['vote'] = MAGIC_ABSTAIN
+            else:
+                # select voted options
+                rs.values.setlist('vote', split_vote[0])
+
+        candidates = {e['moniker']: e
+                      for e in ballot['candidates'].values()}
+        if ballot['use_bar']:
+            candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
+                "bar (options below this are declined)")
+        # this is used for the flux candidate table
+        current = {
+            f"{key}_{candidate_id}": value
+            for candidate_id, candidate in ballot['candidates'].items()
+            for key, value in candidate.items() if key != 'id'}
+        merge_dicts(rs.values, current)
+
+        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
+        done, extended, current, future = self.group_ballots(ballots)
+
+        # Currently we don't distinguish between current and extended ballots
+        current.update(extended)
+        ballot_list = sum((xsorted(bdict, key=lambda key: bdict[key]["title"])
+                           for bdict in (future, current, done)), [])
+
+        i = ballot_list.index(ballot_id)
+        l = len(ballot_list)
+        prev_ballot = ballots[ballot_list[i-1]] if i > 0 else None
+        next_ballot = ballots[ballot_list[i+1]] if i + 1 < l else None
+
+        return self.render(rs, "show_ballot", {
+            'attachments': attachments, 'split_vote': split_vote,
+            'own_vote': own_vote, 'result': result, 'candidates': candidates,
+            'attends': attends, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
+            'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
+            'secret': secret, 'has_voted': has_voted,
+        })
+
+    def _update_ballot_state(self, rs, ballot):
+        """Helper to automatically update a ballots state.
+
+        State updates are necessary for extending and tallying a ballot.
+        If this function performs a state update, the calling function should
+        redirect to the calling page.
+        """
+
+        timestamp = now()
+        update = False
+
+        # check for extension
+        if ballot['extended'] is None and timestamp > ballot['vote_end']:
+            self.assemblyproxy.check_voting_priod_extension(rs, ballot['id'])
+            update = True
+
         finished = (
                 timestamp > ballot['vote_end']
                 and (not ballot['extended']
                      or timestamp > ballot['vote_extension_end']))
         # check whether we need to initiate tallying
-        if finished and not ballot['is_tallied']:
-            did_tally = self.assemblyproxy.tally_ballot(rs, ballot_id)
+        if finished and not ballot['is_tallied'] and not update:
+            did_tally = self.assemblyproxy.tally_ballot(rs, ballot['id'])
             if did_tally:
-                path = self.conf.STORAGE_DIR / "ballot_result" / str(ballot_id)
+                path = self.conf["STORAGE_DIR"] / "ballot_result" / str(ballot['id'])
                 attachment_result = {
                     'path': path,
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
-                to = [self.conf.BALLOT_TALLY_ADDRESS]
+                to = [self.conf["BALLOT_TALLY_ADDRESS"]]
                 if rs.ambience['assembly']['mail_address']:
                     to.append(rs.ambience['assembly']['mail_address'])
                 subject = "Abstimmung '{}' ausgezählt".format(ballot['title'])
@@ -647,14 +717,15 @@ class AssemblyFrontend(AbstractUserFrontend):
                 self.do_mail(
                     rs, "ballot_tallied", {'To': to, 'Subject': subject},
                     attachments=(attachment_result,),
-                    params={'sha': hasher.hexdigest()})
-            return self.redirect(rs, "assembly/show_ballot")
-        # initial checks done, present the ballot
-        ballot['is_voting'] = self.is_ballot_voting(ballot)
-        ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
+                    params={'sha': hasher.hexdigest(), 'title': ballot['title']})
+                update = True
+        return update
+
+    def get_online_result(self, ballot):
+        """Helper to get the result information of a tallied ballot."""
         result = None
         if ballot['is_tallied']:
-            path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
+            path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot['id'])
             with open(path) as f:
                 result = json.load(f)
             tiers = tuple(x.split('=') for x in result['result'].split('>'))
@@ -672,68 +743,60 @@ class AssemblyFrontend(AbstractUserFrontend):
                     tmp = losers
             result['winners'] = winners
             result['losers'] = losers
-            result['counts'] = None  # Will be used for classical voting
-        attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
-        has_voted = False
-        own_vote = None
-        if attends:
-            has_voted = self.assemblyproxy.has_voted(rs, ballot_id)
-            if has_voted:
-                try:
-                    own_vote = self.assemblyproxy.get_vote(
-                        rs, ballot_id, secret=secret)
-                except ValueError:
-                    own_vote = None
-        merge_dicts(rs.values, {'vote': own_vote})
-        split_vote = None
-        if own_vote:
-            split_vote = tuple(x.split('=') for x in own_vote.split('>'))
-        if ballot['votes']:
-            if split_vote:
-                if len(split_vote) == 1:
-                    # abstention
-                    rs.values['vote'] = MAGIC_ABSTAIN
-                else:
-                    # select voted options
-                    rs.values.setlist('vote', split_vote[0])
-            if result:
+
+            # vote count for classical vote ballots
+            if ballot['votes']:
                 counts = {e['moniker']: 0
                           for e in ballot['candidates'].values()}
-                for v in result['votes']:
-                    raw = v['vote']
+                if ballot['use_bar']:
+                    counts[ASSEMBLY_BAR_MONIKER] = 0
+                for vote in result['votes']:
+                    raw = vote['vote']
                     if '>' in raw:
                         selected = raw.split('>')[0].split('=')
                         for s in selected:
-                            if s in counts:
-                                counts[s] += 1
+                            counts[s] += 1
                 result['counts'] = counts
-        candidates = {e['moniker']: e
-                      for e in ballot['candidates'].values()}
-        if ballot['use_bar']:
-            candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
-                "bar (options below this are declined)")
+            # vote count for preferential vote ballots
+            else:
+                votes = [e['vote'] for e in result['votes']]
+                candidates = [k for k, v in result['candidates'].items()]
+                if ballot['use_bar']:
+                    candidates += (ASSEMBLY_BAR_MONIKER,)
+                condensed, counts = schulze_evaluate(votes, candidates)
 
-        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
+            result['counts'] = counts
+
+            # count abstentions for both voting forms
+            abstentions = 0
+            for vote in result['votes']:
+                if '>' not in vote['vote']:
+                    abstentions += 1
+            result['abstentions'] = abstentions
+
+        return result
+
+    @access("assembly")
+    def summary_ballots(self, rs, assembly_id):
+        """Give an online summary of all tallied ballots of an assembly."""
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        assembly_ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballot_ids = [k for k, v in assembly_ballots.items()]
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+
+        # Check for extensions before grouping ballots.
+        if any([self._update_ballot_state(rs, ballot)
+                for id, ballot in ballots.items()]):
+            return self.redirect(rs, "assembly/summary_ballots")
+
         done, extended, current, future = self.group_ballots(ballots)
 
-        # Currently we don't distinguish between current and extended ballots
-        current.update(extended)
-        ballot_list = sum((sorted(bdict, key=lambda key: bdict[key]["title"])
-                           for bdict in (future, current, done)), [])
+        result = {k: self.get_online_result(v) for k, v in done.items()}
 
-        i = ballot_list.index(ballot_id)
-        l = len(ballot_list)
-        prev_ballot = ballots[ballot_list[i-1]] if i > 0 else None
-        next_ballot = ballots[ballot_list[i+1]] if i + 1 < l else None
-
-        return self.render(rs, "show_ballot", {
-            'attachments': attachments, 'split_vote': split_vote,
-            'own_vote': own_vote, 'result': result, 'candidates': candidates,
-            'attends': attends, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
-            'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
-            'secret': secret, 'has_voted': has_voted,
-        })
+        return self.render(rs, "summary_ballots", {
+            'ballots': done, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
+            'result': result})
 
     @access("assembly_admin")
     def change_ballot_form(self, rs, assembly_id, ballot_id):
@@ -762,7 +825,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def ballot_start_voting(self, rs, assembly_id, ballot_id):
         """Immediately start voting period of a ballot.
         Only possible in CDEDB_DEV mode."""
-        if not self.conf.CDEDB_DEV:
+        if not self.conf["CDEDB_DEV"]:
             raise RuntimeError(
                 n_("Force starting a ballot is only possible in dev mode."))
 
@@ -864,47 +927,42 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not rs.ambience['ballot']['is_tallied']:
             rs.notify("warning", n_("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)
-        path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
+        path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot_id)
         return self.send_file(rs, path=path, inline=False,
                               filename="ballot_{}_result.json".format(ballot_id))
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("moniker", "restrictive_identifier"), ("description", "str"))
-    def add_candidate(self, rs, assembly_id, ballot_id, moniker, description):
-        """Create a new option for a ballot."""
-        monikers = {c['moniker']
-                    for c in rs.ambience['ballot']['candidates'].values()}
-        if moniker in monikers:
-            rs.append_validation_error(
-                ("moniker", ValueError(n_("Duplicate moniker."))))
-        if moniker == ASSEMBLY_BAR_MONIKER:
-            rs.append_validation_error(
-                ("moniker", ValueError(n_("Mustn’t be the bar moniker."))))
-        if rs.has_validation_errors():
-            return self.show_ballot(rs, assembly_id, ballot_id)
-        data = {
-            'id': ballot_id,
-            'candidates': {
-                -1: {
-                    'moniker': moniker,
-                    'description': description,
-                }
-            }
-        }
-        code = self.assemblyproxy.set_ballot(rs, data)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "assembly/show_ballot")
+    def edit_candidates(self, rs, assembly_id, ballot_id):
+        """Create, edit and delete candidates of ballot.
 
-    @access("assembly_admin", modi={"POST"})
-    def remove_candidate(self, rs, assembly_id, ballot_id, candidate_id):
-        """Delete an option from a ballot."""
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type ballot_id: int
+        """
+        candidates = process_flux_input(
+            rs, rs.ambience['ballot']['candidates'].keys(),
+            {'moniker': "restrictive_identifier", 'description': "str"})
+
+        monikers = set()
+        for candidate_id, candidate in candidates.items():
+            if candidate and candidate['moniker'] == ASSEMBLY_BAR_MONIKER:
+                rs.append_validation_error(
+                    (f"moniker_{candidate_id}",
+                     ValueError(n_("Mustn’t be the bar moniker.")))
+                )
+            if candidate and candidate['moniker'] in monikers:
+                rs.append_validation_error(
+                    (f"moniker_{candidate_id}",
+                     ValueError(n_("Duplicate moniker.")))
+                )
+            if candidate:
+                monikers.add(candidate['moniker'])
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
+
         data = {
             'id': ballot_id,
-            'candidates': {
-                candidate_id: None
-            }
+            'candidates': candidates
         }
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)

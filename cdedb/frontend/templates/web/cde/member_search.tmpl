@@ -56,15 +56,16 @@
                         {{ util.form_input_text(
                                 name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
                                 label=gettext("Interests"), aclass="input-sm") }}
-                        {{ util.form_input_select(name="qval_pevent_id", entries=choices['pevent_id']|dictsort(by='value'),
-                                                  nulloption="&nbsp;"|s, label=gettext("Academy"), aclass="input-sm") }}
+                        {{ util.form_input_select(name="qval_pevent_id", entries=choices['pevent_id'].items(),
+                                                  nulloption="&nbsp;"|s, label=gettext("Academy"), aclass="input-sm",
+                                                  sort=True) }}
                         {% if values.get('qval_pevent_id') %}
-                            {{ util.form_input_select(name="qval_pcourse_id", entries=choices['pcourse_id']|dictsort(by='value'),
+                            {{ util.form_input_select(name="qval_pcourse_id", entries=choices['pcourse_id'].items(),
                                                       nulloption="&nbsp;"|s, label=gettext("Course"), aclass="input-sm",
-                                                      defaultvalue='') }}
+                                                      defaultvalue='', sort=True) }}
                         {% else %}
                             <div class="help-block text-muted">
-                                {{ util.make_icon("info-sign") }}
+                                {{ util.make_icon('info-circle') }}
                                 {% trans %}Course choices will be displayed after first search.{% endtrans %}
                             </div>
                         {% endif %}
@@ -94,7 +95,7 @@
             </div>
         </div>
     </form>
-    {% call util.bootstrap_panel(title=gettext("Properties of the search"), aclass='panel-default mosp', icon='info-sign') %}
+    {% call util.bootstrap_panel(title=gettext("Properties of the search"), aclass='panel-default mosp', icon='info-circle') %}
         <ul class="slim">
             <li>
                 {% trans %}

@@ -60,14 +60,19 @@ Event Mailinglists
     part of a given event as implicit subscribers. Other users are not allowed
     to subscribe.
 
+    If an event list is not linked to an event, it behaves as an invitation
+    only list for all users.
+
     * visible to: event users
     * additional admins: event
     * sortkey: event
 
 Orga Mailinglists
     Mailinglists that contain the orga team of a specified event as implicit
-    subscribers. Other users are not allowed
-    to subscribe.
+    subscribers. Other users are not allowed to subscribe.
+
+    If an orga list is not linked to an event, it behaves as an invitation
+    only list for all users.
 
     * visible to: event users
     * additional admins: event

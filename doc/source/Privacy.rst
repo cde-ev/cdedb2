@@ -77,7 +77,7 @@ möglich):
     * Guthaben,
     * Sichtbarkeit
 
-Darüber hinaus gibt es die sogenannte ```Änderungshistorie``` eines Benutzers.
+Darüber hinaus gibt es die sogenannte ``Änderungshistorie`` eines Benutzers.
 In dieser werden die Änderungen an einem Benutzerprofil gespeichert.
 Diese ist lediglich Core-Admins zugänglich.
 
@@ -143,6 +143,9 @@ besitzt (das maximale Element der Bereiche):
     Besitz ein Benutzer den CdE Bereich, ist automatisch nur der CdE-Admin
     relativer Admin.
 
+Alle User mit Admin Rechten sind unter ``Core/Administratorenübersicht``
+aufgelistet.
+
 
 
 
@@ -164,8 +167,8 @@ auf den Profilen anderer Benutzer sehen darf.
         werden
 
 * Grundlegend
-    Jeder aktive Benutzer kann die grundlegenden Informationen über jeden nicht-
-    archivierten Nutzer sehen. Damit diese nicht systematisch ausgelesen werden
+    Jeder aktive Benutzer kann die grundlegenden Informationen über jeden
+    nicht-archivierten Nutzer sehen. Damit diese nicht systematisch ausgelesen werden
     können, ist der Zugriff auf ein Profil generell mit einem Encode-Parameter
     im Link zu einem Profil geschützt.
 
@@ -197,19 +200,19 @@ auf den Profilen anderer Benutzer sehen darf.
 
 * Mitglieder
     Mitglieder sind Benutzer, die den CdE-Bereich besitzen und darüber hinaus
-    das Attribut "Mitglied" haben (=^ ihren Mitgliedsbeitrag für das laufende
+    das Attribut "Mitglied" haben (≙ ihren Mitgliedsbeitrag für das laufende
     Semester bezahlt haben). Darüber hinaus können sie der Datenschutzerklärung
     zustimmen. Tuen Sie dies, erhalten sie weiterhin das Attribut "Suchbar".
     Mitglieder, die diese beiden Attribute besitzen, erhalten erweiterten
     Zugriff auf andere Mitglieder, die ebenfalls diese beiden Attribute besitzen.
-    Der Zugriff ist durch ein tägliches Limit von maximal #TODO Limit
-    referenzieren # Zugriffen auf fremde Profile beschränkt.
+    Der Zugriff ist durch ein tägliches Limit von maximal 42 Zugriffen auf
+    fremde Profile beschränkt.
 
       * Mitglied *und* Suchbar: "Mitglieder"
 
 * Man selbst
     Jeder aktive Benutzer hat fast vollständigen Zugriff auf sein eigenes Profil.
-    Außgenommen hiervon sind die Admin Admin-Notizen und die Änderungshistorie.
+    Außgenommen hiervon sind die Admin-Notizen und die ``Änderungshistorie``.
     Deaktivierte und archivierte Benutzer können Ihr eigenes Profil nicht sehen,
     da sie sich nicht einloggen können.
 

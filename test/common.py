@@ -7,25 +7,28 @@ import email.policy
 import functools
 import gettext
 import inspect
+import os
 import pathlib
+import pytz
 import re
+import unittest
 import subprocess
+import sys
 import tempfile
 import types
-import unittest
+import webtest
 import urllib.parse
 
-import pytz
-import webtest
-from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
+from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.common import (PrivilegeError, ProxyShim, RequestState, glue,
-                          roles_to_db_role, unwrap)
+from cdedb.common import (
+    PrivilegeError, ProxyShim, RequestState, glue, roles_to_db_role, unwrap,
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -93,23 +96,32 @@ class BackendShim(ProxyShim):
         self.sessionproxy = SessionBackend(backend.conf._configpath)
         secrets = SecretsConfig(backend.conf._configpath)
         self.connpool = connection_pool_factory(
-            backend.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, backend.conf.DB_PORT)
-        self.validate_mlscriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
+            backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, backend.conf["DB_PORT"])
         self.translator = gettext.translation(
             'cdedb', languages=('de',),
-            localedir=str(backend.conf.REPOSITORY_PATH / 'i18n'))
+            localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
 
     def _setup_requeststate(self, key):
+        sessionkey = None
+        apitoken = None
+
+        # we only use one slot to transport the key (for simplicity and
+        # probably for historic reasons); the following lookup process
+        # mimicks the one in frontend/application.py
+        user = self.sessionproxy.lookuptoken(key, "127.0.0.0")
+        if user.roles == {'anonymous'}:
+            user = self.sessionproxy.lookupsession(key, "127.0.0.0")
+            sessionkey = key
+        else:
+            apitoken = key
+
         rs = RequestState(
-            key, None, None, None, [], None, None,
-            [], {}, "de", self.translator.gettext,
-            self.translator.ngettext, None, None, key)
-        rs.user = self.sessionproxy.lookupsession(key, "127.0.0.0")
+            sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
+            response=None, notifications=[], mapadapter=None, requestargs=None,
+            errors=[], values={}, lang="de", gettext=self.translator.gettext,
+            ngettext=self.translator.ngettext, coders=None, begin=None)
         rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
-        if self.validate_mlscriptkey(key):
-            rs.user.roles.add("ml_script")
-            rs._conn = self.connpool["cdb_persona"]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
             rs.user.orga = self._backend.orga_info(rs, rs.user.persona_id)
@@ -234,8 +246,8 @@ class BackendUsingTest(unittest.TestCase):
 
     @staticmethod
     def initialize_raw_backend(backendcls):
-        return backendcls(_BASICCONF.REPOSITORY_PATH
-                          / _BASICCONF.TESTCONFIG_PATH)
+        return backendcls(_BASICCONF["REPOSITORY_PATH"]
+                          / _BASICCONF["TESTCONFIG_PATH"])
 
     @staticmethod
     def initialize_backend(backendcls):
@@ -533,8 +545,8 @@ class FrontendTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = Application(_BASICCONF.REPOSITORY_PATH
-                          / _BASICCONF.TESTCONFIG_PATH)
+        app = Application(_BASICCONF["REPOSITORY_PATH"]
+                          / _BASICCONF["TESTCONFIG_PATH"])
         lang = "de"
         cls.gettext = app.translations[lang].gettext
         cls.app = webtest.TestApp(app, extra_environ={
@@ -543,11 +555,11 @@ class FrontendTest(unittest.TestCase):
             'wsgi.url_scheme': 'https'})
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
-        cls.do_scrap = False
+        cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
         if cls.do_scrap:
             # create a temporary directory and print it
             cls.scrap_path = tempfile.mkdtemp()
-            print(cls.scrap_path)
+            print(cls.scrap_path, file=sys.stderr)
 
     @classmethod
     def tearDownClass(cls):
@@ -563,6 +575,7 @@ class FrontendTest(unittest.TestCase):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
         self.app.reset()
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
         self.response = None  # type: webtest.TestResponse
 
     def basic_validate(self, verbose=False):
@@ -585,8 +598,8 @@ class FrontendTest(unittest.TestCase):
     def log_generation_time(self, response=None):
         if response is None:
             response = self.response
-        if _BASICCONF.TIMING_LOG:
-            with open(_BASICCONF.TIMING_LOG, 'a') as f:
+        if _BASICCONF["TIMING_LOG"]:
+            with open(_BASICCONF["TIMING_LOG"], 'a') as f:
                 output = "{} {} {} {}\n".format(
                     response.request.path, response.request.method,
                     response.headers.get('X-Generation-Time'),
@@ -895,6 +908,36 @@ class FrontendTest(unittest.TestCase):
             log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
+    def _click_admin_view_button(self, label, current_state=None):
+        """
+        Helper function for checking the disableable admin views
+
+        This function searches one of the buttons in the adminviewstoggleform
+        (by its label), optionally checks this button's state, and submits
+        the form using this button's value to enable/disable the corresponding
+        admin view(s).
+
+        :param label: A regex used to find the correct admin view button
+        :type label: str or re.Pattern
+        :param current_state: If not None, the admin view button's active state
+            is checked to be equal to this boolean
+        :type current_state: bool or None
+        :return: The button element to perform further checks
+        :rtype: BeautifulSoup element
+        """
+        f = self.response.forms['adminviewstoggleform']
+        button = self.response.html\
+            .find(id="adminviewstoggleform")\
+            .find(text=label)\
+            .parent
+        if current_state is not None:
+            if current_state:
+                self.assertIn("active", button['class'])
+            else:
+                self.assertNotIn("active", button['class'])
+        self.submit(f, 'view_specifier', False, value=button['value'])
+        return button
+
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])
 MailTrace = collections.namedtuple(
@@ -935,8 +978,8 @@ class CronTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.cron = CronFrontend(_BASICCONF.REPOSITORY_PATH
-                                / _BASICCONF.TESTCONFIG_PATH)
+        cls.cron = CronFrontend(_BASICCONF["REPOSITORY_PATH"]
+                                / _BASICCONF["TESTCONFIG_PATH"])
         cls.core = CronBackendShim(cls.cron, cls.cron.core.coreproxy)
         cls.cde = CronBackendShim(cls.cron, cls.cron.core.cdeproxy)
         cls.event = CronBackendShim(cls.cron, cls.cron.core.eventproxy)

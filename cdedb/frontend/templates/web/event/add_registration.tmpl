@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
     {{ util.breadcrumb_link(cdedblink("event/add_registration"), gettext("Add Participant"), active=True) }}
 {% endblock %}
@@ -19,7 +19,7 @@
         {% trans %}
             New Registration
         {% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}

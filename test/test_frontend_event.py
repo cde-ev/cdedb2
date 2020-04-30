@@ -9,7 +9,8 @@ import webtest
 from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
-from cdedb.common import now, CDEDB_EXPORT_EVENT_VERSION
+from cdedb.common import (now, CDEDB_EXPORT_EVENT_VERSION,
+    ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.frontend.common import CustomCSVDialect
 import cdedb.database.constants as const
 
@@ -144,6 +145,74 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
         self.assertPresence("12345", div='address')
+
+    @as_users("anton")
+    def test_event_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+
+        self.traverse({'href': '/event'})
+        self._click_admin_view_button(
+            re.compile(r"Benutzer-Administration"), current_state=False)
+
+        # Test Event Management Admin View
+        self.assertNoLink('/event/event/log')
+        self.assertNoLink('/event/event/list')
+        self.traverse({'href': '/event/event/1/show'})
+        self.assertNotIn('deleteeventform', self.response.forms)
+        self.assertNotIn('addorgaform', self.response.forms)
+        self.traverse({'href': '/event/event/1/registration/status'})
+        self._click_admin_view_button(re.compile(r"Veranst.-Verwaltung"),
+                                      current_state=False)
+        self.traverse({'href': '/event/event/1/show'})
+        self.assertIn('deleteeventform', self.response.forms)
+        self.assertIn('addorgaform', self.response.forms)
+        self.traverse({'href': '/event/'},
+                      {'href': '/event/list'},
+                      {'href': '/event/event/create'})
+
+        # Test Orga Controls Admin View
+        self.traverse({'href': '/event/'},
+                      {'href': '/event/event/1/show'})
+        self.assertNoLink('/event/event/1/registration/list')
+        self.assertNoLink('/event/event/1/registration/query')
+        self.assertNoLink('/event/event/1/change')
+        self.assertNoLink('/event/event/1/part/summary')
+        self.assertNoLink('/event/event/1/part/checkin')
+        self.assertNotIn('quickregistrationform', self.response.forms)
+        self.assertNotIn('changeminorformform', self.response.forms)
+        self.assertNotIn('lockform', self.response.forms)
+        self.traverse({'href': '/event/event/1/course/list'})
+        self.assertNoLink('/event/event/1/course/1/show')
+
+        self._click_admin_view_button(re.compile(r"Veranst.-Verwaltung"),
+                                      current_state=True)
+        # Even without the Orga Controls Admin View we should see the Orga
+        # Controls of our own event:
+        self.traverse({'href': '/event/'},
+                      {'href': '/event/event/2/show'},
+                      {'href': '/event/event/2/registration/list'},
+                      {'href': '/event/event/2/registration/query'},
+                      {'href': '/event/event/2/change'},
+                      {'href': '/event/event/2/part/summary'},
+                      {'href': '/event/event/2/show'})
+        self.assertIn('quickregistrationform', self.response.forms)
+        self.assertIn('changeminorformform', self.response.forms)
+        self.assertIn('lockform', self.response.forms)
+
+        self._click_admin_view_button(
+            re.compile(r"Orga-Schaltflächen"), current_state=False)
+        self.traverse({'href': '/event/'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/list'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'href': '/event/event/1/change'},
+                      {'href': '/event/event/1/part/summary'},
+                      {'href': '/event/event/1/course/list'},
+                      {'href': '/event/event/1/course/1/show'},
+                      {'href': '/event/event/1/show'})
+        self.assertIn('quickregistrationform', self.response.forms)
+        self.assertIn('changeminorformform', self.response.forms)
+        self.assertIn('lockform', self.response.forms)
 
     @as_users("annika")
     def test_list_events(self, user):
@@ -1403,33 +1472,32 @@ etc;anything else""", f['entries_2'].value)
         # default sort is by given names
         self._sort_appearance([akira, anton, berta, emilia])
         # explicit sort by given names, ascending
-        self.traverse({'description': "Vorname(n)*"})
+        self.traverse({'description': r"\sVorname\(n\)$"})
         self._sort_appearance([akira, anton, berta, emilia])
         # explicit sort by given names, descending
-        self.traverse({'description': "Vorname(n)*"})
+        self.traverse({'description': r"\sVorname\(n\)$"})
         self._sort_appearance([emilia, berta, anton, akira])
         # ... and again, ascending
-        self.traverse({'description': "Vorname(n)*"})
+        self.traverse({'description': r"\sVorname\(n\)$"})
         self._sort_appearance([akira, anton, berta, emilia])
-        self.traverse({'description': "Nachname*"})
+        self.traverse({'description': r"\sNachname$"})
         self._sort_appearance([akira, anton, berta, emilia])
-        self.traverse({'description': "E-Mail-Adresse*"})
+        self.traverse({'description': r"\sE-Mail-Adresse$"})
         self._sort_appearance([akira, anton, berta, emilia])
-        self.traverse({'description': "Postleitzahl, Stadt*"})
+        self.traverse({'description': r"\sPostleitzahl, Stadt$"})
         self._sort_appearance([akira, anton, berta, emilia])
 
-        self.traverse({'description': "Zweite Hälfte"})
-        self.traverse({'description': "Vorname(n)*"})
+        self.traverse({'description': r"^Zweite Hälfte$"})
+        self.traverse({'description': r"\sVorname\(n\)"})
         self._sort_appearance([akira, anton, emilia])
-        self.traverse({'description': "Nachname*"})
+        self.traverse({'description': r"\sNachname$"})
         self._sort_appearance([akira, anton, emilia])
-        self.traverse({'description': "E-Mail-Adresse*"})
+        self.traverse({'description': r"\sE-Mail-Adresse$"})
         self._sort_appearance([akira, anton, emilia])
-        self.traverse({'description': "Postleitzahl, Stadt*"})
+        self.traverse({'description': r"\sPostleitzahl, Stadt$"})
         self._sort_appearance([akira, anton, emilia])
-        # this is a bit hacky to not match "Kurseinteilung" or "Kursliste"
-        self.traverse({'description': "Kurs[^el] *"})
-        self._sort_appearance([akira, emilia, anton])
+        self.traverse({'description': r"\sKurs$"})
+        self._sort_appearance([anton, akira, emilia])
 
     @as_users("emilia", "garcia")
     def test_participant_list_profile_link(self, user):
@@ -1461,6 +1529,43 @@ etc;anything else""", f['entries_2'].value)
             # this is an expanded profile, since garcia is not searchable but
             # orga of this event
             self.assertPresence("akira@example.cde", div='contact-email')
+
+    @as_users("annika", "garcia")
+    def test_cancellation(self, user):
+        self.traverse({'href': '/event/$'})
+        self.assertNonPresence("abgesagt")
+        if user['display_name'] == "garcia":
+            self.traverse({'href': '/event/event/list'})
+            self.assertPresence("(3 Teile)")
+            self.assertNonPresence("abgesagt")
+
+        self.traverse({'href': '/event/event/1/show'})
+        self.assertNonPresence("abgesagt", div="notifications")
+
+        self.traverse({'href': '/event/event/1/change'})
+        self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['is_cancelled'].checked = True
+        self.submit(f)
+
+        self.traverse({'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("Diese Veranstaltung wurde abgesagt.",
+                            div="notifications")
+        self.traverse({'href': '/event/event/1/course/list'})
+        self.assertPresence("Diese Veranstaltung wurde abgesagt.",
+                            div="notifications")
+
+        if user['display_name'] == "annika":
+            # Make sure the index shows it as cancelled.
+            # Orgas only see it as Organized event now.
+            self.traverse({'href': '/event'})
+            self.assertPresence("02.02.2222–30.11.2222, wurde abgesagt.")
+
+            # Make sure the management page shows it as cancelled
+            self.traverse({'href': '/event/event/list'})
+            self.assertPresence("(3 Teile, wurde abgesagt)")
+
 
     @as_users("garcia")
     def test_batch_fee(self, user):
@@ -1562,6 +1667,30 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(
             self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
             "")
+
+    @as_users("annika")
+    def test_course_query(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'},
+                      {'description': 'Kurse'},
+                      {'description': 'Kurssuche'})
+        self.assertTitle('Kurssuche (Große Testakademie 2222)')
+        f = self.response.forms['queryform']
+        for field in f.fields:
+            if field and field.startswith('qsel_'):
+                f[field].checked = True
+        f['qop_track3.takes_place'] = QueryOperators.equal.value
+        f['qval_track3.takes_place'] = True
+        f['qop_track3.num_choices1'] = QueryOperators.greaterequal.value
+        f['qval_track3.num_choices1'] = 2
+        f['qord_primary'] = 'track2.num_choices0'
+        self.submit(f)
+        self.assertTitle('Kurssuche (Große Testakademie 2222)')
+        self.assertPresence("Ergebnis [2]", div="query-results")
+        self.assertPresence("Lang", div="result-container")
+        self.assertPresence("Seminarraum 23", div="result-container")
+        self.assertPresence("Kabarett", div="result-container")
+        self.assertPresence("Theater", div="result-container")
 
     @as_users("garcia")
     def test_multiedit(self, user):
@@ -2778,6 +2907,7 @@ etc;anything else""", f['entries_2'].value)
                       'is_archived': False,
                       'is_participant_list_visible': False,
                       'courses_in_participant_list': False,
+                      'is_cancelled': False,
                       'is_course_list_visible': True,
                       'is_course_state_visible': False,
                       'is_visible': True,

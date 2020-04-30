@@ -37,13 +37,16 @@
         </p>
     {% endif %}
 
-    {% if not decided_search %}
-        <p>{{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="time", aclass="btn btn-default") }}</p>
-    {% endif %}
+    <p>
+        {% if not decided_search %}
+            {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="clock", aclass="btn btn-default") }}
+        {% endif %}
+        {{ util.href(docurl('Privacy'), gettext("Who can see my data?"), aclass="btn btn-info btn-default", icon="question-circle") }}
+    </p>
 
     <h1>{% trans %}Consent{% endtrans %}</h1>
 
-    <p> 
+    <p>
         {% trans %}
         	The CdE-Datenbank relies on the principle of mutuality:
             Only if you consent to the following, others can access your data
@@ -88,10 +91,10 @@
                 style="display: inline;">
             {{ util.anti_csrf_token('cde/consent_decision') }}
             {{ util.input_hidden(name="ack", value="False") }}
-            {{ util.input_submit(value=gettext("Refuse consent"), icon="remove", aclass="btn btn-danger") }}
+            {{ util.input_submit(value=gettext("Refuse consent"), icon="times-circle", aclass="btn btn-danger") }}
         </form>
 
-        {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="time", aclass="btn btn-default") }}
+        {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="clock", aclass="btn btn-default") }}
     {% else %}
         {{ util.href(cdedblink("cde/index"), gettext("Don’t change anything"), icon="asterisk", aclass="btn btn-default") }}
     {% endif %}

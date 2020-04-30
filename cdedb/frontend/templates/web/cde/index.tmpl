@@ -43,7 +43,7 @@
             {% endcall %}
         </div>
         <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Initiative 25+"), icon='euro') %}
+            {% call util.bootstrap_panel(title=gettext("Initiative 25+"), icon='euro-sign') %}
                 {% if has_lastschrift %}
                     <p>
                         {% trans link=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
@@ -57,9 +57,9 @@
                             {% trans %}
                                 You are already a part of the Initiative 25+.
                             {% endtrans %}
-                        </strong>.
+                        </strong>
                         {% trans link=util.href(cdedblink("cde/lastschrift_show", {'persona_id': user.persona_id}),
-                                 gettext("existing Direct Debit Authorization"), icon='euro')-%}
+                                 gettext("existing Direct Debit Authorization"), icon='euro-sign')-%}
                             View Your {{ link }}.
                         {% endtrans %}
                     </p>
@@ -82,7 +82,7 @@
         </div>
     </div>
     {% if not has_lastschrift %}
-        {% call util.bootstrap_panel(title=gettext("Membership-Fee"), icon='euro') %}
+        {% call util.bootstrap_panel(title=gettext("Membership-Fee"), icon='euro-sign') %}
             {% if "member" in user.roles %}
                 <p>
                     {% trans amount=data['balance']|money(lang=lang) %}

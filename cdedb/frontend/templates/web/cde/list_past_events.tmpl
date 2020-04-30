@@ -7,7 +7,7 @@
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active="True") }}
 {% endblock %}
 {% block content %}
-    {% if is_admin %}
+    {% if "past_event" in user.admin_views %}
         <div class="p">
             {{ util.href(cdedblink("cde/create_past_event_form"), gettext("Create Past Event"),
                     aclass="btn btn-success btn-sm", icon="plus") }}
@@ -33,9 +33,9 @@
             {% for pevent_id in year_events %}
                 <li>
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
-                    {% if is_admin %}[{{ shortnames[pevent_id] }}]{% endif %}
+                    {% if "past_event" in user.admin_views %}[{{ shortnames[pevent_id] }}]{% endif %}
                     {% if not institution_id %}({{ stats[pevent_id]['institution_moniker'] }}){% endif %}
-                    {% if is_admin %}
+                    {% if "past_event" in user.admin_views %}
                         <small class="text-muted nowrap">
                             {% trans count=stats[pevent_id]['courses'] %}
                                 {{ count }} Course

@@ -2,4 +2,4 @@
 
 DB_PORT = 42
 CDB_DATABASE_NAME = "skynet"
-ML_SCRIPT_KEY = "matrix"
+URL_PARAMETER_SALT = "matrix"

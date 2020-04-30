@@ -37,7 +37,7 @@ from cdedb.common import (
     n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
-    implying_realms)
+    implying_realms, xsorted)
 from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -343,7 +343,6 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    @singularize("get_assembly")
     def get_assemblies(self, rs, ids):
         """Retrieve data for some assemblies.
 
@@ -356,6 +355,7 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
+    get_assembly = singularize(get_assemblies)
 
     @access("assembly_admin")
     def set_assembly(self, rs, data):
@@ -536,7 +536,6 @@ class AssemblyBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
-    @singularize("get_ballot")
     def get_ballots(self, rs, ids):
         """Retrieve data for some ballots,
 
@@ -566,6 +565,7 @@ class AssemblyBackend(AbstractBackend):
                 ret = {k: v for k, v in ret.items()
                        if self.check_attendance(rs, ballot_id=k)}
         return ret
+    get_ballot = singularize(get_ballots)
 
     @access("assembly_admin")
     def set_ballot(self, rs, data):
@@ -1125,7 +1125,8 @@ class AssemblyBackend(AbstractBackend):
                 x['moniker'] for x in ballot['candidates'].values())
             if ballot['use_bar'] or ballot['votes']:
                 monikers += (ASSEMBLY_BAR_MONIKER,)
-            result = schulze_evaluate([e['vote'] for e in votes], monikers)
+            condensed, detailed = schulze_evaluate([e['vote'] for e in votes],
+                                                   monikers)
             update = {
                 'id': ballot_id,
                 'is_tallied': True,
@@ -1142,30 +1143,30 @@ class AssemblyBackend(AbstractBackend):
                 self.get_assemblies(rs, (ballot['assembly_id'],)))
             candidates = ",\n        ".join(
                 "{}: {}".format(esc(c['moniker']), esc(c['description']))
-                for c in sorted(ballot['candidates'].values(),
-                                key=lambda x: x['moniker']))
+                for c in xsorted(ballot['candidates'].values(),
+                                 key=lambda x: x['moniker']))
             query = glue("SELECT persona_id FROM assembly.voter_register",
                          "WHERE ballot_id = %s and has_voted = True")
             voter_ids = self.query_all(rs, query, (ballot_id,))
             voters = self.core.get_personas(
                 rs, tuple(unwrap(e) for e in voter_ids))
             voters = ("{} {}".format(e['given_names'], e['family_name'])
-                      for e in sorted(voters.values(),
-                                      key=EntitySorter.persona))
+                      for e in xsorted(voters.values(),
+                                       key=EntitySorter.persona))
             voter_list = ",\n        ".join(esc(v) for v in voters)
-            votes = sorted('{{"vote": {}, "salt": {}, "hash": {}}}'.format(
+            votes = xsorted('{{"vote": {}, "salt": {}, "hash": {}}}'.format(
                 esc(v['vote']), esc(v['salt']), esc(v['hash'])) for v in votes)
             vote_list = ",\n        ".join(v for v in votes)
             result_file = template.substitute({
                 'ASSEMBLY': esc(assembly['title']),
                 'BALLOT': esc(ballot['title']),
-                'RESULT': esc(result),
+                'RESULT': esc(condensed),
                 'CANDIDATES': candidates,
                 'USE_BAR': esc(ballot['use_bar']),
                 'VOTERS': voter_list,
                 'VOTES': vote_list,
             })
-            path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
+            path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot_id)
             with open(path, 'w') as f:
                 f.write(result_file)
         return True
@@ -1309,7 +1310,6 @@ class AssemblyBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
-    @singularize("get_attachment")
     def get_attachments(self, rs, ids):
         """Retrieve data on attachments
 
@@ -1325,6 +1325,7 @@ class AssemblyBackend(AbstractBackend):
             ret = {k: v for k, v in ret.items() if self.check_attendance(
                 rs, assembly_id=v['assembly_id'], ballot_id=v['ballot_id'])}
         return ret
+    get_attachment = singularize(get_attachments)
 
     @access("assembly_admin")
     def add_attachment(self, rs, data, attachment):
@@ -1349,7 +1350,7 @@ class AssemblyBackend(AbstractBackend):
         self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                           assembly_id, additional_info=data['title'])
 
-        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+        path = (self.conf["STORAGE_DIR"] / 'assembly_attachment'
                 / str(ret))
         with open(str(path), 'wb') as f:
             f.write(attachment)
@@ -1379,7 +1380,7 @@ class AssemblyBackend(AbstractBackend):
         self.assembly_log(rs, const.AssemblyLogCodes.attachment_removed,
                           assembly_id, additional_info=current['title'])
 
-        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+        path = (self.conf["STORAGE_DIR"] / 'assembly_attachment'
                 / str(attachment_id))
         if path.exists():
             path.unlink()

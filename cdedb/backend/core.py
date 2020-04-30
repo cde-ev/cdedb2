@@ -24,7 +24,7 @@ from cdedb.common import (
     PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter, genesis_realm_access_bits, ValidationWarning)
+    decode_parameter, genesis_realm_access_bits, ValidationWarning, xsorted)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -47,14 +47,14 @@ class CoreBackend(AbstractBackend):
         super().__init__(configpath, is_core=True)
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
-            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, self.conf.DB_PORT)
+            self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, self.conf["DB_PORT"])
         self.generate_reset_cookie = (
             lambda rs, persona_id, timeout: self._generate_reset_cookie(
-                rs, persona_id, secrets.RESET_SALT, timeout=timeout))
+                rs, persona_id, secrets["RESET_SALT"], timeout=timeout))
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
-                rs, persona_id, secrets.RESET_SALT, cookie))
+                rs, persona_id, secrets["RESET_SALT"], cookie))
 
     @classmethod
     def is_admin(cls, rs):
@@ -261,7 +261,7 @@ class CoreBackend(AbstractBackend):
         time_start = affirm("datetime_or_None", time_start)
         time_stop = affirm("datetime_or_None", time_stop)
 
-        length = length or self.conf.DEFAULT_LOG_LENGTH
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
 
         conditions = []
         params = []
@@ -435,7 +435,7 @@ class CoreBackend(AbstractBackend):
             self.sql_insert(rs, "core.changelog", insert)
 
             # resolve change if it doesn't require review
-            if not requires_review or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            if not requires_review or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 ret = self.changelog_resolve_change(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
@@ -521,7 +521,6 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("persona")
-    @singularize("changelog_get_generation")
     def changelog_get_generations(self, rs, ids):
         """Retrieve the current generation of the persona ids in the
         changelog. This includes committed and pending changelog entries.
@@ -538,6 +537,7 @@ class CoreBackend(AbstractBackend):
                         const.MemberChangeStati.committed)
         data = self.query_all(rs, query, (ids, valid_status))
         return {e['persona_id']: e['generation'] for e in data}
+    changelog_get_generation = singularize(changelog_get_generations)
 
     @access("core_admin")
     def changelog_get_changes(self, rs, stati):
@@ -551,7 +551,7 @@ class CoreBackend(AbstractBackend):
           about the change and the persona
         """
         stati = affirm_set("enum_memberchangestati", stati)
-        query = glue("SELECT persona_id, given_names, family_name,",
+        query = glue("SELECT id, persona_id, given_names, family_name,",
                      "generation, ctime",
                      "FROM core.changelog WHERE change_status = ANY(%s)")
         data = self.query_all(rs, query, (stati,))
@@ -589,7 +589,6 @@ class CoreBackend(AbstractBackend):
         return {e['generation']: e for e in data}
 
     @internal_access("persona")
-    @singularize("retrieve_persona")
     def retrieve_personas(self, rs, ids, columns=PERSONA_CORE_FIELDS):
         """Helper to access a persona dataset.
 
@@ -607,6 +606,7 @@ class CoreBackend(AbstractBackend):
             columns += ("id",)
         data = self.sql_select(rs, "core.personas", columns, ids)
         return {d['id']: d for d in data}
+    retrieve_persona = singularize(retrieve_personas)
 
     @internal_access("ml")
     def list_current_members(self, rs, is_active=False):
@@ -819,13 +819,16 @@ class CoreBackend(AbstractBackend):
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
+            ret = self.set_persona(
+                rs, data, may_wait=False,
+                change_note="Bereiche geändert.",
+                allow_specials=("realms", "finance", "membership"))
+            if data.get('trial_member'):
+                ret *= self.change_membership(rs, data['id'], is_member=True)
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
                 additional_info="Bereiche geändert.")
-            return self.set_persona(
-                rs, data, may_wait=False,
-                change_note="Bereiche geändert.",
-                allow_specials=("realms", "finance"))
+            return ret
 
     @access("persona")
     def change_foto(self, rs, persona_id, foto):
@@ -1032,7 +1035,6 @@ class CoreBackend(AbstractBackend):
         return {e["id"]: e for e in data}
 
     @access("meta_admin")
-    @singularize("get_privilege_change")
     def get_privilege_changes(self, rs, ids):
         """Retrieve datasets for priviledge changes.
 
@@ -1045,6 +1047,7 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select(
             rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, ids)
         return {e["id"]: e for e in data}
+    get_privilege_change = singularize(get_privilege_changes)
 
     @access("persona")
     def list_admins(self, rs, realm):
@@ -1539,7 +1542,6 @@ class CoreBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, (foto,)))
 
     @access("persona")
-    @singularize("get_persona")
     def get_personas(self, rs, ids):
         """Acquire data sets for specified ids.
 
@@ -1549,9 +1551,9 @@ class CoreBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
+    get_persona = singularize(get_personas)
 
     @access("event")
-    @singularize("get_event_user")
     def get_event_users(self, rs, ids, event_id=None):
         """Get an event view on some data sets.
 
@@ -1605,9 +1607,9 @@ class CoreBackend(AbstractBackend):
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
         return ret
+    get_event_user = singularize(get_event_users)
 
     @access("cde")
-    @singularize("get_cde_user")
     def get_cde_users(self, rs, ids):
         """Get an cde view on some data sets.
 
@@ -1630,7 +1632,7 @@ class CoreBackend(AbstractBackend):
             else:
                 num = unwrap(num)
             new = tuple(i == rs.user.persona_id for i in ids).count(False)
-            if (num + new > self.conf.QUOTA_VIEWS_PER_DAY
+            if (num + new > self.conf["QUOTA_VIEWS_PER_DAY"]
                     and not {"cde_admin", "core_admin"} & rs.user.roles):
                 raise QuotaException(n_("Too many queries."))
             if new:
@@ -1646,9 +1648,9 @@ class CoreBackend(AbstractBackend):
                                  for e in ret.values()))):
                 raise RuntimeError(n_("Improper access to member data."))
             return ret
+    get_cde_user = singularize(get_cde_users)
 
     @access("ml")
-    @singularize("get_ml_user")
     def get_ml_users(self, rs, ids):
         """Get an ml view on some data sets.
 
@@ -1661,9 +1663,9 @@ class CoreBackend(AbstractBackend):
         if any(not e['is_ml_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an ml user."))
         return ret
+    get_ml_user = singularize(get_ml_users)
 
     @access("assembly")
-    @singularize("get_assembly_user")
     def get_assembly_users(self, rs, ids):
         """Get an assembly view on some data sets.
 
@@ -1676,9 +1678,9 @@ class CoreBackend(AbstractBackend):
         if any(not e['is_assembly_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an assembly user."))
         return ret
+    get_assembly_user = singularize(get_assembly_users)
 
     @access("persona")
-    @singularize("get_total_persona")
     def get_total_personas(self, rs, ids):
         """Acquire data sets for specified ids.
 
@@ -1696,6 +1698,7 @@ class CoreBackend(AbstractBackend):
                         for anid in ids)):
             raise PrivilegeError(n_("Must be privileged."))
         return self.retrieve_personas(rs, ids, columns=PERSONA_ALL_FIELDS)
+    get_total_persona = singularize(get_total_personas)
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
@@ -1783,7 +1786,7 @@ class CoreBackend(AbstractBackend):
             "FROM core.personas",
             "WHERE username = lower(%s) AND is_active = True")
         data = self.query_one(rs, query, (username,))
-        verified = bool(data) and self.conf.CDEDB_OFFLINE_DEPLOYMENT
+        verified = bool(data) and self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
         if not verified and data:
             verified = self.verify_password(password, data["password_hash"])
         if not verified:
@@ -1792,7 +1795,7 @@ class CoreBackend(AbstractBackend):
                 ip, username))
             return None
         else:
-            if self.conf.LOCKDOWN and not (data['is_meta_admin']
+            if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
                                            or data['is_core_admin']):
                 # Short circuit in case of lockdown
                 return None
@@ -1860,7 +1863,6 @@ class CoreBackend(AbstractBackend):
         return data['num'] == len(ids)
 
     @internal_access("persona")
-    @singularize("get_roles_single")
     def get_roles_multi(self, rs, ids):
         """Resolve ids into roles.
 
@@ -1876,9 +1878,9 @@ class CoreBackend(AbstractBackend):
         bits = PERSONA_STATUS_FIELDS + ("id",)
         data = self.sql_select(rs, "core.personas", bits, ids)
         return {d['id']: extract_roles(d) for d in data}
+    get_roles_single = singularize(get_roles_multi)
 
     @access("persona")
-    @singularize("get_realms_single")
     def get_realms_multi(self, rs, ids):
         """Resolve persona ids into realms (only for active users).
 
@@ -1891,6 +1893,7 @@ class CoreBackend(AbstractBackend):
         roles = self.get_roles_multi(rs, ids)
         all_realms = {"cde", "event", "assembly", "ml"}
         return {key: value & all_realms for key, value in roles.items()}
+    get_realms_single = singularize(get_realms_multi)
 
     @access("persona")
     def verify_personas(self, rs, ids, required_roles=None):
@@ -2161,7 +2164,7 @@ class CoreBackend(AbstractBackend):
         :returns: The ``bool`` indicates success and the ``str`` is
           either the reset cookie or an error message.
         """
-        timeout = timeout or self.conf.PARAMETER_TIMEOUT
+        timeout = timeout or self.conf["PARAMETER_TIMEOUT"]
         email = affirm("email", email)
         data = self.sql_select_one(rs, "core.personas", ("id", "is_active"),
                                    email, entity_key="username")
@@ -2193,7 +2196,7 @@ class CoreBackend(AbstractBackend):
                                    entity_key="username")
         if not data:
             return False, n_("Nonexistant user.")
-        if self.conf.LOCKDOWN:
+        if self.conf["LOCKDOWN"]:
             return False, n_("Lockdown active.")
         persona_id = unwrap(data)
         success, msg = self.modify_password(
@@ -2221,7 +2224,7 @@ class CoreBackend(AbstractBackend):
 
         if self.verify_existence(rs, data['username']):
             return None
-        if self.conf.LOCKDOWN and not self.is_admin(rs):
+        if self.conf["LOCKDOWN"] and not self.is_admin(rs):
             return None
         data['case_status'] = const.GenesisStati.unconfirmed
         ret = self.sql_insert(rs, "core.genesis_cases", data)
@@ -2253,7 +2256,7 @@ class CoreBackend(AbstractBackend):
 
         case = self.genesis_get_case(rs, case_id)
         if (case["case_status"] == const.GenesisStati.unconfirmed and
-                now() < case["ctime"] + self.conf.PARAMETER_TIMEOUT):
+                now() < case["ctime"] + self.conf["PARAMETER_TIMEOUT"]):
             blockers["unconfirmed"] = case_id
         if case["case_status"] in {const.GenesisStati.to_review,
                                    const.GenesisStati.approved}:
@@ -2399,7 +2402,6 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
-    @singularize("genesis_get_case")
     def genesis_get_cases(self, rs, ids):
         """Retrieve datasets for persona creation cases.
 
@@ -2416,6 +2418,7 @@ class CoreBackend(AbstractBackend):
                         for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
+    genesis_get_case = singularize(genesis_get_cases)
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
@@ -2531,7 +2534,7 @@ class CoreBackend(AbstractBackend):
         CUTOFF = 21
         MAX_ENTRIES = 7
         persona_ids = tuple(k for k, v in scores.items() if v > CUTOFF)
-        persona_ids = sorted(persona_ids, key=lambda k: -scores.get(k))
+        persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k))
         persona_ids = persona_ids[:MAX_ENTRIES]
         return self.get_total_personas(rs, persona_ids)
 

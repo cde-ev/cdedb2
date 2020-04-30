@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 import copy
+import re
+
 import urllib.parse
 from test.common import USER_DICT, FrontendTest, as_users
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 
 import cdedb.database.constants as const
 import webtest
@@ -134,6 +137,65 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(user['given_names'], div='title')
 
     @as_users("vera")
+    def test_toggle_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        # Core Administration
+        self.get('/')
+        self.assertNoLink("/core/meta")
+        # Submit the adminviewstoggleform with the right button
+        self._click_admin_view_button(re.compile(r"Index-Administration"),
+                                      current_state=False)
+        self.traverse({'href': '/core/meta'},
+                      {'href': '/'})
+        self.assertNoLink("/core/search/user")  # Should not have an effect here
+        self._click_admin_view_button(re.compile(r"Index-Administration"),
+                                      current_state=True)
+        self.assertNoLink("/core/meta")
+
+        # No meta administration for vera
+        button = self.response.html\
+            .find(id="adminviewstoggleform") \
+            .find(text=re.compile(r"Admin-Administration"))
+        self.assertIsNone(button)
+
+        # user administration
+        # No adminshowuserform present
+        self.assertNotIn('adminshowuserform', self.response.forms)
+        self.assertNoLink('/core/genesis/list')
+        self.assertNoLink('/core/changelog/list')
+        self.assertNoLink('/core/changelog/view')
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=False)
+
+        self.traverse({'href': '/core/genesis/list'},
+                      {'href': '/core/changelog/list'},
+                      {'href': '/core/changelog/view'},
+                      {'href': '/cde/'},
+                      {'href': '/cde/search/user'})
+        # Now, the adminshowuserform is present, so we can navigate to Berta
+        self.admin_view_profile('berta')
+        # Test some of the admin buttons
+        self.response.click(href='/username/adminchange')
+        self.response.click(href=re.compile(r'\d+/adminchange'))
+        self.response.click(href='/membership/change')
+        # Disable the User admin view. No buttons should be present anymore
+        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
+                                      current_state=True)
+        self.assertNoLink('/username/adminchange')
+        self.assertNoLink(re.compile(r'\d+/adminchange'))
+        self.assertNoLink('/membership/change')
+        # We shouldn't even see realms and account balance anymore
+        self.assertNonPresence('Bereiche')
+        self.assertNonPresence('12,50€')
+        self.assertNotIn('activitytoggleform', self.response.forms)
+        self.assertNotIn('sendpasswordresetform', self.response.forms)
+
+        # There should not be any admin toggle buttons for Vera in the assembly
+        # realm
+        self.traverse({'href': '/assembly'})
+        self.assertNotIn('adminviewstoggleform', self.response.forms)
+
+    @as_users("vera")
     def test_adminshowuser(self, user):
         self.admin_view_profile('berta')
         self.assertTitle("Bertålotta Beispiel")
@@ -189,6 +251,54 @@ class TestCoreFrontend(FrontendTest):
         expectation = (11,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
+
+    @as_users("quintus")
+    def test_selectpersona_two(self, user):
+        # Quintus is unsearchable, but this should not matter here.
+        self.get('/core/persona/select?kind=admin_persona&phrase=din')
+        expectation = (4, 6)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("berta", "martin", "nina", "vera", "werner", "annika")
+    def test_selectpersona_403(self, user):
+        # These can not be done by Berta no matter what.
+        if user['display_name'] != "Vera":
+            self.get('/core/persona/select?kind=admin_persona&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Werner":
+            self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Nina":
+            self.get('/core/persona/select?kind=ml_admin_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Annika":
+            self.get('/core/persona/select?kind=event_admin_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+
+        # These can be done by Berta for other values of aux.
+        if (user['display_name'] in
+                {"Berta", "Martin", "Vera", "Werner"}):
+            self.get('/core/persona/select'
+                     '?kind=orga_event_user&phrase=@exam&aux=1',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select'
+                     '?kind=mod_ml_user&phrase=@exam&aux=57&variant=20',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select'
+                     '?kind=mod_ml_user&phrase=@exam&aux=57',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+
 
     @as_users("garcia", "nina")
     def test_selectpersona_ml_event(self, user):
@@ -1214,6 +1324,25 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
+        self.assertNonPresence("CdE-Mitglied", "cde-membership")
+        self.assertNonPresence("Probemitgliedschaft", "cde-membership")
+
+        # Do another promotion, this time granting trial membership.
+        self.admin_view_profile('nina')
+        self.traverse({'description': 'Bereich hinzufügen'})
+        self.assertTitle("Bereichsänderung für Nina Neubauer")
+        f = self.response.forms['realmselectionform']
+        self.assertNotIn("event", f['target_realm'].options)
+        f['target_realm'] = "cde"
+        self.submit(f)
+        self.assertTitle("Bereichsänderung für Nina Neubauer")
+        f = self.response.forms['promotionform']
+        f['trial_member'].checked = True
+        self.submit(f)
+        self.assertTitle("Nina Neubauer")
+        self.assertPresence("0,00 €", div='balance')
+        self.assertPresence("CdE-Mitglied", div="cde-membership")
+        self.assertPresence("Probemitgliedschaft", div="cde-membership")
 
     @as_users("vera")
     def test_nontrivial_promotion(self, user):
@@ -1491,6 +1620,14 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = self.fetch_link(mail)
+        self.traverse({'href': '^/$'})
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = "Zelda Zeruda-Hime"
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("0,00 €", div="balance")
+        self.assertPresence("CdE-Mitglied", div="cde-membership")
+        self.assertPresence("Probemitglied", div="cde-membership")
         self.logout()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
@@ -1635,15 +1772,27 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
 
     def test_resolve_api(self):
-        b = urllib.parse.quote_plus('Bertålotta')
+        at = urllib.parse.quote_plus('@')
         self.get(
-            '/core/api/resolve?given_names={}&family_name=Beispiel'.format(b),
-            headers={'X-CdEDB-API-token': 'secret'})
-        self.assertEqual(self.response.json, ["berta@example.cde"])
+            '/core/api/resolve?username=%20bErTa{}example.CDE%20'.format(at),
+            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+        self.assertEqual(self.response.json, {
+            "given_names": USER_DICT["berta"]["given_names"],
+            "family_name": "Beispiel",
+            "is_member": True,
+            "id": 2,
+            "username": "berta@example.cde",
+        })
         self.get(
-            '/core/api/resolve?given_names=Anton&family_name=Administrator',
-            headers={'X-CdEDB-API-token': 'secret'})
-        self.assertEqual(self.response.json, ["anton@example.cde"])
+            '/core/api/resolve?username=anton{}example.cde'.format(at),
+            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+        self.assertEqual(self.response.json, {
+            "given_names": "Anton Armin A.",
+            "family_name": "Administrator",
+            "is_member": True,
+            "id": 1,
+            "username": "anton@example.cde",
+        })
         self.get('/core/api/resolve', status=403)
 
     def test_log(self):

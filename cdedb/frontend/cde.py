@@ -29,13 +29,13 @@ from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
     PERSONA_DEFAULTS, diacritic_patterns, shutil_copy, asciificator,
-    EntitySorter, TransactionType)
+    EntitySorter, TransactionType, xsorted)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
-    calculate_db_logparams, calculate_loglinks)
+    calculate_db_logparams, calculate_loglinks, process_flux_input)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
 import cdedb.frontend.parse_statement as parse
@@ -85,7 +85,7 @@ class CdEFrontend(AbstractUserFrontend):
         if "member" in rs.user.roles:
             user_lastschrift = self.cdeproxy.list_lastschrift(
                 rs, persona_ids=(rs.user.persona_id,), active=True)
-            periods_left = data['balance'] // self.conf.MEMBERSHIP_FEE
+            periods_left = data['balance'] // self.conf["MEMBERSHIP_FEE"]
             if data['trial_member']:
                 periods_left += 1
             period = self.cdeproxy.get_period(rs,
@@ -169,8 +169,8 @@ class CdEFrontend(AbstractUserFrontend):
             rs, "query_input",
             mangle_query_input(rs, spec, defaults),
             "query", spec=spec, allow_empty=not is_search, separator=" ")
-        events = {k: v
-                  for k, v in self.pasteventproxy.list_past_events(rs).items()}
+
+        events = self.pasteventproxy.list_past_events(rs)
         pevent_id = None
         if rs.values.get('qval_pevent_id'):
             try:
@@ -179,12 +179,11 @@ class CdEFrontend(AbstractUserFrontend):
                 pass
         courses = tuple()
         if pevent_id:
-            courses = {k: v for k, v in self.pasteventproxy.list_past_courses(
-                rs, pevent_id).items()}
+            courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
         choices = {"pevent_id": events, 'pcourse_id': courses}
         result = None
         count = 0
-        cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
+        cutoff = self.conf["MAX_MEMBER_SEARCH_RESULTS"]
 
         if rs.has_validation_errors():
             # A little hack to fix displaying of errors: The form uses
@@ -213,7 +212,7 @@ class CdEFrontend(AbstractUserFrontend):
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
-            result = sorted(result, key=EntitySorter.persona)
+            result = xsorted(result, key=EntitySorter.persona)
             count = len(result)
             if count == 1:
                 return self.redirect_show_user(rs, result[0]['id'],
@@ -242,14 +241,14 @@ class CdEFrontend(AbstractUserFrontend):
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
-                sorted(events.items(), key=operator.itemgetter(0))),
+                xsorted(events.items(), key=operator.itemgetter(0))),
             'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext))
         }
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']
+        default_queries = self.conf["DEFAULT_QUERIES"]['qview_cde_user']
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
@@ -602,11 +601,11 @@ class CdEFrontend(AbstractUserFrontend):
                 if datum['resolution'] == LineResolutions.create:
                     success, message = self.coreproxy.make_reset_cookie(
                         rs, datum['raw']['username'],
-                        timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
+                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     email = self.encode_parameter(
                         "core/do_password_reset_form", "email",
                         datum['raw']['username'],
-                        timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
+                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     meta_info = self.coreproxy.get_meta_info(rs)
                     self.do_mail(rs, "welcome",
                                  {'To': (datum['raw']['username'],),
@@ -762,7 +761,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = data or {}
         merge_dicts(rs.values, data)
         event_list = self.eventproxy.list_db_events(rs)
-        event_entries = sorted(event_list.items(), key=lambda x: x[1])
+        event_entries = xsorted(event_list.items(), key=lambda x: x[1])
         params = {
             'params': params or None,
             'data': data,
@@ -902,9 +901,11 @@ class CdEFrontend(AbstractUserFrontend):
                  ("event", "id_or_None"),
                  ("membership", "str_or_None"),
                  ("excel", "str_or_None"),
-                 ("gnucash", "str_or_None"))
+                 ("gnucash", "str_or_None"),
+                 ("ignore_warnings", "bool"))
     def parse_download(self, rs, count, start, end, timestamp, validate=None,
-                       event=None, membership=None, excel=None, gnucash=None):
+                       event=None, membership=None, excel=None, gnucash=None,
+                       ignore_warnings=False):
         """
         Provide data as CSV-Download with the given filename.
 
@@ -943,7 +944,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, transactions, start, end, timestamp)
 
         if validate is not None or params["has_error"] \
-                or params["has_warning"]:
+                or (params["has_warning"] and not ignore_warnings):
             return self.parse_statement_form(rs, data, params)
         elif membership is not None:
             filename = "Mitgliedsbeiträge"
@@ -1105,7 +1106,7 @@ class CdEFrontend(AbstractUserFrontend):
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
                         change_note=note)
-                    if new_balance >= self.conf.MEMBERSHIP_FEE:
+                    if new_balance >= self.conf["MEMBERSHIP_FEE"]:
                         memberships_gained += self.coreproxy.change_membership(
                             rs, datum['persona_id'], is_member=True)
         except psycopg2.extensions.TransactionRollbackError:
@@ -1236,7 +1237,7 @@ class CdEFrontend(AbstractUserFrontend):
             lastschrift_ids = self.cdeproxy.list_lastschrift(rs).keys()
         stati = const.LastschriftTransactionStati
         period = self.cdeproxy.current_period(rs)
-        periods = tuple(range(period - self.conf.PERIODS_PER_YEAR + 1,
+        periods = tuple(range(period - self.conf["PERIODS_PER_YEAR"] + 1,
                               period + 1))
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, lastschrift_ids=lastschrift_ids, periods=periods,
@@ -1267,7 +1268,7 @@ class CdEFrontend(AbstractUserFrontend):
         open_permits = self.determine_open_permits(rs, lastschrift_ids)
         for lastschrift in lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
-        last_order = sorted(
+        last_order = xsorted(
             lastschrifts.keys(),
             key=lambda anid: EntitySorter.persona(
                 personas[lastschrifts[anid]['persona_id']]))
@@ -1378,7 +1379,7 @@ class CdEFrontend(AbstractUserFrontend):
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
             self.do_mail(rs, "pending_lastschrift_revoked",
-                         {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                         {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
                          {'persona_id': persona_id})
         return self.redirect(rs, "cde/lastschrift_show", {
@@ -1389,7 +1390,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         :rtype: datetime.date
         """
-        payment_date = now().date() + self.conf.SEPA_PAYMENT_OFFSET
+        payment_date = now().date() + self.conf["SEPA_PAYMENT_OFFSET"]
 
         # Before anything else: check whether we are on special easter days.
         easter = dateutil.easter.easter(payment_date.year)
@@ -1454,11 +1455,11 @@ class CdEFrontend(AbstractUserFrontend):
                              for key, value in sorted_transactions.items()},
             'count': len(transactions),
             'sender': {
-                'name': self.conf.SEPA_SENDER_NAME,
-                'address': self.conf.SEPA_SENDER_ADDRESS,
-                'country': self.conf.SEPA_SENDER_COUNTRY,
-                'iban': self.conf.SEPA_SENDER_IBAN,
-                'glaeubigerid': self.conf.SEPA_GLAEUBIGERID,
+                'name': self.conf["SEPA_SENDER_NAME"],
+                'address': self.conf["SEPA_SENDER_ADDRESS"],
+                'country': self.conf["SEPA_SENDER_COUNTRY"],
+                'iban': self.conf["SEPA_SENDER_IBAN"],
+                'glaeubigerid': self.conf["SEPA_GLAEUBIGERID"],
             },
             'payment_date': self._calculate_payment_date(),
         }
@@ -1510,10 +1511,10 @@ class CdEFrontend(AbstractUserFrontend):
                 'type': "RCUR",  # TODO remove this, hardcode it in template
             }
             if (lastschrift['granted_at'].date()
-                    >= self.conf.SEPA_INITIALISATION_DATE):
+                    >= self.conf["SEPA_INITIALISATION_DATE"]):
                 transaction['mandate_date'] = lastschrift['granted_at'].date()
             else:
-                transaction['mandate_date'] = self.conf.SEPA_CUTOFF_DATE
+                transaction['mandate_date'] = self.conf["SEPA_CUTOFF_DATE"]
             if lastschrift['account_owner']:
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
@@ -1585,7 +1586,7 @@ class CdEFrontend(AbstractUserFrontend):
                 'account_owner': lastschrift['account_owner'],
                 'mandate_reference': lastschrift_reference(
                     lastschrift['persona_id'], lastschrift['id']),
-                'glaeubiger_id': self.conf.SEPA_GLAEUBIGERID,
+                'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
             }
             subject = "Anstehender Lastschrifteinzug CdE Initiative 25+"
             self.do_mail(rs, "sepa_pre-notification",
@@ -1631,7 +1632,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         tally = None
         if status == const.LastschriftTransactionStati.failure:
-            tally = -self.conf.SEPA_ROLLBACK_FEE
+            tally = -self.conf["SEPA_ROLLBACK_FEE"]
         return self.cdeproxy.finalize_lastschrift_transaction(
             rs, transaction_id, status, tally=tally)
 
@@ -1695,7 +1696,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
-        tally = -self.conf.SEPA_ROLLBACK_FEE
+        tally = -self.conf["SEPA_ROLLBACK_FEE"]
         code = self.cdeproxy.rollback_lastschrift_transaction(
             rs, transaction_id, tally)
         self.notify_return_code(rs, code)
@@ -1706,7 +1707,7 @@ class CdEFrontend(AbstractUserFrontend):
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
             self.do_mail(rs, "pending_lastschrift_revoked",
-                         {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                         {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
                          {'persona_id': persona_id})
         if persona_id:
@@ -1743,7 +1744,7 @@ class CdEFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             with open(work_dir / "lastschrift_receipt.tex", 'w') as f:
                 f.write(tex)
-            logo_src = self.conf.REPOSITORY_PATH / "misc/cde-logo.jpg"
+            logo_src = self.conf["REPOSITORY_PATH"] / "misc/cde-logo.jpg"
             shutil_copy(logo_src, work_dir / "cde-logo.jpg")
             errormsg = n_("LaTeX compiliation failed. "
                           "This might be due to special characters.")
@@ -1880,7 +1881,7 @@ class CdEFrontend(AbstractUserFrontend):
                         persona['id'], lastschrift['id'])
                 address = make_postal_address(persona)
                 transaction_subject = make_transaction_subject(persona)
-                endangered = (persona['balance'] < self.conf.MEMBERSHIP_FEE
+                endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                               and not persona['trial_member']
                               and not lastschrift)
                 if endangered:
@@ -1892,7 +1893,7 @@ class CdEFrontend(AbstractUserFrontend):
                     {'To': (persona['username'],),
                      'Subject': subject},
                     {'persona': persona,
-                     'fee': self.conf.MEMBERSHIP_FEE,
+                     'fee': self.conf["MEMBERSHIP_FEE"],
                      'lastschrift': lastschrift,
                      'open_lastschrift': open_lastschrift,
                      'address': address,
@@ -1941,7 +1942,7 @@ class CdEFrontend(AbstractUserFrontend):
                     'id': period_id,
                     'ejection_state': persona_id,
                 }
-                if (persona['balance'] < self.conf.MEMBERSHIP_FEE
+                if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                         and not persona['trial_member']):
                     self.coreproxy.change_membership(rrs, persona_id,
                                                      is_member=False)
@@ -1956,7 +1957,7 @@ class CdEFrontend(AbstractUserFrontend):
                         {'To': (persona['username'],),
                          'Subject': "Austritt aus dem CdE e.V."},
                         {'persona': persona,
-                         'fee': self.conf.MEMBERSHIP_FEE,
+                         'fee': self.conf["MEMBERSHIP_FEE"],
                          'transaction_subject': transaction_subject,
                          'meta_info': meta_info,
                          })
@@ -1996,7 +1997,7 @@ class CdEFrontend(AbstractUserFrontend):
                     'id': period_id,
                     'balance_state': persona_id,
                 }
-                if (persona['balance'] < self.conf.MEMBERSHIP_FEE
+                if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                         and not persona['trial_member']):
                     # TODO maybe fail more gracefully here?
                     # Maybe set balance to 0 and send a mail or something.
@@ -2014,15 +2015,15 @@ class CdEFrontend(AbstractUserFrontend):
                         period_update['balance_trialmembers'] = \
                             period['balance_trialmembers'] + 1
                     else:
-                        new_b = persona['balance'] - self.conf.MEMBERSHIP_FEE
+                        new_b = persona['balance'] - self.conf["MEMBERSHIP_FEE"]
                         note = "Mitgliedsbeitrag abgebucht ({}).".format(
-                            money_filter(self.conf.MEMBERSHIP_FEE))
+                            money_filter(self.conf["MEMBERSHIP_FEE"]))
                         self.coreproxy.change_persona_balance(
                             rrs, persona_id, new_b,
                             const.FinanceLogCodes.deduct_membership_fee,
                             change_note=note)
                         period_update['balance_total'] = \
-                            period['balance_total'] + self.conf.MEMBERSHIP_FEE
+                            period['balance_total'] + self.conf["MEMBERSHIP_FEE"]
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
@@ -2093,7 +2094,7 @@ class CdEFrontend(AbstractUserFrontend):
                      'Subject': "Adressabfrage für exPuls"},
                     {'persona': persona,
                      'lastschrift': lastschrift,
-                     'fee': self.conf.MEMBERSHIP_FEE,
+                     'fee': self.conf["MEMBERSHIP_FEE"],
                      'address': address,
                      })
                 if testrun:
@@ -2152,64 +2153,12 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "institution_summary", {
             'institutions': institutions, 'is_referenced': is_referenced})
 
-    @staticmethod
-    def process_institution_input(rs, institutions):
-        """This handles input to configure the institutions.
-
-        Since this covers a variable number of rows, we cannot do this
-        statically. This takes care of validation too.
-
-        :type rs: :py:class:`FrontendRequestState`
-        :type institutions: [int]
-        :param institutions: ids of existing institutions
-        :rtype: {int: {str: object} or None}
-        """
-        delete_flags = request_extractor(
-            rs, (("delete_{}".format(institution_id), "bool")
-                 for institution_id in institutions))
-        deletes = {institution_id for institution_id in institutions
-                   if delete_flags['delete_{}'.format(institution_id)]}
-        spec = {
-            'title': "str",
-            'moniker': "str",
-        }
-        params = tuple(("{}_{}".format(key, institution_id), value)
-                       for institution_id in institutions
-                       if institution_id not in deletes
-                       for key, value in spec.items())
-        data = request_extractor(rs, params)
-        ret = {
-            institution_id: {key: data["{}_{}".format(key, institution_id)]
-                             for key in spec}
-            for institution_id in institutions if institution_id not in deletes
-        }
-        for institution_id in institutions:
-            if institution_id in deletes:
-                ret[institution_id] = None
-            else:
-                ret[institution_id]['id'] = institution_id
-        marker = 1
-        while marker < 2 ** 10:
-            will_create = unwrap(request_extractor(
-                rs, (("create_-{}".format(marker), "bool"),)))
-            if will_create:
-                params = tuple(("{}_-{}".format(key, marker), value)
-                               for key, value in spec.items())
-                data = request_extractor(rs, params)
-                ret[-marker] = {key: data["{}_-{}".format(key, marker)]
-                                for key in spec}
-            else:
-                break
-            marker += 1
-        rs.values['create_last_index'] = marker - 1
-        return ret
-
     @access("cde_admin", modi={"POST"})
     def institution_summary(self, rs):
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
-        institutions = self.process_institution_input(
-            rs, institution_ids.keys())
+        spec = {'title': "str", 'moniker': "str"}
+        institutions = process_flux_input(rs, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
         code = 1
@@ -2257,9 +2206,9 @@ class CdEFrontend(AbstractUserFrontend):
             rs, pevent_id=pevent_id)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
-        # We are privileged to see other participants if we are admin or
-        # participant by ourselves
-        privileged = is_participant or self.is_admin(rs)
+        # We are privileged to see other participants if we are admin (and have
+        # the relevant admin view enabled) or participant by ourselves
+        privileged = is_participant or "past_event" in rs.user.admin_views
         participants = {}
         personas = {}
         extra_participants = 0
@@ -2285,7 +2234,7 @@ class CdEFrontend(AbstractUserFrontend):
                 participants[persona_id] = entry
 
             personas = self.coreproxy.get_personas(rs, participants.keys())
-            participants = OrderedDict(sorted(
+            participants = OrderedDict(xsorted(
                 participants.items(),
                 key=lambda x: EntitySorter.persona(personas[x[0]])))
         # Delete unsearchable participants if we are not privileged
@@ -2386,7 +2335,7 @@ class CdEFrontend(AbstractUserFrontend):
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
 
         # Generate (reverse) chronologically sorted list of past event ids
-        stats_sorter = sorted(stats, key=lambda x: events[x])
+        stats_sorter = xsorted(stats, key=lambda x: events[x])
         stats_sorter.sort(key=lambda x: stats[x]['tempus'], reverse=True)
         # Bunch past events by years
         # Using idea from http://stackoverflow.com/a/8983196
@@ -2409,7 +2358,8 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def change_past_event_form(self, rs, pevent_id):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['pevent'])
         return self.render(rs, "change_past_event", {
             'institutions': institutions})
@@ -2430,7 +2380,8 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def create_past_event_form(self, rs):
         """Render form."""
-        institutions = self.pasteventproxy.list_institutions(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         return self.render(rs, "create_past_event", {
             'institutions': institutions})
 
@@ -2599,7 +2550,7 @@ class CdEFrontend(AbstractUserFrontend):
     def view_cde_log(self, rs, codes, offset, length, persona_id, submitted_by,
                      additional_info, time_start, time_stop):
         """View general activity."""
-        length = length or self.conf.DEFAULT_LOG_LENGTH
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
@@ -2632,7 +2583,7 @@ class CdEFrontend(AbstractUserFrontend):
     def view_finance_log(self, rs, codes, offset, length, persona_id, submitted_by,
                          additional_info, time_start, time_stop):
         """View financial activity."""
-        length = length or self.conf.DEFAULT_LOG_LENGTH
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
@@ -2666,7 +2617,7 @@ class CdEFrontend(AbstractUserFrontend):
     def view_past_log(self, rs, codes, pevent_id, offset, length, persona_id,
                       submitted_by, additional_info, time_start, time_stop):
         """View activities concerning concluded events."""
-        length = length or self.conf.DEFAULT_LOG_LENGTH
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)

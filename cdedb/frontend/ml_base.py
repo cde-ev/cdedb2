@@ -34,9 +34,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
         self.mailman_create_client = lambda url, user: mailmanclient.Client(
-            url, user, secrets.MAILMAN_PASSWORD)
+            url, user, secrets["MAILMAN_PASSWORD"])
         self.mailman_template_password = (
-            lambda: secrets.MAILMAN_BASIC_AUTH_PASSWORD)
+            lambda: secrets["MAILMAN_BASIC_AUTH_PASSWORD"])
 
     @classmethod
     def is_admin(cls, rs):
@@ -53,7 +53,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
             group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
-            grouped[group_id][mailinglist_id] = title
+            grouped[group_id][mailinglist_id] = {'title': title, 'id': mailinglist_id}
         return self.render(rs, "index", {
             'groups': MailinglistGroup,
             'mailinglists': grouped,
@@ -95,7 +95,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                           spec=spec, allow_empty=False)
         else:
             query = None
-        default_queries = self.conf.DEFAULT_QUERIES['qview_ml_user']
+        default_queries = self.conf["DEFAULT_QUERIES"]['qview_ml_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
@@ -133,7 +133,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
             group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
-            grouped[group_id][mailinglist_id] = title
+            grouped[group_id][mailinglist_id] = {'title': title, 'id': mailinglist_id}
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         subs = self.mlproxy.get_many_subscription_states(
@@ -197,7 +197,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def view_log(self, rs, codes, mailinglist_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
-        length = length or self.conf.DEFAULT_LOG_LENGTH
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)
@@ -308,7 +308,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
-            return self.management(rs, mailinglist_id)
+            return self.show_mailinglist(rs, mailinglist_id)
 
         code = self.mlproxy.delete_mailinglist(
             rs, mailinglist_id, cascade={"subscriptions", "log", "addresses",
@@ -329,7 +329,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def view_ml_log(self, rs, mailinglist_id, codes, offset, length, persona_id,
                     submitted_by, additional_info, time_start, time_stop):
         """View activities pertaining to one list."""
-        length = length or self.conf.DEFAULT_LOG_LENGTH
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset, _length = calculate_db_logparams(offset, length)

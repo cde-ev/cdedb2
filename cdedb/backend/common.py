@@ -8,8 +8,11 @@ template for all services.
 
 import abc
 import collections.abc
+import copy
 import enum
+import functools
 import logging
+from typing import Any, Callable, TypeVar
 
 from cdedb.common import (
     n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
@@ -19,79 +22,81 @@ from cdedb.validation import parse_date, parse_datetime
 from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
 from cdedb.config import Config
 import cdedb.validation as validate
+from cdedb.database.connection import Atomizer
 
 
-def singularize(singular_function_name, array_param_name="ids",
-                singular_param_name="anid", passthrough=False):
-    """This decorator marks a function for singularization.
+F = TypeVar('F', bound=Callable[..., Any])
 
-    The function has to accept an array as parameter and return a dict
+def singularize(function: F,
+                array_param_name: str = "ids",
+                singular_param_name: str = "anid",
+                passthrough: bool = False) -> F:
+    """This takes a function and returns a singularized version.
+
+    The function has to accept an array as a parameter and return a dict
     indexed by this array. This array has either to be a keyword only
-    parameter or the first positional parameter after the request
-    state. Singularization creates a function which accepts a single
-    element instead and transparently wraps in a list as well as
-    unwrapping the returned dict.
+    parameter or the first positional parameter after the request state.
+    Singularization creates a function which accepts a single element instead
+    and transparently wraps in a list as well as unwrapping the returned dict.
 
-    Singularization is performed at the same spot as publishing of the
-    functions with @access decorator, that is in
-    :py:class:`cdedb.common.ProxyShim`.
-
-    :type singular_function_name: str
-    :param singular_function_name: name for the new singularized function
-    :type array_param_name: str
     :param array_param_name: name of the parameter to singularize
-    :type singular_param_name: str
     :param singular_param_name: new name of the singularized parameter
-    :type passthrough: bool
     :param passthrough: Whether or not the return value should be passed through
         directly. If this is false, the output is assumed to be a dict with the
         singular param as a key.
     """
 
-    def wrap(fun):
-        fun.singularization_hint = {
-            'singular_function_name': singular_function_name,
-            'array_param_name': array_param_name,
-            'singular_param_name': singular_param_name,
-            'passthrough': passthrough,
-        }
-        return fun
+    @functools.wraps(function)
+    def singularized(self, rs, *args, **kwargs):
+        if singular_param_name in kwargs:
+            param = kwargs.pop(singular_param_name)
+            kwargs[array_param_name] = (param,)
+        else:
+            param = args[0]
+            args = ((param,),) + args[1:]
+        data = function(self, rs, *args, **kwargs)
+        if passthrough:
+            return data
+        else:
+            return data[param]
 
-    return wrap
+    return singularized
 
 
-def batchify(batch_function_name, array_param_name="data",
-             singular_param_name="data"):
-    """This decorator marks a function for batchification.
+def batchify(function: F,
+             array_param_name: str = "data",
+             singular_param_name: str = "data") -> F:
+    """This takes a function and returns a batchified version.
 
-    The function has to accept an a singular parameter. The singular
-    parameter has either to be a keyword only parameter or the first
-    positional parameter after the request state. Batchification creates a
-    function which accepts an array instead and loops over this array
-    wrapping everything in a database transaction. It returns an array of
-    all return values.
+    The function has to accept an a singular parameter.
+    The singular parameter has either to be a keyword only parameter
+    or the first positional parameter after the request state.
+    Batchification creates a function which accepts an array instead
+    and loops over this array wrapping everything in a database transaction.
+    It returns an array of all return values.
 
-    Batchification is performed at the same spot as publishing of the
-    functions with @access decorator, that is in
-    :py:class:`cdedb.common.ProxyShim`.
-
-    :type batch_function_name: str
-    :param batch_function_name: name for the new batchified function
-    :type array_param_name: str
-    :type array_param_name: new name of the batchified parameter
-    :type singular_param_name: str
-    :type singular_param_name: name of the parameter to batchify
+    :param array_param_name: new name of the batchified parameter
+    :param singular_param_name: name of the parameter to batchify
     """
 
-    def wrap(fun):
-        fun.batchification_hint = {
-            'batch_function_name': batch_function_name,
-            'array_param_name': array_param_name,
-            'singular_param_name': singular_param_name,
-        }
-        return fun
+    @functools.wraps(function)
+    def batchified(self, rs, *args, **kwargs):
+        ret = []
+        with Atomizer(rs):
+            if array_param_name in kwargs:
+                param = kwargs.pop(array_param_name)
+                for datum in param:
+                    new_kwargs = copy.deepcopy(kwargs)
+                    new_kwargs[singular_param_name] = datum
+                    ret.append(function(self, rs, *args, **new_kwargs))
+            else:
+                param = args[0]
+                for datum in param:
+                    new_args = (datum,) + args[1:]
+                    ret.append(function(self, rs, *new_args, **kwargs))
+        return ret
 
-    return wrap
+    return batchified
 
 
 def access(*roles):
@@ -149,14 +154,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.conf = Config(configpath)
         # initialize logging
         make_root_logger(
-            "cdedb.backend", self.conf.BACKEND_LOG, self.conf.LOG_LEVEL,
-            syslog_level=self.conf.SYSLOG_LEVEL,
-            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+            "cdedb.backend", self.conf["BACKEND_LOG"], self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         make_root_logger(
             "cdedb.backend.{}".format(self.realm),
-            getattr(self.conf, "{}_BACKEND_LOG".format(self.realm.upper())),
-            self.conf.LOG_LEVEL, syslog_level=self.conf.SYSLOG_LEVEL,
-            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+            self.conf[f"{self.realm.upper()}_BACKEND_LOG"],
+            self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
         self.logger.info("Instantiated {} with configpath {}.".format(
@@ -491,6 +497,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :rtype: [{str: object}]
         :returns: all results of the query
         """
+        query.fix_custom_columns()
         self.logger.debug("Performing general query {}.".format(query))
         select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
                            for field in query.fields_of_interest
@@ -675,7 +682,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         time_start = affirm_validation("datetime_or_None", time_start)
         time_stop = affirm_validation("datetime_or_None", time_stop)
 
-        length = length or self.conf.DEFAULT_LOG_LENGTH
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
         additional_columns = additional_columns or tuple()
 
         # First, define the common WHERE filter clauses

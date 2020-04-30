@@ -22,7 +22,7 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
     n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
-    ANTI_CSRF_TOKEN_NAME, ProxyShim)
+    ANTI_CSRF_TOKEN_NAME, ProxyShim, ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
     docurl, JINJA_FILTERS, check_validation)
@@ -58,17 +58,16 @@ class Application(BaseApp):
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
-            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, self.conf.DB_PORT)
-        self.validate_mlscriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
+            self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, self.conf["DB_PORT"])
         # Construct a reduced Jinja environment for rendering error pages.
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
-                str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
+                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None, autoescape=True,
-            auto_reload=self.conf.CDEDB_DEV)
+            auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.globals.update({
             'now': now,
             'staticurl': staticurl,
@@ -80,11 +79,11 @@ class Application(BaseApp):
         self.translations = {
             lang: gettext.translation(
                 'cdedb', languages=(lang,),
-                localedir=str(self.conf.REPOSITORY_PATH / 'i18n'))
-            for lang in self.conf.I18N_LANGUAGES}
+                localedir=str(self.conf["REPOSITORY_PATH"] / 'i18n'))
+            for lang in self.conf["I18N_LANGUAGES"]}
         if pathlib.Path("/PRODUCTIONVM").is_file():
             # Sanity checks for the live instance
-            if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 raise RuntimeError(
                     n_("Refusing to start in debug/offline mode."))
 
@@ -156,31 +155,37 @@ class Application(BaseApp):
                 # note time for performance measurement
                 begin = now()
                 sessionkey = request.cookies.get("sessionkey")
+                # TODO remove ml script key backwards compatibility code
+                apitoken = (request.headers.get("X-CdEDB-API-Token")
+                            or request.headers.get("MLSCRIPTKEY"))
                 urls = self.urlmap.bind_to_environ(request.environ)
                 endpoint, args = urls.match()
-                mlscriptkey = request.headers.get("MLSCRIPTKEY")
-                user = self.sessionproxy.lookupsession(sessionkey,
-                                                       request.remote_addr)
-                if self.validate_mlscriptkey(mlscriptkey):
-                    # Special case the access of the mailing list software
-                    # since it's not tied to an actual persona. Note that
-                    # this is not affected by the LOCKDOWN configuration.
-                    user.roles.add("ml_script")
+                if apitoken:
+                    sessionkey = None
+                    user = self.sessionproxy.lookuptoken(apitoken,
+                                                         request.remote_addr)
+                    # Error early to make debugging easier.
+                    if 'droid' not in user.roles:
+                        raise werkzeug.exceptions.Forbidden(
+                            "API token invalid.")
+                else:
+                    user = self.sessionproxy.lookupsession(sessionkey,
+                                                           request.remote_addr)
 
-                # Check for timed out / invalid sessionkey
-                if sessionkey and not user.persona_id:
-                    params = {
-                        'wants': self.encode_parameter(
-                            "core/index", "wants", request.url,
-                            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT),
-                    }
-                    ret = construct_redirect(request,
-                                             urls.build("core/index", params))
-                    ret.delete_cookie("sessionkey")
-                    notifications = json.dumps([self.encode_notification(
-                        "error", n_("Session expired."))])
-                    ret.set_cookie("displaynote", notifications)
-                    return ret
+                    # Check for timed out / invalid sessionkey
+                    if sessionkey and not user.persona_id:
+                        params = {
+                            'wants': self.encode_parameter(
+                                "core/index", "wants", request.url,
+                                timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
+                        }
+                        ret = construct_redirect(
+                            request, urls.build("core/index", params))
+                        ret.delete_cookie("sessionkey")
+                        notifications = json.dumps([self.encode_notification(
+                            "error", n_("Session expired."))])
+                        ret.set_cookie("displaynote", notifications)
+                        return ret
                 coders = {
                     "encode_parameter": self.encode_parameter,
                     "decode_parameter": self.decode_parameter,
@@ -189,10 +194,10 @@ class Application(BaseApp):
                 }
                 lang = self.get_locale(request)
                 rs = RequestState(
-                    sessionkey=sessionkey, user=user, request=request,
-                    response=None, notifications=[], mapadapter=urls,
-                    requestargs=args, errors=[], values={}, lang=lang,
-                    gettext=self.translations[lang].gettext,
+                    sessionkey=sessionkey, apitoken=apitoken, user=user,
+                    request=request, response=None, notifications=[],
+                    mapadapter=urls, requestargs=args, errors=[], values={},
+                    lang=lang, gettext=self.translations[lang].gettext,
                     ngettext=self.translations[lang].ngettext,
                     coders=coders, begin=begin,
                     default_gettext=self.translations["en"].gettext,
@@ -225,7 +230,7 @@ class Application(BaseApp):
                             request.method))
 
                 # Check anti CSRF token (if required by the endpoint)
-                if handler.check_anti_csrf:
+                if handler.check_anti_csrf and 'droid' not in user.roles:
                     okay, error = check_anti_csrf(rs, component, action)
                     if not okay:
                         rs.csrf_alert = True
@@ -247,6 +252,8 @@ class Application(BaseApp):
                                                             user.persona_id)
                 user.orga = orga
                 user.moderator = moderator
+                user.init_admin_views_from_cookie(
+                    request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, ''))
 
                 try:
                     ret = handler(rs, **args)
@@ -293,11 +300,11 @@ class Application(BaseApp):
         except Exception as e:
             # Raise exceptions when in TEST environment to let the test runner
             # catch them.
-            if self.conf.CDEDB_TEST:
+            if self.conf["CDEDB_TEST"]:
                 raise
 
             # debug output if applicable
-            if self.conf.CDEDB_DEV:
+            if self.conf["CDEDB_DEV"]:
                 return Response(cgitb.html(sys.exc_info(), context=7),
                                 mimetype="text/html", status=500)
             # generic errors
@@ -314,13 +321,13 @@ class Application(BaseApp):
         :rtype: str
         """
         if 'locale' in request.cookies \
-                and request.cookies['locale'] in self.conf.I18N_LANGUAGES:
+                and request.cookies['locale'] in self.conf["I18N_LANGUAGES"]:
             return request.cookies['locale']
 
         if 'Accept-Language' in request.headers:
             for lang in request.headers['Accept-Language'].split(','):
                 lang_code = lang.split('-')[0].split(';')[0].strip()
-                if lang_code in self.conf.I18N_LANGUAGES:
+                if lang_code in self.conf["I18N_LANGUAGES"]:
                     return lang_code
 
         return 'de'

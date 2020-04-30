@@ -94,6 +94,9 @@ body{
     border-top-style: none;
     min-width: 20px;
 }
+tr.no-upper-border>td {
+    border-top-style: none;
+}
 ul.slim {
     padding-left: 15px;
 }
@@ -205,12 +208,13 @@ dd>*:first-child {
     .list-group.tear-down {
         margin-bottom: 8px;
     }
-    .list-group.tear-down>.list-group-item {
+    .list-group.tear-down>.list-group-item, .list-group.tear-down>button.list-group-item {
         font-size: .9em;
         border-radius: 4px;
         display: inline-block;
         margin-bottom: 4px;
         padding: 6px 10px;
+        width: auto;
     }
 }
 

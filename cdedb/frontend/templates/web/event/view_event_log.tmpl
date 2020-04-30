@@ -12,13 +12,13 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Log{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
         {{ logging.counter(total, values['offset'] or '', length) }}
     </h1>
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='blackboard') }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
     {{ util.breadcrumb_link(cdedblink("event/view_event_log"), gettext("Log"), active="True") }}
 {% endblock %}
 {% block content %}

@@ -10,13 +10,13 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/course_choices"), gettext("Course Assignment"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Course Choices{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% macro course_cell(course_id, track_id, border_left=False, complain_empty=False, primary=False, filtered=False,
@@ -57,7 +57,7 @@
     {% set course_entries = courses|keydictsort(EntitySorter.course)|xdict_entries('{id}', '{nr}. {shortname}') %}
 
     <div class="p">
-        {{ util.href(cdedblink("event/course_assignment_checks"), gettext("Checks"), icon='check',
+        {{ util.href(cdedblink("event/course_assignment_checks"), gettext("Checks"), icon='check-square',
                      aclass='btn btn-sm btn-info') }}
     </div>
 
@@ -80,7 +80,7 @@
                                 aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Course")),
                         select3=util.input_select(name="position", entries=filter_entries,
                                 aclass="form-control input-slim input-sm", nulloption=gettext("— no Filter —"),
-                                arialabel=gettext("Filter: Course Operator"))
+                                arialabel=gettext("Filter: Course Operator"), sort=True)
                         -%}
                     Show only participants who {{ select3 }} the course {{ select2 }} {{ select1 }}
                 {% endtrans %}
@@ -94,7 +94,7 @@
             </div>
             <p class="nosp">
                 {{ util.input_submit(value=gettext("Go!"), icon="search") }}
-                {{ util.href(cdedblink("event/course_choices",{}), gettext("Show all participants"), icon="remove",
+                {{ util.href(cdedblink("event/course_choices",{}), gettext("Show all participants"), icon="times-circle",
                              aclass="btn btn-default") }}
             </p>
         </form>
@@ -108,7 +108,7 @@
         {{ util.input_hidden(name="position") }}
         {{ util.input_hidden(name="ids") }}
         {{ util.input_hidden(name="include_active") }}
-        {% call util.bootstrap_panel(title=gettext("Assignment"), icon="screenshot", aclass='panel-warning',
+        {% call util.bootstrap_panel(title=gettext("Assignment"), icon="crosshairs", aclass='panel-warning',
                                      anid="assignment-options") %}
             {% if ambience['event']['tracks']|length == 1 %}
                 {% set tracks=util.input_hidden(name="assign_track_ids", value=(ambience['event']['tracks']|list)[0]) %}
@@ -123,7 +123,7 @@
                         participants='<div class="col-md-2">%s</div>'|s|format(gettext("selected participants")),
                         course='<div class="col-md-4"><div class="form-group">%s</div><div class="form-group">%s</div></div>'|s|format(
                             util.input_select(name="assign_action", anid="input-action",
-                                              entries=action_entries, arialabel=gettext("Assignment Method")),
+                                              entries=action_entries, arialabel=gettext("Assignment Method"), sort=True),
                             util.input_select(name="assign_course_id", anid="input-course_id", entries=course_entries,
                                               nulloption="&nbsp;"|s, arialabel="Assign to Course")),
                         tracks=tracks,
@@ -155,15 +155,15 @@
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select All{% endtrans %}"
                         id="btn-select-all">
-                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
+                    {{ util.make_icon('check-square') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select None{% endtrans %}"
                         id="btn-select-none">
-                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
+                    {{ util.make_icon('square') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}Invert Selection{% endtrans %}"
                         id="btn-select-swap">
-                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
+                    {{ util.make_icon('caret-square-right') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
                 </button>
             </div>
         </div>
@@ -200,7 +200,7 @@
                     {% endmacro %}
                     {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
-                            {{ util.make_icon('screenshot', title=gettext("assigned to")) }}
+                            {{ util.make_icon('crosshairs', title=gettext("assigned to")) }}
                         </th>
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">
                             {% trans %}Instr.{% endtrans %}
@@ -287,6 +287,6 @@
                 {% trans %}not assigned or course is cancelled{% endtrans %}&emsp;
     </p>
     <p>
-        {{ util.make_icon('info-sign') }} {% trans %}Double-Click the course number to view the course.{% endtrans %}
+        {{ util.make_icon('info-circle') }} {% trans %}Double-Click the course number to view the course.{% endtrans %}
     </p>
 {% endblock %}

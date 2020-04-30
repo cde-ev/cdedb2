@@ -2,7 +2,7 @@
 
 import unittest
 from cdedb.common import (
-    extract_roles, schulze_evaluate, int_to_words)
+    extract_roles, schulze_evaluate, int_to_words, xsorted)
 import cdedb.database.constants as const
 import datetime
 import pytz
@@ -52,9 +52,9 @@ class TestCommon(unittest.TestCase):
         )
         for expectation, spec in tests:
             with self.subTest(spec=spec):
-                self.assertEqual(expectation,
-                                 schulze_evaluate(_ordinary_votes(
-                                     spec, candidates), candidates))
+                condensed, detailed = schulze_evaluate(
+                    _ordinary_votes(spec, candidates), candidates)
+                self.assertEqual(expectation, condensed)
 
     def test_schulze(self):
         candidates = ('0', '1', '2', '3', '4')
@@ -98,8 +98,8 @@ class TestCommon(unittest.TestCase):
         )
         for expectation, addons in tests:
             with self.subTest(addons=addons):
-                self.assertEqual(expectation,
-                                 schulze_evaluate(base+addons, candidates))
+                condensed, detailed = schulze_evaluate(base+addons, candidates)
+                self.assertEqual(expectation, condensed)
 
     def test_schulze_runtime(self):
         ## silly test, since I just realized, that the algorithm runtime is
@@ -175,3 +175,57 @@ class TestCommon(unittest.TestCase):
         for case in cases:
             with self.subTest(case=case):
                 self.assertEqual(cases[case], int_to_words(case, "de"))
+
+    def test_collation(self):
+        # Test correct plain string sorting
+        names = [
+            "",
+            " ",
+            "16",
+            "Stránd",
+            "Strassé",
+            "straßenpanther",
+            "Straßenpanther",
+            "Strassenpeter",
+            "Zimmer -30",
+            "Zimmer -40",
+            "Zimmer 20 Das beste Zimmer",
+            "Zimmer 100a",
+            "Zimmer w20a",
+            "Zimmer w100a",
+        ]
+        shuffled_names = random.sample(names, len(names))
+        self.assertEqual(names, xsorted(shuffled_names))
+
+        # Test correct sorting of complex objects with sortkeys
+        # Also tests that negative ints are not sorted lexicographically
+        dicts = [
+            {
+                'id': 2,
+                'string': 'Erster String',
+                'neg': -3,
+            },
+            {
+                'id': 1,
+                'string': 'Weiterer String',
+                'neg': -2,
+            },
+            {
+                'id': 0,
+                'string': 'Z-String',
+                'neg': -1,
+            }
+        ]
+        shuffled_dicts = random.sample(dicts, len(dicts))
+        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['string']))
+        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['id'], reverse=True))
+        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['neg'], reverse=False))
+        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: str(x['neg']), reverse=True))
+
+        # Test correct sorting of tuples, which would be sorted differently as string
+        tuples = [
+            ("Corona ", 2020),
+            ("Corona", 2020),
+        ]
+        self.assertEqual(list(reversed(tuples)), xsorted(tuples))
+        self.assertEqual(tuples, xsorted(tuples, key=lambda x: str(x)))

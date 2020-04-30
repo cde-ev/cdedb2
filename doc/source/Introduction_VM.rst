@@ -191,7 +191,7 @@ Sample dev setup
 Here is a description of my setup hopefully aiding new devs in
 setup. This is by no means a mandatory setup. First an overview of the
 directory structure::
-  
+
   /home/markus/DB/
   ├── cdedb2/
   │   └── ...

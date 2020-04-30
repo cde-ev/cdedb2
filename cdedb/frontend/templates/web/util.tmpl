@@ -40,7 +40,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='', rel='') -%}
+{% macro href(ref, label, readonly=False, icon=None, aclass='', active=False, title='', rel='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {%- if aclass or active or readonly -%}
     class="{{ aclass }}{% if active %} active{% endif -%}
@@ -52,31 +52,32 @@
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
-{# Macro to place a Bootstrap/Glyphicon icon
+{# Macro to place a Fontawesome icon
 
-   icon       The icon's name. See https://getbootstrap.com/docs/3.3/components/#glyphicons for a list of available
-              icons. Only the distinguishing part of the icon's CSS class is required. E.g. "ok" instead of
-              "glyphicon glyphicon-ok"
+   icon       The icon's name. See https://fontawesome.com/icons for a list of available icons.
+              Only the distinguishing part of the icon's CSS class is required (e.g. "ok" instead of "fas fa-ok").
+              If the icon contains a space the full class is required. (e.g. "far fa-star")
    aclass     An additonal HTML/CSS class to add to the icon. Useful if you want to access the icon via JavaScript
-   title      A HTML `title` attribute (hover text) to add to the icon. This is also used as arialabel, if you don't
-              provide one explicitly.
-   arialabel  A screenreader-only text to append to the icon. Please make sure, to provide one (or a title) for every
-              semantically important icon in support of a11y. #}
-{% macro make_icon(icon, aclass='', title='', arialabel='') -%}
-    {% if title and not arialabel %}{% set arialabel = title %}{% endif -%}
-    <span class="glyphicon glyphicon-{{ icon }} {{aclass }}"
-            {%- if title %} title="{{ title }}"{% endif %} aria-hidden="true"></span>
-    {%- if arialabel %}
-        <span class="sr-only">{{ arialabel }}</span>
-    {%- endif %}
-{%- endmacro %}
+   title      A HTML `title` attribute (hover text) to add to the icon.
+              This is also used as arialabel, if you don't provide one explicitly.
+   arialabel  A screenreader-only text to append to the icon.
+              Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
+{% macro make_icon(icon, fixed_width=True, aclass="", title=None, arialabel=None) -%}
+    <span{{ dict(
+        class=("fas fa-{}".format(icon) if " " not in icon else icon)
+            + (" fa-fw" if fixed_width else "")
+            + (" {}".format(aclass) if aclass else ""),
+        title=title,
+    )|xmlattr }} aria-hidden="true"></span>
+    {%- if arialabel or title %}<span class="sr-only">{{ arialabel or title }}</span>{% endif %}
+{%- endmacro%}
 
 
 {# ############## #
  # Layout helpers #
  # ############## #}
 
-{% macro bootstrap_panel(title="", aclass="panel-default", icon="", anid="") %}
+{% macro bootstrap_panel(title="", aclass="panel-default", icon=None, anid="") %}
     <div class="panel {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
         {%- if title or icon %}
             <div class="panel-heading">
@@ -104,11 +105,11 @@
               accessible to screen readers by any other means. #}
 {% macro deko_checkbox(checked, anid='', titles=[]) %}
     {%- if checked %}
-        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid }}"{% endif %} data-checked="True"
+        <span class="fas fa-check-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="True"
                 {%- if titles[1] %} title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[1] %}{{ titles[1] }}{% endif %}</span>
     {%- elif checked is not none %}
-        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="False"
+        <span class="far fa-times-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="False"
                 {%- if titles[0] %} title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[0] %}{{ titles[0] }}{% endif %}</span>
     {%- endif %}
@@ -175,7 +176,7 @@
    name/title. In this case the icon should represent the type of the named object. For a complex example, take a look
    at the event/change_course template.
   #}
-{% macro breadcrumb_link(ref, label, icon="", active=False, readonly=False) %}
+{% macro breadcrumb_link(ref, label, icon=None, active=False, readonly=False) %}
     {%- if active or readonly -%}
         <li {% if active %}class="active" aria-current="location"{% endif %}>
             {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label -}}
@@ -191,7 +192,7 @@
    docurl(). #}
 {% macro doclink(topic, anchor=None) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
-        {{ make_icon('question-sign') }}
+        {{ make_icon('question-circle') }}
     {% trans %}
         Help
     {% endtrans %}
@@ -223,7 +224,7 @@
 {% macro output_info(info, link='') %}
     {%- if info %}
         <p class="help-block no-color">
-	    {{ make_icon('info-sign') }} {{ info }}
+	    {{ make_icon('info-circle') }} {{ info }}
 	    {% if link %}
 	        {{ link }}
 	    {% endif %}
@@ -240,10 +241,11 @@
                              has-error
                          {% endif %}">
         {% endif %}
+        {# TODO sort #}
         {%- for error in errors.get(name, []) if error %}
             {% if error.args %}
                 <div class="help-block">
-                    {{ make_icon('exclamation-sign') }}
+                    {{ make_icon('exclamation-circle') }}
                     {{ format_error(error) }}
                 </div>
             {% endif %}
@@ -319,8 +321,7 @@
         placeholder='', arialabel='', attributes='') %}
     <input type="{{ type }}" {%- if aclass %} class="{{ aclass }}"{% endif %}
             {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {%- if placeholder and type in
-            ("email", "number", "password", "search", "tel", "text", "url") %} placeholder="{{ placeholder }}"{% endif %}
+            {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
             {%- if anid %} id="{{ anid }}"{% endif %} {# -#}
             name="{{ name }}"
@@ -371,6 +372,7 @@
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {# -#}
             name="{{ name }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {%- if readonly %} disabled{% endif %} {{ attributes }}>
+    {#- TODO sort if this is a list -#}
         {{- values.get(name, defaultvalue) -}}
     </textarea>
 {%- endmacro %}
@@ -401,10 +403,11 @@
 {%- endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
-        arialabeledby="") %}
+        arialabeledby="", sort=False) %}
     <div role="{% if radio %}radio{% endif %}group"
             {%- if arialabeledby %} aria-labelledby="{{ arialabeledby }}"{% endif %}>
         {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
+        {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for entry_value, entry_label in entries %}
             {% if not inline -%}
                 <div class="{% if radio %}radio{% else %}checkbox{% endif %}{% if readonly %} disabled{% endif %}">
@@ -439,20 +442,20 @@
 {%- endmacro %}
 
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-        small=False, radio=False, horizontal=True, aclass='', labelid='', infolink='', differentiate_warnings=True) %}
+        small=False, radio=False, horizontal=True, aclass='', labelid='', infolink='', differentiate_warnings=True, sort=False) %}
     {#- This is the version for multiple checkboxes as opposed to input_checkbox().
        entries is of type [(str, str)]. #}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
     {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass,
-                arialabeledby=labelid) }}
+                arialabeledby=labelid, sort=sort) }}
     {%- endcall %}
 {%- endmacro %}
 
 
 {% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
-        nulloption=None, arialabel='', attributes="") %}
+        nulloption=None, arialabel='', attributes="", sort=False) %}
     <select name="{{ name }}" {%- if anid %} id="{{ anid }}"{% endif %}
             {%- if aclass %} class="{{ aclass }}"{% endif %}{% if readonly %} disabled{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {{ attributes }}>
@@ -461,6 +464,7 @@
                 {{- nulloption -}}
             </option>
         {%- endif %}
+        {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for value, label in entries %}
             <option value="{{ value }}"
               {%- if values.get(name, defaultvalue)|string == value|string %} selected{% endif %}>
@@ -471,12 +475,13 @@
 {%- endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
-        nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="", differentiate_warnings=True) %}
+        nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="", differentiate_warnings=True,
+        sort=False) %}
     {%- if not anid %}{% set anid = "input-select-{}".format(name) %}{% endif %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
-                aclass="form-control " + aclass, attributes=attributes) }}
+                aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
     {%- endcall %}
 {%- endmacro%}
 
@@ -484,7 +489,7 @@
     <div class="form-control-static"{% if anid %}id="{{ anid }}"{% endif %}>{{ value }}</div>
 {%- endmacro %}
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True, aclass='',
-        infolink='', icon='', differentiate_warnings=True) %}
+        infolink='', icon=None, differentiate_warnings=True) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
     {%- call form_input_general(None, label, anid, small, info, False, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
@@ -495,7 +500,7 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="ok",
+{% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="check",
         readonly=False, title='', arialabel='') %}
     <button type="submit" name="{{ name }}" {%- if readonly %} disabled{% endif %}
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %}
@@ -505,7 +510,7 @@
 {%- endmacro %}
 
 {% macro form_input_submit(value="Save", name="submitform", readonly=False, anid='',
-        aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue="Cancel",
+        aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
         small=False, horizontal=True, differentiate_warnings=False) %}
     <div class="form-group mosp">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
@@ -515,7 +520,7 @@
                 {{ input_submit(gettext("Ignore Warnings"), name="ignore_warnings", anid=anid, aclass=aclass, icon=icon, readonly=readonly) }}
             {% endif %}
             {%- if cancellink %}
-                &emsp; {{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
+                &emsp; {{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
             {%- endif %}
         </div>
     </div>
@@ -552,7 +557,7 @@
     {%- endif %}
     {%- if fields['entries'] %}
         {{- input_select(name=name, entries=fields['entries'], nulloption="&nbsp;"|s,
-                        readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
+                        readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=True) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
         {%- if fields['kind'] == datatypes.bool %}
@@ -591,6 +596,95 @@
     {%- endcall %}
 {%- endmacro %}
 
+{# Macro for a general row, used in a flux table.
+
+   non-deletable rows have a disabled 'delete'-checkbox,
+   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
+{% macro print_flux_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
+    <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
+        {% for column in columns %}
+            <td {% if '{}_{}'.format(column['name'], id) in errors %}class="has-error"{% endif %}>
+                {% set func = column['func'] %}
+                {% set name = '{}_{}'.format(column['name'], id) %}
+
+                {# TODO set the remaining items of colum as attributes to func #}
+                {# this is a call for a generic util.input_* macro specified by the caller #}
+                {{ func(name=name,
+                        aclass='drow-input form-control',
+                        attributes=('data-basename="{}_"'.format(column['name'])|s if newrow else ''),
+                        arialabel=gettext(column['label'])
+                        ) }}
+                {{ util.output_errors(name) }}
+            </td>
+        {% endfor %}
+
+        <td>
+            <span class="drow-buttonspace">
+                {% if newrow %}
+                    {{ util.input_checkbox("create_{}".format(id), label=gettext("Add"),
+                                           attributes='data-basename="create_"'|s,
+                                           aclass='drow-indicator') }}
+                {% else %}
+                    {{ util.input_checkbox("delete_{}".format(id), label=gettext("Delete"),
+                                           readonly=not deletable, aclass='drow-indicator') }}
+                {% endif %}
+            </span>
+        </td>
+    </tr>
+{% endmacro %}
+
+{# This macro creates a table which entries can be added, deleted and modified by the user.
+
+   name:     the name of the table
+   columns:  List of dicts. Each dict must contain a 'func' key, specifing the util.input_* macro for this column,
+             the 'name' (mapping the input to a db field) and a 'label'.
+   existing: a dict of already existing entries.
+   endpoint: the rule to the python method which will process the input
+   locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
+   sortkey:  to sort existing #}
+{% macro print_flux_table(name, columns, existing, endpoint, locked=[], sortkey=None) %}
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#drow-table').cdedbDynamicRow({
+                addButton: $('#drow-addbutton'),
+                delButtonTitle: "{{ gettext("Delete line") }}"});
+            $('#institutionsummaryform').cdedbProtectChanges();
+        });
+    </script>
+    <form action="{{ cdedblink(endpoint) }}" method="POST" id="{{ name|lower|replace(' ', '') }}summaryform">
+        {{ util.anti_csrf_token(endpoint) }}
+        <table class="table table-condensed" id="drow-table">
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                        <th>{% trans title=column['label']%}{{ title }}{% endtrans %}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% set sorted_existing = existing|keydictsort(sortkey) if sortkey else existing|dictsort %}
+                {# Old items, already stored in the database #}
+                {% for id, entry in sorted_existing %}
+                    {{ print_flux_row(id, name, columns, id not in locked, 'drow-row') }}
+                {% endfor %}
+                {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+                {% for i in range(1, values.get('create_last_index', 0) + 1) %}
+                    {{ print_flux_row(-i, name, columns, False, 'drow-new', newrow=True) }}
+                {% endfor %}
+                {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+                {{ print_flux_row(-values.get('create_last_index', 0) - 1, name, columns, False, 'drow-prototype', newrow=True) }}
+            </tbody>
+        </table>
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                {{ util.make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
+            </button>
+        </p>
+        {{ util.input_submit(value=gettext("Save")) }}
+    </form>
+{% endmacro %}
+
 {# Generate an anti CSRF (Cross-Site Request Forgery) token and add it as hidden input to an HTML form.
 
    The frontend application checks the anti CSRF token for every called endpoint which is marked for this check, which
@@ -601,6 +695,55 @@
    For protection against replay attacks, we use the default timeout of config.PARAMETER_TIMEOUT #}
 {% macro anti_csrf_token(target) %}
     {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, user.persona_id)) }}
+{% endmacro %}
+
+{# Generate a list of admin view toggle buttons. Should be used in the navigation sidebar.
+
+   The properties of the individual buttons are specified through the `views` argument, which is an iterable of
+   3-tuples. Each tuple defines (label, view_names, relevant_views) of one button:
+     * `label` (1st tuple entry) defines the caption of the button. Should be internationalized.
+     * `view_names` (2nd tuple entry) defines a list of admin_views to be toggled by this button together.
+     * `relevant_views` (3rd tuple entry) defines a list of views, which are the subset of `view_names` that is relevant
+       in the current page's context. The button is only displayed, if one of those views is available to the user.
+       For convenience, `relevant_views` may be set to None, in which case all `view_names` are considered relevant.
+       Example: A button in the Core realm may toggle all user admin views (`core_user`, `cde_user, `event_user`, ...),
+       but should only be shown to core admins, i.e. users who have the `core_user` view available.
+ #}
+{% macro admin_views_toggle(views) %}
+    {% set inner = _admin_views_toggle_inner(views) %}
+    {% if inner %}
+        <hr />
+        <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" id="adminviewstoggleform">
+            {% if original_request and original_request.url %}
+                {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
+                                                          original_request.url, timeout=None)) }}
+            {% endif %}
+            <div class="list-group tear-down">
+                {{ inner }}
+            </div>
+        </form>
+    {% endif %}
+{% endmacro %}
+
+{# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
+   jinja #}
+{% macro _admin_views_toggle_inner(views) -%}
+    {% for label, view_names, relevant_views in views -%}
+        {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
+        {% if (relevant_views|set).intersection(user.available_admin_views) %}
+            {# The button is "deactivated" as long as there are more "relevant views" which are available for the
+               user but are not enabled yet. #}
+            {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) -%}
+            <button type="submit"
+                    name="view_specifier"
+                    value="{% if active %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
+                    class="list-group-item list-group-item-info {% if active %}active{% endif %}"
+                    title="{{ (gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label) }}">
+                {{- make_icon('wrench') }} {{ label -}}
+                {% if active %} <span class="sr-only">{% trans %}(enabled){% endtrans %}</span>{% endif -%}
+            </button>
+        {% endif -%}
+    {% endfor -%}
 {% endmacro %}
 
 {#
