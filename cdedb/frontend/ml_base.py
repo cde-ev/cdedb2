@@ -178,7 +178,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         data = check(rs, "mailinglist", data, creation=True)
         # Check if mailinglist address is unique
         try:
-            self.mlproxy.construct_address(rs, data)
+            self.mlproxy.validate_address(rs, data)
         except ValueError as e:
             rs.extend_validation_errors([("local_part", e), ("domain", e)])
 
@@ -295,7 +295,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         data = check(rs, "mailinglist", data)
         # Check if mailinglist address is unique
         try:
-            self.mlproxy.construct_address(rs, data)
+            self.mlproxy.validate_address(rs, data)
         except ValueError as e:
             rs.extend_validation_errors([("local_part", e), ("domain", e)])
 

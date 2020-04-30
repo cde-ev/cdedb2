@@ -320,10 +320,7 @@ class MlBackend(AbstractBackend):
         :returns: Mapping of mailinglist ids to titles.
         """
         query = "SELECT id, address FROM ml.mailinglists"
-
-        with Atomizer(rs):
-            data = self.query_all(rs, query, [])
-
+        data = self.query_all(rs, query, [])
         return {e['id']: e['address'] for e in data}
 
 
@@ -496,7 +493,7 @@ class MlBackend(AbstractBackend):
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:
-                mdata['address'] = self.construct_address(
+                mdata['address'] = self.validate_address(
                     rs, dict(current, **mdata))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
@@ -531,7 +528,7 @@ class MlBackend(AbstractBackend):
         :returns: the id of the new mailinglist
         """
         data = affirm("mailinglist", data, creation=True)
-        data['address'] = self.construct_address(rs, data)
+        data['address'] = self.validate_address(rs, data)
         if not self.is_relevant_admin(rs, mailinglist=data):
             raise PrivilegeError("Not privileged to create mailinglist of this "
                                  "type.")
@@ -547,7 +544,7 @@ class MlBackend(AbstractBackend):
         return new_id
 
     @access("ml")
-    def construct_address(self, rs, data):
+    def validate_address(self, rs, data):
         """Construct the complete address and check for duplicates.
 
         :type rs: :py:class:`cdedb.common.RequestState`
