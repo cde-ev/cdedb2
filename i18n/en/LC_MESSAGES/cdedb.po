@@ -187,7 +187,7 @@ msgstr "Assembly concluded"
 
 #: cdedb/i18n_additional.py:19
 msgid "AssemblyLogCodes.assembly_deleted"
-msgstr ""
+msgstr "Assembly deleted"
 
 #: cdedb/i18n_additional.py:20
 msgid "AssemblyLogCodes.ballot_created"
