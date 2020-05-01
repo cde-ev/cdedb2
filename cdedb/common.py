@@ -1736,15 +1736,17 @@ def roles_to_admin_views(roles):
     if "core_admin" in roles:
         result |= {"core_user", "core"}
     if "cde_admin" in roles:
-        result |= {"cde_user", "past_event"}
+        result |= {"cde_user", "past_event", "ml_mgmt", "ml_moderator"}
     if "finance_admin" in roles:
         result |= {"finance"}
     if "event_admin" in roles:
-        result |= {"event_user", "event_mgmt", "event_orga"}
+        result |= {"event_user", "event_mgmt", "event_orga", "ml_mgmt",
+                   "ml_moderator"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_moderator"}
     if "assembly_admin" in roles:
-        result |= {"assembly_user", "assembly_mgmt", "assembly_contents"}
+        result |= {"assembly_user", "assembly_mgmt", "assembly_contents",
+                   "ml_mgmt", "ml_moderator"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
             for realm in realm_specific_genesis_fields)):

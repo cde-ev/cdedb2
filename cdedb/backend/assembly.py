@@ -293,7 +293,7 @@ class AssemblyBackend(AbstractBackend):
         return self.check_attendance(
             rs, assembly_id=assembly_id, persona_id=persona_id)
 
-    @access("assembly")
+    @access("assembly", "ml_admin")
     def list_attendees(self, rs, assembly_id):
         """Everybody who has subscribed for a specific assembly.
 
@@ -307,7 +307,8 @@ class AssemblyBackend(AbstractBackend):
         :rtype: [int]
         """
         assembly_id = affirm("id", assembly_id)
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if (not self.may_assemble(rs, assembly_id=assembly_id)
+                and not "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         attendees = self.sql_select(
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),

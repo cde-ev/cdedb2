@@ -45,6 +45,8 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 
+from typing import Callable
+
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
@@ -58,6 +60,7 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
+from cdedb.backend.common import AbstractBackend
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -969,6 +972,22 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 isinstance(kind, ValidationWarning)
                 for param, kind in all_errors)
 
+        def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
+                                  method_name: str) -> Callable:
+            """Provide a checker from the backend(proxy) for the templates.
+
+            This takes a Frontend object and refers the check to the
+            given backend if that backend has a method of the given
+            `method_name`. If no such method exists, the checker
+            will always return False.
+            """
+            try:
+                checker = getattr(backend, method_name)
+                if callable(checker):
+                    return lambda *args, **kwargs: checker(rs, *args, **kwargs)
+            except AttributeError:
+                return lambda *args, **kwargs: False
+
         errorsdict = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
@@ -982,6 +1001,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'gettext': rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
+            'is_relevant_admin': _make_backend_checker(
+                rs, self.mlproxy, method_name="is_relevant_admin"),
             'is_warning': _is_warning,
             'lang': rs.lang,
             'ngettext': rs.ngettext,
@@ -2012,14 +2033,18 @@ def event_guard(argname="event_id", check_offline=False):
     return wrap
 
 
-def mailinglist_guard(argname="mailinglist_id"):
+def mailinglist_guard(argname="mailinglist_id", allow_moderators=True):
     """This decorator checks the access with respect to a specific
     mailinglist. The list is specified by id which has either to be a
     keyword parameter or the first positional parameter after the
-    request state. Only moderators and privileged users are admitted.
+    request state.
+
+    If `allow_moderators` is True, moderators of the mailinglist are allowed,
+    otherwise we require a relevant admin for the given mailinglist.
 
     :type argname: str
     :param argname: name of the keyword argument specifying the id
+    :type allow_moderators: bool
     """
 
     def wrap(fun):
@@ -2029,10 +2054,16 @@ def mailinglist_guard(argname="mailinglist_id"):
                 arg = kwargs[argname]
             else:
                 arg = args[0]
-            if arg not in rs.user.moderator and not obj.is_admin(rs):
-                raise werkzeug.exceptions.Forbidden(rs.gettext(
-                    "This page can only be accessed by the mailinglist’s "
-                    "moderators."))
+            if allow_moderators:
+                if not obj.mlproxy.may_manage(rs, **{argname: arg}):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "This page can only be accessed by the mailinglist’s "
+                        "moderators."))
+            else:
+                if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "This page can only be accessed by appropriate "
+                        "admins."))
             return fun(obj, rs, *args, **kwargs)
 
         return new_fun

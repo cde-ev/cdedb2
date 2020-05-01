@@ -172,7 +172,7 @@
         {% endcall %}
     {% endif %}
 
-    {% if 'ml_mgmt' in user.admin_views %}
+    {% if is_relevant_admin(mailinglist_id=ambience['mailinglist']['id']) and 'ml_mgmt' in user.admin_views %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">

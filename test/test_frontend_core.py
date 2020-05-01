@@ -285,7 +285,7 @@ class TestCoreFrontend(FrontendTest):
 
         # These can be done by Berta for other values of aux.
         if (user['display_name'] in
-                {"Berta", "Martin", "Vera", "Werner"}):
+                {"Berta", "Martin", "Werner"}):
             self.get('/core/persona/select'
                      '?kind=orga_event_user&phrase=@exam&aux=1',
                      status=403)
@@ -299,6 +299,29 @@ class TestCoreFrontend(FrontendTest):
                      status=403)
             self.assertTitle('403: Forbidden')
 
+    @as_users("vera")
+    def test_selectpersona_relative_cde_admin(self, user):
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=@exam&aux=57')
+        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("annika")
+    def test_selectpersona_relative_event_admin(self, user):
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=@exam&aux=8')
+        expectation = (1, 2, 3)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("werner")
+    def test_selectpersona_relative_assembly_admin(self, user):
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=@exam&aux=11')
+        expectation = (1, 2, 3)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
 
     @as_users("garcia", "nina")
     def test_selectpersona_ml_event(self, user):

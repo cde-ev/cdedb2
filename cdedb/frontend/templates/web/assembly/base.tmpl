@@ -25,9 +25,6 @@
                                  aclass="list-group-item", icon="far fa-list-alt", active=(sidenav_active == 'assembly_assembly_log')) }}
             {% endif %}
         </div>
-
-        {{ util.admin_views_toggle(((gettext("Assembly Configuration"), ["assembly_contents"], None),
-                                    (gettext("Assembly Management"), ["assembly_mgmt"], None))) }}
 {% endmacro %}
 
 {% block breadcrumb %}
@@ -60,10 +57,17 @@
                 {% endif %}
             </div>
         {% endif %}
-
-        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
-                                    (gettext("Assembly Management"), ["assembly_mgmt"], None))) }}
     {% endif %}
 
     <hr class="strong visible-xs visible-sm" />
+{% endblock %}
+
+{% block adminviews %}
+    {% if ambience['assembly'] %}
+        {{ util.admin_views_toggle(((gettext("Assembly Configuration"), ["assembly_contents"], None),
+                                    (gettext("Assembly Management"), ["assembly_mgmt"], None))) }}
+    {% else %}
+        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
+                                    (gettext("Assembly Management"), ["assembly_mgmt"], None))) }}
+    {% endif %}
 {% endblock %}

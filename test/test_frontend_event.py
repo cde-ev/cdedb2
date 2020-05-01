@@ -1038,8 +1038,8 @@ etc;anything else""", f['entries_2'].value)
         f['nonmember_surcharge'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True
-        # TODO This should be fixed with introducing relative admins
-        #f['create_orga_list'].checked = True
+        f['create_orga_list'].checked = True
+        f['create_participant_list'].checked = True
         self.submit(f)
         self.assertTitle("Alternative Akademie")
         # self.assertPresence("altaka@aka.cde-ev.de")
@@ -1048,7 +1048,6 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['partsummaryform']
         tracks = find_tracks(f)
         self.assertEqual(len(tracks), 1)
-
 
     @as_users("annika", "garcia")
     def test_change_course(self, user):

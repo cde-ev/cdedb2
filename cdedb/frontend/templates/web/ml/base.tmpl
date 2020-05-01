@@ -7,13 +7,13 @@
             {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': data['id']}), gettext("Overview"),
                     icon="caret-right", aclass="list-group-item", active=(sidenav_active == 'ml_show')) }}
 
-            {% if data['id'] in user.moderator or 'ml_moderator' in user.admin_views %}
+            {% if data['id'] in user.moderator or ('ml_moderator' in user.admin_views and is_relevant_admin(mailinglist_id=data['id'])) %}
                 {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Management"),
                         aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
                 {{ util.href(cdedblink("ml/show_subscription_details", {'mailinglist_id': data['id']}), gettext("Advanced Management"),
                         aclass="list-group-item", icon="wrench", active=(sidenav_active == 'ml_details')) }}
             {% endif %}
-            {% if data['id'] in user.moderator or user.admin_views.intersection(('ml_mgmt', 'ml_moderator'))%}
+            {% if data['id'] in user.moderator or (user.admin_views.intersection(('ml_mgmt', 'ml_moderator')) and is_relevant_admin(mailinglist_id=data['id'])) %}
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
                         gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
@@ -21,9 +21,6 @@
                              aclass="list-group-item", icon="far fa-list-alt", active=(sidenav_active == 'ml_ml_log')) }}
             {% endif %}
         </div>
-
-    {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),
-                                (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
 {% endmacro %}
 
 {% block breadcrumb %}
@@ -32,7 +29,7 @@
 {% block navigation %}
     {% if ambience['mailinglist'] %}
         <p>
-            {% if is_admin and not ambience['mailinglist']['is_active'] %}
+            {% if not ambience['mailinglist']['is_active'] and "ml_mgmt" in user.admin_views %}
                 {{ util.href(cdedblink("ml/list_mailinglists"), gettext("Mailinglist-Overview"),
                              icon="arrow-alt-circle-up") }}
             {% else %}
@@ -46,9 +43,10 @@
     {% else %}
         <h3 class="heading-sidebar">Mailinglisten</h3>
         <div class="list-group tear-down">
-            {% if 'ml_mgmt' in user.admin_views %}
+            {% if 'ml_mgmt' in user.admin_views or user.moderator %}
                 {{ util.href(cdedblink("ml/index"), gettext("Active Mailinglists"), icon="caret-right",
                         aclass="list-group-item", active=(sidenav_active == 'ml_index')) }}
+                {# TODO Rename this more appropriately for users who only sse some mailinglists here. #}
                 {{ util.href(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists"), icon="cog",
                         aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}
             {% else %}
@@ -68,10 +66,18 @@
                 {% endif %}
             </div>
         {% endif %}
-
-        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["ml_user"]),
-                                    (gettext("Mailinglist Management"), ["ml_mgmt"], None))) }}
     {% endif %}
 
     <hr class="strong visible-xs visible-sm" />
+{% endblock %}
+
+{% block adminviews %}
+    {% if ambience['mailinglist'] %}
+        {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),
+                                    (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
+    {% else %}
+        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user",
+                                                                      "assembly_user", "genesis"], ["ml_user"]),
+                                    (gettext("Mailinglist Management"), ["ml_mgmt"], None))) }}
+    {% endif %}
 {% endblock %}

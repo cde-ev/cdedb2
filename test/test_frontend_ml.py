@@ -16,31 +16,35 @@ class TestMlFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'href': '/ml/'})
 
-    @as_users("annika", "martin", "nina", "vera", "werner")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner")
     def test_navigation(self, user):
         self.traverse({'description': 'Mailinglisten'})
-        everyone = ["Mailinglisten"]
-        no_admin = ["Übersicht"]
-        admin = ["Aktive Mailinglisten", "Alle Mailinglisten",
-                 "Nutzer verwalten", "Log"]
-        ins = []
-        out = everyone + no_admin + admin
-        s = "Mailinglisten "
-
-        # not ml admins
-        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera'],
-                    USER_DICT['werner']]:
-            ins = everyone + no_admin
-            out = admin
-        # ml admin
-        elif user == USER_DICT['nina']:
-            ins = everyone + admin
-            out = no_admin
+        # Users with no administrated and no modereated mailinglists:
+        if user['id'] in {USER_DICT['martin']['id']}:
+            ins = ["Mailinglisten", "Übersicht"]
+            out = ["Alle Mailinglisten", "Nutzer verwalten", "Log"]
+        # Users with relative admin privileges for some mailinglists:
+        elif user['id'] in {USER_DICT['annika']['id'], USER_DICT['vera']['id'],
+                            USER_DICT['werner']['id']}:
+            # TODO: replace "Alle Mailinglisten".
+            ins = ["Mailinglisten", "Alle Mailinglisten", "Log"]
+            out = ["Übersicht", "Nutzer verwalten"]
+        # Users with moderated mailinglists, but no admin privileges.
+        elif user['id'] in {USER_DICT['berta']['id']}:
+            ins = ["Mailinglisten", "Alle Mailinglisten"]
+            out = ["Übersicht", "Nutzer verwalten", "Log"]
+        # Users with full ml-admin privileges.
+        elif user['id'] in {USER_DICT['nina']['id'], USER_DICT['anton']['id']}:
+            ins = ["Mailinglisten", "Aktive Mailinglisten",
+                   "Alle Mailinglisten", "Nutzer verwalten", "Log"]
+            out = ["Übersicht"]
+        else:
+            self.fail("Please adjust users for this test.")
 
         for s in ins:
-            self.assertPresence(s, div='sidebar')
+            self.assertPresence(s, div='sidebar-navigation')
         for s in out:
-            self.assertNonPresence(s, div='sidebar')
+            self.assertNonPresence(s, div='sidebar-navigation')
 
     @as_users("janis")
     def test_showuser(self, user):
@@ -124,7 +128,8 @@ class TestMlFrontend(FrontendTest):
 
         # Test Event Management Admin View
         self.assertNoLink('/ml/log')
-        self.assertNoLink('/ml/mailinglist/list')
+        # This is still available because we are a moderator.
+        # self.assertNoLink('/ml/mailinglist/list')
         self.traverse({'href': '/ml/mailinglist/1/show'})
         self.assertNoLink('/ml/mailinglist/1/change')
         self.assertNoLink('/ml/mailinglist/1/log')
@@ -161,7 +166,8 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
-    @as_users("annika", "berta", "martin", "nina", "vera", "werner")
+    @as_users("akira", "annika", "anton", "berta", "martin", "nina", "vera",
+              "werner")
     def test_navigation_one_mailinglist(self, user):
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Klatsch und Tratsch'})
@@ -169,23 +175,32 @@ class TestMlFrontend(FrontendTest):
                     "Mailingliste Klatsch und Tratsch", "Übersicht "]
         moderator = ["Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
                      "Log"]
-        ins = []
-        out = everyone + moderator
 
-        # not moderator or ml-admin
-        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera'],
-                    USER_DICT['werner']]:
-            ins = everyone
-            out = moderator
-        # moderator or ml-admin
-        elif user in [USER_DICT['berta'], USER_DICT['nina']]:
+        # Moderators:
+        if user['id'] in {USER_DICT['akira']['id'], USER_DICT['berta']['id']}:
             ins = everyone + moderator
             out = []
+        # Relative admins that are not also moderators:
+        elif user['id'] in {USER_DICT['vera']['id']}:
+            ins = everyone + moderator
+            out = []
+        # Absolute admins that are not also moderators:
+        elif user['id'] in {USER_DICT['anton']['id'], USER_DICT['nina']['id']}:
+            ins = everyone + moderator
+            out = []
+        # Other users:
+        elif user['id'] in {USER_DICT['annika']['id'],
+                            USER_DICT['martin']['id'],
+                            USER_DICT['werner']['id']}:
+            ins = everyone
+            out = moderator
+        else:
+            self.fail("Please adjust users for this test.")
 
         for s in ins:
-            self.assertPresence(s, div='sidebar')
+            self.assertPresence(s, div='sidebar-navigation')
         for s in out:
-            self.assertNonPresence(s, div='sidebar')
+            self.assertNonPresence(s, div='sidebar-navigation')
 
     @as_users("anton", "janis")
     def test_show_ml_buttons_change_address(self, user):
@@ -405,6 +420,9 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Munkelwand")
         self.traverse({'href': '/ml/mailinglist/create$'})
         self.assertTitle("Mailingliste anlegen")
+        f = self.response.forms['selectmltypeform']
+        f['ml_type'] = const.MailinglistTypes.member_mandatory.value
+        self.submit(f)
         f = self.response.forms['createlistform']
         f['title'] = "Munkelwand"
         f['local_part'] = "munkelwand"
@@ -415,7 +433,6 @@ class TestMlFrontend(FrontendTest):
         f['is_active'].checked = True
         f['notes'] = "Noch mehr Gemunkel."
         f['moderator_ids'] = "DB-2-7, DB-7-8"
-        f['ml_type'] = 1
         f['domain'] = 1
         self.submit(f)
         self.assertTitle("Munkelwand")
@@ -513,11 +530,16 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Anton Armin A. Administrator")
 
-    def create_mailinglist(self, mdata):
+    def _create_mailinglist(self, mdata):
         self.traverse({'href': '/ml/'},
                       {'href': '/ml/mailinglist/create'})
+        f = self.response.forms['selectmltypeform']
+        f['ml_type'] = mdata['ml_type']
+        self.submit(f)
         f = self.response.forms['createlistform']
         for k, v in mdata.items():
+            if k == 'ml_type':
+                continue
             f[k] = v
         self.submit(f)
         self.assertTitle(mdata['title'])
@@ -537,7 +559,7 @@ class TestMlFrontend(FrontendTest):
                     'event_id': "1",
                     'moderator_ids': user['DB-ID'],
                 }
-                self.create_mailinglist(mdata)
+                self._create_mailinglist(mdata)
                 self.traverse({'href': '/event/'},
                               {'href': '/event/event/1/show'})
                 f = self.response.forms['addorgaform']

@@ -485,11 +485,9 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("orgalist", "bool"))
     def create_event_mailinglist(self, rs, event_id, orgalist=False):
-        """Create a default mailinglist for the event. Requires ml_admin."""
+        """Create a default mailinglist for the event."""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
-        if "ml_admin" not in rs.user.roles:
-            raise werkzeug.exceptions.Forbidden(n_("Must be ml_admin."))
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
         if not self.mlproxy.verify_existence(rs, ml_type.full_address(ml_data)):
@@ -507,7 +505,7 @@ class EventFrontend(AbstractUserFrontend):
                 }
                 self.eventproxy.set_event(rs, data)
         else:
-            rs.notify("info", n_("Mailinglist %(address)s already exists."),
+            rs.notify("error", n_("Mailinglist %(address)s already exists."),
                       {'address': ml_type.full_address(ml_data)})
         return self.redirect(rs, "event/show_event")
 
@@ -945,7 +943,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         orga_ml_data = None
         orga_ml_address = None
-        if create_orga_list and "ml_admin" in rs.user.roles:
+        if create_orga_list:
             orga_ml_data = self._get_mailinglist_setter(data, orgalist=True)
             orga_ml_address = ml_type.full_address(orga_ml_data)
             data['orga_address'] = orga_ml_address
@@ -965,19 +963,19 @@ class EventFrontend(AbstractUserFrontend):
             code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
             self.notify_return_code(
                 rs, code, success=n_("Orga mailinglist created."))
-        if create_participant_list and "ml_admin" in rs.user.roles:
+        if create_participant_list:
             participant_ml_data = self._get_mailinglist_setter(data)
             participant_ml_address = ml_type.full_address(participant_ml_data)
             if not self.mlproxy.verify_existence(rs, participant_ml_address):
                 link = cdedburl(rs, "event/register", {'event_id': new_id})
                 descr = participant_ml_data['description'].format(link)
                 participant_ml_data['description'] = descr
-                code = self.mlproxy.create_mailinglist(rs, ml_data)
+                code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
                 self.notify_return_code(
                     rs, code, success=n_("Participant mailinglist created."))
             else:
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': ml_data['address']})
+                          {'address': participant_ml_address})
         self.notify_return_code(rs, new_id, success=n_("Event created."))
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 
