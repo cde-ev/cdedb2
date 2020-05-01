@@ -1,4 +1,4 @@
-{% set sidenav_active='event_configure_questionnaire' %}
+{% set sidenav_active='event_configure_additional_questionnaire' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='strong' %}
@@ -15,7 +15,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/configure_questionnaire"), gettext("Configure Questionnaire"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -26,18 +26,18 @@
 
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink('event/questionnaire', {"preview": True}), gettext("Preview Questionnaire"),
+        {{ util.href(cdedblink('event/additional_questionnaire', {"preview": True}), gettext("Preview Questionnaire"),
                      aclass="btn btn-info btn-sm", icon='edit') }}
         {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].additional.value}),
                      gettext("Reorder Questionnaire"), readonly=is_locked,
                      aclass="btn btn-info btn-sm", icon='sort') }}
     </div>
-    <form action="{{ cdedblink('event/configure_questionnaire') }}" method="POST" id="configurequestionnaireform">
-        {{ util.anti_csrf_token('event/configure_questionnaire') }}
+    <form action="{{ cdedblink('event/configure_additional_questionnaire') }}" method="POST" id="configurequestionnaireform">
+        {{ util.anti_csrf_token('event/configure_additional_questionnaire') }}
         {% set kind = enums['QuestionnaireUsages'].additional %}
         <div id="drow-container">
             {# Old items, already stored in the database #}
-            {% for entry in questionnaire %}
+            {% for entry in add_questionnaire %}
                 {{ util.print_questionnaire_config(loop.index0, kind, aclass='drow-row') }}
             {% endfor %}
 

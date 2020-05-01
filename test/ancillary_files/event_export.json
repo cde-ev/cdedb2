@@ -1310,7 +1310,7 @@
             "iban": "DE96370205000008068901",
             "nonmember_surcharge": "5.00",
             "shortname": "TestAka",
-            "use_questionnaire": false,
+            "use_additional_questionnaire": false,
             "is_archived": false,
             "description": "Everybody come!",
             "institution": 1,

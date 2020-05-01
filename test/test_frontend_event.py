@@ -402,7 +402,7 @@ class TestEventFrontend(FrontendTest):
         more
 
         text"""
-        f['use_questionnaire'].checked = True
+        f['use_additional_questionnaire'].checked = True
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertNonPresence("30.10.2000")
@@ -875,7 +875,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/change'})
         f = self.response.forms['changeeventform']
-        f['use_questionnaire'].checked = True
+        f['use_additional_questionnaire'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/questionnaire/config'})
         f = self.response.forms['configurequestionnaireform']
@@ -907,7 +907,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/change'})
         f = self.response.forms['changeeventform']
-        f['use_questionnaire'].checked = True
+        f['use_additional_questionnaire'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/questionnaire/config'})
         f = self.response.forms['configurequestionnaireform']
@@ -1454,7 +1454,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
-        f['use_questionnaire'].checked = True
+        f['use_additional_questionnaire'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
@@ -2694,7 +2694,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
-        f['use_questionnaire'].checked = True
+        f['use_additional_questionnaire'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
@@ -3172,7 +3172,7 @@ etc;anything else""", f['entries_2'].value)
                       'reserve_field': 'may_reserve',
                       'shortname': 'TestAka',
                       'title': 'Große Testakademie 2222',
-                      'use_questionnaire': False},
+                      'use_additional_questionnaire': False},
             'id': 1,
             'kind': 'partial',
             'lodgement_groups': {'1': {'moniker': 'Haupthaus'},

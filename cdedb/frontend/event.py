@@ -24,7 +24,7 @@ import magic
 import psycopg2.extensions
 import werkzeug.exceptions
 from werkzeug import Response
-from typing import Sequence
+from typing import Sequence, Dict, Any, Collection, Mapping, List
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
@@ -390,7 +390,7 @@ class EventFrontend(AbstractUserFrontend):
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
         "registration_hard_limit", "iban", "orga_address", "registration_text",
-        "mail_text", "use_questionnaire", "notes", "lodge_field",
+        "mail_text", "use_additional_questionnaire", "notes", "lodge_field",
         "reserve_field", "is_visible", "is_course_list_visible",
         "is_course_state_visible", "is_participant_list_visible",
         "courses_in_participant_list", "is_cancelled", "course_room_field",
@@ -906,8 +906,8 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, current)
         referenced = set()
         fee_modifiers = set()
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        for k, v in questionnaire.items():
+        full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        for k, v in full_questionnaire.items():
             for row in v:
                 if row['field_id']:
                     referenced.add(row['field_id'])
@@ -2997,15 +2997,16 @@ class EventFrontend(AbstractUserFrontend):
         # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event['parts'])
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+        reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         return self.render(rs, "register", {
             'persona': persona, 'age': age, 'courses': courses,
             'course_choices': course_choices, 'semester_fee': semester_fee,
-            'questionnaire': questionnaire, 'preview': preview})
+            'reg_questionnaire': reg_questionnaire, 'preview': preview})
 
     @staticmethod
-    def process_registration_input(rs, event, courses, questionnaire, parts=None):
+    def process_registration_input(rs, event, courses, reg_questionnaire, 
+                                   parts=None):
         """Helper to handle input by participants.
 
         This takes care of extracting the values and validating them. Which
@@ -3014,7 +3015,7 @@ class EventFrontend(AbstractUserFrontend):
         :type rs: :py:class:`FrontendRequestState`
         :type event: {str: object}
         :type courses: {int: {str: object}}
-        :type questionnaire: [{str: object}]
+        :type reg_questionnaire: [{str: object}]
         :type parts: [int] or None
         :param parts: If not None this specifies the ids of the parts this
           registration applies to (since you can apply for only some of the
@@ -3094,9 +3095,8 @@ class EventFrontend(AbstractUserFrontend):
         params = tuple(
             (f(entry)['field_name'],
              "{}".format(const.FieldDatatypes(f(entry)['kind']).name))
-            for entry in questionnaire
-            if entry['field_id'] and not entry['readonly']
-            and entry['kind'] == const.QuestionnaireUsages.registration)
+            for entry in reg_questionnaire
+            if entry['field_id'] and not entry['readonly'])
         field_data = request_extractor(rs, params)
 
         registration = {
@@ -3123,10 +3123,10 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+        reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
-        registration = self.process_registration_input(rs, rs.ambience['event'],
-                                                       courses, questionnaire)
+        registration = self.process_registration_input(
+            rs, rs.ambience['event'], courses, reg_questionnaire)
         if rs.has_validation_errors():
             return self.register_form(rs, event_id)
         registration['event_id'] = event_id
@@ -3185,12 +3185,12 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['parts'][anid]['part_begin'])
         registration['parts'] = OrderedDict(
             (part_id, registration['parts'][part_id]) for part_id in part_order)
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+        reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, (const.QuestionnaireUsages.registration,)))
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
-            'questionnaire': questionnaire,
+            'reg_questionnaire': reg_questionnaire,
         })
 
     @access("event")
@@ -3243,11 +3243,12 @@ class EventFrontend(AbstractUserFrontend):
             track_id for track_id, track in tracks.items()
             if const.RegistrationPartStati(stat(track)).is_involved()}
         merge_dicts(rs.values, non_trivials, registration)
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+        reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         return self.render(rs, "amend_registration", {
             'age': age, 'courses': courses, 'course_choices': course_choices,
-            'involved_tracks': involved_tracks, 'questionnaire': questionnaire,
+            'involved_tracks': involved_tracks, 
+            'reg_questionnaire': reg_questionnaire,
         })
 
     @access("event", modi={"POST"})
@@ -3275,10 +3276,10 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         stored = self.eventproxy.get_registration(rs, registration_id)
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+        reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         registration = self.process_registration_input(
-            rs, rs.ambience['event'], courses, questionnaire,
+            rs, rs.ambience['event'], courses, reg_questionnaire,
             parts=stored['parts'])
         if rs.has_validation_errors():
             return self.amend_registration_form(rs, event_id)
@@ -3297,23 +3298,24 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def configure_registration_form(self, rs, event_id):
         """Render form."""
-        questionnaire, reg_fields = self._prepare_questionnaire_form(
+        reg_questionnaire, reg_fields = self._prepare_questionnaire_form(
             rs, event_id, const.QuestionnaireUsages.registration)
         return self.render(rs, "configure_registration",
-                           {'questionnaire': questionnaire,
+                           {'reg_questionnaire': reg_questionnaire,
                             'registration_fields': reg_fields})
 
     @access("event")
     @event_guard(check_offline=True)
-    def configure_questionnaire_form(self, rs, event_id):
+    def configure_additional_questionnaire_form(self, rs, event_id):
         """Render form."""
-        questionnaire, reg_fields = self._prepare_questionnaire_form(
+        add_questionnaire, reg_fields = self._prepare_questionnaire_form(
             rs, event_id, const.QuestionnaireUsages.additional)
-        return self.render(rs, "configure_questionnaire", {
-            'questionnaire': questionnaire,
+        return self.render(rs, "configure_additional_questionnaire", {
+            'add_questionnaire': add_questionnaire,
             'registration_fields': reg_fields})
 
     def _prepare_questionnaire_form(self, rs, event_id, kind):
+        """Helper to retrieve some data for questionnaire configuration."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         current = {
@@ -3343,8 +3345,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def configure_questionnaire(self, rs, event_id):
-        """Manipulate the questionnaire form.
+    def configure_additional_questionnaire(self, rs, event_id):
+        """Manipulate the additional questionnaire form.
 
         This allows the orgas to design a form without interaction with an
         administrator.
@@ -3352,13 +3354,13 @@ class EventFrontend(AbstractUserFrontend):
         kind = const.QuestionnaireUsages.additional
         code = self._set_questionnaire(rs, event_id, kind)
         if code is None:
-            return self.configure_questionnaire_form(rs, event_id)
+            return self.configure_additional_questionnaire_form(rs, event_id)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/configure_questionnaire_form")
+        return self.redirect(
+            rs, "event/configure_additional_questionnaire_form")
 
     def _set_questionnaire(self, rs, event_id, kind):
         """Deduplicated code to set questionnaire rows of one kind."""
-
         other_kinds = set()
         for x in const.QuestionnaireUsages:
             if x != kind:
@@ -3369,7 +3371,6 @@ class EventFrontend(AbstractUserFrontend):
             rs, event_id, kinds=other_kinds)
         other_used_fields = {e['field_id'] for v in other_questionnaire.values()
                              for e in v if e['field_id']}
-        self.logger.debug(other_used_fields)
         registration_fields = {
             k: v for k, v in rs.ambience['event']['fields'].items()
             if v['association'] == const.FieldAssociations.registration}
@@ -3385,7 +3386,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("preview", "bool_or_None"))
-    def questionnaire_form(self, rs, event_id, preview=False, internal=False):
+    def additional_questionnaire_form(self, rs, event_id, preview=False, 
+                                      internal=False):
         """Render form.
 
         The internal flag is used if the call comes from another frontend
@@ -3401,7 +3403,7 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_event")
             registration_id = unwrap(registration_id, keys=True)
             registration = self.eventproxy.get_registration(rs, registration_id)
-            if not rs.ambience['event']['use_questionnaire']:
+            if not rs.ambience['event']['use_additional_questionnaire']:
                 rs.notify("warning", n_("Questionnaire disabled."))
                 return self.redirect(rs, "event/registration_status")
             if self.is_locked(rs.ambience['event']):
@@ -3411,23 +3413,20 @@ class EventFrontend(AbstractUserFrontend):
             if event_id not in rs.user.orga and not self.is_admin(rs):
                 raise werkzeug.exceptions.Forbidden(
                     n_("Must be Orga to use preview."))
-            if not rs.ambience['event']['use_questionnaire']:
+            if not rs.ambience['event']['use_additional_questionnaire']:
                 rs.notify("info", n_("Questionnaire is not enabled yet."))
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+        add_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
-        return self.render(rs, "questionnaire", {
-            'questionnaire': questionnaire,
+        return self.render(rs, "additional_questionnaire", {
+            'add_questionnaire': add_questionnaire,
             'preview': preview})
 
     @access("event", modi={"POST"})
-    def questionnaire(self, rs, event_id):
+    def additional_questionnaire(self, rs, event_id):
         """Fill in additional fields.
-
-        The registration form was very sparse and asked only for minimal
-        information, to allow for maximum flexibility with this, which in
-        contrast allows the orgas to query their applicants for all kind of
-        additional information. What exactly is queried is configured on a
-        per event basis.
+        
+        Save data submitted in the additional questionnaire.
+        Note that questionnaire rows may also be present during registration.
         """
         registration_id = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
@@ -3435,7 +3434,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
         registration_id = unwrap(registration_id, keys=True)
-        if not rs.ambience['event']['use_questionnaire']:
+        if not rs.ambience['event']['use_additional_questionnaire']:
             rs.notify("error", n_("Questionnaire disabled."))
             return self.redirect(rs, "event/registration_status")
         if self.is_locked(rs.ambience['event']):
@@ -3444,37 +3443,39 @@ class EventFrontend(AbstractUserFrontend):
         if rs.ambience['event']['is_archived']:
             rs.notify("error", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+        add_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params = tuple(
             (f(entry)['field_name'],
              "{}_or_None".format(const.FieldDatatypes(f(entry)['kind']).name))
-            for entry in questionnaire
+            for entry in add_questionnaire
             if entry['field_id'] and not entry['readonly'])
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
-            return self.questionnaire_form(rs, event_id, internal=True)
+            return self.additional_questionnaire_form(
+                rs, event_id, internal=True)
 
         code = self.eventproxy.set_registration(rs, {
             'id': registration_id, 'fields': data,
         })
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/questionnaire_form")
+        return self.redirect(rs, "event/additional_questionnaire_form")
 
     @staticmethod
-    def process_questionnaire_input(rs, num, reg_fields, kind, other_used_fields):
-        """This handles input to configure the questionnaire.
+    def process_questionnaire_input(rs: RequestState, num: int,
+                                    reg_fields: Mapping[int, Mapping[str, Any]],
+                                    kind: const.QuestionnaireUsages,
+                                    other_used_fields: Collection) -> \
+            Dict[const.QuestionnaireUsages, List[Mapping[str, Any]]]:
+        """This handles input to configure questionnaires.
 
         Since this covers a variable number of rows, we cannot do this
         statically. This takes care of validation too.
 
-        :type rs: :py:class:`FrontendRequestState`
-        :type num: int
         :param num: number of rows to expect
-        :type reg_fields: {int: {str: obj}}}
         :param reg_fields: Available fields
-        :type kind: const.QuestionnaireUsages
+        :param kind: For which kind of questionnaire are these rows?
         :rtype: [{str: object}]
         """
         del_flags = request_extractor(
@@ -3497,43 +3498,47 @@ class EventFrontend(AbstractUserFrontend):
         rs.values['create_last_index'] = marker - 1
         indices = (set(range(num)) | {-i for i in range(1, marker)}) - deletes
 
+        field_key = lambda anid: f"field_id_{anid}"
+        readonly_key = lambda anid: f"readonly_{anid}"
+        default_value_key = lambda anid: f"default_value_{anid}"
+
         def duplicate_constraint(idx1, idx2):
             if idx1 == idx2:
                 return None
-            key1 = "field_id_{}".format(idx1)
-            key2 = "field_id_{}".format(idx2)
+            key1 = field_key(idx1)
+            key2 = field_key(idx2)
             msg = n_("Must not duplicate field.")
             return (lambda d: (not d[key1] or d[key1] != d[key2]),
                     (key1, ValueError(msg)))
 
         def valid_field_constraint(idx):
-            key = "field_id_{}".format(idx)
+            key = field_key(idx)
             return (lambda d: not d[key] or d[key] in reg_fields,
                     (key, ValueError(n_("Invalid field."))))
 
         def fee_modifier_kind_constraint(idx):
-            field_key = "field_id_{}".format(idx)
+            key = field_key(idx)
             msg = n_("Fee modifier field may only be used in"
                      " registration questionnaire.")
             fee_modifier_fields = {
                 e['field_id'] for
                 e in rs.ambience['event']['fee_modifiers'].values()}
             valid_usages = {const.QuestionnaireUsages.registration.value}
-            return (lambda d: not (d[field_key] in fee_modifier_fields
+            return (lambda d: not (d[key] in fee_modifier_fields
                                    and kind not in valid_usages),
-                    (field_key, ValueError(msg)))
+                    (key, ValueError(msg)))
 
         def readonly_kind_constraint(idx):
-            readonly_key = "readonly_{}".format(idx)
+            key = readonly_key(idx)
             msg = n_("Registration questionnaire rows may not be readonly.")
-            return (lambda d: (not d[readonly_key] or kind.allow_readonly()),
-                    (readonly_key, ValueError(msg)))
+            return (lambda d: (not d[key] or kind.allow_readonly()),
+                    (key, ValueError(msg)))
 
         def duplicate_kind_constraint(idx):
-            field_key = "field_id_{}".format(idx)
+            key = field_key(idx)
             msg = n_("This field is already in use in another questionnaire.")
-            return (lambda d: d[field_key] not in other_used_fields,
-                    (field_key, ValueError(msg)))
+            return (lambda d: d[key] not in other_used_fields,
+                    (key, ValueError(msg)))
 
         constraints = tuple(filter(
             None, (duplicate_constraint(idx1, idx2)
@@ -3549,13 +3554,16 @@ class EventFrontend(AbstractUserFrontend):
                        for i in indices for key, value in spec.items())
         data = request_extractor(rs, params, constraints)
         for idx in indices:
-            name = "default_value_{}".format(idx)
-            if data[name] is None:
+            dv_key = default_value_key(idx)
+            field_id = data[field_key(idx)]
+            if data[dv_key] is None or field_id is None:
+                data[dv_key] = None
                 continue
-            data[name] = check(rs, "by_field_datatype_or_None",
-                               data[name], name, kind=kind)
+            data[dv_key] = check(rs, "by_field_datatype_or_None",
+                                 data[dv_key], dv_key,
+                                 kind=reg_fields[field_id]['kind'])
         questionnaire = {
-            kind: tuple(
+            kind: list(
                 {key: data["{}_{}".format(key, i)] for key in spec}
                 for i in mixed_existence_sorter(indices))}
         return questionnaire
@@ -3593,7 +3601,7 @@ class EventFrontend(AbstractUserFrontend):
             const.QuestionnaireUsages.registration:
                 "event/configure_registration",
             const.QuestionnaireUsages.additional:
-                "event/configure_questionnaire",
+                "event/configure_additional_questionnaire",
         }
         if not questionnaire:
             rs.notify("info", n_("No questionnaire rows of this kind found."))

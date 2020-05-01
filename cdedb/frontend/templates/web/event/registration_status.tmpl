@@ -18,10 +18,10 @@
     </h1>
 {% endblock %}
 {% block content %}
-    {% if ambience['event']['use_questionnaire'] %}
+    {% if ambience['event']['use_additional_questionnaire'] %}
         <div class="alert alert-info">
              {{ util.make_icon('info-circle') }}
-             {% trans link=util.href(cdedblink('event/questionnaire_form'), gettext("questionnaire")) %}
+             {% trans link=util.href(cdedblink('event/additional_questionnaire_form'), gettext("questionnaire")) %}
             	Please fill in the {{ link }} now.
             {% endtrans %}
         </div>
@@ -190,9 +190,9 @@
         </dd>
     </dl>
 
-    {% if questionnaire %}
+    {% if reg_questionnaire %}
         <dl class="dl-horizontal" id="questionnaire_results">
-        {% for entry in questionnaire %}
+        {% for entry in reg_questionnaire %}
             {% if entry['field_id'] %}
                 {{ util.print_questionnaire_result(entry, registration) }}
             {% endif %}

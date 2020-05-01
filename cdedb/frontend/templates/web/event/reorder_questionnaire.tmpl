@@ -2,7 +2,7 @@
 {% if kind == enums['QuestionnaireUsages'].registration %}
     {% set sidenav_active='event_configure_registration' %}
 {% elif kind == enums['QuestionnaireUsages'].additional %}
-    {% set sidenav_active='event_configure_questionnaire' %}
+    {% set sidenav_active='event_configure_additional_questionnaire' %}
 {% endif %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='strong' %}
@@ -15,7 +15,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/configure_questionnaire"), gettext("Configure Questionnaire")) }}
+    {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire")) }}
     {{ util.breadcrumb_link(cdedblink("event/reorder_questionnaire"), gettext("Reorder Questionnaire"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -80,7 +80,7 @@
         {{ util.form_input_text(name="order", anid="input-roworder",
                                 label=gettext("Order"), placeholder=gettext("Nr,Nr,Nr,…"),
                                 defaultvalue=range(0, entries|length)|join(','), small=True) }}
-        {{ util.form_input_submit(value=gettext("Reorder"), small=True, cancellink=cdedblink('event/configure_questionnaire')) }}
+        {{ util.form_input_submit(value=gettext("Reorder"), small=True, cancellink=cdedblink('event/configure_additional_questionnaire')) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         var input = $('#input-roworder');

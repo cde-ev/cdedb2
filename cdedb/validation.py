@@ -2097,7 +2097,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'is_visible': _bool,
     'is_course_list_visible': _bool,
     'is_course_state_visible': _bool,
-    'use_questionnaire': _bool,
+    'use_additional_questionnaire': _bool,
     'registration_start': _datetime_or_None,
     'registration_soft_limit': _datetime_or_None,
     'registration_hard_limit': _datetime_or_None,

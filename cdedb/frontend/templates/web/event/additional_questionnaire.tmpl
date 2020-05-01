@@ -1,4 +1,4 @@
-{% set sidenav_active = 'event_configure_questionnaire' if preview else 'event_quest' %}
+{% set sidenav_active = 'event_configure_additional_questionnaire' if preview else 'event_quest' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='weak' %}
@@ -21,12 +21,12 @@
                             readonly=not (ambience['event']['is_visible']
                                           or ambience['event']['id'] in user.orga
                                           or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
-    {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
+    {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
                             gettext("Questionnaire"), active=True) }}
 {% else %}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/configure_questionnaire"), gettext("Configure Questionnaire")) }}
-    {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
+    {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire")) }}
+    {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
                             gettext("Preview Questionnaire"), active=True) }}
 {% endif %}
 {% endblock %}
@@ -44,11 +44,11 @@
     {% if preview %}
         <div class="form-horizontal">
     {% else %}
-    <form action="{{ cdedblink('event/questionnaire') }}" method="POST" id="questionnaireform"
+    <form action="{{ cdedblink('event/additional_questionnaire') }}" method="POST" id="questionnaireform"
           class="form-horizontal">
-        {{ util.anti_csrf_token('event/questionnaire') }}
+        {{ util.anti_csrf_token('event/additional_questionnaire') }}
     {% endif %}
-        {% for entry in questionnaire %}
+        {% for entry in add_questionnaire %}
             {{ util.print_questionnaire_entry(entry) }}
         {% endfor %}
         {% if not preview %}

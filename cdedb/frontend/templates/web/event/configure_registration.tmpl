@@ -37,7 +37,7 @@
         {% set kind = enums['QuestionnaireUsages'].registration %}
         <div id="drow-container">
             {# Old items, already stored in the database #}
-            {% for entry in questionnaire %}
+            {% for entry in reg_questionnaire %}
                 {{ util.print_questionnaire_config(loop.index0, kind, aclass='drow-row') }}
             {% endfor %}
 

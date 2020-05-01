@@ -3241,6 +3241,9 @@ class EventBackend(AbstractBackend):
     def get_questionnaire(self, rs, event_id, kinds=None):
         """Retrieve the questionnaire rows for a specific event.
 
+        Rows are seperated by kind. Specifying a kinds will get you only rows
+        of those kinds, otherwise you get them all.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :type kinds: [const.QuestionnaireUsages] or None
