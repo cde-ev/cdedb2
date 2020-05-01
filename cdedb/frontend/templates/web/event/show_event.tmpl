@@ -372,6 +372,8 @@
                                 {{ util.input_submit(value=gettext("Archive"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
                                                      aclass="btn btn-danger", icon="folder",
                                                      title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
+                                {{ util.input_checkbox(name="create_past_event", readonly=(is_locked or ambience['event']['end'] >= now().date()),
+                                        label=gettext("Create past event after archiving."), defaultvalue='True') }}
                                 {{ util.input_checkbox(name="ack_archive", label=gettext("Are you sure?")) }}
                             </form>
                         </div>

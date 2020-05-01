@@ -994,18 +994,24 @@ class EventBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
-    @internal_access("event")
+    @access("event")
     def set_event_archived(self, rs, data):
         """Wrapper around ``set_event()`` for archiving an event.
         
         This exists to emit the correct log message. It delegates
         everything else (like validation) to the wrapped method.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: default return code
         """
         with Atomizer(rs):
             with Silencer(rs):
-                self.set_event(rs, data)
+                ret = self.set_event(rs, data)
             self.event_log(rs, const.EventLogCodes.event_archived,
                            data['id'])
+        return ret
         
     @access("event")
     def set_event(self, rs, data):

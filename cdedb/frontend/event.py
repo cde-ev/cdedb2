@@ -5263,10 +5263,11 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("ack_archive", "bool"))
+    @REQUESTdata(("ack_archive", "bool"),
+                 ("create_past_event", "bool"))
     @event_guard(check_offline=True)
-    def archive_event(self, rs, event_id, ack_archive):
-        """Make a past_event from an event.
+    def archive_event(self, rs, event_id, ack_archive, create_past_event):
+        """Archive an event and optionally create a past event.
 
         This is at the boundary between event and cde frontend, since
         the past-event stuff generally resides in the cde realm.
@@ -5284,12 +5285,19 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
 
+        if not create_past_event:
+            code = self.eventproxy.set_event_archived(rs, {'id': event_id,
+                                                           'is_archived': True})
+            self.notify_return_code(rs, code, success="Event archived.")
+            return self.redirect(rs, "event/show_event")
+
         new_ids, message = self.pasteventproxy.archive_event(rs, event_id)
         if not new_ids:
             rs.notify("warning", message)
             return self.redirect(rs, "event/show_event")
         rs.notify("success", n_("Event archived."))
         if len(new_ids) == 1:
+            rs.notify("info", n_("Created past event."))
             return self.redirect(rs, "cde/show_past_event",
                                  {'pevent_id': unwrap(new_ids)})
         else:
