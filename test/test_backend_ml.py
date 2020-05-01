@@ -994,7 +994,6 @@ class TestMlBackend(BackendTest):
 
     @as_users("anton")
     def test_change_sub_policy(self, user):
-        pass
         mdata = {
             'local_part': 'revolution',
             'domain': const.MailinglistDomain.lists,
