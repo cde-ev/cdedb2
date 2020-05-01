@@ -14020,6 +14020,12 @@ msgstr "Mailinglisten-Verwaltung"
 msgid "Moderator Controls"
 msgstr "Moderator-Schaltflächen"
 
+msgid "Created past event."
+msgstr "Vergangene Veranstaltung erstellt."
+
+msgid "Create past event after archiving."
+msgstr "Vergangene Veranstaltung beim Archivieren erstellen."
+
 #~ msgid "Not authorized."
 #~ msgstr "Nicht authorisiert."
 

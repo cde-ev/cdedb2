@@ -1000,13 +1000,17 @@ class EventBackend(AbstractBackend):
         
         This exists to emit the correct log message. It delegates
         everything else (like validation) to the wrapped method.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: None
         """
         with Atomizer(rs):
             with Silencer(rs):
                 self.set_event(rs, data)
             self.event_log(rs, const.EventLogCodes.event_archived,
                            data['id'])
-        
+
     @access("event")
     def set_event(self, rs, data):
         """Update some keys of an event organized via DB.

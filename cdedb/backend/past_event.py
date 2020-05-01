@@ -786,8 +786,11 @@ class PastEventBackend(AbstractBackend):
         return new_id
 
     @access("cde_admin", "event_admin")
-    def archive_event(self, rs, event_id):
-        """Transfer data from a concluded event into the past event schema.
+    def archive_event(self, rs, event_id, create_past_event=True):
+        """Archive a concluded event.
+
+        This optionally creates a follow-up past event by transferring data from
+        the event into the past event schema.
 
         The data of the event organization is scheduled to be deleted at
         some point. We retain in the past_event schema only the
@@ -800,10 +803,11 @@ class PastEventBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
+        :type create_past_event: bool
         :rtype: ([int] or None, str or None)
         :returns: The first entry are the ids of the new past events or None
-          if there were complications. In the latter case the second entry
-          is an error message.
+          if there were complications or create_past_events is False.
+          If there were complications, the second entry is an error message.
         """
         event_id = affirm("id", event_id)
         if ("cde_admin" not in rs.user.roles
@@ -818,6 +822,9 @@ class PastEventBackend(AbstractBackend):
                 return None, "Event locked."
             self.event.set_event_archived(rs, {'id': event_id,
                                                'is_archived': True})
-            new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                            for part_id in xsorted(event['parts']))
+            if create_past_event:
+                new_ids = tuple(self.archive_one_part(rs, event, part_id)
+                                for part_id in xsorted(event['parts']))
+            else:
+                new_ids = None
         return new_ids, None
