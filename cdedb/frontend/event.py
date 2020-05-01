@@ -5285,18 +5285,15 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
 
-        if not create_past_event:
-            code = self.eventproxy.set_event_archived(rs, {'id': event_id,
-                                                           'is_archived': True})
-            self.notify_return_code(rs, code, success="Event archived.")
-            return self.redirect(rs, "event/show_event")
-
-        new_ids, message = self.pasteventproxy.archive_event(rs, event_id)
-        if not new_ids:
+        new_ids, message = self.pasteventproxy.archive_event(
+            rs, event_id, create_past_event=create_past_event)
+        if not new_ids and create_past_event:
             rs.notify("warning", message)
             return self.redirect(rs, "event/show_event")
         rs.notify("success", n_("Event archived."))
-        if len(new_ids) == 1:
+        if new_ids is None:
+            return self.redirect(rs, "event/show_event")
+        elif len(new_ids) == 1:
             rs.notify("info", n_("Created past event."))
             return self.redirect(rs, "cde/show_past_event",
                                  {'pevent_id': unwrap(new_ids)})

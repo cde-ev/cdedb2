@@ -994,7 +994,7 @@ class EventBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
-    @access("event")
+    @internal_access("event")
     def set_event_archived(self, rs, data):
         """Wrapper around ``set_event()`` for archiving an event.
         
@@ -1003,16 +1003,14 @@ class EventBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
-        :rtype: int
-        :returns: default return code
+        :rtype: None
         """
         with Atomizer(rs):
             with Silencer(rs):
-                ret = self.set_event(rs, data)
+                self.set_event(rs, data)
             self.event_log(rs, const.EventLogCodes.event_archived,
                            data['id'])
-        return ret
-        
+
     @access("event")
     def set_event(self, rs, data):
         """Update some keys of an event organized via DB.

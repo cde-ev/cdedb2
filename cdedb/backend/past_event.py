@@ -786,7 +786,7 @@ class PastEventBackend(AbstractBackend):
         return new_id
 
     @access("cde_admin", "event_admin")
-    def archive_event(self, rs, event_id):
+    def archive_event(self, rs, event_id, create_past_event=True):
         """Transfer data from a concluded event into the past event schema.
 
         The data of the event organization is scheduled to be deleted at
@@ -818,6 +818,9 @@ class PastEventBackend(AbstractBackend):
                 return None, "Event locked."
             self.event.set_event_archived(rs, {'id': event_id,
                                                'is_archived': True})
-            new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                            for part_id in xsorted(event['parts']))
+            if create_past_event:
+                new_ids = tuple(self.archive_one_part(rs, event, part_id)
+                                for part_id in xsorted(event['parts']))
+            else:
+                new_ids = None
         return new_ids, None
