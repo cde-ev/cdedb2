@@ -236,24 +236,36 @@ class MlBaseFrontend(AbstractUserFrontend):
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
-        mailinglist_ids = [mailinglist_id] if mailinglist_id else None
+        db_mailinglist_ids = [mailinglist_id] if mailinglist_id else None
+
+        relevant_mls = self.mlproxy.list_mailinglists(
+            rs, active_only=False, managed_only=True)
+        if not self.is_admin(rs):
+            if db_mailinglist_ids is None:
+                db_mailinglist_ids = relevant_mls.keys()
+            elif not db_mailinglist_ids <= relevant_mls.keys():
+                db_mailinglist_ids =\
+                    set(db_mailinglist_ids) | set(relevant_mls.keys())
+                rs.notify("warning", n_(
+                    "Not privileged to view log for all these mailinglists."))
+
         total, log = self.mlproxy.retrieve_log(
-            rs, codes, mailinglist_ids, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            rs, codes, db_mailinglist_ids, _offset, _length,
+            persona_id=persona_id, submitted_by=submitted_by,
+            additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        mailinglist_ids = {entry['mailinglist_id']
+        log_mailinglist_ids = {entry['mailinglist_id']
                            for entry in log if entry['mailinglist_id']}
-        mailinglists = self.mlproxy.get_mailinglists(rs, mailinglist_ids)
-        all_mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
+        mailinglists = self.mlproxy.get_mailinglists(rs, log_mailinglist_ids)
         loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'mailinglists': mailinglists, 'all_mailinglists': all_mailinglists,
+            'mailinglists': mailinglists, 'relevant_mailinglists': relevant_mls,
             'loglinks': loglinks})
 
     @access("ml")
