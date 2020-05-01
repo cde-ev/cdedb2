@@ -106,7 +106,7 @@
                         entries=all_events|dictsort, small=True) }}
             {% elif filter_name == "mailinglist_id" %}
                 {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
-                        entries=all_mailinglists|dictsort, small=True) }}
+                        entries=relevant_mailinglists|dictsort, small=True) }}
             {% elif filter_name == "changelog" %}
                 {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
                         anid="input-reviewed_by") }}

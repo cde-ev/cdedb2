@@ -31,8 +31,8 @@ class TestMlFrontend(FrontendTest):
             out = ["Übersicht", "Nutzer verwalten"]
         # Users with moderated mailinglists, but no admin privileges.
         elif user['id'] in {USER_DICT['berta']['id']}:
-            ins = ["Mailinglisten", "Alle Mailinglisten"]
-            out = ["Übersicht", "Nutzer verwalten", "Log"]
+            ins = ["Mailinglisten", "Alle Mailinglisten", "Log"]
+            out = ["Übersicht", "Nutzer verwalten"]
         # Users with full ml-admin privileges.
         elif user['id'] in {USER_DICT['nina']['id'], USER_DICT['anton']['id']}:
             ins = ["Mailinglisten", "Aktive Mailinglisten",
@@ -127,9 +127,9 @@ class TestMlFrontend(FrontendTest):
                                       current_state=False)
 
         # Test Event Management Admin View
-        self.assertNoLink('/ml/log')
         # This is still available because we are a moderator.
         # self.assertNoLink('/ml/mailinglist/list')
+        # self.assertNoLink('/ml/log')
         self.traverse({'href': '/ml/mailinglist/1/show'})
         self.assertNoLink('/ml/mailinglist/1/change')
         self.assertNoLink('/ml/mailinglist/1/log')
@@ -432,11 +432,11 @@ class TestMlFrontend(FrontendTest):
         f['maxsize'] = 512
         f['is_active'].checked = True
         f['notes'] = "Noch mehr Gemunkel."
-        f['moderator_ids'] = "DB-2-7, DB-7-8"
+        f['moderator_ids'] = "DB-3-5, DB-7-8"
         f['domain'] = 1
         self.submit(f)
         self.assertTitle("Munkelwand")
-        self.assertPresence("Beispiel")
+        self.assertPresence("Clown")
         self.assertPresence("Garcia G. Generalis")
 
     @as_users("anton")
@@ -917,3 +917,27 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})
         self.assertTitle("Klatsch und Tratsch: Log [1–6 von 6]")
+        self.logout()
+
+        self.login(USER_DICT['berta'])
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/log'})
+        self.assertTitle("Mailinglisten-Log [1–6 von 6]")
+        self.assertPresence("Witz des Tages")
+        self.assertNonPresence("Platin-Lounge")
+        self.logout()
+
+        self.login(USER_DICT['vera'])
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/log'})
+        self.assertTitle("Mailinglisten-Log [1–9 von 9]")
+        self.assertPresence("Aktivenforum 2001")
+        self.assertNonPresence("CdE-Party")
+        self.logout()
+
+        self.login(USER_DICT['annika'])
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/log'})
+        self.assertTitle("Mailinglisten-Log [0–0 von 0]")
+        self.assertNonPresence("Aktivenforum")
+        self.assertPresence("CdE-Party")

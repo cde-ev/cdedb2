@@ -54,13 +54,13 @@
                         active=(sidenav_active == 'ml_index')) }}
             {% endif %}
         </div>
-        {% if user.admin_views.intersection(('ml_mgmt', 'ml_user')) %}
+        {% if user.moderator or user.admin_views.intersection(('ml_mgmt', 'ml_user')) %}
             <div class="list-group tear-down">
                 {% if 'ml_user' in user.admin_views %}
                     {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                             icon="users", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
                 {% endif %}
-                {% if 'ml_mgmt' in user.admin_views %}
+                {% if user.moderator or 'ml_mgmt' in user.admin_views %}
                     {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="far fa-list-alt", aclass="list-group-item",
                             active=(sidenav_active == 'ml_log')) }}
                 {% endif %}
