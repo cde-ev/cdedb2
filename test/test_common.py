@@ -15,8 +15,7 @@ class TestCommon(unittest.TestCase):
         unsorted = [3, 8, -3, 5, 0, -4]
         self.assertEqual(list(mixed_existence_sorter(unsorted)),
                          [0, 3, 5, 8, -3, -4])
-        print(sorted([-3, -4]))
-        print(xsorted([-3, -4]))
+        self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))
 
     def test_extract_roles(self):
         self.assertEqual({
