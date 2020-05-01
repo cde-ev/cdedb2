@@ -21,6 +21,9 @@ import re
 import shutil
 import string
 import sys
+from typing import (
+   Any, TypeVar, Mapping, Collection, Dict, List, overload, Union, Sequence,
+)
 
 import psycopg2.extras
 import pytz
@@ -36,6 +39,25 @@ _LOGGER = logging.getLogger(__name__)
 
 # Global unified collator to be used when sorting.
 COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
+
+# Pseudo objects like assembly, event, course, event part, etc.
+CdEDBObject = Dict[str, Any]
+
+# Map of pseudo objects, indexed by their id, as returned by
+# `get_events`, event["parts"], etc.
+
+CdEDBObjectMap = Mapping[int, CdEDBObject]
+
+# An integer with special semantics. Positive return values indicate success,
+# a return of zero signals an error, a negative return value indicates some
+# special case like a change pending review.
+DefaultReturnCode = int
+
+# Return value for `delete_foo_blockers` part of the deletion interface.
+# The key specifies the kind of blocker, the value is a list of blocking ids.
+# For some blockers the value might have a different type, mostly when that
+# blocker blocks deletion without the option to cascadingly delete.
+DeletionBlockers = Dict[str, List[int]]
 
 
 class RequestState:
@@ -897,7 +919,20 @@ def schulze_evaluate(votes, candidates):
 ASSEMBLY_BAR_MONIKER = "_bar_"
 
 
-def unwrap(single_element_list, keys=False):
+T = TypeVar("T")
+
+
+@overload
+def unwrap(single_element_list: Sequence[T]) -> T:
+    pass
+
+
+@overload
+def unwrap(single_element_list: Mapping[Any, T]) -> T:
+    pass
+
+
+def unwrap(single_element_list):
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -907,20 +942,16 @@ def unwrap(single_element_list, keys=False):
     In case of an error (e.g. wrong number of elements) this raises an
     error.
 
-    :type single_element_list: [obj]
-    :type keys: bool
-    :param keys: If a mapping is input, this toggles between returning
-      the key or value.
-    :rtype: object or None
+    Beware, that this behaves differently for mappings than other iterations,
+    in that it uses the values instead of the keys. To unwrap the keys pass
+    `data.keys()` instead.
     """
     if (not isinstance(single_element_list, collections.abc.Iterable)
-            or len(single_element_list) != 1):
+            or (isinstance(single_element_list, collections.abc.Sized)
+                and len(single_element_list) != 1)):
         raise RuntimeError(n_("Unable to unwrap!"))
     if isinstance(single_element_list, collections.abc.Mapping):
-        if keys:
-            single_element_list = single_element_list.keys()
-        else:
-            single_element_list = single_element_list.values()
+        single_element_list = single_element_list.values()
     return next(i for i in single_element_list)
 
 

@@ -63,7 +63,7 @@ class EventFrontend(AbstractUserFrontend):
                 params['is_participant'] = False
                 if params['is_registered']:
                     registration = self.eventproxy.get_registration(
-                        rs, unwrap(reg_list, keys=True))
+                        rs, unwrap(reg_list.keys()))
                     if any(part['status']
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
@@ -272,7 +272,7 @@ class EventFrontend(AbstractUserFrontend):
             if not reg_list:
                 rs.notify("warning", n_("Not registered for event."))
                 return self.redirect(rs, "event/show_event")
-            registration_id = unwrap(reg_list, keys=True)
+            registration_id = unwrap(reg_list.keys())
             registration = self.eventproxy.get_registration(rs, registration_id)
             parts = registration['parts']
             list_consent = registration['list_consent']
@@ -2973,7 +2973,7 @@ class EventFrontend(AbstractUserFrontend):
         if not reg_list:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
-        registration_id = unwrap(reg_list, keys=True)
+        registration_id = unwrap(reg_list.keys())
         registration = self.eventproxy.get_registration(rs, registration_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(
@@ -2999,7 +2999,7 @@ class EventFrontend(AbstractUserFrontend):
         event = rs.ambience['event']
         tracks = event['tracks']
         registration_id = unwrap(self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id), keys=True)
+            rs, event_id, persona_id=rs.user.persona_id).keys())
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
@@ -3054,7 +3054,7 @@ class EventFrontend(AbstractUserFrontend):
         purpose. For this they have to communicate with the orgas.
         """
         registration_id = unwrap(self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id), keys=True)
+            rs, event_id, persona_id=rs.user.persona_id).keys())
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
@@ -3102,7 +3102,7 @@ class EventFrontend(AbstractUserFrontend):
             if not registration_id:
                 rs.notify("warning", n_("Not registered for event."))
                 return self.redirect(rs, "event/show_event")
-            registration_id = unwrap(registration_id, keys=True)
+            registration_id = unwrap(registration_id.keys())
             registration = self.eventproxy.get_registration(rs, registration_id)
             if not rs.ambience['event']['use_questionnaire']:
                 rs.notify("warning", n_("Questionnaire disabled."))
@@ -3136,7 +3136,7 @@ class EventFrontend(AbstractUserFrontend):
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
-        registration_id = unwrap(registration_id, keys=True)
+        registration_id = unwrap(registration_id.keys())
         if not rs.ambience['event']['use_questionnaire']:
             rs.notify("error", n_("Questionnaire disabled."))
             return self.redirect(rs, "event/registration_status")
@@ -5460,7 +5460,7 @@ class EventFrontend(AbstractUserFrontend):
             tmp = self.eventproxy.list_registrations(rs, event_id,
                                                      persona_id=anid)
             if tmp:
-                tmp = unwrap(tmp, keys=True)
+                tmp = unwrap(tmp.keys())
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': tmp})
 

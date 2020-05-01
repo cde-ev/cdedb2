@@ -12,7 +12,7 @@ import copy
 import enum
 import functools
 import logging
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, cast, Iterable, Tuple, Set, Union
 
 from cdedb.common import (
     n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
@@ -26,11 +26,13 @@ from cdedb.database.connection import Atomizer
 
 
 F = TypeVar('F', bound=Callable[..., Any])
+G = TypeVar('G', bound=Callable[..., Any])
+
 
 def singularize(function: F,
                 array_param_name: str = "ids",
                 singular_param_name: str = "anid",
-                passthrough: bool = False) -> F:
+                passthrough: bool = False) -> G:
     """This takes a function and returns a singularized version.
 
     The function has to accept an array as a parameter and return a dict
@@ -65,7 +67,7 @@ def singularize(function: F,
 
 def batchify(function: F,
              array_param_name: str = "data",
-             singular_param_name: str = "data") -> F:
+             singular_param_name: str = "data") -> G:
     """This takes a function and returns a batchified version.
 
     The function has to accept an a singular parameter.
@@ -169,12 +171,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             self, configpath))
         # Everybody needs access to the core backend
         if is_core:
-            self.core = self
+            self.core = self  # type: CoreBackend
         else:
             # Import here since we otherwise have a cyclic import.
             # I don't see how we can get out of this ...
             from cdedb.backend.core import CoreBackend
-            self.core = ProxyShim(CoreBackend(configpath), internal=True)
+            self.core: CoreBackend = cast(
+                CoreBackend, ProxyShim(CoreBackend(configpath), internal=True))
 
     def affirm_realm(self, rs, ids, realms=None):
         """Check that all personas corresponding to the ids are in the
@@ -774,46 +777,43 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def affirm_validation(assertion, value, **kwargs):
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+T = TypeVar("T")
 
-    :type assertion: str
-    :type value: object
-    :rtype: object
-    """
+
+def affirm_validation(assertion: str, value: T, **kwargs: Any) \
+        -> Union[T, None]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
 
 
-def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
+def affirm_array_validation(assertion: str, values: Iterable[T],
+                            allow_None: bool = False, **kwargs: Any) \
+        -> Union[Tuple[T], None]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
-    :type assertion: str
-    :type allow_None: bool
     :param allow_None: Since we don't have the luxury of an automatic
       '_or_None' variant like with other validators we have this parameter.
-    :type values: [object] (or None)
-    :rtype: [object]
     """
     if allow_None and values is None:
         return None
-    checker = getattr(validate, "assert_{}".format(assertion))
+    checker: Callable[[T, ...], T] = \
+        getattr(validate, "assert_{}".format(assertion))
     return tuple(checker(value, **kwargs) for value in values)
 
 
-def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
+def affirm_set_validation(assertion: str, values: Iterable[T],
+                          allow_None: bool = False, **kwargs: Any) \
+        -> Union[Set[T], None]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
 
-    :type assertion: str
-    :type allow_None: bool
     :param allow_None: Since we don't have the luxury of an automatic
       '_or_None' variant like with other validators we have this parameter.
-    :type values: {object} (or None)
-    :rtype: {object}
     """
     if allow_None and values is None:
         return None
-    checker = getattr(validate, "assert_{}".format(assertion))
+    checker: Callable[[T, ...], T] = \
+        getattr(validate, "assert_{}".format(assertion))
     return {checker(value, **kwargs) for value in values}
 
 

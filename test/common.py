@@ -903,7 +903,7 @@ class FrontendTest(unittest.TestCase):
         # adapt slicing to our count of log entries
         logs = all_logs[start-1:end]
         for index, log in enumerate(logs, start=1):
-            log_id = unwrap(log, keys=True)
+            log_id = unwrap(log.keys())
             log_code = unwrap(log)
             log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
