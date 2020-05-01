@@ -67,7 +67,7 @@
                 {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                        {% if is_admin or moderator != user.persona_id %}
+                        {% if is_relevant_admin(mailinglist_id=ambience['mailinglist']['id']) or moderator != user.persona_id %}
                             <form action="{{ cdedblink('ml/remove_moderator') }}"
                                   method="POST"
                                   id="removemoderatorform{{ moderator }}"

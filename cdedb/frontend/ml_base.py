@@ -554,7 +554,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Demote persona from moderator status."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
-        if moderator_id == rs.user.persona_id and not self.is_admin(rs):
+        if (moderator_id == rs.user.persona_id
+                and not self.mlproxy.is_relevant_admin(rs,
+                    mailinglist_id=mailinglist_id)):
             rs.notify("error",
                       n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
