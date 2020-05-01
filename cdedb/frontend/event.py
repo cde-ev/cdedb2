@@ -5287,7 +5287,7 @@ class EventFrontend(AbstractUserFrontend):
 
         new_ids, message = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
-        if not new_ids and create_past_event:
+        if message:
             rs.notify("warning", message)
             return self.redirect(rs, "event/show_event")
         rs.notify("success", n_("Event archived."))
