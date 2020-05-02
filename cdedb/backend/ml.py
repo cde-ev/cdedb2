@@ -620,7 +620,6 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: the id of the new mailinglist
         """
-        data['address'] = ml_type.full_address(data)
         data = affirm("mailinglist", data, creation=True)
         data['address'] = self.validate_address(rs, data)
         if not self.is_relevant_admin(rs, mailinglist=data):
@@ -1058,8 +1057,8 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_user_subscriptions(self, rs: RequestState, persona_id: int,
-                               states: Optional[SubStates],
-                               mailinglist_ids: Optional[Iterable[int]]) \
+                               states: Optional[SubStates] = None,
+                               mailinglist_ids: Optional[Iterable[int]] = None)\
             -> Dict[int, Union[const.SubscriptionStates, None]]:
         """Returns a list of mailinglists the persona is related to.
 
@@ -1581,7 +1580,7 @@ class MlBackend(AbstractBackend):
 
     @access("droid_rklist")
     def oldstyle_bounce(self, rs: RequestState, address: str, error: int) \
-            -> Union[True, None]:
+            -> Union[bool, None]:
         address = affirm("email", address)
         error = affirm("int", error)
         with Atomizer(rs):
