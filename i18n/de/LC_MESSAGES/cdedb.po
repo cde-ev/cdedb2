@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-05-02 18:22+0200\n"
+"POT-Creation-Date: 2020-05-02 18:27+0200\n"
 "PO-Revision-Date: 2020-03-13 19:55+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -317,7 +317,7 @@ msgstr "Passwort zurückgesetzt"
 
 #: cdedb/i18n_additional.py:56
 msgid "CoreLogCodes.password_invalidated"
-msgstr ""
+msgstr "Passwort ungültig gemacht"
 
 #: cdedb/i18n_additional.py:57
 msgid "CoreLogCodes.genesis_request"
@@ -485,11 +485,11 @@ msgstr "Unterkunftgruppe erstellt"
 
 #: cdedb/i18n_additional.py:99
 msgid "EventLogCodes.lodgement_group_changed"
-msgstr ""
+msgstr "Unterkunftgruppe geändert"
 
 #: cdedb/i18n_additional.py:100
 msgid "EventLogCodes.lodgement_group_deleted"
-msgstr ""
+msgstr "Unterkunftgruppe gelöscht"
 
 #: cdedb/i18n_additional.py:102
 msgid "FinanceLogCodes.new_member"
