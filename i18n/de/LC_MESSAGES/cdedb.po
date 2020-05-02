@@ -274,7 +274,7 @@ msgstr "Nächstes Semester"
 
 #: cdedb/i18n_additional.py:43
 msgid "CdeLogCodes.advance_expuls"
-msgstr "Nächster Expuls"
+msgstr "Nächster exPuls"
 
 #: cdedb/i18n_additional.py:45 cdedb/i18n_additional.py:51
 msgid "CoreLogCodes.persona_creation"
