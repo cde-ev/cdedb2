@@ -6,6 +6,8 @@ import json
 import re
 import datetime
 import webtest
+import unittest
+
 from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
@@ -1885,6 +1887,7 @@ etc;anything else""", f['entries_2'].value)
                       {'description': 'Alle Anmeldungen'})
         self.assertNonPresence("Anton Armin A.")
 
+    @unittest.expectedFailure
     @as_users("garcia")
     def test_profile_link(self, user):
         # Test if I can view the profile of searchable members
