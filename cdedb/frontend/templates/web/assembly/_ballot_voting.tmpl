@@ -315,5 +315,18 @@
     {% set columns =  [dict(name="moniker", label="Shortname", func=util.input_text),
                        dict(name="description", label="Description", func=util.input_text)] %}
 
-    {{ util.print_flux_table("Candidates", columns, ambience['ballot']['candidates'], 'assembly/edit_candidates', sortkey=EntitySorter.candidate) }}
+    <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
+        {{ util.anti_csrf_token('assembly/edit_candidates') }}
+        {{ util.dynamic_row_table("Candidates", columns, ambience['ballot']['candidates'], sortkey=EntitySorter.candidate) }}
+        {{ util.input_submit(value=gettext("Save")) }}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#drow-table').cdedbDynamicRow({
+                addButton: $('#drow-addbutton'),
+                delButtonTitle: "{{ gettext("Delete line") }}"});
+            $('#candidatessummaryform').cdedbProtectChanges();
+        });
+    </script>
 {%- endmacro %}

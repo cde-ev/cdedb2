@@ -2181,8 +2181,8 @@ def make_transaction_subject(persona):
                                asciificator(persona['given_names']))
 
 
-def process_flux_input(rs, existing, spec, additional=None):
-    """Retrieve information provided by flux tables.
+def process_dynamic_input(rs, existing, spec, additional=None):
+    """Retrieve information provided by dynamic_row_tables.
 
     This returns a data dict to update the database, which includes:
     - existing, mapped to their (validated) input fields (from spec)

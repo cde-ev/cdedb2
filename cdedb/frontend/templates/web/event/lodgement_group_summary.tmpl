@@ -25,5 +25,18 @@
 {% block content %}
     {% set columns =  [dict(name="moniker", label="Name", func=util.input_text)] %}
 
-    {{ util.print_flux_table("Lodgement Group", columns, lodgement_groups, 'event/lodgement_group_summary', sortkey=EntitySorter.lodgement_group) }}
+    <form action="{{ cdedblink('event/lodgement_group_summary') }}" method="POST" id="lodgementgroupsummaryform">
+        {{ util.anti_csrf_token('event/lodgement_group_summary') }}
+        {{ util.dynamic_row_table("Lodgement Group", columns, lodgement_groups, sortkey=EntitySorter.lodgement_group) }}
+        {{ util.input_submit(value=gettext("Save")) }}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#drow-table').cdedbDynamicRow({
+                addButton: $('#drow-addbutton'),
+                delButtonTitle: "{{ gettext("Delete line") }}"});
+            $('#lodgementgroupsummaryform').cdedbProtectChanges();
+        });
+    </script>
 {% endblock %}
