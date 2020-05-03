@@ -1876,7 +1876,8 @@ class EventBackend(AbstractBackend):
                 or "ml_admin" in rs.user.roles):
                 registration_ids = self.list_registrations_for_ml_mods(
                     rs, event_id, persona_id)
-            else raise
+            else:
+                raise
         if not registration_ids:
             return False
         reg_id = unwrap(registration_ids.keys())
