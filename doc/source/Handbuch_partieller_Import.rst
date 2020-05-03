@@ -129,6 +129,11 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version 11: Für Anmeldungen wird gespeichert, wie viel ein Teilnehmer bezahlen
+  soll. Der Fragebogen wurde aufgeteilt in einen Anmeldungs-Teil, der direkt bei
+  der eigentlichen Anmeldung abgefragt wird und einen zusätzlichen Teil, der
+  dem bisherigen Fragebogen entspricht. Für Veranstaltungsteile können nun
+  Beitragsmodifikatoren angelegt werden.
 * Version 10 (abwärtskompatibel): Es wird ein Flag ``is_cancelled`` je Event
   eingeführt, mit dem die Absage von Veranstaltungen gekennzeichnet werden
   kann.

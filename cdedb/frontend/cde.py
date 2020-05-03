@@ -35,7 +35,7 @@ from cdedb.frontend.common import (
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
-    calculate_db_logparams, calculate_loglinks, process_flux_input)
+    calculate_db_logparams, calculate_loglinks, process_dynamic_input)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
 import cdedb.frontend.parse_statement as parse
@@ -2158,7 +2158,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
         spec = {'title': "str", 'moniker': "str"}
-        institutions = process_flux_input(rs, institution_ids.keys(), spec)
+        institutions = process_dynamic_input(rs, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
         code = 1

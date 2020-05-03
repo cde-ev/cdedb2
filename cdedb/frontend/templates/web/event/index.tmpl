@@ -45,9 +45,9 @@
                                      gettext("registered")) -%}
                             (already {{ link }})
                         {% endtrans %}
-                        {%- if event['use_questionnaire'] %}
+                        {%- if event['use_additional_questionnaire'] %}
                             &bull;
-                            {{ util.href(cdedblink('event/questionnaire', {'event_id': event_id}),
+                            {{ util.href(cdedblink('event/additional_questionnaire', {'event_id': event_id}),
                                          gettext("Questionnaire"), icon='edit') -}}
                         {% endif -%}
                     {% elif "event" in user.roles and event['is_open'] %}
