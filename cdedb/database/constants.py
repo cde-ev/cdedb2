@@ -94,6 +94,28 @@ class FieldDatatypes(enum.IntEnum):
 
 
 @enum.unique
+class QuestionnaireUsages(enum.IntEnum):
+    """Where a questionnaire row will be displayed."""
+    registration = 1
+    additional = 2
+
+    def allow_readonly(self):
+        """Whether or not rows with this usage are allowed to be readonly."""
+        return self == QuestionnaireUsages.additional
+
+    def allow_fee_modifier(self):
+        """Whether or not rows with this usage may use fee modifier fields."""
+        return self == QuestionnaireUsages.registration
+
+    def get_icon(self):
+        icons = {
+            QuestionnaireUsages.registration: "sign-in-alt",
+            QuestionnaireUsages.additional: "pen",
+        }
+        return icons.get(self, repr(self))
+
+
+@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
@@ -425,6 +447,9 @@ class EventLogCodes(enum.IntEnum):
     lodgement_group_created = 70  #:
     lodgement_group_changed = 71  #:
     lodgement_group_deleted = 72  #:
+    fee_modifier_created = 80  #:
+    fee_modifier_changed = 81  #:
+    fee_modifier_deleted = 82  #:
 
 
 @enum.unique

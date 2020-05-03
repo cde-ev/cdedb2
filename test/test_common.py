@@ -2,7 +2,8 @@
 
 import unittest
 from cdedb.common import (
-    extract_roles, schulze_evaluate, int_to_words, xsorted)
+    extract_roles, schulze_evaluate, int_to_words, xsorted,
+    mixed_existence_sorter)
 import cdedb.database.constants as const
 import datetime
 import pytz
@@ -10,6 +11,12 @@ import random
 import timeit
 
 class TestCommon(unittest.TestCase):
+    def test_mixed_existence_sorter(self):
+        unsorted = [3, 8, -3, 5, 0, -4]
+        self.assertEqual(list(mixed_existence_sorter(unsorted)),
+                         [0, 3, 5, 8, -3, -4])
+        self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))
+
     def test_extract_roles(self):
         self.assertEqual({
             "anonymous", "persona", "cde", "member", "searchable",

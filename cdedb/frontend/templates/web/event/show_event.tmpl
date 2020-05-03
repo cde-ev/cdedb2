@@ -87,7 +87,7 @@
                 <dt>{% trans %}CdE-Account IBAN{% endtrans %}</dt>
                 <dd id="cde-iban">{{ ambience['event']['iban']|iban }}</dd>
                 <dt>{% trans %}Questionnaire active{% endtrans %}</dt>
-                <dd id="questionnaire-active">{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire'],
+                <dd id="questionnaire-active">{{ util.deko_checkbox(checked=ambience['event']['use_additional_questionnaire'],
                             titles=[gettext("No"),gettext("Yes")]) }}</dd>
             {% endif %}
         </dl>

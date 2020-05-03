@@ -249,6 +249,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         else:
             return obj
 
+    @staticmethod
+    def affirm_atomized_context(rs):
+        """Make sure that we are operating in a atomized transaction."""
+
+        if not rs.conn.is_contaminated:
+            raise RuntimeError(n_("No contamination!"))
+
     def execute_db_query(self, cur, query, params):
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
