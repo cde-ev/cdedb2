@@ -1803,7 +1803,7 @@ class EventBackend(AbstractBackend):
                     {"type": "course", "block": blockers.keys()})
         return ret
 
-    def _list_registrations_unchecked(rs: RequestState, event_id, persona_id=None):
+    def _list_registrations_unchecked(self, rs: RequestState, event_id, persona_id=None):
         """List all registrations of an event.
 
         If an ordinary event_user is requesting this, just participants of this
