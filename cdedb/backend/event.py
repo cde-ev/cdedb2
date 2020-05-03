@@ -12,7 +12,7 @@ import decimal
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
     affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
-    cast_fields, internal, RequestState)
+    cast_fields, internal)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
@@ -21,7 +21,7 @@ from cdedb.common import (
     PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter, xsorted)
+    mixed_existence_sorter, xsorted, RequestState)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
