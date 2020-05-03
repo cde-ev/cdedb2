@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
 "POT-Creation-Date: 2020-05-02 18:27+0200\n"
-"PO-Revision-Date: 2020-03-13 19:55+0100\n"
+"PO-Revision-Date: 2020-05-03 16:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -2602,11 +2602,11 @@ msgstr "Nicht-existente Mailingliste."
 
 #: cdedb/backend/ml.py:65
 msgid "No mailinglist specified."
-msgstr ""
+msgstr "Keine Mailingliste angegeben."
 
 #: cdedb/backend/ml.py:70
 msgid "Different mailinglists specified."
-msgstr ""
+msgstr "Unterschiedliche Mailinglisten angegeben."
 
 #: cdedb/backend/ml.py:869 cdedb/backend/ml.py:813
 msgid "User has no means to access this list."
@@ -3190,7 +3190,7 @@ msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
 
 #: cdedb/frontend/common.py:2064
 msgid "This page can only be accessed by appropriate admins."
-msgstr ""
+msgstr "Auf diese Seite können nur Administratoren zugreifen."
 
 #: cdedb/frontend/core.py:44 cdedb/frontend/core.py:43
 msgid "CdE event"
@@ -4137,11 +4137,11 @@ msgstr "Aktive Zeichen in der Eingabe gefunden."
 
 #: cdedb/frontend/ml_base.py:173
 msgid "May not create mailinglist of this type."
-msgstr ""
+msgstr "Kann keine Mailingliste des gewünschten Typs erstellen."
 
 #: cdedb/frontend/ml_base.py:249
 msgid "Not privileged to view log for all these mailinglists."
-msgstr ""
+msgstr "Keine Berechtigung um auf die Logs aller Mailinglisten zuzugreifen."
 
 #: cdedb/frontend/ml_base.py:330 cdedb/frontend/ml_base.py:274
 msgid "Only Admins may change mailinglist configuration."
@@ -4149,7 +4149,7 @@ msgstr "Nur Administratoren dürfen die Mailinglisten-Konfiguration ändern."
 
 #: cdedb/frontend/ml_base.py:353
 msgid "Mailinglist Type cannot be changed here."
-msgstr ""
+msgstr "Der Typ der Mailingliste kann hier nicht geändert werden."
 
 #: cdedb/frontend/ml_base.py:573 cdedb/frontend/ml_base.py:458
 msgid "Not allowed to remove yourself as moderator."
@@ -5907,7 +5907,7 @@ msgstr "Code"
 
 #: cdedb/frontend/templates/web/logging.tmpl:121
 msgid "Length"
-msgstr ""
+msgstr "Länge"
 
 #: cdedb/frontend/templates/web/logging.tmpl:122
 msgid "Offset"
@@ -6021,12 +6021,12 @@ msgstr "Zeile löschen"
 #: cdedb/frontend/templates/web/util.tmpl:661
 #, python-format
 msgid "%(title)s"
-msgstr ""
+msgstr "%(title)s"
 
 #: cdedb/frontend/templates/web/util.tmpl:681
 #, python-format
 msgid "Add %(name)s"
-msgstr ""
+msgstr "%(name)s hinzufügen"
 
 #: cdedb/frontend/templates/web/util.tmpl:741
 #: cdedb/frontend/templates/web/util.tmpl:766
@@ -13213,7 +13213,7 @@ msgstr "Mailinglistentyp"
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:18
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:22
 msgid "Change Type"
-msgstr ""
+msgstr "Typ ändern"
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:71
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:52
