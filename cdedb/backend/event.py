@@ -1871,9 +1871,9 @@ class EventBackend(AbstractBackend):
             registration_ids = self.list_registrations(
                 rs, event_id, persona_id)
         except PrivilegeError:
-            if self.is_orga(rs, event_id=event_id)
+            if (self.is_orga(rs, event_id=event_id)
                 or self.is_admin(rs)
-                or "ml_admin" in rs.user.roles:
+                or "ml_admin" in rs.user.roles):
                 registration_ids = self.list_registrations_for_ml_mods(
                     rs, event_id, persona_id)
             else raise
