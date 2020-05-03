@@ -2080,21 +2080,11 @@ class CdEFrontend(AbstractUserFrontend):
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 address = make_postal_address(persona)
-                lastschrift_list = self.cdeproxy.list_lastschrift(
-                    rrs, persona_ids=(persona_id,))
-                lastschrift = None
-                if lastschrift_list:
-                    lastschrift = self.cdeproxy.get_lastschrift(
-                        rrs, unwrap(lastschrift_list.keys()))
-                    lastschrift['reference'] = lastschrift_reference(
-                        persona['id'], lastschrift['id'])
                 self.do_mail(
                     rrs, "addresscheck",
                     {'To': (persona['username'],),
-                     'Subject': "Adressabfrage für exPuls"},
+                     'Subject': "Adressabfrage für den exPuls"},
                     {'persona': persona,
-                     'lastschrift': lastschrift,
-                     'fee': self.conf["MEMBERSHIP_FEE"],
                      'address': address,
                      })
                 if testrun:
