@@ -87,7 +87,7 @@ class MlBackend(AbstractBackend):
         return ml_id is not None and (ml_id in rs.user.moderator
                                       or "droid_rklist" in rs.user.roles)
 
-    @access("ml")
+    @access("ml", "droid_rklist")
     def may_manage(self, rs, mailinglist_id):
         """Check whether a user is allowed to manage a given mailinglist.
 
