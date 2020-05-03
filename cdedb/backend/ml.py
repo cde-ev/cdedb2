@@ -71,7 +71,7 @@ class MlBackend(AbstractBackend):
             atype = ml_type.get_type(mailinglist['ml_type'])
         return atype.is_relevant_admin(rs)
 
-    @access("ml")
+    @access("ml", "droid_rklist")
     def is_moderator(self, rs, ml_id):
         """Check for moderator privileges as specified in the ml.moderators
         table.
