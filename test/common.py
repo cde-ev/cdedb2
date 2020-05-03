@@ -9,26 +9,29 @@ import gettext
 import inspect
 import os
 import pathlib
-import pytz
 import re
-import unittest
 import subprocess
 import sys
 import tempfile
 import types
-import webtest
+import unittest
 import urllib.parse
+from typing import TypeVar, cast
 
+import pytz
+import webtest
+
+from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
+from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
-from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.common import (
-    PrivilegeError, ProxyShim, RequestState, glue, roles_to_db_role, unwrap,
-    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME)
+from cdedb.common import (ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS,
+                          PrivilegeError, RequestState, glue, n_,
+                          roles_to_db_role, unwrap)
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -89,29 +92,39 @@ def json_keys_to_int(obj):
         ret = obj
     return ret
 
+B = TypeVar("B", bound=AbstractBackend)
 
-class BackendShim(ProxyShim):
-    def __init__(self, backend, *args, **kwargs):
-        super().__init__(backend, *args, **kwargs)
-        self.sessionproxy = SessionBackend(backend.conf._configpath)
-        secrets = SecretsConfig(backend.conf._configpath)
-        self.connpool = connection_pool_factory(
-            backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-            secrets, backend.conf["DB_PORT"])
-        self.translator = gettext.translation(
-            'cdedb', languages=('de',),
-            localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
+def BackendShim(backend: B, internal=False) -> B:
+    """Wrap a backend to only expose functions with an access decorator.
 
-    def _setup_requeststate(self, key):
+    If we used an actual RPC mechanism, this would do some additional
+    lifting to accomodate this.
+
+    We need to use a function so we can cast the return value.
+    We also need to use an inner class so we can provide __getattr__.
+
+    This is similar to the normal ProxyShim but encorporates a different wrapper
+    """
+
+    sessionproxy = SessionBackend(backend.conf._configpath)
+    secrets = SecretsConfig(backend.conf._configpath)
+    connpool = connection_pool_factory(
+        backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+        secrets, backend.conf["DB_PORT"])
+    translator = gettext.translation(
+        'cdedb', languages=('de',),
+        localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
+
+    def setup_requeststate(key):
         sessionkey = None
         apitoken = None
 
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        user = self.sessionproxy.lookuptoken(key, "127.0.0.0")
+        user = sessionproxy.lookuptoken(key, "127.0.0.0")
         if user.roles == {'anonymous'}:
-            user = self.sessionproxy.lookupsession(key, "127.0.0.0")
+            user = sessionproxy.lookupsession(key, "127.0.0.0")
             sessionkey = key
         else:
             apitoken = key
@@ -119,28 +132,35 @@ class BackendShim(ProxyShim):
         rs = RequestState(
             sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
             response=None, notifications=[], mapadapter=None, requestargs=None,
-            errors=[], values={}, lang="de", gettext=self.translator.gettext,
-            ngettext=self.translator.ngettext, coders=None, begin=None)
-        rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
+            errors=[], values={}, lang="de", gettext=translator.gettext,
+            ngettext=translator.ngettext, coders=None, begin=None)
+        rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
-        if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
-            rs.user.orga = self._backend.orga_info(rs, rs.user.persona_id)
-        if "ml" in rs.user.roles and hasattr(self._backend, "moderator_info"):
-            rs.user.moderator = self._backend.moderator_info(
+        if "event" in rs.user.roles and hasattr(backend, "orga_info"):
+            rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
+        if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
+            rs.user.moderator = backend.moderator_info(
                 rs, rs.user.persona_id)
         return rs
 
-    def _wrapit(self, function):
-        """
-        :type function: callable
-        """
+    class Proxy():
+        def __getattr__(self, name):
+            attr = getattr(backend, name)
+            if (
+                not attr.access
+                or hasattr(attr, "internal") and attr.internal and not internal
+                or not callable(attr)
+            ):
+                raise PrivilegeError(n_("Attribute %s not public") % name)
 
-        @functools.wraps(function)
-        def wrapper(key, *args, **kwargs):
-            rs = self._setup_requeststate(key)
-            return function(rs, *args, **kwargs)
+            @functools.wraps(attr)
+            def wrapper(key, *args, **kwargs):
+                rs = setup_requeststate(key)
+                return attr(rs, *args, **kwargs)
 
-        return wrapper
+            return wrapper
+
+    return cast(B, Proxy())
 
 
 class MyTextTestResult(unittest.TextTestResult):
