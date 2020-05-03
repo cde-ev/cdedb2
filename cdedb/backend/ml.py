@@ -733,21 +733,7 @@ class MlBackend(AbstractBackend):
             num += self.query_exec(rs, query, params)
 
         return num
-
-    @internal
-    @access("ml")
-    def _set_subscription(self, rs, datum):
-        """Maunual singularization of `_set_subscriptions.
-
-        This is required to make the `@internal` decorator work.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: int}
-        :rtype: int
-        :returns: Number of affected rows.
-        """
-
-        return self._set_subscriptions(rs, [datum])
+    _set_subscription = singularize(_set_subscriptions, "data", "datum")
 
     @internal
     @access("ml")
@@ -777,21 +763,7 @@ class MlBackend(AbstractBackend):
             ret = self.query_exec(rs, query, params)
 
         return ret
-
-    @internal
-    @access("ml")
-    def _remove_subscription(self, rs, datum):
-        """Maunual singularization of `_remove_subscriptions.
-
-        This is required to make the `@internal` decorator work.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: int}
-        :rtype: int
-        :returns: Number of affected rows.
-        """
-
-        return self._remove_subscriptions(rs, [datum])
+    _remove_subscription = singularize(_remove_subscriptions, "data", "datum")
 
     @access("ml")
     def do_subscription_action(self, rs, action, mailinglist_id,
@@ -1038,26 +1010,8 @@ class MlBackend(AbstractBackend):
                     for e in data})
 
         return ret
-
-    @access("ml")
-    def get_subscription(self, rs, persona_id, states=None,
-                         mailinglist_id=None):
-        """Return the relation between a persona and a mailinglist.
-
-        Returns None if there exists no such persona, mailinglist or relation.
-
-        Manual implementation of singularization of `get_user_subscriptions`,
-        to make sure the parameters work.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :type states: [const.SubscriptionStates] or None
-        :type mailinglist_id: int or None
-        :rtype: const.SubscriptionStates or None
-        """
-        # Validation is done inside.
-        return unwrap(self.get_user_subscriptions(
-            rs, persona_id, states=states, mailinglist_ids=(mailinglist_id,)))
+    get_subscription = singularize(
+        get_user_subscriptions, "mailinglist_ids", "mailinglist_id")
 
     @access("ml", "droid")
     def get_subscription_addresses(self, rs, mailinglist_id, persona_ids=None,

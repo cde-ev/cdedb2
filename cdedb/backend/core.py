@@ -2615,8 +2615,7 @@ class CoreBackend(AbstractBackend):
                 ret = self.sql_insert(rs, "core.cron_store", update)
             return ret
 
-    @access("core_admin")
-    def submit_general_query(self, rs, query):
+    def _submit_general_query(self, rs, query):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
 
@@ -2636,6 +2635,7 @@ class CoreBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
+    submit_general_query = access("core_admin")(submit_general_query)
 
     @access("persona")
     def submit_select_persona_query(self, rs, query):
@@ -2651,7 +2651,7 @@ class CoreBackend(AbstractBackend):
 
         """
         query = affirm("query", query)
-        return self.submit_general_query(rs, query)
+        return self._submit_general_query(rs, query)
 
     @access("anonymous")
     def submit_resolve_api_query(self, rs, query):
