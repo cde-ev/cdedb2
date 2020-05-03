@@ -12,7 +12,7 @@ import decimal
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
     affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
-    cast_fields, internal)
+    cast_fields, internal, RequestState)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
@@ -1803,8 +1803,7 @@ class EventBackend(AbstractBackend):
                     {"type": "course", "block": blockers.keys()})
         return ret
 
-    @access("event")
-    def list_registrations(self, rs, event_id, persona_id=None):
+    def _list_registrations_unchecked(rs: RequestState, event_id, persona_id=None):
         """List all registrations of an event.
 
         If an ordinary event_user is requesting this, just participants of this
@@ -1841,6 +1840,8 @@ class EventBackend(AbstractBackend):
         if is_limited and rs.user.persona_id not in ret.values():
             raise PrivilegeError(n_("Not privileged."))
         return ret
+    list_registrations_for_ml_mods = access("ml")(_list_registrations_unchecked)
+    list_registrations = access("event")(_list_registrations_unchecked)
 
     @internal
     @access("persona")

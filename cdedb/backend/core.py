@@ -437,7 +437,7 @@ class CoreBackend(AbstractBackend):
 
             # resolve change if it doesn't require review
             if not requires_review or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-                ret = self.changelog_resolve_change_unattended(
+                ret = self._changelog_resolve_change_unsafe(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
                 ret = -1
@@ -462,7 +462,7 @@ class CoreBackend(AbstractBackend):
                 self.sql_insert(rs, "core.changelog", insert)
         return ret
 
-    def changelog_resolve_change_unattended(self, rs, persona_id, generation, ack,
+    def _changelog_resolve_change_unsafe(self, rs, persona_id, generation, ack,
                                  reviewed=True):
         """Review a currently pending change from the changelog.
 
@@ -519,6 +519,7 @@ class CoreBackend(AbstractBackend):
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
+    changelog_resolve_change = access("core_admin", "cde_admin")(_changelog_resolve_change_unsafe)
 
     @access("persona")
     def changelog_get_generations(self, rs, ids):
@@ -1866,7 +1867,7 @@ class CoreBackend(AbstractBackend):
         return data['num'] == len(ids)
 
     @internal
-    @access("persona")
+    @access("anonymous")
     def get_roles_multi(self, rs, ids):
         """Resolve ids into roles.
 
@@ -1966,7 +1967,7 @@ class CoreBackend(AbstractBackend):
         """
         with Atomizer(rs):
             if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
-                roles = unwrap(self.get_roles_multi(rs, (persona_id,)))
+                roles = self.get_roles_single(rs, persona_id)
                 if any("admin" in role for role in roles):
                     raise PrivilegeError(n_("Preventing reset of admin."))
             password_hash = unwrap(self.sql_select_one(
