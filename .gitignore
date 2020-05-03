@@ -20,6 +20,7 @@ cdedb/localconfig.py
 .ldap_rootpw_local
 
 # cache data
+.mypy_cache/
 .coverage
 .idea
 

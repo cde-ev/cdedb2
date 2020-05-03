@@ -10,7 +10,6 @@ import decimal
 import enum
 import functools
 import hmac
-import icu
 import inspect
 import itertools
 import json
@@ -21,19 +20,19 @@ import re
 import shutil
 import string
 import sys
-from typing import (
-   Any, TypeVar, Mapping, Collection, Dict, List, overload, Union, Sequence,
-)
+from typing import (TYPE_CHECKING, Any, Collection, Dict, List, Mapping,
+                    Sequence, TypeVar, Union, cast, overload)
 
 import psycopg2.extras
 import pytz
 import werkzeug.datastructures
 
+import icu
 # The following imports are only for re-export. They are not used
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
-from cdedb.ml_subscription_aux import (
-    SubscriptionError, SubscriptionInfo, SubscriptionActions)
+from cdedb.ml_subscription_aux import (SubscriptionActions, SubscriptionError,
+                                       SubscriptionInfo)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -269,55 +268,48 @@ class User:
         enabled_views = enabled_views_cookie.split(',')
         self.admin_views = self.available_admin_views & set(enabled_views)
 
+if TYPE_CHECKING:
+    from cdedb.backend.common import AbstractBackend
+else:
+    AbstractBackend = None
 
-class ProxyShim:
-    """Wrap a backend for some syntactic sugar.
+B = TypeVar("B", bound=AbstractBackend)
+
+def ProxyShim(backend: B, internal=False) -> B:
+    """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
     lifting to accomodate this.
 
-    This takes care of the annotations given by the decorators on the
-    backend functions.
+    We need to use a function so we can cast the return value.
+    We also need to use an inner class so we can provide __getattr__.
     """
 
-    def __init__(self, backend, internal=False):
-        """
-        :type backend: :py:class:`AbstractBackend`
-        """
-        self._backend = backend
-        self._funs = {}
-        self._internal = internal
-        funs = inspect.getmembers(backend, predicate=inspect.isroutine)
-        for name, fun in funs:
-            # TODO make proper boolean implication
-            if hasattr(fun, "access") and (hasattr(fun, "internal") <= internal):
-                self._funs[name] = self._wrapit(fun)
+    class Proxy():
+        def __getattr__(self, name):
+            attr = getattr(backend, name)
+            if (
+                not attr.access
+                or hasattr(attr, "internal") and attr.internal and not internal
+                or not callable(attr)
+            ):
+                raise PrivilegeError(n_("Attribute %s not public") % name)
 
-    def _wrapit(self, function):
-        """
-        :type function: callable
-        """
+            @functools.wraps(attr)
+            def wrapper(rs, *args, **kwargs):
+                try:
+                    if not internal:
+                        # Expose database connection for the backends
+                        rs.conn = rs._conn
+                    return attr(rs, *args, **kwargs)
+                finally:
+                    if not internal:
+                        rs.conn = None
 
-        @functools.wraps(function)
-        def wrapper(rs, *args, **kwargs):
-            try:
-                if not self._internal:
-                    # Expose database connection for the backends
-                    rs.conn = rs._conn
-                return function(rs, *args, **kwargs)
-            finally:
-                if not self._internal:
-                    rs.conn = None
+            return wrapper
 
-        return wrapper
+    return cast(B, Proxy())
 
-    def __getattr__(self, name):
-        if name in {"_funs", "_backend"}:
-            raise AttributeError()
-        try:
-            return self._funs[name]
-        except KeyError as e:
-            raise AttributeError from e
 
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,

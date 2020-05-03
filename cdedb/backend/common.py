@@ -176,8 +176,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             # Import here since we otherwise have a cyclic import.
             # I don't see how we can get out of this ...
             from cdedb.backend.core import CoreBackend
-            self.core: CoreBackend = cast(
-                CoreBackend, ProxyShim(CoreBackend(configpath), internal=True))
+            self.core = ProxyShim(CoreBackend(configpath), internal=True)
 
     def affirm_realm(self, rs, ids, realms=None):
         """Check that all personas corresponding to the ids are in the
