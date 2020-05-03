@@ -1,15 +1,16 @@
-Hallo {{ user['given_names'] }},
+Hallo {{ user['display_name'] }},
 
-Deine Anmeldung zur Veranstaltung {{ ambience['event']['title'] }} ist bei uns
-angekommen. Beachte bitte, dass Deine Anmeldung erst mit Überweisung des
+Du hast dich erfolgreich zur Veranstaltung
+    "{{ ambience['event']['title'] }}"
+angemeldet. Beachte bitte, dass Deine Anmeldung erst mit Überweisung des
 Teilnehmerbeitrags gültig wird.
 
 {% if ambience['event']['iban'] %}
 {% if ambience['event']['mail_text'] %}
-Überweise dazu bitte {{ fee }}€ plus möglicherweise unten erwähnte
+Überweise dazu bitte {{ fee|money }} plus möglicherweise unten erwähnte
 veranstaltungsspezifische Beträge auf folgendes Konto.
 {% else %}
-Überweise dazu bitte {{ fee }}€ auf folgendes Konto.
+Überweise dazu bitte {{ fee|money }} auf folgendes Konto.
 {% endif %}
 Achte bitte bei internationalen Überweisungen darauf, dass der
 Empfänger keine Gebühren zahlen muss.
@@ -32,7 +33,7 @@ Wenn Du dies tust, überweise Mitgliedsbeitrag und Teilnahmebeitrag bitte separa
 {% endif %}
 {% endif %}
 {% else %}
-Die Orgas werden Dir separat mitteilen, wie Du den Beitrag von {{ fee|money }}
+Wir werden Dir separat mitteilen, wie Du den Beitrag von {{ fee|money }}
 bezahlen kannst.
 {% endif%}
 
@@ -48,7 +49,8 @@ Informationen unter [1].
 
 {% endif %}
 
-Liebe Grüße von den Orgas
+Viele Grüße
+das Orga Team
 
 {% if age.is_minor() %}
 [1] {{ cdedblink('event/get_minor_form') }}
