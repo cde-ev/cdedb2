@@ -24,7 +24,7 @@ from cdedb.common import (
     PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter, genesis_realm_access_bits, ValidationWarning)
+    decode_parameter, genesis_realm_access_bits, ValidationWarning, xsorted)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -818,13 +818,16 @@ class CoreBackend(AbstractBackend):
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
+            ret = self.set_persona(
+                rs, data, may_wait=False,
+                change_note="Bereiche geändert.",
+                allow_specials=("realms", "finance", "membership"))
+            if data.get('trial_member'):
+                ret *= self.change_membership(rs, data['id'], is_member=True)
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
                 additional_info="Bereiche geändert.")
-            return self.set_persona(
-                rs, data, may_wait=False,
-                change_note="Bereiche geändert.",
-                allow_specials=("realms", "finance"))
+            return ret
 
     @access("persona")
     def change_foto(self, rs, persona_id, foto):
@@ -2397,7 +2400,8 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin", "ml_admin")
+    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
+            "ml_admin")
     def genesis_get_cases(self, rs, ids):
         """Retrieve datasets for persona creation cases.
 
@@ -2530,7 +2534,7 @@ class CoreBackend(AbstractBackend):
         CUTOFF = 21
         MAX_ENTRIES = 7
         persona_ids = tuple(k for k, v in scores.items() if v > CUTOFF)
-        persona_ids = sorted(persona_ids, key=lambda k: -scores.get(k))
+        persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k))
         persona_ids = persona_ids[:MAX_ENTRIES]
         return self.get_total_personas(rs, persona_ids)
 

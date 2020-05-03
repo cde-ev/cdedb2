@@ -121,3 +121,22 @@ nutzerdefinierten Felder müssen vorher definiert sein.
 
 .. literalinclude:: ../../test/ancillary_files/partial_event_import.json
     :language: json
+
+Changelog
+---------
+
+Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
+Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
+Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
+
+* Version 10 (abwärtskompatibel): Es wird ein Flag ``is_cancelled`` je Event
+  eingeführt, mit dem die Absage von Veranstaltungen gekennzeichnet werden
+  kann.
+* Version 9 (abwärtskompatibel): Es wird eine Dezimalzahl
+  ``additional_external_fee`` je Event eingeführt, die den Zusatzbeitrag für
+  Externe ergänzt.
+* Version 8: Es wird eine Dezimalzahl ``amount_paid`` eingeführt, die
+  dokumentiert, wie groß der bereits bezahlte Beitrag ist.
+* Version 7: Die Semantik der Kursgrößen wird dahingehend angepasst, dass die
+  Kursleiter nicht mehr in die Kursgrößen mit einbezogen werden.
+* Version 6: …

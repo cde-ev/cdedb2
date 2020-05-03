@@ -7974,7 +7974,7 @@ FREQUENCY_LISTS = {
         "küa,kuea,kurs,bub,club,ehemaligen,mitglieder,suche,ev,"
         "e.v.,cde-ev.d,dsa,jgw,bildung,begabung,kirchheim,"
         "windischleuba,oberwesel,kaub,eisenberg,seminar,segeln,"
-        "ski,orga,orgas,team,expuls,obä,obaee,naschi,naschihü,"
+        "ski,orga,orgas,team,expuls,obä,obae,naschi,naschihü,"
         "naschihue,nachtkueche,nachtküche,kontakt,minderjährig,"
         "minderwertig,maria,äquivalen,aequivalen,spiel,verloren,"
         "spaß,spass,schokolade,pelikan,halle,bunter,abend,haus,"
@@ -7985,6 +7985,6 @@ FREQUENCY_LISTS = {
         "vollnuss,schlaf,rotation,sultan,sultanine,duschorgie,"
         "telegram,gruppenmama,freund,freude,verrückt,verrueckt,"
         "hochbegabt,mensch,müde,muede,übermüdet,uebermuedet,"
-        "interesse,interessiert"
+        "interesse,interessiert,cyberaka,corona,nachtspeicher"
     ).split(","),
 }

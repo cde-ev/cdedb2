@@ -1497,7 +1497,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': r"\sPostleitzahl, Stadt$"})
         self._sort_appearance([akira, anton, emilia])
         self.traverse({'description': r"\sKurs$"})
-        self._sort_appearance([akira, emilia, anton])
+        self._sort_appearance([anton, akira, emilia])
 
     @as_users("emilia", "garcia")
     def test_participant_list_profile_link(self, user):
@@ -1529,6 +1529,26 @@ etc;anything else""", f['entries_2'].value)
             # this is an expanded profile, since garcia is not searchable but
             # orga of this event
             self.assertPresence("akira@example.cde", div='contact-email')
+
+    @as_users("garcia")
+    def test_cancellation(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertNonPresence("abgesagt", div="notifications")
+
+        self.traverse({'href': '/event/event/1/change'})
+        self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['is_cancelled'].checked = True
+        self.submit(f)
+
+        self.traverse({'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("Diese Veranstaltung wurde abgesagt.",
+                            div="notifications")
+        self.traverse({'href': '/event/event/1/course/list'})
+        self.assertPresence("Diese Veranstaltung wurde abgesagt.",
+                            div="notifications")
 
     @as_users("garcia")
     def test_batch_fee(self, user):
@@ -2870,6 +2890,7 @@ etc;anything else""", f['entries_2'].value)
                       'is_archived': False,
                       'is_participant_list_visible': False,
                       'courses_in_participant_list': False,
+                      'is_cancelled': False,
                       'is_course_list_visible': True,
                       'is_course_state_visible': False,
                       'is_visible': True,

@@ -21,7 +21,7 @@ from cdedb.common import (
     PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter)
+    mixed_existence_sorter, xsorted)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -198,7 +198,7 @@ class EventBackend(AbstractBackend):
         """
         subquery = glue(
             "SELECT e.id, e.registration_start, e.title, e.is_visible,",
-            "e.is_archived, MAX(p.part_end) AS event_end",
+            "e.is_archived, e.is_cancelled, MAX(p.part_end) AS event_end",
             "FROM event.events AS e JOIN event.event_parts AS p",
             "ON p.event_id = e.id",
             "GROUP BY e.id")
@@ -210,9 +210,11 @@ class EventBackend(AbstractBackend):
             params.append(visible)
         if current is not None:
             if current:
-                constraints.append("e.event_end > now()")
+                constraints.append(
+                    "e.event_end > now() AND e.is_cancelled = False")
             else:
-                constraints.append("e.event_end <= now()")
+                constraints.append(
+                    "e.event_end <= now() OR e.is_cancelled = True")
         if archived is not None:
             constraints.append("is_archived = %s")
             params.append(archived)
@@ -880,7 +882,7 @@ class EventBackend(AbstractBackend):
         deleted = {x for x in data
                    if x > 0 and data[x] is None}
         # new
-        for x in reversed(sorted(new)):
+        for x in reversed(xsorted(new)):
             new_track = {
                 "part_id": part_id,
                 **data[x]
@@ -2049,8 +2051,8 @@ class EventBackend(AbstractBackend):
                     tmp = {e['course_id']: e['rank'] for e in choices
                            if (e['registration_id'] == anid
                                and e['track_id'] == track_id)}
-                    tracks[track_id]['choices'] = sorted(tmp.keys(),
-                                                         key=tmp.get)
+                    tracks[track_id]['choices'] = xsorted(tmp.keys(),
+                                                          key=tmp.get)
                 ret[anid]['tracks'] = tracks
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
@@ -2885,7 +2887,7 @@ class EventBackend(AbstractBackend):
             ("field_id", "pos", "title", "info", "input_size", "readonly",
              "default_value"),
             (event_id,), entity_key="event_id")
-        return sorted(data, key=lambda x: x['pos'])
+        return xsorted(data, key=lambda x: x['pos'])
 
     @access("event")
     def set_questionnaire(self, rs, event_id, data):
@@ -3268,7 +3270,7 @@ class EventBackend(AbstractBackend):
                     tmp = {e['course_id']: e['rank'] for e in choices
                            if (e['registration_id'] == track['registration_id']
                                and e['track_id'] == track_id)}
-                    track['choices'] = sorted(tmp.keys(), key=tmp.get)
+                    track['choices'] = xsorted(tmp.keys(), key=tmp.get)
                     del track['registration_id']
                     del track['track_id']
                 registration['tracks'] = tracks

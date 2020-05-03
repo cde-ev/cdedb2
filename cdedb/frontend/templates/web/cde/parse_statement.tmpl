@@ -175,6 +175,7 @@
                 {{ print_transaction(t_id) }}
             {% endfor %}
             <div id="submit-container">
+            {{ util.form_input_checkbox(name="ignore_warnings", label=gettext("Ignore Warnings"), horizontal=False) }}
             {{ util.form_input_submit(name="validate", value=gettext("Validate"), horizontal=False) }}
             {% if not params["has_error"] %}
                 <button type="submit" name="gnucash" value="gnucash" class="btn btn-primary">

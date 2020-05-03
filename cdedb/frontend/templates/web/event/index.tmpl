@@ -116,6 +116,9 @@
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
                     <br />
                     {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
+                    {%- if event['is_cancelled'] %}
+                        {%- trans %}, is cancelled.{% endtrans %}
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>

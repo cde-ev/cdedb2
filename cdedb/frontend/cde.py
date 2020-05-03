@@ -29,7 +29,7 @@ from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
     PERSONA_DEFAULTS, diacritic_patterns, shutil_copy, asciificator,
-    EntitySorter, TransactionType)
+    EntitySorter, TransactionType, xsorted)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
@@ -211,7 +211,7 @@ class CdEFrontend(AbstractUserFrontend):
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
-            result = sorted(result, key=EntitySorter.persona)
+            result = xsorted(result, key=EntitySorter.persona)
             count = len(result)
             if count == 1:
                 return self.redirect_show_user(rs, result[0]['id'],
@@ -240,7 +240,7 @@ class CdEFrontend(AbstractUserFrontend):
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
-                sorted(events.items(), key=operator.itemgetter(0))),
+                xsorted(events.items(), key=operator.itemgetter(0))),
             'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
@@ -760,7 +760,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = data or {}
         merge_dicts(rs.values, data)
         event_list = self.eventproxy.list_db_events(rs)
-        event_entries = sorted(event_list.items(), key=lambda x: x[1])
+        event_entries = xsorted(event_list.items(), key=lambda x: x[1])
         params = {
             'params': params or None,
             'data': data,
@@ -900,9 +900,11 @@ class CdEFrontend(AbstractUserFrontend):
                  ("event", "id_or_None"),
                  ("membership", "str_or_None"),
                  ("excel", "str_or_None"),
-                 ("gnucash", "str_or_None"))
+                 ("gnucash", "str_or_None"),
+                 ("ignore_warnings", "bool"))
     def parse_download(self, rs, count, start, end, timestamp, validate=None,
-                       event=None, membership=None, excel=None, gnucash=None):
+                       event=None, membership=None, excel=None, gnucash=None,
+                       ignore_warnings=False):
         """
         Provide data as CSV-Download with the given filename.
 
@@ -941,7 +943,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, transactions, start, end, timestamp)
 
         if validate is not None or params["has_error"] \
-                or params["has_warning"]:
+                or (params["has_warning"] and not ignore_warnings):
             return self.parse_statement_form(rs, data, params)
         elif membership is not None:
             filename = "Mitgliedsbeiträge"
@@ -1265,7 +1267,7 @@ class CdEFrontend(AbstractUserFrontend):
         open_permits = self.determine_open_permits(rs, lastschrift_ids)
         for lastschrift in lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
-        last_order = sorted(
+        last_order = xsorted(
             lastschrifts.keys(),
             key=lambda anid: EntitySorter.persona(
                 personas[lastschrifts[anid]['persona_id']]))
@@ -2283,7 +2285,7 @@ class CdEFrontend(AbstractUserFrontend):
                 participants[persona_id] = entry
 
             personas = self.coreproxy.get_personas(rs, participants.keys())
-            participants = OrderedDict(sorted(
+            participants = OrderedDict(xsorted(
                 participants.items(),
                 key=lambda x: EntitySorter.persona(personas[x[0]])))
         # Delete unsearchable participants if we are not privileged
@@ -2384,7 +2386,7 @@ class CdEFrontend(AbstractUserFrontend):
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
 
         # Generate (reverse) chronologically sorted list of past event ids
-        stats_sorter = sorted(stats, key=lambda x: events[x])
+        stats_sorter = xsorted(stats, key=lambda x: events[x])
         stats_sorter.sort(key=lambda x: stats[x]['tempus'], reverse=True)
         # Bunch past events by years
         # Using idea from http://stackoverflow.com/a/8983196
