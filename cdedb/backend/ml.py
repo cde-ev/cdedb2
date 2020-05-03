@@ -71,7 +71,7 @@ class MlBackend(AbstractBackend):
             atype = ml_type.get_type(mailinglist['ml_type'])
         return atype.is_relevant_admin(rs)
 
-    @access("ml", "ml_script")
+    @access("ml")
     def is_moderator(self, rs, ml_id):
         """Check for moderator privileges as specified in the ml.moderators
         table.
@@ -87,7 +87,7 @@ class MlBackend(AbstractBackend):
         return ml_id is not None and (ml_id in rs.user.moderator
                                       or "droid_rklist" in rs.user.roles)
 
-    @access("ml", "ml_script")
+    @access("ml")
     def may_manage(self, rs, mailinglist_id):
         """Check whether a user is allowed to manage a given mailinglist.
 
@@ -340,7 +340,7 @@ class MlBackend(AbstractBackend):
             return {k: v for k, v in ret.items()
                     if self.may_view(rs, mailinglists[k])}
 
-    @access("ml", "ml_script")
+    @access("ml", "droid")
     def get_mailinglists(self, rs, ids):
         """Retrieve data for some mailinglists.
 
