@@ -47,14 +47,14 @@ class CoreBackend(AbstractBackend):
         super().__init__(configpath, is_core=True)
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
-            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, self.conf.DB_PORT)
+            self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, self.conf["DB_PORT"])
         self.generate_reset_cookie = (
             lambda rs, persona_id, timeout: self._generate_reset_cookie(
-                rs, persona_id, secrets.RESET_SALT, timeout=timeout))
+                rs, persona_id, secrets["RESET_SALT"], timeout=timeout))
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
-                rs, persona_id, secrets.RESET_SALT, cookie))
+                rs, persona_id, secrets["RESET_SALT"], cookie))
 
     @classmethod
     def is_admin(cls, rs):
@@ -205,7 +205,7 @@ class CoreBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin")
-    def retrieve_log(self, rs, codes=None, start=None, stop=None,
+    def retrieve_log(self, rs, codes=None, offset=None, length=None,
                      persona_id=None, submitted_by=None,
                      additional_info=None, time_start=None, time_stop=None):
         """Get recorded activity.
@@ -215,8 +215,8 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
-        :type start: int or None
-        :type stop: int or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: int or None
         :type submitted_by: int or None
         :type additional_info: str or None
@@ -225,13 +225,13 @@ class CoreBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
-            rs, "enum_corelogcodes", "persona", "core.log", codes, start=start,
-            stop=stop, persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info, time_start=time_start,
-            time_stop=time_stop)
+            rs, "enum_corelogcodes", "persona", "core.log", codes=codes,
+            offset=offset, length=length, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop)
 
     @access("core_admin")
-    def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None,
+    def retrieve_changelog_meta(self, rs, stati=None, offset=None, length=None,
                                 persona_id=None, submitted_by=None,
                                 additional_info=None, time_start=None,
                                 time_stop=None, reviewed_by=None):
@@ -242,8 +242,8 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type stati: [int] or None
-        :type start: int or None
-        :type stop: int or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: id or None
         :type submitted_by: id or None
         :type additional_info: str or None
@@ -253,8 +253,8 @@ class CoreBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         stati = affirm_set("enum_memberchangestati", stati, allow_None=True)
-        start = affirm("int_or_None", start)
-        stop = affirm("int_or_None", stop)
+        offset = affirm("non_negative_int_or_None", offset)
+        length = affirm("positive_int_or_None", length)
         persona_id = affirm("id_or_None", persona_id)
         submitted_by = affirm("id_or_None", submitted_by)
         additional_info = affirm("regex_or_None", additional_info)
@@ -262,57 +262,61 @@ class CoreBackend(AbstractBackend):
         time_start = affirm("datetime_or_None", time_start)
         time_stop = affirm("datetime_or_None", time_stop)
 
-        start = start or 0
-        if stop:
-            stop = max(start, stop)
-        query = glue(
-            "SELECT submitted_by, reviewed_by, ctime, generation, change_note,",
-            "change_status, persona_id FROM core.changelog {} ORDER BY id DESC")
-        if stop:
-            query = glue(query, "LIMIT {}".format(stop - start))
-        if start:
-            query = glue(query, "OFFSET {}".format(start))
-        connector = "WHERE"
-        condition = ""
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
+
+        conditions = []
         params = []
         if stati:
-            condition = glue(
-                condition, "{} change_status = ANY(%s)".format(connector))
-            connector = "AND"
+            conditions.append("change_status = ANY(%s)")
             params.append(stati)
         if submitted_by:
-            condition = glue(
-                condition, "{} submitted_by = %s".format(connector))
-            connector = "AND"
+            conditions.append("submitted_by = %s")
             params.append(submitted_by)
         if reviewed_by:
-            condition = glue(condition, "{} reviewed_by = %s".format(connector))
-            connector = "AND"
+            conditions.append("reviewed_by = %s")
             params.append(reviewed_by)
         if persona_id:
-            condition = glue(condition, "{} persona_id = %s".format(connector))
-            connector = "AND"
+            conditions.append("persona_id = %s")
             params.append(persona_id)
         if additional_info:
-            condition = glue(condition,
-                             "{} change_note ~* %s".format(connector))
-            connector = "AND"
+            conditions.append("change_note ~* %s")
             params.append(diacritic_patterns(additional_info))
         if time_start and time_stop:
-            condition = glue(condition,
-                             "{} %s <= ctime AND ctime <= %s".format(connector))
-            connector = "AND"
+            conditions.append("%s <= ctime AND ctime <= %s")
             params.extend((time_start, time_stop))
         elif time_start:
-            condition = glue(condition, "{} %s <= ctime".format(connector))
-            connector = "AND"
+            conditions.append("%s <= ctime")
             params.append(time_start)
         elif time_stop:
-            condition = glue(condition, "{} ctime <= %s".format(connector))
-            connector = "AND"
+            cconditions.append("ctime <= %s")
             params.append(time_stop)
-        query = query.format(condition)
-        return self.query_all(rs, query, params)
+
+        if conditions:
+            condition = "WHERE {}".format(" AND ".join(conditions))
+        else:
+            condition = ""
+
+        # First query determines the absolute number of logs existing matching
+        # the given criteria
+        query = "SELECT COUNT(*) AS count FROM core.changelog {condition}"
+        query = query.format(condition=condition)
+        total = unwrap(self.query_one(rs, query, params))
+        if offset and offset > total:
+            # Why you do this
+            return total, tuple()
+        elif offset is None and total > length:
+            offset = length * ((total - 1) // length)
+
+        # Now, query the actual information
+        query = glue(
+            "SELECT submitted_by, reviewed_by, ctime, generation, change_note,",
+            "change_status, persona_id FROM core.changelog {condition}"
+            "ORDER BY id ASC LIMIT {limit}")
+        if offset is not None:
+            query = glue(query, "OFFSET {}".format(offset))
+
+        query = query.format(condition=condition, limit=length)
+        return total, self.query_all(rs, query, params)
 
     def changelog_submit_change(self, rs, data, generation, may_wait,
                                 change_note):
@@ -432,7 +436,7 @@ class CoreBackend(AbstractBackend):
             self.sql_insert(rs, "core.changelog", insert)
 
             # resolve change if it doesn't require review
-            if not requires_review or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            if not requires_review or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 ret = self.changelog_resolve_change_unattended(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
@@ -1631,7 +1635,7 @@ class CoreBackend(AbstractBackend):
             else:
                 num = unwrap(num)
             new = tuple(i == rs.user.persona_id for i in ids).count(False)
-            if (num + new > self.conf.QUOTA_VIEWS_PER_DAY
+            if (num + new > self.conf["QUOTA_VIEWS_PER_DAY"]
                     and not {"cde_admin", "core_admin"} & rs.user.roles):
                 raise QuotaException(n_("Too many queries."))
             if new:
@@ -1785,7 +1789,7 @@ class CoreBackend(AbstractBackend):
             "FROM core.personas",
             "WHERE username = lower(%s) AND is_active = True")
         data = self.query_one(rs, query, (username,))
-        verified = bool(data) and self.conf.CDEDB_OFFLINE_DEPLOYMENT
+        verified = bool(data) and self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
         if not verified and data:
             verified = self.verify_password(password, data["password_hash"])
         if not verified:
@@ -1794,7 +1798,7 @@ class CoreBackend(AbstractBackend):
                 ip, username))
             return None
         else:
-            if self.conf.LOCKDOWN and not (data['is_meta_admin']
+            if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
                                            or data['is_core_admin']):
                 # Short circuit in case of lockdown
                 return None
@@ -2164,7 +2168,7 @@ class CoreBackend(AbstractBackend):
         :returns: The ``bool`` indicates success and the ``str`` is
           either the reset cookie or an error message.
         """
-        timeout = timeout or self.conf.PARAMETER_TIMEOUT
+        timeout = timeout or self.conf["PARAMETER_TIMEOUT"]
         email = affirm("email", email)
         data = self.sql_select_one(rs, "core.personas", ("id", "is_active"),
                                    email, entity_key="username")
@@ -2196,7 +2200,7 @@ class CoreBackend(AbstractBackend):
                                    entity_key="username")
         if not data:
             return False, n_("Nonexistant user.")
-        if self.conf.LOCKDOWN:
+        if self.conf["LOCKDOWN"]:
             return False, n_("Lockdown active.")
         persona_id = unwrap(data)
         success, msg = self.modify_password(
@@ -2224,7 +2228,7 @@ class CoreBackend(AbstractBackend):
 
         if self.verify_existence(rs, data['username']):
             return None
-        if self.conf.LOCKDOWN and not self.is_admin(rs):
+        if self.conf["LOCKDOWN"] and not self.is_admin(rs):
             return None
         data['case_status'] = const.GenesisStati.unconfirmed
         ret = self.sql_insert(rs, "core.genesis_cases", data)
@@ -2256,7 +2260,7 @@ class CoreBackend(AbstractBackend):
 
         case = self.genesis_get_case(rs, case_id)
         if (case["case_status"] == const.GenesisStati.unconfirmed and
-                now() < case["ctime"] + self.conf.PARAMETER_TIMEOUT):
+                now() < case["ctime"] + self.conf["PARAMETER_TIMEOUT"]):
             blockers["unconfirmed"] = case_id
         if case["case_status"] in {const.GenesisStati.to_review,
                                    const.GenesisStati.approved}:

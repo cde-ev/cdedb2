@@ -165,8 +165,8 @@ class AssemblyBackend(AbstractBackend):
                         additional_info))
 
     @access("assembly_admin")
-    def retrieve_log(self, rs, codes=None, assembly_id=None, start=None,
-                     stop=None, persona_id=None, submitted_by=None,
+    def retrieve_log(self, rs, codes=None, assembly_id=None, offset=None,
+                     length=None, persona_id=None, submitted_by=None,
                      additional_info=None, time_start=None, time_stop=None):
         """Get recorded activity.
 
@@ -176,8 +176,8 @@ class AssemblyBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type assembly_id: int or None
-        :type start: int or None
-        :type stop: int or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: int or None
         :type submitted_by: int or None
         :type additional_info: str or None
@@ -186,9 +186,10 @@ class AssemblyBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         assembly_id = affirm("id_or_None", assembly_id)
+        assembly_ids = [assembly_id] if assembly_id else None
         return self.generic_retrieve_log(
             rs, "enum_assemblylogcodes", "assembly", "assembly.log", codes,
-            entity_id=assembly_id, start=start, stop=stop,
+            entity_ids=assembly_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)
@@ -293,7 +294,7 @@ class AssemblyBackend(AbstractBackend):
         return self.check_attendance(
             rs, assembly_id=assembly_id, persona_id=persona_id)
 
-    @access("assembly")
+    @access("assembly", "ml_admin")
     def list_attendees(self, rs, assembly_id):
         """Everybody who has subscribed for a specific assembly.
 
@@ -307,7 +308,8 @@ class AssemblyBackend(AbstractBackend):
         :rtype: [int]
         """
         assembly_id = affirm("id", assembly_id)
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if (not self.may_assemble(rs, assembly_id=assembly_id)
+                and not "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         attendees = self.sql_select(
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
@@ -1166,7 +1168,7 @@ class AssemblyBackend(AbstractBackend):
                 'VOTERS': voter_list,
                 'VOTES': vote_list,
             })
-            path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
+            path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot_id)
             with open(path, 'w') as f:
                 f.write(result_file)
         return True
@@ -1350,7 +1352,7 @@ class AssemblyBackend(AbstractBackend):
         self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                           assembly_id, additional_info=data['title'])
 
-        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+        path = (self.conf["STORAGE_DIR"] / 'assembly_attachment'
                 / str(ret))
         with open(str(path), 'wb') as f:
             f.write(attachment)
@@ -1380,7 +1382,7 @@ class AssemblyBackend(AbstractBackend):
         self.assembly_log(rs, const.AssemblyLogCodes.attachment_removed,
                           assembly_id, additional_info=current['title'])
 
-        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+        path = (self.conf["STORAGE_DIR"] / 'assembly_attachment'
                 / str(attachment_id))
         if path.exists():
             path.unlink()

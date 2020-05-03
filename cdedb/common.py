@@ -21,6 +21,9 @@ import re
 import shutil
 import string
 import sys
+from typing import (
+   Any, TypeVar, Mapping, Collection, Dict, List, overload, Union, Sequence,
+)
 
 import psycopg2.extras
 import pytz
@@ -37,6 +40,25 @@ _LOGGER = logging.getLogger(__name__)
 # Global unified collator to be used when sorting.
 COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
 
+# Pseudo objects like assembly, event, course, event part, etc.
+CdEDBObject = Dict[str, Any]
+
+# Map of pseudo objects, indexed by their id, as returned by
+# `get_events`, event["parts"], etc.
+
+CdEDBObjectMap = Mapping[int, CdEDBObject]
+
+# An integer with special semantics. Positive return values indicate success,
+# a return of zero signals an error, a negative return value indicates some
+# special case like a change pending review.
+DefaultReturnCode = int
+
+# Return value for `delete_foo_blockers` part of the deletion interface.
+# The key specifies the kind of blocker, the value is a list of blocking ids.
+# For some blockers the value might have a different type, mostly when that
+# blocker blocks deletion without the option to cascadingly delete.
+DeletionBlockers = Dict[str, List[int]]
+
 
 class RequestState:
     """Container for request info. Besides this and db accesses the python
@@ -45,12 +67,13 @@ class RequestState:
     enough to not be non-nice).
     """
 
-    def __init__(self, sessionkey, user, request, response, notifications,
-                 mapadapter, requestargs, errors, values, lang, gettext,
-                 ngettext, coders, begin, default_gettext=None,
+    def __init__(self, sessionkey, apitoken, user, request, response,
+                 notifications, mapadapter, requestargs, errors, values, lang,
+                 gettext, ngettext, coders, begin, default_gettext=None,
                  default_ngettext=None):
         """
         :type sessionkey: str or None
+        :type apitoken: str or None
         :type user: :py:class:`User`
         :type request: :py:class:`werkzeug.wrappers.Request`
         :type response: :py:class:`werkzeug.wrappers.Response` or None
@@ -97,6 +120,7 @@ class RequestState:
         """
         self.ambience = {}
         self.sessionkey = sessionkey
+        self.apitoken = apitoken
         self.user = user
         self.request = request
         self.response = response
@@ -425,10 +449,15 @@ class ValidationWarning(Exception):
 def xsorted(iterable, *, key=lambda x: x, reverse=False):
     """Wrapper for sorted() to achieve a natural sort.
 
+    This replaces all strings in possibly nested objects with a sortkey
+    matching an collation from the Unicode Collation Algorithm, provided
+    by the icu library.
+
     In particular, this makes sure strings containing diacritics are
-    sorted, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
-    (ints and decimals) are sorted correctly, even in midst of strings
-    as well as negative ones. This is achieved by using the icu library.
+    sorted correctly, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
+    (ints and decimals) are sorted correctly, even in midst of strings.
+    However, negative numbers in strings are sorted by absolute value, before
+    positive numbers, as minus and hyphens can not be distinguished.
 
     For users, the interface of this function should be identical
     to sorted().
@@ -439,7 +468,17 @@ def xsorted(iterable, *, key=lambda x: x, reverse=False):
     :type reverse: boolean
     :rtype: list
     """
-    return sorted(iterable, key=lambda x: COLLATOR.getSortKey(str(key(x))),
+
+    def collate(sortkey):
+        if isinstance(sortkey, str):
+            return COLLATOR.getSortKey(sortkey)
+        if isinstance(sortkey, collections.abc.Iterable):
+            # Make sure strings in nested Iterables are sorted
+            # correctly as well.
+            return tuple(map(collate, sortkey))
+        return sortkey
+
+    return sorted(iterable, key=lambda x: collate(key(x)),
                   reverse=reverse)
 
 
@@ -870,7 +909,20 @@ def schulze_evaluate(votes, candidates):
 ASSEMBLY_BAR_MONIKER = "_bar_"
 
 
-def unwrap(single_element_list, keys=False):
+T = TypeVar("T")
+
+
+@overload
+def unwrap(single_element_list: Sequence[T]) -> T:
+    pass
+
+
+@overload
+def unwrap(single_element_list: Mapping[Any, T]) -> T:
+    pass
+
+
+def unwrap(single_element_list):
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -880,20 +932,16 @@ def unwrap(single_element_list, keys=False):
     In case of an error (e.g. wrong number of elements) this raises an
     error.
 
-    :type single_element_list: [obj]
-    :type keys: bool
-    :param keys: If a mapping is input, this toggles between returning
-      the key or value.
-    :rtype: object or None
+    Beware, that this behaves differently for mappings than other iterations,
+    in that it uses the values instead of the keys. To unwrap the keys pass
+    `data.keys()` instead.
     """
     if (not isinstance(single_element_list, collections.abc.Iterable)
-            or len(single_element_list) != 1):
+            or (isinstance(single_element_list, collections.abc.Sized)
+                and len(single_element_list) != 1)):
         raise RuntimeError(n_("Unable to unwrap!"))
     if isinstance(single_element_list, collections.abc.Mapping):
-        if keys:
-            single_element_list = single_element_list.keys()
-        else:
-            single_element_list = single_element_list.values()
+        single_element_list = single_element_list.values()
     return next(i for i in single_element_list)
 
 
@@ -1472,6 +1520,27 @@ def extract_roles(session, introspection_only=False):
     return ret
 
 
+# The following droids are exempt from lockdown to keep our infrastructure
+# working
+INFRASTRUCTURE_DROIDS = {'rklist', 'resolve'}
+
+
+def droid_roles(identity):
+    """Resolve droid identity to a complete set of roles.
+
+    Currently this is rather trivial, but could be more involved in the
+    future if more API capabilities are added to the DB.
+
+    :type identity: str
+    :param identity: The name for the API functionality, e.g. ``rklist``.
+    :rtype: {str}
+    """
+    ret = {'anonymous', 'droid', f'droid_{identity}'}
+    if identity in INFRASTRUCTURE_DROIDS:
+        ret.add('droid_infra')
+    return ret
+
+
 # The following dict defines the hierarchy of realms. This has direct impact on
 # the admin privileges: An admin of a specific realm can only query and edit
 # members of that realm, who are not member of another realm implying that
@@ -1650,7 +1719,7 @@ DB_ROLE_MAPPING = collections.OrderedDict((
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),
-    ("ml_script", "cdb_persona"),
+    ("droid", "cdb_persona"),
 
     ("anonymous", "cdb_anonymous"),
 ))
@@ -1688,15 +1757,17 @@ def roles_to_admin_views(roles):
     if "core_admin" in roles:
         result |= {"core_user", "core"}
     if "cde_admin" in roles:
-        result |= {"cde_user", "past_event"}
+        result |= {"cde_user", "past_event", "ml_mgmt", "ml_moderator"}
     if "finance_admin" in roles:
         result |= {"finance"}
     if "event_admin" in roles:
-        result |= {"event_user", "event_mgmt", "event_orga"}
+        result |= {"event_user", "event_mgmt", "event_orga", "ml_mgmt",
+                   "ml_moderator"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_moderator"}
     if "assembly_admin" in roles:
-        result |= {"assembly_user", "assembly_mgmt", "assembly_contents"}
+        result |= {"assembly_user", "assembly_mgmt", "assembly_contents",
+                   "ml_mgmt", "ml_moderator"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
             for realm in realm_specific_genesis_fields)):

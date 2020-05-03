@@ -119,7 +119,7 @@ This section is from direct correspondence with the Verwaltung.
   shold be responsible for maintaining them.
 * Confirming member dataset changes should offer the possibility/link to go
   to the next unconfirmed change.
-* The ExPuls usually has two issues per year. One in early autumn after the
+* The exPuls usually has two issues per year. One in early autumn after the
   DSA academies are finished and new members have entered. The second at the
   beginning of the year for opening of Pfingst-/Sommerakademie registration.
 * The page 'Downloads' in v1 is superseeded by the search functionality in

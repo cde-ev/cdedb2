@@ -1,28 +1,20 @@
 {% set sidenav_active='core_change_log' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/generic.tmpl" as generic with context %}
+{% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans %}
-    	Userdata Log
-    {% endtrans %}
-    {% if log %}
-        [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
-    {% endif %}
+    {% trans %}Userdata Log{% endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), active="True") }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), active="True") }}
 {% endblock %}
 {% block content %}
-    {% if log %}
-        <div class="p">
-            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
-        </div>
-    {% endif %}
+    {{ logging.filterlink() }}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
@@ -77,5 +69,6 @@
         </tbody>
     </table>
 
-    {{ generic.log_filter(cdedblink('core/view_changelog_meta'), enums['MemberChangeStati'], 'admin_persona', 'changelog') }}
+    {{ logging.filter('core/view_changelog_meta', enums['MemberChangeStati'], 'admin_persona', 'changelog') }}
+    {{ logging.navigation('core/view_changelog_meta', total, length, loglinks) }}
 {% endblock %}

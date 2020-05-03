@@ -4,14 +4,22 @@
 {% import "web/assembly/_ballot_meta.tmpl" as ballot_meta with context %}
 {% import "web/assembly/_ballot_result.tmpl" as ballot_result with context %}
 {% import "web/assembly/_ballot_voting.tmpl" as ballot_voting with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_voting.js') }}{% endblock %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_voting.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+{% endblock %}
+
 {% set jshint = 'weak' %}
 {% block title %}{{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }}){% endblock %}
+
 {% block heading %}
     <h1 class="title">
         {{ ambience['ballot']['title'] }}
     </h1>
 {% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
@@ -19,8 +27,11 @@
     {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up",
                             active=True) }}
 {% endblock %}
+
 {% block content %}
     {% set edit_mode = "assembly_contents" in user.admin_views and now() < ambience['ballot']['vote_begin'] %}
+    {% set classical = ambience['ballot']['votes'] %}
+    {% set preferential = not ambience['ballot']['votes'] %}
 
     {# Admin modification options (delete and edit) #}
     {% if edit_mode %}
@@ -47,10 +58,10 @@
     {% if ambience['ballot']['is_tallied'] %}
         <h3>{% trans %}Result{% endtrans %}</h3>
         {{ ballot_result.show_result(ambience['ballot'], result) }}
-        {{ ballot_result.explain_result() }}
+        {{ ballot_result.explain_result(classical=classical, preferential=preferential, use_bar=ambience['ballot']['use_bar']) }}
 
         <h4>{% trans %}Summary{% endtrans %}</h4>
-        {% if not ambience['ballot']['votes'] %}
+        {% if preferential  %}
             {{ ballot_result.show_summary() }}
         {% endif %}
         <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
@@ -59,19 +70,20 @@
     {% else %}
         {% if edit_mode %}
             {{ ballot_voting.add_candidate_form() }}
-        {% endif %}
-
-        {# Classical voting, not tallied #}
-        {% if ambience['ballot']['votes'] %}
-            {% if ambience['ballot']['is_voting'] and attends %}
-                {{ ballot_voting.show_classical_voting() }}
-            {% else %}
-                {{ ballot_voting.show_classical_candidates(edit_mode) }}
-            {% endif %}
         {% else %}
-            {{ ballot_voting.show_preferential_candidates(edit_mode) }}
-            {% if ambience['ballot']['is_voting'] and attends %}
-                {{ ballot_voting.show_preferential_voting() }}
+            {# Classical voting, not tallied #}
+            {% if ambience['ballot']['votes'] %}
+                {% if ambience['ballot']['is_voting'] and attends %}
+                    {{ ballot_voting.show_classical_voting() }}
+                {% else %}
+                    {{ ballot_voting.show_classical_candidates() }}
+                {% endif %}
+            {# Preferential voting, not tallied #}
+            {% else %}
+                {{ ballot_voting.show_preferential_candidates() }}
+                {% if ambience['ballot']['is_voting'] and attends %}
+                    {{ ballot_voting.show_preferential_voting() }}
+                {% endif %}
             {% endif %}
         {% endif %}
     {% endif %}

@@ -29,7 +29,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
              endpoint="index"),
         sub('/core', (
             rule("/api/resolve", methods=_GET,
-                 endpoint="api_resolve_name"),
+                 endpoint="api_resolve_username"),
             rule("/login", methods=_POST,
                  endpoint="login"),
             rule("/logout", methods=_POST,
@@ -588,10 +588,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="add_attachment_form"),
                     rule("/attachment/add", methods=_POST,
                          endpoint="add_attachment"),
-                    rule("/candidate/add", methods=_POST,
-                         endpoint="add_candidate"),
-                    rule("/candidate/<int:candidate_id>/remove", methods=_POST,
-                         endpoint="remove_candidate"),)),)),
+                    rule("/candidates/edit", methods=_POST,
+                         endpoint="edit_candidates"),)),)),
         )),)),
     werkzeug.routing.EndpointPrefix('ml/', (
         sub('/ml', (
@@ -630,6 +628,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="change_mailinglist_form"),
                 rule("/change", methods=_POST,
                      endpoint="change_mailinglist"),
+                rule("/type/change", methods=_GET,
+                     endpoint="change_ml_type_form"),
+                rule("/type/change", methods=_POST,
+                     endpoint="change_ml_type"),
                 rule("/delete", methods=_POST,
                      endpoint="delete_mailinglist"),
                 rule("/log", methods=_GET,

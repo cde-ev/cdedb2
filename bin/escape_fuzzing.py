@@ -42,7 +42,7 @@ _BASICCONF = BasicConfig()
 
 outdir = pathlib.Path('./out')
 
-app = Application(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
+app = Application(_BASICCONF["REPOSITORY_PATH"] / _BASICCONF["TESTCONFIG_PATH"])
 wt_app = webtest.TestApp(app, extra_environ={
     'REMOTE_ADDR': "127.0.0.0",
     'SERVER_PROTOCOL': "HTTP/1.1",

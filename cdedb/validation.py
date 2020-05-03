@@ -1253,7 +1253,7 @@ def parse_datetime(val, default_date=None):
     if ret is None:
         ret = datetime.datetime.fromisoformat(val)
     if ret.tzinfo is None:
-        ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
+        ret = _BASICCONF["DEFAULT_TIMEZONE"].localize(ret)
     return ret.astimezone(pytz.utc)
 
 
@@ -3811,7 +3811,7 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True,
         mandatory_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
         optional_fields = {}
     else:
-        mandatory_fields = {}
+        mandatory_fields = {'id': _id}
         optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,

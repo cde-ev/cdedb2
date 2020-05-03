@@ -26,9 +26,9 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.common import (PrivilegeError, ProxyShim, RequestState, glue,
-                          roles_to_db_role, ALL_ADMIN_VIEWS,
-                          ADMIN_VIEWS_COOKIE_NAME)
+from cdedb.common import (
+    PrivilegeError, ProxyShim, RequestState, glue, roles_to_db_role, unwrap,
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -96,23 +96,32 @@ class BackendShim(ProxyShim):
         self.sessionproxy = SessionBackend(backend.conf._configpath)
         secrets = SecretsConfig(backend.conf._configpath)
         self.connpool = connection_pool_factory(
-            backend.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets, backend.conf.DB_PORT)
-        self.validate_mlscriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
+            backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+            secrets, backend.conf["DB_PORT"])
         self.translator = gettext.translation(
             'cdedb', languages=('de',),
-            localedir=str(backend.conf.REPOSITORY_PATH / 'i18n'))
+            localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
 
     def _setup_requeststate(self, key):
+        sessionkey = None
+        apitoken = None
+
+        # we only use one slot to transport the key (for simplicity and
+        # probably for historic reasons); the following lookup process
+        # mimicks the one in frontend/application.py
+        user = self.sessionproxy.lookuptoken(key, "127.0.0.0")
+        if user.roles == {'anonymous'}:
+            user = self.sessionproxy.lookupsession(key, "127.0.0.0")
+            sessionkey = key
+        else:
+            apitoken = key
+
         rs = RequestState(
-            key, None, None, None, [], None, None,
-            [], {}, "de", self.translator.gettext,
-            self.translator.ngettext, None, None, key)
-        rs.user = self.sessionproxy.lookupsession(key, "127.0.0.0")
+            sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
+            response=None, notifications=[], mapadapter=None, requestargs=None,
+            errors=[], values={}, lang="de", gettext=self.translator.gettext,
+            ngettext=self.translator.ngettext, coders=None, begin=None)
         rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
-        if self.validate_mlscriptkey(key):
-            rs.user.roles.add("ml_script")
-            rs._conn = self.connpool["cdb_persona"]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
             rs.user.orga = self._backend.orga_info(rs, rs.user.persona_id)
@@ -228,8 +237,8 @@ class BackendUsingTest(unittest.TestCase):
 
     @staticmethod
     def initialize_raw_backend(backendcls):
-        return backendcls(_BASICCONF.REPOSITORY_PATH
-                          / _BASICCONF.TESTCONFIG_PATH)
+        return backendcls(_BASICCONF["REPOSITORY_PATH"]
+                          / _BASICCONF["TESTCONFIG_PATH"])
 
     @staticmethod
     def initialize_backend(backendcls):
@@ -527,8 +536,10 @@ class FrontendTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = Application(_BASICCONF.REPOSITORY_PATH
-                          / _BASICCONF.TESTCONFIG_PATH)
+        app = Application(_BASICCONF["REPOSITORY_PATH"]
+                          / _BASICCONF["TESTCONFIG_PATH"])
+        lang = "de"
+        cls.gettext = app.translations[lang].gettext
         cls.app = webtest.TestApp(app, extra_environ={
             'REMOTE_ADDR': "127.0.0.0",
             'SERVER_PROTOCOL': "HTTP/1.1",
@@ -578,8 +589,8 @@ class FrontendTest(unittest.TestCase):
     def log_generation_time(self, response=None):
         if response is None:
             response = self.response
-        if _BASICCONF.TIMING_LOG:
-            with open(_BASICCONF.TIMING_LOG, 'a') as f:
+        if _BASICCONF["TIMING_LOG"]:
+            with open(_BASICCONF["TIMING_LOG"], 'a') as f:
                 output = "{} {} {} {}\n".format(
                     response.request.path, response.request.method,
                     response.headers.get('X-Generation-Time'),
@@ -797,6 +808,97 @@ class FrontendTest(unittest.TestCase):
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
 
+    def log_pagination(self, title, logs):
+        """Helper function to test the logic of the log pagination.
+
+        This should be called from every frontend log, to ensure our pagination
+        works. Logs must contain at least 9 log entries.
+
+        :type title: str
+        :param title: of the Log page, like "Userdata-Log"
+        :type logs: [{id: LogCode}]
+        :param logs: list of log entries mapped to their LogCode
+        """
+        # check the landing page
+        f = self.response.forms['logshowform']
+        total = len(logs)
+        self._log_subroutine(title, logs, start=1,
+                             end=total if total < 50 else 50)
+
+        # check a combination of offset and length with 0th page
+        length = total // 3
+        if length % 2 == 0:
+            length -= 1
+        offset = 1
+
+        f['length'] = length
+        f['offset'] = offset
+        self.submit(f)
+
+        # starting at the 0th page, ...
+        self.traverse({'linkid': 'pagination-0'})
+        # we store the absolute values of start and end in an array, because
+        # they must not change when we iterate in different ways
+        starts = [1]
+        ends = [length - offset - 1]
+
+        # ... iterate over all pages:
+        # - by using the 'next' button
+        while ends[-1] < total:
+            self._log_subroutine(title, logs, start=starts[-1], end=ends[-1])
+            self.traverse({'linkid': 'pagination-next'})
+            starts.append(ends[-1] + 1)
+            ends.append(ends[-1] + length)
+        self.assertNoLink(content='›')
+        self._log_subroutine(title, logs, start=starts[-1], end=ends[-1])
+
+        # - by using the 'previous' button
+        for start, end in zip(starts[:0:-1], ends[:0:-1]):
+            self._log_subroutine(title, logs, start=start, end=end)
+            self.traverse({'linkid': 'pagination-previous'})
+        self.assertNoLink(content='‹')
+        self._log_subroutine(title, logs, start=starts[0], end=ends[0])
+
+        # - by using the page number buttons
+        for page, (start, end) in enumerate(zip(starts, ends)):
+            self.traverse({'linkid': f'pagination-{page}'})
+            self._log_subroutine(title, logs, start=start, end=end)
+        self.assertNoLink(content='›')
+
+        # check first-page button (result in offset = 0)
+        self.traverse({'linkid': 'pagination-first'})
+        self.assertNoLink(content='‹')
+        self._log_subroutine(title, logs, start=1, end=length)
+
+        # there must not be a 0th page, because length is a multiple of offset
+        self.assertNonPresence("0", div='log-pagination')
+
+        # check last-page button (results in offset = None)
+        self.traverse({'linkid': 'pagination-last'})
+        self.assertNoLink(content='›')
+        self._log_subroutine(
+            title, logs, start=length * ((total - 1) // length) + 1, end=total)
+
+        # tidy up the form
+        f["offset"] = None
+        f["length"] = None
+        self.submit(f)
+
+    def _log_subroutine(self, title, all_logs, start, end):
+        total = len(all_logs)
+        self.assertTitle(f"{title} [{start}–{end} von {total}]")
+
+        if end > total:
+            end = total
+
+        # adapt slicing to our count of log entries
+        logs = all_logs[start-1:end]
+        for index, log in enumerate(logs, start=1):
+            log_id = unwrap(log.keys())
+            log_code = unwrap(log)
+            log_code_str = self.gettext(str(log_code))
+            self.assertPresence(log_code_str, div=f"{index}-{log_id}")
+
     def _click_admin_view_button(self, label, current_state=None):
         """
         Helper function for checking the disableable admin views
@@ -867,8 +969,8 @@ class CronTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.cron = CronFrontend(_BASICCONF.REPOSITORY_PATH
-                                / _BASICCONF.TESTCONFIG_PATH)
+        cls.cron = CronFrontend(_BASICCONF["REPOSITORY_PATH"]
+                                / _BASICCONF["TESTCONFIG_PATH"])
         cls.core = CronBackendShim(cls.cron, cls.cron.core.coreproxy)
         cls.cde = CronBackendShim(cls.cron, cls.cron.core.cdeproxy)
         cls.event = CronBackendShim(cls.cron, cls.cron.core.eventproxy)

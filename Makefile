@@ -145,7 +145,7 @@ lint:
 	@echo "Lines too long in templates"
 	@echo "================================================================================"
 	@echo ""
-	egrep -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:' | cat
+	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 	@echo ""
 	@echo "================================================================================"
 	@echo "All of pylint"
@@ -157,7 +157,7 @@ lint:
 	@echo "And now only errors and warnings"
 	@echo "================================================================================"
 	@echo ""
-	${PYLINTBIN} --rcfile='./lint.rc' --output-format=text cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
+	${PYLINTBIN} --rcfile='./lint.rc' --output-format=text cdedb | grep -E '^(\*\*\*\*|E:|W:)' | grep -E -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member"
 
 check:
 	make i18n-compile

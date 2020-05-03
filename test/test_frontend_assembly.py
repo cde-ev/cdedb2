@@ -55,10 +55,12 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({"description": "Abstimmungen"},
                       {"description": bdata['title']})
         if candidates:
-            f = self.response.forms["addcandidateform"]
+
             for candidate in candidates:
+                f = self.response.forms["candidatessummaryform"]
                 for k, v in candidate.items():
-                    f[k] = v
+                    f[f'{k}_-1'] = v
+                f['create_-1'].checked = True
                 self.submit(f)
 
     @as_users("werner", "berta", "kalif")
@@ -87,7 +89,6 @@ class TestAssemblyFrontend(FrontendTest):
         for s in out:
             self.assertNonPresence(s, div='sidebar')
 
-    @unittest.expectedFailure
     @as_users("kalif")
     def test_showuser(self, user):
         self.traverse({'description': user['display_name']})
@@ -214,8 +215,7 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/assembly/1/ballot/2/show'},
                       {'href': '/assembly/assembly/1/ballot/2/attachment/add'},
                       {'href': '/assembly/assembly/1/ballot/2/show'})
-        self.assertIn('removecandidateform6', self.response.forms)
-        self.assertIn('addcandidateform', self.response.forms)
+        self.assertIn('candidatessummaryform', self.response.forms)
         self.assertIn('deleteballotform', self.response.forms)
 
     @as_users("annika", "martin", "vera", "werner")
@@ -697,17 +697,41 @@ class TestAssemblyFrontend(FrontendTest):
                       {'description': 'Abstimmungen'},
                       {'description': 'Farbe des Logos'},)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertNonPresence("Dunkelaquamarin")
-        f = self.response.forms['addcandidateform']
-        f['moniker'] = 'aqua'
-        f['description'] = 'Dunkelaquamarin'
+        f = self.response.forms['candidatessummaryform']
+        self.assertEqual("rot", f['moniker_6'].value)
+        self.assertEqual("gelb", f['moniker_7'].value)
+        self.assertEqual("gruen", f['moniker_8'].value)
+        self.assertNotIn("Dunkelaquamarin", f.fields)
+        f['create_-1'].checked = True
+        f['moniker_-1'] = "aqua"
+        f['description_-1'] = "Dunkelaquamarin"
         self.submit(f)
+
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertPresence("Dunkelaquamarin", div='preferential-candidates')
-        f = self.response.forms['removecandidateform1001']
+        f = self.response.forms['candidatessummaryform']
+        self.assertEqual("aqua", f['moniker_1001'].value)
+        f['moniker_7'] = "rot"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Farbe des Logos (Internationaler Kongress)")
+        f = self.response.forms['candidatessummaryform']
+        f['moniker_7'] = "gelb"
+        f['moniker_8'] = "_bar_"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Farbe des Logos (Internationaler Kongress)")
+        f = self.response.forms['candidatessummaryform']
+        f['moniker_8'] = "farbe"
+        f['description_6'] = "lila"
+        f['delete_7'].checked = True
         self.submit(f)
+
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertNonPresence("Dunkelaquamarin")
+        self.assertEqual("rot", f['moniker_6'].value)
+        self.assertEqual("lila", f['description_6'].value)
+        self.assertEqual("farbe", f['moniker_8'].value)
+        self.assertEqual("aqua", f['moniker_1001'].value)
+        self.assertNotIn("gelb", f.fields)
 
     @as_users("werner")
     def test_has_voted(self, user):
@@ -813,7 +837,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.login(USER_DICT['werner'])
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Log'})
-        self.assertTitle("\nVersammlungs-Log [0–15]\n")
+        self.assertTitle("Versammlungs-Log [1–16 von 16]")
         f = self.response.forms['logshowform']
         codes = [const.AssemblyLogCodes.assembly_created.value,
                  const.AssemblyLogCodes.assembly_changed.value,
@@ -823,19 +847,16 @@ class TestAssemblyFrontend(FrontendTest):
                  const.AssemblyLogCodes.ballot_tallied.value]
         f['codes'] = codes
         f['assembly_id'] = 1
-        f['start'] = 1
-        f['stop'] = 10
         self.submit(f)
-        self.assertTitle("\nVersammlungs-Log [1–6]\n")
+        self.assertTitle("Versammlungs-Log [1–7 von 7]")
 
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Drittes CdE-Konzil'},
                       {'description': 'Log'})
-        self.assertTitle("\nDrittes CdE-Konzil: Log [0–6]\n")
+        self.assertTitle("Drittes CdE-Konzil: Log [1–7 von 7]")
 
         f = self.response.forms['logshowform']
         f['codes'] = codes
-        f['start'] = 1
-        f['stop'] = 10
+        f['offset'] = 2
         self.submit(f)
-        self.assertTitle("\nDrittes CdE-Konzil: Log [1–4]\n")
+        self.assertTitle("Drittes CdE-Konzil: Log [3–52 von 5]")

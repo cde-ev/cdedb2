@@ -17,7 +17,7 @@
         {{ util.anti_csrf_token('cde/money_transfers') }}
         {{ util.input_hidden("checksum") }}
         {{ util.form_input_checkbox("sendmail", label=gettext("Send Notification"), horizontal=False) }}
-        {{ util.form_input_file(name="transfers_file", label=gettext("Transfers"), horizontal=False) }}
+        {{ util.form_input_file(name="transfers_file", label=gettext("Transfers"), horizontal=False, accept="text/*") }}
         {{ util.form_input_textarea(name="transfers", horizontal=False, rows=8, anid="input-data") }}
 
         <p class="help-block">

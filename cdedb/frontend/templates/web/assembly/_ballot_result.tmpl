@@ -1,17 +1,20 @@
 {% macro show_result(ballot, result, short=False) -%}
+    {% set is_classical_vote = ballot['votes'] %}
     <table class="table">
         <thead>
             <tr>
                 <th></th>
-                <th class="col-md-10">
+                <th class="col-md-{% if is_classical_vote %}11{% else %}10{% endif %}">
                     {% trans %}Candidates{% endtrans %}
                 </th>
                 <th class="col-md-1">
-                    {{ util.make_icon('plus', title=gettext("Pro-Votes")) }}
+                    {{ util.make_icon('plus', title=gettext("Pro-Votes"), fixed_width=False) }}
                 </th>
+            {% if not is_classical_vote %}
                 <th class="col-md-1">
-                    {{ util.make_icon('minus', title=gettext("Contra-Votes")) }}
+                    {{ util.make_icon('minus', title=gettext("Contra-Votes"), fixed_width=False) }}
                 </th>
+            {% endif %}
             </tr>
         </thead>
     <tbody>
@@ -24,7 +27,9 @@
                     {% set first_candidate = loop.first %}
                     <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
                         <td>
-                            {{ count.value }}.
+                            {% if loop.first %}
+                                {{ count.value }}.
+                            {% endif %}
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['description'] }}
@@ -34,6 +39,13 @@
                                 </span>
                             {% endif %}
                         </td>
+                    {% if is_classical_vote %}
+                        <td>
+                            {% if first_candidate %}
+                                {{ result['counts'][candidate_moniker] }}
+                            {% endif %}
+                        </td>
+                    {% else %}
                         <td>
                             {% for level in result['counts'] %}
                                 {% if candidate_moniker in level['winner'] and first_candidate %}
@@ -48,6 +60,7 @@
                                 {% endif %}
                             {% endfor %}
                         </td>
+                    {% endif %}
                         {% if not loop.last %}
                             <br /><span class="sr-only">{% trans %}and{% endtrans %}</span>
                         {% endif %}
@@ -60,7 +73,7 @@
             <tr
                 {% for level in result['counts'] %}
                     {# it is possible that a candidate is equal to bar. This candidate will be in the winner section.
-                       So, if bar is a winner and not the only winner, we must not print a new level number.
+                       So, if bar is a winner and not the only winner, we must not print an upper boarder.
                        This has to check nonetherless for bar not in level[winner] and not in level[looser], think
                        of a vote without losers.#}
                     {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length != 1
@@ -70,35 +83,53 @@
                 {% endfor %}
             >
                 <td>
-                    {% for level in result['counts'] %}
-                        {# it is possible that a candidate is equal to bar. This candidate will be in the winner section.
-                           So, if bar is a winner and not the only winner, we must not increase the level number #}
-                        {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
-                            {% set count.value = count.value + 1 %}
-                        {% endif %}
-                    {% endfor %}
-                    {{ count.value }}.
+                    {# We do not count bar as candidate, imagine bar to be an infinitisimal border between candidates. #}
                 </td>
                 <td class="text-info">
-                    {% if not short %}
-                        {% if ballot['votes'] %}
-                            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                                The following candidates have less votes than the "Against all Candidates" ({{ abm }}) choice.
+                    {% if is_classical_vote %}
+                        {% if short %}
+                            {% trans %}
+                                Against all Candidates.
                             {% endtrans %}
                         {% else %}
-                            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                                The following candidates lost against the bar ({{ abm }}).
-                            {% endtrans %}
+                            {% if result['losers'] %}
+                                {% trans %}
+                                    The following candidates have less votes than the "Against all Candidates" choice.
+                                {% endtrans %}
+                            {% else %}
+                                {% trans %}
+                                    No candidate has less votes than the "Against all Candidates" choice.
+                                {% endtrans %}
+                            {% endif %}
                         {% endif %}
                     {% else %}
-                        {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                            The bar option {{ abm }}.
-                        {% endtrans %}
+                        {% if short %}
+                            {% trans %}
+                                Rejection limit.
+                            {% endtrans %}
+                        {% else %}
+                            {% if result['losers'] %}
+                                {% trans %}
+                                    The following candidates lost against the rejection limit.
+                                {% endtrans %}
+                            {% else %}
+                                {% trans %}
+                                    No candidate lost against the rejection limit.
+                                {% endtrans %}
+                            {% endif %}
+                        {% endif %}
                     {% endif %}
                 </td>
+            {% if is_classical_vote %}
+                {# this are the votes for the 'against all' choice #}
+                <td>
+                    {{ result['counts'][ASSEMBLY_BAR_MONIKER] }}
+                </td>
+            {% else %}
                 <td>
                     {% for level in result['counts'] %}
-                        {# see above for a detailed explanation #}
+                        {# It is possible that a candidate is equal to bar. This candidate will be in the winner section.
+                           So, if bar is a winner and not the only winner, we do not show the votes. #}
                         {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
                             {{ level['pro_votes'] }}
                         {% endif %}
@@ -112,6 +143,7 @@
                         {% endif %}
                     {% endfor %}
                 </td>
+            {% endif %}
             </tr>
         {% endif %}
 
@@ -123,7 +155,9 @@
                     {% set first_candidate = loop.first %}
                     <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
                         <td>
-                            {{ count.value }}.
+                            {% if loop.first %}
+                                {{ count.value }}.
+                            {% endif %}
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['description'] }}
@@ -133,6 +167,13 @@
                                 </span>
                             {% endif %}
                         </td>
+                    {% if is_classical_vote %}
+                        <td>
+                            {% if first_candidate %}
+                                {{ result['counts'][candidate_moniker] }}
+                            {% endif %}
+                        </td>
+                    {% else %}
                         <td>
                             {% for level in result['counts'] %}
                                 {% if candidate_moniker in level['winner'] and first_candidate %}
@@ -147,6 +188,7 @@
                                 {% endif %}
                             {% endfor %}
                         </td>
+                    {% endif %}
                         {% if not loop.last %}
                             <br /><span class="sr-only">{% trans %}and{% endtrans %}</span>
                         {% endif %}
@@ -156,17 +198,49 @@
         {% endif %}
     </tbody>
     </table>
+    {% trans abstentions=result['abstentions'] %}
+        {{ abstentions }} voters had abstained.
+    {% endtrans %}
 {%- endmacro %}
 
-{% macro explain_result() %}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
-        <p>
-            Die Pro (a) und Kontra (b) Stimmen gelten für die jeweilige Platzierung (x) und beziehen sich relativ
-            auf die darunter liegende Platzierung (y).
-        </p>
-        <p>
-            Also: Option x gewinnt gegen Option y mit a Pro und b Kontra Stimmen.
-        </p>
+{% macro explain_result(classical=false, preferential=false, use_bar=false) %}
+    {% call util.bootstrap_panel(title=gettext("Help for tallying"), icon='info-circle', aclass='panel-default mosp') %}
+        {% if classical and preferential %}
+            <b>{% trans %}Classical vote{% endtrans %}</b><br />
+        {% endif %}
+        {% if classical %}
+            <p>
+                {% trans %}
+                    Pro votes are the sum of all votes in favor of this candidate. Votes against candidates are not
+                    possible in this voting system.
+                {% endtrans %}
+            </p>
+            {% if use_bar %}
+                <p>
+                    {% trans %}
+                        Using the "Against all candidates" option it is possible to vote against all candidates.
+                        This option can only be exclusively chosen, potential other votes expire.
+                    {% endtrans %}
+                </p>
+            {% endif %}
+        {% endif %}
+        {% if classical and preferential %}
+            <b>{% trans %}Preferential vote{% endtrans %}</b><br />
+        {% endif %}
+        {% if preferential %}
+            <p>
+                {% trans %}
+                    Pro votes (i.e. 5) and Contra votes (i.e. 2) are valid for the given position and are relative to
+                    the next lower position (i.e. 3.). Multiple candidates can share the same position in the ranking.
+                {% endtrans %}
+            </p>
+            <p>
+                {% trans %}
+                    Therefore, all candidates on 3rd place win against all candidates on fourth place with 5 Pro votes
+                    and 2 Contra votes.
+                {% endtrans %}
+            </p>
+        {% endif %}
     {% endcall %}
 {% endmacro %}
 
@@ -194,9 +268,8 @@
         {% if ambience['ballot']['use_bar'] %}
             <p>
                 {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                    Additionally the moniker {{ abm }} shows where in the rejection bar was ranked in the
-                    overall preference list.
-                    Should no candidate have won against the bar, the board may take additional measures.
+                    Additionally the moniker {{ abm }} shows where in the election the rejection limit was ranked.
+                    Should no candidate have won against the rejection limit, the board may take additional measures.
                 {% endtrans %}
             </p>
         {% endif %}

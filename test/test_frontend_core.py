@@ -252,6 +252,77 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
+    @as_users("quintus")
+    def test_selectpersona_two(self, user):
+        # Quintus is unsearchable, but this should not matter here.
+        self.get('/core/persona/select?kind=admin_persona&phrase=din')
+        expectation = (4, 6)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("berta", "martin", "nina", "vera", "werner", "annika")
+    def test_selectpersona_403(self, user):
+        # These can not be done by Berta no matter what.
+        if user['display_name'] != "Vera":
+            self.get('/core/persona/select?kind=admin_persona&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Werner":
+            self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Nina":
+            self.get('/core/persona/select?kind=ml_admin_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Annika":
+            self.get('/core/persona/select?kind=event_admin_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+
+        # These can be done by Berta for other values of aux.
+        if (user['display_name'] in
+                {"Berta", "Martin", "Werner"}):
+            self.get('/core/persona/select'
+                     '?kind=orga_event_user&phrase=@exam&aux=1',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select'
+                     '?kind=mod_ml_user&phrase=@exam&aux=57&variant=20',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+            self.get('/core/persona/select'
+                     '?kind=mod_ml_user&phrase=@exam&aux=57',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+
+    @as_users("vera")
+    def test_selectpersona_relative_cde_admin(self, user):
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=@exam&aux=57')
+        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("annika")
+    def test_selectpersona_relative_event_admin(self, user):
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=@exam&aux=8')
+        expectation = (1, 2, 3)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("werner")
+    def test_selectpersona_relative_assembly_admin(self, user):
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=@exam&aux=11')
+        expectation = (1, 2, 3)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
     @as_users("garcia", "nina")
     def test_selectpersona_ml_event(self, user):
         # Only event participants are shown
@@ -1183,7 +1254,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['logshowform']
         f['reviewed_by'] = 'DB-22-1'
         self.submit(f)
-        self.assertTitle('Nutzerdaten-Log [0–0]')
+        self.assertTitle('Nutzerdaten-Log [1–1 von 1]')
         self.assertPresence("Bertålotta Ganondorf")
         self.logout()
         user = USER_DICT["berta"]
@@ -1373,28 +1444,41 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
 
-    def test_genesis_event(self):
-        user = USER_DICT['vera']
+    def _genesis_request(self, data):
         self.get('/')
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "event"
-        f['gender'] = "1"
-        f['birthday'] = "1987-06-05"
-        f['address'] = "An der Eiche"
-        f['postal_code'] = "12345"
-        f['location'] = "Marcuria"
-        f['country'] = "Arkadien"
+        for field, entry in data.items():
+            f[field] = entry
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = self.fetch_link(mail)
         self.get(link)
         self.follow()
+        return None
+
+    ML_GENESIS_DATA = {
+        'given_names': "Zelda", 'family_name': "Zeruda-Hime",
+        'username': "zelda@example.cde", 'notes': "Gimme!", 'realm': "ml"
+    }
+
+    EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
+    EVENT_GENESIS_DATA.update({
+        'realm': "event", 'gender': 1, 'birthday': "1987-06-05",
+        'address': "An der Eiche", 'postal_code': "12345",
+        'location': "Marcuria", 'country': "Arkadien"
+    })
+
+    CDE_GENESIS_DATA = EVENT_GENESIS_DATA.copy()
+    CDE_GENESIS_DATA.update({
+        'realm': "cde"
+    })
+
+    def test_genesis_event(self):
+        self._genesis_request(self.EVENT_GENESIS_DATA)
+
+        user = USER_DICT['vera']
         self.login(user)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
@@ -1458,20 +1542,7 @@ class TestCoreFrontend(FrontendTest):
 
     def test_genesis_ml(self):
         user = USER_DICT['vera']
-        self.get('/')
-        self.traverse({'description': 'Account anfordern'})
-        self.assertTitle("Account anfordern")
-        f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "ml"
-        self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        self.get(link)
-        self.follow()
+        self._genesis_request(self.ML_GENESIS_DATA)
         self.login(user)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
@@ -1510,18 +1581,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Account anfordern")
         self.assertPresence("Die maximale Dateigröße ist 8 MB.")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
+        for field, entry in self.CDE_GENESIS_DATA.items():
+            f[field] = entry
         f['birth_name'] = "Ganondorf"
-        f['username'] = "zelda@example.cde"
-        # f['notes'] = "Gimme!"  # Do not send this to test upload permanance.
-        f['realm'] = "cde"
-        f['gender'] = "1"
-        f['birthday'] = "1987-06-05"
-        f['address'] = "An der Eiche"
-        f['postal_code'] = "12345"
-        f['location'] = "Marcuria"
-        f['country'] = "Arkadien"
+        f['notes'] = ""  # Do not send this to test upload permanance.
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['attachment'] = webtest.Upload(
@@ -1617,11 +1680,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "ml"
+        for field, entry in self.ML_GENESIS_DATA.items():
+            f[field] = entry
         # Submit once
         self.submit(f)
         # Submit twice
@@ -1647,18 +1707,15 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['logshowform']
         f['codes'] = [20]
         self.submit(f)
-        self.assertTitle("Account-Log [0–0]")
+        self.assertTitle("Account-Log [1–1 von 1]")
 
     def test_genesis_verification_mail_resend(self):
         self.get('/')
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "ml"
+        for field, entry in self.ML_GENESIS_DATA.items():
+            f[field] = entry
         self.submit(f)
         self.assertGreater(len(self.fetch_mail()), 0)
         self.submit(f)
@@ -1670,16 +1727,10 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "event"
-        f['gender'] = "1"
-        f['birthday'] = "1987-06-05"
-        f['address'] = "An der Eiche"
+        for field, entry in self.EVENT_GENESIS_DATA.items():
+            f[field] = entry
+        f['country'] = ""
         f['postal_code'] = "Z-12345"
-        f['location'] = "Marcuria"
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl.")
         f['country'] = "Arkadien"
@@ -1690,16 +1741,9 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "event"
-        f['gender'] = "1"
+        for field, entry in self.EVENT_GENESIS_DATA.items():
+            f[field] = entry
         f['birthday'] = "2222-06-05"
-        f['address'] = "An der Eiche"
-        f['postal_code'] = "12345"
-        f['location'] = "Marcuria"
         self.submit(f, check_notification=False)
         self.assertPresence(
             "Ein Geburtsdatum muss in der Vergangenheit liegen.")
@@ -1709,34 +1753,14 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
+        for field, entry in self.EVENT_GENESIS_DATA.items():
+            f[field] = entry
         f['notes'] = ""
-        f['realm'] = "event"
-        f['gender'] = "1"
-        f['birthday'] = "1987-06-05"
-        f['address'] = "An der Eiche"
-        f['postal_code'] = "12345"
-        f['location'] = "Marcuria"
         self.submit(f, check_notification=False)
         self.assertPresence("Notwendige Angabe fehlt.")
 
     def test_genesis_modify(self):
-        self.get('/')
-        self.traverse({'description': 'Account anfordern'})
-        self.assertTitle("Account anfordern")
-        f = self.response.forms['genesisform']
-        f['given_names'] = "Zelda"
-        f['family_name'] = "Zeruda-Hime"
-        f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
-        f['realm'] = "ml"
-        self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        self.get(link)
-        self.follow()
+        self._genesis_request(self.ML_GENESIS_DATA)
 
         admin = USER_DICT["vera"]
         self.login(admin)
@@ -1771,31 +1795,82 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
 
     def test_resolve_api(self):
-        b = urllib.parse.quote_plus('Bertålotta')
+        at = urllib.parse.quote_plus('@')
         self.get(
-            '/core/api/resolve?given_names={}&family_name=Beispiel'.format(b),
-            headers={'X-CdEDB-API-token': 'secret'})
-        self.assertEqual(self.response.json, ["berta@example.cde"])
+            '/core/api/resolve?username=%20bErTa{}example.CDE%20'.format(at),
+            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+        self.assertEqual(self.response.json, {
+            "given_names": USER_DICT["berta"]["given_names"],
+            "family_name": "Beispiel",
+            "is_member": True,
+            "id": 2,
+            "username": "berta@example.cde",
+        })
         self.get(
-            '/core/api/resolve?given_names=Anton&family_name=Administrator',
-            headers={'X-CdEDB-API-token': 'secret'})
-        self.assertEqual(self.response.json, ["anton@example.cde"])
+            '/core/api/resolve?username=anton{}example.cde'.format(at),
+            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+        self.assertEqual(self.response.json, {
+            "given_names": "Anton Armin A.",
+            "family_name": "Administrator",
+            "is_member": True,
+            "id": 1,
+            "username": "anton@example.cde",
+        })
         self.get('/core/api/resolve', status=403)
 
     def test_log(self):
+        user = USER_DICT['vera']
+        logs = []
         # First: generate data
-        self.test_genesis_event()
-        self.logout()
-        self.test_nontrivial_promotion()
-        self.logout()
-        self.test_admin_username_change()
-        self.logout()
+        # request two new accounts
+        self._genesis_request(self.ML_GENESIS_DATA)
+        logs.append({1001: const.CoreLogCodes.genesis_request})
+        logs.append({1002: const.CoreLogCodes.genesis_verified})
+
+        event_genesis = self.EVENT_GENESIS_DATA.copy()
+        event_genesis['username'] = "tester@example.cde"
+        self._genesis_request(event_genesis)
+        logs.append({1003: const.CoreLogCodes.genesis_request})
+        logs.append({1004: const.CoreLogCodes.genesis_verified})
+
+        # approve the account requests
+        self.login(user)
+        self.traverse({'description': 'Accountanfragen'})
+        f = self.response.forms['genesismlapprovalform1']
+        self.submit(f)
+        logs.append({1005: const.CoreLogCodes.genesis_approved})
+        logs.append({1006: const.CoreLogCodes.persona_creation})
+        logs.append({1007: const.CoreLogCodes.password_reset_cookie})
+
+        self.traverse({'href': 'core/genesis/1002/show'})
+        f = self.response.forms['genesiseventapprovalform']
+        self.submit(f)
+        logs.append({1008: const.CoreLogCodes.genesis_approved})
+        logs.append({1009: const.CoreLogCodes.persona_creation})
+        logs.append({1010: const.CoreLogCodes.password_reset_cookie})
+
+        # make janis assembly user
+        self.admin_view_profile('janis')
+        self.traverse({'description': 'Bereich hinzufügen'})
+        f = self.response.forms['realmselectionform']
+        f['target_realm'] = "assembly"
+        self.submit(f)
+        f = self.response.forms['promotionform']
+        self.submit(f)
+        logs.append({1011: const.CoreLogCodes.realm_change})
+
+        # change berta's user name
+        self.admin_view_profile('berta')
+        self.traverse({'href': '/username/adminchange'})
+        f = self.response.forms['usernamechangeform']
+        f['new_username'] = "bertalotta@example.cde"
+        self.submit(f)
+        logs.append(({1012: const.CoreLogCodes.username_change}))
 
         # Now check it
-        self.login(USER_DICT['vera'])
         self.traverse({'description': 'Index'},
-                      {'href': '/core/log'})
-        self.assertTitle("Account-Log [0–7]")
+                      {'description': 'Account-Log'})
+        self.log_pagination("Account-Log", logs)
         f = self.response.forms["logshowform"]
         f["codes"] = [const.CoreLogCodes.genesis_verified.value,
                       const.CoreLogCodes.realm_change.value,
@@ -1804,4 +1879,3 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Bereiche geändert.")
         self.assertPresence("zelda@example.cde")
         self.assertPresence("bertalotta@example.cde")
-        self.assertTitle("Account-Log [0–2]")

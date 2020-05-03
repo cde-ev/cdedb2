@@ -15,7 +15,7 @@ import psycopg2.extensions
 
 from cdedb.database.connection import connection_pool_factory
 from cdedb.common import (glue, make_root_logger, now, PERSONA_STATUS_FIELDS,
-                          User, extract_roles)
+                          User, extract_roles, droid_roles)
 from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
 
@@ -35,10 +35,14 @@ class SessionBackend:
         """
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
+
+        lookup = {v: k for k, v in secrets['API_TOKENS'].items()}
+        self.api_token_lookup = lambda token: lookup.get(token)
+
         make_root_logger(
-            "cdedb.backend.session", getattr(self.conf, "SESSION_BACKEND_LOG"),
-            self.conf.LOG_LEVEL, syslog_level=self.conf.SYSLOG_LEVEL,
-            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+            "cdedb.backend.session", self.conf["SESSION_BACKEND_LOG"],
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.session")
         # To prevent lots of serialization failures due to races for
@@ -50,8 +54,8 @@ class SessionBackend:
         # updating atime (which does not suffer too much from a lost write,
         # since the competing write will be pretty similar).
         self.connpool = connection_pool_factory(
-            self.conf.CDB_DATABASE_NAME, ("cdb_anonymous", "cdb_persona"),
-            secrets, self.conf.DB_PORT,
+            self.conf["CDB_DATABASE_NAME"], ("cdb_anonymous", "cdb_persona"),
+            secrets, self.conf["DB_PORT"],
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
 
     def lookupsession(self, sessionkey, ip):
@@ -79,15 +83,15 @@ class SessionBackend:
                         data = cur.fetchone()
                     else:
                         # log message to be picked up by fail2ban
-                        msg = "CdEDB invalid session key from {}".format(ip)
-                        self.logger.warning(msg)
+                        self.logger.warning(
+                            f"CdEDB invalid session key from {ip}")
         if data:
             deactivate = False
             if data["is_active"]:
                 if data["ip"] == ip:
                     timestamp = now()
-                    if data["atime"] + self.conf.SESSION_TIMEOUT >= timestamp:
-                        if (data["ctime"] + self.conf.SESSION_LIFESPAN
+                    if data["atime"] + self.conf["SESSION_TIMEOUT"] >= timestamp:
+                        if (data["ctime"] + self.conf["SESSION_LIFESPAN"]
                                 >= timestamp):
                             # here we finally verified the session key
                             persona_id = data["persona_id"]
@@ -127,7 +131,7 @@ class SessionBackend:
                 cur.execute(query, (sessionkey,))
                 cur.execute(query2, (persona_id,))
                 data = cur.fetchone()
-        if self.conf.LOCKDOWN and not (data['is_meta_admin']
+        if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
                                        or data['is_core_admin']):
             # Short circuit in case of lockdown
             return User()
@@ -139,3 +143,28 @@ class SessionBackend:
                 for k in ('persona_id', 'username', 'given_names',
                           'display_name', 'family_name')}
         return User(roles=extract_roles(data), **vals)
+
+    def lookuptoken(self, apitoken, ip):
+        """Raison d'etre deux.
+
+        Resolve an API token (originally submitted via header) into the
+        User wrapper required for a :py:class:`cdedb.common.RequestState`.
+
+        :type apitoken: str
+        :type ip: str
+        :rtype: User or None
+        """
+        ret = User()
+        identity = self.api_token_lookup(apitoken)
+        if identity:
+            ret = User(persona_id=None, username=None, given_names=None,
+                       display_name=None, family_name=None,
+                       roles=droid_roles(identity))
+            if self.conf['LOCKDOWN'] and not 'droid_infra' in ret.roles:
+                ret = User()
+        else:
+            # log message to be picked up by fail2ban
+            self.logger.warning(f"CdEDB invalid API token from {ip}")
+        return ret
+
+

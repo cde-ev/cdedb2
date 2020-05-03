@@ -1,35 +1,17 @@
 {% import "web/util.tmpl" as util with context %}
 
 {# Classical voting: Presentation of candidates #}
-{% macro show_classical_candidates(edit_mode) -%}
+{% macro show_classical_candidates() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
     <div class="row">
         <ul class="col-md-8" id="classical-candidates">
             {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
                 <li class="hide-hover-container clearfix-after">
                     {{ candidate['description'] }}
-                    {% if edit_mode %}
-                        <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
-                            {{ candidate['moniker'] }}
-                        </span>
-                        <form action="{{ cdedblink('assembly/remove_candidate',
-                                                {'candidate_id': candidate_id}) }}"
-                                method="POST" id="removecandidateform{{ candidate_id }}"
-                                class="remove-candiate-form hide-hover display-inline">
-                            {{ util.anti_csrf_token('assembly/remove_candidate') }}
-                            {{ util.input_submit(value="", icon="trash-alt", aclass="btn btn-xs btn-danger list-button-float",
-                                                title=gettext("Remove Candidate")) }}
-                        </form>
-                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
     </div>
-    {% if edit_mode %}
-        <script nonce="{{ csp_nonce }}">
-            $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The candidate will be removed.") }}");
-        </script>
-    {% endif %}
 {%- endmacro %}
 
 {# Classical voting: Voting form #}
@@ -78,37 +60,22 @@
 {%- endmacro %}
 
 {# Preferential voting: Presentation of candidates #}
-{% macro show_preferential_candidates(edit_mode) -%}
+{% macro show_preferential_candidates() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
     <div class="row" id="preferential-candidates">
         <ul class="col-md-8">
             {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
                 <li class="hide-hover-container clearfix-after">
                     {{ candidate['description'] }}
-                    {% if attends or edit_mode %}
+                    {% if attends %}
                         <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
                             {{ candidate['moniker'] }}
                         </span>
-                    {% endif %}
-                    {% if edit_mode and candidate['moniker'] != ASSEMBLY_BAR_MONIKER %}
-                        <form action="{{ cdedblink('assembly/remove_candidate',
-                                                {'candidate_id': candidate_id}) }}"
-                            method="POST" id="removecandidateform{{ candidate_id }}"
-                            class="remove-candiate-form hide-hover display-inline">
-                            {{ util.anti_csrf_token('assembly/remove_candidate') }}
-                            {{ util.input_submit(value="", icon="trash-alt", aclass="btn btn-xs btn-danger list-button-float",
-                                                title=gettext("Remove Candidate")) }}
-                        </form>
                     {% endif %}
                 </li>
             {% endfor %}
         </ul>
     </div>
-    {% if edit_mode %}
-        <script nonce="{{ csp_nonce }}">
-            $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The candidate will be removed.") }}");
-        </script>
-    {% endif %}
 {%- endmacro %}
 
 {% macro show_manual_for_text_preferential_voting() -%}
@@ -343,24 +310,10 @@
 {%- endmacro %}
 
 {% macro add_candidate_form() -%}
-    {% call util.bootstrap_panel(aclass="panel-success panel-condensed", title=gettext("Add Candidate"),
-            icon='plus') %}
-        <form action="{{ cdedblink('assembly/add_candidate') }}" method="POST" id="addcandidateform" class="row">
-            {{ util.anti_csrf_token('assembly/add_candidate') }}
-            <div class="col-md-4 {% if 'moniker' in errors %}has-error{% endif %}">
-                {{ util.input_text(name="moniker", placeholder=gettext("Shortname"), aclass="form-control input-sm",
-                                   arialabel=gettext("Shortname")) }}
-                {{ util.output_errors("moniker") }}
-                {{ util.output_info(gettext("For sorting and preferential vote.")) }}
-            </div>
-            <div class="col-md-6 {% if 'description' in errors %}has-error{% endif %}">
-                {{ util.input_text(name="description", placeholder=gettext("Description"),
-                                   aclass="form-control input-sm", arialabel=gettext("Description")) }}
-                {{ util.output_errors("description") }}
-            </div>
-            <div class="col-md-2">
-                {{ util.input_submit(value=gettext("Add"), aclass="btn btn-primary btn-sm") }}
-            </div>
-        </form>
-    {% endcall %}
+    <h3>{% trans %}Candidates{% endtrans %}</h3>
+
+    {% set columns =  [dict(name="moniker", label="Shortname", func=util.input_text),
+                       dict(name="description", label="Description", func=util.input_text)] %}
+
+    {{ util.print_flux_table("Candidates", columns, ambience['ballot']['candidates'], 'assembly/edit_candidates', sortkey=EntitySorter.candidate) }}
 {%- endmacro %}

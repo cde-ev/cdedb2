@@ -45,19 +45,22 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 
+from typing import Callable
+
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
     decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields,
-    ValidationWarning, xsorted)
+    ValidationWarning, xsorted, unwrap)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
+from cdedb.backend.common import AbstractBackend
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -99,25 +102,24 @@ class BaseApp(metaclass=abc.ABCMeta):
         # initialize logging
         if getattr(self, 'realm', None):
             logger_name = "cdedb.frontend.{}".format(self.realm)
-            logger_file = getattr(self.conf,
-                                  "{}_FRONTEND_LOG".format(self.realm.upper()))
+            logger_file = self.conf[f"{self.realm.upper()}_FRONTEND_LOG"]
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf.FRONTEND_LOG
+            logger_file = self.conf["FRONTEND_LOG"]
         make_root_logger(
-            logger_name, logger_file, self.conf.LOG_LEVEL,
-            syslog_level=self.conf.SYSLOG_LEVEL,
-            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+            logger_name, logger_file, self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
         self.decode_parameter = (
             lambda target, name, param:
-            decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
+            decode_parameter(secrets["URL_PARAMETER_SALT"], target, name, param))
 
         def local_encode(target, name, param,
-                         timeout=self.conf.PARAMETER_TIMEOUT):
-            return encode_parameter(secrets.URL_PARAMETER_SALT, target, name,
+                         timeout=self.conf["PARAMETER_TIMEOUT"]):
+            return encode_parameter(secrets["URL_PARAMETER_SALT"], target, name,
                                     param, timeout=timeout)
 
         self.encode_parameter = local_encode
@@ -143,7 +145,7 @@ class BaseApp(metaclass=abc.ABCMeta):
                                           json_serialize(nparams))
         return self.encode_parameter(
             '_/notification', 'displaynote', message,
-            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT)
+            timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
 
     def decode_notification(self, note):
         """Inverse wrapper to :py:meth:`encode_notification`.
@@ -266,7 +268,7 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
             return val
         return None
     if val.tzinfo is not None:
-        val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)
+        val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
         _LOGGER.warning("Found naive datetime object {}.".format(val))
     if lang:
@@ -830,11 +832,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         super().__init__(configpath, *args, **kwargs)
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
-                str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
+                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None, autoescape=True,
-            auto_reload=self.conf.CDEDB_DEV)
+            auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -844,13 +846,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'enums': ENUMS_DICT,
             'encode_parameter': self.encode_parameter,
             'staticurl': functools.partial(staticurl,
-                                           version=self.conf.GIT_COMMIT[:8]),
+                                           version=self.conf["GIT_COMMIT"][:8]),
             'docurl': docurl,
-            'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
-            'CDEDB_DEV': self.conf.CDEDB_DEV,
+            'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
+            'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
-            'GIT_COMMIT': self.conf.GIT_COMMIT,
-            'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
+            'GIT_COMMIT': self.conf["GIT_COMMIT"],
+            'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management':
                 lambda roles: roles & ({'core_admin'} | set(
@@ -970,6 +972,22 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 isinstance(kind, ValidationWarning)
                 for param, kind in all_errors)
 
+        def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
+                                  method_name: str) -> Callable:
+            """Provide a checker from the backend(proxy) for the templates.
+
+            This takes a Frontend object and refers the check to the
+            given backend if that backend has a method of the given
+            `method_name`. If no such method exists, the checker
+            will always return False.
+            """
+            try:
+                checker = getattr(backend, method_name)
+                if callable(checker):
+                    return lambda *args, **kwargs: checker(rs, *args, **kwargs)
+            except AttributeError:
+                return lambda *args, **kwargs: False
+
         errorsdict = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
@@ -983,6 +1001,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'gettext': rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
+            'is_relevant_admin': _make_backend_checker(
+                rs, self.mlproxy, method_name="is_relevant_admin"),
             'is_warning': _is_warning,
             'lang': rs.lang,
             'ngettext': rs.ngettext,
@@ -1097,7 +1117,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
-        if 'debugstring' not in params and self.conf.CDEDB_DEV:
+        if 'debugstring' not in params and self.conf["CDEDB_DEV"]:
             debugstring = glue(
                 "We have is_multithreaded={}; is_multiprocess={};",
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
@@ -1111,7 +1131,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['debugstring'] = debugstring
         if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
-        if self.conf.LOCKDOWN:
+        if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
@@ -1177,12 +1197,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type attachments: [{str: object}] or None
         :rtype: :py:class:`email.message.Message`
         """
-        defaults = {"From": self.conf.DEFAULT_SENDER,
-                    "Reply-To": self.conf.DEFAULT_REPLY_TO,
-                    "Return-Path": self.conf.DEFAULT_RETURN_PATH,
+        defaults = {"From": self.conf["DEFAULT_SENDER"],
+                    "Reply-To": self.conf["DEFAULT_REPLY_TO"],
+                    "Return-Path": self.conf["DEFAULT_RETURN_PATH"],
                     "Cc": tuple(),
                     "Bcc": tuple(),
-                    "domain": self.conf.MAIL_DOMAIN,
+                    "domain": self.conf["MAIL_DOMAIN"],
                     }
         merge_dicts(headers, defaults)
         if headers["From"] == headers["Reply-To"]:
@@ -1214,7 +1234,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Subject", "Return-Path"):
             msg[header] = headers[header]
-        msg["Message-ID"] = email.utils.make_msgid(domain=self.conf.MAIL_DOMAIN)
+        msg["Message-ID"] = email.utils.make_msgid(domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
         return msg
 
@@ -1264,8 +1284,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
             self.logger.warning("No recipients for mail. Dropping it.")
             return None
-        if not self.conf.CDEDB_DEV:
-            s = smtplib.SMTP(self.conf.MAIL_HOST)
+        if not self.conf["CDEDB_DEV"]:
+            s = smtplib.SMTP(self.conf["MAIL_HOST"])
             s.send_message(msg)
             s.quit()
         else:
@@ -1359,7 +1379,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Deleting corrupted file {}".format(pdf_path))
                 pdf_path.unlink()
             self.logger.debug("Exception \"{}\" caught and handled.".format(e))
-            if self.conf.CDEDB_DEV:
+            if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
                 self.logger.info("Copying source file to {}".format(
@@ -1515,12 +1535,12 @@ class Worker(threading.Thread):
         :type rs: :py:class:`RequestState`
         """
         rrs = RequestState(
-            rs.sessionkey, rs.user, rs.request, None, [], rs.urls,
+            rs.sessionkey, rs.apitoken, rs.user, rs.request, None, [], rs.urls,
             rs.requestargs, [], copy.deepcopy(rs.values),
             rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin)
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
-            conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets, conf.DB_PORT)
+            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets, conf["DB_PORT"])
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
 
         def runner():
@@ -1659,7 +1679,9 @@ def access(*roles, modi=None, check_anti_csrf=None):
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
-                if rs.user.roles == {"anonymous"}:
+                expects_persona = any('droid' not in role
+                                      for role in access_list)
+                if rs.user.roles == {"anonymous"} and expects_persona:
                     params = {
                         'wants': rs._coders['encode_parameter'](
                             "core/index", "wants", rs.request.url,
@@ -2001,7 +2023,7 @@ def event_guard(argname="event_id", check_offline=False):
                     rs.gettext("This page can only be accessed by orgas."))
             if check_offline:
                 is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
-                if is_locked != obj.conf.CDEDB_OFFLINE_DEPLOYMENT:
+                if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                     raise werkzeug.exceptions.Forbidden(
                         rs.gettext("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
@@ -2011,14 +2033,18 @@ def event_guard(argname="event_id", check_offline=False):
     return wrap
 
 
-def mailinglist_guard(argname="mailinglist_id"):
+def mailinglist_guard(argname="mailinglist_id", allow_moderators=True):
     """This decorator checks the access with respect to a specific
     mailinglist. The list is specified by id which has either to be a
     keyword parameter or the first positional parameter after the
-    request state. Only moderators and privileged users are admitted.
+    request state.
+
+    If `allow_moderators` is True, moderators of the mailinglist are allowed,
+    otherwise we require a relevant admin for the given mailinglist.
 
     :type argname: str
     :param argname: name of the keyword argument specifying the id
+    :type allow_moderators: bool
     """
 
     def wrap(fun):
@@ -2028,10 +2054,16 @@ def mailinglist_guard(argname="mailinglist_id"):
                 arg = kwargs[argname]
             else:
                 arg = args[0]
-            if arg not in rs.user.moderator and not obj.is_admin(rs):
-                raise werkzeug.exceptions.Forbidden(rs.gettext(
-                    "This page can only be accessed by the mailinglist’s "
-                    "moderators."))
+            if allow_moderators:
+                if not obj.mlproxy.may_manage(rs, **{argname: arg}):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "This page can only be accessed by the mailinglist’s "
+                        "moderators."))
+            else:
+                if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "This page can only be accessed by appropriate "
+                        "admins."))
             return fun(obj, rs, *args, **kwargs)
 
         return new_fun
@@ -2149,6 +2181,59 @@ def make_transaction_subject(persona):
                                asciificator(persona['given_names']))
 
 
+def process_flux_input(rs, existing, spec, additional=None):
+    """Retrieve information provided by flux tables.
+
+    This returns a data dict to update the database, which includes:
+    - existing, mapped to their (validated) input fields (from spec)
+    - existing, mapped to None (if they were marked to be deleted)
+    - new entries, mapped to their (validated) input fields (from spec)
+
+    :type rs: :py:class:`FrontendRequestState`
+    :type existing: [int]
+    :param existing: ids of already existent objects
+    :type spec: {str: str}
+    :param spec: name of input fields, mapped to their validation
+    :type additional: dict
+    :param additional: additional keys added to each output object
+
+    :rtype: {int: {str: object} or None}
+    """
+    delete_flags = request_extractor(
+        rs, ((f"delete_{anid}", "bool") for anid in existing))
+    deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
+    params = tuple(
+        (f"{key}_{anid}", value)
+        for anid in existing if anid not in deletes
+        for key, value in spec.items())
+    data = request_extractor(rs, params)
+    ret = {
+        anid: {key: data[f"{key}_{anid}"] for key in spec}
+        for anid in existing if anid not in deletes
+    }
+    for anid in existing:
+        if anid in deletes:
+            ret[anid] = None
+        else:
+            ret[anid]['id'] = anid
+    marker = 1
+    while marker < 2 ** 10:
+        will_create = unwrap(
+            request_extractor(rs, ((f"create_-{marker}", "bool"),)))
+        if will_create:
+            params = tuple((f"{key}_-{marker}", value)
+                           for key, value in spec.items())
+            data = request_extractor(rs, params)
+            ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
+            if additional:
+                ret[-marker].update(additional)
+        else:
+            break
+        marker += 1
+    rs.values['create_last_index'] = marker - 1
+    return ret
+
+
 class CustomCSVDialect(csv.Dialect):
     delimiter = ';'
     quoting = csv.QUOTE_MINIMAL
@@ -2216,3 +2301,64 @@ def query_result_to_json(data, fields, substitutions=None):
             row[field] = value
         json_data.append(row)
     return json_serialize(json_data)
+
+def calculate_db_logparams(offset, length):
+    """Modify the offset and length values used in the frontend to
+    allow for guaranteed valid sql queries.
+
+    :type offset: int
+    :type length: int
+    :rtype (int, int)"""
+    _offset = offset
+    _length = length
+    if _offset and _offset < 0:
+        # Avoid non-positive lengths
+        if -offset < length:
+            _length = _length + _offset
+        _offset = 0
+
+    return _offset, _length
+
+def calculate_loglinks(rs, total, offset, length):
+    """Calculate the target parameters for the links in the log pagination bar.
+
+    :type rs: :py:class:`cdedb.common.RequestState`
+    :type total: int
+    :param total: The total count of log entries
+    :type offset: int
+    :param offset: The offset, preprocessed for negative offset values
+    :type length: int
+    :param length: The requested length (not necessarily the shown length)
+    :rtype: {str: werkzeug.datastructures.MultiDict}
+    """
+    # The true offset does represent the acutal count of log entries before
+    # the first shown entry. This is done magically, if no offset has been
+    # given.
+    if offset != 0 and not offset:
+        trueoffset = length * ((total - 1) // length)
+    else:
+        trueoffset = offset
+    loglinks = {
+        "first": rs.values.copy(),
+        "previous": rs.values.copy(),
+        "pre-current": [rs.values.copy() for x in range(3)
+                        if trueoffset - x * length > 0],
+        "current": rs.values.copy(),
+        "post-current": [rs.values.copy() for x in range(3)
+                         if trueoffset + (x + 1) * length < total],
+        "next": rs.values.copy(),
+        "last": rs.values.copy(),
+    }
+    loglinks["first"]["offset"] = "0"
+    loglinks["last"]["offset"] = ""
+    for x, pre in enumerate(loglinks["pre-current"]):
+        loglinks["pre-current"][x]["offset"] = (
+                trueoffset - (len(loglinks["pre-current"]) - x) * length
+        )
+    loglinks["previous"]["offset"] = trueoffset - length
+    for x, post in enumerate(loglinks["post-current"]):
+        loglinks["post-current"][x]["offset"] = trueoffset + (x + 1) * length
+    loglinks["next"]["offset"] = trueoffset + length
+    loglinks["current"]["offset"] = trueoffset
+
+    return loglinks

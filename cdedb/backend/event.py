@@ -105,7 +105,7 @@ class EventBackend(AbstractBackend):
         # the following does the argument checking
         is_locked = self.is_offline_locked(rs, event_id=event_id,
                                            course_id=course_id)
-        if is_locked != self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
@@ -155,8 +155,8 @@ class EventBackend(AbstractBackend):
         return self.sql_insert(rs, "event.log", data)
 
     @access("event")
-    def retrieve_log(self, rs, codes=None, event_id=None, start=None,
-                     stop=None, persona_id=None, submitted_by=None,
+    def retrieve_log(self, rs, codes=None, event_id=None, offset=None,
+                     length=None, persona_id=None, submitted_by=None,
                      additional_info=None, time_start=None, time_stop=None):
         """Get recorded activity.
 
@@ -166,8 +166,8 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type event_id: int or None
-        :type start: int or None
-        :type stop: int or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: int or None
         :type submitted_by: int or None
         :type additional_info: str or None
@@ -179,11 +179,13 @@ class EventBackend(AbstractBackend):
         if (not (event_id and self.is_orga(rs, event_id=event_id))
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
+        event_ids = [event_id] if event_id else None
         return self.generic_retrieve_log(
-            rs, "enum_eventlogcodes", "event", "event.log", codes,
-            entity_id=event_id, start=start, stop=stop, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
-            time_start=time_start, time_stop=time_stop)
+            rs, "enum_eventlogcodes", "event", "event.log", codes=codes,
+            entity_ids=event_ids, offset=offset, length=length,
+            persona_id=persona_id, submitted_by=submitted_by,
+            additional_info=additional_info, time_start=time_start,
+            time_stop=time_stop)
 
     @access("anonymous")
     def list_db_events(self, rs, visible=None, current=None, archived=None):
@@ -210,11 +212,11 @@ class EventBackend(AbstractBackend):
             params.append(visible)
         if current is not None:
             if current:
-                constraints.append(
-                    "e.event_end > now() AND e.is_cancelled = False")
+                constraints.append("e.event_end > now()")
+                constraints.append("e.is_cancelled = False")
             else:
                 constraints.append(
-                    "e.event_end <= now() OR e.is_cancelled = True")
+                    "(e.event_end <= now() OR e.is_cancelled = True)")
         if archived is not None:
             constraints.append("is_archived = %s")
             params.append(archived)
@@ -999,13 +1001,17 @@ class EventBackend(AbstractBackend):
         
         This exists to emit the correct log message. It delegates
         everything else (like validation) to the wrapped method.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: None
         """
         with Atomizer(rs):
             with Silencer(rs):
                 self.set_event(rs, data)
             self.event_log(rs, const.EventLogCodes.event_archived,
                            data['id'])
-        
+
     @access("event")
     def set_event(self, rs, data):
         """Update some keys of an event organized via DB.
@@ -1864,7 +1870,7 @@ class EventBackend(AbstractBackend):
             rs, event_id, persona_id)
         if not registration_ids:
             return False
-        reg_id = unwrap(registration_ids, keys=True)
+        reg_id = unwrap(registration_ids.keys())
         reg = self.get_registration(rs, reg_id)
         return any(part['status'] in stati for part in reg['parts'].values())
 
@@ -2502,7 +2508,7 @@ class EventBackend(AbstractBackend):
                 "AND ctime >= now() - interval '24 hours'")
             params = (event_id, const.EventLogCodes.registration_created)
             num = unwrap(self.query_one(rs, query, params))
-        return num < self.conf.ORGA_ADD_LIMIT
+        return num < self.conf["ORGA_ADD_LIMIT"]
 
     @access("event")
     def list_lodgement_groups(self, rs, event_id):
@@ -2936,7 +2942,7 @@ class EventBackend(AbstractBackend):
         # is true, in the offline instance it is the other way around
         update = {
             'id': event_id,
-            'offline_lock': not self.conf.CDEDB_OFFLINE_DEPLOYMENT,
+            'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
         ret = self.sql_update(rs, "event.events", update)
         self.event_log(rs, const.EventLogCodes.event_locked, event_id)
@@ -3113,7 +3119,7 @@ class EventBackend(AbstractBackend):
         data = affirm("serialized_event", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             raise RuntimeError(n_(glue("Imports into an offline instance must",
                                        "happen via shell scripts.")))
         if not self.is_offline_locked(rs, event_id=data['id']):

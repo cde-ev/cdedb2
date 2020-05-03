@@ -6,6 +6,8 @@ import json
 import re
 import datetime
 import webtest
+import unittest
+
 from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
@@ -1038,8 +1040,8 @@ etc;anything else""", f['entries_2'].value)
         f['nonmember_surcharge'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True
-        # TODO This should be fixed with introducing relative admins
-        #f['create_orga_list'].checked = True
+        f['create_orga_list'].checked = True
+        f['create_participant_list'].checked = True
         self.submit(f)
         self.assertTitle("Alternative Akademie")
         # self.assertPresence("altaka@aka.cde-ev.de")
@@ -1048,7 +1050,6 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['partsummaryform']
         tracks = find_tracks(f)
         self.assertEqual(len(tracks), 1)
-
 
     @as_users("annika", "garcia")
     def test_change_course(self, user):
@@ -1530,10 +1531,16 @@ etc;anything else""", f['entries_2'].value)
             # orga of this event
             self.assertPresence("akira@example.cde", div='contact-email')
 
-    @as_users("garcia")
+    @as_users("annika", "garcia")
     def test_cancellation(self, user):
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
+        self.traverse({'href': '/event/$'})
+        self.assertNonPresence("abgesagt")
+        if user['display_name'] == "garcia":
+            self.traverse({'href': '/event/event/list'})
+            self.assertPresence("(3 Teile)")
+            self.assertNonPresence("abgesagt")
+
+        self.traverse({'href': '/event/event/1/show'})
         self.assertNonPresence("abgesagt", div="notifications")
 
         self.traverse({'href': '/event/event/1/change'})
@@ -1549,6 +1556,17 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/course/list'})
         self.assertPresence("Diese Veranstaltung wurde abgesagt.",
                             div="notifications")
+
+        if user['display_name'] == "annika":
+            # Make sure the index shows it as cancelled.
+            # Orgas only see it as Organized event now.
+            self.traverse({'href': '/event'})
+            self.assertPresence("02.02.2222–30.11.2222, wurde abgesagt.")
+
+            # Make sure the management page shows it as cancelled
+            self.traverse({'href': '/event/event/list'})
+            self.assertPresence("(3 Teile, wurde abgesagt)")
+
 
     @as_users("garcia")
     def test_batch_fee(self, user):
@@ -1869,6 +1887,7 @@ etc;anything else""", f['entries_2'].value)
                       {'description': 'Alle Anmeldungen'})
         self.assertNonPresence("Anton Armin A.")
 
+    @unittest.expectedFailure
     @as_users("garcia")
     def test_profile_link(self, user):
         # Test if I can view the profile of searchable members
@@ -3310,6 +3329,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/show'})
         f = self.response.forms["archiveeventform"]
         f['ack_archive'].checked = True
+        # checkbox to create a past event is checked by default
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
@@ -3331,6 +3351,41 @@ etc;anything else""", f['entries_2'].value)
         self.follow()
         self.assertPresence("Veranstaltung ist bereits archiviert.",
                             div="notifications")
+
+    @as_users("anton")
+    def test_archive_without_past_event(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'CdE-Party 2050'})
+        self.assertTitle("CdE-Party 2050")
+
+        # prepare dates
+        self.traverse({'description': 'Konfiguration'})
+        f = self.response.forms["changeeventform"]
+        f['registration_start'] = "2000-10-30 00:00:00+0000"
+        f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
+        f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
+        self.submit(f)
+        self.traverse({'description': 'Veranstaltungsteile'})
+        f = self.response.forms["partsummaryform"]
+        f['part_begin_4'] = "2003-02-02"
+        f['part_end_4'] = "2003-02-03"
+        self.submit(f)
+
+        # do it
+        self.traverse({'description': 'Übersicht'})
+        f = self.response.forms["archiveeventform"]
+        f['ack_archive'].checked = True
+        f['create_past_event'].checked = False
+        self.submit(f)
+
+        self.assertTitle("CdE-Party 2050")
+        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+                            div="notifications")
+
+        # check that there is no past event
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Verg.-Veranstaltungen'})
+        self.assertNonPresence("CdE-Party 2050")
 
     @as_users("annika")
     def test_one_track_no_courses(self, user):
@@ -3403,25 +3458,23 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT['annika'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen-Log [0–15]")
+        self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
-        f['start'] = 1
-        f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Veranstaltungen-Log [1–1]")
+        self.assertTitle("Veranstaltungen-Log [1–2 von 2]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
-        self.assertTitle("Große Testakademie 2222: Log [0–5]")
+        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen-Log [0–15]")
+        self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-5-1"
         f['submitted_by'] = "DB-1-9"
         self.submit(f)
-        self.assertTitle("Veranstaltungen-Log")
+        self.assertTitle("Veranstaltungen-Log [0–0 von 0]")

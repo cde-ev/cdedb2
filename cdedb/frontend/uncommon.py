@@ -60,7 +60,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                 'username'])
             email = self.encode_parameter(
                 "core/do_password_reset_form", "email", data['username'],
-                timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
+                timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             meta_info = self.coreproxy.get_meta_info(rs)
             self.do_mail(rs, "welcome",
                          {'To': (data['username'],),
