@@ -260,6 +260,26 @@ def work(args):
     print("Protecting data from accidental reset")
     subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
 
+    install_fonts = None
+    if args.no_extra_packages:
+        print("Skipping installation of fonts for template renderer.")
+        install_fonts = False
+    elif args.extra_packages:
+        print("Unconditionally installing fonts for template renderer.")
+        install_fonts = True
+    else:
+        print("Installation of fonts for template renderer.")
+        print("If you confirm this will download 500MB of data.")
+        print("You can also do this later with"
+              " 'sudo apt-get install texlive-fonts-extra'.")
+        print("Without this the template renderer will obviously not work.")
+        decision = input("Do you want to install the fonts (y/n)?")
+        install_fonts = decision.strip().lower() in {'y', 'yes', 'j', 'ja'}
+    if install_fonts:
+        subprocess.run(
+            ["sudo", "apt-get", "-y", "install", "texlive-fonts-extra"],
+            check=True)
+
     print("Restarting application to make offline mode effective")
     subprocess.run(["make", "reload"], check=True, cwd=args.repopath)
 
@@ -272,7 +292,13 @@ if __name__ == "__main__":
     parser.add_argument('data_path', help="Path to exported event data")
     parser.add_argument('-t', '--test', action="store_true",
                         help="Operate on test database")
+    parser.add_argument('-e', '--extra-packages', action="store_true",
+                        help="Unconditionally install additional packages.")
+    parser.add_argument('-E', '--no-extra-packages', action="store_true",
+                        help="Never install additional packages.")
     args = parser.parse_args()
+    if args.extra_packages and args.no_extra_packages:
+        parser.error("Confliction options for (no) additional packages.")
 
     # detemine repo path
     currentpath = pathlib.Path(__file__).resolve().parent

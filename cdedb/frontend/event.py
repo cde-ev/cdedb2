@@ -2680,6 +2680,28 @@ class EventFrontend(AbstractUserFrontend):
             filename="{}_partial_export_event.json".format(
                 rs.ambience['event']['shortname']))
 
+    @access("droid_quick_partial_export")
+    def download_quick_partial_export(self, rs):
+        """Retrieve data for third-party applications in offline mode.
+
+        This is a zero-config variant of download_partial_export.
+        """
+        ret = {
+            'message': "",
+            'export': {},
+        }
+        if not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+            ret['message'] = "Not in offline mode."
+            return self.send_json(rs, ret)
+        events = self.eventproxy.list_db_events(rs)
+        if len(events) != 1:
+            ret['message'] = "Exactly one event must exist."
+            return self.send_json(rs, ret)
+        event_id = unwrap(events, keys=True)
+        ret['export'] = self.eventproxy.partial_export_event(rs, event_id)
+        ret['message'] = "success"
+        return self.send_json(rs, ret)
+
     @access("event")
     @event_guard()
     def partial_import_form(self, rs, event_id):

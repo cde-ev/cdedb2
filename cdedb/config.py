@@ -513,11 +513,14 @@ _SECRECTS_DEFAULTS = {
 
     # fixed tokens for API access
     "API_TOKENS": {
-        # key to use by mailing list software for authentification
+        # for mailing list software
         "rklist": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
 
-        # API token for resolve API
+        # resolve API for CyberAka
         "resolve": "a1o2e3u4i5d6h7t8n9s0",
+
+        # zero-config partial export in offline mode
+        "quick_partial_export": "y1f2i3d4x5b6",
     }
 }
 

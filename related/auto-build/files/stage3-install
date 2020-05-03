@@ -162,6 +162,17 @@ if [ -e /media/cdrom0/vdi ]; then
 
 fi
 
+
+echo ""
+echo "Set up the template renderer..."
+echo "--------------------------------------------"
+
+cd /home/cdedb
+sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/orgas/cde_template_renderer_v3.git \
+    || sudo -u cdedb git clone ssh://gitea@10.9.0.2:63332//orgas/cde_template_renderer_v3.git
+sudo -u cdedb cp /cdedb2/related/auto-build/files/stage3/refresh_template_renderer_data.py .
+chmod +x refresh_template_renderer_data.py
+
 echo ""
 echo "Disable auto-build init..."
 echo "--------------------------------------------"
