@@ -1297,7 +1297,7 @@ def mixed_existence_sorter(iterable):
     for i in xsorted(iterable):
         if i >= 0:
             yield i
-    for i in xsorted(iterable):
+    for i in reversed(xsorted(iterable)):
         if i < 0:
             yield i
 
