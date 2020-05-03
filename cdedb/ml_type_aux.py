@@ -1,13 +1,13 @@
 import enum
 from collections import OrderedDict
 from typing import (
-    Any, Type, Union, Set, Tuple, OrderedDict as OrderedDictType, Dict, Iterable
+    Type, Union, Set, Tuple, OrderedDict as OrderedDictType, Dict, Collection
 )
 
 from cdedb.common import (
-    extract_roles, PrivilegeError, n_, unwrap, CdEDBObject, RequestState
+    extract_roles, n_, unwrap, CdEDBObject, RequestState
 )
-from cdedb.query import Query, QueryOperators, QUERY_SPECS
+from cdedb.query import Query, QueryOperators
 import cdedb.database.constants as const
 from cdedb.database.constants import (
     MailinglistTypes, MailinglistDomain, MailinglistInteractionPolicy)
@@ -63,7 +63,8 @@ class EventAssociatedMeta:
     )
 
     @classmethod
-    def periodic_cleanup(cls, rs, mailinglist):
+    def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
+                         ) -> bool:
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
         return mailinglist["event_id"] is not None
 
@@ -156,20 +157,21 @@ class GeneralMailinglist:
         """
         return bool((cls.relevant_admins | {"ml_admin"}) & rs.user.roles)
 
-    role_map: OrderedDictType[str, MailinglistInteractionPolicy] = \
-        OrderedDict()
+    role_map: OrderedDictType[str, MailinglistInteractionPolicy]
+    role_map = OrderedDict()
 
     @classmethod
     def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,
-                               mailinglist: CdEDBObject, persona_id: int) \
-            -> MIP:
+                               mailinglist: CdEDBObject, persona_id: int,
+                               ) -> MIP:
         return cls.get_interaction_policies(
             rs, bc, mailinglist, (persona_id,))[persona_id]
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
-                                 persona_ids: Iterable[int]) -> Dict[int, MIP]:
+                                 persona_ids: Collection[int]
+                                 ) -> Dict[int, MIP]:
         """Determine the MIP of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
@@ -215,8 +217,8 @@ class GeneralMailinglist:
         return set()
 
     @classmethod
-    def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject) \
-            -> bool:
+    def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
+                         ) -> bool:
         """Whether or not to do periodic subscription cleanup on this list.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -302,7 +304,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
-                                 persona_ids: Iterable[int]) -> Dict[int, MIP]:
+                                 persona_ids: Collection[int],
+                                 ) -> Dict[int, MIP]:
         """Determine the MIP of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this basically means opt-in for all
@@ -353,8 +356,10 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             scope="qview_registration",
             spec=spec,
             fields_of_interest=("persona.id",),
-            constraints=[(status_column, QueryOperators.oneof,
-                          mailinglist["registration_stati"]),],
+            constraints=[
+                (status_column, QueryOperators.oneof,
+                 mailinglist["registration_stati"]),
+            ],
             order=tuple())
         data = bc.event.submit_general_query(rs, query, event_id=event["id"])
 
@@ -367,7 +372,8 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
-                                 persona_ids: Iterable[int]) -> Dict[int, MIP]:
+                                 persona_ids: Collection[int],
+                                 ) -> Dict[int, MIP]:
         """Determine the MIP of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this means opt-out for orgas only.
@@ -405,11 +411,13 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         return event["orgas"]
 
 
-class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta, AssemblyMailinglist):
+class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
+                                    AssemblyMailinglist):
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
-                                 persona_ids: Iterable[int]) -> Dict[int, MIP]:
+                                 persona_ids: Collection[int],
+                                 ) -> Dict[int, MIP]:
         """Determine the MIP of the user or a persona with a mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means opt-out for attendees
@@ -477,8 +485,8 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
                MailinglistDomain.cdemuenchen)
 
 
-def get_type(val: Union[str, int, MailinglistTypes, Type[GeneralMailinglist]]) \
-        -> Type[GeneralMailinglist]:
+def get_type(val: Union[str, int, MailinglistTypes, Type[GeneralMailinglist]],
+             ) -> Type[GeneralMailinglist]:
     if isinstance(val, str):
         val = int(val)
     if isinstance(val, int):

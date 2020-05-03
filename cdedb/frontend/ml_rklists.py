@@ -42,8 +42,8 @@ class RKListsMixin(MlBaseFrontend):
 
     @access("droid_rklist")
     @REQUESTdata(("address", "email"))
-    def oldstyle_mailinglist_export(self, rs: RequestState, address: str) \
-            -> Response:
+    def oldstyle_mailinglist_export(self, rs: RequestState,
+                                    address: str) -> Response:
         """Provide specific infos for comptability mailinglist software"""
         if rs.has_validation_errors():
             return self.send_json(
@@ -54,8 +54,8 @@ class RKListsMixin(MlBaseFrontend):
 
     @access("droid_rklist")
     @REQUESTdata(("address", "email"))
-    def oldstyle_modlist_export(self, rs: RequestState, address: str) \
-            -> Response:
+    def oldstyle_modlist_export(self, rs: RequestState,
+                                address: str) -> Response:
         """Provide specific infos for comptability mailinglist software"""
         if rs.has_validation_errors():
             return self.send_json(
@@ -66,8 +66,8 @@ class RKListsMixin(MlBaseFrontend):
 
     @access("droid_rklist", modi={"POST"})
     @REQUESTdata(("address", "email"), ("error", "int"))
-    def oldstyle_bounce(self, rs: RequestState, address: str, error: int) \
-            -> Response:
+    def oldstyle_bounce(self, rs: RequestState, address: str,
+                        error: int) -> Response:
         """Provide specific infos for comptability mailinglist software"""
         if rs.has_validation_errors():
             err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}

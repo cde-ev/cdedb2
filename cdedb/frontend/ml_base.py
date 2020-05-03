@@ -5,7 +5,7 @@
 import copy
 from datetime import datetime
 import collections
-from typing import Dict, Any, Set, Iterable, Optional
+from typing import Dict, Any, Set, Iterable, Optional, Collection
 
 import mailmanclient
 import werkzeug
@@ -20,7 +20,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
-    RequestState)
+    RequestState, CdEDBObject)
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
@@ -239,8 +239,8 @@ class MlBaseFrontend(AbstractUserFrontend):
                  mailinglist_id: Optional[int], offset: Optional[int],
                  length: Optional[int], persona_id: Optional[int],
                  submitted_by: Optional[int], additional_info: Optional[int],
-                 time_start: Optional[datetime], time_stop: Optional[datetime])\
-            -> Response:
+                 time_start: Optional[datetime],
+                 time_stop: Optional[datetime]) -> Response:
         """View activities."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -359,8 +359,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
         "is_active", "event_id", "assembly_id")
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
-                           registration_stati: Set[const.RegistrationPartStati],
-                           data: Dict[str, Any]) -> Response:
+                           registration_stati: Collection[
+                               const.RegistrationPartStati],
+                           data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
         data['registration_stati'] = registration_stati
@@ -453,7 +454,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                  ("time_stop", "datetime_or_None"))
     @mailinglist_guard()
     def view_ml_log(self, rs: RequestState, mailinglist_id: int,
-                    codes: Iterable[const.MlLogCodes], offset: Optional[int],
+                    codes: Collection[const.MlLogCodes], offset: Optional[int],
                     length: Optional[int], persona_id: Optional[int],
                     submitted_by: Optional[int], additional_info: Optional[str],
                     time_start: Optional[datetime],
@@ -621,7 +622,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @REQUESTdata(("email", "email"))
     @mailinglist_guard()
-    def add_whitelist(self, rs, mailinglist_id, email):
+    def add_whitelist(self, rs: RequestState, mailinglist_id: int,
+                      email: str) -> Response:
         """Allow address to write to the list."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
@@ -645,8 +647,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
-    def _subscription_action_handler(
-            self, rs: RequestState, action: SubscriptionActions, **kwargs):
+    def _subscription_action_handler(self, rs: RequestState,
+                                     action: SubscriptionActions,
+                                     **kwargs: Any) -> None:
         """Un-inlined code from all subscription action initiating endpoints."""
         try:
             code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
@@ -894,7 +897,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @periodic("subscription_request_remind")
     def subscription_request_remind(self, rs: RequestState,
-                                    store: Dict[str, Any]) -> Dict[str, Any]:
+                                    store: CdEDBObject) -> CdEDBObject:
         """Send reminder email to moderators for pending subrequests."""
         ml_ids = self.mlproxy.list_mailinglists(rs)
         current = now().timestamp()
@@ -928,7 +931,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @periodic("write_subscription_states")
     def write_subscription_states(self, rs: RequestState,
-                                  store: Dict[str, Any]) -> Dict[str, Any]:
+                                  store: CdEDBObject) -> CdEDBObject:
         """Write the current state of implicit subscribers to the database."""
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 

@@ -46,8 +46,8 @@ class MailmanMixin(MlBaseFrontend):
         return self.mailman_create_client(url, self.conf["MAILMAN_USER"])
 
     def mailman_sync_list_meta(self, rs: RequestState, mailman: Client,
-                               db_list: CdEDBObject, mm_list: MailingList) \
-            -> None:
+                               db_list: CdEDBObject,
+                               mm_list: MailingList) -> None:
         prefix = ""
         if db_list['subject_prefix']:
             prefix = "[{}] ".format(db_list['subject_prefix'])
@@ -118,8 +118,8 @@ class MailmanMixin(MlBaseFrontend):
                     password=self.mailman_template_password())
 
     def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
-                               db_list: CdEDBObject, mm_list: MailingList) \
-            -> None:
+                               db_list: CdEDBObject,
+                               mm_list: MailingList) -> None:
         SS = const.SubscriptionStates
         persona_ids = set(self.mlproxy.get_subscription_states(
             rs, db_list['id'], states=SS.subscribing_states()))
@@ -143,8 +143,8 @@ class MailmanMixin(MlBaseFrontend):
         mm_list.mass_unsubscribe(delete_subs)
 
     def mailman_sync_list_mods(self, rs: RequestState, mailman: Client,
-                               db_list: CdEDBObject, mm_list: MailingList) \
-            -> None:
+                               db_list: CdEDBObject,
+                               mm_list: MailingList) -> None:
         personas = self.coreproxy.get_personas(
             rs, db_list['moderators'])
         db_moderators = {
@@ -163,8 +163,8 @@ class MailmanMixin(MlBaseFrontend):
             mm_list.remove_moderator(address)
 
     def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
-                                 db_list: CdEDBObject, mm_list: MailingList) \
-            -> None:
+                                 db_list: CdEDBObject,
+                                 mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']
         mm_whitelist = {n.address: n for n in mm_list.nonmembers}
 
