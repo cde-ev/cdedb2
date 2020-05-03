@@ -4053,8 +4053,14 @@ class EventFrontend(AbstractUserFrontend):
             for key, value in group.items() if key != 'id'}
         merge_dicts(rs.values, current)
 
+        is_referenced = set()
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        for lodgement in lodgements.values():
+            is_referenced.add(lodgement['group_id'])
+
         return self.render(rs, "lodgement_group_summary", {
-            'lodgement_groups': groups})
+            'lodgement_groups': groups, 'is_referenced': is_referenced})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
