@@ -3621,8 +3621,8 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         access_ok = (
-            self.conf["CDEDB_OFFLINE_DEPLOYMENT"]  # this grants access for
-                                                   # the droid
+            (self.conf["CDEDB_OFFLINE_DEPLOYMENT"]  # this grants access for
+             and "droid_quick_partial_export" in rs.user.roles)  # the droid
             or self.is_orga(rs, event_id=event_id)
             or self.is_admin(rs))
         if not access_ok:
