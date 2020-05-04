@@ -289,8 +289,8 @@ class ProxyShim:
         self._internal = internal
         funs = inspect.getmembers(backend, predicate=inspect.isroutine)
         for name, fun in funs:
-            # TODO make proper boolean implication
-            if hasattr(fun, "access") and (hasattr(fun, "internal") <= internal):
+            if (getattr(fun, "access", False)
+                and (not getattr(fun, "internal", False) or internal)):
                 self._funs[name] = self._wrapit(fun)
 
     def _wrapit(self, function):
