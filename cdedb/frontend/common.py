@@ -1232,8 +1232,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 self.logger.warning("Empty values zapped in email recipients.")
             if headers[header]:
                 msg[header] = ", ".join(nonempty)
-        for header in ("From", "Reply-To", "Subject", "Return-Path"):
+        for header in ("From", "Reply-To", "Return-Path"):
             msg[header] = headers[header]
+        msg["Subject"] = " ".join(self.conf["DEFAULT_PREFIX"],
+                                  headers['Subject'])
         msg["Message-ID"] = email.utils.make_msgid(domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
         return msg

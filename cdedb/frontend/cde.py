@@ -1134,7 +1134,7 @@ class CdEFrontend(AbstractUserFrontend):
                                + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
-                              'Subject': "Überweisung beim CdE eingetroffen",
+                              'Subject': "Überweisung eingegangen",
                               },
                              {'persona': persona, 'address': address,
                               'new_balance': new_balance})
@@ -1588,7 +1588,7 @@ class CdEFrontend(AbstractUserFrontend):
                     lastschrift['persona_id'], lastschrift['id']),
                 'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
             }
-            subject = "Anstehender Lastschrifteinzug CdE Initiative 25+"
+            subject = "Anstehender Lastschrifteinzug Initiative 25+"
             self.do_mail(rs, "sepa_pre-notification",
                          {'To': (persona['username'],),
                           'Subject': subject},
@@ -1885,9 +1885,9 @@ class CdEFrontend(AbstractUserFrontend):
                               and not persona['trial_member']
                               and not lastschrift)
                 if endangered:
-                    subject = "CdE-Mitgliedschaft verlängern"
+                    subject = "Mitgliedschaft verlängern"
                 else:
-                    subject = "CdE-Mitgliedschaft verlängert"
+                    subject = "Mitgliedschaft verlängert"
                 self.do_mail(
                     rrs, "billing",
                     {'To': (persona['username'],),

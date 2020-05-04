@@ -3148,7 +3148,7 @@ class EventFrontend(AbstractUserFrontend):
         fee = self.eventproxy.calculate_fee(rs, new_id)
         semester_fee = self.conf["MEMBERSHIP_FEE"]
 
-        subject = "[CdE] Anmeldung für {}".format(rs.ambience['event']['title'])
+        subject = "Anmeldung für {}".format(rs.ambience['event']['title'])
         reply_to = (rs.ambience['event']['orga_address'] or
                     self.conf["EVENT_ADMIN_ADDRESS"])
         self.do_mail(

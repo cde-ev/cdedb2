@@ -335,8 +335,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         persona = self.coreproxy.get_persona(rs, persona_id)
         if secret:
             rs.notify("success", n_("Signed up."))
-            subject = "[CdE] Teilnahme an {}".format(
-                rs.ambience['assembly']['title'])
+            subject = f"Teilnahme an {rs.ambience['assembly']['title']}"
             reply_to = (rs.ambience['assembly']['mail_address'] or
                         self.conf["ASSEMBLY_ADMIN_ADDRESS"])
             self.do_mail(
