@@ -289,8 +289,8 @@ def ProxyShim(backend: B, internal=False) -> B:
         def __getattr__(self, name):
             attr = getattr(backend, name)
             if (
-                not attr.access
-                or hasattr(attr, "internal") and attr.internal and not internal
+                not getattr(attr, "access", False)
+                or (getattr(attr, "internal", False) and not internal)
                 or not callable(attr)
             ):
                 raise PrivilegeError(n_("Attribute %s not public") % name)
