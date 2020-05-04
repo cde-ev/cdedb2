@@ -612,6 +612,7 @@ class CdEFrontend(AbstractUserFrontend):
                                   'Subject': "Aufnahme in den CdE",
                                   },
                                  {'data': datum['persona'],
+                                  'fee': self.conf["MEMBERSHIP_FEE"],
                                   'email': email if success else "",
                                   'cookie': message if success else "",
                                   'meta_info': meta_info,
