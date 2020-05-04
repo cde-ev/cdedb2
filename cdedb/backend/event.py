@@ -3624,7 +3624,7 @@ class EventBackend(AbstractBackend):
             self.conf["CDEDB_OFFLINE_DEPLOYMENT"]  # this grants access for
                                                    # the droid
             or self.is_orga(rs, event_id=event_id)
-            or not self.is_admin(rs))
+            or self.is_admin(rs))
         if not access_ok:
             raise PrivilegeError(n_("Not privileged."))
 
