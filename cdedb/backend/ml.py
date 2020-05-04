@@ -942,7 +942,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @access("ml", "droid")
+    @access("ml", "droid_rklist")
     def get_many_subscription_states(self, rs, mailinglist_ids, states=None):
         """Get all users related to a given mailinglist and their sub state.
 
@@ -1056,7 +1056,7 @@ class MlBackend(AbstractBackend):
         return unwrap(self.get_user_subscriptions(
             rs, persona_id, states=states, mailinglist_ids=(mailinglist_id,)))
 
-    @access("ml", "droid")
+    @access("ml", "droid_rklist")
     def get_subscription_addresses(self, rs, mailinglist_id, persona_ids=None,
                                    explicits_only=False):
         """Retrieve email addresses of the given personas for the mailinglist.
@@ -1123,7 +1123,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @access("ml", "droid")
+    @access("ml", "droid_rklist")
     def get_subscription_address(self, rs, mailinglist_id, persona_id,
                                  explicits_only=False):
         """Return the subscription address for one persona and one mailinglist.
