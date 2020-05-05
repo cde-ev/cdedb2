@@ -1553,7 +1553,7 @@ class CoreBackend(AbstractBackend):
         return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
     get_persona = singularize(get_personas)
 
-    @access("event", "droid_resolve")
+    @access("event", "droid_quick_partial_export")
     def get_event_users(self, rs, ids, event_id=None):
         """Get an event view on some data sets.
 
