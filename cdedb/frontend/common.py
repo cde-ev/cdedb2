@@ -870,6 +870,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         )
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
+            trim_blocks=True,
+            lstrip_blocks=True,
         )
         self.jinja_env.policies['ext.i18n.trimmed'] = True
         # Always provide all backends -- they are cheap

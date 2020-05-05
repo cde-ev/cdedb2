@@ -5,11 +5,16 @@ die Abstimmung
 der Versammlung
     "{{ ambience['assembly']['title'] }}"
 ist zu Ende gegangen. Die Ergebnisdatei mit der SHA512-Prüfsumme
-{{ sha }} findet ihr im Anhang.
+{{ sha }}
+findet ihr im Anhang.
 
-Für nähere Informationen zum Wahlverfahren siehe [1].
+Eine Übersicht über die bisher abgeschlossenen Abstimmungen dieser
+Versammlung findet ihr unter [1].
+
+Für nähere Informationen zum Wahlverfahren siehe [2].
 
 
 Die Datenbank
 
-[1] https://db.cde-ev.de/doc/Handbuch_elektronisches_Wahlverfahren.html
+[1] {{ cdedblink('assembly/summary_ballots') }}
+[2] https://db.cde-ev.de/doc/Handbuch_elektronisches_Wahlverfahren.html
