@@ -961,10 +961,6 @@ class CronBackendShim:
         self._cron = cron
         self._proxy = proxy
 
-        self._funs = {}
-        for name, fun in proxy._funs.items():
-            self._funs[name] = self._wrapit(fun)
-
     def _wrapit(self, fun):
         @functools.wraps(fun)
         def new_fun(*args, **kwargs):
@@ -975,10 +971,8 @@ class CronBackendShim:
     def __getattr__(self, name):
         if name in {"_funs", "_proxy", "_cron"}:
             raise AttributeError()
-        try:
-            return self._funs[name]
-        except KeyError as e:
-            raise AttributeError from e
+        attr = getattr(self._proxy, name)
+        return self._wrapit(attr)
 
 
 class CronTest(unittest.TestCase):

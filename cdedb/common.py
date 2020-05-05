@@ -21,7 +21,7 @@ import shutil
 import string
 import sys
 from typing import (TYPE_CHECKING, Any, Collection, Dict, List, Mapping,
-                    Sequence, TypeVar, Union, cast, overload)
+                    Sequence, TypeVar, Union, cast, overload, Callable)
 
 import psycopg2.extras
 import pytz
@@ -274,6 +274,8 @@ else:
     AbstractBackend = None
 
 B = TypeVar("B", bound=AbstractBackend)
+F = TypeVar("F", bound=Callable)
+
 
 def ProxyShim(backend: B, internal=False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
@@ -285,8 +287,21 @@ def ProxyShim(backend: B, internal=False) -> B:
     We also need to use an inner class so we can provide __getattr__.
     """
 
-    class Proxy():
-        def __getattr__(self, name):
+    class Proxy:
+        def _wrapit(self, fun: F) -> F:
+            @functools.wraps(fun)
+            def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+                try:
+                    if not internal:
+                        # Expose database connection for the backends
+                        rs.conn = rs._conn
+                    return fun(rs, *args, **kwargs)
+                finally:
+                    if not internal:
+                        rs.conn = None
+            return wrapper
+
+        def __getattr__(self, name: str) -> Any:
             attr = getattr(backend, name)
             if (
                 not getattr(attr, "access", False)
@@ -295,21 +310,9 @@ def ProxyShim(backend: B, internal=False) -> B:
             ):
                 raise PrivilegeError(n_("Attribute %s not public") % name)
 
-            @functools.wraps(attr)
-            def wrapper(rs, *args, **kwargs):
-                try:
-                    if not internal:
-                        # Expose database connection for the backends
-                        rs.conn = rs._conn
-                    return attr(rs, *args, **kwargs)
-                finally:
-                    if not internal:
-                        rs.conn = None
-
-            return wrapper
+            return self._wrapit(attr)
 
     return cast(B, Proxy())
-
 
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,
