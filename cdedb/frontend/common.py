@@ -1200,6 +1200,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :rtype: :py:class:`email.message.Message`
         """
         defaults = {"From": self.conf["DEFAULT_SENDER"],
+                    "Prefix": self.conf["DEFAULT_PREFIX"],
                     "Reply-To": self.conf["DEFAULT_REPLY_TO"],
                     "Return-Path": self.conf["DEFAULT_RETURN_PATH"],
                     "Cc": tuple(),
@@ -1236,7 +1237,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
             msg[header] = headers[header]
-        msg["Subject"] = self.conf["DEFAULT_PREFIX"] + " " + headers['Subject']
+        msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         msg["Message-ID"] = email.utils.make_msgid(domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
         return msg
