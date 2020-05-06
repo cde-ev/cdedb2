@@ -20,8 +20,8 @@ import re
 import shutil
 import string
 import sys
-from typing import (TYPE_CHECKING, Any, Collection, Dict, List, Mapping,
-                    Sequence, TypeVar, Union, cast, overload, Callable)
+from typing import (TYPE_CHECKING, Any, Callable, Collection, Dict, List,
+                    Mapping, Sequence, TypeVar, Union, cast, overload)
 
 import psycopg2.extras
 import pytz
@@ -287,7 +287,7 @@ def ProxyShim(backend: B, internal=False) -> B:
     We also need to use an inner class so we can provide __getattr__.
     """
 
-    def wrapit(self, fun: F) -> F:
+    def wrapit(fun: F) -> F:
         @functools.wraps(fun)
         def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
             try:
@@ -1750,8 +1750,8 @@ ALL_ADMIN_VIEWS = {
 
 def roles_to_admin_views(roles):
     """ Get the set of available admin views for a user with given roles.
-    
-    :type roles: {str} 
+
+    :type roles: {str}
     :return: {str}
     """
     result = set()

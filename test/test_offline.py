@@ -76,12 +76,19 @@ class TestOffline(FrontendTest):
             self.get(
                 '/event/offline/partial',
                 headers={'X-CdEDB-API-token': 'y1f2i3d4x5b6'})
-            expectation = {
-                'message': "success",
-                'data': {},  # ???
-            }
-            # self.assertEqual(self.response.json, expectation)
             self.assertEqual(self.response.json["message"], "success")
+            expectation = {
+                'CDEDB_EXPORT_EVENT_VERSION',
+                'kind',
+                'timestamp',
+                'id',
+                'event',
+                'lodgement_groups',
+                'lodgements',
+                'courses',
+                'registrations',
+            }
+            self.assertEqual(set(self.response.json["export"]), expectation)
 
             # Additional tests can be added here.
             # Due to the expensive setup of this test these should not
