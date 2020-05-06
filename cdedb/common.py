@@ -274,7 +274,7 @@ else:
     AbstractBackend = None
 
 B = TypeVar("B", bound=AbstractBackend)
-F = TypeVar("F", bound=Callable)
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def ProxyShim(backend: B, internal=False) -> B:
@@ -287,30 +287,30 @@ def ProxyShim(backend: B, internal=False) -> B:
     We also need to use an inner class so we can provide __getattr__.
     """
 
-    class Proxy:
-        def _wrapit(self, fun: F) -> F:
-            @functools.wraps(fun)
-            def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
-                try:
-                    if not internal:
-                        # Expose database connection for the backends
-                        rs.conn = rs._conn
-                    return fun(rs, *args, **kwargs)
-                finally:
-                    if not internal:
-                        rs.conn = None
-            return wrapper
+    def wrapit(self, fun: F) -> F:
+        @functools.wraps(fun)
+        def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+            try:
+                if not internal:
+                    # Expose database connection for the backends
+                    rs.conn = rs._conn
+                return fun(rs, *args, **kwargs)
+            finally:
+                if not internal:
+                    rs.conn = None
+        return wrapper
 
+    class Proxy:
         def __getattr__(self, name: str) -> Any:
             attr = getattr(backend, name)
-            if (
-                not getattr(attr, "access", False)
-                or (getattr(attr, "internal", False) and not internal)
-                or not callable(attr)
+            if any(
+                not getattr(attr, "access", False),
+                getattr(attr, "internal", False) and not internal,
+                not callable(attr),
             ):
                 raise PrivilegeError(n_("Attribute %s not public") % name)
 
-            return self._wrapit(attr)
+            return wrapit(attr)
 
     return cast(B, Proxy())
 
