@@ -1557,7 +1557,7 @@ class CoreBackend(AbstractBackend):
         return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
     get_persona = singularize(get_personas)
 
-    @access("event", "droid")
+    @access("event", "droid_quick_partial_export")
     def get_event_users(self, rs, ids, event_id=None):
         """Get an event view on some data sets.
 
@@ -2654,25 +2654,16 @@ class CoreBackend(AbstractBackend):
         query = affirm("query", query)
         return self._submit_general_query(rs, query)
 
-    @access("anonymous")
+    @access("droid_resolve")
     def submit_resolve_api_query(self, rs, query):
-        """Quick hack only designed to enable the API to resolve names.
+        """Accessible version of :py:meth:`submit_general_query`.
+
+        This should be used solely by the resolve API. The frontend takes
+        the necessary precautions.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type query: :py:class:`cdedb.query.Query`
         :rtype: [{str: object}]
         """
         query = affirm("query", query)
-        # escalate db privilege role
-        orig_conn = None
-        try:
-            if rs.conn.is_contaminated:
-                raise RuntimeError(
-                    n_("Atomized – impossible to escalate."))
-            orig_conn = rs.conn
-            rs.conn = self.connpool['cdb_persona']
-            return self.general_query(rs, query)
-        finally:
-            # deescalate
-            if orig_conn:
-                rs.conn = orig_conn
+        return self.general_query(rs, query)
