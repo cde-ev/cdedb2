@@ -425,7 +425,6 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         f = self.response.forms['createlistform']
         f['title'] = "Munkelwand"
-        f['local_part'] = "munkelwand"
         f['mod_policy'] = 1
         f['attachment_policy'] = 2
         f['subject_prefix'] = "[munkel]"
@@ -434,6 +433,14 @@ class TestMlFrontend(FrontendTest):
         f['notes'] = "Noch mehr Gemunkel."
         f['moderator_ids'] = "DB-3-5, DB-7-8"
         f['domain'] = 1
+
+        # Check that no lists with the same address can be made
+        f['local_part'] = "platin"
+        self.submit(f, check_notification=False)
+        self.assertIn("alert alert-danger", self.response.text)
+        self.assertPresence("Non-unique mailinglist name")
+
+        f['local_part'] = "munkelwand"
         self.submit(f)
         self.assertTitle("Munkelwand")
         self.assertPresence("Clown")
@@ -450,9 +457,16 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("Werbung", f['title'].value)
         f['title'] = "Munkelwand"
         self.assertEqual("werbung", f['local_part'].value)
-        f['local_part'] = "munkelwand"
         self.assertTrue(f['is_active'].checked)
         f['is_active'].checked = False
+
+        # Check that no lists with the same address can be made
+        f['local_part'] = "platin"
+        self.submit(f, check_notification=False)
+        self.assertIn("alert alert-danger", self.response.text)
+        self.assertPresence("Non-unique mailinglist name")
+
+        f['local_part'] = "munkelwand"
         self.submit(f)
         self.assertTitle("Munkelwand")
         self.traverse({'href': '/ml/mailinglist/2/change'},)

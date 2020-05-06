@@ -341,6 +341,22 @@ class MlBackend(AbstractBackend):
             return {k: v for k, v in ret.items()
                     if self.may_view(rs, mailinglists[k])}
 
+    def list_mailinglist_addresses(self, rs):
+        """List all mailinglist adresses
+
+        This is for the purpose of preventing duplicate mail adresses,
+        so it lists mail adresses even if you can not see the corresponding
+        mailinglists.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {int: str}
+        :returns: Mapping of mailinglist ids to titles.
+        """
+        query = "SELECT id, address FROM ml.mailinglists"
+        data = self.query_all(rs, query, [])
+        return {e['id']: e['address'] for e in data}
+
+
     @access("ml")
     def get_mailinglists(self, rs, ids):
         """Retrieve data for some mailinglists.
@@ -527,7 +543,8 @@ class MlBackend(AbstractBackend):
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:
-                mdata['address'] = ml_type.full_address(dict(current, **mdata))
+                mdata['address'] = self.validate_address(
+                    rs, dict(current, **mdata))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
                 # Check if privileges allow new state of the mailinglist.
@@ -565,7 +582,7 @@ class MlBackend(AbstractBackend):
         :returns: the id of the new mailinglist
         """
         data = affirm("mailinglist", data, creation=True)
-        data['address'] = ml_type.full_address(data)
+        data['address'] = self.validate_address(rs, data)
         if not self.is_relevant_admin(rs, mailinglist=data):
             raise PrivilegeError("Not privileged to create mailinglist of this "
                                  "type.")
@@ -579,6 +596,23 @@ class MlBackend(AbstractBackend):
                 self.set_whitelist(rs, new_id, data["whitelist"])
             self.write_subscription_states(rs, new_id)
         return new_id
+
+    @access("ml")
+    def validate_address(self, rs, data):
+        """Construct the complete address and check for duplicates.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: the id of the new mailinglist
+        """
+        address = ml_type.full_address(data)
+        addresses = self.list_mailinglist_addresses(rs)
+        # address can either be free or taken by the current mailinglist
+        if (address in addresses.values()
+                and address != addresses.get(data.get('id'))):
+            raise ValueError(n_("Non-unique mailinglist name"))
+        return address
 
     @access("ml")
     def delete_mailinglist_blockers(self, rs, mailinglist_id):
