@@ -335,8 +335,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         persona = self.coreproxy.get_persona(rs, persona_id)
         if secret:
             rs.notify("success", n_("Signed up."))
-            subject = "[CdE] Teilnahme an {}".format(
-                rs.ambience['assembly']['title'])
+            subject = f"Teilnahme an {rs.ambience['assembly']['title']}"
             reply_to = (rs.ambience['assembly']['mail_address'] or
                         self.conf["ASSEMBLY_ADMIN_ADDRESS"])
             self.do_mail(
@@ -710,12 +709,18 @@ class AssemblyFrontend(AbstractUserFrontend):
                 to = [self.conf["BALLOT_TALLY_ADDRESS"]]
                 if rs.ambience['assembly']['mail_address']:
                     to.append(rs.ambience['assembly']['mail_address'])
-                subject = "Abstimmung '{}' ausgezählt".format(ballot['title'])
+                reply_to = (rs.ambience['assembly']['mail_address'] or
+                            self.conf["ASSEMBLY_ADMIN_ADDRESS"])
+                subject = f"Abstimmung '{ballot['title']}' ausgezählt"
                 hasher = hashlib.sha512()
                 with open(path, 'rb') as resultfile:
                     hasher.update(resultfile.read())
                 self.do_mail(
-                    rs, "ballot_tallied", {'To': to, 'Subject': subject},
+                    rs, "ballot_tallied", {
+                        'To': to,
+                        'Subject': subject,
+                        'Reply-To': reply_to
+                    },
                     attachments=(attachment_result,),
                     params={'sha': hasher.hexdigest(), 'title': ballot['title']})
                 update = True
