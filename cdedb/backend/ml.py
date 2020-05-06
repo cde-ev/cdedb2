@@ -733,7 +733,8 @@ class MlBackend(AbstractBackend):
             num += self.query_exec(rs, query, params)
 
         return num
-    _set_subscription = singularize(_set_subscriptions, "data", "datum")
+    _set_subscription = singularize(
+        _set_subscriptions, "data", "datum", passthrough=True)
 
     @internal
     @access("ml")
