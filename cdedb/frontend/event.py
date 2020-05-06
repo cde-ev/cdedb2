@@ -2697,7 +2697,7 @@ class EventFrontend(AbstractUserFrontend):
         if len(events) != 1:
             ret['message'] = "Exactly one event must exist."
             return self.send_json(rs, ret)
-        event_id = unwrap(events, keys=True)
+        event_id = unwrap(events.keys())
         ret['export'] = self.eventproxy.partial_export_event(rs, event_id)
         ret['message'] = "success"
         return self.send_json(rs, ret)
