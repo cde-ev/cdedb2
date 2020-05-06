@@ -67,6 +67,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                           'Subject': "CdEDB Account erstellt",
                           },
                          {'data': data,
+                          'fee': self.conf["MEMBERSHIP_FEE"],
                           'email': email if success else "",
                           'cookie': message if success else "",
                           'meta_info': meta_info,

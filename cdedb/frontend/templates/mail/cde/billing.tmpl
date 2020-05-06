@@ -1,6 +1,7 @@
 Hallo {{ persona['display_name'] }},
-
 {% if (persona['balance'] < fee and not persona['trial_member']) and not lastschrift %}
+
+
 == Mitgliedsbeitrag bezahlen ==
 
 Schön, dass Du bis jetzt dem CdE treu geblieben bist. Leider reicht
@@ -38,6 +39,8 @@ du später wieder Interesse am CdE haben, kannst du jederzeit wieder
 Mitglied werden.
 {% endif %}
 {% if lastschrift and lastschrift['id'] in open_lastschrift %}
+
+
 == Mitgliedsbeitrag per Lastschrift ==
 
 Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
@@ -58,6 +61,8 @@ CdE-'Guthabenkonto' abgezogen haben möchtest, oder auch, wenn Du dieses
 Jahr mit dem Lastschrifteinzug pausieren möchtest.
 {% endif %}
 {% if addresscheck %}
+
+
 == Adresskontrolle ==
 
 Unter anderem für den Versand des exPuls ist es wichtig, dass wir
@@ -72,12 +77,16 @@ CdE-Datenbank unter der Adresse
 einloggen und die Adresse korrigieren.
 {% endif %}
 {% if (persona['balance'] >= fee or persona['trial_member']) and not lastschrift %}
+
+
 == Guthabenstatus ==
 {% if persona['balance'] %}
+
 Dein momentanes Guthaben beträgt {{ persona['balance']|money }}. Somit
 sind Deine Mitgliedsbeiträge bei der derzeitigen Beitragshöhe
 von {{ fee|money }} noch {{ persona['balance'] // fee }} Halbjahre bezahlt.
 {% else %}
+
 Du bist für dieses Halbjahr Probemitglied im CdE. Du bekommst in
 dieser Zeit mit der Mitgliedschaft auch den exPuls (die
 Vereinszeitschrift).
@@ -109,6 +118,8 @@ Dich hieran zu beteiligen, rufe bitte
 auf und folge den dort angegebenen Hinweisen.
 {% endif %}
 {% if lastschrift and not lastschrift['id'] in open_lastschrift %}
+
+
 == Lastschriftmandat ==
 
 Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
@@ -120,14 +131,15 @@ jeder Lastschrift. Das Lastschriftmandat mit der Mandatsreferenz
 widerrufen. Sollte sich Deine Bankverbindung geändert haben,
 so informiere uns bitte.
 {% endif %}
+
+
 == Noch Fragen? ==
 
-Wenn Du Fragen hast, so erreichst Du uns unter
-	<verwaltung@cde-ev.de>
+Wenn Du Fragen hast, so erreichst Du uns unter <verwaltung@cde-ev.de>
+
 
 Viele Grüße
-
-das CdE-Verwaltungs-Team
+das Verwaltungsteam
 
 P.S.: Weitere Infos zur Mitgliedschaft findest Du unter
 	https://www.cde-ev.de/faq/mitglied/

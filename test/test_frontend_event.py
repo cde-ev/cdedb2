@@ -1195,9 +1195,9 @@ etc;anything else""", f['entries_2'].value)
         mail = self.fetch_mail()[0]
         text = mail.get_body().get_content()
         if user["id"] == 2:
-            self.assertIn("461.49", text)
+            self.assertIn("461,49", text)
         elif user["id"] == 4:
-            self.assertIn("466.49", text)
+            self.assertIn("466,49", text)
             self.assertIn("Da Du kein CdE-Mitglied bist, musst du einen "
                           "zusätzlichen Beitrag",
                           text)
@@ -1205,7 +1205,7 @@ etc;anything else""", f['entries_2'].value)
                           "regulären Mitgliedsbeitrag",
                           text)
         elif user["id"] == 14:
-            self.assertIn("466.49", text)
+            self.assertIn("466,49", text)
             self.assertIn("Da Du kein CdE-Mitglied bist, musst du einen "
                           "zusätzlichen Beitrag",
                           text)
@@ -1290,7 +1290,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]
         text = mail.get_body().get_content()
-        self.assertIn("10.50", text)
+        self.assertIn("10,50", text)
         self.traverse({'href': '/event/event/1/registration/amend'})
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms['amendregistrationform']
@@ -1824,10 +1824,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(3, len(mails))
         for mail in mails:
             text = mail.get_body().get_content()
-            self.assertIn(
-                "Vielen Dank für Deine Überweisung für die Veranstaltung", text)
-            self.assertIn(
-                "Große Testakademie 2222.", text)
+            self.assertIn("Überweisung für die Veranstaltung", text)
+            self.assertIn('"Große Testakademie 2222"', text)
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
         self.traverse({'description': 'Alle Anmeldungen'},

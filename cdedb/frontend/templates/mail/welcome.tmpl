@@ -4,7 +4,9 @@ Hallo {{ data['display_name'] }}!
 Dein Account für die CdE-Datenbank wurde erstellt. Unter [1]
 kannst Du Deine persönlichen Zugangsdaten erstellen.
 
-Liebe Grüße von der Verwaltung
+
+Viele Grüße
+das Verwaltungsteam
 {% else %}
 Ein herzliches Willkommen im
 Club der Ehemaligen der Deutschen SchülerAkademien (CdE)!
@@ -13,7 +15,7 @@ Du hast vor Kurzem an einer Akademie teilgenommen und dort viele Tage
 intensiv gelernt, dabei aber auch sehr viel Spaß gehabt. Würdest Du
 gerne wieder mit anderen motivierten und interessierten Menschen am
 Lagerfeuer sitzen und über Gott und die Welt diskutieren und lachen?
-Dafür gibt es den CdE -- den Club der Ehemaligen der Deutschen
+Dafür gibt es den CdE - den Club der Ehemaligen der Deutschen
 SchülerAkademien e. V. Der CdE besteht aus circa 3.000 Leuten, aus
 Studenten, Berufstätigen und Schülern, aus Biologen und Philosophen,
 aus Leuten aus Deutschland und aus aller Welt, aus 40-jährigen und
@@ -32,31 +34,34 @@ Dir diese Mail zeigen.
 Vieles wird über die Vereinsdatenbank organisiert. Unter [1]
 kannst Du Deine persönlichen Zugangsdaten zur CdE-Datenbank erstellen.
 {% if not data['is_searchable'] %}
+
 Wenn Du Dich zum ersten Mal in unserer Datenbank anmeldest, kannst Du
 entscheiden, ob andere Ehemalige Deine Kontaktdaten einsehen dürfen oder
 nicht.
-{% endif %}
+{%- endif %}
+
 Für einen Überblick über alle CdE-Aktivitäten ist der schnelle Blick
-auf http://www.cde-ev.de ausreichend, aber auch nachstehend findest Du
+auf https://www.cde-ev.de ausreichend, aber auch nachstehend findest Du
 eine ausführliche Beschreibung. Hier ist vorab das Wesentliche über
 die Mitgliedschaft im Verein zusammengefasst:
 
 {% if data['trial_member'] %}
-Wie bleibt man Mitglied im CdE? Da z. B. durch den Druck der
+Wie bleibt man Mitglied im CdE? Da z.B. durch den Druck der
 Vereinszeitschrift "exPuls" Kosten entstehen, wird eine
-Mitgliedsgebühr von 2,50 Euro pro Halbjahr erhoben.  In diesem
+Mitgliedsgebühr von {{ fee|money }} pro Halbjahr erhoben.  In diesem
 Halbjahr ist die Mitgliedschaft (inklusive eines "exPuls") für Dich
 kostenlos, und Du hast so Gelegenheit, den CdE auszuprobieren. Danach
 musst Du den Mitgliedsbeitrag bezahlen, um Mitglied zu bleiben. Nähere
 Informationen dazu findest Du unter https://www.cde-ev.de/faq/mitglied/ .
-Bei weiteren Fragen schreib eine E-Mail an verwaltung@cde-ev.de.
-{% else %}
-Wie bleibt man Mitglied im CdE? Da z. B. durch den Druck der
+Bei weiteren Fragen schreib eine E-Mail an <verwaltung@cde-ev.de>.
+{%- else %}
+Wie bleibt man Mitglied im CdE? Da z.B. durch den Druck der
 Vereinszeitschrift "exPuls" Kosten entstehen, wird eine
-Mitgliedsgebühr von 2,50 Euro pro Halbjahr erhoben. Nähere
+Mitgliedsgebühr von {{ fee|money }} pro Halbjahr erhoben. Nähere
 Informationen dazu findest Du unter https://www.cde-ev.de/faq/mitglied/ .
-Bei weiteren Fragen schreib eine E-Mail an verwaltung@cde-ev.de.
-{% endif %}
+Bei weiteren Fragen schreib eine E-Mail an <verwaltung@cde-ev.de>.
+{%- endif %}
+
 Der CdE ist seit 2006 ein eingetragener Verein. Die
 Mitgliederversammlung, auf der alle wesentlichen Entscheidungen, die
 den CdE betreffen, besprochen werden, inklusive Wahlen und
@@ -64,7 +69,10 @@ Abstimmungen finden jährlich im Oktober online statt. Du erhältst dazu
 rechtzeitig eine Einladung per E-Mail.
 
 Uns, den Vorstand des CdE, kannst Du bei Problemen, Fragen oder
-Anregungen jederzeit unter vorstand@cde-ev.de erreichen.  Viele Grüße!
+Anregungen jederzeit unter <vorstand@cde-ev.de> erreichen.
+
+
+Viele Grüße!
 
 {{ meta_info['Vorstand'] }}
 
@@ -123,7 +131,7 @@ könnt in der Online-Datenbank nachschauen, ob doch noch jemand bei
 Euch in der Nähe wohnt ( {{ cdedblink("core/index") }} ), oder Ihr könnt
 Euch aktiv im CdE beteiligen, in dem ihr an den Diskussionen auf der
 Mailingliste teilnehmt. Diese findet ihr unter
-http://www.cde-ev.de/vereinsleben/mailinglisten/ .
+https://www.cde-ev.de/vereinsleben/mailinglisten/ .
 
 Kann man auch selbst etwas veranstalten? Klar! Der CdE lebt
 ausschließlich von Eigeninitiative! Wenn Du also dringend jemanden

@@ -1,12 +1,14 @@
-Hallo {{ user['given_names'] }},
+Hallo {{ user['display_name'] }},
 
-um Dich mit dieser E-Mail-Adresse in die Mailingliste "{{ ambience['mailinglist']['title'] }}"
-einzutragen, benötigt die Datenbank Deine Bestätigung indem Du den
-untenstehenden Link [1] besuchst.
+um Dich mit dieser E-Mail-Adresse in die Mailingliste
+    "{{ ambience['mailinglist']['title'] }}"
+einzutragen, benötigt die Datenbank Deine Bestätigung. Dazu musst Du den
+untenstehenden Link [1] besuchen.
 
-Solltest Du nicht {{ user['given_names'] }} sein oder nicht eingetragen
+Solltest Du nicht {{ user['display_name'] }} sein oder nicht eingetragen
 werden wollen, so kannst Du diese Mail einfach ignorieren.
 
-               Die Datenbank
+
+Die Datenbank
 
 [1] {{ cdedblink('ml/do_address_change', {'email': email}) }}

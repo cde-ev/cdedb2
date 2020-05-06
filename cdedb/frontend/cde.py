@@ -612,6 +612,7 @@ class CdEFrontend(AbstractUserFrontend):
                                   'Subject': "Aufnahme in den CdE",
                                   },
                                  {'data': datum['persona'],
+                                  'fee': self.conf["MEMBERSHIP_FEE"],
                                   'email': email if success else "",
                                   'cookie': message if success else "",
                                   'meta_info': meta_info,
@@ -1134,7 +1135,7 @@ class CdEFrontend(AbstractUserFrontend):
                                + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
-                              'Subject': "Überweisung beim CdE eingetroffen",
+                              'Subject': "Überweisung eingegangen",
                               },
                              {'persona': persona, 'address': address,
                               'new_balance': new_balance})
@@ -1588,7 +1589,7 @@ class CdEFrontend(AbstractUserFrontend):
                     lastschrift['persona_id'], lastschrift['id']),
                 'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
             }
-            subject = "Anstehender Lastschrifteinzug CdE Initiative 25+"
+            subject = "Anstehender Lastschrifteinzug Initiative 25+"
             self.do_mail(rs, "sepa_pre-notification",
                          {'To': (persona['username'],),
                           'Subject': subject},
@@ -1885,9 +1886,9 @@ class CdEFrontend(AbstractUserFrontend):
                               and not persona['trial_member']
                               and not lastschrift)
                 if endangered:
-                    subject = "CdE-Mitgliedschaft verlängern"
+                    subject = "Mitgliedschaft verlängern"
                 else:
-                    subject = "CdE-Mitgliedschaft verlängert"
+                    subject = "Mitgliedschaft verlängert"
                 self.do_mail(
                     rrs, "billing",
                     {'To': (persona['username'],),
@@ -2080,21 +2081,11 @@ class CdEFrontend(AbstractUserFrontend):
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 address = make_postal_address(persona)
-                lastschrift_list = self.cdeproxy.list_lastschrift(
-                    rrs, persona_ids=(persona_id,))
-                lastschrift = None
-                if lastschrift_list:
-                    lastschrift = self.cdeproxy.get_lastschrift(
-                        rrs, unwrap(lastschrift_list.keys()))
-                    lastschrift['reference'] = lastschrift_reference(
-                        persona['id'], lastschrift['id'])
                 self.do_mail(
                     rrs, "addresscheck",
                     {'To': (persona['username'],),
-                     'Subject': "Adressabfrage für exPuls"},
+                     'Subject': "Adressabfrage für den exPuls"},
                     {'persona': persona,
-                     'lastschrift': lastschrift,
-                     'fee': self.conf["MEMBERSHIP_FEE"],
                      'address': address,
                      })
                 if testrun:
