@@ -8,8 +8,8 @@ Mailinglist Types
 To catch all required use cases while reducing the probability of configuration
 errors and providing a useful sorting order, the code defines different
 mailinglist types. This allows us to support even complex use cases if required,
-while not overloading the interface. (TBD: Furthermore, additional admin roles
-are allowed to manage mailinglists depending on their type.) More information
+while not overloading the interface. Furthermore, additional admin roles
+are allowed to manage mailinglists depending on their type. More information
 about implicit subscriptions is provided in the `Mailinglist Management`_
 section.
 
