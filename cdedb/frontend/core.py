@@ -19,7 +19,8 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, querytoparams_filter,
-    csv_output, query_result_to_json, enum_entries_filter, periodic)
+    csv_output, query_result_to_json, enum_entries_filter, periodic,
+    calculate_db_logparams, calculate_loglinks)
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
@@ -1602,7 +1603,7 @@ class CoreFrontend(AbstractFrontend):
             else:
                 self.do_mail(
                     rs, "reset_password",
-                    {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"},
+                    {'To': (email,), 'Subject': "Passwort zurücksetzen"},
                     {'email': self.encode_parameter(
                         "core/do_password_reset_form", "email", email,
                         timeout=self.conf["PARAMETER_TIMEOUT"]),
@@ -1613,7 +1614,7 @@ class CoreFrontend(AbstractFrontend):
         if admin_exception:
             self.do_mail(
                 rs, "admin_no_reset_password",
-                {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"})
+                {'To': (email,), 'Subject': "Passwort zurücksetzen"})
             msg = "Sent password reset denial mail to admin {} for IP {}."
             self.logger.info(msg.format(email, rs.request.remote_addr))
             rs.notify("success", n_("Email sent."))
@@ -1648,7 +1649,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             self.do_mail(
                 rs, "reset_password",
-                {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"},
+                {'To': (email,), 'Subject': "Passwort zurücksetzen"},
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email,
                     timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
@@ -1733,7 +1734,7 @@ class CoreFrontend(AbstractFrontend):
             return self.change_username_form(rs)
         self.do_mail(rs, "change_username",
                      {'To': (new_username,),
-                      'Subject': "CdEDB Neue E-Mail-Adresse verifizieren"},
+                      'Subject': "Neue E-Mail-Adresse verifizieren"},
                      {'new_username': self.encode_parameter(
                          "core/do_username_change_form", "new_username",
                          new_username)})
@@ -1920,7 +1921,7 @@ class CoreFrontend(AbstractFrontend):
         self.do_mail(rs, "genesis_verify",
                      {
                          'To': (data['username'],),
-                         'Subject': "CdEDB Accountanfrage verifizieren",
+                         'Subject': "Accountanfrage verifizieren",
                      },
                      {
                          'genesis_case_id': self.encode_parameter(
@@ -2285,25 +2286,29 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
-    @REQUESTdata(("stati", "[int]"), ("start", "non_negative_int_or_None"),
+    @REQUESTdata(("stati", "[int]"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("reviewed_by", "cdedbid_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_changelog_meta(self, rs, stati, start, stop, persona_id,
+    def view_changelog_meta(self, rs, stati, offset, length, persona_id,
                             submitted_by, additional_info, time_start,
                             time_stop, reviewed_by):
         """View changelog activity."""
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
-        start = start or 0
-        stop = stop or 50
-        log = self.coreproxy.retrieve_changelog_meta(
-            rs, stati, start, stop, persona_id=persona_id,
+        total, log = self.coreproxy.retrieve_changelog_meta(
+            rs, stati, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
         persona_ids = (
@@ -2313,27 +2318,33 @@ class CoreFrontend(AbstractFrontend):
                    entry['reviewed_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_changelog_meta", {
-            'log': log, 'personas': personas})
+            'log': log, 'total': total, 'length': _length,
+            'personas': personas, 'loglinks': loglinks})
+
 
     @access("core_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_log(self, rs, codes, start, stop, persona_id, submitted_by,
+    def view_log(self, rs, codes, offset, length, persona_id, submitted_by,
                  additional_info, time_start, time_stop):
         """View activity."""
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
-        start = start or 0
-        stop = stop or 50
-        log = self.coreproxy.retrieve_log(
-            rs, codes=codes, start=start, stop=stop, persona_id=persona_id,
+        total, log = self.coreproxy.retrieve_log(
+            rs, codes, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -2341,7 +2352,10 @@ class CoreFrontend(AbstractFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        return self.render(rs, "view_log", {'log': log, 'personas': personas})
+        loglinks = calculate_loglinks(rs, total, offset, length)
+        return self.render(rs, "view_log", {
+            'log': log, 'total': total, 'length': _length,
+            'personas': personas, 'loglinks': loglinks})
 
     @access("anonymous")
     def debug_email(self, rs, token):

@@ -69,7 +69,7 @@ class RequestState:
         self.validation_appraised = True
         self.csrf_alert = False
 
-def setup(persona_id, dbuser, dbpassword, check_system_user=True):
+def setup(persona_id, dbuser, dbpassword, check_system_user=True, dbname='cdb'):
     """This sets up the database.
 
     :type persona_id: int
@@ -88,8 +88,8 @@ def setup(persona_id, dbuser, dbpassword, check_system_user=True):
     """
     if check_system_user and getpass.getuser() != "www-data":
         raise RuntimeError("Must be run as user www-data.")
-    cstring = "dbname=cdb user={} password={} port=5432 host=localhost".format(
-        dbuser, dbpassword)
+    cstring = "dbname={} user={} password={} port=5432 host=localhost".format(
+        dbname, dbuser, dbpassword)
     cdb = psycopg2.connect(cstring,
                            connection_factory=IrradiatedConnection,
                            cursor_factory=psycopg2.extras.RealDictCursor)

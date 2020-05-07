@@ -1,15 +1,16 @@
-Hallo {{ user['given_names'] }},
+Hallo {{ user['display_name'] }},
 
-Deine Anmeldung zur Veranstaltung {{ ambience['event']['title'] }} ist bei uns
-angekommen. Beachte bitte, dass Deine Anmeldung erst mit Überweisung des
+Du hast dich erfolgreich zur Veranstaltung
+    "{{ ambience['event']['title'] }}"
+angemeldet. Beachte bitte, dass Deine Anmeldung erst mit Überweisung des
 Teilnehmerbeitrags gültig wird.
 
 {% if ambience['event']['iban'] %}
 {% if ambience['event']['mail_text'] %}
-Überweise dazu bitte {{ fee }}€ plus möglicherweise unten erwähnte
-veranstaltungsspezifische Beträge auf folgendes Konto.
+Überweise dazu bitte {{ fee|money }} plus möglicherweise unten erwähnte
+veranstaltungsspezifische Beträge auf das folgende Konto.
 {% else %}
-Überweise dazu bitte {{ fee }}€ auf folgendes Konto.
+Überweise dazu bitte {{ fee|money }} auf das folgende Konto.
 {% endif %}
 Achte bitte bei internationalen Überweisungen darauf, dass der
 Empfänger keine Gebühren zahlen muss.
@@ -26,13 +27,14 @@ Verwendungszweck: {{ user['given_names'] }} {{ user['family_name'] }}, {{ user['
 Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe von {{ ambience["event"]["nonmember_surcharge"]|money }}
 bezahlen (bereits in der obigen Summe enthalten).
 {% if "cde" in user.roles %}
+
 Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag in Höhe von {{ semester_fee|money }} bezahlen
 und somit wieder Mitglied werden, woraufhin Du den zusätzlichen Beitrag nicht bezahlen musst.
 Wenn Du dies tust, überweise Mitgliedsbeitrag und Teilnahmebeitrag bitte separat.
 {% endif %}
 {% endif %}
 {% else %}
-Die Orgas werden Dir separat mitteilen, wie Du den Beitrag von {{ fee|money }}
+Wir werden Dir separat mitteilen, wie Du den Beitrag von {{ fee|money }}
 bezahlen kannst.
 {% endif%}
 
@@ -48,7 +50,8 @@ Informationen unter [1].
 
 {% endif %}
 
-Liebe Grüße von den Orgas
+Viele Grüße
+das Orga-Team
 
 {% if age.is_minor() %}
 [1] {{ cdedblink('event/get_minor_form') }}

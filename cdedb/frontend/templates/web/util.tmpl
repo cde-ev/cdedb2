@@ -596,6 +596,81 @@
     {%- endcall %}
 {%- endmacro %}
 
+{# Macro for a general row, used in a dynamic row table.
+
+   non-deletable rows have a disabled 'delete'-checkbox,
+   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
+{% macro dynamic_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
+    <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
+        {% for column in columns %}
+            {% set func = column['func'] %}
+            {% set name = '{}_{}'.format(column['name'], id) %}
+            <td {% if name in errors %}class="has-error"{% endif %}>
+                {# TODO set the remaining items of colum as attributes to func #}
+                {# this is a call for a generic util.input_* macro specified by the caller #}
+                {{ func(name=name,
+                        aclass='drow-input form-control',
+                        attributes=('data-basename="{}_"'.format(column['name'])|s if newrow else ''),
+                        arialabel=gettext(column['label'])
+                        ) }}
+                {{ util.output_errors(name) }}
+            </td>
+        {% endfor %}
+
+        <td>
+            <span class="drow-buttonspace">
+                {% if newrow %}
+                    {{ util.input_checkbox("create_{}".format(id), label=gettext("Add"),
+                                           attributes='data-basename="create_"'|s,
+                                           aclass='drow-indicator') }}
+                {% else %}
+                    {{ util.input_checkbox("delete_{}".format(id), label=gettext("Delete"),
+                                           readonly=not deletable, aclass='drow-indicator') }}
+                {% endif %}
+            </span>
+        </td>
+    </tr>
+{% endmacro %}
+
+{# This macro creates a table which entries can be added, deleted and modified by the user.
+
+   name:     the name of the table
+   columns:  List of dicts. Each dict must contain a 'func' key, specifing the util.input_* macro for this column,
+             the 'name' (mapping the input to a db field) and a 'label'.
+   existing: a dict of already existing entries.
+   locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
+   sortkey:  to sort existing #}
+{% macro dynamic_row_table(name, columns, existing, locked=[], sortkey=None) %}
+    <table class="table table-condensed" id="drow-table">
+        <thead>
+            <tr>
+                {% for column in columns %}
+                    <th>{% trans title=column['label']%}{{ title }}{% endtrans %}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% set sorted_existing = existing|keydictsort(sortkey) if sortkey else existing|dictsort %}
+            {# Old items, already stored in the database #}
+            {% for id, entry in sorted_existing %}
+                {{ dynamic_row(id, name, columns, id not in locked, 'drow-row') }}
+            {% endfor %}
+            {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+            {% for i in range(1, values.get('create_last_index', 0) + 1) %}
+                {{ dynamic_row(-i, name, columns, False, 'drow-new', newrow=True) }}
+            {% endfor %}
+            {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+            {{ dynamic_row(-values.get('create_last_index', 0) - 1, name, columns, False, 'drow-prototype', newrow=True) }}
+        </tbody>
+    </table>
+    <p>
+        <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+            {{ util.make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
+        </button>
+    </p>
+{% endmacro %}
+
 {# Generate an anti CSRF (Cross-Site Request Forgery) token and add it as hidden input to an HTML form.
 
    The frontend application checks the anti CSRF token for every called endpoint which is marked for this check, which
@@ -606,6 +681,146 @@
    For protection against replay attacks, we use the default timeout of config.PARAMETER_TIMEOUT #}
 {% macro anti_csrf_token(target) %}
     {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, user.persona_id)) }}
+{% endmacro %}
+
+
+{% macro print_questionnaire_entry(entry) %}
+    {# Field entry #}
+    {% if entry['field_id'] %}
+        {% with FIELD = ambience['event']['fields'][entry['field_id']],
+                readonly = entry['readonly'] or is_locked or ambience['event']['is_archived'] %}
+            <div id="questionnaire_field_entry_{{ FIELD['field_name'] }}">
+            {% if FIELD['entries'] %}
+                {{ util.form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
+                                          label=entry['title'], info=entry['info'],
+                                          readonly=readonly,
+                                          defaultvalue=entry['default_value'] if not readonly else "") }}
+            {% else %}
+                {% set datatypes = enums['FieldDatatypes'] %}
+                {% if FIELD['kind'] == datatypes.bool %}
+                    {{ util.form_input_checkbox(
+                        name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                        readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
+                {% elif FIELD['kind'] == datatypes.str  %}
+                    {% if entry['input_size'] %}
+                        {{ util.form_input_textarea(
+                            name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                            readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
+                            rows=(1+entry['input_size']*2)) }}
+                    {% else %}
+                        {{ util.form_input_text(
+                            name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                            readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
+                    {% endif %}
+                {% else %}
+                    {{ util.form_event_field_input(
+                        FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                        readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
+                {% endif %}
+            {% endif %}
+            </div>
+        {% endwith %}
+
+    {# Text-only entry #}
+    {% else %}
+        {% if entry['title'] %}
+            <h3 class="heading-underline">{{ entry['title'] }}</h3>
+        {% endif %}
+        {% if entry['info'] %}
+            {{ entry['info']|md }}
+        {% endif %}
+    {% endif %}
+{% endmacro %}
+
+{% macro print_questionnaire_result(entry, registration) %}
+    {% if entry['field_id'] %}
+        {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
+            <div id="questionnaire_field_result_{{ FIELD['field_name'] }}">
+                <dt>{{ entry['title'] }}</dt>
+                <dd>
+                    {% if FIELD['kind'] == enums['FieldDatatypes'].bool %}
+                        {{ deko_checkbox(
+                            checked=registration['fields'].get(FIELD['field_name'])) }}
+                    {% elif FIELD['kind'] == enums['FieldDatatypes'].date %}
+                        {{ registration['fields'].get(FIELD['field_name'])
+                           |date(lang=lang, passthrough=True) }}
+                    {% elif FIELD['kind'] == enums['FieldDatatypes'].datetime %}
+                        {{ registration['fields'].get(FIELD['field_name'])
+                           |datetime(lang=lang, passthrough=True) }}
+                    {% elif FIELD['kind'] == enums['FieldDatatypes'].float %}
+                        {{ registration['fields'].get(FIELD['field_name'])|decimal(lang=lang) }}
+                    {% else %}
+                        {{ registration['fields'].get(FIELD['field_name'])|linebreaks }}
+                    {% endif %}
+                </dd>
+            </div>
+        {% endwith %}
+    {% endif %}
+{% endmacro %}
+
+{# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
+   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
+{% macro print_questionnaire_config(part_id, kind, aclass="", newrow=False) %}
+    <div class="panel panel-default {{ aclass }}">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title"),
+                                            attributes=('data-basename="title_"'|s if newrow else ''),
+                                            aclass='input-title drow-input', horizontal=false) }}
+                    {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),
+                                                attributes=('data-basename="info_"'|s if newrow else ''),
+                                                aclass='input-info drow-input', horizontal=false,
+                                                info=gettext("Supports %(infolink)s for “Text-Only” fields.")|format(
+                                                    infolink=util.href(docurl("Handbuch_Markdown"),
+                                                                       gettext("Markdown"),
+                                                                       title=gettext("Short Markdown summary")))|s) }}
+                </div>
+                <div class="col-md-6">
+                    {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
+                                              entries=registration_fields|keydictsort(EntitySorter.event_field)|dict_entries('id', 'field_name'),
+                                              nulloption=gettext("— Only Text —"),
+                                              attributes=('data-basename="field_id_"'|s if newrow else ''),
+                                              aclass='input-field drow-input', horizontal=False) }}
+                    {{ util.form_input_select(
+                        "input_size_{}".format(part_id), label=gettext("Input Size"), entries=(
+                            (0, gettext("singleline")), (1, gettext("multiline")),
+                            (2, gettext("multiline") + "+"), (3, gettext("multiline") + "++")),
+                        attributes=('data-basename="input_size_"'|s if newrow else ''),
+                        aclass='input-inputsize drow-input', horizontal=False) }}
+                    {{ util.form_input_textarea(
+                        "default_value_{}".format(part_id), label=gettext("Default Value"), rows=2,
+                        attributes=('data-basename="default_value_"'|s if newrow else ''),
+                        aclass='input-defaultvalue drow-input', horizontal=False) }}
+                    <div class="form-group row">
+                        <div class="col-sm-8">
+                            <div class="checkbox">
+                                {{ util.input_checkbox("readonly_{}".format(part_id), label=gettext("read-only"),
+                                                       attributes=('data-basename="readonly_"'|s if newrow else ''),
+                                                       aclass='input-readonly drow-input',
+                                                       readonly=(not values["readonly_{}".format(part_id)]
+                                                                 and (kind and not kind.allow_readonly()))) }}
+                                {{ util.output_errors("readonly_{}".format(part_id), wrapper=True) }}
+                            </div>
+                        </div>
+                        <div class="col-sm-4 text-right">
+                            <span class="drow-buttonspace">
+                                {% if newrow %}
+                                    {{ util.input_checkbox("create_{}".format(part_id), label=gettext("Add"),
+                                                           attributes='data-basename="create_"'|s,
+                                                           aclass='drow-indicator') }}
+                                {% else %}
+                                    {{ util.input_checkbox("delete_{}".format(part_id), label=gettext("Remove"),
+                                                           aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endmacro %}
 
 {# Generate a list of admin view toggle buttons. Should be used in the navigation sidebar.
@@ -639,7 +854,7 @@
 {# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
    jinja #}
 {% macro _admin_views_toggle_inner(views) -%}
-    {% for label, view_names, relevant_views in views|sort(attribute=0) -%}
+    {% for label, view_names, relevant_views in views -%}
         {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
         {% if (relevant_views|set).intersection(user.available_admin_views) %}
             {# The button is "deactivated" as long as there are more "relevant views" which are available for the

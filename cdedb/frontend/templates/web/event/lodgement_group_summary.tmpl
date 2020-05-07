@@ -20,67 +20,23 @@
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
-{# Macro for a general lodgement group row, that can have each role in the DynamicRow workflow.
-   non-deletable rows have a disabled 'delete'-checkbox,
-   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
-   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro print_row(group_id, deletable, aclass="", newrow=False) %}
-    <tr class="{{ aclass }}" role="group" aria-label="Lodgement Group {{ institution_id }}">
-        <td {% if 'moniker_{}'.format(group_id) in errors %}class="has-error"{% endif %}>
-            {{ util.input_text('moniker_{}'.format(group_id), aclass='drow-input form-control',
-                    attributes=('data-basename="moniker_"'|s if newrow else ''), arialabel=gettext("Name")) }}
-            {{ util.output_errors('moniker_{}'.format(group_id)) }}
-        </td>
-        <td>
-            <span class="drow-buttonspace">
-                {% if newrow %}
-                    {{ util.input_checkbox("create_{}".format(group_id), label=gettext("Add"),
-                                           attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
-                {% else %}
-                    {{ util.input_checkbox("delete_{}".format(group_id), label=gettext("Delete"),
-                                           readonly=not deletable, aclass='drow-indicator') }}
-                {% endif %}
-            </span>
-        </td>
-    </tr>
-{% endmacro %}
 
 
 {% block content %}
+    {% set columns =  [dict(name="moniker", label="Name", func=util.input_text)] %}
+
+    <form action="{{ cdedblink('event/lodgement_group_summary') }}" method="POST" id="lodgementgroupsummaryform">
+        {{ util.anti_csrf_token('event/lodgement_group_summary') }}
+        {{ util.dynamic_row_table("Lodgement Group", columns, lodgement_groups, is_referenced, sortkey=EntitySorter.lodgement_group) }}
+        {{ util.input_submit(value=gettext("Save")) }}
+    </form>
+
     <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#drow-table').cdedbDynamicRow({
                 addButton: $('#drow-addbutton'),
                 delButtonTitle: "{{ gettext("Delete line") }}"});
-            $('#institutionsummaryform').cdedbProtectChanges();
+            $('#lodgementgroupsummaryform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('event/lodgement_group_summary') }}" method="POST" id="lodgementgroupsummaryform">
-        {{ util.anti_csrf_token('event/lodgement_group_summary') }}
-        <table class="table table-condensed" id="drow-table">
-            <thead>
-                <tr><th>{% trans %}Name{% endtrans %}</th><th></th></tr>
-            </thead>
-            <tbody>
-                {# Old items, already stored in the database #}
-                {% for group_id, lodgement_group in lodgement_groups|keydictsort(EntitySorter.lodgement_group) %}
-                    {{ print_row(group_id, True, 'drow-row') }}
-                {% endfor %}
-                {# Items that were added by the user but failed validation. They are still new and have no official id.
-                    #}
-                {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                    {{ print_row(-i, False, 'drow-new', newrow=True) }}
-                {% endfor %}
-                {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows.
-                    #}
-                {{ print_row(-values.get('create_last_index', 0) - 1, False, 'drow-prototype', newrow=True) }}
-            </tbody>
-        </table>
-        <p>
-            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                {{ util.make_icon('plus') }} {% trans %}Add Lodgement Group{% endtrans %}
-            </button>
-        </p>
-        {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
-    </form>
 {% endblock %}

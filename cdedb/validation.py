@@ -63,7 +63,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
     CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields,
     ValidationWarning)
-from cdedb.database.constants import FieldDatatypes
+from cdedb.database.constants import FieldDatatypes, FieldAssociations
 from cdedb.validationdata import (
     IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,
     ITU_CODES)
@@ -2111,7 +2111,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'is_visible': _bool,
     'is_course_list_visible': _bool,
     'is_course_state_visible': _bool,
-    'use_questionnaire': _bool,
+    'use_additional_questionnaire': _bool,
     'registration_start': _datetime_or_None,
     'registration_soft_limit': _datetime_or_None,
     'registration_hard_limit': _datetime_or_None,
@@ -2126,6 +2126,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'mail_text': _str_or_None,
     'parts': _mapping,
     'fields': _mapping,
+    'fee_modifiers': _mapping,
     'registration_text': _str_or_None,
     'orga_address': _email_or_None,
     'lodge_field': _id_or_None,
@@ -2223,6 +2224,28 @@ def _event(val, argname=None, *, creation=False, _convert=True,
                 else:
                     newfields[anid] = field
         val['fields'] = newfields
+    if 'fee_modifiers' in val:
+        new_modifiers = {}
+        for anid, fee_modifier in val['fee_modifiers'].items():
+            anid, e = _int(anid, 'fee_modifiers', _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                creation = (anid < 0)
+                fee_modifier, ee = _event_fee_modifier_or_None(
+                    fee_modifier, 'fee_modifiers',
+                    creation=creation,_convert=_convert)
+                if ee:
+                    errs.extend(ee)
+                else:
+                    new_modifiers[anid] = fee_modifier
+        msg = n_("Must not have multiple fee modifiers linked to the same"
+                 " field in one event part.")
+        for e1, e2 in itertools.combinations(
+                filter(None, val['fee_modifiers'].values()), 2):
+            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
+                if e1['part_id'] == e2['part_id']:
+                    errs.append(('fee_modifiers', ValueError(msg)))
     return val, errs
 
 
@@ -2423,6 +2446,33 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                     entries.append((value, description))
                     seen_values.add(value)
             val[entries_key] = entries
+    return val, errs
+
+
+_EVENT_FEE_MODIFIER_COMMON_FIELDS = lambda extra_suffix: {
+    "modifier_name{}".format(extra_suffix): _restrictive_identifier,
+    "amount{}".format(extra_suffix): _decimal,
+    "part_id{}".format(extra_suffix): _id,
+    "field_id{}".format(extra_suffix): _id,
+}
+
+@_addvalidator
+def _event_fee_modifier(val, argname=None, *, creation=False,
+                        _convert=True, extra_suffix=''):
+    argname = argname or "fee_modifiers"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
+        optional_fields = {}
+    else:
+        mandatory_fields = {'id': _id}
+        optional_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
     return val, errs
 
 
@@ -2854,8 +2904,8 @@ def _by_field_datatype(val, argname=None, *, kind=None, _convert=True,
 
 
 @_addvalidator
-def _questionnaire(val, field_definitions, argname=None, *, _convert=True,
-                   _ignore_warnings=False):
+def _questionnaire(val, field_definitions, fee_modifiers, argname=None, *,
+                   _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
@@ -2865,17 +2915,22 @@ def _questionnaire(val, field_definitions, argname=None, *, _convert=True,
     :rtype: ([dict] or None, [(str or None, exception)])
     """
     argname = argname or "questionnaire"
-    val, errs = _iterable(val, argname, _convert=_convert,
-                          _ignore_warnings=_ignore_warnings)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    ret = []
-    for value in val:
-        value, e = _mapping(value, argname, _convert=_convert,
-                            _ignore_warnings=_ignore_warnings)
-        if e:
+    ret = {}
+    fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
+    for k, v in copy.deepcopy(val).items():
+        k, e = _enum_questionnaireusages(k, argname, _convert=_convert,
+                                         _ignore_warnings=_ignore_warnings)
+        v, ee = _iterable(v, argname, _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
+        if e or ee:
             errs.extend(e)
+            errs.extend(ee)
         else:
+            ret[k] = []
             mandatory_fields = {
                 'field_id': _id_or_None,
                 'title': _str_or_None,
@@ -2884,24 +2939,57 @@ def _questionnaire(val, field_definitions, argname=None, *, _convert=True,
                 'readonly': _bool_or_None,
                 'default_value': _str_or_None,
             }
-            value, e = _examine_dictionary_fields(
-                value, mandatory_fields, {}, _convert=_convert,
-                _ignore_warnings=_ignore_warnings)
-            if e:
-                errs.extend(e)
-                continue
-            if value['field_id'] and value['default_value']:
-                field = field_definitions.get(value['field_id'], None)
-                if not field:
-                    errs.extend(('default_value',
-                                 KeyError("Referenced field does not exist.")))
+            optional_fields = {
+                'kind': _enum_questionnaireusages,
+            }
+            for value in v:
+                value, e = _mapping(value, argname, _convert=_convert,
+                                    _ignore_warnings=_ignore_warnings)
+                if e:
+                    errs.extend(e)
                     continue
-                value['default_value'], e = _by_field_datatype(
-                    value['default_value'], "default_value",
-                    kind=field.get('kind', FieldDatatypes.str),
-                    _convert=_convert, _ignore_warnings=_ignore_warnings)
-                errs.extend(e)
-            ret.append(value)
+
+                value, e = _examine_dictionary_fields(
+                    value, mandatory_fields, optional_fields, _convert=_convert,
+                    _ignore_warnings=_ignore_warnings)
+                if 'kind' in value:
+                    if value['kind'] != k:
+                        msg = n_("Incorrect kind for this part of the"
+                                 " questionnaire")
+                        e.append(('kind', ValueError(msg)))
+                else:
+                    value['kind'] = k
+                if e:
+                    errs.extend(e)
+                    continue
+                if value['field_id'] and value['default_value']:
+                    field = field_definitions.get(value['field_id'], None)
+                    if not field:
+                        msg = n_("Referenced field does not exist.")
+                        errs.append(('default_value',
+                                     KeyError(msg)))
+                        continue
+                    value['default_value'], e = _by_field_datatype(
+                        value['default_value'], "default_value",
+                        kind=field.get('kind', FieldDatatypes.str),
+                        _convert=_convert, _ignore_warnings=_ignore_warnings)
+                    errs.extend(e)
+                field_id = value['field_id']
+                if field_id and field_id in fee_modifier_fields:
+                    if not k.allow_fee_modifier():
+                        msg = n_("Inappropriate questionnaire usage for fee"
+                                 " modifier field.")
+                        errs.append(('kind', ValueError(msg)))
+                if value['readonly'] and not k.allow_readonly():
+                    msg = n_("Registration questionnaire rows may not be"
+                             " readonly.")
+                    errs.append(('readonly', ValueError(msg)))
+                ret[k].append(value)
+    all_rows = itertools.chain.from_iterable(ret.values())
+    for e1, e2 in itertools.combinations(all_rows, 2):
+        if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
+            msg = n_("Must not duplicate field.")
+            errs.append(('field_id', ValueError(msg)))
     return ret, errs
 
 
@@ -3007,9 +3095,13 @@ def _serialized_event(val, argname=None, *, _convert=True,
         'event.registration_tracks': _mapping,
         'event.course_choices': _mapping,
         'event.questionnaire_rows': _mapping,
+        'event.fee_modifiers': _mapping,
+    }
+    optional_fields = {
+        'core.personas': _mapping,
     }
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, {'core.personas': _mapping}, _convert=_convert,
+        val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
@@ -3045,7 +3137,8 @@ def _serialized_event(val, argname=None, *, _convert=True,
         'event.lodgements': _augment_dict_validator(
             _lodgement, {'event_id': _id}),
         'event.registrations': _augment_dict_validator(
-            _registration, {'event_id': _id, 'persona_id': _id}),
+            _registration, {'event_id': _id, 'persona_id': _id,
+                            'amount_owed': _non_negative_decimal}),
         'event.registration_parts': _augment_dict_validator(
             _registration_part, {'id': _id, 'part_id': _id,
                                  'registration_id': _id}),
@@ -3060,7 +3153,9 @@ def _serialized_event(val, argname=None, *, _convert=True,
                           'field_id': _id_or_None, 'title': _str_or_None,
                           'info': _str_or_None, 'input_size': _int_or_None,
                           'readonly': _bool_or_None,
+                          'kind': _enum_questionnaireusages,
                           }),
+        'event.fee_modifiers': _event_fee_modifier,
     }
     for table, validator in table_validators.items():
         new_table = {}
@@ -3341,6 +3436,7 @@ _PARTIAL_REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
     'amount_paid': _non_negative_decimal,
+    'amount_owed': _non_negative_decimal,
     'checkin': _datetime_or_None,
     'fields': _mapping,
 }
@@ -3381,6 +3477,8 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
+    if 'amount_owed' in val:
+        del val['amount_owed']
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():
@@ -3825,7 +3923,7 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True,
         mandatory_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
         optional_fields = {}
     else:
-        mandatory_fields = {}
+        mandatory_fields = {'id': _id}
         optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,

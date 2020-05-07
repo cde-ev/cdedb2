@@ -68,10 +68,16 @@ cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/11/main/
 systemctl restart postgresql
 sleep 10
 
-# First create the nobody account which does have no rights, but enables us
-# to connect to postgres
-sudo -u postgres psql -U postgres -c "CREATE USER nobody PASSWORD 'nobody'"
-make sql
+# First create the nobody account with its own database, but no other
+# rights. This enables us to connect to postgres at any point. Take care to
+# use the same database creation invocation as is used for the real dbs.
+sudo -u postgres psql -U postgres -c \
+     "CREATE USER nobody PASSWORD 'nobody'"
+sudo -u postgres psql -U postgres -c \
+     "CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8'"
+sudo -u postgres psql -U postgres -c \
+     "ALTER DATABASE nobody SET datestyle TO 'ISO, YMD'"
+sudo -u cdedb make sql
 
 systemctl stop pgbouncer
 
@@ -155,6 +161,17 @@ if [ -e /media/cdrom0/vdi ]; then
     sed -i -e 's=\bens3\b=enp0s3=g' /etc/network/interfaces
 
 fi
+
+
+echo ""
+echo "Set up the template renderer..."
+echo "--------------------------------------------"
+
+cd /home/cdedb
+sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/orgas/cde_template_renderer_v3.git \
+    || sudo -u cdedb git clone ssh://gitea@10.9.0.2:63332//orgas/cde_template_renderer_v3.git
+sudo -u cdedb cp /cdedb2/related/auto-build/files/stage3/refresh_template_renderer_data.py .
+chmod +x refresh_template_renderer_data.py
 
 echo ""
 echo "Disable auto-build init..."

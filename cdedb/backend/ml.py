@@ -3,6 +3,7 @@
 """The ml backend provides mailing lists. This provides services to the
 event and assembly realm in the form of specific mailing lists.
 """
+from typing import Set
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend,
@@ -14,7 +15,7 @@ from cdedb.common import (
     n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,
     extract_roles, implying_realms, now, ProxyShim,
     SubscriptionError, SubscriptionInfo,
-    SubscriptionActions)
+    SubscriptionActions, RequestState)
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -59,9 +60,16 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int
         :rtype: bool
         """
-        # TODO: for now this is just ml_admin, with the new MailinglistTypes,
-        # this could be other admins as well.
-        return self.is_admin(rs)
+        if mailinglist is None:
+            if mailinglist_id is None:
+                raise ValueError(n_("No mailinglist specified."))
+            atype = self.get_ml_type(rs, mailinglist_id)
+        else:
+            if mailinglist_id is not None:
+                if mailinglist['id'] != mailinglist_id:
+                    raise ValueError(n_("Different mailinglists specified."))
+            atype = ml_type.get_type(mailinglist['ml_type'])
+        return atype.is_relevant_admin(rs)
 
     @staticmethod
     @access("ml")
@@ -92,6 +100,18 @@ class MlBackend(AbstractBackend):
 
         return (self.is_moderator(rs, mailinglist_id)
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
+
+    @access("ml")
+    def get_available_types(self, rs: RequestState) -> \
+            Set[const.MailinglistTypes]:
+        """Get a list of MailinglistTypes, the user is allowed to manage.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {const.MailinglistTypes}
+        """
+        ret = {enum_member for enum_member, atype in ml_type.TYPE_MAP.items()
+               if atype.is_relevant_admin(rs)}
+        return ret
 
     @access("ml")
     def get_interaction_policy(self, rs, persona_id, *, mailinglist=None,
@@ -218,20 +238,23 @@ class MlBackend(AbstractBackend):
         return self.sql_insert(rs, "ml.log", new_log)
 
     @access("ml")
-    def retrieve_log(self, rs, codes=None, mailinglist_id=None, start=None,
-                     stop=None, persona_id=None, submitted_by=None,
+    def retrieve_log(self, rs, codes=None, mailinglist_ids=None, offset=None,
+                     length=None, persona_id=None, submitted_by=None,
                      additional_info=None, time_start=None,
                      time_stop=None):
         """Get recorded activity.
+
+        To support relative admins, this is the only retrieve_log function
+        which allows to query a list for entity_ids.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
-        :type mailinglist_id: int or None
-        :type start: int or None
-        :type stop: int or None
+        :type mailinglist_ids: [int] or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: int or None
         :type submitted_by: int or None
         :type additional_info: str or None
@@ -239,12 +262,14 @@ class MlBackend(AbstractBackend):
         :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
-        mailinglist_id = affirm("id_or_None", mailinglist_id)
-        if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
+        mailinglist_ids = affirm_set("id", mailinglist_ids, allow_None=True)
+        if not (self.is_admin(rs) or (mailinglist_ids
+                and all(self.may_manage(rs, ml_id)
+                        for ml_id in mailinglist_ids))):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
-            rs, "enum_mllogcodes", "mailinglist", "ml.log", codes,
-            entity_id=mailinglist_id, start=start, stop=stop,
+            rs, "enum_mllogcodes", "mailinglist", "ml.log", codes=codes,
+            entity_ids=mailinglist_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)
@@ -277,12 +302,15 @@ class MlBackend(AbstractBackend):
         return self.general_query(rs, query)
 
     @access("ml")
-    def list_mailinglists(self, rs, active_only=True):
+    def list_mailinglists(self, rs, active_only=True, managed_only=False):
         """List all mailinglists you may view
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type active_only: bool
         :param active_only: Toggle wether inactive lists should be included.
+        :type managed_only: bool
+        :param managed_only: Toggle whether to only list lists the user may
+            manage.
         :rtype: {int: str}
         :returns: Mapping of mailinglist ids to titles.
         """
@@ -305,8 +333,29 @@ class MlBackend(AbstractBackend):
 
         if self.is_admin(rs):
             return ret
-        return {k: v for k, v in ret.items()
-                if self.may_view(rs, mailinglists[k])}
+        if managed_only:
+            # TODO maybe allow may_mange to take the entire mailinglist.
+            return {k: v for k, v in ret.items()
+                    if self.may_manage(rs, mailinglist_id=k)}
+        else:
+            return {k: v for k, v in ret.items()
+                    if self.may_view(rs, mailinglists[k])}
+
+    def list_mailinglist_addresses(self, rs):
+        """List all mailinglist adresses
+
+        This is for the purpose of preventing duplicate mail adresses,
+        so it lists mail adresses even if you can not see the corresponding
+        mailinglists.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {int: str}
+        :returns: Mapping of mailinglist ids to titles.
+        """
+        query = "SELECT id, address FROM ml.mailinglists"
+        data = self.query_all(rs, query, [])
+        return {e['id']: e['address'] for e in data}
+
 
     @access("ml")
     def get_mailinglists(self, rs, ids):
@@ -443,6 +492,23 @@ class MlBackend(AbstractBackend):
                                 mailinglist_id, additional_info=address)
         return ret
 
+    def _ml_type_transition(self, rs, mailinglist_id,
+                            old_type: ml_type.GeneralMailinglist,
+                            new_type: ml_type.GeneralMailinglist):
+        old_type = ml_type.get_type(old_type)
+        new_type = ml_type.get_type(new_type)
+        # implicitly atomized context.
+        # TODO add check for Atomizer from feauture/fee_owed branch.
+        obsolete_fields = (old_type.get_additional_fields() -
+                           new_type.get_additional_fields())
+        if obsolete_fields:
+            setter = ", ".join(f"{f} = DEFAULT" for f in obsolete_fields)
+            query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"
+            params = (mailinglist_id,)
+            return self.query_exec(rs, query, params)
+        else:
+            return 1
+
     @access("ml")
     def set_mailinglist(self, rs, data):
         """Update some keys of a mailinglist.
@@ -477,7 +543,8 @@ class MlBackend(AbstractBackend):
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:
-                mdata['address'] = ml_type.full_address(dict(current, **mdata))
+                mdata['address'] = self.validate_address(
+                    rs, dict(current, **mdata))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
                 # Check if privileges allow new state of the mailinglist.
@@ -496,6 +563,10 @@ class MlBackend(AbstractBackend):
                     params = (data['id'], set(const.SubscriptionStates) -
                               const.SubscriptionStates.subscribing_states())
                     ret *= self.query_exec(rs, query, params)
+                if data['ml_type'] != current['ml_type']:
+                    ret *= self._ml_type_transition(
+                        rs, data['id'], old_type=current['ml_type'],
+                        new_type=data['ml_type'])
 
             # Update subscription states.
             ret *= self.write_subscription_states(rs, data['id'])
@@ -511,7 +582,7 @@ class MlBackend(AbstractBackend):
         :returns: the id of the new mailinglist
         """
         data = affirm("mailinglist", data, creation=True)
-        data['address'] = ml_type.full_address(data)
+        data['address'] = self.validate_address(rs, data)
         if not self.is_relevant_admin(rs, mailinglist=data):
             raise PrivilegeError("Not privileged to create mailinglist of this "
                                  "type.")
@@ -526,7 +597,24 @@ class MlBackend(AbstractBackend):
             self.write_subscription_states(rs, new_id)
         return new_id
 
-    @access("ml_admin")
+    @access("ml")
+    def validate_address(self, rs, data):
+        """Construct the complete address and check for duplicates.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: the id of the new mailinglist
+        """
+        address = ml_type.full_address(data)
+        addresses = self.list_mailinglist_addresses(rs)
+        # address can either be free or taken by the current mailinglist
+        if (address in addresses.values()
+                and address != addresses.get(data.get('id'))):
+            raise ValueError(n_("Non-unique mailinglist name"))
+        return address
+
+    @access("ml")
     def delete_mailinglist_blockers(self, rs, mailinglist_id):
         """Determine what blocks a mailinglist from being deleted.
 
@@ -544,6 +632,8 @@ class MlBackend(AbstractBackend):
             are the ids of the blockers.
         """
         mailinglist_id = affirm("id", mailinglist_id)
+        if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
+            raise PrivilegeError(n_("Not privileged."))
         blockers = {}
 
         subscriptions = self.sql_select(
@@ -578,7 +668,7 @@ class MlBackend(AbstractBackend):
 
         return blockers
 
-    @access("ml_admin")
+    @access("ml")
     def delete_mailinglist(self, rs, mailinglist_id, cascade=None):
         """Remove a mailinglist.
 
@@ -591,6 +681,8 @@ class MlBackend(AbstractBackend):
         :returns: default return code
         """
         mailinglist_id = affirm("id", mailinglist_id)
+        if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
+            raise PrivilegeError(n_("Not privileged."))
         blockers = self.delete_mailinglist_blockers(rs, mailinglist_id)
         if not cascade:
             cascade = set()
@@ -836,7 +928,8 @@ class MlBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         email = affirm("email", email)
 
-        if not self.is_admin(rs) and persona_id != rs.user.persona_id:
+        if (not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
+                and persona_id != rs.user.persona_id):
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
@@ -867,7 +960,8 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
 
-        if not self.is_admin(rs) and persona_id != rs.user.persona_id:
+        if (not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
+                and persona_id != rs.user.persona_id):
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
@@ -882,7 +976,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @access("ml", "droid")
+    @access("ml", "droid_rklist")
     def get_many_subscription_states(self, rs, mailinglist_ids, states=None):
         """Get all users related to a given mailinglist and their sub state.
 
@@ -996,7 +1090,7 @@ class MlBackend(AbstractBackend):
         return unwrap(self.get_user_subscriptions(
             rs, persona_id, states=states, mailinglist_ids=(mailinglist_id,)))
 
-    @access("ml", "droid")
+    @access("ml", "droid_rklist")
     def get_subscription_addresses(self, rs, mailinglist_id, persona_ids=None,
                                    explicits_only=False):
         """Retrieve email addresses of the given personas for the mailinglist.
@@ -1063,7 +1157,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @access("ml", "droid")
+    @access("ml", "droid_rklist")
     def get_subscription_address(self, rs, mailinglist_id, persona_id,
                                  explicits_only=False):
         """Return the subscription address for one persona and one mailinglist.
@@ -1136,7 +1230,7 @@ class MlBackend(AbstractBackend):
             rs, persona_id, states=sub_states, mailinglist_id=mailinglist_id)
         return bool(data)
 
-    @access("ml_admin")
+    @access("ml")
     def write_subscription_states(self, rs, mailinglist_id):
         """This takes care of writing implicit subscriptions to the db.
 
@@ -1161,6 +1255,8 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             ml = self.get_mailinglist(rs, mailinglist_id)
             atype = self.get_ml_type(rs, mailinglist_id)
+            if not atype.is_relevant_admin(rs):
+                raise PrivilegeError(n_("Not privileged."))
 
             if not atype.periodic_cleanup(rs, ml):
                 return ret

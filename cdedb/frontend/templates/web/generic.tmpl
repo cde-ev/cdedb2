@@ -348,8 +348,7 @@
                                             {%- endfor %}
                                             {{ util.input_select(name, entries=myentries, nulloption="&nbsp;"|s,
                                                                  aclass="form-control input-sm sort-field",
-                                                                 arialabel=gettext("%s sort key")|format(title),
-                                                                 sort=True) }}
+                                                                 arialabel=gettext("%s sort key")|format(title)) }}
                                         </td>
                                         <td>
                                             {{ util.input_select(name + "_ascending", defaultvalue=True,

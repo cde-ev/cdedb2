@@ -15,7 +15,8 @@ from werkzeug import Response
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
-    check_validation as check, request_extractor, query_result_to_json)
+    check_validation as check, request_extractor, query_result_to_json,
+    calculate_db_logparams, calculate_loglinks, process_dynamic_input)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
@@ -155,20 +156,23 @@ class AssemblyFrontend(AbstractUserFrontend):
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_log(self, rs, codes, assembly_id, start, stop, persona_id,
+    def view_log(self, rs, codes, assembly_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
-        start = start or 0
-        stop = stop or 50
-        log = self.assemblyproxy.retrieve_log(
-            rs, codes, assembly_id, start, stop, persona_id=persona_id,
+        total, log = self.assemblyproxy.retrieve_log(
+            rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         personas = (
@@ -180,28 +184,33 @@ class AssemblyFrontend(AbstractUserFrontend):
                       for entry in log if entry['assembly_id']}
         assemblies = self.assemblyproxy.get_assemblies(rs, assemblies)
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
-            'log': log, 'personas': personas,
-            'assemblies': assemblies, 'all_assemblies': all_assemblies})
+            'log': log, 'total': total, 'length': _length, 'personas': personas,
+            'assemblies': assemblies, 'all_assemblies': all_assemblies,
+            'loglinks': loglinks})
 
     @access("assembly_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_assembly_log(self, rs, codes, assembly_id, start, stop, persona_id,
+    def view_assembly_log(self, rs, codes, assembly_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
-        start = start or 0
-        stop = stop or 50
-        log = self.assemblyproxy.retrieve_log(
-            rs, codes, assembly_id, start, stop, persona_id=persona_id,
+        total, log = self.assemblyproxy.retrieve_log(
+            rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         personas = (
@@ -209,8 +218,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, personas)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_assembly_log", {
-            'log': log, 'personas': personas})
+            'log': log, 'total': total, 'length': _length, 'personas': personas,
+            'loglinks': loglinks})
 
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:
@@ -336,8 +347,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         persona = self.coreproxy.get_persona(rs, persona_id)
         if secret:
             rs.notify("success", n_("Signed up."))
-            subject = "[CdE] Teilnahme an {}".format(
-                rs.ambience['assembly']['title'])
+            subject = f"Teilnahme an {rs.ambience['assembly']['title']}"
             reply_to = (rs.ambience['assembly']['mail_address'] or
                         self.conf["ASSEMBLY_ADMIN_ADDRESS"])
             self.do_mail(
@@ -725,6 +735,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         if ballot['use_bar']:
             candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
                 "bar (options below this are declined)")
+        # this is used for the flux candidate table
+        current = {
+            f"{key}_{candidate_id}": value
+            for candidate_id, candidate in ballot['candidates'].items()
+            for key, value in candidate.items() if key != 'id'}
+        merge_dicts(rs.values, current)
 
         ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
@@ -781,11 +797,17 @@ class AssemblyFrontend(AbstractUserFrontend):
                 to = [self.conf["BALLOT_TALLY_ADDRESS"]]
                 if rs.ambience['assembly']['mail_address']:
                     to.append(rs.ambience['assembly']['mail_address'])
-                subject = "Abstimmung '{}' ausgezählt".format(ballot['title'])
+                reply_to = (rs.ambience['assembly']['mail_address'] or
+                            self.conf["ASSEMBLY_ADMIN_ADDRESS"])
+                subject = f"Abstimmung '{ballot['title']}' ausgezählt"
                 with open(path, 'rb') as resultfile:
                     my_hash = get_hash(resultfile.read())
                 self.do_mail(
-                    rs, "ballot_tallied", {'To': to, 'Subject': subject},
+                    rs, "ballot_tallied", {
+                        'To': to,
+                        'Subject': subject,
+                        'Reply-To': reply_to
+                    },
                     attachments=(attachment_result,),
                     params={'sha': my_hash, 'title': ballot['title']})
                 update = True
@@ -1006,47 +1028,41 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.show_ballot(rs, assembly_id, ballot_id)
         path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot_id)
         return self.send_file(rs, path=path, inline=False,
-                              filename="ballot_{}_result.json".format(ballot_id))
+                              filename=f"ballot_{ballot_id}_result.json")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("moniker", "restrictive_identifier"), ("description", "str"))
-    def add_candidate(self, rs: RequestState, assembly_id: int, ballot_id: int,
-                      moniker: str, description: str) -> Response:
-        """Create a new option for a ballot."""
-        monikers = {c['moniker']
-                    for c in rs.ambience['ballot']['candidates'].values()}
-        if moniker in monikers:
-            rs.append_validation_error(
-                ("moniker", ValueError(n_("Duplicate moniker."))))
-        if moniker == ASSEMBLY_BAR_MONIKER:
-            rs.append_validation_error(
-                ("moniker", ValueError(n_("Mustn’t be the bar moniker."))))
-        if rs.has_validation_errors():
-            return self.show_ballot(rs, assembly_id, ballot_id)
-        data = {
-            'id': ballot_id,
-            'candidates': {
-                -1: {
-                    'moniker': moniker,
-                    'description': description,
-                }
-            }
-        }
-        code = self.assemblyproxy.set_ballot(rs, data)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "assembly/show_ballot")
+    def edit_candidates(self, rs: RequestState, assembly_id: int,
+                        ballot_id: Optional[int]) -> Response:
+        """Create, edit and delete candidates of ballot.
 
-    @access("assembly_admin", modi={"POST"})
-    def remove_candidate(self, rs: RequestState, assembly_id: int,
-                         ballot_id: int, candidate_id: int) -> Response:
-        """Delete an option from a ballot."""
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type ballot_id: int
+        """
+        candidates = process_dynamic_input(
+            rs, rs.ambience['ballot']['candidates'].keys(),
+            {'moniker': "restrictive_identifier", 'description': "str"})
+
+        monikers = set()
+        for candidate_id, candidate in candidates.items():
+            if candidate and candidate['moniker'] == ASSEMBLY_BAR_MONIKER:
+                rs.append_validation_error(
+                    (f"moniker_{candidate_id}",
+                     ValueError(n_("Mustn’t be the bar moniker.")))
+                )
+            if candidate and candidate['moniker'] in monikers:
+                rs.append_validation_error(
+                    (f"moniker_{candidate_id}",
+                     ValueError(n_("Duplicate moniker.")))
+                )
+            if candidate:
+                monikers.add(candidate['moniker'])
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
+
         data = {
             'id': ballot_id,
-            'candidates': {
-                candidate_id: None
-            }
+            'candidates': candidates
         }
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)

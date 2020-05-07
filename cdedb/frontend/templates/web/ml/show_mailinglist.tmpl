@@ -171,4 +171,31 @@
                 {% endif %}
         {% endcall %}
     {% endif %}
+
+    {% if is_relevant_admin(mailinglist_id=ambience['mailinglist']['id']) and 'ml_mgmt' in user.admin_views %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                        <form action="{{ cdedblink('ml/delete_mailinglist') }}" method="POST" id="deletemlform"
+                            class="display-inline">
+                            {{ util.anti_csrf_token('ml/delete_mailinglist') }}
+                            {{ util.input_submit(value=gettext("Delete"), readonly=is_locked,
+                                                 aclass="btn btn-danger", icon="trash-alt") }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                        </form>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <p class="text-muted">
+                        {% trans %}Deletes the mailinglist including description and all subscriber information.{% endtrans %}
+                    </p>
+                </div>
+            </div>
+        {% endcall %}
+        <script nonce="{{ csp_nonce }}">
+            $('#deletemlform').cdedbProtectAction("{{ gettext("The mailinglist will be permanently deleted.") }}");
+            $('#deletemlform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+        </script>
+    {% endif %}
 {% endblock %}

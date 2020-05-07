@@ -33,7 +33,8 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
-    enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect)
+    enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
+    calculate_db_logparams, calculate_loglinks, process_dynamic_input)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
 import cdedb.frontend.parse_statement as parse
@@ -610,6 +611,7 @@ class CdEFrontend(AbstractUserFrontend):
                                   'Subject': "Aufnahme in den CdE",
                                   },
                                  {'data': datum['persona'],
+                                  'fee': self.conf["MEMBERSHIP_FEE"],
                                   'email': email if success else "",
                                   'cookie': message if success else "",
                                   'meta_info': meta_info,
@@ -1131,7 +1133,7 @@ class CdEFrontend(AbstractUserFrontend):
                                + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
-                              'Subject': "Überweisung beim CdE eingetroffen",
+                              'Subject': "Überweisung eingegangen",
                               },
                              {'persona': persona, 'address': address,
                               'new_balance': new_balance})
@@ -1585,7 +1587,7 @@ class CdEFrontend(AbstractUserFrontend):
                     lastschrift['persona_id'], lastschrift['id']),
                 'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
             }
-            subject = "Anstehender Lastschrifteinzug CdE Initiative 25+"
+            subject = "Anstehender Lastschrifteinzug Initiative 25+"
             self.do_mail(rs, "sepa_pre-notification",
                          {'To': (persona['username'],),
                           'Subject': subject},
@@ -1882,9 +1884,9 @@ class CdEFrontend(AbstractUserFrontend):
                               and not persona['trial_member']
                               and not lastschrift)
                 if endangered:
-                    subject = "CdE-Mitgliedschaft verlängern"
+                    subject = "Mitgliedschaft verlängern"
                 else:
-                    subject = "CdE-Mitgliedschaft verlängert"
+                    subject = "Mitgliedschaft verlängert"
                 self.do_mail(
                     rrs, "billing",
                     {'To': (persona['username'],),
@@ -2077,21 +2079,11 @@ class CdEFrontend(AbstractUserFrontend):
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 address = make_postal_address(persona)
-                lastschrift_list = self.cdeproxy.list_lastschrift(
-                    rrs, persona_ids=(persona_id,))
-                lastschrift = None
-                if lastschrift_list:
-                    lastschrift = self.cdeproxy.get_lastschrift(
-                        rrs, unwrap(lastschrift_list.keys()))
-                    lastschrift['reference'] = lastschrift_reference(
-                        persona['id'], lastschrift['id'])
                 self.do_mail(
                     rrs, "addresscheck",
                     {'To': (persona['username'],),
-                     'Subject': "Adressabfrage für exPuls"},
+                     'Subject': "Adressabfrage für den exPuls"},
                     {'persona': persona,
-                     'lastschrift': lastschrift,
-                     'fee': self.conf["MEMBERSHIP_FEE"],
                      'address': address,
                      })
                 if testrun:
@@ -2150,64 +2142,12 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "institution_summary", {
             'institutions': institutions, 'is_referenced': is_referenced})
 
-    @staticmethod
-    def process_institution_input(rs, institutions):
-        """This handles input to configure the institutions.
-
-        Since this covers a variable number of rows, we cannot do this
-        statically. This takes care of validation too.
-
-        :type rs: :py:class:`FrontendRequestState`
-        :type institutions: [int]
-        :param institutions: ids of existing institutions
-        :rtype: {int: {str: object} or None}
-        """
-        delete_flags = request_extractor(
-            rs, (("delete_{}".format(institution_id), "bool")
-                 for institution_id in institutions))
-        deletes = {institution_id for institution_id in institutions
-                   if delete_flags['delete_{}'.format(institution_id)]}
-        spec = {
-            'title': "str",
-            'moniker': "str",
-        }
-        params = tuple(("{}_{}".format(key, institution_id), value)
-                       for institution_id in institutions
-                       if institution_id not in deletes
-                       for key, value in spec.items())
-        data = request_extractor(rs, params)
-        ret = {
-            institution_id: {key: data["{}_{}".format(key, institution_id)]
-                             for key in spec}
-            for institution_id in institutions if institution_id not in deletes
-        }
-        for institution_id in institutions:
-            if institution_id in deletes:
-                ret[institution_id] = None
-            else:
-                ret[institution_id]['id'] = institution_id
-        marker = 1
-        while marker < 2 ** 10:
-            will_create = unwrap(request_extractor(
-                rs, (("create_-{}".format(marker), "bool"),)))
-            if will_create:
-                params = tuple(("{}_-{}".format(key, marker), value)
-                               for key, value in spec.items())
-                data = request_extractor(rs, params)
-                ret[-marker] = {key: data["{}_-{}".format(key, marker)]
-                                for key in spec}
-            else:
-                break
-            marker += 1
-        rs.values['create_last_index'] = marker - 1
-        return ret
-
     @access("cde_admin", modi={"POST"})
     def institution_summary(self, rs):
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
-        institutions = self.process_institution_input(
-            rs, institution_ids.keys())
+        spec = {'title': "str", 'moniker': "str"}
+        institutions = process_dynamic_input(rs, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
         code = 1
@@ -2592,20 +2532,23 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_cde_log(self, rs, codes, start, stop, persona_id, submitted_by,
+    def view_cde_log(self, rs, codes, offset, length, persona_id, submitted_by,
                      additional_info, time_start, time_stop):
         """View general activity."""
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
-        start = start or 0
-        stop = stop or 50
-        log = self.cdeproxy.retrieve_cde_log(
-            rs, codes, start, stop, persona_id=persona_id,
+        total, log = self.cdeproxy.retrieve_cde_log(
+            rs, codes, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -2613,27 +2556,32 @@ class CdEFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_cde_log", {
-            'log': log, 'personas': personas})
+            'log': log, 'total': total, 'length': _length,
+            'personas': personas, 'loglinks': loglinks})
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_finance_log(self, rs, codes, start, stop, persona_id, submitted_by,
+    def view_finance_log(self, rs, codes, offset, length, persona_id, submitted_by,
                          additional_info, time_start, time_stop):
         """View financial activity."""
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
-        start = start or 0
-        stop = stop or 50
-        log = self.cdeproxy.retrieve_finance_log(
-            rs, codes, start, stop, persona_id=persona_id,
+        total, log = self.cdeproxy.retrieve_finance_log(
+            rs, codes, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -2641,28 +2589,33 @@ class CdEFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_finance_log", {
-            'log': log, 'personas': personas})
+            'log': log, 'total': total, 'length': _length,
+            'personas': personas, 'loglinks': loglinks})
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_past_log(self, rs, codes, pevent_id, start, stop, persona_id,
+    def view_past_log(self, rs, codes, pevent_id, offset, length, persona_id,
                       submitted_by, additional_info, time_start, time_stop):
         """View activities concerning concluded events."""
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
-        start = start or 0
-        stop = stop or 50
-        log = self.pasteventproxy.retrieve_past_log(
-            rs, codes, pevent_id, start, stop, persona_id=persona_id,
+        total, log = self.pasteventproxy.retrieve_past_log(
+            rs, codes, pevent_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -2672,5 +2625,7 @@ class CdEFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_past_log", {
-            'log': log, 'personas': personas, 'pevents': pevents})
+            'log': log, 'total': total, 'length': _length,
+            'personas': personas, 'pevents': pevents, 'loglinks': loglinks})

@@ -42,11 +42,12 @@ _LOGGER = logging.getLogger(__name__)
 COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
 
 # Pseudo objects like assembly, event, course, event part, etc.
-CdEDBObject = Mapping[str, Any]
+CdEDBObject = Dict[str, Any]
 
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
-CdEDBObjectMap = Mapping[int, CdEDBObject]
+
+CdEDBObjectMap = Dict[int, CdEDBObject]
 
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
@@ -181,6 +182,14 @@ class RequestState:
         """
         self.validation_appraised = False
         self._errors.append(error)
+
+    def add_validation_error(self, error):
+        for k, e in self._errors:
+            if k == error[0]:
+                if e.args == error[1].args:
+                    break
+        else:
+            self.append_validation_error(error)
 
     def extend_validation_errors(self, errors):
         """Register a new (maybe empty) set of errors.
@@ -1786,15 +1795,17 @@ def roles_to_admin_views(roles):
     if "core_admin" in roles:
         result |= {"core_user", "core"}
     if "cde_admin" in roles:
-        result |= {"cde_user", "past_event"}
+        result |= {"cde_user", "past_event", "ml_mgmt", "ml_moderator"}
     if "finance_admin" in roles:
         result |= {"finance"}
     if "event_admin" in roles:
-        result |= {"event_user", "event_mgmt", "event_orga"}
+        result |= {"event_user", "event_mgmt", "event_orga", "ml_mgmt",
+                   "ml_moderator"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_moderator"}
     if "assembly_admin" in roles:
-        result |= {"assembly_user", "assembly_mgmt", "assembly_contents"}
+        result |= {"assembly_user", "assembly_mgmt", "assembly_contents",
+                   "ml_mgmt", "ml_moderator"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
             for realm in realm_specific_genesis_fields)):
@@ -1805,7 +1816,7 @@ def roles_to_admin_views(roles):
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-CDEDB_EXPORT_EVENT_VERSION = 10
+CDEDB_EXPORT_EVENT_VERSION = 11
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1918,7 +1929,7 @@ EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname",
     "registration_start", "registration_soft_limit", "registration_hard_limit",
     "iban", "nonmember_surcharge", "orga_address", "registration_text",
-    "mail_text", "use_questionnaire", "notes", "offline_lock", "is_visible",
+    "mail_text", "use_additional_questionnaire", "notes", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible",
     "is_participant_list_visible", "courses_in_participant_list", "is_cancelled",
     "is_archived", "lodge_field", "reserve_field", "course_room_field")
@@ -1935,6 +1946,9 @@ COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
 FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",
                            "association", "entries")
 
+#: Fields of a modifier for an event_parts fee.
+FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")
+
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
 
@@ -1949,7 +1963,7 @@ COURSE_SEGMENT_FIELDS = ("course_id", "track_id", "is_active")
 REGISTRATION_FIELDS = (
     "id", "persona_id", "event_id", "notes", "orga_notes", "payment",
     "parental_agreement", "mixed_lodging", "checkin", "list_consent", "fields",
-    "real_persona_id", "amount_paid")
+    "real_persona_id", "amount_paid", "amount_owed")
 
 #: Fields of a registration which are specific for each part of the event
 REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
@@ -1965,6 +1979,11 @@ LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
 #: Fields of a lodgement entry (one house/room)
 LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
                     "group_id", "fields")
+
+# Fields of a row in a questionnaire.
+# (This can be displayed in different places according to `kind`).
+QUESTIONNAIRE_ROW_FIELDS = ("field_id", "pos", "title", "info",
+                            "input_size", "readonly", "default_value", "kind")
 
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (

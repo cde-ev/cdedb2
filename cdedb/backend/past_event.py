@@ -100,8 +100,8 @@ class PastEventBackend(AbstractBackend):
         return self.sql_insert(rs, "past_event.log", data)
 
     @access("cde_admin", "event_admin")
-    def retrieve_past_log(self, rs, codes=None, pevent_id=None, start=None,
-                          stop=None, persona_id=None, submitted_by=None,
+    def retrieve_past_log(self, rs, codes=None, pevent_id=None, offset=None,
+                          length=None, persona_id=None, submitted_by=None,
                           additional_info=None, time_start=None,
                           time_stop=None):
         """Get recorded activity for concluded events.
@@ -112,8 +112,8 @@ class PastEventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type pevent_id: int or None
-        :type start: int or None
-        :type stop: int or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: int or None
         :type submitted_by: int or None
         :type additional_info: str or None
@@ -121,11 +121,14 @@ class PastEventBackend(AbstractBackend):
         :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
+        pevent_id = affirm("id_or_None", pevent_id)
+        pevent_ids = [pevent_id] if pevent_id else None
         return self.generic_retrieve_log(
-            rs, "enum_pasteventlogcodes", "pevent", "past_event.log", codes,
-            entity_id=pevent_id, start=start, stop=stop, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
-            time_start=time_start, time_stop=time_stop)
+            rs, "enum_pasteventlogcodes", "pevent", "past_event.log",
+            codes=codes, entity_ids=pevent_ids, offset=offset, length=length,
+            persona_id=persona_id, submitted_by=submitted_by,
+            additional_info=additional_info, time_start=time_start,
+            time_stop=time_stop)
 
     @access("cde", "event")
     def list_institutions(self, rs):
@@ -783,8 +786,11 @@ class PastEventBackend(AbstractBackend):
         return new_id
 
     @access("cde_admin", "event_admin")
-    def archive_event(self, rs, event_id):
-        """Transfer data from a concluded event into the past event schema.
+    def archive_event(self, rs, event_id, create_past_event=True):
+        """Archive a concluded event.
+
+        This optionally creates a follow-up past event by transferring data from
+        the event into the past event schema.
 
         The data of the event organization is scheduled to be deleted at
         some point. We retain in the past_event schema only the
@@ -797,10 +803,11 @@ class PastEventBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
+        :type create_past_event: bool
         :rtype: ([int] or None, str or None)
         :returns: The first entry are the ids of the new past events or None
-          if there were complications. In the latter case the second entry
-          is an error message.
+          if there were complications or create_past_events is False.
+          If there were complications, the second entry is an error message.
         """
         event_id = affirm("id", event_id)
         if ("cde_admin" not in rs.user.roles
@@ -815,6 +822,9 @@ class PastEventBackend(AbstractBackend):
                 return None, "Event locked."
             self.event.set_event_archived(rs, {'id': event_id,
                                                'is_archived': True})
-            new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                            for part_id in xsorted(event['parts']))
+            if create_past_event:
+                new_ids = tuple(self.archive_one_part(rs, event, part_id)
+                                for part_id in xsorted(event['parts']))
+            else:
+                new_ids = None
         return new_ids, None

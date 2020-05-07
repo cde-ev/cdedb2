@@ -25,7 +25,7 @@ class TestOffline(FrontendTest):
             stderr=subprocess.DEVNULL)
         try:
             subprocess.run(
-                ['bin/make_offline_vm.py', '--test',
+                ['bin/make_offline_vm.py', '--test', '--no-extra-packages',
                  'test/ancillary_files/event_export.json'],
                 cwd=base, check=True, stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL)
@@ -70,6 +70,25 @@ class TestOffline(FrontendTest):
             self.assertPresence("Zelda")
             self.assertTitle("Anton Armin A. Administrator")
             self.assertPresence("03.04.1933")
+
+            # Test quick partial export
+            self.logout()
+            self.get(
+                '/event/offline/partial',
+                headers={'X-CdEDB-API-token': 'y1f2i3d4x5b6'})
+            self.assertEqual(self.response.json["message"], "success")
+            expectation = {
+                'CDEDB_EXPORT_EVENT_VERSION',
+                'kind',
+                'timestamp',
+                'id',
+                'event',
+                'lodgement_groups',
+                'lodgements',
+                'courses',
+                'registrations',
+            }
+            self.assertEqual(set(self.response.json["export"]), expectation)
 
             # Additional tests can be added here.
             # Due to the expensive setup of this test these should not

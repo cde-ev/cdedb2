@@ -232,6 +232,8 @@ _DEFAULTS = {
     # maximum length of personas presented via select persona API for any other
     # user
     "NUM_PREVIEW_PERSONAS": 3,
+    #: Default amount of lines shown in logs shown in the frontend
+    "DEFAULT_LOG_LENGTH": 50,
     # Available languages
     "I18N_LANGUAGES": ("de", "en"),
 
@@ -247,6 +249,8 @@ _DEFAULTS = {
     "DEFAULT_RETURN_PATH": "bounces@cde-ev.de",
     # default sender address for mails
     "DEFAULT_SENDER": '"CdE-Datenbank" <datenbank@cde-ev.de>',
+    # default subject prefix
+    "DEFAULT_PREFIX": "[CdE]",
     # domain for emails (determines message id)
     "MAIL_DOMAIN": "db.cde-ev.de",
     # host to use for sending emails
@@ -511,11 +515,14 @@ _SECRECTS_DEFAULTS = {
 
     # fixed tokens for API access
     "API_TOKENS": {
-        # key to use by mailing list software for authentification
+        # for mailing list software
         "rklist": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
 
-        # API token for resolve API
+        # resolve API for CyberAka
         "resolve": "a1o2e3u4i5d6h7t8n9s0",
+
+        # zero-config partial export in offline mode
+        "quick_partial_export": "y1f2i3d4x5b6",
     }
 }
 

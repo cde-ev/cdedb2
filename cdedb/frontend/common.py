@@ -46,19 +46,22 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 
+from typing import Callable
+
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
     decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields,
-    ValidationWarning, xsorted)
+    ValidationWarning, xsorted, unwrap)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
+from cdedb.backend.common import AbstractBackend
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -868,6 +871,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         )
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
+            trim_blocks=True,
+            lstrip_blocks=True,
         )
         self.jinja_env.policies['ext.i18n.trimmed'] = True
         # Always provide all backends -- they are cheap
@@ -971,6 +976,22 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 isinstance(kind, ValidationWarning)
                 for param, kind in all_errors)
 
+        def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
+                                  method_name: str) -> Callable:
+            """Provide a checker from the backend(proxy) for the templates.
+
+            This takes a Frontend object and refers the check to the
+            given backend if that backend has a method of the given
+            `method_name`. If no such method exists, the checker
+            will always return False.
+            """
+            try:
+                checker = getattr(backend, method_name)
+                if callable(checker):
+                    return lambda *args, **kwargs: checker(rs, *args, **kwargs)
+            except AttributeError:
+                return lambda *args, **kwargs: False
+
         errorsdict = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
@@ -984,6 +1005,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'gettext': rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
+            'is_relevant_admin': _make_backend_checker(
+                rs, self.mlproxy, method_name="is_relevant_admin"),
             'is_warning': _is_warning,
             'lang': rs.lang,
             'ngettext': rs.ngettext,
@@ -1179,6 +1202,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :rtype: :py:class:`email.message.Message`
         """
         defaults = {"From": self.conf["DEFAULT_SENDER"],
+                    "Prefix": self.conf["DEFAULT_PREFIX"],
                     "Reply-To": self.conf["DEFAULT_REPLY_TO"],
                     "Return-Path": self.conf["DEFAULT_RETURN_PATH"],
                     "Cc": tuple(),
@@ -1213,8 +1237,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 self.logger.warning("Empty values zapped in email recipients.")
             if headers[header]:
                 msg[header] = ", ".join(nonempty)
-        for header in ("From", "Reply-To", "Subject", "Return-Path"):
+        for header in ("From", "Reply-To", "Return-Path"):
             msg[header] = headers[header]
+        msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         msg["Message-ID"] = email.utils.make_msgid(domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
         return msg
@@ -2014,14 +2039,18 @@ def event_guard(argname="event_id", check_offline=False):
     return wrap
 
 
-def mailinglist_guard(argname="mailinglist_id"):
+def mailinglist_guard(argname="mailinglist_id", allow_moderators=True):
     """This decorator checks the access with respect to a specific
     mailinglist. The list is specified by id which has either to be a
     keyword parameter or the first positional parameter after the
-    request state. Only moderators and privileged users are admitted.
+    request state.
+
+    If `allow_moderators` is True, moderators of the mailinglist are allowed,
+    otherwise we require a relevant admin for the given mailinglist.
 
     :type argname: str
     :param argname: name of the keyword argument specifying the id
+    :type allow_moderators: bool
     """
 
     def wrap(fun):
@@ -2031,10 +2060,16 @@ def mailinglist_guard(argname="mailinglist_id"):
                 arg = kwargs[argname]
             else:
                 arg = args[0]
-            if arg not in rs.user.moderator and not obj.is_admin(rs):
-                raise werkzeug.exceptions.Forbidden(rs.gettext(
-                    "This page can only be accessed by the mailinglist’s "
-                    "moderators."))
+            if allow_moderators:
+                if not obj.mlproxy.may_manage(rs, **{argname: arg}):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "This page can only be accessed by the mailinglist’s "
+                        "moderators."))
+            else:
+                if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "This page can only be accessed by appropriate "
+                        "admins."))
             return fun(obj, rs, *args, **kwargs)
 
         return new_fun
@@ -2152,6 +2187,59 @@ def make_transaction_subject(persona):
                                asciificator(persona['given_names']))
 
 
+def process_dynamic_input(rs, existing, spec, additional=None):
+    """Retrieve information provided by dynamic_row_tables.
+
+    This returns a data dict to update the database, which includes:
+    - existing, mapped to their (validated) input fields (from spec)
+    - existing, mapped to None (if they were marked to be deleted)
+    - new entries, mapped to their (validated) input fields (from spec)
+
+    :type rs: :py:class:`FrontendRequestState`
+    :type existing: [int]
+    :param existing: ids of already existent objects
+    :type spec: {str: str}
+    :param spec: name of input fields, mapped to their validation
+    :type additional: dict
+    :param additional: additional keys added to each output object
+
+    :rtype: {int: {str: object} or None}
+    """
+    delete_flags = request_extractor(
+        rs, ((f"delete_{anid}", "bool") for anid in existing))
+    deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
+    params = tuple(
+        (f"{key}_{anid}", value)
+        for anid in existing if anid not in deletes
+        for key, value in spec.items())
+    data = request_extractor(rs, params)
+    ret = {
+        anid: {key: data[f"{key}_{anid}"] for key in spec}
+        for anid in existing if anid not in deletes
+    }
+    for anid in existing:
+        if anid in deletes:
+            ret[anid] = None
+        else:
+            ret[anid]['id'] = anid
+    marker = 1
+    while marker < 2 ** 10:
+        will_create = unwrap(
+            request_extractor(rs, ((f"create_-{marker}", "bool"),)))
+        if will_create:
+            params = tuple((f"{key}_-{marker}", value)
+                           for key, value in spec.items())
+            data = request_extractor(rs, params)
+            ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
+            if additional:
+                ret[-marker].update(additional)
+        else:
+            break
+        marker += 1
+    rs.values['create_last_index'] = marker - 1
+    return ret
+
+
 class CustomCSVDialect(csv.Dialect):
     delimiter = ';'
     quoting = csv.QUOTE_MINIMAL
@@ -2219,3 +2307,64 @@ def query_result_to_json(data, fields, substitutions=None):
             row[field] = value
         json_data.append(row)
     return json_serialize(json_data)
+
+def calculate_db_logparams(offset, length):
+    """Modify the offset and length values used in the frontend to
+    allow for guaranteed valid sql queries.
+
+    :type offset: int
+    :type length: int
+    :rtype (int, int)"""
+    _offset = offset
+    _length = length
+    if _offset and _offset < 0:
+        # Avoid non-positive lengths
+        if -offset < length:
+            _length = _length + _offset
+        _offset = 0
+
+    return _offset, _length
+
+def calculate_loglinks(rs, total, offset, length):
+    """Calculate the target parameters for the links in the log pagination bar.
+
+    :type rs: :py:class:`cdedb.common.RequestState`
+    :type total: int
+    :param total: The total count of log entries
+    :type offset: int
+    :param offset: The offset, preprocessed for negative offset values
+    :type length: int
+    :param length: The requested length (not necessarily the shown length)
+    :rtype: {str: werkzeug.datastructures.MultiDict}
+    """
+    # The true offset does represent the acutal count of log entries before
+    # the first shown entry. This is done magically, if no offset has been
+    # given.
+    if offset != 0 and not offset:
+        trueoffset = length * ((total - 1) // length)
+    else:
+        trueoffset = offset
+    loglinks = {
+        "first": rs.values.copy(),
+        "previous": rs.values.copy(),
+        "pre-current": [rs.values.copy() for x in range(3)
+                        if trueoffset - x * length > 0],
+        "current": rs.values.copy(),
+        "post-current": [rs.values.copy() for x in range(3)
+                         if trueoffset + (x + 1) * length < total],
+        "next": rs.values.copy(),
+        "last": rs.values.copy(),
+    }
+    loglinks["first"]["offset"] = "0"
+    loglinks["last"]["offset"] = ""
+    for x, pre in enumerate(loglinks["pre-current"]):
+        loglinks["pre-current"][x]["offset"] = (
+                trueoffset - (len(loglinks["pre-current"]) - x) * length
+        )
+    loglinks["previous"]["offset"] = trueoffset - length
+    for x, post in enumerate(loglinks["post-current"]):
+        loglinks["post-current"][x]["offset"] = trueoffset + (x + 1) * length
+    loglinks["next"]["offset"] = trueoffset + length
+    loglinks["current"]["offset"] = trueoffset
+
+    return loglinks

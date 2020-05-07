@@ -45,9 +45,9 @@
                                      gettext("registered")) -%}
                             (already {{ link }})
                         {% endtrans %}
-                        {%- if event['use_questionnaire'] %}
+                        {%- if event['use_additional_questionnaire'] %}
                             &bull;
-                            {{ util.href(cdedblink('event/questionnaire', {'event_id': event_id}),
+                            {{ util.href(cdedblink('event/additional_questionnaire', {'event_id': event_id}),
                                          gettext("Questionnaire"), icon='edit') -}}
                         {% endif -%}
                     {% elif "event" in user.roles and event['is_open'] %}
@@ -116,8 +116,8 @@
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
                     <br />
                     {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
-                    {%- if event['is_cancelled'] %}
-                        {%- trans %}, is cancelled.{% endtrans %}
+                    {%- if event['is_cancelled'] -%}
+                        , {% trans %}is cancelled{% endtrans %}.
                     {% endif %}
                 </li>
             {% endfor %}

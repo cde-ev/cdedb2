@@ -161,8 +161,14 @@
 
             <div class="row">
                 <nav class="col-md-3" id="sidebar" aria-label="{% trans %}Sub Menu{% endtrans %}">
-                    {% block navigation %}
-                    {% endblock %}
+                    <div id="sidebar-navigation">
+                        {% block navigation %}
+                        {% endblock %}
+                    </div>
+                    <div id="sidebar-adminviews">
+                        {% block adminviews %}
+                        {% endblock %}
+                    </div>
                 </nav>
                 <div class="col-md-9">
                     {% if self.breadcrumb %}

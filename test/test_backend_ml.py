@@ -236,7 +236,7 @@ class TestMlBackend(BackendTest):
         new_data['assembly_id'] = None
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
 
-    @as_users("anton")
+    @as_users("nina")
     def test_sample_data(self, user):
         ml_ids = self.ml.list_mailinglists(self.key, active_only=False)
 
@@ -271,7 +271,7 @@ class TestMlBackend(BackendTest):
         reality = self.ml.get_mailinglist(self.key, mailinglist_id)
         self.assertEqual(expectation, reality)
 
-    @as_users("anton", "berta")
+    @as_users("nina", "berta")
     def test_subscriptions(self, user):
         # Which lists is Berta subscribed to.
         expectation = {
@@ -374,7 +374,7 @@ class TestMlBackend(BackendTest):
         # permissions are present. This should work for moderators as well,
         # but it does not for some reason.
         if code is not None and self.ml.may_manage(self.key, mailinglist_id):
-            log_entry = {
+            expected_log = {
                 'additional_info': None,
                 'code': action.get_log_code(),
                 'ctime': nearly_now(),
@@ -382,9 +382,12 @@ class TestMlBackend(BackendTest):
                 'persona_id': persona_id,
                 'submitted_by': persona_id
             }
-            self.assertIn(
-                log_entry, self.ml.retrieve_log(
-                    self.key, mailinglist_id=mailinglist_id))
+            _, log_entries = self.ml.retrieve_log(
+                self.key, mailinglist_ids=[mailinglist_id])
+            # its a bit annoying to check always the correct log id
+            log_entries = [{k: v for k, v in log.items() if k != 'id'}
+                           for log in log_entries]
+            self.assertIn(expected_log, log_entries)
 
     @as_users("anton", "berta", "ferdinand")
     def test_opt_in(self, user):
@@ -856,7 +859,7 @@ class TestMlBackend(BackendTest):
             self._change_sub(user['id'], 11, SA.subscribe,
                              code=None, state=None, kind="error")
 
-    @as_users("anton")
+    @as_users("nina")
     def test_write_subscription_states(self, user):
         # CdE-Member list.
         mailinglist_id = 7
@@ -914,7 +917,10 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
         # Check that this has been logged
-        log_entry = {
+        _, log_entries = self.ml.retrieve_log(
+            self.key, mailinglist_ids=[mailinglist_id])
+        expected_log = {
+            'id': 1001,
             'additional_info': None,
             'code': const.MlLogCodes.cron_removed,
             'ctime': nearly_now(),
@@ -922,9 +928,7 @@ class TestMlBackend(BackendTest):
             'persona_id': 5,
             'submitted_by': user['id']
         }
-        self.assertIn(
-            log_entry, self.ml.retrieve_log(
-                self.key, mailinglist_id=mailinglist_id))
+        self.assertIn(expected_log, log_entries)
 
         # Now test lists with implicit subscribers.
         # First for events.
@@ -990,7 +994,6 @@ class TestMlBackend(BackendTest):
 
     @as_users("anton")
     def test_change_sub_policy(self, user):
-        pass
         mdata = {
             'local_part': 'revolution',
             'domain': const.MailinglistDomain.lists,
@@ -1527,6 +1530,163 @@ class TestMlBackend(BackendTest):
                          self.ml.get_subscription(
                              self.key, persona_id=9, mailinglist_id=4))
 
+    @as_users("annika", "werner", "vera", "nina")
+    def test_relevant_admins(self, user):
+        if user['display_name'] in {"Annika", "Nina"}:
+            # Create a new event mailinglist.
+            mldata = {
+                'local_part': "cyber",
+                'domain': const.MailinglistDomain.aka,
+                'description': "Für alle, die nicht ohne Akademien können.",
+                'event_id': None,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'is_active': True,
+                'attachment_policy': const.AttachmentPolicy.forbid,
+                'maxsize': None,
+                'moderators': {user['id']},
+                'subject_prefix': "cyber",
+                'title': "CyberAka",
+                'mod_policy': const.ModerationPolicy.non_subscribers,
+                'notes': None,
+                'registration_stati': [],
+            }
+            new_id = self.ml.create_mailinglist(self.key, mldata)
+            self.assertGreater(new_id, 0)
+
+            # Add self as a subscriber.
+            self.ml.do_subscription_action(
+                self.key, SA.add_subscriber, new_id, user['id'])
+
+            # Modify the new mailinglist.
+            mdata = {
+                'id': new_id,
+                'registration_stati': [
+                    const.RegistrationPartStati.guest,
+                    const.RegistrationPartStati.participant,
+                    const.RegistrationPartStati.applied,
+                    const.RegistrationPartStati.waitlist,
+                ],
+                'event_id': 1,
+                'ml_type': const.MailinglistTypes.event_associated,
+            }
+            self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Attempt to change the mailinglist type.
+            mdata = {
+                'id': new_id,
+                'ml_type': const.MailinglistTypes.member_opt_in,
+            }
+            if user['display_name'] != "Nina":
+                with self.assertRaises(PrivilegeError) as cm:
+                    self.ml.set_mailinglist(self.key, mdata)
+                self.assertEqual(cm.exception.args,
+                                 ("Not privileged to make this change.",))
+            else:
+                self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Delete the mailinglist.
+            self.assertTrue(self.ml.delete_mailinglist(
+                self.key, new_id,
+                cascade=["moderators", "subscriptions", "log"]))
+
+        if user['display_name'] in {"Werner", "Nina"}:
+            # Create a new event mailinglist.
+            mldata = {
+                'local_part': "mgv-ag",
+                'domain': const.MailinglistDomain.lists,
+                'description': "Vor der nächsten MGV müssen wir noch ein paar"
+                               " Dinge klären.",
+                'ml_type': const.MailinglistTypes.assembly_opt_in,
+                'is_active': True,
+                'attachment_policy': const.AttachmentPolicy.forbid,
+                'maxsize': None,
+                'moderators': {user['id']},
+                'subject_prefix': "mgv-ag",
+                'title': "Arbeitsgruppe Mitgliederversammlung",
+                'mod_policy': const.ModerationPolicy.non_subscribers,
+                'notes': None,
+            }
+            new_id = self.ml.create_mailinglist(self.key, mldata)
+            self.assertGreater(new_id, 0)
+
+            # Add self as a subscriber.
+            self.ml.do_subscription_action(
+                self.key, SA.add_subscription_override, new_id, user['id'])
+
+            # Modify the new mailinglist.
+            mdata = {
+                'id': new_id,
+                'assembly_id': 2,
+                'ml_type': const.MailinglistTypes.assembly_associated,
+            }
+            self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Attempt to change the mailinglist type.
+            mdata = {
+                'id': new_id,
+                'ml_type': const.MailinglistTypes.member_opt_in,
+            }
+            if user['display_name'] != "Nina":
+                with self.assertRaises(PrivilegeError) as cm:
+                    self.ml.set_mailinglist(self.key, mdata)
+                self.assertEqual(cm.exception.args,
+                                 ("Not privileged to make this change.",))
+            else:
+                self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Delete the mailinglist.
+            self.assertTrue(self.ml.delete_mailinglist(
+                self.key, new_id,
+                cascade=["moderators", "subscriptions", "log"]))
+        if user['display_name'] in {"Vera", "Nina"}:
+            # Create a new member mailinglist.
+            mldata = {
+                'local_part': "literatir",
+                'domain': const.MailinglistDomain.lists,
+                'description': "Wir reden hier über coole Bücher die wir"
+                               " gelesen haben.",
+                'ml_type': const.MailinglistTypes.member_opt_in,
+                'is_active': True,
+                'attachment_policy': const.AttachmentPolicy.forbid,
+                'maxsize': None,
+                'moderators': {user['id']},
+                'subject_prefix': "literatur",
+                'title': "Buchclub",
+                'mod_policy': const.ModerationPolicy.non_subscribers,
+                'notes': None,
+            }
+            new_id = self.ml.create_mailinglist(self.key, mldata)
+            self.assertGreater(new_id, 0)
+
+            # Add self as a subscriber.
+            self.ml.do_subscription_action(
+                self.key, SA.add_subscription_override, new_id, user['id'])
+
+            # Modify the new mailinglist.
+            mdata = {
+                'id': new_id,
+                'ml_type': const.MailinglistTypes.member_opt_out,
+            }
+            self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Attempt to change the mailinglist type.
+            mdata = {
+                'id': new_id,
+                'ml_type': const.MailinglistTypes.general_opt_in,
+            }
+            if user['display_name'] != "Nina":
+                with self.assertRaises(PrivilegeError) as cm:
+                    self.ml.set_mailinglist(self.key, mdata)
+                self.assertEqual(cm.exception.args,
+                                 ("Not privileged to make this change.",))
+            else:
+                self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+
+            # Delete the mailinglist.
+            self.assertTrue(self.ml.delete_mailinglist(
+                self.key, new_id,
+                cascade=["moderators", "subscriptions", "log"]))
+
     @as_users("anton")
     def test_log(self, user):
         # first generate some data
@@ -1564,64 +1724,73 @@ class TestMlBackend(BackendTest):
                                   "whitelist", "moderators", "log"))
 
         # now check it
-        expectation = (
-            {'additional_info': 'Witz des Tages (witz@lists.cde-ev.de)',
-             'code': const.MlLogCodes.list_deleted,
-             'ctime': nearly_now(),
-             'mailinglist_id': None,
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': 'che@example.cde',
-             'code': const.MlLogCodes.whitelist_added,
-             'ctime': nearly_now(),
-             'mailinglist_id': new_id,
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': const.MlLogCodes.moderator_added,
-             'ctime': nearly_now(),
-             'mailinglist_id': new_id,
-             'persona_id': 2,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': const.MlLogCodes.moderator_added,
-             'ctime': nearly_now(),
-             'mailinglist_id': new_id,
-             'persona_id': 1,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': const.MlLogCodes.list_created,
-             'ctime': nearly_now(),
-             'mailinglist_id': new_id,
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': const.MlLogCodes.subscribed,
-             'ctime': nearly_now(),
-             'mailinglist_id': 7,
-             'persona_id': 1,
-             'submitted_by': 1},
-            {'additional_info': 'devnull@example.cde',
-             'code': const.MlLogCodes.subscription_changed,
-             'ctime': nearly_now(),
-             'mailinglist_id': 4,
-             'persona_id': 1,
-             'submitted_by': 1},
-            {'additional_info': None,
+        expectation = (8, (
+            {'id': 1001,
+             'additional_info': None,
              'code': const.MlLogCodes.unsubscribed,
              'ctime': nearly_now(),
              'mailinglist_id': 2,
              'persona_id': 1,
-             'submitted_by': 1})
+             'submitted_by': user['id']},
+            {'id': 1002,
+             'additional_info': 'devnull@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'mailinglist_id': 4,
+             'persona_id': 1,
+             'submitted_by': user['id']},
+            {'id': 1003,
+             'additional_info': None,
+             'code': const.MlLogCodes.subscribed,
+             'ctime': nearly_now(),
+             'mailinglist_id': 7,
+             'persona_id': 1,
+             'submitted_by': user['id']},
+            {'id': 1004,
+             'additional_info': None,
+             'code': const.MlLogCodes.list_created,
+             'ctime': nearly_now(),
+             'mailinglist_id': new_id,
+             'persona_id': None,
+             'submitted_by': user['id']},
+            {'id': 1005,
+             'additional_info': None,
+             'code': const.MlLogCodes.moderator_added,
+             'ctime': nearly_now(),
+             'mailinglist_id': new_id,
+             'persona_id': 1,
+             'submitted_by': user['id']},
+            {'id': 1006,
+             'additional_info': None,
+             'code': const.MlLogCodes.moderator_added,
+             'ctime': nearly_now(),
+             'mailinglist_id': new_id,
+             'persona_id': 2,
+             'submitted_by': user['id']},
+            {'id': 1007,
+             'additional_info': 'che@example.cde',
+             'code': const.MlLogCodes.whitelist_added,
+             'ctime': nearly_now(),
+             'mailinglist_id': new_id,
+             'persona_id': None,
+             'submitted_by': user['id']},
+            {'id': 1008,
+             'additional_info': 'Witz des Tages (witz@lists.cde-ev.de)',
+             'code': const.MlLogCodes.list_deleted,
+             'ctime': nearly_now(),
+             'mailinglist_id': None,
+             'persona_id': None,
+             'submitted_by': user['id']}
+        ))
         self.assertEqual(expectation, self.ml.retrieve_log(self.key))
         self.assertEqual(
-            expectation[2:5],
-            self.ml.retrieve_log(self.key, start=2, stop=5))
+            (expectation[0], expectation[1][2:5]),
+            self.ml.retrieve_log(self.key, offset=2, length=3))
         self.assertEqual(
-            expectation[2:5],
-            self.ml.retrieve_log(self.key, mailinglist_id=new_id, start=1, stop=5))
+            (4, expectation[1][3:7]),
+            self.ml.retrieve_log(self.key, mailinglist_ids=[new_id]))
         self.assertEqual(
-            expectation[2:4],
+            (2, expectation[1][4:6]),
             self.ml.retrieve_log(
                 self.key, codes=(const.MlLogCodes.moderator_added,)))
 

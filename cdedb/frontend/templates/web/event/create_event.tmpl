@@ -54,11 +54,9 @@
                 "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
             );
         </script>
-        {% if "ml_admin" in user.roles %}
-            <h4 class="heading-underline">{% trans %}Mailinglists{% endtrans %}</h4>
-            {{ util.form_input_checkbox(name="create_orga_list", label=gettext("Create Orga Mailinglist")) }}
-            {{ util.form_input_checkbox(name="create_participant_list", label=gettext("Create Participant Mailinglist")) }}
-        {% endif %}
+        <h4 class="heading-underline">{% trans %}Mailinglists{% endtrans %}</h4>
+        {{ util.form_input_checkbox(name="create_orga_list", label=gettext("Create Orga Mailinglist")) }}
+        {{ util.form_input_checkbox(name="create_participant_list", label=gettext("Create Participant Mailinglist")) }}
 
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_db_events")) }}
     </form>

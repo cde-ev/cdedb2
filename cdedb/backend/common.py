@@ -12,7 +12,7 @@ import copy
 import enum
 import functools
 import logging
-from typing import Any, Callable, TypeVar, Set, Union, Iterable, Tuple
+from typing import Any, Callable, TypeVar, cast, Iterable, Tuple, Set, Optional
 
 from cdedb.common import (
     n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
@@ -171,12 +171,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             self, configpath))
         # Everybody needs access to the core backend
         if is_core:
-            self.core = self
+            self.core = self  # type: CoreBackend
         else:
             # Import here since we otherwise have a cyclic import.
             # I don't see how we can get out of this ...
             from cdedb.backend.core import CoreBackend
-            self.core = ProxyShim(CoreBackend(configpath), internal=True)
+            self.core: CoreBackend = cast(
+                CoreBackend, ProxyShim(CoreBackend(configpath), internal=True))
 
     def affirm_realm(self, rs, ids, realms=None):
         """Check that all personas corresponding to the ids are in the
@@ -247,6 +248,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return obj.value
         else:
             return obj
+
+    @staticmethod
+    def affirm_atomized_context(rs):
+        """Make sure that we are operating in a atomized transaction."""
+
+        if not rs.conn.is_contaminated:
+            raise RuntimeError(n_("No contamination!"))
 
     def execute_db_query(self, cur, query, params):
         """Perform a database query. This low-level wrapper should be used
@@ -620,10 +628,11 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_all(rs, q, params)
 
     def generic_retrieve_log(self, rs, code_validator, entity_name, table,
-                             codes=None, entity_id=None, start=None, stop=None,
-                             additional_columns=None, persona_id=None,
-                             submitted_by=None, additional_info=None,
-                             time_start=None, time_stop=None):
+                             codes=None, entity_ids=None, offset=None,
+                             length=None, additional_columns=None,
+                             persona_id=None, submitted_by=None,
+                             additional_info=None, time_start=None,
+                             time_stop=None):
         """Get recorded activity.
 
         Each realm has it's own log as well as potentially additional
@@ -651,11 +660,11 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type code_validator: str
         :param code_validator: e.g. "enum_mllogcodes"
         :type codes: [int] or None
-        :type entity_id: int or None
-        :type start: int or None
-        :param start: How many entries to skip at the start.
-        :type stop: int or None
-        :param stop: At which entry to halt, in sum you get ``stop-start``
+        :type entity_ids: [int] or None
+        :type offset: int or None
+        :param offset: How many entries to skip at the start.
+        :type length: int or None
+        :param length: How many entries to list.
           entries (works like python sequence slices).
         :type additional_columns: [str] or None
         :param additional_columns: Extra values to retrieve.
@@ -672,9 +681,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :rtype: [{str: object}]
         """
         codes = affirm_set_validation(code_validator, codes, allow_None=True)
-        entity_id = affirm_validation("id_or_None", entity_id)
-        start = affirm_validation("int_or_None", start)
-        stop = affirm_validation("int_or_None", stop)
+        entity_ids = affirm_set_validation("id", entity_ids, allow_None=True)
+        offset = affirm_validation("non_negative_int_or_None", offset)
+        length = affirm_validation("positive_int_or_None", length)
         additional_columns = affirm_set_validation(
             "restrictive_identifier", additional_columns, allow_None=True)
         persona_id = affirm_validation("id_or_None", persona_id)
@@ -683,30 +692,18 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         time_start = affirm_validation("datetime_or_None", time_start)
         time_stop = affirm_validation("datetime_or_None", time_stop)
 
-        start = start or 0
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
         additional_columns = additional_columns or tuple()
-        if stop:
-            stop = max(start, stop)
-        query = glue(
-            "SELECT ctime, code, submitted_by, {entity}_id, persona_id,",
-            "additional_info {extra_columns} FROM {table} {condition}",
-            "ORDER BY id DESC")
-        if stop:
-            query = glue(query, "LIMIT {}".format(stop - start))
-        if start:
-            query = glue(query, "OFFSET {}".format(start))
-        extra_columns = ", ".join(additional_columns)
-        if extra_columns:
-            extra_columns = ", " + extra_columns
 
+        # First, define the common WHERE filter clauses
         conditions = []
         params = []
         if codes:
             conditions.append("code = ANY(%s)")
             params.append(codes)
-        if entity_id:
-            conditions.append("{}_id = %s".format(entity_name))
-            params.append(entity_id)
+        if entity_ids:
+            conditions.append("{}_id = ANY(%s)".format(entity_name))
+            params.append(entity_ids)
         if persona_id:
             conditions.append("persona_id = %s")
             params.append(persona_id)
@@ -730,9 +727,35 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             condition = "WHERE {}".format(" AND ".join(conditions))
         else:
             condition = ""
+
+        # The first query determines the absolute number of logs existing
+        # matching the given criteria
+        query = "SELECT COUNT(*) AS count FROM {table} {condition}"
+        query = query.format(entity=entity_name, table=table,
+                             condition=condition)
+        total = unwrap(self.query_one(rs, query, params))
+        if offset and offset > total:
+            # Why you do this
+            return total, tuple()
+        elif offset is None and total > length:
+            offset = length * ((total - 1) // length)
+
+        # Now, query the actual information
+        query = glue(
+            "SELECT id, ctime, code, submitted_by, {entity}_id, persona_id,",
+            "additional_info {extra_columns} FROM {table} {condition}",
+            "ORDER BY id ASC LIMIT {limit}")
+        if offset is not None:
+            query = glue(query, "OFFSET {}".format(offset))
+
+        extra_columns = ", ".join(additional_columns)
+        if extra_columns:
+            extra_columns = ", " + extra_columns
+
         query = query.format(entity=entity_name, extra_columns=extra_columns,
-                             table=table, condition=condition)
-        return self.query_all(rs, query, params)
+                             table=table, condition=condition, limit=length,
+                             offset=offset)
+        return total, self.query_all(rs, query, params)
 
 
 class Silencer:
@@ -761,19 +784,18 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
-def affirm_validation(assertion: str, value: T, **kwargs: Any) -> Union[T, None]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
-    """
+def affirm_validation(assertion: str, value: T, **kwargs: Any) -> Optional[T]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
 
 
-def affirm_array_validation(assertion: str, values: Union[Iterable[T], None],
-                            allow_None: bool = False, **kwargs: Any) -> \
-        Union[Tuple[T], None]:
+def affirm_array_validation(assertion: str, values: Optional[Iterable[T]],
+                            allow_None: bool = False,
+                            **kwargs: Any) -> Optional[Tuple[T]]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
     :param allow_None: Since we don't have the luxury of an automatic
@@ -781,25 +803,23 @@ def affirm_array_validation(assertion: str, values: Union[Iterable[T], None],
     """
     if allow_None and values is None:
         return None
-    checker = getattr(validate, "assert_{}".format(assertion))
+    checker: Callable[[T, ...], T] = \
+        getattr(validate, "assert_{}".format(assertion))
     return tuple(checker(value, **kwargs) for value in values)
 
 
-def affirm_set_validation(assertion: str, values: Union[Iterable[T], None],
-                          allow_None: bool = False, **kwargs: Any) -> \
-        Union[Set[T], None]:
+def affirm_set_validation(assertion: str, values: Optional[Iterable[T]],
+                          allow_None: bool = False,
+                          **kwargs: Any) -> Optional[Set[T]]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
 
-    :type assertion: str
-    :type allow_None: bool
     :param allow_None: Since we don't have the luxury of an automatic
       '_or_None' variant like with other validators we have this parameter.
-    :type values: {object} (or None)
-    :rtype: {object}
     """
     if allow_None and values is None:
         return None
-    checker = getattr(validate, "assert_{}".format(assertion))
+    checker: Callable[[T, ...], T] = \
+        getattr(validate, "assert_{}".format(assertion))
     return {checker(value, **kwargs) for value in values}
 
 

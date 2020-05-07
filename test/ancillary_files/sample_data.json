@@ -2857,7 +2857,7 @@
             "orga_address": "aka@example.cde",
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
-            "use_questionnaire": false,
+            "use_additional_questionnaire": false,
             "notes": "Todoliste ... just kidding ;)",
             "offline_lock": false,
             "is_visible": true,
@@ -2885,7 +2885,7 @@
             "orga_address": "",
             "registration_text": null,
             "mail_text": "",
-            "use_questionnaire": false,
+            "use_additional_questionnaire": false,
             "notes": "Wird anstrengend \u2026",
             "offline_lock": false,
             "is_visible": false,
@@ -2898,6 +2898,73 @@
             "lodge_field": null,
             "reserve_field": null,
             "course_room_field": null
+        }
+    ],
+    "event.event_parts": [
+        {
+            "id": 1,
+            "event_id": 1,
+            "title": "Warmup",
+            "shortname": "Wu",
+            "part_begin": "2222-02-02",
+            "part_end": "2222-02-02",
+            "fee": "10.50"
+        },
+        {
+            "id": 2,
+            "event_id": 1,
+            "title": "Erste H\u00e4lfte",
+            "shortname": "1.H.",
+            "part_begin": "2222-11-01",
+            "part_end": "2222-11-11",
+            "fee": "123.00"
+        },
+        {
+            "id": 3,
+            "event_id": 1,
+            "title": "Zweite H\u00e4lfte",
+            "shortname": "2.H.",
+            "part_begin": "2222-11-11",
+            "part_end": "2222-11-30",
+            "fee": "450.99"
+        },
+        {
+            "id": 4,
+            "event_id": 2,
+            "title": "Party",
+            "shortname": "Party",
+            "part_begin": "2050-01-15",
+            "part_end": "2050-01-15",
+            "fee": "15.00"
+        }
+    ],
+    "event.course_tracks": [
+        {
+            "id": 1,
+            "part_id": 2,
+            "title": "Morgenkreis (Erste H\u00e4lfte)",
+            "shortname": "Morgenkreis",
+            "num_choices": 4,
+            "min_choices": 4,
+            "sortkey": 1
+        },
+        {
+            "id": 2,
+            "part_id": 2,
+            "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
+            "shortname": "Kaffee",
+            "num_choices": 1,
+            "min_choices": 1,
+            "sortkey": 2
+        },
+        {
+            "id": 3,
+            "part_id": 3,
+            "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
+            "shortname": "Sitzung",
+            "num_choices": 3,
+            "min_choices": 2,
+            "sortkey": 3
         }
     ],
     "event.orgas": [
@@ -3000,11 +3067,52 @@
                     "no radiation"
                 ]
             ]
+        },
+        {
+            "id": 7,
+            "event_id": 1,
+            "field_name": "is_child",
+            "kind": 2,
+            "association": 1,
+            "entries": null
+        }
+    ],
+    "event.fee_modifiers": [
+        {
+            "id": 1,
+            "amount": "-5.00",
+            "field_id": 7,
+            "modifier_name": "is_child",
+            "part_id": 1
+        },
+        {
+            "id": 2,
+            "amount": "-12.00",
+            "field_id": 7,
+            "modifier_name": "is_child",
+            "part_id": 2
+        },
+        {
+            "id": 3,
+            "amount": "-19.00",
+            "field_id": 7,
+            "modifier_name": "is_child",
+            "part_id": 3
         }
     ],
     "event.questionnaire_rows": [
         {
-            "id": 1,
+            "event_id": 1,
+            "field_id": 7,
+            "pos": 0,
+            "title": "Ich bin unter 13 Jahre alt.",
+            "info": null,
+            "input_size": null,
+            "readonly": null,
+            "default_value": null,
+            "kind": 1
+        },
+        {
             "event_id": 1,
             "field_id": null,
             "pos": 0,
@@ -3012,10 +3120,10 @@
             "info": "mit Text darunter",
             "input_size": null,
             "readonly": null,
-            "default_value": null
+            "default_value": null,
+            "kind": 2
         },
         {
-            "id": 2,
             "event_id": 1,
             "field_id": 1,
             "pos": 1,
@@ -3023,10 +3131,10 @@
             "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
             "input_size": null,
             "readonly": false,
-            "default_value": "True"
+            "default_value": "True",
+            "kind": 2
         },
         {
-            "id": 3,
             "event_id": 1,
             "field_id": null,
             "pos": 2,
@@ -3034,10 +3142,10 @@
             "info": "nur etwas Text",
             "input_size": null,
             "readonly": null,
-            "default_value": null
+            "default_value": null,
+            "kind": 2
         },
         {
-            "id": 4,
             "event_id": 1,
             "field_id": null,
             "pos": 3,
@@ -3045,10 +3153,10 @@
             "info": null,
             "input_size": null,
             "readonly": null,
-            "default_value": null
+            "default_value": null,
+            "kind": 2
         },
         {
-            "id": 5,
             "event_id": 1,
             "field_id": 2,
             "pos": 4,
@@ -3056,10 +3164,10 @@
             "info": null,
             "input_size": null,
             "readonly": false,
-            "default_value": "etc"
+            "default_value": "etc",
+            "kind": 2
         },
         {
-            "id": 6,
             "event_id": 1,
             "field_id": 3,
             "pos": 5,
@@ -3067,74 +3175,8 @@
             "info": null,
             "input_size": 3,
             "readonly": false,
-            "default_value": null
-        }
-    ],
-    "event.event_parts": [
-        {
-            "id": 1,
-            "event_id": 1,
-            "title": "Warmup",
-            "shortname": "Wu",
-            "part_begin": "2222-02-02",
-            "part_end": "2222-02-02",
-            "fee": "10.50"
-        },
-        {
-            "id": 2,
-            "event_id": 1,
-            "title": "Erste H\u00e4lfte",
-            "shortname": "1.H.",
-            "part_begin": "2222-11-01",
-            "part_end": "2222-11-11",
-            "fee": "123.00"
-        },
-        {
-            "id": 3,
-            "event_id": 1,
-            "title": "Zweite H\u00e4lfte",
-            "shortname": "2.H.",
-            "part_begin": "2222-11-11",
-            "part_end": "2222-11-30",
-            "fee": "450.99"
-        },
-        {
-            "id": 4,
-            "event_id": 2,
-            "title": "Party",
-            "shortname": "Party",
-            "part_begin": "2050-01-15",
-            "part_end": "2050-01-15",
-            "fee": "15.00"
-        }
-    ],
-    "event.course_tracks": [
-        {
-            "id": 1,
-            "part_id": 2,
-            "title": "Morgenkreis (Erste H\u00e4lfte)",
-            "shortname": "Morgenkreis",
-            "num_choices": 4,
-            "min_choices": 4,
-            "sortkey": 1
-        },
-        {
-            "id": 2,
-            "part_id": 2,
-            "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
-            "shortname": "Kaffee",
-            "num_choices": 1,
-            "min_choices": 1,
-            "sortkey": 2
-        },
-        {
-            "id": 3,
-            "part_id": 3,
-            "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
-            "shortname": "Sitzung",
-            "num_choices": 3,
-            "min_choices": 2,
-            "sortkey": 3
+            "default_value": null,
+            "kind": 2
         }
     ],
     "event.courses": [
@@ -3341,12 +3383,13 @@
             "notes": null,
             "orga_notes": null,
             "payment": null,
+            "amount_owed": "573.99",
             "amount_paid": "0.00",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": "{\"lodge\": \"Die \\u00fcblichen Verd\\u00e4chtigen :)\"}"
+            "fields": {"lodge": "Die üblichen Verdächtigen :)", "is_child": false}
         },
         {
             "id": 2,
@@ -3356,12 +3399,13 @@
             "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "payment": "2014-02-02",
+            "amount_owed": "589.49",
             "amount_paid": "0.00",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": "{\"brings_balls\": true, \"transportation\": \"pedes\"}"
+            "fields": {"brings_balls": true, "transportation": "pedes", "is_child": false}
         },
         {
             "id": 3,
@@ -3371,12 +3415,13 @@
             "notes": null,
             "orga_notes": null,
             "payment": "2014-03-03",
+            "amount_owed": "584.49",
             "amount_paid": "0.00",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": false,
-            "fields": "{\"transportation\": \"car\"}"
+            "fields": {"transportation": "car", "is_child": false}
         },
         {
             "id": 4,
@@ -3386,12 +3431,13 @@
             "notes": null,
             "orga_notes": null,
             "payment": "2014-04-04",
+            "amount_owed": "431.99",
             "amount_paid": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
             "checkin": null,
             "list_consent": false,
-            "fields": "{\"may_reserve\": true, \"brings_balls\": false, \"transportation\": \"etc\"}"
+            "fields": {"may_reserve": true, "brings_balls": false, "transportation": "etc", "is_child": true}
         },
         {
             "id": 5,
@@ -3401,12 +3447,13 @@
             "notes": null,
             "orga_notes": null,
             "payment": null,
+            "amount_owed": "584.49",
             "amount_paid": "0.00",
             "parental_agreement": true,
             "mixed_lodging": false,
             "checkin": null,
             "list_consent": true,
-            "fields": "{\"transportation\": \"pedes\"}"
+            "fields": {"transportation": "pedes", "is_child": false}
         },
         {
             "id": 6,
@@ -3416,12 +3463,13 @@
             "notes": null,
             "orga_notes": null,
             "payment": null,
+            "amount_owed": "10.50",
             "amount_paid": "0.00",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": "{\"transportation\": \"pedes\"}"
+            "fields": {"transportation": "pedes", "is_child": false}
         }
     ],
     "event.registration_parts": [
@@ -5095,10 +5143,8 @@
             "local_part": "announce",
             "domain": 1,
             "description": null,
-            "sub_policy": null,
             "mod_policy": 3,
             "attachment_policy": 3,
-            "audience_policy": null,
             "ml_type": 1,
             "subject_prefix": "H\u00f6rt, h\u00f6rt",
             "maxsize": null,
@@ -5116,10 +5162,8 @@
             "local_part": "werbung",
             "domain": 1,
             "description": "Wir werden auch gut bezahlt daf\u00fcr",
-            "sub_policy": null,
             "mod_policy": 3,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 2,
             "subject_prefix": "werbung",
             "maxsize": null,
@@ -5137,10 +5181,8 @@
             "local_part": "witz",
             "domain": 1,
             "description": "Einer geht noch ...",
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 2,
-            "audience_policy": null,
             "ml_type": 40,
             "subject_prefix": "witz",
             "maxsize": 2048,
@@ -5158,10 +5200,8 @@
             "local_part": "klatsch",
             "domain": 1,
             "description": null,
-            "sub_policy": null,
             "mod_policy": 1,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 4,
             "subject_prefix": "klatsch",
             "maxsize": null,
@@ -5179,10 +5219,8 @@
             "local_part": "kongress",
             "domain": 1,
             "description": null,
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 2,
-            "audience_policy": null,
             "ml_type": 30,
             "subject_prefix": "kampf",
             "maxsize": 1024,
@@ -5200,10 +5238,8 @@
             "local_part": "aktivenforum2000",
             "domain": 1,
             "description": null,
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 2,
-            "audience_policy": null,
             "ml_type": 3,
             "subject_prefix": "aktivenforum",
             "maxsize": 1024,
@@ -5221,10 +5257,8 @@
             "local_part": "aktivenforum",
             "domain": 1,
             "description": null,
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 2,
-            "audience_policy": null,
             "ml_type": 3,
             "subject_prefix": "aktivenforum",
             "maxsize": 1024,
@@ -5242,10 +5276,8 @@
             "local_part": "aka",
             "domain": 2,
             "description": null,
-            "sub_policy": null,
             "mod_policy": 1,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 21,
             "subject_prefix": "orga",
             "maxsize": null,
@@ -5263,10 +5295,8 @@
             "local_part": "participants",
             "domain": 2,
             "description": null,
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 20,
             "subject_prefix": "aka",
             "maxsize": null,
@@ -5287,10 +5317,8 @@
             "local_part": "wait",
             "domain": 2,
             "description": null,
-            "sub_policy": null,
             "mod_policy": 3,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 20,
             "subject_prefix": "wait",
             "maxsize": null,
@@ -5310,10 +5338,8 @@
             "local_part": "opt",
             "domain": 1,
             "description": null,
-            "sub_policy": null,
             "mod_policy": 1,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 31,
             "subject_prefix": "talk",
             "maxsize": null,
@@ -5331,10 +5357,8 @@
             "local_part": "all",
             "domain": 1,
             "description": "F\u00fcr alle CdEler.",
-            "sub_policy": null,
             "mod_policy": 3,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 1,
             "subject_prefix": "all",
             "maxsize": null,
@@ -5352,10 +5376,8 @@
             "local_part": "info",
             "domain": 1,
             "description": "Hier werden Veranstaltungsank\u00fcndigungen etc. verschickt.",
-            "sub_policy": null,
             "mod_policy": 3,
             "attachment_policy": 2,
-            "audience_policy": null,
             "ml_type": 2,
             "subject_prefix": "info",
             "maxsize": null,
@@ -5373,10 +5395,8 @@
             "local_part": "mitgestaltung",
             "domain": 1,
             "description": "Wir haben uns jetzt umbenannt.",
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 3,
             "subject_prefix": "mitg.",
             "maxsize": null,
@@ -5394,10 +5414,8 @@
             "local_part": "gutscheine",
             "domain": 1,
             "description": "Die bekommt nicht jeder!",
-            "sub_policy": null,
             "mod_policy": 1,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 4,
             "subject_prefix": "gutschein",
             "maxsize": null,
@@ -5415,10 +5433,8 @@
             "local_part": "platin",
             "domain": 1,
             "description": "Hier kommt nicht jeder rein.",
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 5,
             "subject_prefix": "platin",
             "maxsize": null,
@@ -5436,10 +5452,8 @@
             "local_part": "bau",
             "domain": 1,
             "description": "denn ein Eisenberg ist nicht genug!",
-            "sub_policy": null,
             "mod_policy": 1,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 10,
             "subject_prefix": "bau",
             "maxsize": null,
@@ -5457,10 +5471,8 @@
             "local_part": "geheim",
             "domain": 1,
             "description": "... uns gibt es gar nicht!",
-            "sub_policy": null,
             "mod_policy": 3,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 11,
             "subject_prefix": "psst",
             "maxsize": null,
@@ -5478,10 +5490,8 @@
             "local_part": "test-gast",
             "domain": 2,
             "description": "... f\u00fcr unsere besonderen G\u00e4ste.",
-            "sub_policy": null,
             "mod_policy": 1,
             "attachment_policy": 3,
-            "audience_policy": null,
             "ml_type": 20,
             "subject_prefix": "special",
             "maxsize": null,
@@ -5501,10 +5511,8 @@
             "local_part": "party50",
             "domain": 2,
             "description": "Bitte wende dich bei Fragen oder Problemen, die mit unserer Veranstaltung zusammenh\u00e4ngen, \u00fcber diese Liste an uns.",
-            "sub_policy": null,
             "mod_policy": 1,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 21,
             "subject_prefix": "Party50",
             "maxsize": 1024,
@@ -5522,10 +5530,8 @@
             "local_part": "party50-all",
             "domain": 2,
             "description": "Dieser Liste kannst du nur beitreten, indem du dich zu unserer [Veranstaltung anmeldest](/db/event/event/2/register) und den Status *Teilnehmer* erh\u00e4lst. Auf dieser Liste stehen alle Teilnehmer unserer Veranstaltung; sie kann im Vorfeld zum Austausch untereinander genutzt werden.",
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 2,
-            "audience_policy": null,
             "ml_type": 20,
             "subject_prefix": "Party50",
             "maxsize": 1024,
@@ -5545,10 +5551,8 @@
             "local_part": "kanonisch",
             "domain": 1,
             "description": "Wir schie\u00dfen auch auf Spatzen.",
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 2,
-            "audience_policy": null,
             "ml_type": 30,
             "subject_prefix": "kanonisch",
             "maxsize": null,
@@ -5566,10 +5570,8 @@
             "local_part": "wal",
             "domain": 1,
             "description": "Helft beim der Wal-z\u00e4hlung!",
-            "sub_policy": null,
             "mod_policy": 1,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 31,
             "subject_prefix": "wal",
             "maxsize": null,
@@ -5587,10 +5589,8 @@
             "local_part": "dsa",
             "domain": 1,
             "description": "Hier ist jeder willkommen.",
-            "sub_policy": null,
             "mod_policy": 1,
             "attachment_policy": 3,
-            "audience_policy": null,
             "ml_type": 40,
             "subject_prefix": "dsa",
             "maxsize": null,
@@ -5608,10 +5608,8 @@
             "local_part": "42",
             "domain": 1,
             "description": "und der ganze Rest.",
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 50,
             "subject_prefix": "42",
             "maxsize": null,
@@ -5629,10 +5627,8 @@
             "local_part": "hogwarts",
             "domain": 4,
             "description": "Kommt doch einfach mal zum w\u00f6chentlichen Treff nach Hogsmead.",
-            "sub_policy": null,
             "mod_policy": 2,
             "attachment_policy": 1,
-            "audience_policy": null,
             "ml_type": 60,
             "subject_prefix": "hogwarts",
             "maxsize": null,
@@ -5719,11 +5715,6 @@
             "id": 15,
             "mailinglist_id": 10,
             "persona_id": 7
-        },
-        {
-            "id": 16,
-            "mailinglist_id": 51,
-            "persona_id": 13
         },
         {
             "id": 17,

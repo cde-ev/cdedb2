@@ -26,9 +26,9 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.common import (PrivilegeError, ProxyShim, RequestState, glue,
-                          roles_to_db_role, ALL_ADMIN_VIEWS,
-                          ADMIN_VIEWS_COOKIE_NAME)
+from cdedb.common import (
+    PrivilegeError, ProxyShim, RequestState, glue, roles_to_db_role, unwrap,
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -117,9 +117,10 @@ class BackendShim(ProxyShim):
             apitoken = key
 
         rs = RequestState(
-            sessionkey, apitoken, user, None, None, None, [], None, None,
-            [], {}, "de", self.translator.gettext,
-            self.translator.ngettext, None, None, key)
+            sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
+            response=None, notifications=[], mapadapter=None, requestargs=None,
+            errors=[], values={}, lang="de", gettext=self.translator.gettext,
+            ngettext=self.translator.ngettext, coders=None, begin=None)
         rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
@@ -546,6 +547,8 @@ class FrontendTest(unittest.TestCase):
     def setUpClass(cls):
         app = Application(_BASICCONF["REPOSITORY_PATH"]
                           / _BASICCONF["TESTCONFIG_PATH"])
+        lang = "de"
+        cls.gettext = app.translations[lang].gettext
         cls.app = webtest.TestApp(app, extra_environ={
             'REMOTE_ADDR': "127.0.0.0",
             'SERVER_PROTOCOL': "HTTP/1.1",
@@ -604,7 +607,7 @@ class FrontendTest(unittest.TestCase):
                 f.write(output)
 
     def get(self, *args, verbose=False, **kwargs):
-        self.response = self.app.get(*args, **kwargs)
+        self.response: webtest.TestResponse = self.app.get(*args, **kwargs)
         self.basic_validate(verbose=verbose)
 
     def follow(self, **kwargs):
@@ -813,6 +816,97 @@ class FrontendTest(unittest.TestCase):
             raise AssertionError(
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
+
+    def log_pagination(self, title, logs):
+        """Helper function to test the logic of the log pagination.
+
+        This should be called from every frontend log, to ensure our pagination
+        works. Logs must contain at least 9 log entries.
+
+        :type title: str
+        :param title: of the Log page, like "Userdata-Log"
+        :type logs: [{id: LogCode}]
+        :param logs: list of log entries mapped to their LogCode
+        """
+        # check the landing page
+        f = self.response.forms['logshowform']
+        total = len(logs)
+        self._log_subroutine(title, logs, start=1,
+                             end=total if total < 50 else 50)
+
+        # check a combination of offset and length with 0th page
+        length = total // 3
+        if length % 2 == 0:
+            length -= 1
+        offset = 1
+
+        f['length'] = length
+        f['offset'] = offset
+        self.submit(f)
+
+        # starting at the 0th page, ...
+        self.traverse({'linkid': 'pagination-0'})
+        # we store the absolute values of start and end in an array, because
+        # they must not change when we iterate in different ways
+        starts = [1]
+        ends = [length - offset - 1]
+
+        # ... iterate over all pages:
+        # - by using the 'next' button
+        while ends[-1] < total:
+            self._log_subroutine(title, logs, start=starts[-1], end=ends[-1])
+            self.traverse({'linkid': 'pagination-next'})
+            starts.append(ends[-1] + 1)
+            ends.append(ends[-1] + length)
+        self.assertNoLink(content='›')
+        self._log_subroutine(title, logs, start=starts[-1], end=ends[-1])
+
+        # - by using the 'previous' button
+        for start, end in zip(starts[:0:-1], ends[:0:-1]):
+            self._log_subroutine(title, logs, start=start, end=end)
+            self.traverse({'linkid': 'pagination-previous'})
+        self.assertNoLink(content='‹')
+        self._log_subroutine(title, logs, start=starts[0], end=ends[0])
+
+        # - by using the page number buttons
+        for page, (start, end) in enumerate(zip(starts, ends)):
+            self.traverse({'linkid': f'pagination-{page}'})
+            self._log_subroutine(title, logs, start=start, end=end)
+        self.assertNoLink(content='›')
+
+        # check first-page button (result in offset = 0)
+        self.traverse({'linkid': 'pagination-first'})
+        self.assertNoLink(content='‹')
+        self._log_subroutine(title, logs, start=1, end=length)
+
+        # there must not be a 0th page, because length is a multiple of offset
+        self.assertNonPresence("0", div='log-pagination')
+
+        # check last-page button (results in offset = None)
+        self.traverse({'linkid': 'pagination-last'})
+        self.assertNoLink(content='›')
+        self._log_subroutine(
+            title, logs, start=length * ((total - 1) // length) + 1, end=total)
+
+        # tidy up the form
+        f["offset"] = None
+        f["length"] = None
+        self.submit(f)
+
+    def _log_subroutine(self, title, all_logs, start, end):
+        total = len(all_logs)
+        self.assertTitle(f"{title} [{start}–{end} von {total}]")
+
+        if end > total:
+            end = total
+
+        # adapt slicing to our count of log entries
+        logs = all_logs[start-1:end]
+        for index, log in enumerate(logs, start=1):
+            log_id = unwrap(log.keys())
+            log_code = unwrap(log)
+            log_code_str = self.gettext(str(log_code))
+            self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
     def _click_admin_view_button(self, label, current_state=None):
         """

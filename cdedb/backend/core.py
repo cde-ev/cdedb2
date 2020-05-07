@@ -204,7 +204,7 @@ class CoreBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin")
-    def retrieve_log(self, rs, codes=None, start=None, stop=None,
+    def retrieve_log(self, rs, codes=None, offset=None, length=None,
                      persona_id=None, submitted_by=None,
                      additional_info=None, time_start=None, time_stop=None):
         """Get recorded activity.
@@ -214,8 +214,8 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
-        :type start: int or None
-        :type stop: int or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: int or None
         :type submitted_by: int or None
         :type additional_info: str or None
@@ -224,13 +224,13 @@ class CoreBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
-            rs, "enum_corelogcodes", "persona", "core.log", codes, start=start,
-            stop=stop, persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info, time_start=time_start,
-            time_stop=time_stop)
+            rs, "enum_corelogcodes", "persona", "core.log", codes=codes,
+            offset=offset, length=length, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop)
 
     @access("core_admin")
-    def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None,
+    def retrieve_changelog_meta(self, rs, stati=None, offset=None, length=None,
                                 persona_id=None, submitted_by=None,
                                 additional_info=None, time_start=None,
                                 time_stop=None, reviewed_by=None):
@@ -241,8 +241,8 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type stati: [int] or None
-        :type start: int or None
-        :type stop: int or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: id or None
         :type submitted_by: id or None
         :type additional_info: str or None
@@ -252,8 +252,8 @@ class CoreBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         stati = affirm_set("enum_memberchangestati", stati, allow_None=True)
-        start = affirm("int_or_None", start)
-        stop = affirm("int_or_None", stop)
+        offset = affirm("non_negative_int_or_None", offset)
+        length = affirm("positive_int_or_None", length)
         persona_id = affirm("id_or_None", persona_id)
         submitted_by = affirm("id_or_None", submitted_by)
         additional_info = affirm("regex_or_None", additional_info)
@@ -261,57 +261,61 @@ class CoreBackend(AbstractBackend):
         time_start = affirm("datetime_or_None", time_start)
         time_stop = affirm("datetime_or_None", time_stop)
 
-        start = start or 0
-        if stop:
-            stop = max(start, stop)
-        query = glue(
-            "SELECT submitted_by, reviewed_by, ctime, generation, change_note,",
-            "change_status, persona_id FROM core.changelog {} ORDER BY id DESC")
-        if stop:
-            query = glue(query, "LIMIT {}".format(stop - start))
-        if start:
-            query = glue(query, "OFFSET {}".format(start))
-        connector = "WHERE"
-        condition = ""
+        length = length or self.conf["DEFAULT_LOG_LENGTH"]
+
+        conditions = []
         params = []
         if stati:
-            condition = glue(
-                condition, "{} change_status = ANY(%s)".format(connector))
-            connector = "AND"
+            conditions.append("change_status = ANY(%s)")
             params.append(stati)
         if submitted_by:
-            condition = glue(
-                condition, "{} submitted_by = %s".format(connector))
-            connector = "AND"
+            conditions.append("submitted_by = %s")
             params.append(submitted_by)
         if reviewed_by:
-            condition = glue(condition, "{} reviewed_by = %s".format(connector))
-            connector = "AND"
+            conditions.append("reviewed_by = %s")
             params.append(reviewed_by)
         if persona_id:
-            condition = glue(condition, "{} persona_id = %s".format(connector))
-            connector = "AND"
+            conditions.append("persona_id = %s")
             params.append(persona_id)
         if additional_info:
-            condition = glue(condition,
-                             "{} change_note ~* %s".format(connector))
-            connector = "AND"
+            conditions.append("change_note ~* %s")
             params.append(diacritic_patterns(additional_info))
         if time_start and time_stop:
-            condition = glue(condition,
-                             "{} %s <= ctime AND ctime <= %s".format(connector))
-            connector = "AND"
+            conditions.append("%s <= ctime AND ctime <= %s")
             params.extend((time_start, time_stop))
         elif time_start:
-            condition = glue(condition, "{} %s <= ctime".format(connector))
-            connector = "AND"
+            conditions.append("%s <= ctime")
             params.append(time_start)
         elif time_stop:
-            condition = glue(condition, "{} ctime <= %s".format(connector))
-            connector = "AND"
+            cconditions.append("ctime <= %s")
             params.append(time_stop)
-        query = query.format(condition)
-        return self.query_all(rs, query, params)
+
+        if conditions:
+            condition = "WHERE {}".format(" AND ".join(conditions))
+        else:
+            condition = ""
+
+        # First query determines the absolute number of logs existing matching
+        # the given criteria
+        query = "SELECT COUNT(*) AS count FROM core.changelog {condition}"
+        query = query.format(condition=condition)
+        total = unwrap(self.query_one(rs, query, params))
+        if offset and offset > total:
+            # Why you do this
+            return total, tuple()
+        elif offset is None and total > length:
+            offset = length * ((total - 1) // length)
+
+        # Now, query the actual information
+        query = glue(
+            "SELECT submitted_by, reviewed_by, ctime, generation, change_note,",
+            "change_status, persona_id FROM core.changelog {condition}"
+            "ORDER BY id ASC LIMIT {limit}")
+        if offset is not None:
+            query = glue(query, "OFFSET {}".format(offset))
+
+        query = query.format(condition=condition, limit=length)
+        return total, self.query_all(rs, query, params)
 
     def changelog_submit_change(self, rs, data, generation, may_wait,
                                 change_note):
@@ -1549,7 +1553,7 @@ class CoreBackend(AbstractBackend):
         return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
     get_persona = singularize(get_personas)
 
-    @access("event")
+    @access("event", "droid_quick_partial_export")
     def get_event_users(self, rs, ids, event_id=None):
         """Get an event view on some data sets.
 
@@ -1584,7 +1588,8 @@ class CoreBackend(AbstractBackend):
             is_orga = False
         if (ids != {rs.user.persona_id}
                 and not (rs.user.roles
-                         & {"event_admin", "cde_admin", "core_admin"})):
+                         & {"event_admin", "cde_admin", "core_admin",
+                            "droid_quick_partial_export"})):
             query = ("SELECT DISTINCT regs.id, regs.persona_id"
                      " FROM event.registrations AS regs"
                      " LEFT OUTER JOIN event.registration_parts AS rparts"
@@ -2644,25 +2649,16 @@ class CoreBackend(AbstractBackend):
         query = affirm("query", query)
         return self.submit_general_query(rs, query)
 
-    @access("anonymous")
+    @access("droid_resolve")
     def submit_resolve_api_query(self, rs, query):
-        """Quick hack only designed to enable the API to resolve names.
+        """Accessible version of :py:meth:`submit_general_query`.
+
+        This should be used solely by the resolve API. The frontend takes
+        the necessary precautions.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type query: :py:class:`cdedb.query.Query`
         :rtype: [{str: object}]
         """
         query = affirm("query", query)
-        # escalate db privilege role
-        orig_conn = None
-        try:
-            if rs.conn.is_contaminated:
-                raise RuntimeError(
-                    n_("Atomized – impossible to escalate."))
-            orig_conn = rs.conn
-            rs.conn = self.connpool['cdb_persona']
-            return self.general_query(rs, query)
-        finally:
-            # deescalate
-            if orig_conn:
-                rs.conn = orig_conn
+        return self.general_query(rs, query)
