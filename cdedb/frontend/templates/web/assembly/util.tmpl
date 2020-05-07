@@ -18,6 +18,9 @@
                 <div class="text-nowrap">
                     {{ util.href(cdedblink("assembly/add_attachment_form", {'attachment_id': current_version["attachment_id"]}), gettext("Add Version"),
                                  aclass="btn btn-success btn-sm", icon="plus") }}
+                    {{ util.href(cdedblink("assembly/change_attachment_form", {'attachment_id': current_version["attachment_id"]}),
+                                 gettext("Change Attachment"),
+                                 aclass="btn btn-warning btn-sm", icon="pen") }}
                     <form action="{{ cdedblink("assembly/delete_attachment", {'attachment_id': current_version["attachment_id"]}) }}"
                           method="POST" id="deleteattachmentform{{ current_version["attachment_id"] }}">
                         {{ util.anti_csrf_token("assembly/delete_attachment") }}
@@ -43,6 +46,9 @@
                      version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version"]),
                      icon="file") }}
         {% if edit %}
+            <div class="list-button-float">
+            {{ util.href(cdedblink('assembly/edit_attachment_version', {'attachment_id': version["attachment_id"], 'version': version["version"]}),
+                    title=gettext("Edit File"), label=util.make_icon("pen"), aclass="btn btn-xs btn-warning hide-hover") }}
             <form action="{{ cdedblink('assembly/delete_attachment',
                                        {'attachment_id': version["attachment_id"]}) }}"
                     method="POST"
@@ -51,9 +57,10 @@
                 {{ util.anti_csrf_token('assembly/delete_attachment') }}
                 {{ util.input_hidden(name="version", value=version["version"]) }}
                 {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
+                {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash-alt",
                         title=gettext("Delete File")) }}
             </form>
+            </div>
             <script nonce="{{ csp_nonce }}">
                 $('#removeattachmentversionform{{ version['attachment_id'] }}_{{ version["version"] }}').cdedbProtectAction(
                     "{{ gettext("The version of the attachment will be permanently deleted.") }}");
