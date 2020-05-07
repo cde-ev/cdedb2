@@ -6,8 +6,8 @@ event and assembly realm in the form of specific mailing lists.
 from datetime import datetime
 
 from typing import (
-    Set, cast, Union, Dict, List, Optional, Iterable, Tuple,
-    Callable, Type, overload, Collection
+    Set, cast, Dict, List, Optional, Iterable, Tuple, Callable, overload,
+    Collection
 )
 
 from cdedb.backend.common import (
