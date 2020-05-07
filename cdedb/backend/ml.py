@@ -549,7 +549,7 @@ class MlBackend(AbstractBackend):
         old_type = ml_type.get_type(old_type)
         new_type = ml_type.get_type(new_type)
         # implicitly atomized context.
-        # TODO add check for Atomizer from feauture/fee_owed branch.
+        self.affirm_atomized_context(rs)
         obsolete_fields = (old_type.get_additional_fields() -
                            new_type.get_additional_fields())
         if obsolete_fields:
