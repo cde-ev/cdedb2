@@ -461,7 +461,7 @@ class TestCron(CronTest):
         # Moderator update
         self.assertEqual(
             mm_lists['aka'].add_moderator.call_args_list,
-            [umcall('garcia@example.cde', display_name='Garcia G. Generalis')])
+            [umcall('garcia@example.cde')])
         # Whitelist update
         self.assertEqual(
             list(xsorted(mm_lists['aktivenforum'].add_role.call_args_list)),
