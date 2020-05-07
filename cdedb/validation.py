@@ -793,48 +793,35 @@ def _csv_identifier(val, argname=None, *, _convert=True,
     return val, errs
 
 
-def _to_csv_list(val):
-    """
-    Generic function to convert strings to csvs.
-    :type val: object
-    """
-    if isinstance(val, str):
-        vals = val.split(",")
-        val = []
-        for entry in vals:
-            if not entry:
-                # skip empty entries which can be produced by Javscript
-                continue
-            val.append(entry.strip())
-        return val, []
-    else:
-        return val, []
-
-
-def _list(vals, validator, argname=None, *, _convert=True,
-              _ignore_warnings=False):
-    """
-    Generic function to check all strings in a list share a given type
-
-    :type vals: object
-    :type validator: callable
-    :param validator: validator function to call to validate substrings
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: ([int] or None, [(str or None, exception)])
-    """
-    if not isinstance(vals, collections.abc.Sequence):
-        return None, [(argname, TypeError(n_("Must be sequence.")))]
-    # We use a new list, as lists are not modified in-place when iterating
-    val = []
-    for entry in vals:
-        entry, errs = validator(entry, argname, _convert=_convert,
-                                _ignore_warnings=_ignore_warnings)
-        val.append(entry)
+def _list_of(val, validator, argname=None, *, _convert=True,
+             _ignore_warnings=False, _allow_empty=True):
+    if _convert:
+        if isinstance(val, str):
+            # TODO use default separator from config here?
+            # Skip emtpy entries which can be produced by JavaScript.
+            val = [v.strip() for v in val.split(",") if v]
+        val, errs = _iterable(val, argname, _convert=_convert,
+                              _ignore_warnings=_ignore_warnings)
         if errs:
-            return val, errs
-    return val, []
+            return None, errs
+        val = list(val)
+    else:
+        val, errs = _sequence(val, argname, _convert=_convert,
+                              _ignore_warnings=_ignore_warnings)
+        if errs:
+            return None, errs
+        val = list(val)
+    vals = []
+    errs = []
+    for v in val:
+        v, e = validator(v, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
+        vals.append(v)
+        errs.extend(e)
+    if not _allow_empty:
+        if not vals:
+            return None, [(argname, ValueError(n_("Must not be empty.")))]
+    return vals, errs
 
 
 @_addvalidator
@@ -846,16 +833,13 @@ def _int_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
     :type _ignore_warnings: bool
     :rtype: ([int] or None, [(str or None, exception)])
     """
-    if _convert:
-        val, errs = _to_csv_list(val)
-        if errs:
-            return val, errs
-    return _list(val, _int, argname, _convert=_convert,
-                 _ignore_warnings=_ignore_warnings)
+    return _list_of(val, _int, argname, _convert=_convert,
+                    _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
-def _cdedbid_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _cdedbid_csv_list(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
     """
     This deals with strings containing multiple cdedbids, like when they are
     returned from cdedbSearchPerson.
@@ -866,12 +850,8 @@ def _cdedbid_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=Fals
     :type _ignore_warnings: bool
     :rtype: ([int] or None, [(str or None, exception)])
     """
-    if _convert:
-        val, errs = _to_csv_list(val)
-        if errs:
-            return val, errs
-    return _list(val, _cdedbid, argname, _convert=_convert,
-                 _ignore_warnings=_ignore_warnings)
+    return _list_of(val, _cdedbid, argname, _convert=_convert,
+                    _ignore_warnings=False)
 
 
 @_addvalidator
