@@ -348,7 +348,7 @@ QUERY_SPECS = {
             ("lodgement.reserve", "int"),
             ("lodgement.notes", "str"),
             ("lodgement.group_id", "int"),
-            ("group.moniker", "int"),
+            ("lodgement_group.moniker", "int"),
             # This will be augmented with additional fields in the fly.
         ]),
     "qview_core_user":  # query for a general user including past event infos
