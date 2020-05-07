@@ -459,6 +459,8 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("werner")
     def test_entity_attachments(self, user):
+        with open("/cdedb2/test/ancillary_files/rechen.pdf", "rb") as f:
+            self.assertEqual(f.read(), self.assembly.get_attachment_content(self.key, attachment_id=1))
         expectation = set()
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=2))

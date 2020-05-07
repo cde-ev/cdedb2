@@ -4195,7 +4195,7 @@
             "is_tallied": false,
             "notes": null
         },
-       {
+        {
             "id": 7,
             "assembly_id": 2,
             "title": "Entlastung des Vorstands",
@@ -4326,6 +4326,21 @@
             "extended": null,
             "use_bar": false,
             "quorum": 2000,
+            "votes": null,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 16,
+            "assembly_id": 2,
+            "title": "Ganz wichtige Wahl",
+            "description": null,
+            "vote_begin": "2222-02-22T00:00+00:00",
+            "vote_end": "2222-02-22T00:01+00:00",
+            "vote_extension_end": null,
+            "extended": null,
+            "use_bar": false,
+            "quorum": 0,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -4649,6 +4664,11 @@
             "id": 2,
             "ballot_id": null,
             "assembly_id": 3
+        },
+        {
+            "id": 3,
+            "ballot_id": 16,
+            "assembly_id": null
         }
     ],
     "assembly.attachment_versions": [
@@ -4675,12 +4695,32 @@
         {
             "attachment_id": 2,
             "version": 2,
+            "title": null,
+            "authors": null,
+            "ctime": "---now---",
+            "dtime": "---now---",
+            "filename": null,
+            "file_hash": "del"
+        },
+        {
+            "attachment_id": 2,
+            "version": 3,
             "title": "Kassenprüferbericht 2",
             "authors": "Garcia",
             "ctime": "---now---",
             "dtime": null,
             "filename": "kasse.pdf",
             "file_hash": "cde"
+        },
+        {
+            "attachment_id": 3,
+            "version": 1,
+            "title": "Liste der Kanditaten",
+            "authors": "Wahlleitung",
+            "ctime": "---now---",
+            "dtime": null,
+            "filename": "kandidaten.pdf",
+            "file_hash": "xyz"
         }
     ],
     "assembly.votes": [
