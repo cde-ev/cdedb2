@@ -1580,7 +1580,9 @@ def reconnoitre_ambience(obj, rs):
 
     def attachment_check(a):
         if a['attachment']['ballot_id']:
-            return a['attachment']['ballot_id'] == rs.requestargs['ballot_id']
+            return (a['attachment']['ballot_id']
+                    == rs.requestargs.get(
+                        'ballot_id', a['attachment']['ballot_id']))
         else:
             return (a['attachment']['assembly_id']
                     == rs.requestargs['assembly_id'])
