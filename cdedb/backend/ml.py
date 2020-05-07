@@ -26,10 +26,9 @@ from cdedb.common import (
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
-from cdedb.ml_type_aux import GeneralMailinglist
+from cdedb.ml_type_aux import MLTypeLike, MLType
 import cdedb.ml_type_aux as ml_type
 
-MLType = Union[const.MailinglistTypes, Type[GeneralMailinglist]]
 SubStates = Collection[const.SubscriptionStates]
 
 
@@ -53,18 +52,13 @@ class MlBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("ml")
-    def get_ml_type(self, rs: RequestState,
-                    mailinglist_id: int) -> Optional[Type[GeneralMailinglist]]:
+    def get_ml_type(self, rs: RequestState, mailinglist_id: int) -> MLType:
         mailinglist_id = affirm("id", mailinglist_id)
         data = self.sql_select_one(
             rs, "ml.mailinglists", ("ml_type",), mailinglist_id)
         if not data:
             raise ValueError(n_("Unknown mailinglist_id."))
-        if not data["ml_type"]:
-            return None
-        # TODO fix typechecker for enum calls.
-        # noinspection PyArgumentList
-        return ml_type.TYPE_MAP[const.MailinglistTypes(data["ml_type"])]
+        return ml_type.get_type(data['ml_type'])
 
     @overload
     def is_relevant_admin(self, rs: RequestState, *,
@@ -142,12 +136,12 @@ class MlBackend(AbstractBackend):
 
     @overload
     def get_interaction_policy(self, rs: RequestState, persona_id: int, *,
-                               mailinglist: CdEDBObject) -> ml_type.MIP:
+                               mailinglist: CdEDBObject) -> ml_type.MIPol:
         pass
 
     @overload
     def get_interaction_policy(self, rs: RequestState, persona_id: int, *,
-                               mailinglist_id: int) -> ml_type.MIP:
+                               mailinglist_id: int) -> ml_type.MIPol:
         pass
 
     @access("ml")
@@ -550,8 +544,8 @@ class MlBackend(AbstractBackend):
         return ret
 
     def _ml_type_transition(self, rs: RequestState, mailinglist_id: int,
-                            old_type: MLType,
-                            new_type: MLType) -> DefaultReturnCode:
+                            old_type: MLTypeLike,
+                            new_type: MLTypeLike) -> DefaultReturnCode:
         old_type = ml_type.get_type(old_type)
         new_type = ml_type.get_type(new_type)
         # implicitly atomized context.

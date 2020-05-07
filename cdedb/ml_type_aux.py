@@ -12,7 +12,8 @@ import cdedb.database.constants as const
 from cdedb.database.constants import (
     MailinglistTypes, MailinglistDomain, MailinglistInteractionPolicy)
 
-MIP = Union[MailinglistInteractionPolicy, None]
+
+MIPol = Union[MailinglistInteractionPolicy, None]
 
 
 class BackendContainer:
@@ -163,7 +164,7 @@ class GeneralMailinglist:
     @classmethod
     def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,
                                mailinglist: CdEDBObject, persona_id: int,
-                               ) -> MIP:
+                               ) -> MIPol:
         return cls.get_interaction_policies(
             rs, bc, mailinglist, (persona_id,))[persona_id]
 
@@ -171,8 +172,8 @@ class GeneralMailinglist:
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int]
-                                 ) -> Dict[int, MIP]:
-        """Determine the MIP of the user or a persona with a mailinglist.
+                                 ) -> Dict[int, MIPol]:
+        """Determine the MIPol of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
         which will automatically take care of the work for trivial mailinglists.
@@ -305,8 +306,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
-                                 ) -> Dict[int, MIP]:
-        """Determine the MIP of the user or a persona with a mailinglist.
+                                 ) -> Dict[int, MIPol]:
+        """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this basically means opt-in for all
         implicit subscribers. See `get_impicit_subscribers`.
@@ -373,8 +374,8 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
-                                 ) -> Dict[int, MIP]:
-        """Determine the MIP of the user or a persona with a mailinglist.
+                                 ) -> Dict[int, MIPol]:
+        """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this means opt-out for orgas only.
         """
@@ -417,8 +418,8 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
-                                 ) -> Dict[int, MIP]:
-        """Determine the MIP of the user or a persona with a mailinglist.
+                                 ) -> Dict[int, MIPol]:
+        """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means opt-out for attendees
         of the associated assembly.
@@ -485,8 +486,11 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
                MailinglistDomain.cdemuenchen)
 
 
-def get_type(val: Union[str, int, MailinglistTypes, Type[GeneralMailinglist]],
-             ) -> Type[GeneralMailinglist]:
+MLTypeLike = Union[const.MailinglistTypes, Type[GeneralMailinglist]]
+MLType = Type[GeneralMailinglist]
+
+
+def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
     if isinstance(val, str):
         val = int(val)
     if isinstance(val, int):
