@@ -200,16 +200,13 @@ class MlBaseFrontend(AbstractUserFrontend):
         "attachment_policy", "ml_type", "subject_prefix",
         "maxsize", "is_active", "notes", "event_id", "registration_stati",
         "assembly_id")
-    @REQUESTdata(("ml_type", "enum_mailinglisttypes"), ("moderator_ids", "str"))
+    @REQUESTdata(("ml_type", "enum_mailinglisttypes"),
+                 ("moderator_ids", "cdedbid_csv_list"))
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
                            ml_type: const.MailinglistTypes,
-                           moderator_ids: str) -> Response:
+                           moderator_ids: Iterable[int]) -> Response:
         """Make a new list."""
-        if moderator_ids:
-            data["moderators"] = {
-                check(rs, "cdedbid", anid.strip(), "moderator_ids")
-                for anid in moderator_ids.split(",")
-                }
+        data["moderators"] = moderator_ids
         data['ml_type'] = ml_type
         data = check(rs, "mailinglist", data, creation=True)
         # Check if mailinglist address is unique
@@ -582,17 +579,15 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs.ambience['mailinglist']['id']))
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("moderator_ids", "str"))
+    @REQUESTdata(("moderator_ids", "cdedbid_csv_list"))
     @mailinglist_guard()
     def add_moderators(self, rs: RequestState, mailinglist_id: int,
                        moderator_ids: str) -> Response:
         """Promote personas to moderator."""
-        if moderator_ids:
-            moderator_ids = {check(rs, "cdedbid", anid.strip(), "moderator_ids")
-                             for anid in moderator_ids.split(",")}
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
+        moderator_ids = set(moderator_ids)
         moderator_ids |= set(rs.ambience['mailinglist']['moderators'])
         code = self.mlproxy.set_moderators(rs, mailinglist_id, moderator_ids)
         self.notify_return_code(rs, code)

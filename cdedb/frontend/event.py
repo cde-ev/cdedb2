@@ -1083,7 +1083,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
-                 ("orga_ids", "str"), ("create_track", "bool"),
+                 ("orga_ids", "cdedbid_csv_list"), ("create_track", "bool"),
                  ("create_orga_list", "bool"),
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
@@ -1092,10 +1092,8 @@ class EventFrontend(AbstractUserFrontend):
     def create_event(self, rs, event_begin, event_end, orga_ids, data,
                      create_track, create_orga_list, create_participant_list):
         """Create a new event, organized via DB."""
-        if orga_ids:
-            data['orgas'] = {check(rs, "cdedbid", anid.strip(), "orga_ids")
-                             for anid in orga_ids.split(",")}
         # multi part events will have to edit this later on
+        data["orgas"] = orga_ids
         new_track = {
             'title': data['title'],
             'shortname': data['shortname'],
