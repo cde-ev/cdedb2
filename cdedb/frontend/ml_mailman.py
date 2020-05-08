@@ -5,8 +5,10 @@
 This utilizes the mailman REST API to drive the mailinglists residing
 on the mail VM from within the CdEDB.
 """
+from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
+from cdedb.common import RequestState, CdEDBObject
 from cdedb.frontend.common import periodic
 from cdedb.frontend.ml_base import MlBaseFrontend
 
@@ -25,7 +27,7 @@ POLICY_OTHER_CONVERT = {
 }
 
 
-def template_url(name):
+def template_url(name: str) -> str:
     """Construct an HTTP URL to a published mailman template.
 
     The handling of templates in mailman is a bit tricky involving a
@@ -38,12 +40,14 @@ def template_url(name):
 
 
 class MailmanMixin(MlBaseFrontend):
-    def mailman_connect(self):
+    def mailman_connect(self) -> Client:
         """Create a Mailman REST client."""
         url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
         return self.mailman_create_client(url, self.conf["MAILMAN_USER"])
 
-    def mailman_sync_list_meta(self, rs, mailman, db_list, mm_list):
+    def mailman_sync_list_meta(self, rs: RequestState, mailman: Client,
+                               db_list: CdEDBObject,
+                               mm_list: MailingList) -> None:
         prefix = ""
         if db_list['subject_prefix']:
             prefix = "[{}] ".format(db_list['subject_prefix'])
@@ -113,7 +117,9 @@ class MailmanMixin(MlBaseFrontend):
                     username=self.conf["MAILMAN_BASIC_AUTH_USER"],
                     password=self.mailman_template_password())
 
-    def mailman_sync_list_subs(self, rs, mailman, db_list, mm_list):
+    def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
+                               db_list: CdEDBObject,
+                               mm_list: MailingList) -> None:
         SS = const.SubscriptionStates
         persona_ids = set(self.mlproxy.get_subscription_states(
             rs, db_list['id'], states=SS.subscribing_states()))
@@ -136,7 +142,9 @@ class MailmanMixin(MlBaseFrontend):
                               pre_approved=True)
         mm_list.mass_unsubscribe(delete_subs)
 
-    def mailman_sync_list_mods(self, rs, mailman, db_list, mm_list):
+    def mailman_sync_list_mods(self, rs: RequestState, mailman: Client,
+                               db_list: CdEDBObject,
+                               mm_list: MailingList) -> None:
         personas = self.coreproxy.get_personas(
             rs, db_list['moderators'])
         db_moderators = {
@@ -150,11 +158,13 @@ class MailmanMixin(MlBaseFrontend):
         delete_mods = set(mm_moderators) - set(db_moderators)
 
         for address in new_mods:
-            mm_list.add_moderator(address, display_name=db_moderators[address])
+            mm_list.add_moderator(address)
         for address in delete_mods:
             mm_list.remove_moderator(address)
 
-    def mailman_sync_list_whites(self, rs, mailman, db_list, mm_list):
+    def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
+                                 db_list: CdEDBObject,
+                                 mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']
         mm_whitelist = {n.address: n for n in mm_list.nonmembers}
 
@@ -174,28 +184,29 @@ class MailmanMixin(MlBaseFrontend):
         for address in delete_whites:
             mm_list.remove_role('nonmember', address)
 
-    def mailman_sync_list(self, rs, mailman, db_list, mm_list):
+    def mailman_sync_list(self, rs: RequestState, mailman: Client,
+                          db_list: CdEDBObject, mm_list: MailingList) -> None:
         self.mailman_sync_list_meta(rs, mailman, db_list, mm_list)
         self.mailman_sync_list_subs(rs, mailman, db_list, mm_list)
         self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
         self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
 
     @periodic("mailman_sync")
-    def mailman_sync(self, rs, store):
+    def mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
         """Synchronize the mailing list software with the database.
 
         This has an @periodic decorator in the frontend.
         """
         mailman = self.mailman_connect()
         try:
-            _ = mailman.system # cause the client to connect
-        except Exception as e: # sadly this throws a host of different exceptions
+            _ = mailman.system  # cause the client to connect
+        except Exception as e:  # sadly this throws many different exceptions
             self.logger.exception("Mailman client connection failed!")
             return store
         db_lists = self.mlproxy.get_mailinglists(
             rs, self.mlproxy.list_mailinglists(rs))
-        db_lists = {l['address']: l for l in db_lists.values()}
-        mm_lists = {l.fqdn_listname: l for l in mailman.lists}
+        db_lists = {lst['address']: lst for lst in db_lists.values()}
+        mm_lists = {lst.fqdn_listname: lst for lst in mailman.lists}
         new_lists = set(db_lists) - set(mm_lists)
         current_lists = set(db_lists) - new_lists
         deleted_lists = set(mm_lists) - set(db_lists)

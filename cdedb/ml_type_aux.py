@@ -1,12 +1,19 @@
 import enum
 from collections import OrderedDict
-from typing import Any
+from typing import (
+    Type, Union, Set, Tuple, OrderedDict as OrderedDictType, Dict, Collection
+)
 
-from cdedb.common import extract_roles, PrivilegeError, n_, unwrap
-from cdedb.query import Query, QueryOperators, QUERY_SPECS
+from cdedb.common import (
+    extract_roles, n_, unwrap, CdEDBObject, RequestState
+)
+from cdedb.query import Query, QueryOperators
 import cdedb.database.constants as const
 from cdedb.database.constants import (
     MailinglistTypes, MailinglistDomain, MailinglistInteractionPolicy)
+
+
+MIPol = Union[MailinglistInteractionPolicy, None]
 
 
 class BackendContainer:
@@ -16,9 +23,9 @@ class BackendContainer:
         self.assembly = assembly
 
 
-def full_address(val):
+def full_address(val: CdEDBObject) -> str:
     if isinstance(val, dict):
-        return val['local_part'] + '@' + str(val['domain'])
+        return val['local_part'] + '@' + str(MailinglistDomain(val['domain']))
     else:
         raise ValueError(n_("Cannot determine full address for %s."), val)
 
@@ -35,7 +42,8 @@ class MailinglistGroup(enum.IntEnum):
 class AllMembersImplicitMeta:
     """Metaclass for all mailinglists with members as implicit subscribers."""
     @classmethod
-    def get_implicit_subscribers(cls, rs, bc, mailinglist):
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
         return bc.core.list_current_members(rs, is_active=False)
 
@@ -56,7 +64,8 @@ class EventAssociatedMeta:
     )
 
     @classmethod
-    def periodic_cleanup(cls, rs, mailinglist):
+    def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
+                         ) -> bool:
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
         return mailinglist["event_id"] is not None
 
@@ -91,18 +100,18 @@ class GeneralMailinglist:
     def __init__(self):
         raise RuntimeError()
 
-    sortkey = MailinglistGroup.other
+    sortkey: MailinglistGroup = MailinglistGroup.other
 
-    domains = (MailinglistDomain.lists,)
+    domains: Tuple[MailinglistDomain] = (MailinglistDomain.lists,)
 
-    allow_unsub = True
+    allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields = tuple()
-    optional_validation_fields = tuple()
+    mandatory_validation_fields: Tuple[Tuple[str, str]] = tuple()
+    optional_validation_fields: Tuple[Tuple[str, str]] = tuple()
 
     @classmethod
-    def get_additional_fields(cls):
+    def get_additional_fields(cls) -> Set[str]:
         ret = set()
         for field, validator_str in cls.mandatory_validation_fields:
             ret.add(field)
@@ -110,10 +119,10 @@ class GeneralMailinglist:
             ret.add(field)
         return ret
 
-    viewer_roles = {"ml"}
+    viewer_roles: Set[str] = {"ml"}
 
     @classmethod
-    def may_view(cls, rs):
+    def may_view(cls, rs: RequestState) -> bool:
         """Determine whether the user may view a mailinglist.
 
         Instead of overriding this, you should set the `viewer_roles`
@@ -129,10 +138,10 @@ class GeneralMailinglist:
         """
         return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
 
-    relevant_admins = set()
+    relevant_admins: Set[str] = set()
 
     @classmethod
-    def is_relevant_admin(cls, rs):
+    def is_relevant_admin(cls, rs: RequestState):
         """Determine if the user is allowed to administrate a mailinglist.
 
         Instead of overriding this, you should set the `relevant_admins`
@@ -149,16 +158,22 @@ class GeneralMailinglist:
         """
         return bool((cls.relevant_admins | {"ml_admin"}) & rs.user.roles)
 
+    role_map: OrderedDictType[str, MailinglistInteractionPolicy]
     role_map = OrderedDict()
 
     @classmethod
-    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id):
+    def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,
+                               mailinglist: CdEDBObject, persona_id: int,
+                               ) -> MIPol:
         return cls.get_interaction_policies(
             rs, bc, mailinglist, (persona_id,))[persona_id]
 
     @classmethod
-    def get_interaction_policies(cls, rs, bc, mailinglist, persona_ids):
-        """Determine the MIP of the user or a persona with a mailinglist.
+    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject,
+                                 persona_ids: Collection[int]
+                                 ) -> Dict[int, MIPol]:
+        """Determine the MIPol of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
         which will automatically take care of the work for trivial mailinglists.
@@ -191,7 +206,8 @@ class GeneralMailinglist:
         return ret
 
     @classmethod
-    def get_implicit_subscribers(cls, rs, bc, mailinglist):
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
         """Retrieve a set of personas, which should be subscribers.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -202,7 +218,8 @@ class GeneralMailinglist:
         return set()
 
     @classmethod
-    def periodic_cleanup(cls, rs, mailinglist):
+    def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
+                         ) -> bool:
         """Whether or not to do periodic subscription cleanup on this list.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -286,8 +303,11 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
 
     @classmethod
-    def get_interaction_policies(cls, rs, bc, mailinglist, persona_ids):
-        """Determine the MIP of the user or a persona with a mailinglist.
+    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject,
+                                 persona_ids: Collection[int],
+                                 ) -> Dict[int, MIPol]:
+        """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this basically means opt-in for all
         implicit subscribers. See `get_impicit_subscribers`.
@@ -311,7 +331,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         return ret
 
     @classmethod
-    def get_implicit_subscribers(cls, rs, bc, mailinglist):
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `EventAssociatedMailinglist` this means registrations with
@@ -336,8 +357,10 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             scope="qview_registration",
             spec=spec,
             fields_of_interest=("persona.id",),
-            constraints=[(status_column, QueryOperators.oneof,
-                          mailinglist["registration_stati"]),],
+            constraints=[
+                (status_column, QueryOperators.oneof,
+                 mailinglist["registration_stati"]),
+            ],
             order=tuple())
         data = bc.event.submit_general_query(rs, query, event_id=event["id"])
 
@@ -348,8 +371,11 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
 
     @classmethod
-    def get_interaction_policies(cls, rs, bc, mailinglist, persona_ids):
-        """Determine the MIP of the user or a persona with a mailinglist.
+    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject,
+                                 persona_ids: Collection[int],
+                                 ) -> Dict[int, MIPol]:
+        """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this means opt-out for orgas only.
         """
@@ -370,7 +396,8 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         return ret
 
     @classmethod
-    def get_implicit_subscribers(cls, rs, bc, mailinglist):
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
         """Get a list of personas that should be on this mailinglist.
 
         For the `EventOrgaMailinglist` this means the event's orgas.
@@ -385,10 +412,14 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         return event["orgas"]
 
 
-class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta, AssemblyMailinglist):
+class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
+                                    AssemblyMailinglist):
     @classmethod
-    def get_interaction_policies(cls, rs, bc, mailinglist, persona_ids):
-        """Determine the MIP of the user or a persona with a mailinglist.
+    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject,
+                                 persona_ids: Collection[int],
+                                 ) -> Dict[int, MIPol]:
+        """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means opt-out for attendees
         of the associated assembly.
@@ -407,7 +438,8 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta, AssemblyMailinglist)
         return ret
 
     @classmethod
-    def get_implicit_subscribers(cls, rs, bc, mailinglist):
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means the attendees of the
@@ -454,7 +486,11 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
                MailinglistDomain.cdemuenchen)
 
 
-def get_type(val: Any) -> GeneralMailinglist:
+MLTypeLike = Union[const.MailinglistTypes, Type[GeneralMailinglist]]
+MLType = Type[GeneralMailinglist]
+
+
+def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
     if isinstance(val, str):
         val = int(val)
     if isinstance(val, int):
