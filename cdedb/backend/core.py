@@ -590,7 +590,7 @@ class CoreBackend(AbstractBackend):
         return {e['generation']: e for e in data}
 
     @internal
-    @access("persona")
+    @access("persona", "droid")
     def retrieve_personas(self, rs, ids, columns=PERSONA_CORE_FIELDS):
         """Helper to access a persona dataset.
 
