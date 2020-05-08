@@ -795,11 +795,22 @@ def _csv_identifier(val, argname=None, *, _convert=True,
 
 def _list_of(val, validator, argname=None, *, _convert=True,
              _ignore_warnings=False, _allow_empty=True):
+    """
+    Apply another validator to all entries of of a list.
+
+    With `_convert` being True, the input may be a comma-separated string.
+
+    :type val: Any
+    :type argname: str or None
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: (list or None, [(str or None, exception)]
+    """
     if _convert:
         if isinstance(val, str):
             # TODO use default separator from config here?
             # Skip emtpy entries which can be produced by JavaScript.
-            val = [v.strip() for v in val.split(",") if v]
+            val = [v for v in val.split(",") if v]
         val, errs = _iterable(val, argname, _convert=_convert,
                               _ignore_warnings=_ignore_warnings)
         if errs:
