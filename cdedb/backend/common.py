@@ -12,11 +12,21 @@ import copy
 import enum
 import functools
 import logging
-from typing import Any, Callable, Iterable, Set, Tuple, TypeVar, Union, cast
+from datetime import datetime
+import psycopg2.extras
+import psycopg2.extensions
+from typing import (
+    Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
+    Optional, Sequence
+)
 
 import cdedb.validation as validate
-from cdedb.common import (PrivilegeError, PsycoJson, diacritic_patterns, glue,
-                          make_proxy, make_root_logger, n_, unwrap)
+from cdedb.common import (
+    PrivilegeError, PsycoJson, diacritic_patterns, glue, make_proxy,
+    make_root_logger, n_, unwrap, RequestState, Role, Realms,
+    CdEDBObject, CdEDBObjectMap,
+)
+from cdedb.query import Query
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes
@@ -25,6 +35,7 @@ from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])
 G = TypeVar('G', bound=Callable[..., Any])
+T = TypeVar('T')
 
 
 def singularize(function: F,
@@ -47,7 +58,7 @@ def singularize(function: F,
     """
 
     @functools.wraps(function)
-    def singularized(self, rs, *args, **kwargs):
+    def singularized(self, rs: RequestState, *args: Any, **kwargs: Any) -> Any:
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
             kwargs[array_param_name] = (param,)
@@ -80,7 +91,7 @@ def batchify(function: F,
     """
 
     @functools.wraps(function)
-    def batchified(self, rs, *args, **kwargs):
+    def batchified(self, rs: RequestState, *args: Any, **kwargs: Any) -> List:
         ret = []
         with Atomizer(rs):
             if array_param_name in kwargs:
@@ -99,7 +110,7 @@ def batchify(function: F,
     return batchified
 
 
-def access(*roles):
+def access(*roles: Role) -> Callable:
     """The @access decorator marks a function of a backend for publication.
 
     Think of this as an RPC interface, only published functions are
@@ -109,10 +120,10 @@ def access(*roles):
     :param roles: required privilege level (any of)
     """
 
-    def decorator(function):
+    def decorator(function: F) -> F:
 
         @functools.wraps(function)
-        def wrapper(self, rs, *args, **kwargs):
+        def wrapper(self, rs: RequestState, *args: Any, **kwargs: Any) -> Any:
             if rs.user.roles.isdisjoint(roles):
                 raise PrivilegeError(
                     n_("%(user_roles)s is disjoint from %(roles)s"),
@@ -125,7 +136,8 @@ def access(*roles):
 
     return decorator
 
-def internal(function):
+
+def internal(function: F) -> F:
     """Mark a function of a backend for internal publication.
 
     It will be accessible via the :py:class:`cdedb.common.make_proxy` in
@@ -147,7 +159,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     #: abstract str to be specified by children
     realm = None
 
-    def __init__(self, configpath, is_core=False):
+    def __init__(self, configpath: str, is_core: bool = False) -> None:
         """
         :type configpath: str
         :type is_core: bool
@@ -179,7 +191,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             from cdedb.backend.core import CoreBackend
             self.core = make_proxy(CoreBackend(configpath), internal=True)
 
-    def affirm_realm(self, rs, ids, realms=None):
+    def affirm_realm(self, rs: RequestState, ids: Collection[int],
+                     realms: Realms = None) -> None:
         """Check that all personas corresponding to the ids are in the
         appropriate realm.
 
@@ -197,7 +210,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def is_admin(cls, rs):
+    def is_admin(cls, rs: RequestState) -> bool:
         """We abstract away the admin privilege.
 
         Maybe this can be beefed up to check for orgas and moderators too,
@@ -209,7 +222,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return "{}_admin".format(cls.realm) in rs.user.roles
 
     @staticmethod
-    def _sanitize_db_output(output):
+    def _sanitize_db_output(output: Optional[psycopg2.extras.RealDictRow]
+                            ) -> Optional[CdEDBObject]:
         """Convert a :py:class:`psycopg2.extras.RealDictRow` into a normal
         :py:class:`dict`. We only use the outputs as dictionaries and
         the psycopg variant has some rough edges (e.g. it does not survive
@@ -226,7 +240,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return dict(output)
 
     @staticmethod
-    def _sanitize_db_input(obj):
+    def _sanitize_db_input(obj: T) -> T:
         """Mangle data to make psycopg happy.
 
         Convert :py:class:`tuple`s (and all other iterables, but not strings
@@ -250,13 +264,14 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return obj
 
     @staticmethod
-    def affirm_atomized_context(rs):
+    def affirm_atomized_context(rs: RequestState) -> None:
         """Make sure that we are operating in a atomized transaction."""
 
         if not rs.conn.is_contaminated:
             raise RuntimeError(n_("No contamination!"))
 
-    def execute_db_query(self, cur, query, params):
+    def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
+                         params: Sequence) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
@@ -277,7 +292,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
 
-    def query_exec(self, rs, query, params):
+    def query_exec(self, rs: RequestState, query: str, params: Sequence) -> int:
         """Execute a query in a safe way (inside a transaction).
 
         :type rs: :py:class:`BackendRequestState`
@@ -291,7 +306,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    def query_one(self, rs, query, params):
+    def query_one(self, rs: RequestState, query: str, params: Sequence
+                  ) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
         :type rs: :py:class:`BackendRequestState`
@@ -305,7 +321,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.execute_db_query(cur, query, params)
                 return self._sanitize_db_output(cur.fetchone())
 
-    def query_all(self, rs, query, params):
+    def query_all(self, rs: RequestState, query: str, params: Sequence
+                  ) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
         :type rs: :py:class:`BackendRequestState`
@@ -320,7 +337,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 return tuple(
                     self._sanitize_db_output(x) for x in cur.fetchall())
 
-    def sql_insert(self, rs, table, data, entity_key="id"):
+    def sql_insert(self, rs: RequestState, table: str, data: CdEDBObject,
+                   entity_key: str = "id") -> int:
         """Generic SQL insertion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -333,15 +351,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :returns: id of inserted row
         """
         keys = tuple(key for key in data)
-        query = glue("INSERT INTO {table} ({keys}) VALUES ({placeholders})",
-                     "RETURNING {entity_key}")
-        query = query.format(
-            table=table, keys=", ".join(keys),
-            placeholders=", ".join(("%s",) * len(keys)), entity_key=entity_key)
+        query = (f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
+                 f" ({', '.join(('%s',) * len(keys))}) RETURNING {entity_key}")
         params = tuple(data[key] for key in keys)
         return unwrap(self.query_one(rs, query, params))
 
-    def sql_insert_many(self, rs, table, data):
+    def sql_insert_many(self, rs: RequestState, table: str,
+                        data: Sequence[CdEDBObject]) -> int:
         """Generic SQL query to insert multiple datasets with the same keys.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -362,15 +378,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             if entry.keys() != key_set:
                 raise ValueError(n_("Dict keys do not match."))
             params.extend(entry[k] for k in keys)
-        query = "INSERT INTO {table} ({keys}) VALUES {value_list}"
         # Create len(data) many row placeholders for len(keys) many values.
         value_list = ", ".join(("({})".format(", ".join(("%s",) * len(keys))),)
                                * len(data))
-        query = query.format(
-            table=table, keys=", ".join(keys), value_list=value_list)
+        query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES {value_list}"
         return self.query_exec(rs, query, params)
 
-    def sql_select(self, rs, table, columns, entities, entity_key="id"):
+    def sql_select(self, rs: RequestState, table: str, columns: Sequence[str],
+                   entities: Collection, entity_key: str = "id"
+                   ) -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
         This is one of a set of functions which provides formatting and
@@ -388,12 +404,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type entity_key: str
         :rtype: [{str: object}]
         """
-        query = "SELECT {columns} FROM {table} WHERE {entity_key} = ANY(%s)"
-        query = query.format(table=table, columns=", ".join(columns),
-                             entity_key=entity_key)
+        query = (f"SELECT {', '.join(columns)} FROM {table}"
+                 f" WHERE {entity_key} = ANY(%s)")
         return self.query_all(rs, query, (entities,))
 
-    def sql_select_one(self, rs, table, columns, entity, entity_key="id"):
+    def sql_select_one(self, rs: RequestState, table: str,
+                       columns: Sequence[str], entity: Any,
+                       entity_key: str = "id") -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -405,12 +422,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type entity_key: str
         :rtype: {str: object}
         """
-        query = "SELECT {columns} FROM {table} WHERE {entity_key} = %s"
-        query = query.format(table=table, columns=", ".join(columns),
-                             entity_key=entity_key)
+        query = (f"SELECT {', '.join(columns)} FROM {table}"
+                 f" WHERE {entity_key} = %s")
         return self.query_one(rs, query, (entity,))
 
-    def sql_update(self, rs, table, data, entity_key="id"):
+    def sql_update(self, rs: RequestState, table: str, data: CdEDBObject,
+                   entity_key: str = "id") -> int:
         """Generic SQL update query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -426,15 +443,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if not keys:
             # no input is an automatic success
             return 1
-        query = glue("UPDATE {table} SET ({keys}) = ROW({placeholders})",
-                     "WHERE {entity_key} = %s")
-        query = query.format(
-            table=table, keys=", ".join(keys),
-            placeholders=", ".join(("%s",) * len(keys)), entity_key=entity_key)
+        query = (f"UPDATE {table} SET ({', '.join(keys)}) ="
+                 f" ROW({', '.join(('%s',) * len(keys))})"
+                 f" WHERE {entity_key} = %s")
         params = tuple(data[key] for key in keys) + (data[entity_key],)
         return self.query_exec(rs, query, params)
 
-    def sql_json_inplace_update(self, rs, table, data, entity_key="id"):
+    def sql_json_inplace_update(self, rs: RequestState, table: str,
+                                data: CdEDBObject, entity_key: str = "id"
+                                ) -> int:
         """Generic SQL update query for JSON fields storing a dict.
 
         This leaves missing keys unmodified.
@@ -452,16 +469,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if not keys:
             # no input is an automatic success
             return 1
-        query = glue("UPDATE {table} SET {commands} WHERE {entity_key} = %s")
         commands = ", ".join("{key} = {key} || %s".format(key=key)
                              for key in keys)
-        query = query.format(
-            table=table, commands=commands, entity_key=entity_key)
+        query = f"UPDATE {table} SET {commands} WHERE {entity_key} = %s"
         params = tuple(PsycoJson(data[key]) for key in keys)
         params += (data[entity_key],)
         return self.query_exec(rs, query, params)
 
-    def sql_delete(self, rs, table, entities, entity_key="id"):
+    def sql_delete(self, rs: RequestState, table: str, entities: Collection,
+                   entity_key: str = "id") -> int:
         """Generic SQL deletion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -473,11 +489,11 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :rtype: int
         :returns: number of affected rows
         """
-        query = "DELETE FROM {table} WHERE {entity_key} = ANY(%s)"
-        query = query.format(table=table, entity_key=entity_key)
+        query = f"DELETE FROM {table} WHERE {entity_key} = ANY(%s)"
         return self.query_exec(rs, query, (entities,))
 
-    def sql_delete_one(self, rs, table, entity, entity_key="id"):
+    def sql_delete_one(self, rs: RequestState, table: str, entity: Any,
+                       entity_key: str = "id"):
         """Generic SQL deletion query for a single row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -489,11 +505,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :rtype: int
         :returns: number of affected rows
         """
-        query = "DELETE FROM {table} WHERE {entity_key} = %s"
-        query = query.format(table=table, entity_key=entity_key)
+        query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(rs, query, (entity,))
 
-    def general_query(self, rs, query, distinct=True, view=None):
+    def general_query(self, rs: RequestState, query: Query,
+                      distinct: bool = True, view: str = None
+                      ) -> Tuple[CdEDBObject, ...]:
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
 
@@ -627,12 +644,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                                for entry, ascending in query.order))
         return self.query_all(rs, q, params)
 
-    def generic_retrieve_log(self, rs, code_validator, entity_name, table,
-                             codes=None, entity_ids=None, offset=None,
-                             length=None, additional_columns=None,
-                             persona_id=None, submitted_by=None,
-                             additional_info=None, time_start=None,
-                             time_stop=None):
+    def generic_retrieve_log(self, rs: RequestState, code_validator: str,
+                             entity_name: str, table: str,
+                             codes: Collection[int] = None,
+                             entity_ids: Collection = None,
+                             offset: int = None, length: int = None,
+                             additional_columns: Collection[str] = None,
+                             persona_id: int = None, submitted_by: int = None,
+                             additional_info: str = None,
+                             time_start: datetime = None,
+                             time_stop: datetime = None
+                             ) -> Tuple[int, Tuple[CdEDBObject, ...]]:
         """Get recorded activity.
 
         Each realm has it's own log as well as potentially additional
@@ -730,9 +752,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         # The first query determines the absolute number of logs existing
         # matching the given criteria
-        query = "SELECT COUNT(*) AS count FROM {table} {condition}"
-        query = query.format(entity=entity_name, table=table,
-                             condition=condition)
+        query = f"SELECT COUNT(*) AS count FROM {table} {condition}"
         total = unwrap(self.query_one(rs, query, params))
         if offset and offset > total:
             # Why you do this
@@ -740,21 +760,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         elif offset is None and total > length:
             offset = length * ((total - 1) // length)
 
-        # Now, query the actual information
-        query = glue(
-            "SELECT id, ctime, code, submitted_by, {entity}_id, persona_id,",
-            "additional_info {extra_columns} FROM {table} {condition}",
-            "ORDER BY id ASC LIMIT {limit}")
-        if offset is not None:
-            query = glue(query, "OFFSET {}".format(offset))
-
         extra_columns = ", ".join(additional_columns)
         if extra_columns:
             extra_columns = ", " + extra_columns
 
-        query = query.format(entity=entity_name, extra_columns=extra_columns,
-                             table=table, condition=condition, limit=length,
-                             offset=offset)
+        # Now, query the actual information
+        query = (f"SELECT id, ctime, code, submitted_by, {entity_name}_id,"
+                 f" persona_id, additional_info {extra_columns} FROM {table}"
+                 f" {condition} ORDER BY id LIMIT {length}")
+        if offset is not None:
+            query = glue(query, "OFFSET {}".format(offset))
+
         return total, self.query_all(rs, query, params)
 
 
@@ -771,7 +787,7 @@ class Silencer:
     a different higher level log message.
     """
 
-    def __init__(self, rs):
+    def __init__(self, rs: RequestState):
         """
         :type rs: :py:class:`cdedb.common.RequestState`
         """
@@ -784,19 +800,17 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-T = TypeVar("T")
-
-
-def affirm_validation(assertion: str, value: T, **kwargs: Any) \
-        -> Union[T, None]:
+def affirm_validation(assertion: str, value: T,
+                      **kwargs: Any) -> Optional[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
 
 
+# noinspection PyPep8Naming
 def affirm_array_validation(assertion: str, values: Iterable[T],
-                            allow_None: bool = False, **kwargs: Any) \
-        -> Union[Tuple[T], None]:
+                            allow_None: bool = False,
+                            **kwargs: Any) -> Optional[Tuple[T, ...]]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
     :param allow_None: Since we don't have the luxury of an automatic
@@ -804,14 +818,15 @@ def affirm_array_validation(assertion: str, values: Iterable[T],
     """
     if allow_None and values is None:
         return None
-    checker: Callable[[T, ...], T] = \
-        getattr(validate, "assert_{}".format(assertion))
+    checker: Callable[[T, ...], T] = getattr(
+        validate, "assert_{}".format(assertion))
     return tuple(checker(value, **kwargs) for value in values)
 
 
+# noinspection PyPep8Naming
 def affirm_set_validation(assertion: str, values: Iterable[T],
-                          allow_None: bool = False, **kwargs: Any) \
-        -> Union[Set[T], None]:
+                          allow_None: bool = False,
+                          **kwargs: Any) -> Optional[Set[T]]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
 
     :param allow_None: Since we don't have the luxury of an automatic
@@ -819,12 +834,12 @@ def affirm_set_validation(assertion: str, values: Iterable[T],
     """
     if allow_None and values is None:
         return None
-    checker: Callable[[T, ...], T] = \
-        getattr(validate, "assert_{}".format(assertion))
+    checker: Callable[[T, ...], T] = getattr(
+        validate, "assert_{}".format(assertion))
     return {checker(value, **kwargs) for value in values}
 
 
-def cast_fields(data, spec):
+def cast_fields(data: CdEDBObject, spec: CdEDBObjectMap) -> CdEDBObject:
     """Helper to deserialize json fields.
 
     We serialize some classes as strings and need to undo this upon
