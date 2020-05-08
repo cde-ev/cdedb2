@@ -849,8 +849,6 @@ class EventBackend(AbstractBackend):
             query.constraints.append(
                 ("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = "id"
-            with open("/cdedb2/lodgement_query.sql", "w", encoding="utf8") as f:
-                f.write("SELECT * FROM (" + view + ");")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, view=view)
