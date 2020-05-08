@@ -798,7 +798,8 @@ class MlBackend(AbstractBackend):
             ret = self.query_exec(rs, query, params)
 
         return ret
-    _remove_subscription = singularize(_remove_subscriptions, "data", "datum")
+    _remove_subscription = singularize(
+        _remove_subscriptions, "data", "datum", passthrough=True)
 
     @access("ml")
     def do_subscription_action(self, rs, action, mailinglist_id,
