@@ -303,11 +303,11 @@ def ProxyShim(backend: B, internal=False) -> B:
     class Proxy:
         def __getattr__(self, name: str) -> Any:
             attr = getattr(backend, name)
-            if any(x for x in (
+            if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr),
-            )):
+            ]):
                 raise PrivilegeError(n_("Attribute %s not public") % name)
 
             return wrapit(attr)
