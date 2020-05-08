@@ -726,15 +726,19 @@ class EventBackend(AbstractBackend):
                 tmp_id, moniker, capacity, reserve
             FROM (
                 (
-                    SELECT
-                        id AS tmp_id, moniker
-                    FROM
-                        event.lodgement_groups
-                    WHERE
-                        event_id = {event_id}
+                    (
+                        SELECT
+                            id AS tmp_id, moniker
+                        FROM
+                            event.lodgement_groups
+                        WHERE
+                            event_id = {event_id}
+                    )
                     UNION
-                    SELECT
-                        -1, ''
+                    (
+                        SELECT
+                            -1, ''
+                    )
                 ) AS group_base
                 LEFT OUTER JOIN (
                     SELECT
