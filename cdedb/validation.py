@@ -622,7 +622,7 @@ def _cdedbid(val, argname=None, *, _convert=True, _ignore_warnings=False):
                      _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    mo = _CDEDBID.search(val)
+    mo = _CDEDBID.search(val.strip())
     if mo is None:
         return None, [(argname, ValueError(n_("Wrong formatting.")))]
     value = mo.group(1)
