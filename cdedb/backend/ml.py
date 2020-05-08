@@ -1016,7 +1016,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @access("ml", "droid_rklists")
+    @access("ml", "droid_rklist")
     def get_many_subscription_states(
             self, rs: RequestState, mailinglist_ids: Collection[int],
             states: Optional[SubStates] = None,
