@@ -40,12 +40,10 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("CdE-Party 2050", div='current-events')
 
     @as_users("annika", "emilia", "martin", "vera", "werner")
-    def test_navigation(self, user):
+    def test_sidebar(self, user):
         self.traverse({'description': 'Veranstaltungen'})
         everyone = ["Veranstaltungen", "Übersicht"]
         admin = ["Veranstaltungen verwalten", "Nutzer verwalten", "Log"]
-        ins = []
-        out = everyone + admin
 
         # not event admins (also orgas!)
         if user in [USER_DICT['emilia'], USER_DICT['martin'], USER_DICT['vera'],
@@ -56,11 +54,10 @@ class TestEventFrontend(FrontendTest):
         elif user == USER_DICT['annika']:
             ins = everyone + admin
             out = []
+        else:
+            self.fail("Please adjust users for this test.")
 
-        for s in ins:
-            self.assertPresence(s, div='sidebar')
-        for s in out:
-            self.assertNonPresence(s, div='sidebar')
+        self.check_sidebar(ins, out)
 
     @as_users("emilia")
     def test_showuser(self, user):
@@ -305,21 +302,18 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
 
     @as_users("annika", "emilia", "garcia", "martin", "vera", "werner")
-    def test_navigation_one_event(self, user):
+    def test_sidebar_one_event(self, user):
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
-        everyone = [
-            "Veranstaltungsübersicht", "Veranstaltung Große Testakademie 2222",
-            "Übersicht", "Kursliste"]
+        everyone = ["Veranstaltungsübersicht", "Übersicht", "Kursliste"]
         not_registrated = ["Anmelden"]
         registrated = ["Meine Anmeldung"]
-        orga = ["Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse",
-                "Kurseinteilung", "Unterkünfte", "Downloads", "Partieller",
-                "Import", "Überweisungen eintragen", "Konfiguration",
-                "Veranstaltungsteile", "Datenfelder konfigurieren",
-                "Fragebogen konfigurieren", "Log", "Checkin"]
-        ins = []
-        out = everyone + not_registrated + registrated + orga
+        orga = [
+            "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse",
+            "Kurseinteilung", "Unterkünfte", "Downloads", "Partieller Import",
+            "Überweisungen eintragen", "Konfiguration", "Veranstaltungsteile",
+            "Datenfelder konfigurieren", "Anmeldung konfigurieren",
+            "Fragebogen konfigurieren", "Log", "Checkin"]
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registrated and participant, ...
@@ -339,11 +333,10 @@ class TestEventFrontend(FrontendTest):
         elif user == USER_DICT['annika']:
             ins = everyone + not_registrated + orga
             out = registrated
+        else:
+            self.fail("Please adjust users for this test.")
 
-        for s in ins:
-            self.assertPresence(s, div='sidebar')
-        for s in out:
-            self.assertNonPresence(s, div='sidebar')
+        self.check_sidebar(ins, out)
 
     @as_users("anton", "berta")
     def test_no_hard_limit(self, user):

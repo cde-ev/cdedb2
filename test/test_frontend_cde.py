@@ -19,7 +19,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'})
 
     @as_users("annika", "farin", "martin", "vera", "werner")
-    def test_navigation(self, user):
+    def test_sidebar(self, user):
         self.traverse({'description': 'Mitglieder'})
         everyone = ["Mitglieder", "Übersicht", "Verg. Veranstaltungen",
                     "Sonstiges"]
@@ -30,8 +30,6 @@ class TestCdEFrontend(FrontendTest):
         finance_admin = [
             "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
             "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"]
-        ins = []
-        out = everyone + not_searchable + searchable + cde_admin + finance_admin
 
         # searchable member
         if user in [USER_DICT['annika'], USER_DICT['werner']]:
@@ -49,11 +47,10 @@ class TestCdEFrontend(FrontendTest):
         elif user == USER_DICT['farin']:
             ins = everyone + searchable + cde_admin + finance_admin
             out = not_searchable
+        else:
+            self.fail("Please adjust users for this test.")
 
-        for s in ins:
-            self.assertPresence(s, div='sidebar')
-        for s in out:
-            self.assertNonPresence(s, div='sidebar')
+        self.check_sidebar(ins, out)
 
     @as_users("vera", "berta")
     def test_showuser(self, user):
