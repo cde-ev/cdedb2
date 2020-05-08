@@ -68,12 +68,10 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'href': '/assembly/'})
 
     @as_users("annika", "martin", "vera", "werner")
-    def test_navigation(self, user):
+    def test_sidebar(self, user):
         self.traverse({'description': 'Versammlungen'})
         everyone = ["Versammlungen", "Übersicht"]
         admins = ["Nutzer verwalten", "Log"]
-        ins = []
-        out = everyone + admins
 
         # not assembly admins
         if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
@@ -83,11 +81,10 @@ class TestAssemblyFrontend(FrontendTest):
         elif user == USER_DICT['werner']:
             ins = everyone + admins
             out = []
+        else:
+            self.fail("Please adjust users for this test.")
 
-        for s in ins:
-            self.assertPresence(s, div='sidebar')
-        for s in out:
-            self.assertNonPresence(s, div='sidebar')
+        self.check_sidebar(ins, out)
 
     @as_users("kalif")
     def test_showuser(self, user):
@@ -219,15 +216,12 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertIn('deleteballotform', self.response.forms)
 
     @as_users("annika", "martin", "vera", "werner")
-    def test_navigation_one_assembly(self, user):
+    def test_sidebar_one_assembly(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'})
-        everyone = [
-            "Versammlungs-Übersicht", "Versammlung Internationaler Kongress",
-            "Übersicht", "Teilnehmer", "Abstimmungen"]
+        everyone = ["Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
+                    "Abstimmungen", "Zusammenfassung"]
         admin = ["Konfiguration", "Log"]
-        ins = []
-        out = everyone + admin
 
         # not assembly admins
         if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
@@ -237,11 +231,10 @@ class TestAssemblyFrontend(FrontendTest):
         elif user == USER_DICT['werner']:
             ins = everyone + admin
             out = []
+        else:
+            self.fail("Please adjust users for this test.")
 
-        for s in ins:
-            self.assertPresence(s, div='sidebar')
-        for s in out:
-            self.assertNonPresence(s, div='sidebar')
+        self.check_sidebar(ins, out)
 
     @as_users("werner")
     def test_change_assembly(self, user):

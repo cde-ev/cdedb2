@@ -94,7 +94,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Meine Daten")
 
     @as_users("annika", "martin", "nina", "vera", "werner")
-    def test_navigation(self, user):
+    def test_sidebar(self, user):
         self.assertTitle("CdE-Datenbank")
         everyone = ["Index", "Übersicht", "Meine Daten",
                     "Administratorenübersicht"]
@@ -102,8 +102,6 @@ class TestCoreFrontend(FrontendTest):
         core_admin = ["Nutzer verwalten", "Archivsuche", "Änderungen prüfen",
                       "Account-Log", "Nutzerdaten-Log", "Metadaten"]
         meta_admin = ["Admin-Änderungen"]
-        ins = []
-        out = everyone + genesis + core_admin + meta_admin
 
         # admin of a realm without genesis cases
         if user == USER_DICT['werner']:
@@ -121,11 +119,10 @@ class TestCoreFrontend(FrontendTest):
         elif user == USER_DICT['martin']:
             ins = everyone + meta_admin
             out = genesis + core_admin
+        else:
+            self.fail("Please adjust users for this test.")
 
-        for s in ins:
-            self.assertPresence(s, div='sidebar')
-        for s in out:
-            self.assertNonPresence(s, div='sidebar')
+        self.check_sidebar(ins, out)
 
     @as_users("anton", "berta", "charly", "daniel", "emilia", "ferdinand",
               "garcia", "inga", "janis", "kalif", "martin", "nina",

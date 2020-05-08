@@ -899,6 +899,28 @@ class FrontendTest(unittest.TestCase):
             log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
+    def check_sidebar(self, ins, out):
+        """Helper function to check the (in)visibility of sidebar elements.
+
+        Raise an error if an element is in the sidebar and not in ins.
+
+        :type ins: [str]
+        :param ins: elements which are in the sidebar
+        :param out: elements which are not in the sidebar
+        :return: None
+        """
+        sidebar = self.response.html.find(id="sidebar-navigation")
+        present = {nav_point.get_text().strip()
+                   for nav_point in sidebar.find_all("a")}
+        for nav_point in ins:
+            self.assertPresence(nav_point, div='sidebar-navigation')
+            present -= {nav_point}
+        for nav_point in out:
+            self.assertNonPresence(nav_point, div='sidebar-navigation')
+        if present:
+            raise AssertionError(
+                f"Unexpected sidebar elements '{present}' found.")
+
     def _click_admin_view_button(self, label, current_state=None):
         """
         Helper function for checking the disableable admin views

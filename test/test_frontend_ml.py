@@ -17,34 +17,32 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/'})
 
     @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner")
-    def test_navigation(self, user):
+    def test_sidebar(self, user):
         self.traverse({'description': 'Mailinglisten'})
-        # Users with no administrated and no modereated mailinglists:
+        # Users with no administrated and no moderated mailinglists:
         if user['id'] in {USER_DICT['martin']['id']}:
-            ins = ["Mailinglisten", "Übersicht"]
-            out = ["Alle Mailinglisten", "Nutzer verwalten", "Log"]
+            ins = ["Übersicht"]
+            out = ["Alle Mailinglisten", "Aktive Mailinglisten",
+                   "Nutzer verwalten", "Log"]
         # Users with relative admin privileges for some mailinglists:
         elif user['id'] in {USER_DICT['annika']['id'], USER_DICT['vera']['id'],
                             USER_DICT['werner']['id']}:
             # TODO: replace "Alle Mailinglisten".
-            ins = ["Mailinglisten", "Alle Mailinglisten", "Log"]
+            ins = ["Aktive Mailinglisten", "Alle Mailinglisten", "Log"]
             out = ["Übersicht", "Nutzer verwalten"]
         # Users with moderated mailinglists, but no admin privileges.
         elif user['id'] in {USER_DICT['berta']['id']}:
-            ins = ["Mailinglisten", "Alle Mailinglisten", "Log"]
+            ins = ["Aktive Mailinglisten", "Alle Mailinglisten", "Log"]
             out = ["Übersicht", "Nutzer verwalten"]
         # Users with full ml-admin privileges.
         elif user['id'] in {USER_DICT['nina']['id'], USER_DICT['anton']['id']}:
-            ins = ["Mailinglisten", "Aktive Mailinglisten",
-                   "Alle Mailinglisten", "Nutzer verwalten", "Log"]
+            ins = ["Aktive Mailinglisten", "Alle Mailinglisten",
+                   "Nutzer verwalten", "Log"]
             out = ["Übersicht"]
         else:
             self.fail("Please adjust users for this test.")
 
-        for s in ins:
-            self.assertPresence(s, div='sidebar-navigation')
-        for s in out:
-            self.assertNonPresence(s, div='sidebar-navigation')
+        self.check_sidebar(ins, out)
 
     @as_users("janis")
     def test_showuser(self, user):
@@ -168,11 +166,10 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("akira", "annika", "anton", "berta", "martin", "nina", "vera",
               "werner")
-    def test_navigation_one_mailinglist(self, user):
+    def test_sidebar_one_mailinglist(self, user):
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Klatsch und Tratsch'})
-        everyone = ["Mailinglisten-Übersicht",
-                    "Mailingliste Klatsch und Tratsch", "Übersicht "]
+        everyone = ["Mailinglisten-Übersicht", "Übersicht"]
         moderator = ["Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
                      "Log"]
 
@@ -197,10 +194,7 @@ class TestMlFrontend(FrontendTest):
         else:
             self.fail("Please adjust users for this test.")
 
-        for s in ins:
-            self.assertPresence(s, div='sidebar-navigation')
-        for s in out:
-            self.assertNonPresence(s, div='sidebar-navigation')
+        self.check_sidebar(ins, out)
 
     @as_users("anton", "janis")
     def test_show_ml_buttons_change_address(self, user):
