@@ -23,7 +23,8 @@ import string
 import sys
 import hashlib
 from typing import (
-    Any, TypeVar, Mapping, Collection, Dict, List, overload, Union, Sequence
+    Any, TypeVar, Mapping, Collection, Dict, List, overload, Union, Sequence,
+    AbstractSet, Tuple, MutableSequence
 )
 
 import psycopg2.extras
@@ -951,7 +952,8 @@ T = TypeVar("T")
 
 
 @overload
-def unwrap(single_element_list: Sequence[T]) -> T:
+def unwrap(single_element_list: Union[AbstractSet[T], MutableSequence[T],
+                                      Tuple[T]]) -> T:
     pass
 
 
