@@ -36,6 +36,9 @@ msgstr "Nicht in der Liste der Zugriffsberechtigten enthalten."
 msgid "Out of supported scope."
 msgstr "Nicht im unterstützten Bereich."
 
+msgid "Must be later than part begin."
+msgstr "Muss später als Beginn sein."
+
 #: cdedb/common.py:678 cdedb/common.py:709 cdedb/common.py:647
 msgid "Not supported."
 msgstr "Operation nicht unterstützt."
