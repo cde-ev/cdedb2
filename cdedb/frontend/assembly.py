@@ -701,7 +701,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             else:
                 return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, history[version])
-        return self.render(rs, "edit_attachment", {
+        return self.render(rs, "edit_attachment_version", {
             'attachment_id': attachment_id,
             'history': history,
             'version': version,
