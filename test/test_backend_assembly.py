@@ -484,7 +484,7 @@ class TestAssemblyBackend(BackendTest):
             "ballot_id": None,
             "assembly_id": 1,
         }
-        self.assertTrue(self.assembly.change_attachment(self.key, data))
+        self.assertTrue(self.assembly.change_attachment_link(self.key, data))
         self.assertEqual(data, self.assembly.get_attachment(self.key, new_id))
         with self.assertRaises(ValueError):
             data = {
@@ -492,35 +492,35 @@ class TestAssemblyBackend(BackendTest):
                 "ballot_id": 1,
                 "assembly_id": None,
             }
-            self.assembly.change_attachment(self.key, data)
+            self.assembly.change_attachment_link(self.key, data)
         with self.assertRaises(ValueError):
             data = {
                 "id": new_id,
                 "ballot_id": 1,
                 "assembly_id": 1,
             }
-            self.assembly.change_attachment(self.key, data)
+            self.assembly.change_attachment_link(self.key, data)
         with self.assertRaises(ValueError):
             data = {
                 "id": new_id,
                 "ballot_id": None,
                 "assembly_id": None,
             }
-            self.assembly.change_attachment(self.key, data)
+            self.assembly.change_attachment_link(self.key, data)
         with self.assertRaises(ValueError):
             data = {
                 "id": new_id,
                 "ballot_id": None,
                 "assembly_id": 2,
             }
-            self.assembly.change_attachment(self.key, data)
+            self.assembly.change_attachment_link(self.key, data)
         with self.assertRaises(ValueError):
             data = {
                 "id": new_id,
                 "ballot_id": 6,
                 "assembly_id": None,
             }
-            self.assembly.change_attachment(self.key, data)
+            self.assembly.change_attachment_link(self.key, data)
         expectation = {
             1: {
                 "attachment_id": new_id,

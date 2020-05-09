@@ -29,10 +29,11 @@ do it.
 import copy
 import hmac
 from typing import (
-    Set, Dict, List, Union, Iterable, Callable
+    Set, Dict, List, Union, Callable, Collection
 )
 from pathlib import Path
 from os import PathLike
+PathLike = Union[Path, PathLike]
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, affirm_set_validation as affirm_set,
@@ -57,7 +58,7 @@ class AssemblyBackend(AbstractBackend):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.attachment_base_path: Union[Path, PathLike] = (
+        self.attachment_base_path: PathLike = (
                 self.conf['STORAGE_DIR'] / "assembly_attachment")
 
     # TODO this does nothing?
@@ -149,8 +150,8 @@ class AssemblyBackend(AbstractBackend):
         if rs.is_quiet:
             return 0
         # do not use sql_insert since it throws an error for selecting the id
-        query = "INSERT INTO assembly.log (code, assembly_id, submitted_by," \
-                " persona_id, additional_info) VALUES (%s, %s, %s, %s, %s)"
+        query = ("INSERT INTO assembly.log (code, assembly_id, submitted_by,"
+                 " persona_id, additional_info) VALUES (%s, %s, %s, %s, %s)")
         params = (code, assembly_id, rs.user.persona_id, persona_id,
                   additional_info)
         return self.query_exec(rs, query, params)
@@ -211,25 +212,47 @@ class AssemblyBackend(AbstractBackend):
         return self.general_query(rs, query)
 
     @internal_access("persona")
-    def get_assembly_id(self, rs: RequestState, *, ballot_id: int = None,
-                        attachment_id: int = None) -> DefaultReturnCode:
+    def get_assembly_ids(self, rs: RequestState, *,
+                         ballot_ids: Collection[int] = None,
+                         attachment_ids: Collection[int] = None
+                         ) -> Set[int]:
         """Helper to retrieve a corresponding assembly id."""
-        if ballot_id is None and attachment_id is None:
-            raise ValueError(n_("Not input specified."))
-        elif ballot_id and attachment_id:
-            raise ValueError(n_("Too many inputs."))
-        assembly_id = None
-        if attachment_id:
-            attachment_id = affirm("id", attachment_id)
-            data = self.sql_select_one(
-                rs, "assembly.attachments", ("assembly_id", "ballot_id"),
-                attachment_id)
-            assembly_id, ballot_id = data['assembly_id'], data['ballot_id']
-        if ballot_id:
-            ballot_id = affirm("id", ballot_id)
-            assembly_id = unwrap(self.sql_select_one(
-                rs, "assembly.ballots", ("assembly_id",), ballot_id))
-        return assembly_id
+        ballot_ids = affirm_set("id", ballot_ids or set())
+        attachment_ids = affirm_set("id", attachment_ids or set())
+        ret = set()
+        if attachment_ids:
+            data = self._get_attachment_infos(rs, attachment_ids)
+            for e in data.values():
+                if e["assembly_id"]:
+                    ret.add(e["assembly_id"])
+                if e["ballot_id"]:
+                    ballot_ids.add(e["ballot_id"])
+        if ballot_ids:
+            data = self.sql_select(
+                rs, "assembly.ballots", ("assembly_id",), ballot_ids)
+            for e in data:
+                ret.add(e["assembly_id"])
+        return ret
+
+    @internal_access("persona")
+    def get_assembly_id(self, rs: RequestState, *, ballot_id: int = None,
+                        attachment_id: int = None) -> int:
+        if ballot_id is None:
+            ballot_ids = set()
+        else:
+            ballot_ids = {affirm("id", ballot_id)}
+        if attachment_id is None:
+            attachment_ids = set()
+        else:
+            attachment_ids = {affirm("id", attachment_id)}
+        ret = self.get_assembly_ids(
+            rs, ballot_ids=ballot_ids, attachment_ids=attachment_ids)
+        if len(ret) == 0:
+            raise ValueError(n_("No input specified."))
+        if len(ret) > 1:
+            raise ValueError(n_(
+                "Can only retrieve id for exactly one assembly."))
+        return unwrap(ret)
 
     @internal_access("persona")
     def check_attendance(self, rs: RequestState, *, assembly_id: int = None,
@@ -304,7 +327,7 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm("id", assembly_id)
         if (not self.may_assemble(rs, assembly_id=assembly_id)
-                and not "ml_admin" in rs.user.roles):
+                and "ml_admin" not in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         attendees = self.sql_select(
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
@@ -339,15 +362,15 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_assemblies(self, rs: RequestState,
-                       ids: Iterable[int]) -> CdEDBObjectMap:
+                       ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data for some assemblies."""
         ids = affirm_set("id", ids)
         if not all(self.may_assemble(rs, assembly_id=anid) for anid in ids):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
-    get_assembly: Callable[[RequestState, int], CdEDBObject] = \
-        singularize(get_assemblies)
+    get_assembly: Callable[[RequestState, int], CdEDBObject] = singularize(
+        get_assemblies)
 
     @access("assembly_admin")
     def set_assembly(self, rs: RequestState, data: CdEDBObject) -> int:
@@ -437,7 +460,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_assembly(self, rs: RequestState, assembly_id: int,
-                        cascade: Iterable[str] = None) -> int:
+                        cascade: Collection[str] = None) -> int:
         """Remove an assembly.
 
         :param cascade: Specify which deletion blockers to cascadingly
@@ -521,7 +544,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_ballots(self, rs: RequestState,
-                    ids: Iterable[int]) -> CdEDBObjectMap:
+                    ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data for some ballots,
 
         They do not need to be associated to the same assembly. This has an
@@ -550,8 +573,8 @@ class AssemblyBackend(AbstractBackend):
                 ret = {k: v for k, v in ret.items()
                        if self.check_attendance(rs, ballot_id=k)}
         return ret
-    get_ballot: Callable[[RequestState, int], CdEDBObject] = \
-        singularize(get_ballots)
+    get_ballot: Callable[[RequestState, int], CdEDBObject] = singularize(
+        get_ballots)
 
     @access("assembly_admin")
     def set_ballot(self, rs: RequestState, data: CdEDBObject) -> int:
@@ -715,7 +738,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_ballot(self, rs: RequestState, ballot_id: int,
-                      cascade: Iterable[str] = None) -> DefaultReturnCode:
+                      cascade: Collection[str] = None) -> DefaultReturnCode:
         """Remove a ballot.
 
         .. note:: As with modification of ballots this is forbidden
@@ -1196,21 +1219,12 @@ class AssemblyBackend(AbstractBackend):
 
     @internal_access("assembly")
     def check_attachment_access(
-            self, rs: RequestState, attachment_ids: Iterable[int]) -> bool:
+            self, rs: RequestState, attachment_ids: Collection[int]) -> bool:
         """Helper to check whether the user may access the given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
-            attachment_data = self.sql_select(
-                rs, "assembly.attachments", ASSEMBLY_ATTACHMENT_FIELDS,
-                attachment_ids)
-            assembly_ids = {e["assembly_id"] for e in attachment_data
-                            if e["assembly_id"]}
-            ballot_ids = {e["ballot_id"] for e in attachment_data
-                          if e["ballot_id"]}
-            if ballot_ids:
-                ballot_data = self.sql_select(rs, "assembly.ballots",
-                                              ("assembly_id",), ballot_ids)
-                assembly_ids.update({e["assembly_id"] for e in ballot_data})
+            assembly_ids = self.get_assembly_ids(
+                rs, attachment_ids=attachment_ids)
             if not assembly_ids:
                 return True
             if len(assembly_ids) > 1:
@@ -1240,8 +1254,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_attachment_histories(self, rs: RequestState,
-                                 attachment_ids: Iterable[int]) -> \
-            Dict[int, CdEDBObjectMap]:
+                                 attachment_ids: Collection[int]
+                                 ) -> Dict[int, CdEDBObjectMap]:
         """Retrieve all version information for given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         ret = {anid: {} for anid in attachment_ids}
@@ -1256,8 +1270,9 @@ class AssemblyBackend(AbstractBackend):
                 ret[entry["attachment_id"]][entry["version"]] = entry
 
         return ret
-    get_attachment_history: Callable[[RequestState, int], CdEDBObjectMap] = \
-        singularize(get_attachment_histories, "attachment_ids", "attachment_id")
+    get_attachment_history: Callable[[RequestState, int], CdEDBObjectMap]
+    get_attachment_history = singularize(
+        get_attachment_histories, "attachment_ids", "attachment_id")
 
     @access("assembly_admin")
     def add_attachment(self, rs: RequestState, data: CdEDBObject,
@@ -1307,8 +1322,8 @@ class AssemblyBackend(AbstractBackend):
             return new_id
 
     @access("assembly_admin")
-    def change_attachment(self, rs: RequestState, data: CdEDBObject) -> \
-            DefaultReturnCode:
+    def change_attachment_link(self, rs: RequestState,
+                               data: CdEDBObject) -> DefaultReturnCode:
         """Change the association of an attachment.
 
         It is not allowed to modify an attachment of a ballot that
@@ -1350,8 +1365,8 @@ class AssemblyBackend(AbstractBackend):
             return ret
 
     @access("assembly_admin")
-    def delete_attachment_blockers(self, rs: RequestState, attachment_id: int) \
-            -> DeletionBlockers:
+    def delete_attachment_blockers(self, rs: RequestState,
+                                   attachment_id: int) -> DeletionBlockers:
         """Determine what keeps an attachment from being deleted.
 
         Possible blockers:
@@ -1386,7 +1401,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_attachment(self, rs: RequestState, attachment_id: int,
-                          cascade: Iterable[str] = None) -> DefaultReturnCode:
+                          cascade: Collection[str] = None) -> DefaultReturnCode:
         """Remove an attachment."""
         attachment_id = affirm("id", attachment_id)
         blockers = self.delete_attachment_blockers(rs, attachment_id)
@@ -1430,20 +1445,20 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_current_versions(self, rs: RequestState,
-                             attachment_ids: Iterable[int]) -> Dict[int, int]:
+                             attachment_ids: Collection[int]) -> Dict[int, int]:
         """Get the most recent version numbers for the given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
             if not self.check_attachment_access(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
-            query = "SELECT attachment_id, MAX(version) as version FROM" \
-                    " assembly.attachment_versions" \
-                    " WHERE attachment_id = ANY(%s) GROUP BY attachment_id"
+            query = ("SELECT attachment_id, MAX(version) as version FROM"
+                     " assembly.attachment_versions"
+                     " WHERE attachment_id = ANY(%s) GROUP BY attachment_id")
             params = (attachment_ids,)
             data = self.query_all(rs, query, params)
             return {e["attachment_id"]: e["version"] for e in data}
-    get_current_version: Callable[[RequestState, int], int] = \
-        singularize(get_current_versions, "attachment_ids", "attachment_id")
+    get_current_version: Callable[[RequestState, int], int] = singularize(
+        get_current_versions, "attachment_ids", "attachment_id")
 
     @access("assembly_admin")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
@@ -1477,8 +1492,8 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly_admin")
-    def change_attachment_version(self, rs: RequestState, data: CdEDBObject) \
-            -> DefaultReturnCode:
+    def change_attachment_version(self, rs: RequestState,
+                                  data: CdEDBObject) -> DefaultReturnCode:
         """Alter a version of an attachment.
 
         This is not allowed if the associated ballot has begun voting or if
@@ -1494,8 +1509,8 @@ class AssemblyBackend(AbstractBackend):
                     "assembly has been concluded."))
             keys = tuple(data.keys())
             setters = ", ".join(f"{k} = %s" for k in keys)
-            query = f"UPDATE assembly.attachment_versions SET {setters}" \
-                    f" WHERE attachment_id = %s AND version = %s"
+            query = (f"UPDATE assembly.attachment_versions SET {setters}"
+                     f" WHERE attachment_id = %s AND version = %s")
             params = tuple(data[k] for k in keys) + (attachment_id, version)
             return self.query_exec(rs, query, params)
 
@@ -1525,8 +1540,8 @@ class AssemblyBackend(AbstractBackend):
 
             keys = tuple(deletor.keys())
             setters = ", ".join(f"{k} = %s" for k in keys)
-            query = f"UPDATE assembly.attachment_versions SET {setters}" \
-                    f" WHERE attachment_id = %s AND version = %s"
+            query = (f"UPDATE assembly.attachment_versions SET {setters}"
+                     f" WHERE attachment_id = %s AND version = %s")
             params = tuple(deletor[k] for k in keys) + (attachment_id, version)
             ret = self.query_exec(rs, query, params)
 
@@ -1589,18 +1604,28 @@ class AssemblyBackend(AbstractBackend):
                                (key,), entity_key=column)
         return {e['id'] for e in data}
 
+    def _get_attachment_infos(self, rs: RequestState,
+                              attachment_ids: Collection[int]
+                              ) -> CdEDBObjectMap:
+        """Internal helper to retrieve attachment data without access check."""
+        attachment_ids = affirm_set("id", attachment_ids)
+        data = self.sql_select(rs, "assembly.attachments",
+                               ASSEMBLY_ATTACHMENT_FIELDS, attachment_ids)
+        ret = {e['id']: e for e in data}
+        return ret
+    _get_attachment_info: Callable[[RequestState, int], CdEDBObject]
+    _get_attachment_info = singularize(
+        _get_attachment_infos, "attachment_ids", "attachment_id")
+
     @access("assembly")
-    def get_attachments(self, rs: RequestState, attachment_ids: Iterable[int]) \
-            -> CdEDBObjectMap:
+    def get_attachments(self, rs: RequestState,
+                        attachment_ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data on attachments"""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
             if not self.check_attachment_access(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
-
-            data = self.sql_select(rs, "assembly.attachments",
-                                   ASSEMBLY_ATTACHMENT_FIELDS, attachment_ids)
-            ret = {e['id']: e for e in data}
-            return ret
-    get_attachment: Callable[[RequestState, int], Dict[str, int]] = \
-        singularize(get_attachments, "attachment_ids", "attachment_id")
+            return self._get_attachment_infos(rs, attachment_ids)
+    get_attachment: Callable[[RequestState, int], CdEDBObject]
+    get_attachment = singularize(
+        get_attachments, "attachment_ids", "attachment_id")

@@ -662,7 +662,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             data["assembly_id"] = assembly_id
             data["ballot_id"] = None
-        code = self.assemblyproxy.change_attachment(rs, data)
+        code = self.assemblyproxy.change_attachment_link(rs, data)
         self.notify_return_code(rs, code)
         if ballot_id:
             return self.redirect(rs, "assembly/show_ballot",
