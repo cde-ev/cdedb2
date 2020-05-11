@@ -18,7 +18,7 @@ from cdedb.backend.common import internal, singularize
 from cdedb.backend.event import EventBackend
 from cdedb.common import (MAILINGLIST_FIELDS, CdEDBObject, CdEDBObjectMap,
                           DefaultReturnCode, DeletionBlockers, PrivilegeError,
-                          ProxyShim, RequestState, SubscriptionActions,
+                          make_proxy, RequestState, SubscriptionActions,
                           SubscriptionError, glue, implying_realms, n_, now,
                           unwrap)
 from cdedb.database.connection import Atomizer
@@ -35,11 +35,8 @@ class MlBackend(AbstractBackend):
 
     def __init__(self, configpath: str):
         super().__init__(configpath)
-        self.event: EventBackend = cast(
-            EventBackend, ProxyShim(EventBackend(configpath), internal=True))
-        self.assembly: AssemblyBackend = cast(
-            AssemblyBackend,
-            ProxyShim(AssemblyBackend(configpath), internal=True))
+        self.event = make_proxy(EventBackend(configpath), internal=True)
+        self.assembly = make_proxy(AssemblyBackend(configpath), internal=True)
         self.backends = ml_type.BackendContainer(
             core=self.core, event=self.event, assembly=self.assembly)
 

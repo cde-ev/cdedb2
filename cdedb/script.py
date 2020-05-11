@@ -22,7 +22,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
-from cdedb.common import ProxyShim
+from cdedb.common import make_proxy
 from cdedb.database.connection import IrradiatedConnection
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
@@ -122,6 +122,6 @@ def make_backend(realm, proxy=True):
     else:
         raise ValueError("Unrecognized realm")
     if proxy:
-        return ProxyShim(backend)
+        return make_proxy(backend)
     else:
         return backend

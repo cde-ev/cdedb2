@@ -140,7 +140,7 @@ class RequestState:
         # Visible version of the database connection
         self.conn = None
         # Private version of the database connection, only visible in the
-        # backends (mediated by the ProxyShim)
+        # backends (mediated by the make_proxy)
         self._conn = None
         # Toggle to disable logging
         self.is_quiet = False
@@ -277,7 +277,7 @@ B = TypeVar("B", bound=AbstractBackend)
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def ProxyShim(backend: B, internal=False) -> B:
+def make_proxy(backend: B, internal=False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional

@@ -15,7 +15,7 @@ import logging
 from typing import Any, Callable, TypeVar, cast, Iterable, Tuple, Set, Union
 
 from cdedb.common import (
-    n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
+    n_, glue, make_root_logger, make_proxy, unwrap, diacritic_patterns,
     PsycoJson, PrivilegeError)
 from cdedb.database.constants import FieldDatatypes
 from cdedb.validation import parse_date, parse_datetime
@@ -127,7 +127,7 @@ def access(*roles):
 def internal(function):
     """Mark a function of a backend for internal publication.
 
-    It will be accessible via the :py:class:`cdedb.common.ProxyShim` in
+    It will be accessible via the :py:class:`cdedb.common.make_proxy` in
     internal mode.
     """
 
@@ -176,7 +176,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             # Import here since we otherwise have a cyclic import.
             # I don't see how we can get out of this ...
             from cdedb.backend.core import CoreBackend
-            self.core = ProxyShim(CoreBackend(configpath), internal=True)
+            self.core = make_proxy(CoreBackend(configpath), internal=True)
 
     def affirm_realm(self, rs, ids, realms=None):
         """Check that all personas corresponding to the ids are in the

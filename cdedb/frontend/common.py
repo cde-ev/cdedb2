@@ -33,8 +33,8 @@ import tempfile
 import threading
 import types
 import urllib.parse
+from typing import Callable
 
-import markdown
 import babel.dates
 import babel.numbers
 import bleach
@@ -45,31 +45,30 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 
-from typing import Callable
-
-from cdedb.config import BasicConfig, Config, SecretsConfig
-from cdedb.common import (
-    n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
-    roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
-    decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields,
-    ValidationWarning, xsorted, unwrap)
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.cde import CdEBackend
+import cdedb.database.constants as const
+import cdedb.ml_type_aux as ml_type
+import cdedb.query as query_mod
+import cdedb.validation as validate
+import markdown
 from cdedb.backend.assembly import AssemblyBackend
-from cdedb.backend.event import EventBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
+from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.common import (ANTI_CSRF_TOKEN_NAME, CustomJSONEncoder,
+                          EntitySorter, RequestState, ValidationWarning,
+                          asciificator, compute_checkdigit, decode_parameter,
+                          encode_parameter, glue, json_serialize, make_proxy,
+                          make_root_logger, merge_dicts, n_, now,
+                          realm_specific_genesis_fields, roles_to_db_role,
+                          unwrap, xsorted)
+from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
-import cdedb.validation as validate
-import cdedb.database.constants as const
-import cdedb.query as query_mod
 from cdedb.security import secure_token_hex
-import cdedb.ml_type_aux as ml_type
-
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -875,12 +874,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         )
         self.jinja_env.policies['ext.i18n.trimmed'] = True
         # Always provide all backends -- they are cheap
-        self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
-        self.cdeproxy = ProxyShim(CdEBackend(configpath))
-        self.coreproxy = ProxyShim(CoreBackend(configpath))
-        self.eventproxy = ProxyShim(EventBackend(configpath))
-        self.mlproxy = ProxyShim(MlBackend(configpath))
-        self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
+        self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
+        self.cdeproxy = make_proxy(CdEBackend(configpath))
+        self.coreproxy = make_proxy(CoreBackend(configpath))
+        self.eventproxy = make_proxy(EventBackend(configpath))
+        self.mlproxy = make_proxy(MlBackend(configpath))
+        self.pasteventproxy = make_proxy(PastEventBackend(configpath))
 
     @classmethod
     @abc.abstractmethod
