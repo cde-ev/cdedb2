@@ -308,7 +308,7 @@ def ProxyShim(backend: B, internal=False) -> B:
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr),
             ]):
-                raise PrivilegeError(n_("Attribute %s not public") % name)
+                raise PrivilegeError(n_("Attribute %(name)s not public"), {"name": name})
 
             return wrapit(attr)
 
