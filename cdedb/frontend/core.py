@@ -2402,10 +2402,11 @@ class CoreFrontend(AbstractFrontend):
 
         spec = {
             "username": "str",
-            "is_member": "bool",
+            "is_event_realm": "bool",
         }
         constraints = (
             ('username', QueryOperators.equal, username),
+            ('is_event_realm', QueryOperators.equal, True),
         )
         query = Query("qview_persona", spec,
                       ("given_names", "family_name", "is_member", "username"),
