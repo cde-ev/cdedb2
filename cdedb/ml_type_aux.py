@@ -27,7 +27,8 @@ def full_address(val: CdEDBObject) -> str:
     if isinstance(val, dict):
         return val['local_part'] + '@' + str(MailinglistDomain(val['domain']))
     else:
-        raise ValueError(n_("Cannot determine full address for %s."), val)
+        raise ValueError(n_("Cannot determine full address for %(input)s."),
+                         {'input': val})
 
 
 class MailinglistGroup(enum.IntEnum):
