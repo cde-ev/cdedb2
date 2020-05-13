@@ -1,0 +1,44 @@
+{% set sidenav_active='assembly_show' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/util.tmpl" as assembly_util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint = 'weak' %}
+{% block title %}
+    {% trans %}
+        Attachment Overview
+    {% endtrans %}
+    – {{ ambience['assembly']['title'] }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), icon="file", active=True) }}
+
+{% endblock %}
+{% block content %}
+    {% for ballot_id, ballot in [(None, None)] + ballots|keydictsort(EntitySorter.ballot) %}
+    {% call util.bootstrap_panel(
+            title=("Files – {icon} ".format(icon=util.make_icon("thumbs-up"))|s + ballot['title'] if ballot else gettext("General Files")),
+            icon='file') %}
+    <div class="row">
+        <div class="col-sm-12">
+            <ul class="slim" id="attachments-{{ "ballot-{}".format(ballot_id) if ballot_id else "general"}}">
+                {% for attachment_id, history in all_attachments[ballot_id].items() %}
+                    <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
+                        {{ assembly_util.print_attachment(history, edit=("assembly_contents" in user.admin_views),
+                            full_history=True, ballot=ballot) }}
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if (ballot is none or now() < ballot['vote_begin']) and "assembly_contents" in user.admin_views %}
+                <div class="p">
+                    {{ util.href(cdedblink("assembly/add_attachment_form", {'ballot_id': ballot_id}),
+                                 gettext("Attach File"), aclass="btn btn-success btn-sm", icon="plus") }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endcall %}
+    {% endfor %}
+{% endblock %}

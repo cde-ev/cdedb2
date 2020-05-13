@@ -330,8 +330,32 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/index")
 
+    @access("assembly")
+    def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            rs.notify(
+                "error", n_("May not access attachments for this assembly."))
+            return self.redirect(rs, "assembly/index")
+        assembly_attachments = self.assemblyproxy.list_attachments(
+                rs, assembly_id=assembly_id)
+        all_attachments = {
+            None: self.assemblyproxy.get_attachment_histories(
+                rs, assembly_attachments)
+        }
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        for ballot_id in ballot_ids:
+            attachment_ids = self.assemblyproxy.list_attachments(
+                rs, ballot_id=ballot_id)
+            all_attachments[ballot_id] = self.assemblyproxy.\
+                get_attachment_histories(rs, attachment_ids)
+        return self.render(rs, "list_attachments", {
+            "all_attachments": all_attachments,
+            "ballots": ballots,
+        })
+
     def process_signup(self, rs: RequestState, assembly_id: int,
-                       persona_id: int = None) -> Response:
+                       persona_id: int = None) -> None:
         """Helper to actually perform signup.
 
         :type rs: :py:class:`cdedb.common.RequestState`

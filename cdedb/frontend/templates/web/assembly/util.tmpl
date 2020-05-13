@@ -1,38 +1,44 @@
-{% macro print_attachment(history, edit=False, ballot=None) %}
+{% macro print_attachment(history, full_history=False, edit=False, ballot=None) %}
     {% with current_version = history[history.keys()|max] %}
         <div class="p" id="attachment_container_{{ current_version["attachment_id"] }}">
             {{ print_attachment_link(current_version, edit, ballot) }}
-            {% if history|length > 1 %}
-                <ul>
-                    {% for i, version in history|keydictsort(EntitySorter.attachment_version)|reverse %}
-                        {% if not loop.first %}
-                            <li>
-                                {{ print_attachment_link(version, edit) }}
-                            </li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-            {% endif %}
-            {% if edit %}
-                {# TODO make this display on one line. #}
-                <div class="text-nowrap">
-                    {{ util.href(cdedblink("assembly/add_attachment_form", {'attachment_id': current_version["attachment_id"]}), gettext("Add Version"),
-                                 aclass="btn btn-success btn-sm", icon="plus") }}
-                    {{ util.href(cdedblink("assembly/change_attachment_form", {'attachment_id': current_version["attachment_id"]}),
-                                 gettext("Change Attachment"),
-                                 aclass="btn btn-warning btn-sm", icon="pen") }}
-                    <form action="{{ cdedblink("assembly/delete_attachment", {'attachment_id': current_version["attachment_id"]}) }}"
-                          method="POST" id="deleteattachmentform{{ current_version["attachment_id"] }}">
-                        {{ util.anti_csrf_token("assembly/delete_attachment") }}
-                        {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                        {{ util.input_submit(value=gettext("Delete Attachment"), aclass="btn btn-sm btn-danger", icon="trash-alt",
-                                title=gettext("Delete Attachment")) }}
-                    </form>
-                    <script nonce="{{ csp_nonce }}">
-                        $('#deleteattachmentform{{ current_version['attachment_id'] }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
-                        $('#deleteattachmentform{{ current_version['attachment_id'] }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
-                    </script>
-                </div>
+            {% if full_history %}
+                {% if history|length > 1 %}
+                    <ul>
+                        {% for i, version in history|keydictsort(EntitySorter.attachment_version)|reverse %}
+                            {% if not loop.first %}
+                                <li>
+                                    {{ print_attachment_link(version, edit) }}
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if edit %}
+                    {# TODO make this display on one line. #}
+                    <div class="text-nowrap">
+                        {{ util.href(cdedblink("assembly/add_attachment_form", {'attachment_id': current_version["attachment_id"]}), gettext("Add Version"),
+                                     aclass="btn btn-success btn-sm", icon="plus") }}
+                        {{ util.href(cdedblink("assembly/change_attachment_form", {'attachment_id': current_version["attachment_id"]}),
+                                     gettext("Change Attachment"),
+                                     aclass="btn btn-warning btn-sm", icon="pen") }}
+                        <form action="{{ cdedblink("assembly/delete_attachment", {'attachment_id': current_version["attachment_id"]}) }}"
+                              method="POST" id="deleteattachmentform{{ current_version["attachment_id"] }}">
+                            {{ util.anti_csrf_token("assembly/delete_attachment") }}
+                            {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
+                            {{ util.input_submit(value=gettext("Delete Attachment"), aclass="btn btn-sm btn-danger", icon="trash-alt",
+                                    title=gettext("Delete Attachment")) }}
+                        </form>
+                        <script nonce="{{ csp_nonce }}">
+                            $('#deleteattachmentform{{ current_version['attachment_id'] }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
+                            $('#deleteattachmentform{{ current_version['attachment_id'] }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
+                        </script>
+                    </div>
+                {% endif %}
+            {% else %}
+                {{ util.href(cdedblink("assembly/list_attachments")
+                                + "#attachment{}".format(current_version["attachment_id"])|s,
+                             gettext("Attachment Overview")) }}
             {% endif %}
         </div>
     {% endwith %}
