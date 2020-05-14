@@ -77,7 +77,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def index(self, rs):
         """Render start page."""
-        assemblies = self.assemblyproxy.list_assemblies(rs)
+        assemblies = self.assemblyproxy.list_assemblies(rs, restrictive=True)
         for assembly_id, assembly in assemblies.items():
             assembly['does_attend'] = self.assemblyproxy.does_attend(
                 rs, assembly_id=assembly_id)

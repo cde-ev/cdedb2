@@ -27,10 +27,14 @@
                         events[ml['event_id']], icon='chalkboard-teacher') -%}
                     ; linked with {{ link }}
                 {% endtrans %}
-            {# TODO this is broken for non-members #}
-            {%- elif ml['assembly_id'] and assemblies -%}
-                {% trans link=util.href(cdedblink('assembly/show_assembly',{'assembly_id': ml['assembly_id']}),
-                        assemblies[ml['assembly_id']]['title'], icon='bullhorn') -%}
+            {%- elif ml['assembly_id'] -%}
+                {%- if assemblies[ml['assembly_id']]['is_visible'] -%}
+                    {% set link = util.href(cdedblink('assembly/show_assembly',{'assembly_id':ml['assembly_id']}),
+                                            assemblies[ml['assembly_id']]['title'], icon='bullhorn') %}
+                {%- else -%}
+                    {% set link = "%s %s"|s|format(util.make_icon('bullhorn'), assemblies[ml['assembly_id']]['title']) %}
+                {%- endif -%}
+                {% trans link=link -%}
                     ; linked with {{ link }}
                 {% endtrans %}
             {%- endif %}

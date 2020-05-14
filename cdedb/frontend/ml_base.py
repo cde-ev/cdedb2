@@ -146,6 +146,9 @@ class MlBaseFrontend(AbstractUserFrontend):
                 'title': title, 'id': mailinglist_id}
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
+        for assembly_id in assemblies:
+            assemblies[assembly_id]['is_visible'] = self.assemblyproxy.may_view(
+                rs, assembly_id)
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
         for ml_id in subs:
@@ -185,7 +188,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             assemblies = self.assemblyproxy.list_assemblies(rs)
             sorted_assemblies = keydictsort_filter(
                 assemblies, EntitySorter.assembly)
-            assembly_entries = [(k, v['title']) for k, v in sorted_assemblies if sorted_assemblies]
+            assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
             return self.render(rs, "create_mailinglist", {
                 'event_entries': event_entries,
                 'assembly_entries': assembly_entries,
@@ -304,14 +307,10 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         assembly = {}
         if ml['assembly_id']:
-            if "assembly" in rs.user.roles:
-                assembly = self.assemblyproxy.get_assembly(rs, ml['assembly_id'])
-                assembly['is_visible'] = self.assemblyproxy.may_view(
-                    rs, assembly['id'])
-            else:
-                all_assemblies = self.assemblyproxy.list_assemblies(rs)
-                assembly = all_assemblies.get(ml['assembly_id'], {})
-                assembly['is_visible'] = False
+            all_assemblies = self.assemblyproxy.list_assemblies(rs)
+            assembly = all_assemblies[ml['assembly_id']]
+            assembly['is_visible'] = self.assemblyproxy.may_view(
+                rs, assembly['id'])
 
         interaction_policy = self.mlproxy.get_interaction_policy(
             rs, rs.user.persona_id, mailinglist=ml)
@@ -338,7 +337,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assemblies = self.assemblyproxy.list_assemblies(rs)
         sorted_assemblies = keydictsort_filter(
             assemblies, EntitySorter.assembly)
-        assembliy_entries = [(k, v['title']) for k, v in sorted_assemblies]
+        assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
         atype = TYPE_MAP[rs.ambience['mailinglist']['ml_type']]
         available_domains = atype.domains
         merge_dicts(rs.values, rs.ambience['mailinglist'])
@@ -348,7 +347,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                       n_("Only Admins may change mailinglist configuration."))
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
-            'assembly_entries': assembliy_entries,
+            'assembly_entries': assembly_entries,
             'available_domains': available_domains,
         })
 
@@ -392,16 +391,15 @@ class MlBaseFrontend(AbstractUserFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
         sorted_events = keydictsort_filter(events, EntitySorter.event)
         event_entries = [(k, v['title']) for k, v in sorted_events]
-        assembly_ids = self.assemblyproxy.list_assemblies(rs)
-        assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
+        assemblies = self.assemblyproxy.list_assemblies(rs)
         sorted_assemblies = keydictsort_filter(
             assemblies, EntitySorter.assembly)
-        assembliy_entries = [(k, v['title']) for k, v in sorted_assemblies]
+        assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
         merge_dicts(rs.values, rs.ambience['mailinglist'])
         return self.render(rs, "change_ml_type", {
             'available_types': available_types,
             'events': event_entries,
-            'assemblies': assembliy_entries,
+            'assemblies': assembly_entries,
         })
 
     @access("ml", modi={"POST"})
