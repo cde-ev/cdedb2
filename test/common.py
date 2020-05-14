@@ -94,7 +94,7 @@ def json_keys_to_int(obj):
 
 B = TypeVar("B", bound=AbstractBackend)
 
-def BackendShim(backend: B, internal=False) -> B:
+def make_backend_shim(backend: B, internal=False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -103,7 +103,7 @@ def BackendShim(backend: B, internal=False) -> B:
     We need to use a function so we can cast the return value.
     We also need to use an inner class so we can provide __getattr__.
 
-    This is similar to the normal ProxyShim but encorporates a different wrapper
+    This is similar to the normal make_proxy but encorporates a different wrapper
     """
 
     sessionproxy = SessionBackend(backend.conf._configpath)
@@ -146,12 +146,13 @@ def BackendShim(backend: B, internal=False) -> B:
     class Proxy():
         def __getattr__(self, name):
             attr = getattr(backend, name)
-            if (
-                not attr.access
-                or hasattr(attr, "internal") and attr.internal and not internal
-                or not callable(attr)
-            ):
-                raise PrivilegeError(n_("Attribute %s not public") % name)
+            if any([
+                not getattr(attr, "access", False),
+                getattr(attr, "internal", False) and not internal,
+                not callable(attr)
+            ]):
+                raise PrivilegeError(
+                    n_("Attribute %(name)s not public"), {"name": name})
 
             @functools.wraps(attr)
             def wrapper(key, *args, **kwargs):
@@ -262,8 +263,8 @@ class BackendUsingTest(unittest.TestCase):
 
     @staticmethod
     def initialize_backend(backendcls):
-        return BackendShim(BackendUsingTest.initialize_raw_backend(backendcls),
-                           internal=True)
+        return make_backend_shim(
+            BackendUsingTest.initialize_raw_backend(backendcls), internal=True)
 
 
 class BackendTest(BackendUsingTest):
@@ -978,8 +979,7 @@ MailTrace = collections.namedtuple(
 
 
 class CronBackendShim:
-    def __init__(self, cron, proxy, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, cron, proxy):
         self._cron = cron
         self._proxy = proxy
 
@@ -991,7 +991,7 @@ class CronBackendShim:
         return new_fun
 
     def __getattr__(self, name):
-        if name in {"_funs", "_proxy", "_cron"}:
+        if name in {"_proxy", "_cron"}:
             raise AttributeError()
         attr = getattr(self._proxy, name)
         return self._wrapit(attr)
