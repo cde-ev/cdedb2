@@ -597,7 +597,16 @@ class EventFrontend(AbstractUserFrontend):
         params = tuple(("{}_{}".format(key, part_id), value)
                        for part_id in parts if part_id not in deletes
                        for key, value in spec.items())
-        data = request_extractor(rs, params)
+
+        def constraint_maker(part_id):
+            begin = f"part_begin_{part_id}"
+            end = f"part_end_{part_id}"
+            msg = n_("Must be later than part begin.")
+            return (lambda d: d[begin] <= d[end], (end, ValueError(msg)))
+
+        constraints = [constraint_maker(part_id)
+                       for part_id in parts if part_id not in deletes]
+        data = request_extractor(rs, params, constraints)
         ret = {
             part_id: {key: data["{}_{}".format(key, part_id)] for key in spec}
             for part_id in parts if part_id not in deletes
@@ -635,7 +644,8 @@ class EventFrontend(AbstractUserFrontend):
                     raise ValueError(n_("Registrations exist, no creation."))
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
-                data = request_extractor(rs, params)
+                constraints = [constraint_maker(-marker)]
+                data = request_extractor(rs, params, constraints)
                 ret[-marker] = {key: data["{}_-{}".format(key, marker)]
                                 for key in spec}
             else:

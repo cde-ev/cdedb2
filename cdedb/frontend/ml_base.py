@@ -204,7 +204,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                  ("moderator_ids", "cdedbid_csv_list"))
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
                            ml_type: const.MailinglistTypes,
-                           moderator_ids: Iterable[int]) -> Response:
+                           moderator_ids: Collection[int]) -> Response:
         """Make a new list."""
         data["moderators"] = moderator_ids
         data['ml_type'] = ml_type

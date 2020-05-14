@@ -572,7 +572,7 @@ class TestEventFrontend(FrontendTest):
         f['create_-1'].checked = True
         f['title_-1'] = "Cooldown"
         f['shortname_-1'] = "cd"
-        f['part_begin_-1'] = "2233-4-5"
+        f['part_begin_-1'] = "2244-4-5"
         f['part_end_-1'] = "2233-6-7"
         f['fee_-1'] = "23456.78"
         f['track_create_-1_-1'].checked = True
@@ -581,6 +581,9 @@ class TestEventFrontend(FrontendTest):
         f['track_num_choices_-1_-1'] = "1"
         f['track_min_choices_-1_-1'] = "1"
         f['track_sortkey_-1_-1'] = "1"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Muss später als Beginn sein")
+        f['part_begin_-1'] = "2233-4-5"
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         f = self.response.forms['partsummaryform']
@@ -589,6 +592,10 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual("Chillout Training", f['track_title_1001_1001'].value)
         f['title_1001'] = "Größere Hälfte"
         f['fee_1001'] = "99.99"
+        f['part_end_1001'] = "2222-6-7"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Muss später als Beginn sein")
+        f['part_end_1001'] = "2233-4-5"
         self.submit(f)
         # and now for tracks
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
@@ -2970,6 +2977,10 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/part/summary'})
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['partsummaryform']
+        past_past_date = now().date() - datetime.timedelta(days=2)
+        f['part_begin_1'] = past_past_date
+        f['part_begin_2'] = past_past_date
+        f['part_begin_3'] = past_past_date
         past_date = now().date() - datetime.timedelta(days=1)
         f['part_end_1'] = past_date
         f['part_end_2'] = past_date

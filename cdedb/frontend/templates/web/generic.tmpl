@@ -300,8 +300,7 @@
                                                     {{ util.input_select(name, entries=myentries, nulloption="&nbsp;"|s,
                                                             aclass='form-control input-sm filter-op', anid=theid,
                                                             arialabel=(gettext("filter operator for %s")
-                                                                       |format(titles.get(field, field))),
-                                                            sort=True) }}
+                                                                       |format(titles.get(field, field)))) }}
                                                 {% endwith %}
                                             {% endwith %}
                                         </td>

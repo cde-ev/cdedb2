@@ -622,7 +622,7 @@ def _cdedbid(val, argname=None, *, _convert=True, _ignore_warnings=False):
                      _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    mo = _CDEDBID.search(val)
+    mo = _CDEDBID.search(val.strip())
     if mo is None:
         return None, [(argname, ValueError(n_("Wrong formatting.")))]
     value = mo.group(1)
@@ -2316,6 +2316,10 @@ def _event_part(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
+    if ('part_begin' in val and 'part_end' in val
+            and val['part_begin'] > val['part_end']):
+        errs.append(("part_end",
+                     ValueError(n_("Must be later than part begin."))))
     if 'tracks' in val:
         newtracks = {}
         for anid, track in val['tracks'].items():
