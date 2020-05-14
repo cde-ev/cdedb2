@@ -7,7 +7,6 @@ from cdedb.script import setup, make_backend
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import get_type, full_address
 import cdedb.database.constants as const
-from cdedb.common import ProxyShim
 # Configuration
 
 rs = setup(persona_id=1, dbuser="cdb",
