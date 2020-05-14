@@ -27,7 +27,8 @@
                         events[ml['event_id']], icon='chalkboard-teacher') -%}
                     ; linked with {{ link }}
                 {% endtrans %}
-            {%- elif ml['assembly_id'] -%}
+            {# TODO this is broken for non-members #}
+            {%- elif ml['assembly_id'] and assemblies -%}
                 {% trans link=util.href(cdedblink('assembly/show_assembly',{'assembly_id': ml['assembly_id']}),
                         assemblies[ml['assembly_id']]['title'], icon='bullhorn') -%}
                     ; linked with {{ link }}

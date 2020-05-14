@@ -182,11 +182,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             events = self.eventproxy.get_events(rs, event_ids)
             sorted_events = keydictsort_filter(events, EntitySorter.event)
             event_entries = [(k, v['title']) for k, v in sorted_events]
-            assembly_ids = self.assemblyproxy.list_assemblies(rs)
-            assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
+            assemblies = self.assemblyproxy.list_assemblies(rs)
             sorted_assemblies = keydictsort_filter(
                 assemblies, EntitySorter.assembly)
-            assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
+            assembly_entries = [(k, v['title']) for k, v in sorted_assemblies if sorted_assemblies]
             return self.render(rs, "create_mailinglist", {
                 'event_entries': event_entries,
                 'assembly_entries': assembly_entries,
@@ -305,9 +304,14 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         assembly = {}
         if ml['assembly_id']:
-            assembly = self.assemblyproxy.get_assembly(rs, ml['assembly_id'])
-            assembly['is_visible'] = self.assemblyproxy.may_view(
-                rs, assembly['id'])
+            if "assembly" in rs.user.roles:
+                assembly = self.assemblyproxy.get_assembly(rs, ml['assembly_id'])
+                assembly['is_visible'] = self.assemblyproxy.may_view(
+                    rs, assembly['id'])
+            else:
+                all_assemblies = self.assemblyproxy.list_assemblies(rs)
+                assembly = all_assemblies.get(ml['assembly_id'], {})
+                assembly['is_visible'] = False
 
         interaction_policy = self.mlproxy.get_interaction_policy(
             rs, rs.user.persona_id, mailinglist=ml)
