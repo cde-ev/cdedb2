@@ -12,18 +12,17 @@ import copy
 import enum
 import functools
 import logging
-from typing import Any, Callable, TypeVar, cast, Iterable, Tuple, Set, Union
+from typing import Any, Callable, Iterable, Set, Tuple, TypeVar, Union, cast
 
-from cdedb.common import (
-    n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
-    PsycoJson)
-from cdedb.database.constants import FieldDatatypes
-from cdedb.validation import parse_date, parse_datetime
-from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
-from cdedb.config import Config
 import cdedb.validation as validate
+from cdedb.common import (PrivilegeError, ProxyShim, PsycoJson,
+                          diacritic_patterns, glue, make_root_logger, n_,
+                          unwrap)
+from cdedb.config import Config
 from cdedb.database.connection import Atomizer
-
+from cdedb.database.constants import FieldDatatypes
+from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, QueryOperators
+from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])
 G = TypeVar('G', bound=Callable[..., Any])
@@ -111,28 +110,31 @@ def access(*roles):
     :param roles: required privilege level (any of)
     """
 
-    def decorator(fun):
-        fun.access_list = set(roles)
-        return fun
+    def decorator(function):
+
+        @functools.wraps(function)
+        def wrapper(self, rs, *args, **kwargs):
+            if rs.user.roles.isdisjoint(roles):
+                raise PrivilegeError(
+                    n_("%(user_roles)s is disjoint from %(roles)s"),
+                    {"user_roles": rs.user.roles, "roles": roles}
+                )
+            return function(self, rs, *args, **kwargs)
+
+        wrapper.access = True
+        return wrapper
 
     return decorator
 
-
-def internal_access(*roles):
+def internal(function):
     """Mark a function of a backend for internal publication.
 
     It will be accessible via the :py:class:`cdedb.common.ProxyShim` in
     internal mode.
-
-    :type roles: [str]
-    :param roles: required privilege level (any of)
     """
 
-    def decorator(fun):
-        fun.internal_access_list = set(roles)
-        return fun
-
-    return decorator
+    function.internal = True
+    return function
 
 
 class AbstractBackend(metaclass=abc.ABCMeta):

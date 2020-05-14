@@ -15,7 +15,7 @@ from passlib.hash import sha512_crypt
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
-    access, internal_access, singularize, diacritic_patterns,
+    access, internal, singularize, diacritic_patterns,
     affirm_validation as affirm, affirm_set_validation as affirm_set)
 from cdedb.common import (
     n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
@@ -37,7 +37,7 @@ from cdedb.database.connection import connection_pool_factory
 
 class CoreBackend(AbstractBackend):
     """Access to this is probably necessary from everywhere, so we need
-    ``@internal_access`` quite often. """
+    ``@internal`` quite often. """
     realm = "core"
 
     def __init__(self, configpath):
@@ -162,7 +162,8 @@ class CoreBackend(AbstractBackend):
         return self.query_exec(
             rs, query, (code, rs.user.persona_id, persona_id, additional_info))
 
-    @internal_access("cde")
+    @internal
+    @access("cde")
     def finance_log(self, rs, code, persona_id, delta, new_balance,
                     additional_info=None):
         """Make an entry in the finance log.
@@ -436,7 +437,7 @@ class CoreBackend(AbstractBackend):
 
             # resolve change if it doesn't require review
             if not requires_review or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-                ret = self.changelog_resolve_change(
+                ret = self._changelog_resolve_change_unsafe(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
                 ret = -1
@@ -461,8 +462,7 @@ class CoreBackend(AbstractBackend):
                 self.sql_insert(rs, "core.changelog", insert)
         return ret
 
-    @access("core_admin", "cde_admin")
-    def changelog_resolve_change(self, rs, persona_id, generation, ack,
+    def _changelog_resolve_change_unsafe(self, rs, persona_id, generation, ack,
                                  reviewed=True):
         """Review a currently pending change from the changelog.
 
@@ -519,6 +519,7 @@ class CoreBackend(AbstractBackend):
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
+    changelog_resolve_change = access("core_admin", "cde_admin")(_changelog_resolve_change_unsafe)
 
     @access("persona")
     def changelog_get_generations(self, rs, ids):
@@ -588,7 +589,8 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['generation']: e for e in data}
 
-    @internal_access("persona")
+    @internal
+    @access("persona", "droid")
     def retrieve_personas(self, rs, ids, columns=PERSONA_CORE_FIELDS):
         """Helper to access a persona dataset.
 
@@ -608,7 +610,8 @@ class CoreBackend(AbstractBackend):
         return {d['id']: d for d in data}
     retrieve_persona = singularize(retrieve_personas)
 
-    @internal_access("ml")
+    @internal
+    @access("ml")
     def list_current_members(self, rs, is_active=False):
         """Helper to list all current members.
 
@@ -669,7 +672,8 @@ class CoreBackend(AbstractBackend):
             self.sql_update(rs, "core.personas", fulltext_update)
         return num
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def set_persona(self, rs, data, generation=None, change_note=None,
                     may_wait=True, allow_specials=tuple()):
         """Internal helper for modifying a persona data set.
@@ -1863,7 +1867,8 @@ class CoreBackend(AbstractBackend):
         data = self.query_one(rs, query, (ids,))
         return data['num'] == len(ids)
 
-    @internal_access("persona")
+    @internal
+    @access("anonymous")
     def get_roles_multi(self, rs, ids):
         """Resolve ids into roles.
 
@@ -1963,7 +1968,7 @@ class CoreBackend(AbstractBackend):
         """
         with Atomizer(rs):
             if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
-                roles = unwrap(self.get_roles_multi(rs, (persona_id,)))
+                roles = self.get_roles_single(rs, persona_id)
                 if any("admin" in role for role in roles):
                     raise PrivilegeError(n_("Preventing reset of admin."))
             password_hash = unwrap(self.sql_select_one(
@@ -2611,8 +2616,7 @@ class CoreBackend(AbstractBackend):
                 ret = self.sql_insert(rs, "core.cron_store", update)
             return ret
 
-    @access("core_admin")
-    def submit_general_query(self, rs, query):
+    def _submit_general_query(self, rs, query):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
 
@@ -2632,6 +2636,7 @@ class CoreBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
+    submit_general_query = access("core_admin")(_submit_general_query)
 
     @access("persona")
     def submit_select_persona_query(self, rs, query):
@@ -2647,7 +2652,7 @@ class CoreBackend(AbstractBackend):
 
         """
         query = affirm("query", query)
-        return self.submit_general_query(rs, query)
+        return self._submit_general_query(rs, query)
 
     @access("droid_resolve")
     def submit_resolve_api_query(self, rs, query):

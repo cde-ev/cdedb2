@@ -12,7 +12,7 @@ import decimal
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
     affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
-    cast_fields, internal_access,
+    cast_fields, internal,
 )
 from cdedb.common import (
     n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
@@ -22,7 +22,7 @@ from cdedb.common import (
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
     mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
-    xsorted,
+    xsorted, RequestState
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
@@ -1232,7 +1232,8 @@ class EventBackend(AbstractBackend):
 
         return ret
 
-    @internal_access("event")
+    @internal
+    @access("event")
     def set_event_archived(self, rs, data):
         """Wrapper around ``set_event()`` for archiving an event.
         
@@ -2107,8 +2108,7 @@ class EventBackend(AbstractBackend):
                     {"type": "course", "block": blockers.keys()})
         return ret
 
-    @access("event")
-    def list_registrations(self, rs, event_id, persona_id=None):
+    def _list_registrations_unchecked(self, rs: RequestState, event_id, persona_id=None):
         """List all registrations of an event.
 
         If an ordinary event_user is requesting this, just participants of this
@@ -2145,8 +2145,11 @@ class EventBackend(AbstractBackend):
         if is_limited and rs.user.persona_id not in ret.values():
             raise PrivilegeError(n_("Not privileged."))
         return ret
+    list_registrations_for_ml_mods = access("ml")(_list_registrations_unchecked)
+    list_registrations = access("event")(_list_registrations_unchecked)
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def check_registration_status(self, rs, persona_id, event_id, stati):
         """Check if any status for a given event matches one of the given stati.
 
@@ -2169,8 +2172,19 @@ class EventBackend(AbstractBackend):
                 or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
 
-        registration_ids = self.list_registrations(
-            rs, event_id, persona_id)
+        try:
+            registration_ids = self.list_registrations(
+                rs, event_id, persona_id)
+        except PrivilegeError:
+            if (persona_id == rs.user.persona_id
+                or self.is_orga(rs, event_id=event_id)
+                or self.is_admin(rs)
+                or "ml_admin" in rs.user.roles):
+                registration_ids = self.list_registrations_for_ml_mods(
+                    rs, event_id, persona_id)
+            else:
+                raise
+
         if not registration_ids:
             return False
         reg_id = unwrap(registration_ids.keys())
