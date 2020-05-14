@@ -14,6 +14,7 @@ import functools
 import logging
 from typing import Any, Callable, Iterable, Set, Tuple, TypeVar, Union, cast
 
+import cdedb.validation as validate
 from cdedb.common import (PrivilegeError, PsycoJson, diacritic_patterns, glue,
                           make_proxy, make_root_logger, n_, unwrap)
 from cdedb.config import Config
