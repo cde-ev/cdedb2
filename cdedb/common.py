@@ -972,8 +972,8 @@ def unwrap(single_element_list):
     In case of an error (e.g. wrong number of elements) this raises an
     error.
 
-    Beware, that this behaves differently for mappings, than other iterations,
-    in that it uses the values instaed of the keys. To unwrap the keys pass
+    Beware, that this behaves differently for mappings than other iterations,
+    in that it uses the values instead of the keys. To unwrap the keys pass
     `data.keys()` instead.
     """
     if (not isinstance(single_element_list, collections.abc.Iterable)
