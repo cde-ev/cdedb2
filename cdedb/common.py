@@ -412,7 +412,7 @@ def merge_dicts(*dicts):
                     dicts[0][key] = adict[key]
 
 
-def get_hash(*args: Any) -> str:
+def get_hash(*args: Union[bytes, bytearray, memoryview]) -> str:
     """Helper to calculate a hexadecimal hash of an arbitrary object.
 
     This uses SHA512. Use this function to assure the same hash is used
