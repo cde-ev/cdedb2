@@ -1,21 +1,24 @@
 {% macro print_attachment(history, full_history=False, edit=False, ballot=None) %}
-    {% with current_version = history[history.keys()|max] %}
+    {% set x = [] %}
+    {% for i, v in history.items() if v['dtime'] is none %}
+        {% do x.append(i) %}
+    {% endfor %}
+    {% with current_version = history[x|max] if x else history[history.keys()|max] %}
         <div class="p" id="attachment_container_{{ current_version["attachment_id"] }}">
-            {{ print_attachment_link(current_version, edit, ballot) }}
+            {{ print_attachment_link(current_version, edit, ballot, add=True) }}
             {% if full_history %}
                 {% if history|length > 1 %}
                     <ul>
                         {% for i, version in history|keydictsort(EntitySorter.attachment_version)|reverse %}
-                            {% if not loop.first %}
+                            {% if i != current_version['version'] %}
                                 <li>
-                                    {{ print_attachment_link(version, edit) }}
+                                    {{ print_attachment_link(version, edit, ballot) }}
                                 </li>
                             {% endif %}
                         {% endfor %}
                     </ul>
                 {% endif %}
                 {% if edit %}
-                    {# TODO make this display on one line. #}
                     <div class="">
                         {{ util.href(cdedblink("assembly/add_attachment_form",
                                      {'attachment_id': current_version["attachment_id"],
@@ -41,17 +44,15 @@
                     </div>
                 {% endif %}
             {% else %}
-                {% if history|length > 1 %}
-                    {{ util.href(cdedblink("assembly/show_attachment", {'attachment_id': current_version['attachment_id'],
-                                                                        'ballot_id': ballot['id'] if ballot else None}),
-                                 gettext("Attachment Details")) }}
-                {% endif %}
+                {{ util.href(cdedblink("assembly/show_attachment", {'attachment_id': current_version['attachment_id'],
+                                                                    'ballot_id': ballot['id'] if ballot else None}),
+                             gettext("Attachment Details")) }}
             {% endif %}
         </div>
     {% endwith %}
 {% endmacro %}
 
-{% macro print_attachment_link(version, edit, ballot) %}
+{% macro print_attachment_link(version, edit, ballot, add=False) %}
     {% if not version["dtime"] %}
         {{ util.href(cdedblink("assembly/get_attachment",
                                {'attachment_id': version["attachment_id"],
@@ -60,6 +61,13 @@
                      icon="file") }}
         {% if edit %}
             <div class="list-button-float">
+            {% if add %}
+                {{ util.href(cdedblink('assembly/add_attachment',
+                             {'attachment_id': version["attachment_id"],
+                              'ballot_id': ballot['id'] if ballot else None}),
+                             title=gettext("Add Version"), label=util.make_icon("plus"),
+                             aclass="btn btn-xs btn-success hide-hover") }}
+            {% endif %}
             {{ util.href(cdedblink('assembly/edit_attachment_version',
                          {'attachment_id': version["attachment_id"],
                           'version': version["version"],

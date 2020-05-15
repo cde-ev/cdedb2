@@ -1445,19 +1445,25 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_current_versions(self, rs: RequestState,
-                             attachment_ids: Collection[int]) -> Dict[int, int]:
+                             attachment_ids: Collection[int],
+                             include_deleted: bool = False) -> Dict[int, int]:
         """Get the most recent version numbers for the given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
             if not self.check_attachment_access(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
-            query = ("SELECT attachment_id, MAX(version) as version FROM"
-                     " assembly.attachment_versions"
-                     " WHERE attachment_id = ANY(%s) GROUP BY attachment_id")
+            constraints = ["attachment_id = ANY(%s)"]
+            params = [attachment_ids]
+            if not include_deleted:
+                constraints.append("dtime IS NULL")
+            query = (f"SELECT attachment_id, MAX(version) as version FROM"
+                     f" assembly.attachment_versions"
+                     f" WHERE {' AND '.join(constraints)}"
+                     f" GROUP BY attachment_id")
             params = (attachment_ids,)
             data = self.query_all(rs, query, params)
             return {e["attachment_id"]: e["version"] for e in data}
-    get_current_version: Callable[[RequestState, int], int] = singularize(
+    get_current_version: Callable[[RequestState, int, bool], int] = singularize(
         get_current_versions, "attachment_ids", "attachment_id")
 
     @access("assembly_admin")
@@ -1476,7 +1482,8 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
-            version = self.get_current_version(rs, attachment_id) + 1
+            version = self.get_current_version(
+                rs, attachment_id, True) + 1
             data['version'] = version
             data['file_hash'] = get_hash(content)
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
