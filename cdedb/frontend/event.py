@@ -5210,7 +5210,7 @@ class EventFrontend(AbstractUserFrontend):
         return self._send_query_result(rs, download, scope, query, params)
 
     @staticmethod
-    def make_course_view_query_spec(event):
+    def make_course_query_spec(event):
         """Helper to enrich ``QUERY_SPECS['qview_event_course']``.
 
         Since each event has custom course fields we have to amend the query
@@ -5243,7 +5243,7 @@ class EventFrontend(AbstractUserFrontend):
         return spec
 
     @staticmethod
-    def make_course_view_query_aux(rs, event, courses, fixed_gettext=False):
+    def make_course_query_aux(rs, event, courses, fixed_gettext=False):
         """Un-inlined code to prepare input for template.
 
         :type rs: :py:class:`FrontendRequestState`
@@ -5270,7 +5270,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = OrderedDict(
             xsorted((c["id"], course_identifier(c)) for c in courses.values()))
         choices = {
-            "course.id": course_choices
+            "course.course_id": course_choices
         }
         course_fields = {
             field_id: field for field_id, field in event['fields'].items()
@@ -5287,6 +5287,7 @@ class EventFrontend(AbstractUserFrontend):
         # Construct titles.
         titles = {
             "course.id": gettext("course id"),
+            "course.course_id": gettext("course"),
             "course.nr": gettext("course nr"),
             "course.title": gettext("course title"),
             "course.description": gettext("course description"),
@@ -5330,7 +5331,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def course_query(self, rs, event_id, download, is_search):
 
-        spec = self.make_course_view_query_spec(rs.ambience['event'])
+        spec = self.make_course_query_spec(rs.ambience['event'])
         query_input = mangle_query_input(rs, spec)
         if is_search:
             query = check(rs, "query_input", query_input, "query",
@@ -5340,7 +5341,7 @@ class EventFrontend(AbstractUserFrontend):
 
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        choices, titles = self.make_course_view_query_aux(
+        choices, titles = self.make_course_query_aux(
             rs, rs.ambience['event'], courses,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
