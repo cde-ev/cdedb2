@@ -11294,8 +11294,8 @@ msgstr ""
 "könnenden Status eines Kurses zur Zeit nicht sehen."
 
 #: cdedb/frontend/templates/web/event/course_list.tmpl:52
-msgid "The instructors for each course are only visible to logged in users."
-msgstr "Die Kursleiter sind nur für eingeloggte Nutzer sichtbar."
+msgid "The instructors for each course are only visible to logged in event users."
+msgstr "Die Kursleiter sind nur für eingeloggte Veranstaltungs Nutzer sichtbar."
 
 #: cdedb/frontend/templates/web/event/course_list.tmpl:72
 #, python-format

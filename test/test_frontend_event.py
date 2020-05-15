@@ -25,12 +25,25 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("PfingstAkademie 2014")
         self.assertNonPresence("CdE-Party 2050")
 
-    def test_anonymous_index(self):
-        self.get('/')
+    @as_users("anonymous", "janis")
+    def test_no_event_realm_view(self, user):
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
         self.assertNonPresence("CdE-Party 2050")
+
+        self.traverse({'description': 'Große Testakademie 2222'})
+        self.assertPresence("aka@example.cde", div="orga-address")
+        self.assertPresence("Erste Hälfte", div="timeframe-parts")
+        self.assertNonPresence("Everybody come!")
+
+        self.traverse({'description': 'Kursliste'})
+        self.assertPresence("α. Planetenretten für Anfänger", div='list-courses')
+        self.assertPresence("Wir werden die Bäume drücken.", div='list-courses')
+        msg = ("Die Kursleiter sind nur für eingeloggte Veranstaltungs Nutzer "
+               "sichtbar.")
+        self.assertPresence(msg, div="instructors-not-visible")
+        self.assertNonPresence("Bernd Lucke")
 
     @as_users("anton", "berta")
     def test_index_orga(self, user):
@@ -373,13 +386,6 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
 
-    def test_course_list_public(self):
-        self.get('/event/event/1/course/list')
-        self.assertTitle("Kursliste Große Testakademie 2222")
-        self.assertPresence("Die Kursleiter sind nur für eingeloggte Nutzer "
-                            "sichtbar.", div='instructors-not-visible')
-        self.assertNonPresence("ToFi", div='list-courses')
-        self.assertPresence("Wir werden die Bäume drücken.", div='list-courses')
 
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self, user):

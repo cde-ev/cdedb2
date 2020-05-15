@@ -49,7 +49,7 @@
         {% if "event" not in user.roles %}
             <div class="alert alert-info" role="alert" id="instructors-not-visible">
                 {{ util.make_icon('info-circle') }}
-                {% trans %}The instructors for each course are only visible to logged in users.{% endtrans %}
+                {% trans %}The instructors for each course are only visible to logged in event users.{% endtrans %}
             </div>
         {% endif %}
         <div id="list-courses">

@@ -510,8 +510,12 @@ def as_users(*users):
                 with self.subTest(user=user):
                     if i > 0:
                         self.setUp()
-                    kwargs['user'] = USER_DICT[user]
-                    self.login(USER_DICT[user])
+                    if user is "anonymous":
+                        kwargs['user'] = None
+                        self.get('/')
+                    else:
+                        kwargs['user'] = USER_DICT[user]
+                        self.login(USER_DICT[user])
                     fun(self, *args, **kwargs)
         return new_fun
     return wrapper
