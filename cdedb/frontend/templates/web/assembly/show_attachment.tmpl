@@ -1,0 +1,25 @@
+{% set sidenav_active='assembly_ballots' if ambience['ballot'] else 'assembly_show' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/util.tmpl" as assembly_util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint = 'weak' %}
+{% block title %}
+    {% trans %}
+        Attachment Details
+    {% endtrans %}
+    – {{ ambience['assembly']['title'] }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {% if ambience['ballot'] %}
+        {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), gettext("Attachment Details"), icon="file", active=True) }}
+
+{% endblock %}
+{% block content %}
+    {{ assembly_util.attachment_box({attachment['attachment_id']: attachment}, ballot=ambience.get('ballot'),
+                                    edit=("assembly_contents" in user.admin_views), full_history=True) }}
+{% endblock %}

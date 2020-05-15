@@ -580,6 +580,15 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.send_file(rs, data=content, mimetype="application/pdf",
                               filename=history[version]['filename'])
 
+    @access("assembly")
+    def show_attachment(self, rs: RequestState, assembly_id: int,
+                        attachment_id: int, ballot_id: int = None) -> Response:
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            return self.redirect(rs, "assembly/index")
+        attachment = self.assemblyproxy.get_attachment_history(
+            rs, attachment_id)
+        return self.render(rs, "show_attachment", {'attachment': attachment})
+
     @access("assembly_admin")
     @REQUESTdata(("attachment_id", "id_or_None"))
     def add_attachment_form(self, rs: RequestState, assembly_id: int,
