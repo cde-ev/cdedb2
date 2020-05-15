@@ -5395,7 +5395,8 @@ class EventFrontend(AbstractUserFrontend):
         return spec
 
     @staticmethod
-    def make_lodgement_query_aux(rs, event, lodgements, fixed_gettext=False):
+    def make_lodgement_query_aux(rs, event, lodgements, lodgement_groups,
+                                 fixed_gettext=False):
 
         parts = event['parts']
 
@@ -5409,8 +5410,13 @@ class EventFrontend(AbstractUserFrontend):
         # Construct choices.
         lodgement_choices = OrderedDict(
             xsorted((l["id"], l["moniker"]) for l in lodgements.values()))
+        lodgement_group_choices = OrderedDict({-1: gettext(n_("--no group--"))})
+        lodgement_group_choices.update(
+            [(lg_id, lg['moniker']) for lg_id, lg in keydictsort_filter(
+                lodgement_groups, EntitySorter.lodgement_group)])
         choices = {
-            "lodgement.id": lodgement_choices
+            "lodgement.lodgement_id": lodgement_choices,
+            "lodgement_group.id": lodgement_group_choices,
         }
         lodgement_fields = {
             field_id: field for field_id, field in event['fields'].items()
@@ -5426,8 +5432,44 @@ class EventFrontend(AbstractUserFrontend):
 
         # Construct titles.
         titles = {
-
+            "lodgement.id": gettext(n_("Lodgement ID")),
+            "lodgement.lodgement_id": gettext(n_("Lodgement")),
+            "lodgement.moniker": gettext(n_("Moniker")),
+            "lodgement.capacity": gettext(n_("Regular Capacity")),
+            "lodgement.reserve": gettext(n_("Camping Mat Capacity")),
+            "lodgement.notes": gettext(n_("Lodgement Notes")),
+            "lodgement.group_id": gettext(n_("Lodgement Group ID")),
+            "lodgement_group.tmp_id": gettext(n_("Lodgement Group")),
+            "lodgement_group.moniker": gettext(n_("Lodgement Group Moniker")),
+            "lodgement_group.capacity":
+                gettext(n_("Lodgement Group Regular Capacity")),
+            "lodgement_group.reserve":
+                gettext(n_("Lodgement Group Camping Mat Capacity")),
         }
+        titles.update({
+            f"lodgement_fields.xfield_{field['field_name']}":
+                field['field_name']
+            for field in lodgement_fields.values()
+        })
+        for part_id, part in parts.items():
+            if len(parts) > 1:
+                prefix = f"{part['shortname']}: "
+            else:
+                prefix = ""
+            titles.update({
+                f"part{part_id}.regular_inhabitants":
+                    prefix + gettext(n_("Regular Inhabitants")),
+                f"part{part_id}.reserve_inhabitants":
+                    prefix + gettext(n_("Reserve Inhabitants")),
+                f"part{part_id}.total_inhabitants":
+                    prefix + gettext(n_("Total Inhabitants")),
+                f"part{part_id}.group_regular_inhabitants":
+                    prefix + gettext(n_("Group Regular Inhabitants")),
+                f"part{part_id}.group_reserve_inhabitants":
+                    prefix + gettext(n_("Group Reserve Inhabitants")),
+                f"part{part_id}.group_total_inhabitants":
+                    prefix + gettext(n_("Group Total Inhabitants")),
+            })
 
         return choices, titles
 
@@ -5446,13 +5488,20 @@ class EventFrontend(AbstractUserFrontend):
 
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(
+            rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(
+            rs, lodgement_group_ids)
         choices, titles = self.make_lodgement_query_aux(
-            rs, rs.ambience['event'], lodgements,
+            rs, rs.ambience['event'], lodgements, lodgement_groups,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
 
         parts = rs.ambience['event']['parts']
-        selection_default = ["lodgement.moniker"]
+        selection_default = ["lodgement.moniker"] + [
+            f"lodgement_fields.xfield_{field['field_name']}"
+            for field in rs.ambience['event']['fields'].values()
+            if field['association'] == const.FieldAssociations.lodgement]
         for col in ("regular_inhabitants",):
             selection_default += list(f"part{p_id}_{col}" for p_id in parts)
         default_queries = []

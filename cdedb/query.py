@@ -330,6 +330,7 @@ QUERY_SPECS = {
     "qview_event_course":
         collections.OrderedDict([
             ("course.id", "id"),
+            ("course.course_id", "id"),
             ("course.nr", "str"),
             ("course.title", "str"),
             ("course.description", "str"),
@@ -343,6 +344,7 @@ QUERY_SPECS = {
     "qview_event_lodgement":
         collections.OrderedDict([
             ("lodgement.id", "id"),
+            ("lodgement.lodgement_id", "id"),
             ("lodgement.moniker", "str"),
             ("lodgement.capacity", "int"),
             ("lodgement.reserve", "int"),
