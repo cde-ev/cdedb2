@@ -111,7 +111,7 @@ class TestEventFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungs-Nutzerverwaltung")
-        self.assertPresence("Ergebnis [3]", div='query-results')
+        self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
     @as_users("annika", "ferdinand")
@@ -1139,7 +1139,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertPresence("Outside")
 
-    @as_users("charly", "daniel", "nina")
+    @as_users("charly", "daniel", "rowena")
     def test_register(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -1157,7 +1157,7 @@ etc;anything else""", f['entries_2'].value)
             self.assertPresence("Du kannst auch stattdessen Deinen "
                                 "regulären Mitgliedsbeitrag",
                                 div="nonmember-surcharge")
-        elif user["id"] == 14:
+        elif user["id"] == 18:
             self.assertPresence("Da Du kein CdE-Mitglied bist, musst du "
                                 "einen zusätzlichen Beitrag",
                                 div="nonmember-surcharge")
@@ -1204,7 +1204,7 @@ etc;anything else""", f['entries_2'].value)
             self.assertIn("Du kannst auch stattdessen Deinen "
                           "regulären Mitgliedsbeitrag",
                           text)
-        elif user["id"] == 14:
+        elif user["id"] == 18:
             self.assertIn("466,49", text)
             self.assertIn("Da Du kein CdE-Mitglied bist, musst du einen "
                           "zusätzlichen Beitrag",

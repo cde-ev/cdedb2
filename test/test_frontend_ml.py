@@ -277,8 +277,12 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Mailinglisten Komplettübersicht")
         self.assertPresence("Mitglieder (Moderiertes Opt-in)")
         self.assertPresence("Große Testakademie 2222")
-        # TODO this is broken because nina is no assembly user
-        # self.assertPresence("Internationaler Kongress")
+        self.assertPresence("CdE-Party 2050")
+        # not yet published
+        self.assertNoLink("CdE-Party 2050")
+        self.assertPresence("Internationaler Kongress")
+        # Nina is no assembly user
+        self.assertNoLink("Internationaler Kongress")
         self.assertPresence("Andere Mailinglisten")
         self.traverse({'href': '/ml/mailinglist/6'})
         self.assertTitle("Aktivenforum 2000 – Verwaltung")
@@ -554,7 +558,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle(mdata['title'])
 
     def test_event_mailinglist(self):
-        for i, u in enumerate(("emilia", "garcia", "inga", "nina")):
+        for i, u in enumerate(("emilia", "garcia", "inga")):
             if i > 0:
                 self.setUp()
             user = USER_DICT[u]
