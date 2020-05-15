@@ -16,7 +16,7 @@
                 {% endif %}
                 {% if edit %}
                     {# TODO make this display on one line. #}
-                    <div class="text-nowrap">
+                    <div class="">
                         {{ util.href(cdedblink("assembly/add_attachment_form",
                                      {'attachment_id': current_version["attachment_id"],
                                       'ballot_id': ballot['id'] if ballot else None}),
@@ -28,7 +28,7 @@
                         <form action="{{ cdedblink("assembly/delete_attachment",
                                                    {'attachment_id': current_version["attachment_id"],
                                                     'ballot_id': ballot['id'] if ballot else None}) }}"
-                              method="POST" id="deleteattachmentform{{ current_version["attachment_id"] }}">
+                              method="POST" id="deleteattachmentform{{ current_version["attachment_id"] }}" style="display: inline;">
                             {{ util.anti_csrf_token("assembly/delete_attachment") }}
                             {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
                             {{ util.input_submit(value=gettext("Delete Attachment"), aclass="btn btn-sm btn-danger", icon="trash-alt",
@@ -128,6 +128,7 @@
                         {{ print_attachment(history, edit=("assembly_contents" in user.admin_views),
                                             full_history=True, ballot=ballot) }}
                     </li>
+                    <br />
                 {% endfor %}
             </ul>
             {% if (ballot is none or now() < ballot['vote_begin']) and new_attachment_button and
