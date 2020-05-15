@@ -1920,9 +1920,9 @@ etc;anything else""", f['entries_2'].value)
         for field in f.fields:
             if field and field.startswith('qsel_'):
                 f[field].checked = True
-        f['qop_part3.total_inhabitants'] = QueryOperators.greater
+        f['qop_part3.total_inhabitants'] = QueryOperators.greater.value
         f['qval_part3.total_inhabitants'] = 1
-        f['ord_primary'] = 'lodgement_group.moniker'
+        f['qord_primary'] = 'lodgement_group.moniker'
         self.submit(f)
         self.assertPresence("Ergebnis [2]", div="query-results")
         self.assertPresence("Kalte Kammer", div="result-container")
