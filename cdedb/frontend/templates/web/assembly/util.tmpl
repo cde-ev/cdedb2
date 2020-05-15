@@ -17,12 +17,17 @@
                 {% if edit %}
                     {# TODO make this display on one line. #}
                     <div class="text-nowrap">
-                        {{ util.href(cdedblink("assembly/add_attachment_form", {'attachment_id': current_version["attachment_id"]}), gettext("Add Version"),
-                                     aclass="btn btn-success btn-sm", icon="plus") }}
-                        {{ util.href(cdedblink("assembly/change_attachment_form", {'attachment_id': current_version["attachment_id"]}),
-                                     gettext("Change Attachment"),
-                                     aclass="btn btn-warning btn-sm", icon="pen") }}
-                        <form action="{{ cdedblink("assembly/delete_attachment", {'attachment_id': current_version["attachment_id"]}) }}"
+                        {{ util.href(cdedblink("assembly/add_attachment_form",
+                                     {'attachment_id': current_version["attachment_id"],
+                                      'ballot_id': ballot['id'] if ballot else None}),
+                                     gettext("Add Version"), aclass="btn btn-success btn-sm", icon="plus") }}
+                        {{ util.href(cdedblink("assembly/change_attachment_form",
+                                     {'attachment_id': current_version["attachment_id"],
+                                      'ballot_id': ballot['id'] if ballot else None}),
+                                     gettext("Change Attachment"), aclass="btn btn-warning btn-sm", icon="pen") }}
+                        <form action="{{ cdedblink("assembly/delete_attachment",
+                                                   {'attachment_id': current_version["attachment_id"],
+                                                    'ballot_id': ballot['id'] if ballot else None}) }}"
                               method="POST" id="deleteattachmentform{{ current_version["attachment_id"] }}">
                             {{ util.anti_csrf_token("assembly/delete_attachment") }}
                             {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
@@ -48,15 +53,20 @@
     {% if not version["dtime"] %}
         {{ util.href(cdedblink("assembly/get_attachment",
                                {'attachment_id': version["attachment_id"],
-                                'version': version["version"]}),
+                                'version': version["version"], 'ballot_id': ballot['id'] if ballot else None}),
                      version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version"]),
                      icon="file") }}
         {% if edit %}
             <div class="list-button-float">
-            {{ util.href(cdedblink('assembly/edit_attachment_version', {'attachment_id': version["attachment_id"], 'version': version["version"]}),
-                    title=gettext("Edit File"), label=util.make_icon("pen"), aclass="btn btn-xs btn-warning hide-hover") }}
+            {{ util.href(cdedblink('assembly/edit_attachment_version',
+                         {'attachment_id': version["attachment_id"],
+                          'version': version["version"],
+                          'ballot_id': ballot['id'] if ballot else None}),
+                         title=gettext("Edit File"), label=util.make_icon("pen"),
+                         aclass="btn btn-xs btn-warning hide-hover") }}
             <form action="{{ cdedblink('assembly/delete_attachment',
-                                       {'attachment_id': version["attachment_id"]}) }}"
+                                       {'attachment_id': version["attachment_id"],
+                                        'ballot_id': ballot['id'] if ballot else None}) }}"
                     method="POST"
                     id="removeattachmentversionform{{ version["attachment_id"] }}_{{ version["version"] }}"
                     class="hide-hover display-inline">
