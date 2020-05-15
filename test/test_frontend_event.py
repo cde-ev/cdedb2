@@ -1910,6 +1910,25 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Theater", div="result-container")
 
     @as_users("garcia")
+    def test_lodgement_query(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'},
+                      {'description': 'Unterkünfte'},
+                      {'description': 'Unterkunftssuche'})
+        self.assertTitle('Unterkunftssuche (Große Testakademie 2222)')
+        f = self.response.forms['queryform']
+        for field in f.fields:
+            if field and field.startswith('qsel_'):
+                f[field].checked = True
+        f['qop_part3.total_inhabitants'] = QueryOperators.greater
+        f['qval_part3.total_inhabitants'] = 1
+        f['ord_primary'] = 'lodgement_group.moniker'
+        self.submit(f)
+        self.assertPresence("Ergebnis [2]", div="query-results")
+        self.assertPresence("Kalte Kammer", div="result-container")
+        self.assertPresence("Warme Stube", div="result-container")
+
+    @as_users("garcia")
     def test_multiedit(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
