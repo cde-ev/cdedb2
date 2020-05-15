@@ -161,7 +161,7 @@
             <ul id="attachments">
                 {% for attachment_id, history in attachments.items() %}
                     <li class="hide-hover-container clearfix-after">
-                        {{ assembly_util.print_attachment(history, edit=edit_mode) }}
+                        {{ assembly_util.print_attachment(history, edit=edit_mode, ballot=ambience['ballot']) }}
                     </li>
                 {% endfor %}
             </ul>
