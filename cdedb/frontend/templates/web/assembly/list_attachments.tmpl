@@ -18,7 +18,7 @@
 {% endblock %}
 {% block content %}
     {% for ballot_id, ballot in [(None, None)] + ballots|keydictsort(EntitySorter.ballot) %}
-        {{ assembly_util.attachment_box(all_attachments[ballot_id], ballot=ballot,
+        {{ assembly_util.attachment_box(all_attachments[ballot_id], ballot=ballot, new_attachment_button=True,
                                         edit=("assembly_contents" in user.admin_views), full_history=True) }}
     {% endfor %}
 {% endblock %}

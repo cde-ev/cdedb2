@@ -114,7 +114,7 @@
     {% endwith %}
 {% endmacro %}
 
-{% macro attachment_box(attachments, ballot=None, edit=False, full_history=False) %}
+{% macro attachment_box(attachments, ballot=None, edit=False, full_history=False, new_attachment_button=False) %}
     {% call util.bootstrap_panel(
             title=("Files – {link}".format(link=util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot['id']}),
                                                           ballot['title'], icon="thumbs-up"))|s
@@ -130,7 +130,8 @@
                     </li>
                 {% endfor %}
             </ul>
-            {% if (ballot is none or now() < ballot['vote_begin']) and "assembly_contents" in user.admin_views %}
+            {% if (ballot is none or now() < ballot['vote_begin']) and new_attachment_button and
+                    "assembly_contents" in user.admin_views %}
                 <div class="p">
                     {{ util.href(cdedblink("assembly/add_attachment_form",
                                            {'ballot_id': ballot['id'] if ballot else None}),
