@@ -41,9 +41,11 @@
                     </div>
                 {% endif %}
             {% else %}
-                {{ util.href(cdedblink("assembly/show_attachment", {'attachment_id': current_version['attachment_id'],
-                                                                    'ballot_id': ballot['id'] if ballot else None}),
-                             gettext("Attachment Details")) }}
+                {% if history|length > 1 %}
+                    {{ util.href(cdedblink("assembly/show_attachment", {'attachment_id': current_version['attachment_id'],
+                                                                        'ballot_id': ballot['id'] if ballot else None}),
+                                 gettext("Attachment Details")) }}
+                {% endif %}
             {% endif %}
         </div>
     {% endwith %}
