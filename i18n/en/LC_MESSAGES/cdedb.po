@@ -10813,7 +10813,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_list.tmpl:52
-msgid "The instructors for each course are only visible to logged in users."
+msgid "The instructors for each course are only visible to logged in event users."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_list.tmpl:72

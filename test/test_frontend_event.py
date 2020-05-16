@@ -25,12 +25,25 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("PfingstAkademie 2014")
         self.assertNonPresence("CdE-Party 2050")
 
-    def test_anonymous_index(self):
-        self.get('/')
+    @as_users("anonymous", "janis")
+    def test_no_event_realm_view(self, user):
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
         self.assertNonPresence("CdE-Party 2050")
+
+        self.traverse({'description': 'Große Testakademie 2222'})
+        self.assertPresence("aka@example.cde", div="orga-address")
+        self.assertPresence("Erste Hälfte", div="timeframe-parts")
+        self.assertNonPresence("Everybody come!")
+
+        self.traverse({'description': 'Kursliste'})
+        self.assertPresence("α. Planetenretten für Anfänger", div='list-courses')
+        self.assertPresence("Wir werden die Bäume drücken.", div='list-courses')
+        msg = ("Die Kursleiter sind nur für eingeloggte Veranstaltungs Nutzer "
+               "sichtbar.")
+        self.assertPresence(msg, div="instructors-not-visible")
+        self.assertNonPresence("Bernd Lucke")
 
     @as_users("anton", "berta")
     def test_index_orga(self, user):
@@ -111,7 +124,7 @@ class TestEventFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungs-Nutzerverwaltung")
-        self.assertPresence("Ergebnis [3]", div='query-results')
+        self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
     @as_users("annika", "ferdinand")
@@ -373,13 +386,6 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
 
-    def test_course_list_public(self):
-        self.get('/event/event/1/course/list')
-        self.assertTitle("Kursliste Große Testakademie 2222")
-        self.assertPresence("Die Kursleiter sind nur für eingeloggte Nutzer "
-                            "sichtbar.", div='instructors-not-visible')
-        self.assertNonPresence("ToFi", div='list-courses')
-        self.assertPresence("Wir werden die Bäume drücken.", div='list-courses')
 
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self, user):
@@ -1139,7 +1145,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertPresence("Outside")
 
-    @as_users("charly", "daniel", "nina")
+    @as_users("charly", "daniel", "rowena")
     def test_register(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -1157,7 +1163,7 @@ etc;anything else""", f['entries_2'].value)
             self.assertPresence("Du kannst auch stattdessen Deinen "
                                 "regulären Mitgliedsbeitrag",
                                 div="nonmember-surcharge")
-        elif user["id"] == 14:
+        elif user["id"] == 18:
             self.assertPresence("Da Du kein CdE-Mitglied bist, musst du "
                                 "einen zusätzlichen Beitrag",
                                 div="nonmember-surcharge")
@@ -1204,7 +1210,7 @@ etc;anything else""", f['entries_2'].value)
             self.assertIn("Du kannst auch stattdessen Deinen "
                           "regulären Mitgliedsbeitrag",
                           text)
-        elif user["id"] == 14:
+        elif user["id"] == 18:
             self.assertIn("466,49", text)
             self.assertIn("Da Du kein CdE-Mitglied bist, musst du einen "
                           "zusätzlichen Beitrag",

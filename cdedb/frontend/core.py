@@ -162,7 +162,7 @@ class CoreFrontend(AbstractFrontend):
             # open assemblies
             if "assembly" in rs.user.roles:
                 assembly_ids = self.assemblyproxy.list_assemblies(
-                    rs, is_active=True)
+                    rs, is_active=True, restrictive=True)
                 assemblies = self.assemblyproxy.get_assemblies(
                     rs, assembly_ids.keys())
                 final = {}

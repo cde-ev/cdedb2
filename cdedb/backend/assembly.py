@@ -246,6 +246,8 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         if persona_id is None:
             persona_id = rs.user.persona_id
+        if "assembly" not in rs.user.roles and "ml_admin" not in rs.user.roles:
+            raise PrivilegeError(n_("Not privileged to access assembly tables"))
         with Atomizer(rs):
             if ballot_id is not None:
                 assembly_id = unwrap(self.sql_select_one(
@@ -317,13 +319,16 @@ class AssemblyBackend(AbstractBackend):
         return {e['persona_id'] for e in attendees}
 
     @access("persona")
-    def list_assemblies(self, rs, is_active=None):
+    def list_assemblies(self, rs, is_active=None, restrictive=False):
         """List all assemblies.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type is_active: bool or None
         :param is_active: If not None list only assemblies which have this
           activity status.
+        :type restrictive: bool
+        :param restrictive: If true, show only those assemblies the user is
+          allowed to interact with.
         :rtype: {int: {str: str}}
         :returns: Mapping of event ids to dict with title, activity status and
           signup end. The latter is used to sort the assemblies in index.
@@ -337,11 +342,9 @@ class AssemblyBackend(AbstractBackend):
             params = (is_active,)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e for e in data}
-        if "assembly" not in rs.user.roles:
-            ret = {}
-        elif "member" not in rs.user.roles:
+        if restrictive:
             ret = {k: v for k, v in ret.items()
-                   if self.check_attendance(rs, assembly_id=k)}
+                   if self.may_assemble(rs, assembly_id=k)}
         return ret
 
     @access("assembly")

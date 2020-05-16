@@ -697,7 +697,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": false,
             "is_cde_realm": false,
-            "is_event_realm": true,
+            "is_event_realm": false,
             "is_ml_realm": true,
             "is_assembly_realm": false,
             "is_member": false,

@@ -798,7 +798,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation,
                          self.event.get_registration(self.key, 2))
 
-    @as_users("berta", "nina")
+    @as_users("berta", "paul")
     def test_registering(self, user):
         new_reg = {
             'amount_paid': decimal.Decimal("42.00"),
@@ -836,14 +836,14 @@ class TestEventBackend(BackendTest):
             },
             'notes': "Some bla.",
             'payment': None,
-            'persona_id': 14,
+            'persona_id': 16,
             'real_persona_id': None}
-        # try to create a registration for nina
-        if user['id'] == USER_DICT['nina']['id']:
+        # try to create a registration for paul
+        if user['id'] == USER_DICT['paul']['id']:
             new_id = self.event.create_registration(self.key, new_reg)
             self.assertLess(0, new_id)
             new_reg['id'] = new_id
-            new_reg['amount_owed'] = decimal.Decimal("589.49")
+            new_reg['amount_owed'] = decimal.Decimal("584.49")
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
             new_reg['parts'][1]['registration_id'] = new_id

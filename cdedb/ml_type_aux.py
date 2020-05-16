@@ -322,6 +322,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         ret = {}
         for persona_id in persona_ids:
+            # TODO this broken for moderators who are no orgas
             if bc.event.check_registration_status(
                     rs, persona_id, mailinglist['event_id'],
                     mailinglist['registration_stati']):
@@ -363,6 +364,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
                  mailinglist["registration_stati"]),
             ],
             order=tuple())
+        # TODO is this is broken for moderators who are not orgas of the event?
         data = bc.event.submit_general_query(rs, query, event_id=event["id"])
 
         return {e["persona.id"] for e in data}
@@ -429,6 +431,7 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
 
         ret = {}
         for persona_id in persona_ids:
+            # TODO this is broken for non-assembly users
             attending = bc.assembly.check_attendance(
                 rs, persona_id=persona_id,
                 assembly_id=mailinglist["assembly_id"])
@@ -447,6 +450,8 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
         linked assembly.
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        # TODO this is broken for moderators without assembly realm
+        # TODO this is broken for non-members who does not attend to this assembly
         return bc.assembly.list_attendees(rs, mailinglist["assembly_id"])
 
 

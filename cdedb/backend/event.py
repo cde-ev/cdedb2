@@ -243,7 +243,7 @@ class EventBackend(AbstractBackend):
                                (event_id,), entity_key="event_id")
         return {e['id']: e['title'] for e in data}
 
-    @access("event")
+    @access("event", "ml_admin")
     def submit_general_query(self, rs, query, event_id=None):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`

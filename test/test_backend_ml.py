@@ -27,7 +27,7 @@ class TestMlBackend(BackendTest):
         new_data = self.core.get_ml_user(self.key, user['id'])
         self.assertEqual(data, new_data)
 
-    @as_users("anton", "nina")
+    @as_users("nina")
     def test_entity_mailinglist(self, user):
         expectation = {1: 'Verkündungen',
                        2: 'Werbung',
@@ -152,7 +152,7 @@ class TestMlBackend(BackendTest):
         with self.assertRaises(ValueError):
             self.ml.set_mailinglist(self.key, setter)
 
-    @as_users("anton")
+    @as_users("nina")
     def test_mailinglist_creation_deletion(self, user):
         oldlists = self.ml.list_mailinglists(self.key)
         new_data = {
@@ -190,7 +190,7 @@ class TestMlBackend(BackendTest):
                                        "whitelist", "moderators", "log")))
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
 
-    @as_users("anton")
+    @as_users("nina")
     def test_mailinglist_creation_optional_fields(self, user):
         new_data = {
             'local_part': 'revolution',
@@ -292,7 +292,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
 
-    @as_users("anton", "janis")
+    @as_users("nina", "janis")
     def test_subscriptions_two(self, user):
         # Which lists is Janis subscribed to.
         expectation = {
@@ -303,7 +303,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=10))
 
-    @as_users("anton", "emilia")
+    @as_users("nina", "emilia")
     def test_subscriptions_three(self, user):
         expectation = {
             9: SS.unsubscribed,
@@ -313,7 +313,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=5))
 
-    @as_users("anton", "garcia")
+    @as_users("nina", "garcia")
     def test_subscriptions_four(self, user):
         expectation = {
             1: SS.implicit,
@@ -745,7 +745,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], ml_id, SA.add_subscriber,
                          code=None, state=None, kind="error")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_ml_assembly(self, user):
         ml_id = 5
 
@@ -773,7 +773,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'],  ml_id, SA.subscribe,
                          code=1, state=SS.subscribed)
 
-    @as_users("anton", "nina")
+    @as_users("nina")
     def test_bullshit_requests(self, user):
         # Can I remove people from lists they have not subscribed to?
         with self.assertRaises(SubscriptionError) as cm:
@@ -992,7 +992,7 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
-    @as_users("anton")
+    @as_users("nina")
     def test_change_sub_policy(self, user):
         mdata = {
             'local_part': 'revolution',
@@ -1125,7 +1125,7 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
 
-    @as_users("anton")
+    @as_users("nina")
     def test_change_mailinglist_association(self, user):
         mdata = {
             'local_part': 'orga',
@@ -1201,7 +1201,7 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
 
-    @as_users("anton", "janis")
+    @as_users("nina", "janis")
     def test_subscription_addresses(self, user):
         expectation = {
             1: 'anton@example.cde',
@@ -1234,7 +1234,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 7))
 
-    @as_users("anton", "berta")
+    @as_users("nina", "berta")
     def test_subscription_addresses_two(self, user):
         expectation = {1: 'anton@example.cde',
                        2: 'berta@example.cde',
@@ -1246,7 +1246,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 5))
 
-    @as_users("anton", "garcia")
+    @as_users("nina", "garcia")
     def test_subscription_addresses_three(self, user):
             expectation = {7: 'garcia@example.cde'}
             self.assertEqual(expectation,
@@ -1262,7 +1262,7 @@ class TestMlBackend(BackendTest):
             self.assertEqual(expectation,
                              self.ml.get_subscription_addresses(self.key, 10))
 
-    @as_users("anton")
+    @as_users("janis")
     def test_set_subscription_address(self, user):
         # This is a bit tricky, since users may only change their own
         # subscrption address.
@@ -1280,7 +1280,7 @@ class TestMlBackend(BackendTest):
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': user['id'],
-            'email': "anton-spam@example.cde",
+            'email': "new-janis@example.cde",
         }
         expectation.update({datum['persona_id']: datum['email']})
         self.ml.set_subscription_address(self.key, **datum)
@@ -1291,7 +1291,7 @@ class TestMlBackend(BackendTest):
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': user['id'],
-            'email': "anton-cde@example.cde",
+            'email': "janis-ist-toll@example.cde",
         }
         expectation.update({datum['persona_id']: datum['email']})
         self.ml.set_subscription_address(self.key, **datum)
@@ -1530,7 +1530,7 @@ class TestMlBackend(BackendTest):
                          self.ml.get_subscription(
                              self.key, persona_id=9, mailinglist_id=4))
 
-    @as_users("annika", "werner", "vera", "nina")
+    @as_users("annika", "werner", "quintus", "nina")
     def test_relevant_admins(self, user):
         if user['display_name'] in {"Annika", "Nina"}:
             # Create a new event mailinglist.
@@ -1590,7 +1590,7 @@ class TestMlBackend(BackendTest):
                 cascade=["moderators", "subscriptions", "log"]))
 
         if user['display_name'] in {"Werner", "Nina"}:
-            # Create a new event mailinglist.
+            # Create a new assembly mailinglist.
             mldata = {
                 'local_part': "mgv-ag",
                 'domain': const.MailinglistDomain.lists,
@@ -1638,7 +1638,7 @@ class TestMlBackend(BackendTest):
             self.assertTrue(self.ml.delete_mailinglist(
                 self.key, new_id,
                 cascade=["moderators", "subscriptions", "log"]))
-        if user['display_name'] in {"Vera", "Nina"}:
+        if user['display_name'] in {"Quintus", "Nina"}:
             # Create a new member mailinglist.
             mldata = {
                 'local_part': "literatir",
@@ -1794,7 +1794,7 @@ class TestMlBackend(BackendTest):
             self.ml.retrieve_log(
                 self.key, codes=(const.MlLogCodes.moderator_added,)))
 
-    @as_users("anton")
+    @as_users("nina")
     def test_export(self, user):
         expectation = ({'address': 'announce@lists.cde-ev.de',
                         'is_active': True},
@@ -1879,7 +1879,7 @@ class TestMlBackend(BackendTest):
             self.ml.export_one("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
                                "werbung@lists.cde-ev.de"))
 
-    @as_users("anton")
+    @as_users("nina")
     def test_oldstyle_scripting(self, user):
         expectation = ({'address': 'announce@lists.cde-ev.de',
                         'inactive': False,
