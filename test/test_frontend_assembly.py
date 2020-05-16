@@ -43,6 +43,17 @@ class TestAssemblyFrontend(FrontendTest):
             "Versammlung lautet", 1)[1].split("ohne Leerzeichen.", 1)[0].strip()
         return secret
 
+    def _external_signup(self, user):
+        self.traverse({'description': 'Teilnehmer'})
+        f = self.response.forms['addattendeeform']
+        f['persona_id'] = user['DB-ID']
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        text = mail.get_body().get_content()
+        secret = text.split(
+            "Versammlung lautet", 1)[1].split("ohne Leerzeichen.", 1)[0].strip()
+        return secret
+
     def _create_ballot(self, bdata, candidates=None, atitle=None):
         self.traverse({"description": "Abstimmungen"},
                       {"description": "Abstimmung anlegen"})
@@ -217,19 +228,34 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("annika", "martin", "vera", "werner")
     def test_sidebar_one_assembly(self, user):
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Internationaler Kongress'})
-        everyone = ["Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
+        self.traverse({'description': 'Versammlungen'})
+
+        # they are no member and not yet signed up
+        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
+            self.assertNonPresence("Internationaler Kongress")
+
+            # now, sign them up
+            self.logout()
+            self.login(USER_DICT['werner'])
+            self.traverse({'description': 'Versammlungen'},
+                          {'description': 'Internationaler Kongress'})
+            self._external_signup(user)
+            self.logout()
+            self.login(user)
+            self.traverse({'description': 'Versammlungen'})
+
+        self.traverse({'description': 'Internationaler Kongress'})
+        attendee = ["Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
                     "Abstimmungen", "Zusammenfassung"]
         admin = ["Konfiguration", "Log"]
 
         # not assembly admins
         if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
-            ins = everyone
+            ins = attendee
             out = admin
         # assembly admin
         elif user == USER_DICT['werner']:
-            ins = everyone + admin
+            ins = attendee + admin
             out = []
         else:
             self.fail("Please adjust users for this test.")
@@ -314,8 +340,8 @@ class TestAssemblyFrontend(FrontendTest):
     @as_users("werner")
     def test_conclude_assembly(self, user):
         self._create_assembly()
-        f = self.response.forms['signupform']
-        self.submit(f)
+        # werner is no member, so he must signup external
+        secret = self._external_signup(user)
         self.traverse({'description': 'Konfiguration'})
         f = self.response.forms['changeassemblyform']
         f['signup_end'] = "2002-4-1 00:00:00"
@@ -748,7 +774,8 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertNonPresence("Du hast nicht abgestimmt.")
 
         self.traverse({'description': 'Archiv-Sammlung'})
-        secret = self._signup()
+        # werner is no member, so he must signup external
+        secret = self._external_signup(user)
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
 
@@ -760,7 +787,8 @@ class TestAssemblyFrontend(FrontendTest):
     def test_provide_secret(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Archiv-Sammlung'})
-        secret = self._signup()
+        # werner is no member, so he must signup external
+        secret = self._external_signup(user)
         # Create new ballot.
         wait_time = 2
         future = now() + datetime.timedelta(seconds=wait_time)
