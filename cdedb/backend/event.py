@@ -2293,7 +2293,7 @@ class EventBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
-    @access("event")
+    @access("event", "ml_admin")
     def get_registrations(self, rs, ids):
         """Retrieve data for some registrations.
 
