@@ -592,6 +592,9 @@
                         {%- elif query.scope == 'qview_event_course' -%}
                             {{ util.href(cdedblink("event/show_course", {'course_id': row[primary_field]}),
                                          gettext('Details'), icon='book', aclass='btn btn-xs btn-info', rel='noreferrer') }}
+                        {%- elif query.scope == 'qview_event_lodgement' -%}
+                            {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[primary_field]}),
+                                         gettext('Details'), icon='home', aclass='btn btn-xs btn-info', rel='noreferrer') }}
                         {%- else -%}
                             {{ util.href(show_user_link(row[primary_field]),
                                          gettext('Profile'), icon='user', aclass='btn btn-xs btn-info') }}

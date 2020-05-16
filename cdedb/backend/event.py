@@ -468,13 +468,22 @@ class EventBackend(AbstractBackend):
             # Template for the final view.
             # For more in depth information see `doc/Course_Query`.
             # We retrieve general course, custom field and track specific info.
-            course_table = """
-            event.courses AS course
+            template = """
+            (
+                {course_table}
+            ) AS course
             LEFT OUTER JOIN (
                 {course_fields_table}
             ) AS course_fields ON course.id = course_fields.id
             {track_tables}
             """
+
+            course_table = """
+            SELECT
+                id, id AS course_id, event_id,
+                nr, title, description, shortname, instructors, min_size,
+                max_size, notes
+            FROM event.courses"""
 
             # Dynamically construct the custom field view.
             course_fields = {
@@ -655,11 +664,209 @@ class EventBackend(AbstractBackend):
                     for rank in range(track['num_choices'])
                 )
 
-            view = course_table.format(
+            view = template.format(
+                course_table=course_table,
                 course_fields_table=course_fields_table,
                 track_tables=" ".join(
                     track_table(track)
                     for track in event['tracks'].values()),
+            )
+
+            query.constraints.append(
+                ("event_id", QueryOperators.equal, event_id))
+            query.spec['event_id'] = "id"
+        elif query.scope == "qview_event_lodgement":
+            event_id: int = affirm("id", event_id)
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+            event = self.get_event(rs, event_id)
+
+            # Template for the final view.
+            # For more detailed information see `doc/Lodgement_Query`.
+            # We retrieve general lodgement, event-field and part specific info.
+            template = """
+            (
+                {lodgement_table}
+            ) AS lodgement
+            LEFT OUTER JOIN (
+                SELECT
+                    -- replace NULL ids with temp value so we can join.
+                    id, COALESCE(group_id, -1) AS tmp_group_id
+                FROM
+                    event.lodgements
+                WHERE
+                    event_id = {event_id}
+            ) AS tmp_group ON lodgement.id = tmp_group.id
+            LEFT OUTER JOIN (
+                {lodgement_fields_table}
+            ) AS lodgement_fields ON lodgement.id = lodgement_fields.id
+            LEFT OUTER JOIN (
+                {lodgement_group_table}
+            ) AS lodgement_group ON tmp_group.tmp_group_id = lodgement_group.tmp_id
+            {part_tables}
+            """
+
+            lodgement_table = """
+            SELECT
+                id, id as lodgement_id, event_id,
+                moniker, capacity, reserve, notes, group_id
+            FROM
+                event.lodgements"""
+
+            # Dynamically construct the view for custom event-fields:
+            lodgement_fields = {
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.lodgement
+            }
+            lodgement_fields_columns = ", ".join(
+                '''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
+                for name, kind in lodgement_fields.items()
+            )
+            if lodgement_fields_columns:
+                lodgement_fields_columns += ", "
+            lodgement_fields_table = \
+            """SELECT
+                {lodgement_fields_columns}
+                id
+            FROM
+                event.lodgements
+            WHERE
+                event_id = {event_id}""".format(
+                lodgement_fields_columns=lodgement_fields_columns,
+                event_id=event_id)
+
+            # Retrieve generic lodgemnt group information.
+            lodgement_group_table = \
+            """SELECT
+                tmp_id, moniker, capacity, reserve
+            FROM (
+                (
+                    (
+                        SELECT
+                            id AS tmp_id, moniker
+                        FROM
+                            event.lodgement_groups
+                        WHERE
+                            event_id = {event_id}
+                    )
+                    UNION
+                    (
+                        SELECT
+                            -1, ''
+                    )
+                ) AS group_base
+                LEFT OUTER JOIN (
+                    SELECT
+                        COALESCE(group_id, -1) as tmp_group_id,
+                        SUM(capacity) as capacity,
+                        SUM(reserve) as reserve
+                    FROM
+                        event.lodgements
+                    WHERE
+                        event_id = {event_id}
+                    GROUP BY
+                        tmp_group_id
+                ) AS group_totals ON group_base.tmp_id = group_totals.tmp_group_id
+            )""".format(event_id=event_id)
+
+            # Template for retrieveing lodgement information for one
+            # specific part. We don't youse the {base} table from below, because
+            # we need the id to be distinct.
+            part_table_template = \
+                """(
+                    SELECT
+                        id as base_id, COALESCE(group_id, -1) AS tmp_group_id
+                    FROM
+                        event.lodgements
+                    WHERE
+                        event_id = {event_id}
+                ) AS base
+                LEFT OUTER JOIN (
+                    {inhabitants_view}
+                ) AS inhabitants_view{part_id}
+                    ON base.base_id = inhabitants_view{part_id}.id
+                LEFT OUTER JOIN (
+                    {group_inhabitants_view}
+                ) AS group_inhabitants_view{part_id}
+                    ON base.tmp_group_id =
+                    group_inhabitants_view{part_id}.tmp_group_id"""
+
+            def part_table(p_id):
+                ptable = part_table_template.format(
+                    event_id=event_id, part_id=p_id,
+                    inhabitants_view=inhabitants_view(p_id),
+                    group_inhabitants_view=group_inhabitants_view(p_id),
+                )
+                ret = f"""LEFT OUTER JOIN (
+                    {ptable}
+                ) AS part{p_id} ON lodgement.id = part{p_id}.base_id"""
+                return ret
+
+            inhabitants_counter = lambda p_id, rc: \
+            """SELECT
+                lodgement_id, COUNT(registration_id) AS inhabitants
+            FROM
+                event.registration_parts
+            WHERE
+                part_id = {part_id}
+                {rc}
+            GROUP BY
+                lodgement_id""".format(part_id=p_id, rc=rc)
+
+            inhabitants_view = lambda p_id: \
+            """SELECT
+                id, tmp_group_id,
+                COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
+                COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
+            FROM
+                (
+                    SELECT id, COALESCE(group_id, -1) as tmp_group_id
+                    FROM event.lodgements
+                    WHERE event_id = {event_id}
+                ) AS l
+                LEFT OUTER JOIN (
+                    {rp_regular}
+                ) AS rp_regular ON l.id = rp_regular.lodgement_id
+                LEFT OUTER JOIN (
+                    {rp_reserve}
+                ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+                LEFT OUTER JOIN (
+                    {rp_total}
+                ) AS rp_total ON l.id = rp_total.lodgement_id""".format(
+                    event_id=event_id, part_id=p_id,
+                    rp_regular=inhabitants_counter(
+                        p_id, "AND is_reserve = False"),
+                    rp_reserve=inhabitants_counter(
+                        p_id, "AND is_reserve = True"),
+                    rp_total=inhabitants_counter(p_id, ""),
+            )
+
+            group_inhabitants_view = lambda p_id: \
+            """SELECT
+                tmp_group_id,
+                COALESCE(SUM(regular_inhabitants)::bigint, 0) AS group_regular_inhabitants,
+                COALESCE(SUM(reserve_inhabitants)::bigint, 0) AS group_reserve_inhabitants,
+                COALESCE(SUM(total_inhabitants)::bigint, 0) AS group_total_inhabitants
+            FROM (
+                {inhabitants_view}
+            ) AS inhabitants_view{part_id}
+            GROUP BY
+                tmp_group_id""".format(
+                inhabitants_view=inhabitants_view(p_id), part_id=p_id,
+            )
+
+            view = template.format(
+                lodgement_table=lodgement_table,
+                lodgement_fields_table=lodgement_fields_table,
+                lodgement_group_table=lodgement_group_table,
+                part_tables=" ".join(part_table(p_id)
+                                     for p_id in event['parts']),
+                event_id=event_id,
             )
 
             query.constraints.append(

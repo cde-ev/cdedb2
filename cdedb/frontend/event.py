@@ -5208,33 +5208,17 @@ class EventFrontend(AbstractUserFrontend):
             'titles': titles, 'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
+        scope = "qview_registration"
         if not rs.has_validation_errors() and is_search:
-            query.scope = "qview_registration"
-            result = self.eventproxy.submit_general_query(rs, query,
-                                                          event_id=event_id)
-            params['result'] = result
-            if download:
-                fields = []
-                for csvfield in query.fields_of_interest:
-                    fields.extend(csvfield.split(','))
-                shortname = rs.ambience['event']['shortname']
-                if download == "csv":
-                    csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_csv_file(
-                        rs, data=csv_data, inline=False,
-                        filename="{}_result.csv".format(shortname))
-                elif download == "json":
-                    json_data = query_result_to_json(result, fields,
-                                                     substitutions=choices)
-                    return self.send_file(
-                        rs, data=json_data, inline=False,
-                        filename="{}_result.json".format(shortname))
+            query.scope = scope
+            params['result'] = self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id)
         else:
             rs.values['is_search'] = is_search = False
-        return self.render(rs, "registration_query", params)
+        return self._send_query_result(rs, download, scope, query, params)
 
     @staticmethod
-    def make_course_view_query_spec(event):
+    def make_course_query_spec(event):
         """Helper to enrich ``QUERY_SPECS['qview_event_course']``.
 
         Since each event has custom course fields we have to amend the query
@@ -5267,7 +5251,7 @@ class EventFrontend(AbstractUserFrontend):
         return spec
 
     @staticmethod
-    def make_course_view_query_aux(rs, event, courses, fixed_gettext=False):
+    def make_course_query_aux(rs, event, courses, fixed_gettext=False):
         """Un-inlined code to prepare input for template.
 
         :type rs: :py:class:`FrontendRequestState`
@@ -5294,7 +5278,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = OrderedDict(
             xsorted((c["id"], course_identifier(c)) for c in courses.values()))
         choices = {
-            "course.id": course_choices
+            "course.course_id": course_choices
         }
         course_fields = {
             field_id: field for field_id, field in event['fields'].items()
@@ -5311,6 +5295,7 @@ class EventFrontend(AbstractUserFrontend):
         # Construct titles.
         titles = {
             "course.id": gettext("course id"),
+            "course.course_id": gettext("course"),
             "course.nr": gettext("course nr"),
             "course.title": gettext("course title"),
             "course.description": gettext("course description"),
@@ -5354,7 +5339,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def course_query(self, rs, event_id, download, is_search):
 
-        spec = self.make_course_view_query_spec(rs.ambience['event'])
+        spec = self.make_course_query_spec(rs.ambience['event'])
         query_input = mangle_query_input(rs, spec)
         if is_search:
             query = check(rs, "query_input", query_input, "query",
@@ -5364,7 +5349,7 @@ class EventFrontend(AbstractUserFrontend):
 
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        choices, titles = self.make_course_view_query_aux(
+        choices, titles = self.make_course_query_aux(
             rs, rs.ambience['event'], courses,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
@@ -5382,30 +5367,196 @@ class EventFrontend(AbstractUserFrontend):
             'titles': titles, 'selection_default': selection_default,
         }
 
+        scope = "qview_event_course"
         if not rs.has_validation_errors() and is_search:
-            query.scope = "qview_event_course"
-            result = self.eventproxy.submit_general_query(
+            query.scope = scope
+            params['result'] = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
-            params['result'] = result
-            if download:
-                fields = []
-                for csvfield in query.fields_of_interest:
-                    fields.extend(csvfield.split(','))
-                shortname = rs.ambience['event']['shortname']
-                if download == "csv":
-                    csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_csv_file(
-                        rs, data=csv_data, inline=False,
-                        filename="{}_course_result.csv".format(shortname))
-                elif download == "json":
-                    json_data = query_result_to_json(
-                        result, fields, substitutions=choices)
-                    return self.send_file(
-                        rs, data=json_data, inline=False,
-                        filename="{}_course_result.json".format(shortname))
         else:
             rs.values['is_search'] = is_search = False
-        return self.render(rs, "course_query", params)
+        return self._send_query_result(rs, download, scope, query, params)
+
+    @staticmethod
+    def make_lodgement_query_spec(event):
+        parts = event["parts"]
+        lodgement_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.lodgement
+        }
+
+        # This is an OrderedDcit, so order should be respected.
+        spec = copy.deepcopy(QUERY_SPECS["qview_event_lodgement"])
+        spec.update({
+            f"lodgement_fields.xfield_{field['field_name']}":
+                const.FieldDatatypes(field['kind']).name
+            for field in lodgement_fields.values()
+        })
+
+        for part_id, part in parts.items():
+            spec[f"part{part_id}.regular_inhabitants"] = "int"
+            spec[f"part{part_id}.reserve_inhabitants"] = "int"
+            spec[f"part{part_id}.total_inhabitants"] = "int"
+            spec[f"part{part_id}.group_regular_inhabitants"] = "int"
+            spec[f"part{part_id}.group_reserve_inhabitants"] = "int"
+            spec[f"part{part_id}.group_total_inhabitants"] = "int"
+
+        return spec
+
+    @staticmethod
+    def make_lodgement_query_aux(rs, event, lodgements, lodgement_groups,
+                                 fixed_gettext=False):
+
+        parts = event['parts']
+
+        if fixed_gettext:
+            gettext = rs.default_gettext
+            enum_gettext = lambda x: x.name
+        else:
+            gettext = rs.gettext
+            enum_gettext: rs.gettext
+
+        # Construct choices.
+        lodgement_choices = OrderedDict(
+            xsorted((l["id"], l["moniker"]) for l in lodgements.values()))
+        lodgement_group_choices = OrderedDict({-1: gettext(n_("--no group--"))})
+        lodgement_group_choices.update(
+            [(lg_id, lg['moniker']) for lg_id, lg in keydictsort_filter(
+                lodgement_groups, EntitySorter.lodgement_group)])
+        choices = {
+            "lodgement.lodgement_id": lodgement_choices,
+            "lodgement_group.id": lodgement_group_choices,
+        }
+        lodgement_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.lodgement
+        }
+        if not fixed_gettext:
+            # Lodgement fields value -> description
+            choices.update({
+                f"lodgement_fields.xfield_{field['field_name']}":
+                    OrderedDict(field['entries'])
+                for field in lodgement_fields.values() if field['entries']
+            })
+
+        # Construct titles.
+        titles = {
+            "lodgement.id": gettext(n_("Lodgement ID")),
+            "lodgement.lodgement_id": gettext(n_("Lodgement")),
+            "lodgement.moniker": gettext(n_("Moniker")),
+            "lodgement.capacity": gettext(n_("Regular Capacity")),
+            "lodgement.reserve": gettext(n_("Camping Mat Capacity")),
+            "lodgement.notes": gettext(n_("Lodgement Notes")),
+            "lodgement.group_id": gettext(n_("Lodgement Group ID")),
+            "lodgement_group.tmp_id": gettext(n_("Lodgement Group")),
+            "lodgement_group.moniker": gettext(n_("Lodgement Group Moniker")),
+            "lodgement_group.capacity":
+                gettext(n_("Lodgement Group Regular Capacity")),
+            "lodgement_group.reserve":
+                gettext(n_("Lodgement Group Camping Mat Capacity")),
+        }
+        titles.update({
+            f"lodgement_fields.xfield_{field['field_name']}":
+                field['field_name']
+            for field in lodgement_fields.values()
+        })
+        for part_id, part in parts.items():
+            if len(parts) > 1:
+                prefix = f"{part['shortname']}: "
+            else:
+                prefix = ""
+            titles.update({
+                f"part{part_id}.regular_inhabitants":
+                    prefix + gettext(n_("Regular Inhabitants")),
+                f"part{part_id}.reserve_inhabitants":
+                    prefix + gettext(n_("Reserve Inhabitants")),
+                f"part{part_id}.total_inhabitants":
+                    prefix + gettext(n_("Total Inhabitants")),
+                f"part{part_id}.group_regular_inhabitants":
+                    prefix + gettext(n_("Group Regular Inhabitants")),
+                f"part{part_id}.group_reserve_inhabitants":
+                    prefix + gettext(n_("Group Reserve Inhabitants")),
+                f"part{part_id}.group_total_inhabitants":
+                    prefix + gettext(n_("Group Total Inhabitants")),
+            })
+
+        return choices, titles
+
+    @access("event")
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    @event_guard()
+    def lodgement_query(self, rs, event_id, download, is_search):
+
+        spec = self.make_lodgement_query_spec(rs.ambience['event'])
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query",
+                          spec=spec, allow_empty=False)
+        else:
+            query = None
+
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(
+            rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(
+            rs, lodgement_group_ids)
+        choices, titles = self.make_lodgement_query_aux(
+            rs, rs.ambience['event'], lodgements, lodgement_groups,
+            fixed_gettext=download is not None)
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+
+        parts = rs.ambience['event']['parts']
+        selection_default = ["lodgement.moniker"] + [
+            f"lodgement_fields.xfield_{field['field_name']}"
+            for field in rs.ambience['event']['fields'].values()
+            if field['association'] == const.FieldAssociations.lodgement]
+        for col in ("regular_inhabitants",):
+            selection_default += list(f"part{p_id}_{col}" for p_id in parts)
+        default_queries = []
+
+        params = {
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'query': query, 'defualt_queries': default_queries,
+            'titles': titles, 'selection_default': selection_default,
+        }
+
+        scope = "qview_event_lodgement"
+        if not rs.has_validation_errors() and is_search:
+            query.scope = scope
+            params['result'] = self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id)
+        else:
+            rs.values['id_search'] = is_search = False
+        return self._send_query_result(rs, download, scope, query, params)
+
+    def _send_query_result(self, rs, download, scope, query, params):
+        if download:
+            fields = []
+            for csvfield in query.fields_of_interest:
+                fields.extend(csvfield.split(','))
+            shortname = rs.ambience['event']['shortname']
+            if download == "csv":
+                csv_data = csv_output(params['result'], fields,
+                                      substitutions=params['choices'])
+                return self.send_csv_file(
+                    rs, data=csv_data, inline=False,
+                    filename="{}_course_result.csv".format(shortname))
+            elif download == "json":
+                json_data = query_result_to_json(
+                    params['result'], fields, substitutions=params['choices'])
+                return self.send_file(
+                    rs, data=json_data, inline=False,
+                    filename="{}_course_result.json".format(shortname))
+        else:
+            if scope == "qview_registration":
+                page = "registration_query"
+            elif scope == "qview_event_course":
+                page = "course_query"
+            elif scope == "qview_event_lodgement":
+                page = "lodgement_query"
+            else:
+                raise RuntimeError(n_("Unknown query scope."))
+            return self.render(rs, page, params)
 
     @access("event")
     @event_guard(check_offline=True)

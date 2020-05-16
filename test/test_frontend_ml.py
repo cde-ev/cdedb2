@@ -437,7 +437,7 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Non-unique mailinglist name")
+        self.assertPresence("Uneindeutige Mailadresse")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -463,7 +463,7 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Non-unique mailinglist name")
+        self.assertPresence("Uneindeutige Mailadresse")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
