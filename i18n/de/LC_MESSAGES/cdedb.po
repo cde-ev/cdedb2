@@ -824,8 +824,8 @@ msgid "QuestionnaireUsages.registration"
 msgstr "Anmeldungs-Fragebogen"
 
 #: cdedb/i18n_additional.py:196
-msgid "QuestionnaireUsages.questionnaire"
-msgstr ""
+msgid "QuestionnaireUsages.additional"
+msgstr "Zusätzlicher Fragebogen"
 
 #: cdedb/i18n_additional.py:198
 msgid "RegistrationPartStati.not_applied"
