@@ -302,6 +302,15 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertPresence("Insgesamt 6 Anwesende.", div='attendees-count')
         self.assertNonPresence("Charly")
 
+    @as_users("rowena")
+    def test_summary_ballots(self, user):
+        self.traverse({'description': 'Versammlungen'},
+                      {'description': 'Kanonische Beispielversammlung'},
+                      {'description': 'Zusammenfassung'})
+        self.assertTitle("Zusammenfassung (Kanonische Beispielversammlung)")
+        self.assertPresence("Entlastung des Vorstands")
+        self.assertPresence("Wir kaufen den Eisenberg!")
+
     @as_users("werner")
     def test_conclude_assembly(self, user):
         self._create_assembly()
