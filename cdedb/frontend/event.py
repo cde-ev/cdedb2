@@ -4849,6 +4849,11 @@ class EventFrontend(AbstractUserFrontend):
                                 track_id, temp, f['field_name'])
                             kind = const.FieldDatatypes(f['kind']).name
                             spec[key] = kind
+                for i in range(track['num_choices']):
+                    spec[f"course_choices{track_id}.rank{i}"] = "int"
+                if track['num_choices'] > 1:
+                    spec[",".join(f"course_choices{track_id}.rank{i}"
+                                  for i in range(track['num_choices']))] = "int"
         if len(event['parts']) > 1:
             spec[",".join("part{0}.status".format(part_id)
                           for part_id in event['parts'])] = "int"
@@ -4862,7 +4867,8 @@ class EventFrontend(AbstractUserFrontend):
                           for part_id in event['parts'])] = "str"
             spec[",".join("lodgement{0}.notes".format(part_id)
                           for part_id in event['parts'])] = "str"
-            for f in xsorted(event['fields'].values(), key=EntitySorter.event_field):
+            for f in xsorted(event['fields'].values(),
+                             key=EntitySorter.event_field):
                 if f['association'] == const.FieldAssociations.lodgement:
                     key = ",".join(
                         "lodgement{0}.xfield_{1}".format(
@@ -4896,7 +4902,11 @@ class EventFrontend(AbstractUserFrontend):
                                        for track_id in tracks)
                         kind = const.FieldDatatypes(f['kind']).name
                         spec[key] = kind
-        for f in xsorted(event['fields'].values(), key=EntitySorter.event_field):
+            spec[",".join(f"course_choices{track_id}.rank{i}"
+                          for track_id, track in tracks.items()
+                          for i in range(track['num_choices']))] = "int"
+        for f in xsorted(event['fields'].values(),
+                         key=EntitySorter.event_field):
             if f['association'] == const.FieldAssociations.registration:
                 kind = const.FieldDatatypes(f['kind']).name
                 spec["reg_fields.xfield_{}".format(f['field_name'])] = kind
@@ -4975,27 +4985,35 @@ class EventFrontend(AbstractUserFrontend):
                         OrderedDict(field['entries'])
                     for field in lodge_fields.values() if field['entries']
                 })
-        for track_id in tracks:
+        for track_id, track in tracks.items():
             choices.update({
                 # Course choices for the JS selector
                 "track{0}.course_id".format(track_id): course_choices,
                 "track{0}.course_instructor".format(track_id): course_choices,
             })
+            for i in range(track['num_choices']):
+                choices[f"course_choices{track_id}.rank{i}"] = course_choices
+            if track['num_choices'] > 1:
+                choices[",".join(
+                    f"course_choices{track_id}.rank{i}"
+                    for i in range(track['num_choices']))] = course_choices
             if not fixed_gettext:
                 # Course fields value -> description
                 for temp in ("course", "course_instructor"):
-                    key = "{1}{0}.xfield_{2}"
-                    choices.update({
-                       key.format(track_id, temp, field['field_name']):
-                           OrderedDict(field['entries'])
-                       for field in course_fields.values() if field['entries']
-                    })
+                    for field in course_fields.values():
+                        key = f"{temp}{track_id}.xfield_{field['field_name']}"
+                        if field['entries']:
+                            choices[key]= OrderedDict(field['entries'])
         if len(event['parts']) > 1:
             choices.update({
                 # RegistrationPartStati enum
                 ",".join("part{0}.status".format(part_id)
                          for part_id in event['parts']): reg_part_stati_choices,
             })
+        if len(tracks) > 1:
+            choices[",".join(f"course_choices{track_id}.rank{i}"
+                    for track_id, track in tracks.items()
+                    for i in range(track['num_choices']))] = course_choices
         if not fixed_gettext:
             # Registration fields value -> description
             choices.update({
@@ -5057,6 +5075,13 @@ class EventFrontend(AbstractUserFrontend):
                         field=field['field_name'])
                 for field in course_fields.values()
             })
+            for i in range(track['num_choices']):
+                titles[f"course_choices{track_id}.rank{i}"] = \
+                    prefix + gettext("%s. Choice") % (i + 1)
+            if track['num_choices'] > 1:
+                titles[",".join(f"course_choices{track_id}.rank{i}"
+                                for i in range(track['num_choices']))] = \
+                    prefix + gettext("Any Choice")
         if len(event['tracks']) > 1:
             titles.update({
                 ",".join("track{0}.is_course_instructor".format(track_id)
@@ -5115,6 +5140,10 @@ class EventFrontend(AbstractUserFrontend):
                         field=field['field_name'])
                 for field in course_fields.values()
             })
+            key = ",".join(f"course_choices{track_id}.rank{i}"
+                           for track_id, track in tracks.items()
+                           for i in range(track['num_choices']))
+            titles[key] = gettext("any track: Any Choice")
         for part_id, part in event['parts'].items():
             if len(event['parts']) > 1:
                 prefix = "{shortname}: ".format(shortname=part['shortname'])

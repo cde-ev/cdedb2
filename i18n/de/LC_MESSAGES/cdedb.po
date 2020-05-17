@@ -4419,6 +4419,12 @@ msgstr "Bel. Schiene: Kurs {field}"
 msgid "any track: instructed course {field}"
 msgstr "Bel. Schiene: {field} geleiteter Kurs"
 
+msgid "any track: Any Choice"
+msgstr "Bel. Schiene: Beliebige Kurswahl"
+
+msgid "Any Choice"
+msgstr "Beliebige Kurswahl"
+
 #: cdedb/frontend/event.py:4767 cdedb/frontend/event.py:5112
 #: cdedb/frontend/event.py:5117
 msgid "registration status"
