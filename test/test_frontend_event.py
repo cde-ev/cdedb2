@@ -2999,6 +2999,10 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Veranstaltungen")
         self.assertNonPresence("Testakademie")
+        self.logout()
+
+        # since annika is no member, she can not access the past events
+        self.login(USER_DICT['berta'])
         self.traverse({'href': '/cde'},
                       {'href': '/cde/past/event/list'})
         self.assertTitle("Vergangene Veranstaltungen")
