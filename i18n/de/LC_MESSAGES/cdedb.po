@@ -13456,6 +13456,9 @@ msgstr "Sende eine Email an alle Kursleiter"
 msgid "Mailinglist Administration"
 msgstr "Mailinglisten-Administration"
 
+msgid "Foto removed."
+msgstr "Profilbild entfernt."
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 

@@ -581,6 +581,9 @@ class FrontendTest(unittest.TestCase):
             cls.scrap_path = tempfile.mkdtemp()
             print(cls.scrap_path, file=sys.stderr)
 
+        with open("/cdedb2/test/ancillary_files/sample_data.json", "r", encoding="utf8") as f:
+            cls.sample_data = json.load(f)
+
     @classmethod
     def tearDownClass(cls):
         if cls.do_scrap:

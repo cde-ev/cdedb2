@@ -9,8 +9,12 @@ import collections
 import copy
 import datetime
 import decimal
-
 from passlib.hash import sha512_crypt
+import pathlib
+from os import PathLike
+from typing import (
+    Union, Optional
+)
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
@@ -23,7 +27,9 @@ from cdedb.common import (
     PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException, PathLike,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter, genesis_realm_override, ValidationWarning, xsorted)
+    decode_parameter, genesis_realm_override, ValidationWarning, xsorted,
+    RequestState, get_hash, DefaultReturnCode
+)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -51,6 +57,8 @@ class CoreBackend(AbstractBackend):
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, secrets["RESET_SALT"], cookie))
+        self.foto_dir: Union[pathlib.Path, PathLike]
+        self.foto_dir = self.conf['STORAGE_DIR'] / 'foto'
 
     @classmethod
     def is_admin(cls, rs):
@@ -831,23 +839,64 @@ class CoreBackend(AbstractBackend):
             return ret
 
     @access("persona")
-    def change_foto(self, rs, persona_id, foto):
+    def change_foto(self, rs: RequestState, persona_id: int,
+                    foto: Optional[bytes]) -> DefaultReturnCode:
         """Special modification function for foto changes.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :type foto: str or None
-        :rtype: int
-        :returns: default return code
+        Return 1 on successful change, -1 on successful removal, 0 otherwise.
         """
         persona_id = affirm("id", persona_id)
-        foto = affirm("str_or_None", foto)
-        data = {
-            'id': persona_id,
-            'foto': foto}
-        return self.set_persona(
-            rs, data, may_wait=False, change_note="Profilbild geändert.",
-            allow_specials=("foto",))
+        if foto is None:
+            with Atomizer(rs):
+                old_hash = unwrap(self.sql_select_one(
+                    rs, "core.personas", ("foto",), persona_id))
+                data = {
+                    'id': persona_id,
+                    'foto': None,
+                }
+                ret = self.set_persona(
+                    rs, data, may_wait=False,
+                    change_note="Profilbild entfernt.",
+                    allow_specials=("foto",))
+                # Return a negative value to signify deletion.
+                if ret < 0:
+                    raise RuntimeError("Special persona change should not"
+                                       " be pending.")
+                ret = -1 * ret
+                if ret and old_hash and not self.foto_usage(rs, old_hash):
+                    path = self.foto_dir / old_hash
+                    if path.exists():
+                        path.unlink()
+        else:
+            foto = affirm("bytes", foto)
+            my_hash = get_hash(foto)
+            data = {
+                'id': persona_id,
+                'foto': my_hash,
+            }
+            ret = self.set_persona(
+                rs, data, may_wait=False, change_note="Profilbild geändert.",
+                allow_specials=("foto",))
+            if ret:
+                path = self.foto_dir / my_hash
+                if not path.exists():
+                    with open(path, 'wb') as f:
+                        f.write(foto)
+        return ret
+
+    @access("persona")
+    def get_foto(self, rs: RequestState, foto: str) -> Optional[bytes]:
+        """Retrieve a stored foto.
+
+        The foto is identified by its hash rather than the persona id it
+         belongs to, to prevent scraping."""
+        foto = affirm("str", foto)
+        path = self.foto_dir / foto
+        ret = None
+        if path.exists():
+            with open(path, "rb") as f:
+                ret = f.read()
+        return ret
 
     @access("meta_admin")
     def initialize_privilege_change(self, rs, data):

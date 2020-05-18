@@ -2,10 +2,11 @@
 
 import copy
 import re
+import json
 
 import urllib.parse
 from test.common import USER_DICT, FrontendTest, as_users
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, get_hash
 
 import cdedb.database.constants as const
 import webtest
@@ -1038,13 +1039,12 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['setfotoform']
         with open("/tmp/cdedb-store/testfiles/picture.png", 'rb') as datafile:
             data = datafile.read()
+        my_hash = get_hash(data)
         f['foto'] = webtest.Upload("picture.png", data, "application/octet-stream")
         self.submit(f)
-        self.assertIn('foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', self.response.text)
-        with open('/tmp/cdedb-store/foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', 'rb') as f:
-            blob = f.read()
-        self.assertTrue(blob.startswith(b"\x89PNG"))
-        self.assertTrue(len(blob) > 10000)
+        self.assertIn(f'foto/{my_hash}', self.response.text)
+        self.get(f'/core/foto/{my_hash}')
+        self.assertEqual(data, self.response.body)
 
     @as_users("vera", "berta")
     def test_set_foto_jpg(self, user):
@@ -1053,22 +1053,23 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['setfotoform']
         with open("/tmp/cdedb-store/testfiles/picture.jpg", 'rb') as datafile:
             data = datafile.read()
+        my_hash = get_hash(data)
         f['foto'] = webtest.Upload("picture.jpg", data, "application/octet-stream")
         self.submit(f)
-        self.assertIn('foto/5bf9f9d6ce9cb9dbe96623076fac56b631ba129f2d47a497f9adc1b0b8531981bb171e191856ebc37249485136f214c837ae871c1389152a9e956a447b08282e', self.response.text)
-        with open('/tmp/cdedb-store/foto/5bf9f9d6ce9cb9dbe96623076fac56b631ba129f2d47a497f9adc1b0b8531981bb171e191856ebc37249485136f214c837ae871c1389152a9e956a447b08282e', 'rb') as f:
-            blob = f.read()
-        self.assertTrue(blob.startswith(b"\xff\xd8\xff"))
-        self.assertTrue(len(blob) > 10000)
+        self.assertIn(f'foto/{my_hash}', self.response.text)
+        self.get(f'/core/foto/{my_hash}')
+        self.assertEqual(data, self.response.body)
 
     @as_users("berta")
     def test_reset_foto(self, user):
         self.traverse({'description': user['display_name']},)
-        self.assertIn('foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9', self.response.text)
+        foto_hash = self.sample_data['core.personas'][user['id'] - 1]['foto']
+        self.assertIn(f'foto/{foto_hash}', self.response.text)
         self.traverse({'description': 'Profilbild ändern'})
         f = self.response.forms['resetfotoform']
-        self.submit(f)
-        self.assertNotIn('foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9', self.response.text)
+        self.submit(f, check_notification=False)
+        self.assertPresence("Profilbild entfernt.", div="notifications")
+        self.assertNotIn(f'foto/{foto_hash}', self.response.text)
 
     @as_users("vera")
     def test_user_search(self,  user):
