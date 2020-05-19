@@ -135,7 +135,7 @@
                                                 (Registration until {{ date }})
                                             {% endtrans %}
                                         {% else %}
-                                            {% trans date=event['registration_soft_limit']|datetime(lang=lang), date2=event['registration_soft_limit']|datetime(lang=lang) %}
+                                            {% trans date=event['registration_soft_limit']|datetime(lang=lang), date2=event['registration_hard_limit']|datetime(lang=lang) %}
                                                 (Registration until {{ date }}, late registration until {{ date2 }}.)
                                             {% endtrans %}
                                         {% endif %}
@@ -217,7 +217,7 @@
                                 {% endif -%}
                             {% elif event['is_open'] %}
                                 {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
-                                    gettext("Register"), icon='sing-in-alt') }}
+                                    gettext("Register"), icon='sign-in-alt') }}
                                 {% if not event['registration_soft_limit'] is none %}
                                     {% if now() <= event['registration_soft_limit'] %}
                                         {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
