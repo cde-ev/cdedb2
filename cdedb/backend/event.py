@@ -8,6 +8,11 @@ import collections
 import copy
 import hashlib
 import decimal
+import pathlib
+from os import PathLike
+from typing import (
+    Optional, Union
+)
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
@@ -22,7 +27,7 @@ from cdedb.common import (
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
     mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
-    xsorted, RequestState
+    xsorted, get_hash, RequestState, DefaultReturnCode, PathLike
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
@@ -34,6 +39,11 @@ class EventBackend(AbstractBackend):
     """Take note of the fact that some personas are orgas and thus have
     additional actions available."""
     realm = "event"
+
+    def __init__(self, configpath: PathLike):
+        super().__init__(configpath)
+        self.minor_form_dir = Union[pathlib.Path, PathLike]
+        self.minor_form_dir = self.conf['STORAGE_DIR'] / 'minor_form'
 
     @classmethod
     def is_admin(cls, rs):
@@ -1479,6 +1489,47 @@ class EventBackend(AbstractBackend):
                 n_("Deletion of %(type)s blocked by %(block)s."),
                 {"type": "event part", "block": blockers.keys()})
 
+        return ret
+
+    @access("event")
+    def change_minor_form(self, rs: RequestState, event_id: int,
+                          minor_form: Optional[bytes]) -> DefaultReturnCode:
+        """Change or remove an event's minor form.
+
+        Return 1 on successful change, -1 on successful deletion, 0 otherwise."""
+        event_id = affirm("id", event_id)
+        if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
+            raise PrivilegeError(n_("Must be orga or admin to change the"
+                                    " minor form."))
+        # TODO log minorform changes
+        path = self.minor_form_dir / str(event_id)
+        if minor_form is None:
+            if path.exists():
+                path.unlink()
+                self.event_log(rs, const.EventLogCodes.minor_form_removed,
+                               event_id)
+                return -1
+            else:
+                return 0
+        else:
+            with open(path, "wb") as f:
+                f.write(minor_form)
+            self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id)
+            return 1
+
+    @access("event")
+    def get_minor_form(self, rs: RequestState,
+                       event_id: int) -> Optional[bytes]:
+        """Retrieve the minor form for an event.
+
+        Returns None if no minor form exists for the given event."""
+        event_id = affirm("id", event_id)
+        # TODO accesscheck?
+        path = self.minor_form_dir / str(event_id)
+        ret = None
+        if path.exists():
+            with open(path, "rb") as f:
+                ret = f.read()
         return ret
 
     @internal

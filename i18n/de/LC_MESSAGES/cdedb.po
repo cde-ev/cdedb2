@@ -483,6 +483,28 @@ msgstr "Partieller Import"
 msgid "EventLogCodes.lodgement_group_created"
 msgstr "Unterkunftgruppe erstellt"
 
+msgid "EventLogCodes.lodgement_group_changed"
+msgstr "Unterkunftgruppe geändert"
+
+msgid "EventLogCodes.lodgement_group_deleted"
+msgstr "Unterkunftgruppe gelöscht"
+
+msgid "EventLogCodes.fee_modifier_created"
+msgstr "Beitragsmodifikator angelegt"
+
+msgid "EventLogCodes.fee_modifier_changed"
+msgstr "Beitragsmodifikator geändert"
+
+msgid "EventLogCodes.fee_modifier_deleted"
+msgstr "Beitragsmodifikator entfernt"
+
+msgid "EventLogCodes.minor_form_updated"
+msgstr "Minderjährigenformular geändert"
+
+msgid "EventLogCodes.minor_form_removed"
+msgstr "Minderjährigenformular entfernt"
+
+
 #: cdedb/i18n_additional.py:102
 msgid "FinanceLogCodes.new_member"
 msgstr "Neues Mitglied"
@@ -15221,9 +15243,3 @@ msgstr "Profilbild entfernt."
 
 #~ msgid "CoreLogCodes.password_invalidated"
 #~ msgstr "Passwort gelöscht"
-
-#~ msgid "EventLogCodes.lodgement_group_changed"
-#~ msgstr "Unterkunftgruppe geändert"
-
-#~ msgid "EventLogCodes.lodgement_group_deleted"
-#~ msgstr "Unterkunftgruppe gelöscht"

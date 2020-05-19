@@ -476,6 +476,30 @@ msgstr "Event unlocked"
 msgid "EventLogCodes.event_partial_import"
 msgstr "Partial Import"
 
+msgid "EventLogCodes.lodgement_group_created"
+msgstr "Lodgement Group created"
+
+msgid "EventLogCodes.lodgement_group_changed"
+msgstr "Lodgement Group changed"
+
+msgid "EventLogCodes.lodgement_group_deleted"
+msgstr "Lodgement Group deleted"
+
+msgid "EventLogCodes.fee_modifier_created"
+msgstr "Fee Modifier created"
+
+msgid "EventLogCodes.fee_modifier_changed"
+msgstr "Fee modifier changed"
+
+msgid "EventLogCodes.fee_modifier_deleted"
+msgstr "Fee Modifier deleted"
+
+msgid "EventLogCodes.minor_form_updated"
+msgstr "Minor Form updated"
+
+msgid "EventLogCodes.minor_form_removed"
+msgstr "Minor Form removed"
+
 #: cdedb/i18n_additional.py:102
 msgid "FinanceLogCodes.new_member"
 msgstr "New Member"

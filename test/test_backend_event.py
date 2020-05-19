@@ -376,6 +376,41 @@ class TestEventBackend(BackendTest):
              "orgas", "lodgement_groups", "lodgements", "registrations",
              "questionnaire", "log", "mailinglists", "fee_modifiers")))
 
+    @as_users("annika", "garcia")
+    def test_change_minor_form(self, user):
+        event_id = 1
+        minor_form = b"minor_form"
+        self.assertIsNone(self.event.get_minor_form(self.key, event_id))
+        self.assertLess(0, self.event.change_minor_form(self.key, event_id, minor_form))
+        self.assertEqual(minor_form, self.event.get_minor_form(self.key, event_id))
+        self.assertGreater(0, self.event.change_minor_form(self.key, event_id, None))
+        count, log = self.event.retrieve_log(
+            self.key, codes={const.EventLogCodes.minor_form_updated,
+                             const.EventLogCodes.minor_form_removed},
+            event_id=event_id)
+        expectation = [
+            {
+                'code': const.EventLogCodes.minor_form_updated,
+                'submitted_by': user['id'],
+                'persona_id': None,
+                'event_id': event_id,
+                'ctime': nearly_now(),
+                'additional_info': None,
+            },
+            {
+                'code': const.EventLogCodes.minor_form_removed,
+                'submitted_by': user['id'],
+                'persona_id': None,
+                'event_id': event_id,
+                'ctime': nearly_now(),
+                'additional_info': None,
+            }
+        ]
+        self.assertEqual(len(expectation), len(log))
+        for e, l in zip(expectation, log):
+            for k in e:
+                self.assertEqual(e[k], l[k])
+
     @as_users("annika")
     def test_aposteriori_track_creation(self, user):
         event_id = 1
