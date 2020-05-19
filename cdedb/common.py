@@ -69,15 +69,15 @@ Error = Tuple[str, Exception]
 
 # A set of roles a user may have.
 Role = str
-Roles = Set[str]
+Roles = Set[Role]
 
 # A set of realms a persona belongs to.
 Realm = str
-Realms = Set[str]
+Realms = Set[Realm]
 
 # Admin views a user may activate/deactivate.
 AdminView = str
-AdminViews = Set[str]
+AdminViews = Set[Realm]
 
 
 T = TypeVar("T")
@@ -336,7 +336,7 @@ def make_proxy(backend: B, internal=False) -> B:
             finally:
                 if not internal:
                     rs.conn = None
-        return wrapper
+        return cast(F, wrapper)
 
     class Proxy:
         def __getattr__(self, name: str) -> Any:
@@ -424,7 +424,8 @@ def merge_dicts(targetdict: Union[MutableMapping, werkzeug.MultiDict],
 
     :type dicts: [{object: object}]
     """
-    assert (targetdict is not None)
+    if targetdict is None:
+        raise ValueError("No inputs given.")
     for adict in dicts:
         for key in adict:
             if key not in targetdict:
@@ -778,18 +779,6 @@ class PsycoJson(psycopg2.extras.Json):
 
     def dumps(self, obj: Any) -> str:
         return json_serialize(obj)
-
-
-def shutil_copy(*args: Union[str, pathlib.Path],
-                **kwargs: Union[str, pathlib.Path]) -> AnyStr:
-    """Wrapper around shutil.copy() converting pathlib.Path to str.
-
-    This is just a convenience function.
-    """
-    args = tuple(str(a) if isinstance(a, pathlib.Path) else a for a in args)
-    kwargs = {k: str(v) if isinstance(v, pathlib.Path) else v
-              for k, v in kwargs.items()}
-    return shutil.copy(*args, **kwargs)
 
 
 def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
@@ -1337,7 +1326,7 @@ def mixed_existence_sorter(iterable: Collection[int]
             yield i
 
 
-def n_(x: T) -> T:
+def n_(x: str) -> str:
     """
     Alias of the identity for i18n.
     Identity function that shadows the gettext alias to trick pybabel into

@@ -51,7 +51,7 @@ import werkzeug.wrappers
 from typing import (
     Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
     Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    MutableMapping, Sequence
+    MutableMapping, Sequence, cast
 )
 
 from cdedb.common import (
@@ -202,6 +202,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         return ret
 
 
+# Ignore the capitalization error in function name sanitize_None.
 # noinspection PyPep8Naming
 def sanitize_None(data: Optional[T]) -> Union[str, T]:
     """Helper to let jinja convert all ``None`` into empty strings for display
@@ -1895,7 +1896,7 @@ def access(*roles: Role, modi: Collection[str] = None,
             (check_anti_csrf
              if check_anti_csrf is not None
              else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
-        return new_fun
+        return cast(F, new_fun)
 
     return decorator
 
@@ -2069,7 +2070,7 @@ def REQUESTdata(*spec: Tuple[str, str]) -> Callable[[F], F]:
                         kwargs[name] = check_validation(rs, argtype, val, name)
             return fun(obj, rs, *args, **kwargs)
 
-        return new_fun
+        return cast(F, new_fun)
 
     return wrap
 
@@ -2110,7 +2111,7 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
                 rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
 
-        return new_fun
+        return cast(F, new_fun)
 
     return wrap
 
@@ -2195,7 +2196,7 @@ def REQUESTfile(*args: str) -> Callable[[F], F]:
                 rs.values[name] = kwargs[name]
             return fun(obj, rs, *args2, **kwargs)
 
-        return new_fun
+        return cast(F, new_fun)
 
     return wrap
 
@@ -2234,7 +2235,7 @@ def event_guard(argname: str = "event_id",
                         rs.gettext("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
 
-        return new_fun
+        return cast(F, new_fun)
 
     return wrap
 
@@ -2274,7 +2275,7 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                         "admins."))
             return fun(obj, rs, *args, **kwargs)
 
-        return new_fun
+        return cast(F, new_fun)
 
     return wrap
 

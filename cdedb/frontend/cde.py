@@ -18,6 +18,7 @@ import operator
 import datetime
 import time
 import dateutil.easter
+import shutil
 
 import psycopg2.extensions
 import werkzeug
@@ -28,7 +29,7 @@ from cdedb.database.connection import Atomizer
 from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
-    PERSONA_DEFAULTS, diacritic_patterns, shutil_copy, asciificator,
+    PERSONA_DEFAULTS, diacritic_patterns, asciificator,
     EntitySorter, TransactionType, xsorted)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
@@ -1746,7 +1747,7 @@ class CdEFrontend(AbstractUserFrontend):
             with open(work_dir / "lastschrift_receipt.tex", 'w') as f:
                 f.write(tex)
             logo_src = self.conf["REPOSITORY_PATH"] / "misc/cde-logo.jpg"
-            shutil_copy(logo_src, work_dir / "cde-logo.jpg")
+            shutil.copy(logo_src, work_dir / "cde-logo.jpg")
             errormsg = n_("LaTeX compiliation failed. "
                           "This might be due to special characters.")
             pdf = self.serve_complex_latex_document(

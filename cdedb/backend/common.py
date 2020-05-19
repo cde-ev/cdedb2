@@ -17,7 +17,7 @@ import psycopg2.extras
 import psycopg2.extensions
 from typing import (
     Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
-    Optional, Sequence
+    Optional, Sequence, cast
 )
 
 import cdedb.validation as validate
@@ -110,7 +110,7 @@ def batchify(function: F,
     return batchified
 
 
-def access(*roles: Role) -> Callable:
+def access(*roles: Role) -> Callable[[F], F]:
     """The @access decorator marks a function of a backend for publication.
 
     Think of this as an RPC interface, only published functions are
@@ -132,7 +132,7 @@ def access(*roles: Role) -> Callable:
             return function(self, rs, *args, **kwargs)
 
         wrapper.access = True
-        return wrapper
+        return cast(F, wrapper)
 
     return decorator
 
@@ -807,6 +807,7 @@ def affirm_validation(assertion: str, value: T,
     return checker(value, **kwargs)
 
 
+# Ignore the parameter name allow_None
 # noinspection PyPep8Naming
 def affirm_array_validation(assertion: str, values: Iterable[T],
                             allow_None: bool = False,
@@ -823,6 +824,7 @@ def affirm_array_validation(assertion: str, values: Iterable[T],
     return tuple(checker(value, **kwargs) for value in values)
 
 
+# Ignore the parameter name allow_None
 # noinspection PyPep8Naming
 def affirm_set_validation(assertion: str, values: Iterable[T],
                           allow_None: bool = False,
