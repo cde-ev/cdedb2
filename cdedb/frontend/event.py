@@ -41,7 +41,7 @@ from cdedb.common import (
     unwrap, now, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
-    LodgementsSortkeys, xsorted, RequestState)
+    LodgementsSortkeys, xsorted, RequestState, extract_roles)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -457,6 +457,13 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def add_orga(self, rs, event_id, orga_id):
         """Make an additional persona become orga."""
+        if rs.has_validation_errors():
+            # Shortcircuit if we have got no workable cdedbid
+            return self.show_event(rs, event_id)
+        orga = self.coreproxy.get_persona(rs, orga_id)
+        if 'event' not in extract_roles(orga, introspection_only=True):
+            rs.append_validation_error(
+                ('orga_id', ValueError(n_("User is no event user."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         new = {

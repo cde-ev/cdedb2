@@ -411,7 +411,16 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("30.10.2001", div='timeframe-registration')
         # orgas
         self.assertNonPresence("Bertålotta")
-        if user["id"] in {1, 6}:
+        if user["id"] in {27, 6}:
+            f = self.response.forms['addorgaform']
+            f['orga_id'] = "DB-10-2"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+            f = self.response.forms['addorgaform']
+            f['orga_id'] = "DB-10-8"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+            self.assertPresence("User is no event user.")
             f = self.response.forms['addorgaform']
             f['orga_id'] = "DB-2-7"
             self.submit(f)
