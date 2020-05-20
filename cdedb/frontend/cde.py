@@ -1279,7 +1279,7 @@ class CdEFrontend(AbstractUserFrontend):
             'lastschrifts': lastschrifts, 'personas': personas,
             'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
 
-    @access("member")
+    @access("member", "finance_admin")
     def lastschrift_show(self, rs, persona_id):
         """Display all lastschrift information for one member.
 
@@ -2269,7 +2269,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, data=csv_data, inline=False,
             filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
 
-    @access("member")
+    @access("member", "cde_admin")
     def show_past_event(self, rs, pevent_id):
         """Display concluded event."""
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
@@ -2297,7 +2297,7 @@ class CdEFrontend(AbstractUserFrontend):
             'is_participant': is_participant,
         })
 
-    @access("member")
+    @access("member", "cde_admin")
     def show_past_course(self, rs, pevent_id, pcourse_id):
         """Display concluded course."""
         participants, personas, extra_participants = self.process_participants(
@@ -2306,7 +2306,7 @@ class CdEFrontend(AbstractUserFrontend):
             'participants': participants, 'personas': personas,
             'extra_participants': extra_participants})
 
-    @access("member")
+    @access("member", "cde_admin")
     @REQUESTdata(("institution_id", "id_or_None"))
     def list_past_events(self, rs, institution_id=None):
         """List all concluded events."""
@@ -2523,7 +2523,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/show_past_event")
 
-    @access("member")
+    @access("member", "cde_admin")
     def view_misc(self, rs):
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
