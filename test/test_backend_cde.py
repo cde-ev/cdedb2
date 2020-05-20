@@ -18,7 +18,11 @@ class TestCdEBackend(BackendTest):
         data['display_name'] = "Zelda"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'display_name', 'telephone'}}
-        num = self.core.change_persona(self.key, setter, 1, change_note='note')
+        if user == USER_DICT['vera']:
+            generation = 2
+        else:
+            generation = 1
+        num = self.core.change_persona(self.key, setter, generation, change_note='note')
         self.assertEqual(1, num)
         new_data = self.core.get_cde_user(self.key, user['id'])
         self.assertEqual(data, new_data)
@@ -299,7 +303,7 @@ class TestCdEBackend(BackendTest):
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual(
-            {2, 6, 9, 12, 15, 22, 23, 27, 32, 100}, {e['id'] for e in result})
+            {2, 6, 9, 12, 15, 100}, {e['id'] for e in result})
 
     @as_users("vera")
     def test_user_search(self, user):
