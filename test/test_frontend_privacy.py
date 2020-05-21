@@ -641,7 +641,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... nor the member search page itself
         self.get('/cde/search/member', status="403 FORBIDDEN")
 
-    @as_users("annika", "charly", "daniel", "garcia")
+    @as_users("charly", "daniel", "garcia", "inga")
     def test_show_past_event(self, user):
         akira = "Akira Abukara"
         berta = "Bertålotta Beispie"
@@ -663,7 +663,7 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertNonPresence(participant)
 
         # non-cde admin who doesnt participate should see searchable members only
-        elif user == USER_DICT['annika']:
+        elif user == USER_DICT['inga']:
             visible = [akira, berta, ferdinand]
             invisible = [charly, emilia]
             for participant in visible:
@@ -679,7 +679,7 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertPresence(participant, div='list-participants')
                 self.assertNoLink(participant)
 
-    @as_users("annika", "charly", "daniel", "garcia")
+    @as_users("charly", "daniel", "garcia", "inga")
     def test_show_past_course(self, user):
         akira = "Akira Abukara"
         emilia = "Emilia E. Eventis"
@@ -700,7 +700,7 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertNonPresence(participant)
 
         # non-cde admin who doesnt participate should see searchable members only
-        elif user == USER_DICT['annika']:
+        elif user == USER_DICT['inga']:
             visible = [akira, ferdinand]
             invisible = [emilia]
             for participant in visible:

@@ -1305,7 +1305,10 @@ class TestCoreFrontend(FrontendTest):
         self._approve_privilege_change(
             USER_DICT["anton"], USER_DICT["martin"], USER_DICT["berta"],
             new_privileges, old_privileges)
+        self.logout()
+
         # Check the overview.
+        self.login(USER_DICT['inga'])
         self.traverse({"href": "/core/admins"})
         self.assertTitle("Administratorenübersicht")
         self.assertPresence("Anton Armin A. Administrator", div="meta")

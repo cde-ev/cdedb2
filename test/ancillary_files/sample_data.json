@@ -6241,7 +6241,7 @@
             "id": 8,
             "mailinglist_id": 1,
             "persona_id": 13,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 9,
@@ -6253,25 +6253,25 @@
             "id": 10,
             "mailinglist_id": 1,
             "persona_id": 22,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 11,
             "mailinglist_id": 1,
             "persona_id": 23,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 12,
             "mailinglist_id": 1,
             "persona_id": 27,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 13,
             "mailinglist_id": 1,
             "persona_id": 32,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 14,
@@ -6325,7 +6325,7 @@
             "id": 22,
             "mailinglist_id": 2,
             "persona_id": 13,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 23,
@@ -6337,25 +6337,25 @@
             "id": 24,
             "mailinglist_id": 2,
             "persona_id": 22,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 25,
             "mailinglist_id": 2,
             "persona_id": 23,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 26,
             "mailinglist_id": 2,
             "persona_id": 27,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 27,
             "mailinglist_id": 2,
             "persona_id": 32,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 28,
@@ -6571,7 +6571,7 @@
             "id": 63,
             "mailinglist_id": 51,
             "persona_id": 32,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 64,
@@ -6625,7 +6625,7 @@
             "id": 72,
             "mailinglist_id": 51,
             "persona_id": 13,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 73,
@@ -6637,25 +6637,25 @@
             "id": 74,
             "mailinglist_id": 51,
             "persona_id": 22,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 75,
             "mailinglist_id": 51,
             "persona_id": 23,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 76,
             "mailinglist_id": 51,
             "persona_id": 27,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 77,
             "mailinglist_id": 52,
             "persona_id": 32,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 78,
@@ -6709,7 +6709,7 @@
             "id": 86,
             "mailinglist_id": 52,
             "persona_id": 13,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 87,
@@ -6721,19 +6721,19 @@
             "id": 88,
             "mailinglist_id": 52,
             "persona_id": 22,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 89,
             "mailinglist_id": 52,
             "persona_id": 23,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 90,
             "mailinglist_id": 52,
             "persona_id": 27,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 91,
@@ -6805,19 +6805,19 @@
             "id": 102,
             "mailinglist_id": 55,
             "persona_id": 23,
-            "subscription_state": 1
+            "subscription_state": 2
         },
         {
             "id": 103,
             "mailinglist_id": 55,
             "persona_id": 27,
-            "subscription_state": 1
+            "subscription_state": 2
         },
         {
             "id": 104,
             "mailinglist_id": 55,
             "persona_id": 22,
-            "subscription_state": 1
+            "subscription_state": 2
         },
         {
             "id": 105,
@@ -6967,25 +6967,25 @@
             "id": 129,
             "mailinglist_id": 52,
             "persona_id": 17,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 130,
             "mailinglist_id": 51,
             "persona_id": 17,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 131,
             "mailinglist_id": 2,
             "persona_id": 17,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 132,
             "mailinglist_id": 1,
             "persona_id": 17,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 133,
@@ -6997,25 +6997,25 @@
             "id": 134,
             "mailinglist_id": 1,
             "persona_id": 16,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 135,
             "mailinglist_id": 2,
             "persona_id": 16,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 136,
             "mailinglist_id": 51,
             "persona_id": 16,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 137,
             "mailinglist_id": 52,
             "persona_id": 16,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 138,
