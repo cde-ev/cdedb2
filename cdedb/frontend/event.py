@@ -1149,6 +1149,7 @@ class EventFrontend(AbstractUserFrontend):
                 link = cdedburl(rs, "event/register", {'event_id': new_id})
                 descr = participant_ml_data['description'].format(link)
                 participant_ml_data['description'] = descr
+                participant_ml_data['event_id'] = new_id
                 code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
                 self.notify_return_code(
                     rs, code, success=n_("Participant mailinglist created."))
