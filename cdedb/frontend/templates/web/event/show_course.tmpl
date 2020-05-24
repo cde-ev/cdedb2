@@ -92,7 +92,7 @@
     <div class="row">
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                 if track_id in ambience['course']['segments'] %}
-            {% set num_track_attendees = attendees[(ambience['course']['id'], track_id)]|length %}
+            {% set num_track_learners = learners[(ambience['course']['id'], track_id)]|length %}
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
@@ -102,7 +102,7 @@
                                              'course_id': ambience['course']['id'],
                                              'position': enums.CourseFilterPositions.assigned.value,
                                              'submitform': True}),
-                                         num_track_attendees,
+                                         num_track_learners,
                                          title=gettext("Participants’ Course Choices")) }}
                         </div>
                         <h3 class="panel-title">
@@ -119,18 +119,18 @@
                                 <strong>{% trans %}Course is cancelled{% endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['min_size'] != None and
-                                num_track_attendees < ambience['course']['min_size'] %}
+                                num_track_learners < ambience['course']['min_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(ambience['course']['min_size'] - num_track_attendees) %}
+                                    {% trans count=(ambience['course']['min_size'] - num_track_learners) %}
                                         Course has {{ count }} attendees too few.
                                     {% endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['max_size'] != None and
-                                num_track_attendees > ambience['course']['max_size'] %}
+                                num_track_learners > ambience['course']['max_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(num_track_attendees - ambience['course']['max_size']) %}
+                                    {% trans count=(num_track_learners - ambience['course']['max_size']) %}
                                     	Course has {{ count }} attendees too many.
                                     {% endtrans %}</strong>
                             </p>
