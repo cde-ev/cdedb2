@@ -431,6 +431,7 @@ class CoreFrontend(AbstractFrontend):
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
                  and 'foto' in data):
             del data['foto']
+        # relative admins, core admins and the user himself got "core"
         if "core" not in access_levels:
             masks = ["balance", "decided_search", "trial_member", "bub_search",
                      "is_searchable"]
@@ -440,7 +441,7 @@ class CoreFrontend(AbstractFrontend):
                     "is_cde_admin", "is_event_admin", "is_ml_admin",
                     "is_assembly_admin", "is_cde_realm", "is_event_realm",
                     "is_ml_realm", "is_assembly_realm", "is_archived"])
-            if "orga" not in access_levels and not is_relative_admin:
+            if "orga" not in access_levels:
                 masks.extend(["is_member", "gender"])
             for key in masks:
                 if key in data:
