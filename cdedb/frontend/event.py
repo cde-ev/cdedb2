@@ -3701,7 +3701,7 @@ class EventFrontend(AbstractUserFrontend):
         The internal flag is used if the call comes from another frontend
         function to disable further redirection on validation errors.
         """
-        if rs.has_validation_errors():
+        if rs.has_validation_errors() and not internal:
             return self.redirect(rs, 'event/show_registration')
         tracks = rs.ambience['event']['tracks']
         registration = rs.ambience['registration']
