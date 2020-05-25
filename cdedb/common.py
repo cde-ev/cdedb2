@@ -1689,6 +1689,7 @@ PERSONA_DEFAULTS = {
     'decided_search': None,
     'bub_search': None,
     'foto': None,
+    'paper_expuls': None,
 }
 
 #: Set of possible values for ``ntype`` in
@@ -1799,14 +1800,14 @@ PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
     "id", "username", "display_name", "family_name", "given_names",
     "title", "name_supplement")
 
-#: Names of columns associated to a cde (formor)member
+#: Names of columns associated to a cde (former)member
 PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (
     "gender", "birthday", "telephone", "mobile", "address_supplement",
     "address", "postal_code", "location", "country", "birth_name",
     "address_supplement2", "address2", "postal_code2", "location2",
     "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search", "foto")
+    "bub_search", "foto", "paper_expuls")
 
 #: Names of columns associated to an event user. This should be a subset of
 #: :py:data:`PERSONA_CDE_FIELDS` to facilitate upgrading of event users to
@@ -1872,6 +1873,7 @@ genesis_realm_access_bits = {
         'trial_member': True,
         'decided_search': False,
         'bub_search': False,
+        'paper_expuls': True,
     }
 }
 
