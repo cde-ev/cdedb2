@@ -352,17 +352,18 @@ class CoreFrontend(AbstractFrontend):
         if persona_id == rs.user.persona_id:
             access_levels.update(ALL_ACCESS_LEVELS)
         # Core admins see everything
-        if "core_admin" in rs.user.roles:
+        if "core_admin" in rs.user.roles and "core_user" in rs.user.admin_views:
             access_levels.update(ALL_ACCESS_LEVELS)
         # Meta admins are meta
-        if "meta_admin" in rs.user.roles:
+        if "meta_admin" in rs.user.roles and "meta_admin" in rs.user.admin_views:
             access_levels.add("meta")
         # Other admins see their realm if they are relative admin
         if is_relative_admin:
-            # Relative admins can see core data
-            access_levels.add("core")
             for realm in ("ml", "assembly", "event", "cde"):
-                if "{}_admin".format(realm) in rs.user.roles:
+                if (f"{realm}_admin" in rs.user.roles
+                        and f"{realm}_user" in rs.user.admin_views):
+                    # Relative admins can see core data
+                    access_levels.add("core")
                     access_levels.add(realm)
         # Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
@@ -373,23 +374,24 @@ class CoreFrontend(AbstractFrontend):
             access_levels.add("cde")
         # Orgas see their participants
         if event_id:
-            is_orga = ("event_admin" in rs.user.roles
-                       or event_id in self.eventproxy.orga_info(
-                        rs, rs.user.persona_id))
+            is_admin = ("event_admin" in rs.user.roles
+                        and "event_orga" in rs.user.admin_views)
+            is_orga = event_id in self.eventproxy.orga_info(
+                rs, rs.user.persona_id)
             is_participant = self.eventproxy.list_registrations(
                 rs, event_id, persona_id)
-            if is_orga and is_participant:
+            if (is_orga or is_admin) and is_participant:
                 access_levels.add("event")
                 access_levels.add("orga")
         # Mailinglist moderators see all users related to their mailinglist.
         # This excludes users with relation "unsubscribed", because they are not
         # directly shown on the management sites.
         if ml_id:
-            is_moderator = (
-                    "ml_admin" in rs.user.roles
-                    or ml_id in self.mlproxy.moderator_info(
-                        rs, rs.user.persona_id))
-            if is_moderator:
+            is_admin = ("ml_admin" in rs.user.roles
+                        and "ml_moderator" in rs.user.admin_views)
+            is_moderator = ml_id in self.mlproxy.moderator_info(
+                rs, rs.user.persona_id)
+            if is_moderator or is_admin:
                 relevant_stati = [s for s in const.SubscriptionStates
                                   if s != const.SubscriptionStates.unsubscribed]
                 if persona_id in self.mlproxy.get_subscription_states(
