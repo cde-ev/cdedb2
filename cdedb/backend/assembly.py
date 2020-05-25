@@ -75,16 +75,37 @@ class AssemblyBackend(AbstractBackend):
         :param persona_id: If not provided the current user is used.
         :rtype: bool
         """
-        if "member" in rs.user.roles or "assembly_admin" in rs.user.roles:
+        persona_id = persona_id or rs.user.roles
+        roles = self.core.get_roles_single(persona_id)
+
+        if "member" in roles or "assembly_admin" in roles:
             return True
         return self.check_attendance(
             rs, assembly_id=assembly_id, ballot_id=ballot_id,
             persona_id=persona_id)
 
     @access("persona")
-    def may_assemble(self, rs, *, assembly_id=None, ballot_id=None,
-                     persona_id=None):
-        """Helper to check if an user may interact with an assembly or ballot.
+    def may_assemble(self, rs, *, assembly_id=None, ballot_id=None):
+        """Check whether this persona may interact with a specific assembly/ballot.
+
+        Published variant of 'may_access' with input validation.
+
+        Exactly one of assembly_id and ballot_id has to be provided.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type ballot_id: int
+        :rtype: bool
+        """
+        assembly_id = affirm("id_or_None", assembly_id)
+        ballot_id = affirm("id_or_None", ballot_id)
+
+        return self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id)
+
+    @access("persona")
+    def check_assemble(self, rs, *, assembly_id=None, ballot_id=None,
+                       persona_id=None):
+        """Check whether a user may interact with a specific assembly/ballot.
 
         Published variant of 'may_access' with input validation.
 
@@ -102,25 +123,6 @@ class AssemblyBackend(AbstractBackend):
         persona_id = affirm("id_or_None", persona_id)
 
         return self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id,
-                               persona_id=persona_id)
-
-    @access("persona")
-    def may_view(self, rs, assembly_id, persona_id=None):
-        """Helper to check if an user may view an assembly.
-
-        Published variant of `may_access` with input validation. To be used by
-        frontends to find out if an assembly is visible.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type persona_id: int or None
-        :param persona_id: If not provided the current user is used.
-        :rtype: bool
-        """
-        assembly_id = affirm("id", assembly_id)
-        persona_id = affirm("id_or_None", persona_id)
-
-        return self.may_access(rs, assembly_id=assembly_id,
                                persona_id=persona_id)
 
     @staticmethod
@@ -928,7 +930,7 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm("id", assembly_id)
         persona_id = affirm("id", persona_id)
 
-        roles = extract_roles(self.core.get_persona(rs, persona_id))
+        roles = self.core.get_roles_single(rs, persona_id)
         if "member" in roles:
             raise ValueError(n_("Not allowed for members."))
         if "assembly" not in roles:
