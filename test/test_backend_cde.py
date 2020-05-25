@@ -18,10 +18,7 @@ class TestCdEBackend(BackendTest):
         data['display_name'] = "Zelda"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'display_name', 'telephone'}}
-        if user == USER_DICT['vera']:
-            generation = 2
-        else:
-            generation = 1
+        generation = self.core.changelog_get_generation(self.key, user['id'])
         num = self.core.change_persona(self.key, setter, generation, change_note='note')
         self.assertEqual(1, num)
         new_data = self.core.get_cde_user(self.key, user['id'])
