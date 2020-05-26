@@ -156,7 +156,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assemblies = self.assemblyproxy.list_assemblies(rs)
         for assembly_id in assemblies:
             assemblies[assembly_id]['is_visible'] = self.assemblyproxy.may_assemble(
-                rs, assembly_id)
+                rs, assembly_id=assembly_id)
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
         for ml_id in subs:
@@ -318,7 +318,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             all_assemblies = self.assemblyproxy.list_assemblies(rs)
             assembly = all_assemblies[ml['assembly_id']]
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
-                rs, assembly['id'])
+                rs, assembly_id=assembly['id'])
 
         interaction_policy = self.mlproxy.get_interaction_policy(
             rs, rs.user.persona_id, mailinglist=ml)

@@ -75,8 +75,8 @@ class AssemblyBackend(AbstractBackend):
         :param persona_id: If not provided the current user is used.
         :rtype: bool
         """
-        persona_id = persona_id or rs.user.roles
-        roles = self.core.get_roles_single(persona_id)
+        persona_id = persona_id or rs.user.persona_id
+        roles = self.core.get_roles_single(rs, persona_id)
 
         if "member" in roles or "assembly_admin" in roles:
             return True
