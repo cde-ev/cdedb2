@@ -273,7 +273,10 @@ class Application(BaseApp):
                     "<<<\n<<<\n<<<\n<<<").format(request.url))
                 self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                 self.logger.error("SECOND TRY CGITB")
-                self.logger.error(cgitb.text(sys.exc_info(), context=7))
+                try:
+                    self.logger.error(cgitb.text(sys.exc_info(), context=7))
+                except Exception:
+                    pass
                 raise
         except werkzeug.routing.RequestRedirect as e:
             return e.get_response(request.environ)
