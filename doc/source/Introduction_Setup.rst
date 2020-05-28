@@ -17,7 +17,7 @@ We need some dependencies:
 * Apache (with mod_wsgi)
 * git
 * openldap
-* texlive (for generating pdf documents)
+* texlive (incl. luatex and cm-super, for generating pdf documents)
 
 Further we depend on a number of python packages:
 
@@ -34,14 +34,19 @@ Further we depend on a number of python packages:
 * python-magic
 * python-imaging-library (more specifically pillow)
 * zxcvbn
+* icu
+* mailmanclient
 
 At last there are some recommended dependencies:
 
 * sphinx (for building the documentation)
 * guzzle-sphinx-theme (a documentation theme)
 * webtest (for tests, at least 2.0.17 for handling of multiple elements with the same name)
+* lxml (the python module; used in the test suite)
 * pgbouncer (otherwise database performance may be degraded)
 * fail2ban (for preventing brute-force attacks)
+* pylint (for code analysis)
+* requests (the python module; used in some scripts)
 
 Checkout the repository
 -----------------------
