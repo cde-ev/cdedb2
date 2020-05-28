@@ -1179,10 +1179,14 @@ class EventFrontend(AbstractUserFrontend):
                 rs, tuple(e['persona_id'] for e in registrations.values()))
             attendees = self.calculate_groups(
                 (course_id,), rs.ambience['event'], registrations,
-                key="course_id", personas=personas)
+                key="course_id", personas=personas, instructors=True)
+            learners = self.calculate_groups(
+                (course_id,), rs.ambience['event'], registrations,
+                key="course_id", personas=personas, instructors=False)
             params['personas'] = personas
             params['registrations'] = registrations
             params['attendees'] = attendees
+            params['learners'] = learners
             params['blockers'] = self.eventproxy.delete_course_blockers(
                 rs, course_id).keys() - {"instructors", "course_choices",
                                          "course_segments"}
@@ -3036,7 +3040,7 @@ class EventFrontend(AbstractUserFrontend):
             'reg_questionnaire': reg_questionnaire, 'preview': preview})
 
     @staticmethod
-    def process_registration_input(rs, event, courses, reg_questionnaire, 
+    def process_registration_input(rs, event, courses, reg_questionnaire,
                                    parts=None):
         """Helper to handle input by participants.
 
@@ -3278,7 +3282,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         return self.render(rs, "amend_registration", {
             'age': age, 'courses': courses, 'course_choices': course_choices,
-            'involved_tracks': involved_tracks, 
+            'involved_tracks': involved_tracks,
             'reg_questionnaire': reg_questionnaire,
         })
 
@@ -3417,7 +3421,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("preview", "bool_or_None"))
-    def additional_questionnaire_form(self, rs, event_id, preview=False, 
+    def additional_questionnaire_form(self, rs, event_id, preview=False,
                                       internal=False):
         """Render form.
 
@@ -4104,7 +4108,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @staticmethod
     def calculate_groups(entity_ids, event, registrations, key,
-                         personas=None):
+                         personas=None, instructors=True):
         """Determine inhabitants/attendees of lodgements/courses.
 
         This has to take care only to select registrations which are
@@ -4118,6 +4122,9 @@ class EventFrontend(AbstractUserFrontend):
         :type personas: {int: {str: object}} or None
         :param personas: If provided this is used to sort the resulting
           lists by name, so that the can be displayed sorted.
+        :type instructors: bool
+        :param instructors: Include instructors of courses. No effect for
+          lodgements.
         :rtype: {(int, int): [int]}
         """
         tracks = event['tracks']
@@ -4135,8 +4142,12 @@ class EventFrontend(AbstractUserFrontend):
                 part = instance
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id]['part_id']]
-            return (instance[key] == entity_id and
+            ret = (instance[key] == entity_id and
                     const.RegistrationPartStati(part['status']).is_present())
+            if (ret and key == "course_id" and not instructors
+                    and instance['course_instructor'] == entity_id):
+                ret = False
+            return ret
 
         if personas is None:
             sorter = lambda x: x
