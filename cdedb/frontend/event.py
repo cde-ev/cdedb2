@@ -2132,7 +2132,10 @@ class EventFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            try:
+                self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            except Exception:
+                pass
             return False, index
         if send_notifications:
             persona_ids = tuple(e['persona_id'] for e in data)

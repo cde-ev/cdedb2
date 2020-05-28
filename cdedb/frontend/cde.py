@@ -593,7 +593,10 @@ class CdEFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            try:
+                self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            except Exception:
+                pass
             return False, index
         # Send mail after the transaction succeeded
         if sendmail:
