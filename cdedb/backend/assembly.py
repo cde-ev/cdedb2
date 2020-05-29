@@ -86,8 +86,10 @@ class AssemblyBackend(AbstractBackend):
 
     @access("persona")
     def may_assemble(self, rs, *, assembly_id=None, ballot_id=None):
-        """Check whether this persona may interact with a specific assembly/ballot.
+        """Check authorization of this persona.
 
+        This checks, if the calling user may interact with a specific
+        assembly or ballot.
         Published variant of 'may_access' with input validation.
 
         Exactly one of assembly_id and ballot_id has to be provided.
@@ -103,10 +105,12 @@ class AssemblyBackend(AbstractBackend):
         return self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id)
 
     @access("persona")
-    def check_assemble(self, rs, *, assembly_id=None, ballot_id=None,
-                       persona_id=None):
-        """Check whether a user may interact with a specific assembly/ballot.
+    def check_assemble(self, rs, persona_id, *, assembly_id=None,
+                       ballot_id=None):
+        """Check authorization of given persona.
 
+        This checks, if the given persona may interact with a specific
+        assembly or ballot.
         Published variant of 'may_access' with input validation.
 
         Exactly one of assembly_id and ballot_id has to be provided.
