@@ -164,17 +164,16 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
-    @as_users("akira", "annika", "anton", "berta", "martin", "nina", "vera",
-              "werner")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner")
     def test_sidebar_one_mailinglist(self, user):
         self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Klatsch und Tratsch'})
+                      {'description': 'Feriendorf Bau'})
         everyone = ["Mailinglisten-Übersicht", "Übersicht"]
         moderator = ["Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
                      "Log"]
 
         # Moderators:
-        if user['id'] in {USER_DICT['akira']['id'], USER_DICT['berta']['id']}:
+        if user['id'] in {USER_DICT['berta']['id']}:
             ins = everyone + moderator
             out = []
         # Relative admins that are not also moderators:
@@ -726,14 +725,7 @@ class TestMlFrontend(FrontendTest):
                             'charly@example.cde',
                             'garcia@example.cde',
                             'inga@example.cde',
-                            'martin@example.cde',
                             'olaf@example.cde',
-                            'paulchen@example.cde',
-                            'quintus@example.cde',
-                            'vera@example.cde',
-                            'werner@example.cde',
-                            'annika@example.cde',
-                            'farin@example.cde',
                             'akira@example.cde'],
             'whitelist': ['honeypot@example.cde']}
         self.get("/ml/script/one?address=werbung@lists.cde-ev.de", headers=HEADERS)
@@ -859,14 +851,7 @@ class TestMlFrontend(FrontendTest):
                                        'charly@example.cde',
                                        'garcia@example.cde',
                                        'inga@example.cde',
-                                       'martin@example.cde',
                                        'olaf@example.cde',
-                                       'paulchen@example.cde',
-                                       'quintus@example.cde',
-                                       'vera@example.cde',
-                                       'werner@example.cde',
-                                       'annika@example.cde',
-                                       'farin@example.cde',
                                        'akira@example.cde'],
                        'whitelist': ['honeypot@example.cde',]}
         self.get("/ml/script/one/compat?address=werbung@lists.cde-ev.de",

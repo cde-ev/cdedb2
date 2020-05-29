@@ -843,7 +843,8 @@ class TestEventBackend(BackendTest):
             new_id = self.event.create_registration(self.key, new_reg)
             self.assertLess(0, new_id)
             new_reg['id'] = new_id
-            new_reg['amount_owed'] = decimal.Decimal("584.49")
+            # amount_owed include non-member additional fee
+            new_reg['amount_owed'] = decimal.Decimal("589.49")
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
             new_reg['parts'][1]['registration_id'] = new_id

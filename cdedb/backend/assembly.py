@@ -52,8 +52,10 @@ class AssemblyBackend(AbstractBackend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    def may_assemble(self, rs, *, assembly_id=None, ballot_id=None,
-                     persona_id=None):
+    @internal
+    @access("persona")
+    def may_access(self, rs, *, assembly_id=None, ballot_id=None,
+                   persona_id=None):
         """Helper to check authorization.
 
         The deal is that members may access anything and assembly users
@@ -62,7 +64,9 @@ class AssemblyBackend(AbstractBackend):
         their roles, to access only those assemblies they participated
         in.
 
-        Exactly one of the two id parameters has to be provided
+        Assembly admins may access every assembly.
+
+        Exactly one of assembly_id and ballot_id has to be provided.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
@@ -71,27 +75,59 @@ class AssemblyBackend(AbstractBackend):
         :param persona_id: If not provided the current user is used.
         :rtype: bool
         """
-        if "member" in rs.user.roles:
+        persona_id = persona_id or rs.user.persona_id
+        roles = self.core.get_roles_single(rs, persona_id)
+
+        if "member" in roles or "assembly_admin" in roles:
             return True
         return self.check_attendance(
             rs, assembly_id=assembly_id, ballot_id=ballot_id,
             persona_id=persona_id)
 
     @access("persona")
-    def may_view(self, rs, assembly_id, persona_id=None):
-        """Variant of `may_assemble` with input validation. To be used by
-         frontends to find out if assembly is visible.
+    def may_assemble(self, rs, *, assembly_id=None, ballot_id=None):
+        """Check authorization of this persona.
+
+        This checks, if the calling user may interact with a specific
+        assembly or ballot.
+        Published variant of 'may_access' with input validation.
+
+        Exactly one of assembly_id and ballot_id has to be provided.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
+        :type ballot_id: int
+        :rtype: bool
+        """
+        assembly_id = affirm("id_or_None", assembly_id)
+        ballot_id = affirm("id_or_None", ballot_id)
+
+        return self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id)
+
+    @access("persona")
+    def check_assemble(self, rs, persona_id, *, assembly_id=None,
+                       ballot_id=None):
+        """Check authorization of given persona.
+
+        This checks, if the given persona may interact with a specific
+        assembly or ballot.
+        Published variant of 'may_access' with input validation.
+
+        Exactly one of assembly_id and ballot_id has to be provided.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type ballot_id: int
         :type persona_id: int or None
         :param persona_id: If not provided the current user is used.
         :rtype: bool
         """
-        assembly_id = affirm("id", assembly_id)
+        assembly_id = affirm("id_or_None", assembly_id)
+        ballot_id = affirm("id_or_None", ballot_id)
         persona_id = affirm("id_or_None", persona_id)
-        return self.may_assemble(rs, assembly_id=assembly_id,
-                                 persona_id=persona_id)
+
+        return self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id,
+                               persona_id=persona_id)
 
     @staticmethod
     def encrypt_vote(salt, secret, vote):
@@ -225,7 +261,7 @@ class AssemblyBackend(AbstractBackend):
     @access("persona")
     def check_attendance(self, rs, *, assembly_id=None, ballot_id=None,
                          persona_id=None):
-        """Check wether a persona attends a specific assembly/ballot.
+        """Check whether a persona attends a specific assembly/ballot.
 
         Exactly one of the inputs assembly_id and ballot_id has to be
         provided.
@@ -259,7 +295,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def does_attend(self, rs, *, assembly_id=None, ballot_id=None):
-        """Check wether this persona attends a specific assembly/ballot.
+        """Check whether this persona attends a specific assembly/ballot.
 
         Exactly one of the inputs has to be provided.
 
@@ -310,8 +346,8 @@ class AssemblyBackend(AbstractBackend):
         :rtype: [int]
         """
         assembly_id = affirm("id", assembly_id)
-        if (not self.may_assemble(rs, assembly_id=assembly_id)
-                and not "ml_admin" in rs.user.roles):
+        if not (self.may_access(rs, assembly_id=assembly_id)
+                or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         attendees = self.sql_select(
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
@@ -344,7 +380,7 @@ class AssemblyBackend(AbstractBackend):
         ret = {e['id']: e for e in data}
         if restrictive:
             ret = {k: v for k, v in ret.items()
-                   if self.may_assemble(rs, assembly_id=k)}
+                   if self.may_access(rs, assembly_id=k)}
         return ret
 
     @access("assembly")
@@ -356,7 +392,7 @@ class AssemblyBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
-        if not all(self.may_assemble(rs, assembly_id=anid) for anid in ids):
+        if not all(self.may_access(rs, assembly_id=anid) for anid in ids):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
@@ -534,7 +570,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: Mapping of ballot ids to titles.
         """
         assembly_id = affirm("id", assembly_id)
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.may_access(rs, assembly_id=assembly_id):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "assembly.ballots", ("id", "title"),
                                (assembly_id,), entity_key="assembly_id")
@@ -566,9 +602,8 @@ class AssemblyBackend(AbstractBackend):
                               if e['ballot_id'] == anid}
                 assert ('candidates' not in ret[anid])
                 ret[anid]['candidates'] = candidates
-            if "member" not in rs.user.roles:
-                ret = {k: v for k, v in ret.items()
-                       if self.check_attendance(rs, ballot_id=k)}
+            ret = {k: v for k, v in ret.items()
+                   if self.may_access(rs, ballot_id=k)}
         return ret
     get_ballot = singularize(get_ballots)
 
@@ -899,7 +934,7 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm("id", assembly_id)
         persona_id = affirm("id", persona_id)
 
-        roles = extract_roles(self.core.get_persona(rs, persona_id))
+        roles = self.core.get_roles_single(rs, persona_id)
         if "member" in roles:
             raise ValueError(n_("Not allowed for members."))
         if "assembly" not in roles:
@@ -1107,7 +1142,7 @@ class AssemblyBackend(AbstractBackend):
     ]
 }
 """)
-        if not self.may_assemble(rs, ballot_id=ballot_id):
+        if not self.may_access(rs, ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
@@ -1299,7 +1334,7 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         assembly_id = affirm("id_or_None", assembly_id)
         ballot_id = affirm("id_or_None", ballot_id)
-        if not self.may_assemble(rs, assembly_id=assembly_id,
+        if not self.may_access(rs, assembly_id=assembly_id,
                                  ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
@@ -1326,7 +1361,9 @@ class AssemblyBackend(AbstractBackend):
         data = self.sql_select(rs, "assembly.attachments",
                                ASSEMBLY_ATTACHMENT_FIELDS, ids)
         ret = {e['id']: e for e in data}
-        if "member" not in rs.user.roles:
+        # TODO this should use may_access, but provides assembly and ballot id.
+        #  Maybe this can be corrected after merging PR #1142
+        if not ("member" in rs.user.roles or "assembly_admin" in rs.user.roles):
             ret = {k: v for k, v in ret.items() if self.check_attendance(
                 rs, assembly_id=v['assembly_id'], ballot_id=v['ballot_id'])}
         return ret

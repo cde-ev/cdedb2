@@ -976,7 +976,7 @@ class TestCoreBackend(BackendTest):
         result = self.core.retrieve_log(self.key)
         self.assertEqual(core_log_expectation, result)
 
-        total = 25
+        total = 31
         changelog_expectation = (total, (
             # Committing the changed admin bits.
             {
@@ -1090,7 +1090,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_changelog_meta(self, user):
-        expectation = (24, (
+        expectation = (30, (
             {'change_note': 'Init.',
              'change_status': const.MemberChangeStati.committed,
              'ctime': nearly_now(),
@@ -1260,7 +1260,48 @@ class TestCoreBackend(BackendTest):
              'persona_id': 18,
              'reviewed_by': None,
              'submitted_by': 1},
-        ))
+            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 22,
+             'reviewed_by': None,
+             'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 23,
+            'reviewed_by': None,
+            'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 27,
+             'reviewed_by': None,
+             'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 32,
+             'reviewed_by': None,
+             'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 13,
+             'reviewed_by': None,
+             'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 17,
+             'reviewed_by': None,
+             'submitted_by': 100}))
 
         self.assertEqual(expectation,
                          self.core.retrieve_changelog_meta(self.key))

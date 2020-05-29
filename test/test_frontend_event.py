@@ -1452,7 +1452,7 @@ etc;anything else""", f['entries_2'].value)
         f['favorite_day'] = now().date().isoformat()
         self.submit(f)
         self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
-        self.assertPresence("19,99 €", "registrationsummary")
+        self.assertPresence("21,99 €", "registrationsummary")
 
     @as_users("garcia")
     def test_questionnaire(self, user):
@@ -3018,6 +3018,10 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Veranstaltungen")
         self.assertNonPresence("Testakademie")
+        self.logout()
+
+        # since annika is no member, she can not access the past events
+        self.login(USER_DICT['berta'])
         self.traverse({'href': '/cde'},
                       {'href': '/cde/past/event/list'})
         self.assertTitle("Vergangene Veranstaltungen")

@@ -426,7 +426,8 @@ class TestAssemblyBackend(BackendTest):
             'title': 'Außerordentliche Mitgliederversammlung'
         }
         new_id = self.assembly.create_assembly(self.key, data)
-        self.assembly.signup(self.key, new_id)
+        # werner is no member, so he must use the external signup function
+        self.assembly.external_signup(self.key, new_id, user['id'])
         future = now() + datetime.timedelta(seconds=.5)
         farfuture = now() + datetime.timedelta(seconds=1)
         data = {
