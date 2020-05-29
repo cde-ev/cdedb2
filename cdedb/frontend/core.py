@@ -345,6 +345,9 @@ class CoreFrontend(AbstractFrontend):
         ALL_ACCESS_LEVELS = {
             "persona", "ml", "assembly", "event", "cde", "core", "meta",
             "orga", "moderator"}
+        # kind of view with which the user is shown (f.e. relative_admin, orga)
+        # relevant to determinate which admin view toggles will be shown
+        access_mode = set()
         # The basic access level provides only the name (this should only
         # happen in case of un-quoted searchable member access)
         access_levels = {"persona"}
@@ -359,6 +362,7 @@ class CoreFrontend(AbstractFrontend):
             access_levels.add("meta")
         # Other admins see their realm if they are relative admin
         if is_relative_admin:
+            access_mode.add("relative_admin")
             for realm in ("ml", "assembly", "event", "cde"):
                 if (f"{realm}_admin" in rs.user.roles
                         and f"{realm}_user" in rs.user.admin_views):
@@ -374,32 +378,41 @@ class CoreFrontend(AbstractFrontend):
             access_levels.add("cde")
         # Orgas see their participants
         if event_id:
-            is_admin = ("event_admin" in rs.user.roles
-                        and "event_orga" in rs.user.admin_views)
+            is_admin = "event_admin" in rs.user.roles
+            is_viewing_admin = is_admin and "event_orga" in rs.user.admin_views
             is_orga = event_id in self.eventproxy.orga_info(
                 rs, rs.user.persona_id)
-            is_participant = self.eventproxy.list_registrations(
-                rs, event_id, persona_id)
-            if (is_orga or is_admin) and is_participant:
-                access_levels.add("event")
-                access_levels.add("orga")
+            if is_orga or is_admin:
+                is_participant = self.eventproxy.list_registrations(
+                    rs, event_id, persona_id)
+                if (is_orga or is_viewing_admin) and is_participant:
+                    access_levels.add("event")
+                    access_levels.add("orga")
+                # Admins who are also orgas can not disable this admin view
+                if is_admin and not is_orga and is_participant:
+                    access_mode.add("orga")
         # Mailinglist moderators see all users related to their mailinglist.
         # This excludes users with relation "unsubscribed", because they are not
         # directly shown on the management sites.
         if ml_id:
-            is_admin = ("ml_admin" in rs.user.roles
-                        and "ml_moderator" in rs.user.admin_views)
+            is_admin = "ml_admin" in rs.user.roles
+            is_viewing_admin = (is_admin and
+                                "ml_moderator" in rs.user.admin_views)
             is_moderator = ml_id in self.mlproxy.moderator_info(
                 rs, rs.user.persona_id)
-            if is_moderator or is_admin:
-                relevant_stati = [s for s in const.SubscriptionStates
-                                  if s != const.SubscriptionStates.unsubscribed]
-                if persona_id in self.mlproxy.get_subscription_states(
-                        rs, ml_id, states=relevant_stati):
+            relevant_stati = [s for s in const.SubscriptionStates
+                              if s != const.SubscriptionStates.unsubscribed]
+            if is_admin or is_moderator:
+                is_subscriber = persona_id in self.mlproxy.get_subscription_states(
+                    rs, ml_id, states=relevant_stati)
+                if (is_moderator or is_viewing_admin) and is_subscriber:
                     access_levels.add("ml")
                     # the moderator access level currently does nothing, but we
                     # add it anyway to be less confusing
                     access_levels.add("moderator")
+                # Admins who are also moderators can not disable this admin view
+                if is_admin and not is_moderator and is_subscriber:
+                    access_mode.add("moderator")
 
         # Retrieve data
         #
@@ -478,7 +491,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
             'is_relative_admin': is_relative_admin_view,
-            'quoteable': quoteable})
+            'quoteable': quoteable, 'access_mode': access_mode})
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")

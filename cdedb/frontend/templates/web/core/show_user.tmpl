@@ -14,6 +14,29 @@
                                                                                   ambience['persona']['family_name']),
         icon="user", active=True) }}
 {% endblock %}
+
+
+{# This is a bit special, because also non-core roles determinate what a user can see from another one #}
+{% block adminviews %}
+    {% set views = [] %}
+    {% if "relative_admin" in access_mode %}
+        {{ views.append((gettext("User Administration"),
+                        ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"],
+                        ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"])) }}
+    {% endif %}
+    {{ views.append((gettext("Admin Administration"), ["meta_admin"], None)) }}
+    {{ views.append((gettext("Core Administration"), ["core"], None)) }}
+    {% if "moderator" in access_mode %}
+        {{ views.append((gettext("Moderator Controls"), ["ml_moderator"], None)) }}
+    {% endif %}
+    {% if "orga" in access_mode %}
+        {{ views.append((gettext("Orga Controls"), ["event_orga"], None)) }}
+    {% endif %}
+
+    {{ util.admin_views_toggle(views) }}
+{% endblock %}
+
+
 {% block content %}
     {% if is_relative_admin %}
         {% if not ambience['persona']['is_active'] %}
