@@ -20,9 +20,7 @@
 {% block adminviews %}
     {% set views = [] %}
     {% if "relative_admin" in access_mode %}
-        {{ views.append((gettext("User Administration"),
-                        ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"],
-                        ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"])) }}
+        {{ views.append((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], None)) }}
     {% endif %}
     {{ views.append((gettext("Admin Administration"), ["meta_admin"], None)) }}
     {{ views.append((gettext("Core Administration"), ["core"], None)) }}
