@@ -25,6 +25,7 @@
         {{ util.input_hidden(name="generation") }}
 
         <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
+        {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls")) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}

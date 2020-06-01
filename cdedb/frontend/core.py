@@ -842,7 +842,7 @@ class CoreFrontend(AbstractFrontend):
                 "postal_code", "location", "country",
                 "address_supplement2", "address2", "postal_code2", "location2",
                 "country2", "weblink", "specialisation", "affiliation",
-                "timeline", "interests", "free_form",
+                "timeline", "interests", "free_form", "paper_expuls",
                 "birth_name"}
         }
         attributes = REALM_ATTRIBUTES['persona']

@@ -205,6 +205,7 @@ QUERY_SPECS = {
             ("is_active", "bool"),
             ("is_member", "bool"),
             ("trial_member", "bool"),
+            ("paper_expuls", "bool"),
             ("is_searchable", "bool"),
             ("decided_search", "bool"),
             ("balance", "float"),

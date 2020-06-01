@@ -302,6 +302,7 @@ class CdEFrontend(AbstractUserFrontend):
             'is_assembly_realm': True,
             'is_active': True,
             'decided_search': False,
+            'paper_expuls': True,
         }
         data.update(defaults)
         return super().create_user(rs, data)
@@ -373,6 +374,7 @@ class CdEFrontend(AbstractUserFrontend):
             'is_member': True,
             'display_name': persona['given_names'],
             'trial_member': False,
+            'paper_expuls': True,
             'bub_search': False,
             'decided_search': False,
             'notes': None})
@@ -488,6 +490,7 @@ class CdEFrontend(AbstractUserFrontend):
             new_persona.update({
                 'is_member': True,
                 'trial_member': trial_membership,
+                'paper_expuls': True,
                 'is_searchable': consent,
             })
             persona_id = self.coreproxy.create_persona(rs, new_persona)
@@ -503,6 +506,7 @@ class CdEFrontend(AbstractUserFrontend):
                 promotion.update({
                     'decided_search': False,
                     'trial_member': False,
+                    'paper_expuls': True,
                     'bub_search': False,
                     'id': persona_id,
                 })
