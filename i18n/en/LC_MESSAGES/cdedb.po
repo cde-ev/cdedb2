@@ -6554,7 +6554,7 @@ msgid "Manage Users"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:67
-msgid "Assembly Configuration"
+msgid "Wahlleitungs Controls"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:68

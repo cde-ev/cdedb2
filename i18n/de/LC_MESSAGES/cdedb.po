@@ -6743,8 +6743,8 @@ msgid "Manage Users"
 msgstr "Nutzer verwalten"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:67
-msgid "Assembly Configuration"
-msgstr "Versammlungs-Konfig."
+msgid "Wahlleitungs Controls"
+msgstr "Wahlleitung-Schaltflächen"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:68
 #: cdedb/frontend/templates/web/assembly/base.tmpl:71

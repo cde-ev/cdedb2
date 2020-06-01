@@ -192,10 +192,10 @@ class TestAssemblyFrontend(FrontendTest):
         self._click_admin_view_button(re.compile(r"Versammlungs-Verwaltung"),
                                       current_state=False)
         self.assertIn('concludeassemblyform', self.response.forms)
-        self.traverse({'href': 'assembly/assembly/1/change'},
-                      {'href': 'assembly/assembly/1/log'})
+        self.assertNoLink('assembly/assembly/1/log')
+        self.traverse({'href': 'assembly/assembly/1/change'})
 
-        # Test Assembly Configuration Admin View
+        # Test Wahlleitungs Controls Admin View
         self.traverse({'href': '/assembly/assembly/1/show'})
         self.assertNoLink('/assembly/assembly/1/attachment/add')
         self.traverse({'href': '/assembly/assembly/1/ballot/list'})
@@ -207,14 +207,18 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertNotIn('removecandidateform6', self.response.forms)
         self.assertNotIn('addcandidateform', self.response.forms)
         self.assertNotIn('deleteballotform', self.response.forms)
+        self.traverse({'href': '/assembly/assembly/1/attendees'})
+        self.assertNotIn('addattendeeform', self.response.forms)
+        self.assertNonPresence("TeX-Liste")
 
         self._click_admin_view_button(re.compile(r"Versammlungs-Verwaltung"),
                                       current_state=True)
-        self._click_admin_view_button(re.compile(r"Versammlungs-Konfig."),
+        self._click_admin_view_button(re.compile(r"Wahlleitung-Schaltflächen"),
                                       current_state=False)
         self.traverse({'href': '/assembly/assembly/1/show'},
                       {'href': '/assembly/assembly/1/attachment/add'},
                       {'href': '/assembly/assembly/1/show'},
+                      {'href': '/assembly/assembly/1/log'},
                       {'href': '/assembly/assembly/1/ballot/list'},
                       {'href': '/assembly/assembly/1/ballot/2/change'},
                       {'href': '/assembly/assembly/1/ballot/list'},
@@ -225,6 +229,9 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/assembly/1/ballot/2/show'})
         self.assertIn('candidatessummaryform', self.response.forms)
         self.assertIn('deleteballotform', self.response.forms)
+        self.traverse({'href': '/assembly/assembly/1/attendees'})
+        self.assertIn('addattendeeform', self.response.forms)
+        self.assertPresence("TeX-Liste")
 
     @as_users("annika", "martin", "vera", "werner")
     def test_sidebar_one_assembly(self, user):
