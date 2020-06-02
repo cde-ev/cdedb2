@@ -2311,7 +2311,8 @@ def calculate_db_logparams(offset, length):
 
     :type offset: int
     :type length: int
-    :rtype (int, int)"""
+    :rtype: (int, int)
+    """
     _offset = offset
     _length = length
     if _offset and _offset < 0:
