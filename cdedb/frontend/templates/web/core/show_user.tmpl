@@ -14,6 +14,27 @@
                                                                                   ambience['persona']['family_name']),
         icon="user", active=True) }}
 {% endblock %}
+
+
+{# This is a bit special, because also non-core roles determinate what a user can see from another one #}
+{% block adminviews %}
+    {% set views = [] %}
+    {% if "relative_admin" in access_mode %}
+        {{ views.append((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], None)) }}
+    {% endif %}
+    {{ views.append((gettext("Admin Administration"), ["meta_admin"], None)) }}
+    {{ views.append((gettext("Core Administration"), ["core"], None)) }}
+    {% if "moderator" in access_mode %}
+        {{ views.append((gettext("Moderator Controls"), ["ml_moderator"], None)) }}
+    {% endif %}
+    {% if "orga" in access_mode %}
+        {{ views.append((gettext("Orga Controls"), ["event_orga"], None)) }}
+    {% endif %}
+
+    {{ util.admin_views_toggle(views) }}
+{% endblock %}
+
+
 {% block content %}
     {% if is_relative_admin %}
         {% if not ambience['persona']['is_active'] %}
@@ -96,8 +117,7 @@
                 <dt>{% trans %}Birthday{% endtrans %}</dt>
                 <dd>{{ data['birthday']|date(lang=lang) }}</dd>
             {% endif %}
-            {# Gender is privileged information. #}
-            {% if data['gender'] and is_relative_admin %}
+            {% if data['gender'] %}
                 <dt>{% trans %}Gender{% endtrans %}</dt>
                 <dd>{{ gettext(enums['Genders'](data['gender'])|string) }}</dd>
             {% endif %}
@@ -111,7 +131,7 @@
                 <dd id="cdedb-id">
                     {{ data['id']|cdedbid }}
                 </dd>
-                {% if is_relative_admin %}
+                {% if "is_active" in data %}
                     <dt>{% trans %}Account active{% endtrans %}</dt>
                     <dd id="account-active">
                         {{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox',
@@ -120,7 +140,8 @@
                 {% endif %}
             </dl>
 
-            {% if data['id'] == user.persona_id or is_relative_admin or "meta_admin" in user.admin_views %}
+            {# Only a check if the realm bits are contained in data #}
+            {% if "is_ml_realm" in data %}
                 <dl class="dl-horizontal">
                     <dt>{% trans %}Realms{% endtrans %}</dt>
                     <dd id="has-realm">
@@ -168,7 +189,7 @@
                         {% endif %}
                     </dd>
 
-                    {% if data['notes'] and is_relative_admin %}
+                    {% if "notes" in data %}
                         <dt>{% trans %}Admin-Notes{% endtrans %}</dt>
                         <dd>{{ data['notes']|md|linebreaks }}</dd>
                     {% endif %}
@@ -176,24 +197,31 @@
             {% endif %}
         </div>
 
-        {% if data['is_cde_realm'] and (data['id'] == user.persona_id or is_relative_admin) %}
+        {% if data['is_cde_realm'] %}
             <dl id="cde-membership" class="dl-horizontal">
-                <dt>{% trans %}Membership{% endtrans %}</dt>
-                <dd id="membership">
-                    {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
-                    {% if data['is_member'] %}{% trans %}CdE-Member{% endtrans %}{% endif %}
-                    {% if data['trial_member'] %}
-                        {% trans %}(Trialmembership){% endtrans %}
-                    {% endif %}
-                    {% if is_relative_admin %}
-                        {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pen",
-                                     aclass="btn btn-xs btn-warning") }}
-                    {% endif %}
-                </dd>
+                {% if "is_member" in data %}
+                    <dt>{% trans %}Membership{% endtrans %}</dt>
+                    <dd id="membership">
+                        {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
+                        {% if data['is_member'] %}
+                            {% trans %}CdE-Member{% endtrans %}
+                        {% endif %}
+                        {% if data['trial_member'] %}
+                            {% trans %}(Trialmembership){% endtrans %}
+                        {% endif %}
+                        {% if is_relative_admin %}
+                            {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pen",
+                                         aclass="btn btn-xs btn-warning") }}
+                        {% endif %}
+                    </dd>
+                {% endif %}
 
-                <dt>{% trans %}Balance{% endtrans %}</dt>
+                {% if "balance" in data %}
+                    <dt>{% trans %}Balance{% endtrans %}</dt>
                     <dd id="balance">
-                        {{ data['balance']|money(lang=lang) }}
+                        {% if data['balance'] is not none %}
+                            {{ data['balance']|money(lang=lang) }}
+                        {% endif %}
                         {% if "finance" in user.admin_views %}
                             {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
@@ -209,6 +237,7 @@
                                     gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
                         {% endif %}
                     </dd>
+                {% endif %}
 
                 {% if data['is_member'] %}
                     <dt>{% trans %}Searchability{% endtrans %}</dt>

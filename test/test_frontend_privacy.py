@@ -3,7 +3,6 @@
 from test.common import as_users, USER_DICT, FrontendTest
 import unittest
 
-# TODO how to tread "Mitgliedschaft"?
 # TODO Profilfoto
 
 
@@ -112,7 +111,7 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_meta_admin_view(self, inspected):
         # TODO give meta admin a relative admin view for all personas
-        expected = {"Bereiche", "Admin-Privilegien"}
+        expected = {"Bereiche", "Account aktiv", "Admin-Privilegien"}
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         # actual username must not be displayed
@@ -144,7 +143,7 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_of_archived(self, inspected):
         expected = {
-            "Account aktiv", "Bereiche", "Admin-Privilegien"
+            "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -217,8 +216,6 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
-        # TODO should this also be functional if the inspected user is moderator
-        #  and not subscriber of that mailinglist?
         # ... unless they see them as mailinglist associated. Then, they get the
         # same view as a moderator of that mailinglist.
         inspected = USER_DICT['berta']
@@ -241,7 +238,6 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
-    @unittest.expectedFailure
     @as_users("annika")
     def test_profile_as_event_admin(self, user):
         self._disable_searchability('annika')
@@ -265,8 +261,6 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
-        # TODO should this also be functional if the inspected user is orga
-        #  and not registered for that event?
         # ... unless they see them as event associated. Then, they get the same
         # view as an orga of this event.
         self.get(inspected['url'] + "&event_id=1")
@@ -348,10 +342,8 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
-    @unittest.expectedFailure
     @as_users("garcia")
     def test_profile_as_orga(self, user):
-        # TODO should this also be true for "Mit-Orgas"?
         # orgas get a closer view on users associated to their event
         inspected = USER_DICT['berta']
         self.get(inspected['url'] + "&event_id=1")
@@ -510,10 +502,11 @@ class TestPrivacyFrontend(FrontendTest):
                 msg = "Forget {} in case {}.".format(user['given_names'], realm)
                 raise RuntimeError(msg)
 
+    @unittest.expectedFailure
     def test_profile_of_disabled_user(self):
         # a disabled user should be viewable as an equal non-disabled user
         # TODO maybe add all above tests as subtests?
-        pass
+        raise NotImplementedError
 
     @as_users("ferdinand", "martin", "paul")
     def test_profile_of_archived_user(self, user):
