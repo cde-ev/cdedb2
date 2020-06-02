@@ -211,11 +211,11 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('changeminorformform', self.response.forms)
         self.assertIn('lockform', self.response.forms)
 
+        self.traverse({'href': '/event/'},
+                      {'href': '/event/event/1/show'})
         self._click_admin_view_button(
             re.compile(r"Orga-Schaltflächen"), current_state=False)
-        self.traverse({'href': '/event/'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/list'},
+        self.traverse({'href': '/event/event/1/registration/list'},
                       {'href': '/event/event/1/registration/query'},
                       {'href': '/event/event/1/change'},
                       {'href': '/event/event/1/part/summary'},
