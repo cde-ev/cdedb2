@@ -24,7 +24,7 @@ from cdedb.common import (
     PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter, genesis_realm_access_bits, ValidationWarning, xsorted)
+    decode_parameter, genesis_realm_override, ValidationWarning, xsorted)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -2485,7 +2485,7 @@ class CoreBackend(AbstractBackend):
             data['display_name'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
-            data.update(genesis_realm_access_bits[case['realm']])
+            data.update(genesis_realm_override[case['realm']])
             data = affirm("persona", data, creation=True, _ignore_warnings=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))

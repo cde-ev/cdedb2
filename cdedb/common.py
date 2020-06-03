@@ -1846,7 +1846,9 @@ realm_specific_genesis_fields = {
             "country", "birth_name", "attachment"),
 }
 
-genesis_realm_access_bits = {
+# This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
+# defaults for genesis account creation.
+genesis_realm_override = {
     'event': {
         'is_cde_realm': False,
         'is_event_realm': True,
