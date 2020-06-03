@@ -216,6 +216,9 @@ msgstr "Option hinzugefügt"
 msgid "AssemblyLogCodes.candidate_updated"
 msgstr "Option geändert"
 
+msgid "Printed exPuls"
+msgstr "Gedruckter exPuls"
+
 #: cdedb/i18n_additional.py:27
 msgid "AssemblyLogCodes.candidate_removed"
 msgstr "Option entfernt"

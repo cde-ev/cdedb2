@@ -261,6 +261,15 @@
             </dl>
         {% endif %}
 
+        {% if 'paper_expuls' in data %}
+            <dl id=paper-expuls class="dl-horizontal">
+                <dt>{% trans %}Printed exPuls{% endtrans %}</dt>
+                <dd>
+                    {{ util.deko_checkbox(checked=data['paper_expuls'], anid="paper_expuls_checkbox") }}
+                </dd>
+            </dl>
+        {% endif %}
+
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         <div id="contact-information">
             <dl class="dl-horizontal">

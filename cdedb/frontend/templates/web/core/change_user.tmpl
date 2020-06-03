@@ -25,7 +25,6 @@
         {{ util.input_hidden(name="generation") }}
 
         <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
-        {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls")) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
@@ -34,6 +33,11 @@
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
         {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
+
+        {% if values['is_cde_realm'] and values['is_member'] %}
+            <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>
+            {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls")) }}
+        {% endif %}
 
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         {{ util.form_input_static(label=gettext("E-Mail"), value=username,

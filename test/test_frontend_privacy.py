@@ -14,6 +14,7 @@ class TestPrivacyFrontend(FrontendTest):
         "Geschlecht": 'personal-information', "CdEDB-ID": 'account',
         "Account aktiv": 'account', "Bereiche": 'account',
         "Admin-Privilegien": 'account', "Admin-Notizen": 'account',
+        "Gedruckter exPuls": 'paper-expuls',
         "Mitgliedschaft": 'cde-membership', "Guthaben": 'cde-membership',
         "Sichtbarkeit": 'cde-membership', "E-Mail": 'contact-information',
         "Telefon": 'contact-information', "Mobiltelefon": 'contact-information',
