@@ -1347,6 +1347,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
+        self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertNonPresence("CdE-Mitglied", "cde-membership")
         self.assertNonPresence("Probemitgliedschaft", "cde-membership")
 
@@ -1670,6 +1671,7 @@ class TestCoreFrontend(FrontendTest):
         self.login(new_user)
         self.traverse({'href': '/core/self/show'})
         self.assertTitle("Zelda Zeruda-Hime")
+        self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertPresence("12345")
         self.traverse({'href': '/cde'})
         self.assertTitle('CdE-Mitgliederbereich')

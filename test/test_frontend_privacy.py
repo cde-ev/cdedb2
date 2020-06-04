@@ -89,7 +89,8 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_cde_admin_view(self, inspected):
         expected = {
-            "Geschlecht", "Mitgliedschaft", "Guthaben", "Sichtbarkeit"
+            "Geschlecht", "Mitgliedschaft", "Guthaben", "Sichtbarkeit",
+            "Gedruckter exPuls"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
