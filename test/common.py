@@ -742,6 +742,17 @@ class FrontendTest(unittest.TestCase):
         content = tmp[0]
         return content.text_content()
 
+    def assertCheckbox(self, status, id):
+        tmp = self.response.html.find_all(id=id)
+        if not tmp:
+            raise AssertionError("Id not found.", id)
+        if len(tmp) != 1:
+            raise AssertionError("More or less then one hit.", id)
+        checkbox = tmp[0]
+        if "data-checked" not in checkbox.attrs:
+            raise ValueError("Id doesnt belong to a checkbox", id)
+        self.assertEqual(str(status), checkbox['data-checked'])
+
     def assertPresence(self, s, div="content", regex=False, exact=False):
         target = self.get_content(div)
         normalized = re.sub(r'\s+', ' ', target)
