@@ -281,6 +281,7 @@ class CdEFrontend(AbstractUserFrontend):
         defaults = {
             'is_member': True,
             'bub_search': False,
+            'paper_expuls': True,
         }
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
@@ -293,7 +294,8 @@ class CdEFrontend(AbstractUserFrontend):
         "telephone", "mobile", "weblink", "address", "address_supplement",
         "postal_code", "location", "country", "address2",
         "address_supplement2", "postal_code2", "location2", "country2",
-        "is_member", "is_searchable", "trial_member", "bub_search", "notes")
+        "is_member", "is_searchable", "trial_member", "bub_search", "notes",
+        "paper_expuls")
     def create_user(self, rs, data):
         defaults = {
             'is_cde_realm': True,

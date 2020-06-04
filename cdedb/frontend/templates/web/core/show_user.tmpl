@@ -265,7 +265,8 @@
             <dl id=paper-expuls class="dl-horizontal">
                 <dt>{% trans %}Printed exPuls{% endtrans %}</dt>
                 <dd>
-                    {{ util.deko_checkbox(checked=data['paper_expuls'], anid="paper_expuls_checkbox") }}
+                    {{ util.deko_checkbox(checked=data['paper_expuls'], anid="paper_expuls_checkbox",
+                                          titles=[gettext("No"), gettext("Yes")]) }}
                 </dd>
             </dl>
         {% endif %}

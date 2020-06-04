@@ -1036,7 +1036,7 @@ class CoreFrontend(AbstractFrontend):
                 "birth_name", "address_supplement2", "address2", "postal_code2",
                 "location2", "country2", "weblink", "specialisation",
                 "affiliation", "timeline", "interests", "free_form",
-                "is_searchable"}
+                "is_searchable", "paper_expuls"}
         }
         attributes = REALM_ATTRIBUTES['persona']
         roles = extract_roles(rs.ambience['persona'])
@@ -1351,6 +1351,8 @@ class CoreFrontend(AbstractFrontend):
             for key in ('trial_member', 'decided_search', 'bub_search'):
                 if data[key] is None:
                     data[key] = False
+            if data['paper_expuls'] is None:
+                data['paper_expuls'] = True
         elif target_realm == "event":
             reference = EVENT_TRANSITION_FIELDS()
         else:
