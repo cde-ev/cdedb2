@@ -6559,7 +6559,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:68
 #: cdedb/frontend/templates/web/assembly/base.tmpl:71
-msgid "Assembly Management"
+msgid "Assembly Administration"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:70
@@ -6993,7 +6993,7 @@ msgid "Past Events Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:69
-msgid "Past Event Management"
+msgid "Past Event Administration"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:70
@@ -9767,7 +9767,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:123
 #: cdedb/frontend/templates/web/event/base.tmpl:127
-msgid "Event Management"
+msgid "Event Administration"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:124
@@ -12121,7 +12121,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:76
 #: cdedb/frontend/templates/web/ml/base.tmpl:81
-msgid "Mailinglist Management"
+msgid "Mailinglist Administration"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:77

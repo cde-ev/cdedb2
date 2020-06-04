@@ -179,7 +179,7 @@ class TestAssemblyFrontend(FrontendTest):
         self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
                                       current_state=False)
 
-        # Test Assembly Management Admin View
+        # Test Assembly Administration Admin View
         self.assertNoLink('/assembly/log')
         self.traverse({'href': '/assembly/assembly/1/show'},
                       {'href': '/assembly/assembly/1/attendees'},
@@ -189,7 +189,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertNoLink('assembly/assembly/1/change')
         self.assertNoLink('assembly/assembly/1/log')
         self.assertNotIn('concludeassemblyform', self.response.forms)
-        self._click_admin_view_button(re.compile(r"Versammlungs-Verwaltung"),
+        self._click_admin_view_button(re.compile(r"Versammlungs-Administration"),
                                       current_state=False)
         self.assertIn('concludeassemblyform', self.response.forms)
         self.assertNoLink('assembly/assembly/1/log')
@@ -211,7 +211,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertNotIn('addattendeeform', self.response.forms)
         self.assertNonPresence("TeX-Liste")
 
-        self._click_admin_view_button(re.compile(r"Versammlungs-Verwaltung"),
+        self._click_admin_view_button(re.compile(r"Versammlungs-Administration"),
                                       current_state=True)
         self._click_admin_view_button(re.compile(r"Wahlleitung-Schaltflächen"),
                                       current_state=False)

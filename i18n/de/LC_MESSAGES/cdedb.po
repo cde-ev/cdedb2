@@ -6748,8 +6748,8 @@ msgstr "Wahlleitung-Schaltflächen"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:68
 #: cdedb/frontend/templates/web/assembly/base.tmpl:71
-msgid "Assembly Management"
-msgstr "Versammlungs-Verwaltung"
+msgid "Assembly Administration"
+msgstr "Versammlungs-Administration"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:70
 #: cdedb/frontend/templates/web/cde/base.tmpl:68
@@ -7203,8 +7203,8 @@ msgid "Past Events Log"
 msgstr "Verg.-Veranstaltungen-Log"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:69
-msgid "Past Event Management"
-msgstr "Verwaltung verg. Veranst."
+msgid "Past Event Administration"
+msgstr "verg. Veranst. Administration"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:70
 msgid "Finance Administration"
@@ -10195,8 +10195,8 @@ msgstr "Veranstaltungen verwalten"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:123
 #: cdedb/frontend/templates/web/event/base.tmpl:127
-msgid "Event Management"
-msgstr "Veranst.-Verwaltung"
+msgid "Event Administration"
+msgstr "Veranstaltungs-Administration"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:124
 msgid "Orga Controls"
@@ -12733,8 +12733,8 @@ msgstr "Alle Mailinglisten"
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:76
 #: cdedb/frontend/templates/web/ml/base.tmpl:81
-msgid "Mailinglist Management"
-msgstr "Mailinglisten-Verwaltung"
+msgid "Mailinglist Administration"
+msgstr "Mailinglisten-Administration"
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:77
 msgid "Moderator Controls"
