@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'CdEDB'
-copyright = '2014-2019, CdE-Datenbank-Entwicklungs-Team'
+copyright = '2014-2020, CdE-Datenbank-Entwicklungs-Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
