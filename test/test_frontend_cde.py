@@ -578,6 +578,7 @@ class TestCdEFrontend(FrontendTest):
                             div='membership')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
+        self.assertCheckbox(True, "paper_expuls_checkbox")
         mail = self.fetch_mail()[0]
         self.logout()
         link = self.fetch_link(mail)
@@ -1093,6 +1094,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Willy Brandt")
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
+
+        self.traverse({'description': 'Angela Merkel'})
+        self.assertPresence("0,00 €", div='balance')
+        self.assertCheckbox(True, "paper_expuls_checkbox")
+        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
+                            div="membership")
 
     @as_users("farin")
     def test_money_transfers(self, user):

@@ -51,6 +51,7 @@ PERSONA_TEMPLATE = {
     'decided_search': None,
     'bub_search': None,
     'foto': None,
+    'paper_expuls': None,
 }
 
 
@@ -244,6 +245,7 @@ class TestCoreBackend(BackendTest):
                 'mobile': None,
                 'name_supplement': None,
                 'notes': 'Not Link.',
+                'paper_expuls': None,
                 'postal_code': None,
                 'postal_code2': None,
                 'reviewed_by': None,
@@ -294,6 +296,7 @@ class TestCoreBackend(BackendTest):
             'decided_search': False,
             'bub_search': False,
             'foto': None,
+            'paper_expuls': True,
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -421,6 +424,9 @@ class TestCoreBackend(BackendTest):
             if key in ('trial_member', 'decided_search', 'bub_search'):
                 if persona[key] is None:
                     persona[key] = False
+            if key == "paper_expuls":
+                if persona[key] is None:
+                    persona[key] = True
         merge_dicts(data, persona)
         self.assertLess(0, self.core.change_persona_realms(self.key, data))
         log_entry = {
@@ -778,6 +784,7 @@ class TestCoreBackend(BackendTest):
             'interests': None,
             'specialisation': None,
             'timeline': None,
+            'paper_expuls': True,
         })
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
@@ -864,6 +871,7 @@ class TestCoreBackend(BackendTest):
             'free_form': 'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen',
             'interests': 'Immer',
             'location2': 'Foreign City',
+            'paper_expuls': True,
             'postal_code2': '8XA 45-$',
             'specialisation': 'Alles\nUnd noch mehr',
             'telephone': '+49 (5432) 987654321',

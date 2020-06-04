@@ -55,14 +55,16 @@
             {{ util.form_input_text(name="country2", label=gettext("Country")) }}
         {% endif %}
 
-        <h4 class="heading-underline">{% trans %}Account{% endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
         {% if realm == "cde" %}
             {{ util.form_input_checkbox(name="is_member", label=gettext("CdE-Member"),
                                    anid="input_checkbox_is_member") }}
-            {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable"),
-                                   anid="input_checkbox_is_searchable") }}
             {{ util.form_input_checkbox(name="trial_member", label=gettext("Trial Member"),
                                        anid="input_checkbox_trial_member") }}
+            {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable"),
+                                   anid="input_checkbox_is_searchable") }}
+            {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
+                                   anid="input_checkbox_is_searchable") }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7",
                                     info=gettext("Supports %(infolink)s.")|format(

@@ -123,6 +123,9 @@ CREATE TABLE core.personas (
         CHECK(NOT is_cde_realm OR bub_search IS NOT NULL),
         -- file name of image
         foto                    varchar DEFAULT NULL,
+        -- wants to receive the exPuls in printed form
+        paper_expuls            boolean DEFAULT TRUE,
+        CHECK(NOT is_cde_realm OR paper_expuls IS NOT NULL),
         -- automatically managed attribute containing all above values as a
         -- string for fulltext search
         fulltext                varchar NOT NULL
@@ -343,7 +346,8 @@ CREATE TABLE core.changelog (
         decided_search          boolean,
         trial_member            boolean,
         bub_search              boolean,
-        foto                    varchar
+        foto                    varchar,
+        paper_expuls            boolean
 );
 CREATE INDEX idx_changelog_change_status ON core.changelog(change_status);
 CREATE INDEX idx_changelog_persona_id ON core.changelog(persona_id);

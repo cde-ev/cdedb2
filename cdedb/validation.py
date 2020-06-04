@@ -1008,6 +1008,7 @@ _PERSONA_BASE_CREATION = lambda: {
     'decided_search': _None,
     'bub_search': _None,
     'foto': _None,
+    'paper_expuls': _None,
 }
 _PERSONA_CDE_CREATION = lambda: {
     'title': _str_or_None,
@@ -1037,6 +1038,7 @@ _PERSONA_CDE_CREATION = lambda: {
     'decided_search': _bool,
     'bub_search': _bool,
     # 'foto': _str_or_None, # No foto -- this is another special
+    'paper_expuls': _bool,
 }
 _PERSONA_EVENT_CREATION = lambda: {
     'title': _str_or_None,
@@ -1100,6 +1102,7 @@ _PERSONA_COMMON_FIELDS = lambda: {
     'decided_search': _bool,
     'bub_search': _bool,
     'foto': _str_or_None,
+    'paper_expuls': _bool_or_None,
 }
 
 
