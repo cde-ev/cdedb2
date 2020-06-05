@@ -191,15 +191,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             available_domains = atype.domains
             event_ids = self.eventproxy.list_db_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
-            sorted_events = keydictsort_filter(events, EntitySorter.event)
-            event_entries = [(k, v['title']) for k, v in sorted_events]
             assemblies = self.assemblyproxy.list_assemblies(rs)
-            sorted_assemblies = keydictsort_filter(
-                assemblies, EntitySorter.assembly)
-            assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
             return self.render(rs, "create_mailinglist", {
-                'event_entries': event_entries,
-                'assembly_entries': assembly_entries,
+                'events': events,
+                'assemblies': assemblies,
                 'ml_type': ml_type,
                 'available_domains': available_domains,
             })
@@ -397,17 +392,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         available_types = self.mlproxy.get_available_types(rs)
         event_ids = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
-        sorted_events = keydictsort_filter(events, EntitySorter.event)
-        event_entries = [(k, v['title']) for k, v in sorted_events]
         assemblies = self.assemblyproxy.list_assemblies(rs)
-        sorted_assemblies = keydictsort_filter(
-            assemblies, EntitySorter.assembly)
-        assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
         merge_dicts(rs.values, rs.ambience['mailinglist'])
         return self.render(rs, "change_ml_type", {
             'available_types': available_types,
-            'events': event_entries,
-            'assemblies': assembly_entries,
+            'events': events,
+            'assemblies': assemblies,
         })
 
     @access("ml", modi={"POST"})

@@ -5461,7 +5461,9 @@ class EventFrontend(AbstractUserFrontend):
 
         # Construct choices.
         lodgement_choices = OrderedDict(
-            xsorted((l["id"], l["moniker"]) for l in lodgements.values()))
+            (l_id, l['moniker'])
+            for l_id, l in keydictsort_filter(lodgements,
+                                              EntitySorter.lodgement))
         lodgement_group_choices = OrderedDict({-1: gettext(n_("--no group--"))})
         lodgement_group_choices.update(
             [(lg_id, lg['moniker']) for lg_id, lg in keydictsort_filter(
