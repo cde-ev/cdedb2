@@ -5,7 +5,8 @@ LOGFILE=$(mktemp)
 MAILTO=cdedb@lists.cde-ev.de
 
 echo "Autobuild started at $(date)" > $LOGFILE
-flock -n -E 123 $LOCKFILE $BINDIR/cdedb-autobuild-stage3.sh &>> $LOGFILE
+timeout -k 5s 120m flock -n -E 123 $LOCKFILE \
+        $BINDIR/cdedb-autobuild-stage3.sh &>> $LOGFILE
 RETVAL=$?
 echo "Autobuild finished at $(date)" >> $LOGFILE
 
@@ -21,6 +22,16 @@ if [[ $RETVAL -eq 1 ]]; then
 fi;
 if [[ $RETVAL -eq 123 ]]; then
     mail -s "cdedb2-auto-build: abort" $MAILTO
+    rm -f $LOGFILE
+    exit 0
+fi;
+if [[ $RETVAL -eq 124 ]]; then
+    mail -s "cdedb2-auto-build: timeout terminated" $MAILTO
+    rm -f $LOGFILE
+    exit 0
+fi;
+if [[ $RETVAL -eq 137 ]]; then
+    mail -s "cdedb2-auto-build: timeout killed" $MAILTO
     rm -f $LOGFILE
     exit 0
 fi;
