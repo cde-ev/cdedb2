@@ -95,18 +95,19 @@
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
+            {# all entities contain only their title, so we dont use the common EntitySorter #}
             {% if filter_name == "assembly_id" %}
                 {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
-                        entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
+                        entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "pevent_id" %}
                 {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="",
-                        entries=pevents|dictsort|dict_entries('id', 'title'), small=True) }}
+                        entries=pevents|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "event_id" %}
                 {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="",
-                        entries=all_events|dictsort, small=True) }}
+                        entries=all_events|dictsort, small=True, sort=True) }}
             {% elif filter_name == "mailinglist_id" %}
                 {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
-                        entries=relevant_mailinglists|dictsort, small=True) }}
+                        entries=relevant_mailinglists|dictsort, small=True, sort=True) }}
             {% elif filter_name == "changelog" %}
                 {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
                         anid="input-reviewed_by") }}
