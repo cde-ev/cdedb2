@@ -487,6 +487,12 @@ class TestAssemblyFrontend(FrontendTest):
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         self.response = saved_response
+        f = self.response.forms['removeattachmentversionform1002_1']
+        f['attachment_ack_delete'].checked = True
+        self.submit(f)
+        self.assertPresence("Version 1 was deleted.")
+        self.traverse({'description': 'Attachment Details'})
+        self.assertTitle("Attachment Details – Internationaler Kongress")
         f = self.response.forms['deleteattachmentform1002']
         f['attachment_ack_delete'].checked = True
         self.submit(f)
@@ -796,6 +802,12 @@ class TestAssemblyFrontend(FrontendTest):
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
+
+        self.traverse({'description': 'Abstimmungen'},
+                      {'description': 'Ganz wichtige Wahl'})
+        f = self.response.forms['deleteballotform']
+        f['ack_delete'].checked = True
+        self.submit(f)
 
         # Conclude assembly.
         self.traverse({'description': 'Archiv-Sammlung'})
