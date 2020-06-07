@@ -5,7 +5,7 @@
     {% endfor %}
     {% with current_version = history[x|max] if x else history[history.keys()|max] %}
         <div class="p" id="attachment_container_{{ current_version["attachment_id"] }}">
-            {{ print_attachment_link(current_version, edit, ballot, add=True) }}
+            {{ print_attachment_link(current_version, edit, ballot, add=not full_history) }}
             {% if full_history %}
                 {% if history|length > 1 %}
                     <ul>
