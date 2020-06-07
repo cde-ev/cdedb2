@@ -1589,7 +1589,7 @@ class AssemblyBackend(AbstractBackend):
         if not self.check_attachment_access(rs, (attachment_id,)):
             raise PrivilegeError(n_("Not privileged."))
         version = affirm("id_or_None", version) or self.get_current_version(
-            rs, attachment_id)
+            rs, attachment_id, False)
         path = self.attachment_base_path / f"{attachment_id}_v{version}"
         if path.exists():
             with open(path, "rb") as f:
