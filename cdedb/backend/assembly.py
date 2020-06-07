@@ -234,6 +234,12 @@ class AssemblyBackend(AbstractBackend):
     @internal_access("persona")
     def get_assembly_id(self, rs: RequestState, *, ballot_id: int = None,
                         attachment_id: int = None) -> int:
+        """Singular version of `get_assembly_ids`.
+
+        This allows both inputs, but raises an error if they belong to
+        different assemblies.
+
+        Providing no inputs or unused ids will also result in an error."""
         if ballot_id is None:
             ballot_ids = set()
         else:
@@ -1220,11 +1226,11 @@ class AssemblyBackend(AbstractBackend):
         """Helper to check whether the user may access the given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
+            if not attachment_ids:
+                return True
             assembly_ids = self.get_assembly_ids(
                 rs, attachment_ids=attachment_ids)
-            if not assembly_ids:
-                return True
-            if len(assembly_ids) > 1:
+            if len(assembly_ids) != 1:
                 raise ValueError(n_("Can only access attachments from exactly "
                                     "one assembly at a time."))
             return self.may_assemble(rs, assembly_id=unwrap(assembly_ids))
