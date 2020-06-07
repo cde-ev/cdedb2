@@ -40,7 +40,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         "persona_getter": lambda obj: obj.coreproxy.get_assembly_user,
     }
 
-    # TODO this does nothing?
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
@@ -130,7 +129,6 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
 
-    # TODO log type hints after log pagination branch.
     @access("assembly_admin")
     @REQUESTdata(("codes", "[int]"), ("assembly_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
@@ -140,8 +138,13 @@ class AssemblyFrontend(AbstractUserFrontend):
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_log(self, rs, codes, assembly_id, offset, length, persona_id,
-                 submitted_by, additional_info, time_start, time_stop):
+    def view_log(self, rs: RequestState,
+                 codes: Collection[const.AssemblyLogCodes],
+                 assembly_id: Optional[int], offset: Optional[int],
+                 length: Optional[int], persona_id: Optional[int],
+                 submitted_by: Optional[int], additional_info: Optional[str],
+                 time_start: Optional[datetime.datetime],
+                 time_stop: Optional[datetime.datetime]):
         """View activities."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
