@@ -29,7 +29,7 @@ do it.
 import copy
 import hmac
 from typing import (
-    Set, Dict, List, Union, Callable, Collection
+    Set, Dict, List, Union, Callable, Collection, Optional
 )
 
 from cdedb.backend.common import (
@@ -57,8 +57,9 @@ class AssemblyBackend(AbstractBackend):
         super().__init__(*args, **kwargs)
         self.attachment_base_path: PathLike = (
                 self.conf['STORAGE_DIR'] / "assembly_attachment")
+        self.ballot_result_base_path: PathLike = (
+                self.conf['STORAGE_DIR'] / 'ballot_result')
 
-    # TODO this does nothing?
     @classmethod
     def is_admin(cls, rs: RequestState):
         return super().is_admin(rs)
@@ -1086,7 +1087,33 @@ class AssemblyBackend(AbstractBackend):
         return vote['vote']
 
     @access("assembly")
-    def tally_ballot(self, rs: RequestState, ballot_id: int) -> bool:
+    def get_ballot_result(self, rs: RequestState,
+                          ballot_id: int) -> Optional[bytes]:
+        """Retrieve the content of a result file for a ballot.
+
+        Returns None if the ballot is not tallied yet or if the file is missing.
+        """
+        ballot_id = affirm("id", ballot_id)
+        if not self.may_access(rs, ballot_id=ballot_id):
+            raise PrivilegeError(n_("May not access result for this ballot."))
+
+        ballot = self.get_ballot(rs, ballot_id)
+        if not ballot['is_tallied']:
+            return None
+        else:
+            path = self.ballot_result_base_path / str(ballot_id)
+            if not path.exists():
+                # TODO raise an error here?
+                self.logger.warning(
+                    f"Result file for ballot {ballot_id} not found.")
+                return None
+            with open(path, 'rb') as f:
+                ret = f.read()
+            return ret
+
+    @access("assembly")
+    def tally_ballot(self, rs: RequestState,
+                     ballot_id: int) -> Optional[bytes]:
         """Evaluate the result of a ballot.
 
         After voting has finished all votes are tallied and a result
@@ -1101,8 +1128,8 @@ class AssemblyBackend(AbstractBackend):
         We use the Schulze method as documented in
         :py:func:`cdedb.common.schulze_evaluate`.
 
-        :returns: True if a new result file was generated and False if the
-          ballot was already tallied.
+        :returns: The content of the file if a new result file was created,
+            otherwise None.
         """
         ballot_id = affirm("id", ballot_id)
 
@@ -1112,7 +1139,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
             if ballot['is_tallied']:
-                return False
+                return None
             if ballot['extended'] is None:
                 raise ValueError(n_("Extension unchecked."))
             if ballot['extended']:
@@ -1168,10 +1195,12 @@ class AssemblyBackend(AbstractBackend):
                 "voters": voters,
                 "votes": votes,
             }
-            path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot_id)
+            path = self.ballot_result_base_path / str(ballot_id)
             with open(path, 'w') as f:
                 f.write(json_serialize(result))
-        return True
+            with open(path, 'rb') as f:
+                ret = f.read()
+        return ret
 
     @access("assembly_admin")
     def conclude_assembly_blockers(self, rs: RequestState,

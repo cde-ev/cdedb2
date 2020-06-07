@@ -8,6 +8,7 @@ import pathlib
 import collections
 import datetime
 import time
+import io
 from typing import Any, Dict, Tuple, Union, Optional, Collection
 
 import werkzeug.exceptions
@@ -899,7 +900,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # initial checks done, present the ballot
         ballot['is_voting'] = self.is_ballot_voting(ballot)
         ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
-        result = self.get_online_result(ballot)
+        result = self.get_online_result(rs, ballot)
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
         has_voted = False
         own_vote = None
@@ -980,11 +981,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                      or timestamp > ballot['vote_extension_end']))
         # check whether we need to initiate tallying
         if finished and not ballot['is_tallied'] and not update:
-            did_tally = self.assemblyproxy.tally_ballot(rs, ballot['id'])
-            if did_tally:
-                path = self.conf["STORAGE_DIR"] / "ballot_result" / str(ballot['id'])
+            result = self.assemblyproxy.tally_ballot(rs, ballot['id'])
+            if result:
+                afile = io.BytesIO(result)
+                my_hash = get_hash(result)
                 attachment_result = {
-                    'path': path,
+                    'file': afile,
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
                 to = [self.conf["BALLOT_TALLY_ADDRESS"]]
@@ -993,8 +995,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                 reply_to = (rs.ambience['assembly']['mail_address'] or
                             self.conf["ASSEMBLY_ADMIN_ADDRESS"])
                 subject = f"Abstimmung '{ballot['title']}' ausgezählt"
-                with open(path, 'rb') as resultfile:
-                    my_hash = get_hash(resultfile.read())
                 self.do_mail(
                     rs, "ballot_tallied", {
                         'To': to,
@@ -1006,14 +1006,13 @@ class AssemblyFrontend(AbstractUserFrontend):
                 update = True
         return update
 
-    def get_online_result(self, ballot: Dict[str, Any]) -> \
-            Union[Dict[str, Any], None]:
+    def get_online_result(self, rs, ballot: Dict[str, Any]
+                          ) -> Union[Dict[str, Any], None]:
         """Helper to get the result information of a tallied ballot."""
         result = None
         if ballot['is_tallied']:
-            path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot['id'])
-            with open(path) as f:
-                result = json.load(f)
+            result = json.loads(
+                self.assemblyproxy.get_ballot_result(rs, ballot['id']))
             tiers = tuple(x.split('=') for x in result['result'].split('>'))
             winners = []
             losers = []
@@ -1078,7 +1077,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         done, extended, current, future = self.group_ballots(ballots)
 
-        result = {k: self.get_online_result(v) for k, v in done.items()}
+        result = {k: self.get_online_result(rs, v) for k, v in done.items()}
 
         return self.render(rs, "summary_ballots", {
             'ballots': done, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
@@ -1215,11 +1214,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Download the tallied stats of a ballot."""
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not rs.ambience['ballot']['is_tallied']:
+        result = self.assemblyproxy.get_ballot_result(rs, ballot_id)
+        if not rs.ambience['ballot']['is_tallied'] or not result:
             rs.notify("warning", n_("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)
-        path = self.conf["STORAGE_DIR"] / 'ballot_result' / str(ballot_id)
-        return self.send_file(rs, path=path, inline=False,
+        return self.send_file(rs, data=result, inline=False,
                               filename=f"ballot_{ballot_id}_result.json")
 
     @access("assembly_admin", modi={"POST"})
