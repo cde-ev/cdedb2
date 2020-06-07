@@ -1455,17 +1455,21 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             if not self.check_attachment_access(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
+            query = ("SELECT attachment_id, MAX(version) as version"
+                     " FROM assembly.attachment_versions"
+                     " WHERE {} GROUP BY attachment_id")
+            params = (attachment_ids,)
             constraints = ["attachment_id = ANY(%s)"]
             params = [attachment_ids]
+            data = self.query_all(
+                rs, query.format(" AND ".join(constraints)), params)
+            ret = {e["attachment_id"]: e["version"] for e in data}
             if not include_deleted:
                 constraints.append("dtime IS NULL")
-            query = (f"SELECT attachment_id, MAX(version) as version FROM"
-                     f" assembly.attachment_versions"
-                     f" WHERE {' AND '.join(constraints)}"
-                     f" GROUP BY attachment_id")
-            params = (attachment_ids,)
-            data = self.query_all(rs, query, params)
-            return {e["attachment_id"]: e["version"] for e in data}
+                data = self.query_all(
+                    rs, query.format(" AND ".join(constraints)), params)
+                ret.update({e["attachment_id"]: e["version"] for e in data})
+            return ret
     get_current_version: Callable[[RequestState, int, bool], int] = singularize(
         get_current_versions, "attachment_ids", "attachment_id")
 
