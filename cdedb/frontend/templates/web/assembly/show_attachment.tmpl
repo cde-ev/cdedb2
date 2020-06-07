@@ -10,16 +10,25 @@
     {% endtrans %}
     – {{ ambience['assembly']['title'] }}
 {% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans %}
+            Attachment Details
+        {% endtrans %}
+        {{ assembly_util.small_attachment_title(attachment) }}
+    </h1>
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {% if ambience['ballot'] %}
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), gettext("Attachment Details"), icon="file", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), assembly_util.small_attachment_title(attachment), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), gettext("Attachment Details"), active=True) }}
 
 {% endblock %}
 {% block content %}
-    {{ assembly_util.attachment_box({attachment['attachment_id']: attachment}, ballot=ambience.get('ballot'),
-                                    edit=("assembly_contents" in user.admin_views), full_history=True) }}
+    {{ assembly_util.attachment_list({attachment['attachment_id']: attachment}, ballot=ambience.get('ballot'),
+                                     edit=("assembly_contents" in user.admin_views)) }}
 {% endblock %}

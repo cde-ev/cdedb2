@@ -5,10 +5,17 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}
-    {% trans %}
-        Attachment Overview
+    {% trans title=ambience['assembly']['title'] %}
+        Attachment Overview ({{ title }})
     {% endtrans %}
-    – {{ ambience['assembly']['title'] }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans %}
+            Attachment Overview
+        {% endtrans %}
+        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
+    </h1>
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -19,6 +26,6 @@
 {% block content %}
     {% for ballot_id, ballot in [(None, None)] + ballots|keydictsort(EntitySorter.ballot) %}
         {{ assembly_util.attachment_box(all_attachments[ballot_id], ballot=ballot, new_attachment_button=True,
-                                        edit=("assembly_contents" in user.admin_views), full_history=True) }}
+                                        edit=("assembly_contents" in user.admin_views)) }}
     {% endfor %}
 {% endblock %}

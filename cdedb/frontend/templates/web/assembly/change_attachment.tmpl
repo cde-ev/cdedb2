@@ -39,7 +39,7 @@
     {% endif %}
     {{ util.breadcrumb_link("", history[history.keys()|max]['title'], icon="file") }}
     {{ util.breadcrumb_link(cdedblink("assembly/change_attachment", {'attachment_id': attachment_id}),
-                            gettext("Edit File"), active=True) }}
+                            gettext("Edit Attachment"), active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/change_attachment') }}" method="POST" enctype="multipart/form-data"
