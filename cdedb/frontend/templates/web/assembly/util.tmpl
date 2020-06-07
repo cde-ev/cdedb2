@@ -24,7 +24,7 @@
                                      {'attachment_id': current_version["attachment_id"],
                                       'ballot_id': ballot['id'] if ballot else None}),
                                      gettext("Add Version"), aclass="btn btn-success btn-sm", icon="plus") }}
-                        {{ util.href(cdedblink("assembly/change_attachment_form",
+                        {{ util.href(cdedblink("assembly/change_attachment_link_form",
                                      {'attachment_id': current_version["attachment_id"],
                                       'ballot_id': ballot['id'] if ballot else None}),
                                      gettext("Edit Attachment"), aclass="btn btn-warning btn-sm", icon="pen") }}
@@ -76,12 +76,12 @@
                          aclass="btn btn-xs btn-warning hide-hover") }}
             <form action="{{ cdedblink('assembly/delete_attachment',
                                        {'attachment_id': version["attachment_id"],
-                                        'ballot_id': ballot['id'] if ballot else None}) }}"
+                                        'ballot_id': ballot['id'] if ballot else None,
+                                        'version': version['version']}) }}"
                     method="POST"
                     id="removeattachmentversionform{{ version["attachment_id"] }}_{{ version["version"] }}"
                     class="hide-hover display-inline">
                 {{ util.anti_csrf_token('assembly/delete_attachment') }}
-                {{ util.input_hidden(name="version", value=version["version"]) }}
                 {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
                 {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash-alt",
                         title=gettext("Delete File")) }}
@@ -114,15 +114,19 @@
     </div>
 {% endmacro %}
 
-{% macro small_attachment_title(history) %}
-    {% set x = [] %}
-    {% for i, v in history.items() if v['dtime'] is none %}
-        {% do x.append(i) %}
-    {% endfor %}
-    {% with current = history[x|max] if x else history[history.keys()|max] %}
-        <small>
-            {{- util.make_icon('file', arialabel='Attachment') }} {{ current['title'] -}}
-        </small>
+{% macro small_attachment_title(history, version=None, icon=True) %}
+    {% if version is none %}
+        {% set x = [] %}
+        {% for i, v in history.items() if v['dtime'] is none %}
+            {% do x.append(i) %}
+        {% endfor %}
+        {% set version = x|max if x else history.keys()|max %}
+    {% endif %}
+    {% with current = history[version] %}
+        {% if icon %}
+            {{- util.make_icon('file', arialabel='Attachment') }}
+        {% endif %}
+        {{ current['title'] -}}
     {% endwith %}
 {% endmacro %}
 

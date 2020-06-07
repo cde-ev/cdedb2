@@ -549,8 +549,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                        attachment_id: int, ballot_id: int = None,
                        version: int = None) -> Response:
         """Retrieve an attachment. Default to most recent version."""
-        if rs.has_validation_errors():
-            version = None
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         history = self.assemblyproxy.get_attachment_history(
@@ -572,18 +570,16 @@ class AssemblyFrontend(AbstractUserFrontend):
     def show_attachment(self, rs: RequestState, assembly_id: int,
                         attachment_id: int, ballot_id: int = None) -> Response:
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
-            return self.redirect(rs, "assembly/index")
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         attachment = self.assemblyproxy.get_attachment_history(
             rs, attachment_id)
         return self.render(rs, "show_attachment", {'attachment': attachment})
 
     @access("assembly_admin")
-    @REQUESTdata(("attachment_id", "id_or_None"))
     def add_attachment_form(self, rs: RequestState, assembly_id: int,
                             ballot_id: int = None,
                             attachment_id: int = None) -> Response:
         """Render form."""
-        rs.ignore_validation_errors()
         if ballot_id and now() > rs.ambience['ballot']['vote_begin']:
             rs.notify("warning", n_("Voting has already begun."))
             return self.redirect(rs, "assembly/show_ballot")
@@ -607,192 +603,18 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'history': history,
             })
 
-    @access("assembly_admin")
-    def change_attachment_form(self, rs: RequestState,
-                               assembly_id: int, attachment_id: int,
-                               ballot_id: int = None) -> Response:
-        """Change the association of an existing attachment incl. versions."""
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
-        if (ballot_id != attachment['ballot_id'] or
-                (attachment['assembly_id']
-                 and attachment['assembly_id'] != assembly_id)):
-            rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-
-        history = self.assemblyproxy.get_attachment_history(rs, attachment_id)
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-        ballot_entries = [
-            (ballot['id'], ballot['title'])
-            for ballot in xsorted(ballots.values(), key=EntitySorter.ballot)
-            if now() < ballot['vote_begin']
-        ]
-        attachment['new_ballot_id'] = attachment['ballot_id']
-        merge_dicts(rs.values, attachment)
-        return self.render(rs, "change_attachment", params={
-            'history': history,
-            'attachment_id': attachment_id,
-            'ballot_entries': ballot_entries,
-        })
-
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("new_ballot_id", "id_or_None"))
-    def change_attachment(self, rs: RequestState, assembly_id: int,
-                          attachment_id: int, new_ballot_id: Optional[int],
-                          ballot_id: int = None) -> Response:
-        """Change the association of an existing attachment incl. versions."""
-        if rs.has_validation_errors():
-            return self.change_attachment_form(
-                rs, assembly_id, attachment_id)
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
-        if (ballot_id != attachment['ballot_id']
-                or (attachment['assembly_id']
-                    and attachment['assembly_id'] != assembly_id)):
-            rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-
-        data = {'id': attachment_id}
-        if new_ballot_id:
-            ballot = self.assemblyproxy.get_ballot(rs, new_ballot_id)
-            if ballot['assembly_id'] != assembly_id:
-                rs.append_validation_error(
-                    ("new_ballot_id",
-                     ValueError(n_("Invalid ballot specified."))))
-            if now() > ballot['vote_begin']:
-                rs.append_validation_error(
-                    ("new_ballot_id",
-                     ValueError(n_("Voting has already begun."))))
-            if rs.has_validation_errors():
-                return self.change_attachment_form(
-                    rs, assembly_id, attachment_id, ballot_id)
-            data["assembly_id"] = None
-            data["ballot_id"] = new_ballot_id
-        else:
-            data["assembly_id"] = assembly_id
-            data["ballot_id"] = None
-        code = self.assemblyproxy.change_attachment_link(rs, data)
-        self.notify_return_code(rs, code)
-        if new_ballot_id:
-            return self.redirect(rs, "assembly/show_ballot",
-                                 {'ballot_id': new_ballot_id})
-        else:
-            return self.redirect(rs, "assembly/show_assembly")
-
-    @access("assembly_admin")
-    @REQUESTdata(("version", "id"))
-    def edit_attachment_version_form(self, rs: RequestState,
-                                     assembly_id: int, attachment_id: int,
-                                     version: int) -> Response:
-        """Change an existing version of an attachment."""
-        rs.ignore_validation_errors()
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
-        if (attachment['assembly_id']
-                and attachment['assembly_id'] != assembly_id):
-            rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-        history = self.assemblyproxy.get_attachment_history(
-            rs, attachment_id)
-        if version not in history or history[version]['dtime']:
-            rs.notify("error", "Invalid version specified.")
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        merge_dicts(rs.values, history[version])
-        return self.render(rs, "edit_attachment_version", {
-            'attachment_id': attachment_id,
-            'history': history,
-            'version': version,
-        })
-
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("version", "id"), ("title", "str"),
-                 ("authors", "str_or_None"), ("filename", "str"))
-    def edit_attachment_version(self, rs: RequestState, assembly_id: int,
-                                attachment_id: int, version: int, title: str,
-                                authors: Optional[str], filename: str,
-                                ballot_id: int = None) -> Response:
-        """Change an existing version of an attachment."""
-        if rs.has_validation_errors():
-            return self.change_attachment_form(
-                rs, assembly_id, attachment_id, version)
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-        if (ballot_id != attachment['ballot_id'] or
-                (attachment['assembly_id']
-                 and attachment['assembly_id'] != assembly_id)):
-            rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        history = self.assemblyproxy.get_attachment_history(
-            rs, attachment_id)
-        if version not in history or history[version]['dtime']:
-            rs.notify("error", "Invalid version specified.")
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-
-        data = {
-            'attachment_id': attachment_id,
-            'version': version,
-            'title': title,
-            'authors': authors,
-            'filename': filename,
-        }
-        code = self.assemblyproxy.change_attachment_version(rs, data)
-        self.notify_return_code(rs, code)
-        if ballot_id:
-            return self.redirect(rs, "assembly/show_ballot")
-        else:
-            return self.redirect(rs, "assembly/show_assembly")
-
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("attachment_id", "id_or_None"), ("title", "str"),
+    @REQUESTdata(("title", "str"),
                  ("authors", "str_or_None"),
                  ("filename", "identifier_or_None"),)
     @REQUESTfile("attachment")
-    # ballot_id is optional, but comes semantically after assembly_id
-    def add_attachment(self, rs: RequestState, assembly_id: int, title: str,
-                       attachment_id: Optional[int], filename: Optional[str],
-                       attachment: werkzeug.FileStorage, authors: Optional[str],
-                       ballot_id: int = None) -> Response:
+    # ballot_id and attachment_id come semantically after asssembly_id,
+    # but are optional, so need to be at the end.
+    def add_attachment(self, rs: RequestState, assembly_id: int,
+                       attachment: werkzeug.FileStorage,
+                       title: str, filename: Optional[str],
+                       authors: Optional[str], ballot_id: int = None,
+                       attachment_id: int = None) -> Response:
         """Create a new attachment.
 
         It can either be associated to an assembly or a ballot.
@@ -834,8 +656,186 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "assembly/show_assembly")
 
+    @access("assembly_admin")
+    def change_attachment_link_form(self, rs: RequestState,
+                                    assembly_id: int, attachment_id: int,
+                                    ballot_id: int = None) -> Response:
+        """Change the association of an existing attachment incl. versions."""
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if (ballot_id != attachment['ballot_id'] or
+                (attachment['assembly_id']
+                 and attachment['assembly_id'] != assembly_id)):
+            rs.notify("error", n_("Invalid attachment specified."))
+            if attachment['ballot_id']:
+                return self.redirect(rs, "assembly/show_ballot",
+                                     {'ballot_id': attachment['ballot_id']})
+            else:
+                return self.redirect(rs, "assembly/show_assembly")
+        if attachment['ballot_id']:
+            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
+            if now() > ballot['vote_begin']:
+                rs.notify("warning", n_("Voting has already begun."))
+                return self.redirect(rs, "assembly/show_ballot")
+
+        history = self.assemblyproxy.get_attachment_history(rs, attachment_id)
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        ballot_entries = [
+            (ballot['id'], ballot['title'])
+            for ballot in xsorted(ballots.values(), key=EntitySorter.ballot)
+            if now() < ballot['vote_begin']
+        ]
+        attachment['new_ballot_id'] = attachment['ballot_id']
+        merge_dicts(rs.values, attachment)
+        return self.render(rs, "change_attachment_link", params={
+            'history': history,
+            'attachment_id': attachment_id,
+            'ballot_entries': ballot_entries,
+        })
+
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("version", "id_or_None"), ("attachment_ack_delete", "bool"))
+    @REQUESTdata(("new_ballot_id", "id_or_None"))
+    def change_attachment_link(self, rs: RequestState, assembly_id: int,
+                               attachment_id: int, new_ballot_id: Optional[int],
+                               ballot_id: int = None) -> Response:
+        """Change the association of an existing attachment incl. versions."""
+        if rs.has_validation_errors():
+            return self.change_attachment_link_form(
+                rs, assembly_id, attachment_id)
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if (ballot_id != attachment['ballot_id']
+                or (attachment['assembly_id']
+                    and attachment['assembly_id'] != assembly_id)):
+            rs.notify("error", n_("Invalid attachment specified."))
+            if attachment['ballot_id']:
+                return self.redirect(rs, "assembly/show_ballot",
+                                     {'ballot_id': attachment['ballot_id']})
+            else:
+                return self.redirect(rs, "assembly/show_assembly")
+        if attachment['ballot_id']:
+            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
+            if now() > ballot['vote_begin']:
+                rs.notify("warning", n_("Voting has already begun."))
+                return self.redirect(rs, "assembly/show_ballot")
+
+        data = {'id': attachment_id}
+        if new_ballot_id:
+            ballot = self.assemblyproxy.get_ballot(rs, new_ballot_id)
+            if ballot['assembly_id'] != assembly_id:
+                rs.append_validation_error(
+                    ("new_ballot_id",
+                     ValueError(n_("Invalid ballot specified."))))
+            if now() > ballot['vote_begin']:
+                rs.append_validation_error(
+                    ("new_ballot_id",
+                     ValueError(n_("Voting has already begun."))))
+            if rs.has_validation_errors():
+                return self.change_attachment_link_form(
+                    rs, assembly_id, attachment_id, ballot_id)
+            data["assembly_id"] = None
+            data["ballot_id"] = new_ballot_id
+        else:
+            data["assembly_id"] = assembly_id
+            data["ballot_id"] = None
+        code = self.assemblyproxy.change_attachment_link(rs, data)
+        self.notify_return_code(rs, code)
+        if new_ballot_id:
+            return self.redirect(rs, "assembly/show_ballot",
+                                 {'ballot_id': new_ballot_id})
+        else:
+            return self.redirect(rs, "assembly/show_assembly")
+
+    @access("assembly_admin")
+    # ballot_id comes semantically after assembly_id, but is optional,
+    # so needs to be at the end.
+    def edit_attachment_version_form(self, rs: RequestState,
+                                     assembly_id: int, attachment_id: int,
+                                     version: int,
+                                     ballot_id: int = None) -> Response:
+        """Change an existing version of an attachment."""
+        rs.ignore_validation_errors()
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if (attachment['assembly_id']
+                and attachment['assembly_id'] != assembly_id):
+            rs.notify("error", n_("Invalid attachment specified."))
+            if attachment['ballot_id']:
+                return self.redirect(rs, "assembly/show_ballot",
+                                     {'ballot_id': attachment['ballot_id']})
+            else:
+                return self.redirect(rs, "assembly/show_assembly")
+        if attachment['ballot_id']:
+            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
+            if now() > ballot['vote_begin']:
+                rs.notify("warning", n_("Voting has already begun."))
+                return self.redirect(rs, "assembly/show_ballot")
+        history = self.assemblyproxy.get_attachment_history(
+            rs, attachment_id)
+        if version not in history or history[version]['dtime']:
+            rs.notify("error", "Invalid version specified.")
+            if attachment['ballot_id']:
+                return self.redirect(rs, "assembly/show_ballot",
+                                     {'ballot_id': attachment['ballot_id']})
+            else:
+                return self.redirect(rs, "assembly/show_assembly")
+        merge_dicts(rs.values, history[version])
+        return self.render(rs, "edit_attachment_version", {
+            'attachment_id': attachment_id,
+            'history': history,
+            'version': version,
+        })
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("title", "str"), ("authors", "str_or_None"),
+                 ("filename", "str"))
+    def edit_attachment_version(self, rs: RequestState, assembly_id: int,
+                                attachment_id: int, version: int, title: str,
+                                authors: Optional[str], filename: str,
+                                ballot_id: int = None) -> Response:
+        """Change an existing version of an attachment."""
+        if rs.has_validation_errors():
+            return self.change_attachment_link_form(
+                rs, assembly_id, attachment_id, version)
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if attachment['ballot_id']:
+            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
+            if now() > ballot['vote_begin']:
+                rs.notify("warning", n_("Voting has already begun."))
+                return self.redirect(rs, "assembly/show_ballot")
+        if (ballot_id != attachment['ballot_id'] or
+                (attachment['assembly_id']
+                 and attachment['assembly_id'] != assembly_id)):
+            rs.notify("error", n_("Invalid attachment specified."))
+            if attachment['ballot_id']:
+                return self.redirect(rs, "assembly/show_ballot",
+                                     {'ballot_id': attachment['ballot_id']})
+            else:
+                return self.redirect(rs, "assembly/show_assembly")
+        history = self.assemblyproxy.get_attachment_history(
+            rs, attachment_id)
+        if version not in history or history[version]['dtime']:
+            rs.notify("error", "Invalid version specified.")
+            if attachment['ballot_id']:
+                return self.redirect(rs, "assembly/show_ballot",
+                                     {'ballot_id': attachment['ballot_id']})
+            else:
+                return self.redirect(rs, "assembly/show_assembly")
+
+        data = {
+            'attachment_id': attachment_id,
+            'version': version,
+            'title': title,
+            'authors': authors,
+            'filename': filename,
+        }
+        code = self.assemblyproxy.change_attachment_version(rs, data)
+        self.notify_return_code(rs, code)
+        if ballot_id:
+            return self.redirect(rs, "assembly/show_ballot")
+        else:
+            return self.redirect(rs, "assembly/show_assembly")
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("attachment_ack_delete", "bool"))
     # ballot_id is optional, but comes semantically before attachment_id
     def delete_attachment(self, rs: RequestState, assembly_id: int,
                           attachment_id: int, attachment_ack_delete: bool,

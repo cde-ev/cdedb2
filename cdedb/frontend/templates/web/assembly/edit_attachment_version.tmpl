@@ -27,7 +27,9 @@
                 {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] -}}
             </small>
         {% endif %}
-        {{ assembly_util.small_attachment_title(history) }}
+        <small>
+            {{ assembly_util.small_attachment_title(history, version) }}
+        <small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -37,16 +39,14 @@
         {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
-    {{ util.breadcrumb_link("", history[history.keys()|max]['title'], icon="file") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/edit_attachment_version", {'attachment_id': attachment_id, 'version': version}),
-                            gettext("Edit File"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), assembly_util.small_attachment_title(history, version, icon=False), icon="file") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/edit_attachment_version"), gettext("Edit File"), active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/edit_attachment_version') }}" method="POST" enctype="multipart/form-data"
             id="editattachmentform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/edit_attachment_version') }}
         {{ util.input_hidden(name="attachment_id") }}
-        {{ util.input_hidden(name="version") }}
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename")) }}

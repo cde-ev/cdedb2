@@ -28,7 +28,9 @@
             </small>
         {% endif %}
         {% if history %}
-            {{ assembly_util.small_attachment_title(history) }}
+            <small>
+                {{ assembly_util.small_attachment_title(history) }}
+            </small>
         {% endif %}
     </h1>
 {% endblock %}
@@ -40,9 +42,8 @@
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
     {% if attachment_id %}
-        {{ util.breadcrumb_link("", history[history.keys()|max]['title'], icon="file") }}
-        {{ util.breadcrumb_link(cdedblink("assembly/add_attachment", {'attachment_id': attachment_id}),
-                                gettext("Add Version"), active=True) }}
+        {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), assembly_util.small_attachment_title(history, icon=False), icon="file") }}
+        {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Add Version"), active=True) }}
     {% else %}
         {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Attach File"), active=True) }}
     {% endif %}
