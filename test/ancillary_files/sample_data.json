@@ -57,7 +57,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 2,
@@ -109,7 +110,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
-            "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9"
+            "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9",
+            "paper_expuls": true
         },
         {
             "id": 3,
@@ -161,7 +163,8 @@
             "decided_search": true,
             "trial_member": true,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 4,
@@ -213,7 +216,8 @@
             "decided_search": false,
             "trial_member": false,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 5,
@@ -265,7 +269,8 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 6,
@@ -317,7 +322,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 7,
@@ -369,7 +375,8 @@
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 8,
@@ -421,7 +428,8 @@
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 9,
@@ -473,7 +481,8 @@
             "decided_search": true,
             "trial_member": true,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 10,
@@ -525,7 +534,8 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 11,
@@ -577,7 +587,8 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 12,
@@ -629,7 +640,8 @@
             "decided_search": true,
             "trial_member": true,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 13,
@@ -648,7 +660,7 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
+            "is_member": false,
             "is_searchable": false,
             "is_archived": false,
             "display_name": "Martin",
@@ -681,7 +693,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 14,
@@ -697,7 +710,7 @@
             "is_ml_admin": true,
             "is_assembly_admin": false,
             "is_cde_realm": false,
-            "is_event_realm": true,
+            "is_event_realm": false,
             "is_ml_realm": true,
             "is_assembly_realm": false,
             "is_member": false,
@@ -733,7 +746,8 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 15,
@@ -785,7 +799,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 16,
@@ -804,7 +819,7 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
+            "is_member": false,
             "is_searchable": false,
             "is_archived": false,
             "display_name": "Paul",
@@ -837,7 +852,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 17,
@@ -856,7 +872,7 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
+            "is_member": false,
             "is_searchable": false,
             "is_archived": false,
             "display_name": "Quintus",
@@ -889,7 +905,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 18,
@@ -941,7 +958,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 22,
@@ -960,8 +978,8 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
-            "is_searchable": true,
+            "is_member": false,
+            "is_searchable": false,
             "is_archived": false,
             "display_name": "Vera",
             "given_names": "Vera",
@@ -993,7 +1011,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 23,
@@ -1012,8 +1031,8 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
-            "is_searchable": true,
+            "is_member": false,
+            "is_searchable": false,
             "is_archived": false,
             "display_name": "Werner",
             "given_names": "Werner",
@@ -1045,7 +1064,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 27,
@@ -1064,8 +1084,8 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
-            "is_searchable": true,
+            "is_member": false,
+            "is_searchable": false,
             "is_archived": false,
             "display_name": "Annika",
             "given_names": "Annika",
@@ -1097,7 +1117,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 32,
@@ -1116,8 +1137,8 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
-            "is_searchable": true,
+            "is_member": false,
+            "is_searchable": false,
             "is_archived": false,
             "display_name": "Farin",
             "given_names": "Farin",
@@ -1149,7 +1170,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 100,
@@ -1201,7 +1223,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         }
     ],
     "core.changelog": [
@@ -1261,7 +1284,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 2,
@@ -1319,7 +1343,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
-            "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9"
+            "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9",
+            "paper_expuls": true
         },
         {
             "id": 3,
@@ -1377,7 +1402,8 @@
             "decided_search": true,
             "trial_member": true,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 4,
@@ -1435,7 +1461,8 @@
             "decided_search": false,
             "trial_member": false,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 5,
@@ -1493,7 +1520,8 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 6,
@@ -1551,7 +1579,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 7,
@@ -1609,7 +1638,8 @@
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 8,
@@ -1667,7 +1697,8 @@
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 9,
@@ -1725,7 +1756,8 @@
             "decided_search": true,
             "trial_member": true,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 10,
@@ -1783,7 +1815,8 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 11,
@@ -1841,7 +1874,8 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 12,
@@ -1899,7 +1933,8 @@
             "decided_search": true,
             "trial_member": true,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 13,
@@ -1957,7 +1992,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 14,
@@ -2015,7 +2051,8 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
         },
         {
             "id": 15,
@@ -2073,7 +2110,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 16,
@@ -2131,7 +2169,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 17,
@@ -2189,7 +2228,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 18,
@@ -2247,7 +2287,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 19,
@@ -2305,7 +2346,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 20,
@@ -2363,7 +2405,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 21,
@@ -2421,7 +2464,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 22,
@@ -2479,7 +2523,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 23,
@@ -2537,7 +2582,8 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": true
         },
         {
             "id": 24,
@@ -2595,7 +2641,362 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null
+            "foto": null,
+            "paper_expuls": null
+        },
+        {
+            "id": 25,
+            "submitted_by": 100,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 2,
+            "change_note": "Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.",
+            "change_status": 2,
+            "persona_id": 22,
+            "username": "vera@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": true,
+            "is_cde_admin": true,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Vera",
+            "given_names": "Vera",
+            "family_name": "Verwaltung",
+            "title": null,
+            "name_supplement": null,
+            "gender": 1,
+            "birthday": "1989-11-09",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": null,
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "26.77",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
+            "id": 26,
+            "submitted_by": 100,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 2,
+            "change_note": "Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.",
+            "change_status": 2,
+            "persona_id": 23,
+            "username": "werner@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": true,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Werner",
+            "given_names": "Werner",
+            "family_name": "Wahlleitung",
+            "title": "Dr. med.",
+            "name_supplement": null,
+            "gender": 2,
+            "birthday": "2001-09-11",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": null,
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "10.04",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
+            "id": 27,
+            "submitted_by": 100,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 2,
+            "change_note": "Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.",
+            "change_status": 2,
+            "persona_id": 27,
+            "username": "annika@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": true,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Annika",
+            "given_names": "Annika",
+            "family_name": "Akademieteam",
+            "title": null,
+            "name_supplement": null,
+            "gender": 1,
+            "birthday": "1966-04-17",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": null,
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "417.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
+            "id": 28,
+            "submitted_by": 100,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 2,
+            "change_note": "Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.",
+            "change_status": 2,
+            "persona_id": 32,
+            "username": "farin@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": true,
+            "is_cde_admin": true,
+            "is_finance_admin": true,
+            "is_event_admin": true,
+            "is_ml_admin": true,
+            "is_assembly_admin": true,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Farin",
+            "given_names": "Farin",
+            "family_name": "Finanzvorstand",
+            "title": null,
+            "name_supplement": null,
+            "gender": 2,
+            "birthday": "1963-10-27",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": null,
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": "Ich Fahr in Urlaub!",
+            "balance": "56.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
+            "id": 29,
+            "submitted_by": 100,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 2,
+            "change_note": "Zu Testzwecken Mitgliedschaft entzogen.",
+            "change_status": 2,
+            "persona_id": 13,
+            "username": "martin@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": true,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Martin",
+            "given_names": "Martin",
+            "family_name": "Meister",
+            "title": null,
+            "name_supplement": null,
+            "gender": 2,
+            "birthday": "2019-07-10",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": null,
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "25.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
+            "id": 30,
+            "submitted_by": 100,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 2,
+            "change_note": "Zu Testzwecken Mitgliedschaft entzogen.",
+            "change_status": 2,
+            "persona_id": 17,
+            "username": "quintus@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": true,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Quintus",
+            "given_names": "Quintus",
+            "family_name": "da Quirm",
+            "title": "Prof. Dr.",
+            "name_supplement": null,
+            "gender": 2,
+            "birthday": "1955-05-05",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": "Oberster Stock, zweite Tür links",
+            "address": "Straße Schlauer Kunsthandwerker 42",
+            "postal_code": null,
+            "location": "Ankh-Morpork",
+            "country": "Scheibenwelt",
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": "",
+            "affiliation": null,
+            "timeline": "Absolvent der Alchemisten-, Architekten- und Uhrmachergilde 1965, Ehrenmitglied der meisten anderen ",
+            "interests": "Quasi alles.",
+            "free_form": null,
+            "balance": "5.55",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
         }
     ],
     "core.privilege_changes": [],
@@ -5976,7 +6377,7 @@
             "id": 8,
             "mailinglist_id": 1,
             "persona_id": 13,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 9,
@@ -5988,25 +6389,25 @@
             "id": 10,
             "mailinglist_id": 1,
             "persona_id": 22,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 11,
             "mailinglist_id": 1,
             "persona_id": 23,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 12,
             "mailinglist_id": 1,
             "persona_id": 27,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 13,
             "mailinglist_id": 1,
             "persona_id": 32,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 14,
@@ -6060,7 +6461,7 @@
             "id": 22,
             "mailinglist_id": 2,
             "persona_id": 13,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 23,
@@ -6072,25 +6473,25 @@
             "id": 24,
             "mailinglist_id": 2,
             "persona_id": 22,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 25,
             "mailinglist_id": 2,
             "persona_id": 23,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 26,
             "mailinglist_id": 2,
             "persona_id": 27,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 27,
             "mailinglist_id": 2,
             "persona_id": 32,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 28,
@@ -6306,7 +6707,7 @@
             "id": 63,
             "mailinglist_id": 51,
             "persona_id": 32,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 64,
@@ -6360,7 +6761,7 @@
             "id": 72,
             "mailinglist_id": 51,
             "persona_id": 13,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 73,
@@ -6372,25 +6773,25 @@
             "id": 74,
             "mailinglist_id": 51,
             "persona_id": 22,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 75,
             "mailinglist_id": 51,
             "persona_id": 23,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 76,
             "mailinglist_id": 51,
             "persona_id": 27,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 77,
             "mailinglist_id": 52,
             "persona_id": 32,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 78,
@@ -6444,7 +6845,7 @@
             "id": 86,
             "mailinglist_id": 52,
             "persona_id": 13,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 87,
@@ -6456,19 +6857,19 @@
             "id": 88,
             "mailinglist_id": 52,
             "persona_id": 22,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 89,
             "mailinglist_id": 52,
             "persona_id": 23,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 90,
             "mailinglist_id": 52,
             "persona_id": 27,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 91,
@@ -6540,19 +6941,19 @@
             "id": 102,
             "mailinglist_id": 55,
             "persona_id": 23,
-            "subscription_state": 1
+            "subscription_state": 2
         },
         {
             "id": 103,
             "mailinglist_id": 55,
             "persona_id": 27,
-            "subscription_state": 1
+            "subscription_state": 2
         },
         {
             "id": 104,
             "mailinglist_id": 55,
             "persona_id": 22,
-            "subscription_state": 1
+            "subscription_state": 2
         },
         {
             "id": 105,
@@ -6702,25 +7103,25 @@
             "id": 129,
             "mailinglist_id": 52,
             "persona_id": 17,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 130,
             "mailinglist_id": 51,
             "persona_id": 17,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 131,
             "mailinglist_id": 2,
             "persona_id": 17,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 132,
             "mailinglist_id": 1,
             "persona_id": 17,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 133,
@@ -6732,25 +7133,25 @@
             "id": 134,
             "mailinglist_id": 1,
             "persona_id": 16,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 135,
             "mailinglist_id": 2,
             "persona_id": 16,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 136,
             "mailinglist_id": 51,
             "persona_id": 16,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 137,
             "mailinglist_id": 52,
             "persona_id": 16,
-            "subscription_state": 30
+            "subscription_state": 2
         },
         {
             "id": 138,

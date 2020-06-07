@@ -10,7 +10,6 @@ import decimal
 import enum
 import functools
 import hmac
-import icu
 import inspect
 import itertools
 import json
@@ -25,18 +24,19 @@ import hashlib
 from os import PathLike
 from typing import (
     Any, TypeVar, Mapping, Collection, Dict, List, overload, Union, Sequence,
-    AbstractSet, Tuple, MutableSequence
+    AbstractSet, Tuple, MutableSequence, TYPE_CHECKING, Callable, cast
 )
 
 import psycopg2.extras
 import pytz
 import werkzeug.datastructures
 
+import icu
 # The following imports are only for re-export. They are not used
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
-from cdedb.ml_subscription_aux import (
-    SubscriptionError, SubscriptionInfo, SubscriptionActions)
+from cdedb.ml_subscription_aux import (SubscriptionActions, SubscriptionError,
+                                       SubscriptionInfo)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -148,7 +148,7 @@ class RequestState:
         # Visible version of the database connection
         self.conn = None
         # Private version of the database connection, only visible in the
-        # backends (mediated by the ProxyShim)
+        # backends (mediated by the make_proxy)
         self._conn = None
         # Toggle to disable logging
         self.is_quiet = False
@@ -276,65 +276,51 @@ class User:
         enabled_views = enabled_views_cookie.split(',')
         self.admin_views = self.available_admin_views & set(enabled_views)
 
+if TYPE_CHECKING:
+    from cdedb.backend.common import AbstractBackend
+else:
+    AbstractBackend = None
 
-class ProxyShim:
-    """Wrap a backend for some syntactic sugar.
+B = TypeVar("B", bound=AbstractBackend)
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def make_proxy(backend: B, internal=False) -> B:
+    """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
     lifting to accomodate this.
 
-    This takes care of the annotations given by the decorators on the
-    backend functions.
+    We need to use a function so we can cast the return value.
+    We also need to use an inner class so we can provide __getattr__.
     """
 
-    def __init__(self, backend, internal=False):
-        """
-        :type backend: :py:class:`AbstractBackend`
-        """
-        self._backend = backend
-        self._funs = {}
-        self._internal = internal
-        funs = inspect.getmembers(backend, predicate=inspect.isroutine)
-        for name, fun in funs:
-            if hasattr(fun, "access_list") or (
-                    internal and hasattr(fun, "internal_access_list")):
-                self._funs[name] = self._wrapit(fun)
-
-    def _wrapit(self, fun):
-        """
-        :type fun: callable
-        """
-        try:
-            access_list = fun.access_list
-        except AttributeError:
-            if self._internal:
-                access_list = fun.internal_access_list
-            else:
-                raise
-
+    def wrapit(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(rs, *args, **kwargs):
-            if rs.user.roles & access_list:
-                try:
-                    if not self._internal:
-                        # Expose database connection for the backends
-                        rs.conn = rs._conn
-                    return fun(rs, *args, **kwargs)
-                finally:
-                    if not self._internal:
-                        rs.conn = None
-            else:
-                raise PrivilegeError(n_("Not in access list."))
+        def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+            try:
+                if not internal:
+                    # Expose database connection for the backends
+                    rs.conn = rs._conn
+                return fun(rs, *args, **kwargs)
+            finally:
+                if not internal:
+                    rs.conn = None
+        return wrapper
 
-        return new_fun
+    class Proxy:
+        def __getattr__(self, name: str) -> Any:
+            attr = getattr(backend, name)
+            if any([
+                not getattr(attr, "access", False),
+                getattr(attr, "internal", False) and not internal,
+                not callable(attr),
+            ]):
+                raise PrivilegeError(n_("Attribute %(name)s not public"), {"name": name})
 
-    def __getattr__(self, name):
-        if name in {"_funs", "_backend"}:
-            raise AttributeError()
-        try:
-            return self._funs[name]
-        except KeyError as e:
-            raise AttributeError from e
+            return wrapit(attr)
+
+    return cast(B, Proxy())
 
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,
@@ -1731,6 +1717,7 @@ PERSONA_DEFAULTS = {
     'decided_search': None,
     'bub_search': None,
     'foto': None,
+    'paper_expuls': None,
 }
 
 #: Set of possible values for ``ntype`` in
@@ -1792,8 +1779,8 @@ ALL_ADMIN_VIEWS = {
 
 def roles_to_admin_views(roles):
     """ Get the set of available admin views for a user with given roles.
-    
-    :type roles: {str} 
+
+    :type roles: {str}
     :return: {str}
     """
     result = set()
@@ -1841,14 +1828,14 @@ PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
     "id", "username", "display_name", "family_name", "given_names",
     "title", "name_supplement")
 
-#: Names of columns associated to a cde (formor)member
+#: Names of columns associated to a cde (former)member
 PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (
     "gender", "birthday", "telephone", "mobile", "address_supplement",
     "address", "postal_code", "location", "country", "birth_name",
     "address_supplement2", "address2", "postal_code2", "location2",
     "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search", "foto")
+    "bub_search", "foto", "paper_expuls")
 
 #: Names of columns associated to an event user. This should be a subset of
 #: :py:data:`PERSONA_CDE_FIELDS` to facilitate upgrading of event users to
@@ -1887,7 +1874,9 @@ realm_specific_genesis_fields = {
             "country", "birth_name", "attachment"),
 }
 
-genesis_realm_access_bits = {
+# This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
+# defaults for genesis account creation.
+genesis_realm_override = {
     'event': {
         'is_cde_realm': False,
         'is_event_realm': True,
@@ -1914,6 +1903,7 @@ genesis_realm_access_bits = {
         'trial_member': True,
         'decided_search': False,
         'bub_search': False,
+        'paper_expuls': True,
     }
 }
 

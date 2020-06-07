@@ -22,7 +22,7 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
     n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
-    ANTI_CSRF_TOKEN_NAME, ProxyShim, ADMIN_VIEWS_COOKIE_NAME)
+    ANTI_CSRF_TOKEN_NAME, make_proxy, ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
     docurl, JINJA_FILTERS, check_validation)
@@ -45,9 +45,9 @@ class Application(BaseApp):
         :type configpath: str
         """
         super().__init__(configpath)
-        self.eventproxy = ProxyShim(EventBackend(configpath))
-        self.mlproxy = ProxyShim(MlBackend(configpath))
-        # do not use a ProxyShim since the only usage here is before the
+        self.eventproxy = make_proxy(EventBackend(configpath))
+        self.mlproxy = make_proxy(MlBackend(configpath))
+        # do not use a make_proxy since the only usage here is before the
         # RequestState exists
         self.sessionproxy = SessionBackend(configpath)
         self.core = CoreFrontend(configpath)
@@ -239,7 +239,7 @@ class Application(BaseApp):
                         rs.notify('error', error)
 
                 # Store database connection as private attribute.
-                # It will be made accessible for the backends by the ProxyShim.
+                # It will be made accessible for the backends by the make_proxy.
                 rs._conn = self.connpool[roles_to_db_role(user.roles)]
 
                 # Insert orga and moderator status context
@@ -273,7 +273,10 @@ class Application(BaseApp):
                     "<<<\n<<<\n<<<\n<<<").format(request.url))
                 self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                 self.logger.error("SECOND TRY CGITB")
-                self.logger.error(cgitb.text(sys.exc_info(), context=7))
+                try:
+                    self.logger.error(cgitb.text(sys.exc_info(), context=7))
+                except Exception:
+                    pass
                 raise
         except werkzeug.routing.RequestRedirect as e:
             return e.get_response(request.environ)

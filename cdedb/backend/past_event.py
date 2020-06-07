@@ -12,7 +12,7 @@ from cdedb.backend.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     n_, glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
-    unwrap, now, ProxyShim, INSTITUTION_FIELDS, xsorted)
+    unwrap, now, make_proxy, INSTITUTION_FIELDS, xsorted)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 
@@ -27,7 +27,7 @@ class PastEventBackend(AbstractBackend):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        self.event = ProxyShim(EventBackend(configpath), internal=True)
+        self.event = make_proxy(EventBackend(configpath), internal=True)
 
     @classmethod
     def is_admin(cls, rs):

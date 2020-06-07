@@ -18,11 +18,12 @@ class TestCdEFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'description': 'Mitglieder'})
 
-    @as_users("annika", "farin", "martin", "vera", "werner")
-    def test_navigation(self, user):
+    @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner")
+    def test_sidebar(self, user):
         self.traverse({'description': 'Mitglieder'})
-        everyone = ["Mitglieder", "Übersicht", "Verg. Veranstaltungen",
-                    "Sonstiges"]
+        everyone = ["Mitglieder", "Übersicht"]
+        past_event = ["Verg. Veranstaltungen"]
+        member = ["Sonstiges"]
         not_searchable = ["Datenschutzerklärung"]
         searchable = ["CdE-Mitglied suchen"]
         cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
@@ -30,30 +31,32 @@ class TestCdEFrontend(FrontendTest):
         finance_admin = [
             "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
             "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"]
-        ins = []
-        out = everyone + not_searchable + searchable + cde_admin + finance_admin
 
+        # non-members
+        if user in [USER_DICT['annika'], USER_DICT['werner'], USER_DICT['martin']]:
+            ins = everyone
+            out = (past_event + member + not_searchable + searchable + cde_admin
+                   + finance_admin)
         # searchable member
-        if user in [USER_DICT['annika'], USER_DICT['werner']]:
-            ins = everyone + searchable
+        elif user == USER_DICT['berta']:
+            ins = everyone + past_event + member + searchable
             out = not_searchable + cde_admin + finance_admin
         # not-searchable member
-        elif user == USER_DICT['martin']:
-            ins = everyone + not_searchable
+        elif user == USER_DICT['charly']:
+            ins = everyone + past_event + member + not_searchable
             out = searchable + cde_admin + finance_admin
-        # cde but not finance admin
+        # cde but not finance admin (vera is no member)
         elif user == USER_DICT['vera']:
-            ins = everyone + searchable + cde_admin
-            out = not_searchable + finance_admin
-        # cde and finance admin
+            ins = everyone + past_event + cde_admin
+            out = member + not_searchable + searchable + finance_admin
+        # cde and finance admin (farin is no member)
         elif user == USER_DICT['farin']:
-            ins = everyone + searchable + cde_admin + finance_admin
-            out = not_searchable
+            ins = everyone + past_event + cde_admin + finance_admin
+            out = member + not_searchable + searchable
+        else:
+            self.fail("Please adjust users for this test.")
 
-        for s in ins:
-            self.assertPresence(s, div='sidebar')
-        for s in out:
-            self.assertNonPresence(s, div='sidebar')
+        self.check_sidebar(ins, out)
 
     @as_users("vera", "berta")
     def test_showuser(self, user):
@@ -79,9 +82,9 @@ class TestCdEFrontend(FrontendTest):
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
 
-    @as_users("vera")
+    @as_users("quintus", "vera")
     def test_adminchangedata(self, user):
-        self.admin_view_profile('berta')
+        self.realm_admin_view_profile('berta', "cde")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -215,7 +218,7 @@ class TestCdEFrontend(FrontendTest):
                 self.assertPresence("automatisch zurückgesetzt")
                 break
 
-    @as_users("vera", "berta", "inga")
+    @as_users("anton", "berta", "inga")
     def test_member_search(self, user):
         # by family_name and birth_name
         self.traverse({'description': 'Mitglieder'},
@@ -337,28 +340,28 @@ class TestCdEFrontend(FrontendTest):
         # Fulltext search is a bit special: This handel every word individual
         # len(word) <= 3 must be a word (add word boundaries in the query)
         f = self.response.forms['membersearchform']
-        f['qval_fulltext'] = "Aka"
+        f['qval_fulltext'] = "sta"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertNonPresence("Ergebnis")
 
         # len(word) > 3 can be just a part of a word
-        f['qval_fulltext'] = "Akadem"
+        f['qval_fulltext'] = "stadt"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("2 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Annika", div='result')
+        self.assertPresence("Anton", div='result')
         self.assertPresence("Inga", div='result')
 
         # handle both cases individual in the same query
-        f['qval_fulltext'] = "ich"
+        f['qval_fulltext'] = "am"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("2 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Farin", div='result')
+        self.assertPresence("Ferdinand", div='result')
         self.assertPresence("Inga", div='result')
 
-        f['qval_fulltext'] = "ich Akadem"
+        f['qval_fulltext'] = "am stadt"
         self.submit(f)
         self.assertTitle("Inga Iota")
 
@@ -575,6 +578,7 @@ class TestCdEFrontend(FrontendTest):
                             div='membership')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
+        self.assertCheckbox(True, "paper_expuls_checkbox")
         mail = self.fetch_mail()[0]
         self.logout()
         link = self.fetch_link(mail)
@@ -600,11 +604,14 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("farin", "berta")
     def test_lastschrift_show(self, user):
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'CdE-Mitglied suchen'})
-        f = self.response.forms['membersearchform']
-        f['qval_family_name,birth_name'] = "Beispiel"
-        self.submit(f)
+        if user == USER_DICT['berta']:
+            self.traverse({'description': 'Mitglieder'},
+                          {'description': 'CdE-Mitglied suchen'})
+            f = self.response.forms['membersearchform']
+            f['qval_family_name,birth_name'] = "Beispiel"
+            self.submit(f)
+        else:
+            self.realm_admin_view_profile('berta', "cde")
         self.assertTitle("Bertålotta Beispiel")
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
@@ -1088,6 +1095,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
 
+        self.traverse({'description': 'Angela Merkel'})
+        self.assertPresence("0,00 €", div='balance')
+        self.assertCheckbox(True, "paper_expuls_checkbox")
+        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
+                            div="membership")
+
     @as_users("farin")
     def test_money_transfers(self, user):
         self.traverse({'description': 'Mitglieder'},
@@ -1367,11 +1380,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("CdE-Log [1–8 von 8]")
         self.assertPresence("0 inaktive Mitglieder gestrichen.", div="2-1002")
         self.assertPresence("3 Probemitgliedschaften beendet", div="3-1003")
-        self.assertPresence("32.50 € Guthaben abgebucht.", div="3-1003")
+        self.assertPresence("15.00 € Guthaben abgebucht.", div="3-1003")
 
         self.assertPresence("3 inaktive Mitglieder gestrichen.", div="6-1006")
         self.assertPresence("0 Probemitgliedschaften beendet", div="7-1007")
-        self.assertPresence("30.00 € Guthaben abgebucht.", div="7-1007")
+        self.assertPresence("15.00 € Guthaben abgebucht.", div="7-1007")
 
     @as_users("farin")
     def test_expuls(self, user):
@@ -2061,9 +2074,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_changelog_meta(self, user):
-        self.traverse({'href': '^/$'},
-                      {'href': '/core/changelog/view'})
-        self.assertTitle("Nutzerdaten-Log [1–24 von 24]")
+        self.traverse({'description': 'Nutzerdaten-Log'})
+        self.assertTitle("Nutzerdaten-Log [1–30 von 30]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)

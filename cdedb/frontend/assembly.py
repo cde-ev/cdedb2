@@ -8,7 +8,7 @@ import pathlib
 import collections
 import datetime
 import time
-from typing import Any, Set, Dict, List, Iterable, Tuple, Union, Optional
+from typing import Any, Dict, Tuple, Union, Optional, Collection
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -24,7 +24,7 @@ from cdedb.common import (
     n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter,
     schulze_evaluate, xsorted, RequestState, get_hash
 )
-from cdedb.database.connection import Atomizer
+import cdedb.database.constants as const
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a moniker since it contains
@@ -57,32 +57,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                      or (ballot['extended']
                          and timestamp < ballot['vote_extension_end'])))
 
-    def may_assemble(self, rs: RequestState, *, assembly_id: int = None,
-                     ballot_id: int = None) -> bool:
-        """Helper to check authorization.
-
-        The deal is that members may access anything and assembly users
-        may access any assembly in which they are participating. This
-        especially allows people who have "cde", but not "member" in
-        their roles, to access only those assemblies they participated
-        in.
-
-        Exactly one of the two id parameters has to be provided
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type ballot_id: int
-        :rtype: bool
-        """
-        if "member" in rs.user.roles:
-            return True
-        return self.assemblyproxy.does_attend(
-            rs, assembly_id=assembly_id, ballot_id=ballot_id)
-
     @access("assembly")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
-        assemblies = self.assemblyproxy.list_assemblies(rs)
+        assemblies = self.assemblyproxy.list_assemblies(rs, restrictive=True)
         for assembly_id, assembly in assemblies.items():
             assembly['does_attend'] = self.assemblyproxy.does_attend(
                 rs, assembly_id=assembly_id)
@@ -199,8 +177,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_assembly_log(self, rs, codes, assembly_id, offset, length, persona_id,
-                 submitted_by, additional_info, time_start, time_stop):
+    def view_assembly_log(self, rs: RequestState,
+                          codes: Optional[Collection[const.AssemblyLogCodes]],
+                          assembly_id: Optional[int], offset: Optional[int],
+                          length: Optional[int], persona_id: Optional[int],
+                          submitted_by: Optional[int],
+                          additional_info: Optional[str],
+                          time_start: Optional[datetime.datetime],
+                          time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -227,7 +211,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:
         """Present an assembly."""
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         attachment_ids = self.assemblyproxy.list_attachments(
@@ -332,7 +316,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly")
     def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             rs.notify(
                 "error", n_("May not access attachments for this assembly."))
             return self.redirect(rs, "assembly/index")
@@ -423,7 +407,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def list_attendees(self, rs: RequestState, assembly_id: int) -> Response:
         """Provide a online list of who is/was present."""
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         attendees = self._get_list_attendees_data(rs, assembly_id)
         return self.render(rs, "list_attendees", {"attendees": attendees})
@@ -504,7 +488,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def list_ballots(self, rs: RequestState, assembly_id: int) -> Response:
         """View available ballots for an assembly."""
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
@@ -512,7 +496,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # Check for extensions before grouping ballots.
         if any([self._update_ballot_state(rs, ballot)
-                for id, ballot in ballots.items()]):
+                for anid, ballot in ballots.items()]):
             return self.redirect(rs, "assembly/list_ballots")
 
         done, extended, current, future = self.group_ballots(ballots)
@@ -563,7 +547,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Retrieve an attachment. Default to most recent version."""
         if rs.has_validation_errors():
             version = None
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         history = self.assemblyproxy.get_attachment_history(
             rs, attachment_id)
@@ -583,7 +567,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def show_attachment(self, rs: RequestState, assembly_id: int,
                         attachment_id: int, ballot_id: int = None) -> Response:
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             return self.redirect(rs, "assembly/index")
         attachment = self.assemblyproxy.get_attachment_history(
             rs, attachment_id)
@@ -796,9 +780,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata( ("attachment_id", "id_or_None"), ("title", "str"),
-                  ("authors", "str_or_None"),
-                  ("filename", "identifier_or_None"),)
+    @REQUESTdata(("attachment_id", "id_or_None"), ("title", "str"),
+                 ("authors", "str_or_None"),
+                 ("filename", "identifier_or_None"),)
     @REQUESTfile("attachment")
     # ballot_id is optional, but comes semantically after assembly_id
     def add_attachment(self, rs: RequestState, assembly_id: int, title: str,
@@ -902,7 +886,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         If a secret is provided, this will fetch the vote belonging to that
         secret.
         """
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
         attachment_ids = self.assemblyproxy.list_attachments(
@@ -961,9 +945,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                            for bdict in (future, current, done)), [])
 
         i = ballot_list.index(ballot_id)
-        l = len(ballot_list)
+        length = len(ballot_list)
         prev_ballot = ballots[ballot_list[i-1]] if i > 0 else None
-        next_ballot = ballots[ballot_list[i+1]] if i + 1 < l else None
+        next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
             'attachments': attachments, 'split_vote': split_vote,
@@ -1081,7 +1065,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def summary_ballots(self, rs: RequestState, assembly_id: int) -> Response:
         """Give an online summary of all tallied ballots of an assembly."""
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         assembly_ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballot_ids = [k for k, v in assembly_ballots.items()]
@@ -1156,8 +1140,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.show_ballot(rs, assembly_id, ballot_id)
         blockers = self.assemblyproxy.delete_ballot_blockers(rs, ballot_id)
         if "vote_begin" in blockers:
-            rs.notify("error",
-                      ValueError(n_("Unable to remove active ballot.")))
+            rs.notify("error", n_("Unable to remove active ballot."))
             return self.show_ballot(rs, assembly_id, ballot_id)
 
         # Specify what to cascade
@@ -1176,7 +1159,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
         """
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
         candidates = tuple(e['moniker']
@@ -1230,7 +1213,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def get_result(self, rs: RequestState, assembly_id: int,
                    ballot_id: int) -> Response:
         """Download the tallied stats of a ballot."""
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if not rs.ambience['ballot']['is_tallied']:
             rs.notify("warning", n_("Ballot not yet tallied."))

@@ -122,8 +122,11 @@ class CronFrontend(BaseApp):
                             self.logger.error(banner.format(hook.cron['name']))
                             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                             self.logger.error("SECOND TRY CGITB")
-                            self.logger.error(cgitb.text(sys.exc_info(),
-                                                         context=7))
+                            try:
+                                self.logger.error(cgitb.text(sys.exc_info(),
+                                                             context=7))
+                            except Exception:
+                                pass
                         else:
                             self.core.set_cron_store(rs, hook.cron['name'],
                                                      tmp)

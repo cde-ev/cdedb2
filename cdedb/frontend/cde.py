@@ -240,7 +240,7 @@ class CdEFrontend(AbstractUserFrontend):
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(0))),
+                xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
@@ -280,6 +280,7 @@ class CdEFrontend(AbstractUserFrontend):
         defaults = {
             'is_member': True,
             'bub_search': False,
+            'paper_expuls': True,
         }
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
@@ -292,7 +293,8 @@ class CdEFrontend(AbstractUserFrontend):
         "telephone", "mobile", "weblink", "address", "address_supplement",
         "postal_code", "location", "country", "address2",
         "address_supplement2", "postal_code2", "location2", "country2",
-        "is_member", "is_searchable", "trial_member", "bub_search", "notes")
+        "is_member", "is_searchable", "trial_member", "bub_search", "notes",
+        "paper_expuls")
     def create_user(self, rs, data):
         defaults = {
             'is_cde_realm': True,
@@ -301,6 +303,7 @@ class CdEFrontend(AbstractUserFrontend):
             'is_assembly_realm': True,
             'is_active': True,
             'decided_search': False,
+            'paper_expuls': True,
         }
         data.update(defaults)
         return super().create_user(rs, data)
@@ -372,6 +375,7 @@ class CdEFrontend(AbstractUserFrontend):
             'is_member': True,
             'display_name': persona['given_names'],
             'trial_member': False,
+            'paper_expuls': True,
             'bub_search': False,
             'decided_search': False,
             'notes': None})
@@ -487,6 +491,7 @@ class CdEFrontend(AbstractUserFrontend):
             new_persona.update({
                 'is_member': True,
                 'trial_member': trial_membership,
+                'paper_expuls': True,
                 'is_searchable': consent,
             })
             persona_id = self.coreproxy.create_persona(rs, new_persona)
@@ -502,6 +507,7 @@ class CdEFrontend(AbstractUserFrontend):
                 promotion.update({
                     'decided_search': False,
                     'trial_member': False,
+                    'paper_expuls': True,
                     'bub_search': False,
                     'id': persona_id,
                 })
@@ -592,7 +598,10 @@ class CdEFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            try:
+                self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            except Exception:
+                pass
             return False, index
         # Send mail after the transaction succeeded
         if sendmail:
@@ -1277,7 +1286,7 @@ class CdEFrontend(AbstractUserFrontend):
             'lastschrifts': lastschrifts, 'personas': personas,
             'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
 
-    @access("member")
+    @access("member", "finance_admin")
     def lastschrift_show(self, rs, persona_id):
         """Display all lastschrift information for one member.
 
@@ -2267,7 +2276,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, data=csv_data, inline=False,
             filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
 
-    @access("member")
+    @access("member", "cde_admin")
     def show_past_event(self, rs, pevent_id):
         """Display concluded event."""
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
@@ -2295,7 +2304,7 @@ class CdEFrontend(AbstractUserFrontend):
             'is_participant': is_participant,
         })
 
-    @access("member")
+    @access("member", "cde_admin")
     def show_past_course(self, rs, pevent_id, pcourse_id):
         """Display concluded course."""
         participants, personas, extra_participants = self.process_participants(
@@ -2304,7 +2313,7 @@ class CdEFrontend(AbstractUserFrontend):
             'participants': participants, 'personas': personas,
             'extra_participants': extra_participants})
 
-    @access("member")
+    @access("member", "cde_admin")
     @REQUESTdata(("institution_id", "id_or_None"))
     def list_past_events(self, rs, institution_id=None):
         """List all concluded events."""
@@ -2521,7 +2530,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/show_past_event")
 
-    @access("member")
+    @access("member", "cde_admin")
     def view_misc(self, rs):
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)

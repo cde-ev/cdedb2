@@ -23,13 +23,23 @@
         <div class="col-sm-6 small">
             {{ gettext( enums['MailinglistTypes'](ml['ml_type'])|string) -}}
             {% if ml['event_id'] -%}
-                {% trans link=util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
-                        events[ml['event_id']], icon='chalkboard-teacher') -%}
+                {%- if events[ml['event_id']]['is_visible'] -%}
+                    {% set link = util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
+                                            events[ml['event_id']]['title'], icon='chalkboard-teacher') %}
+                {%- else -%}
+                    {% set link = "%s %s"|s|format(util.make_icon('bullhorn'), events[ml['event_id']]['title']) %}
+                {%- endif -%}
+                {% trans link=link -%}
                     ; linked with {{ link }}
                 {% endtrans %}
             {%- elif ml['assembly_id'] -%}
-                {% trans link=util.href(cdedblink('assembly/show_assembly',{'assembly_id': ml['assembly_id']}),
-                        assemblies[ml['assembly_id']]['title'], icon='bullhorn') -%}
+                {%- if assemblies[ml['assembly_id']]['is_visible'] -%}
+                    {% set link = util.href(cdedblink('assembly/show_assembly',{'assembly_id':ml['assembly_id']}),
+                                            assemblies[ml['assembly_id']]['title'], icon='bullhorn') %}
+                {%- else -%}
+                    {% set link = "%s %s"|s|format(util.make_icon('bullhorn'), assemblies[ml['assembly_id']]['title']) %}
+                {%- endif -%}
+                {% trans link=link -%}
                     ; linked with {{ link }}
                 {% endtrans %}
             {%- endif %}

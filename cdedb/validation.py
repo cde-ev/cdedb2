@@ -29,11 +29,11 @@ substitutions to the error string done after i18n.
 
 The parameter ``_convert`` is present in every validator and is usually passed
 along from the original caller to every validation inside. If ``True``,
-validators may try to convert the value into the apporpirate type. For instance
-``_int`` will try to convert the input into an int which woulb be useful for
+validators may try to convert the value into the appropriate type. For instance
+``_int`` will try to convert the input into an int which would be useful for
 string inputs especially.
 
-The paramter ``_ignore_warnings`` is present in every validator. If ``True``,
+The parameter ``_ignore_warnings`` is present in every validator. If ``True``,
 certain Errors of type ``ValidationWarning`` may be ignored instead of returned.
 Think of this like a toggle to enable less strict validation of some constants
 which might change externally like german postal codes.
@@ -622,7 +622,7 @@ def _cdedbid(val, argname=None, *, _convert=True, _ignore_warnings=False):
                      _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    mo = _CDEDBID.search(val)
+    mo = _CDEDBID.search(val.strip())
     if mo is None:
         return None, [(argname, ValueError(n_("Wrong formatting.")))]
     value = mo.group(1)
@@ -793,6 +793,48 @@ def _csv_identifier(val, argname=None, *, _convert=True,
     return val, errs
 
 
+def _list_of(val, validator, argname=None, *, _convert=True,
+             _ignore_warnings=False, _allow_empty=True):
+    """
+    Apply another validator to all entries of of a list.
+
+    With `_convert` being True, the input may be a comma-separated string.
+
+    :type val: Any
+    :type argname: str or None
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: (list or None, [(str or None, exception)]
+    """
+    if _convert:
+        if isinstance(val, str):
+            # TODO use default separator from config here?
+            # Skip emtpy entries which can be produced by JavaScript.
+            val = [v for v in val.split(",") if v]
+        val, errs = _iterable(val, argname, _convert=_convert,
+                              _ignore_warnings=_ignore_warnings)
+        if errs:
+            return None, errs
+        val = list(val)
+    else:
+        val, errs = _sequence(val, argname, _convert=_convert,
+                              _ignore_warnings=_ignore_warnings)
+        if errs:
+            return None, errs
+        val = list(val)
+    vals = []
+    errs = []
+    for v in val:
+        v, e = validator(v, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
+        vals.append(v)
+        errs.extend(e)
+    if not _allow_empty:
+        if not vals:
+            return None, [(argname, ValueError(n_("Must not be empty.")))]
+    return vals, errs
+
+
 @_addvalidator
 def _int_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
@@ -802,25 +844,25 @@ def _int_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
     :type _ignore_warnings: bool
     :rtype: ([int] or None, [(str or None, exception)])
     """
-    if _convert:
-        if isinstance(val, str):
-            vals = val.split(",")
-            val = []
-            for entry in vals:
-                if not entry:
-                    # skip empty entries which can be produced by Javscript
-                    continue
-                entry, errs = _int(entry, argname, _convert=_convert,
-                                   _ignore_warnings=_ignore_warnings)
-                if errs:
-                    return val, errs
-                val.append(entry)
-    if not isinstance(val, collections.abc.Sequence):
-        return None, [(argname, TypeError(n_("Must be sequence.")))]
-    for entry in val:
-        if not isinstance(entry, int):
-            return None, [(argname, TypeError(n_("Must contain integers.")))]
-    return val, []
+    return _list_of(val, _int, argname, _convert=_convert,
+                    _ignore_warnings=_ignore_warnings)
+
+
+@_addvalidator
+def _cdedbid_csv_list(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
+    """
+    This deals with strings containing multiple cdedbids, like when they are
+    returned from cdedbSearchPerson.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: ([int] or None, [(str or None, exception)])
+    """
+    return _list_of(val, _cdedbid, argname, _convert=_convert,
+                    _ignore_warnings=False)
 
 
 @_addvalidator
@@ -966,6 +1008,7 @@ _PERSONA_BASE_CREATION = lambda: {
     'decided_search': _None,
     'bub_search': _None,
     'foto': _None,
+    'paper_expuls': _None,
 }
 _PERSONA_CDE_CREATION = lambda: {
     'title': _str_or_None,
@@ -995,6 +1038,7 @@ _PERSONA_CDE_CREATION = lambda: {
     'decided_search': _bool,
     'bub_search': _bool,
     # 'foto': _str_or_None, # No foto -- this is another special
+    'paper_expuls': _bool,
 }
 _PERSONA_EVENT_CREATION = lambda: {
     'title': _str_or_None,
@@ -1058,6 +1102,7 @@ _PERSONA_COMMON_FIELDS = lambda: {
     'decided_search': _bool,
     'bub_search': _bool,
     'foto': _str_or_None,
+    'paper_expuls': _bool_or_None,
 }
 
 
@@ -2288,6 +2333,10 @@ def _event_part(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
+    if ('part_begin' in val and 'part_end' in val
+            and val['part_begin'] > val['part_end']):
+        errs.append(("part_end",
+                     ValueError(n_("Must be later than part begin."))))
     if 'tracks' in val:
         newtracks = {}
         for anid, track in val['tracks'].items():

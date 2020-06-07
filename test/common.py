@@ -9,26 +9,29 @@ import gettext
 import inspect
 import os
 import pathlib
-import pytz
 import re
-import unittest
 import subprocess
 import sys
 import tempfile
 import types
-import webtest
+import unittest
 import urllib.parse
+from typing import TypeVar, cast
 
+import pytz
+import webtest
+
+from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
+from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
-from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.common import (
-    PrivilegeError, ProxyShim, RequestState, glue, roles_to_db_role, unwrap,
-    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME)
+from cdedb.common import (ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS,
+                          PrivilegeError, RequestState, glue, n_,
+                          roles_to_db_role, unwrap)
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -89,29 +92,39 @@ def json_keys_to_int(obj):
         ret = obj
     return ret
 
+B = TypeVar("B", bound=AbstractBackend)
 
-class BackendShim(ProxyShim):
-    def __init__(self, backend, *args, **kwargs):
-        super().__init__(backend, *args, **kwargs)
-        self.sessionproxy = SessionBackend(backend.conf._configpath)
-        secrets = SecretsConfig(backend.conf._configpath)
-        self.connpool = connection_pool_factory(
-            backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-            secrets, backend.conf["DB_PORT"])
-        self.translator = gettext.translation(
-            'cdedb', languages=('de',),
-            localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
+def make_backend_shim(backend: B, internal=False) -> B:
+    """Wrap a backend to only expose functions with an access decorator.
 
-    def _setup_requeststate(self, key):
+    If we used an actual RPC mechanism, this would do some additional
+    lifting to accomodate this.
+
+    We need to use a function so we can cast the return value.
+    We also need to use an inner class so we can provide __getattr__.
+
+    This is similar to the normal make_proxy but encorporates a different wrapper
+    """
+
+    sessionproxy = SessionBackend(backend.conf._configpath)
+    secrets = SecretsConfig(backend.conf._configpath)
+    connpool = connection_pool_factory(
+        backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
+        secrets, backend.conf["DB_PORT"])
+    translator = gettext.translation(
+        'cdedb', languages=('de',),
+        localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
+
+    def setup_requeststate(key):
         sessionkey = None
         apitoken = None
 
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        user = self.sessionproxy.lookuptoken(key, "127.0.0.0")
+        user = sessionproxy.lookuptoken(key, "127.0.0.0")
         if user.roles == {'anonymous'}:
-            user = self.sessionproxy.lookupsession(key, "127.0.0.0")
+            user = sessionproxy.lookupsession(key, "127.0.0.0")
             sessionkey = key
         else:
             apitoken = key
@@ -119,37 +132,36 @@ class BackendShim(ProxyShim):
         rs = RequestState(
             sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
             response=None, notifications=[], mapadapter=None, requestargs=None,
-            errors=[], values={}, lang="de", gettext=self.translator.gettext,
-            ngettext=self.translator.ngettext, coders=None, begin=None)
-        rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
+            errors=[], values={}, lang="de", gettext=translator.gettext,
+            ngettext=translator.ngettext, coders=None, begin=None)
+        rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
-        if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
-            rs.user.orga = self._backend.orga_info(rs, rs.user.persona_id)
-        if "ml" in rs.user.roles and hasattr(self._backend, "moderator_info"):
-            rs.user.moderator = self._backend.moderator_info(
+        if "event" in rs.user.roles and hasattr(backend, "orga_info"):
+            rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
+        if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
+            rs.user.moderator = backend.moderator_info(
                 rs, rs.user.persona_id)
         return rs
 
-    def _wrapit(self, fun):
-        """
-        :type fun: callable
-        """
-        try:
-            access_list = fun.access_list
-        except AttributeError:
-            if self._internal:
-                access_list = fun.internal_access_list
-            else:
-                raise
+    class Proxy():
+        def __getattr__(self, name):
+            attr = getattr(backend, name)
+            if any([
+                not getattr(attr, "access", False),
+                getattr(attr, "internal", False) and not internal,
+                not callable(attr)
+            ]):
+                raise PrivilegeError(
+                    n_("Attribute %(name)s not public"), {"name": name})
 
-        @functools.wraps(fun)
-        def new_fun(key, *args, **kwargs):
-            rs = self._setup_requeststate(key)
-            if rs.user.roles & access_list:
-                return fun(rs, *args, **kwargs)
-            else:
-                raise PrivilegeError("Not in access list.")
-        return new_fun
+            @functools.wraps(attr)
+            def wrapper(key, *args, **kwargs):
+                rs = setup_requeststate(key)
+                return attr(rs, *args, **kwargs)
+
+            return wrapper
+
+    return cast(B, Proxy())
 
 
 class MyTextTestResult(unittest.TextTestResult):
@@ -251,8 +263,8 @@ class BackendUsingTest(unittest.TestCase):
 
     @staticmethod
     def initialize_backend(backendcls):
-        return BackendShim(BackendUsingTest.initialize_raw_backend(backendcls),
-                           internal=True)
+        return make_backend_shim(
+            BackendUsingTest.initialize_raw_backend(backendcls), internal=True)
 
 
 class BackendTest(BackendUsingTest):
@@ -510,8 +522,12 @@ def as_users(*users):
                 with self.subTest(user=user):
                     if i > 0:
                         self.setUp()
-                    kwargs['user'] = USER_DICT[user]
-                    self.login(USER_DICT[user])
+                    if user is "anonymous":
+                        kwargs['user'] = None
+                        self.get('/')
+                    else:
+                        kwargs['user'] = USER_DICT[user]
+                        self.login(USER_DICT[user])
                     fun(self, *args, **kwargs)
         return new_fun
     return wrapper
@@ -726,6 +742,17 @@ class FrontendTest(unittest.TestCase):
         content = tmp[0]
         return content.text_content()
 
+    def assertCheckbox(self, status, id):
+        tmp = self.response.html.find_all(id=id)
+        if not tmp:
+            raise AssertionError("Id not found.", id)
+        if len(tmp) != 1:
+            raise AssertionError("More or less then one hit.", id)
+        checkbox = tmp[0]
+        if "data-checked" not in checkbox.attrs:
+            raise ValueError("Id doesnt belong to a checkbox", id)
+        self.assertEqual(str(status), checkbox['data-checked'])
+
     def assertPresence(self, s, div="content", regex=False, exact=False):
         target = self.get_content(div)
         normalized = re.sub(r'\s+', ' ', target)
@@ -908,6 +935,28 @@ class FrontendTest(unittest.TestCase):
             log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
+    def check_sidebar(self, ins, out):
+        """Helper function to check the (in)visibility of sidebar elements.
+
+        Raise an error if an element is in the sidebar and not in ins.
+
+        :type ins: [str]
+        :param ins: elements which are in the sidebar
+        :param out: elements which are not in the sidebar
+        :return: None
+        """
+        sidebar = self.response.html.find(id="sidebar-navigation")
+        present = {nav_point.get_text().strip()
+                   for nav_point in sidebar.find_all("a")}
+        for nav_point in ins:
+            self.assertPresence(nav_point, div='sidebar-navigation')
+            present -= {nav_point}
+        for nav_point in out:
+            self.assertNonPresence(nav_point, div='sidebar-navigation')
+        if present:
+            raise AssertionError(
+                f"Unexpected sidebar elements '{present}' found.")
+
     def _click_admin_view_button(self, label, current_state=None):
         """
         Helper function for checking the disableable admin views
@@ -945,14 +994,9 @@ MailTrace = collections.namedtuple(
 
 
 class CronBackendShim:
-    def __init__(self, cron, proxy, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, cron, proxy):
         self._cron = cron
         self._proxy = proxy
-
-        self._funs = {}
-        for name, fun in proxy._funs.items():
-            self._funs[name] = self._wrapit(fun)
 
     def _wrapit(self, fun):
         @functools.wraps(fun)
@@ -962,12 +1006,10 @@ class CronBackendShim:
         return new_fun
 
     def __getattr__(self, name):
-        if name in {"_funs", "_proxy", "_cron"}:
+        if name in {"_proxy", "_cron"}:
             raise AttributeError()
-        try:
-            return self._funs[name]
-        except KeyError as e:
-            raise AttributeError from e
+        attr = getattr(self._proxy, name)
+        return self._wrapit(attr)
 
 
 class CronTest(unittest.TestCase):

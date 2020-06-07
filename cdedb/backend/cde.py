@@ -116,7 +116,7 @@ class CdEBackend(AbstractBackend):
             additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)
 
-    @access("member")
+    @access("member", "core_admin", "cde_admin")
     def list_lastschrift(self, rs, persona_ids=None, active=True):
         """List all direct debit permits.
 
@@ -150,7 +150,7 @@ class CdEBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
-    @access("member")
+    @access("member", "cde_admin")
     def get_lastschrifts(self, rs, ids):
         """Retrieve direct debit permits.
 
@@ -192,7 +192,7 @@ class CdEBackend(AbstractBackend):
             self.core.finance_log(rs, log_code, persona_id, None, None)
         return ret
 
-    @access("cde_admin")
+    @access("finance_admin")
     def create_lastschrift(self, rs, data):
         """Make a new direct debit permit.
 
@@ -212,7 +212,7 @@ class CdEBackend(AbstractBackend):
                                   data['persona_id'], None, None)
         return new_id
 
-    @access("member")
+    @access("member", "cde_admin")
     def list_lastschrift_transactions(self, rs, lastschrift_ids=None,
                                       stati=None, periods=None):
         """List direct debit transactions.
@@ -258,7 +258,7 @@ class CdEBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e['lastschrift_id'] for e in data}
 
-    @access("member")
+    @access("member", "finance_admin")
     def get_lastschrift_transactions(self, rs, ids):
         """Retrieve direct debit transactions.
 

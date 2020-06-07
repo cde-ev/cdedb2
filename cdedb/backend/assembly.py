@@ -34,11 +34,11 @@ from typing import (
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, affirm_set_validation as affirm_set,
-    Silencer, singularize, AbstractBackend, internal_access)
+    Silencer, singularize, AbstractBackend, internal)
 from cdedb.common import (
     n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
-    extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
+    PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
     get_hash, mixed_existence_sorter, PathLike,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers
@@ -63,9 +63,11 @@ class AssemblyBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState):
         return super().is_admin(rs)
 
-    def may_assemble(self, rs: RequestState, *, assembly_id: int = None,
-                     ballot_id: int = None, attachment_id: int = None,
-                     persona_id: int = None) -> bool:
+    @internal
+    @access("persona")
+    def may_access(self, rs: RequestState, *, assembly_id: int = None,
+                   ballot_id: int = None, attachment_id: int = None,
+                   persona_id: int = None) -> bool:
         """Helper to check authorization.
 
         The deal is that members may access anything and assembly users
@@ -74,28 +76,68 @@ class AssemblyBackend(AbstractBackend):
         their roles, to access only those assemblies they participated
         in.
 
-        Exactly one of the two id parameters has to be provided
+        Assembly admins may access every assembly.
+
+        Exactly one of assembly_id and ballot_id has to be provided.
 
         :param persona_id: If not provided the current user is used.
         """
-        if "member" in rs.user.roles:
+        persona_id = persona_id or rs.user.persona_id
+        roles = self.core.get_roles_single(rs, persona_id)
+
+        if "member" in roles or "assembly_admin" in roles:
             return True
         return self.check_attendance(
             rs, assembly_id=assembly_id, ballot_id=ballot_id,
             attachment_id=attachment_id, persona_id=persona_id)
 
     @access("persona")
-    def may_view(self, rs: RequestState, assembly_id: int,
-                 persona_id: int = None) -> bool:
-        """Variant of `may_assemble` with input validation. To be used by
-         frontends to find out if assembly is visible.
+    def may_assemble(self, rs: RequestState, *, assembly_id: int = None,
+                     ballot_id: int = None, attachment_id: int = None) -> bool:
+        """Check authorization of this persona.
+
+        This checks, if the calling user may interact with a specific
+        assembly or ballot.
+        Published variant of 'may_access' with input validation.
+
+        Exactly one of assembly_id, ballot_idand attachment_id has to be
+        provided.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type ballot_id: int
+        :rtype: bool
+        """
+        assembly_id = affirm("id_or_None", assembly_id)
+        ballot_id = affirm("id_or_None", ballot_id)
+        attachment_id = affirm("id_or_None", attachment_id)
+
+        return self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id,
+                               attachment_id=attachment_id)
+
+    @access("assembly_admin")
+    def check_assemble(self, rs: RequestState, persona_id: int, *,
+                       assembly_id: int = None, ballot_id: int = None,
+                       attachment_id: int = None) -> bool:
+        """Check authorization of given persona.
+
+        This checks, if the given persona may interact with a specific
+        assembly or ballot.
+        Published variant of 'may_access' with input validation.
+
+        Exactly one of assembly_id, ballot_id and attachment_id has to be
+        provided.
 
         :param persona_id: If not provided the current user is used.
         """
-        assembly_id = affirm("id", assembly_id)
         persona_id = affirm("id_or_None", persona_id)
-        return self.may_assemble(rs, assembly_id=assembly_id,
-                                 persona_id=persona_id)
+        assembly_id = affirm("id_or_None", assembly_id)
+        ballot_id = affirm("id_or_None", ballot_id)
+        attachment_id = affirm("id_or_None", attachment_id)
+
+        return self.may_access(
+            rs, assembly_id=assembly_id, ballot_id=ballot_id,
+            persona_id=persona_id, attachment_id=attachment_id)
 
     @staticmethod
     def encrypt_vote(salt: str, secret: str, vote: str) -> str:
@@ -208,7 +250,8 @@ class AssemblyBackend(AbstractBackend):
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def get_assembly_ids(self, rs: RequestState, *,
                          ballot_ids: Collection[int] = None,
                          attachment_ids: Collection[int] = None
@@ -231,7 +274,8 @@ class AssemblyBackend(AbstractBackend):
                 ret.add(e["assembly_id"])
         return ret
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def get_assembly_id(self, rs: RequestState, *, ballot_id: int = None,
                         attachment_id: int = None) -> int:
         """Singular version of `get_assembly_ids`.
@@ -257,14 +301,15 @@ class AssemblyBackend(AbstractBackend):
                 "Can only retrieve id for exactly one assembly."))
         return unwrap(ret)
 
-    @internal_access("persona")
+    @internal
+    @access("persona")
     def check_attendance(self, rs: RequestState, *, assembly_id: int = None,
                          ballot_id: int = None, attachment_id: int = None,
                          persona_id: int = None) -> bool:
-        """Check wether a persona attends a specific assembly/ballot.
+        """Check whether a persona attends a specific assembly/ballot.
 
-        Exactly one of the inputs assembly_id and ballot_id has to be
-        provided.
+        Exactly one of the inputs assembly_id, ballot_id and attachment_id has
+        to be provided.
 
         This does not check for authorization since it is used during
         the authorization check.
@@ -278,6 +323,8 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         if persona_id is None:
             persona_id = rs.user.persona_id
+        if "assembly" not in rs.user.roles and "ml_admin" not in rs.user.roles:
+            raise PrivilegeError(n_("Not privileged to access assembly tables"))
         with Atomizer(rs):
             if assembly_id is None:
                 assembly_id = self.get_assembly_id(
@@ -290,7 +337,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def does_attend(self, rs: RequestState, *, assembly_id: int = None,
                     ballot_id: int = None) -> bool:
-        """Check wether this persona attends a specific assembly/ballot.
+        """Check whether this persona attends a specific assembly/ballot.
 
         Exactly one of the inputs has to be provided.
 
@@ -329,8 +376,8 @@ class AssemblyBackend(AbstractBackend):
         be public to the entire association.
         """
         assembly_id = affirm("id", assembly_id)
-        if (not self.may_assemble(rs, assembly_id=assembly_id)
-                and "ml_admin" not in rs.user.roles):
+        if not (self.may_access(rs, assembly_id=assembly_id)
+                or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         attendees = self.sql_select(
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
@@ -339,28 +386,32 @@ class AssemblyBackend(AbstractBackend):
 
     @access("persona")
     def list_assemblies(self, rs: RequestState,
-                        is_active: bool = None) -> CdEDBObjectMap:
+                        is_active: Union[bool, None] = None,
+                        restrictive: bool = False) -> CdEDBObjectMap:
         """List all assemblies.
 
         :param is_active: If not None list only assemblies which have this
           activity status.
+        :param restrictive: If true, show only those assemblies the user is
+          allowed to interact with.
         :returns: Mapping of event ids to dict with title, activity status and
           signup end. The latter is used to sort the assemblies in index.
         """
         is_active = affirm("bool_or_None", is_active)
         query = ("SELECT id, title, signup_end, is_active "
                  "FROM assembly.assemblies")
-        params = tuple()
+        constraints = []
+        params = []
         if is_active is not None:
-            query = glue(query, "WHERE is_active = %s")
-            params = (is_active,)
+            constraints.append("is_active = %s")
+            params.append(is_active)
+        if constraints:
+            query += " WHERE " + " AND ".join(constraints)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e for e in data}
-        if "assembly" not in rs.user.roles:
-            ret = {}
-        elif "member" not in rs.user.roles:
+        if restrictive:
             ret = {k: v for k, v in ret.items()
-                   if self.check_attendance(rs, assembly_id=k)}
+                   if self.may_access(rs, assembly_id=k)}
         return ret
 
     @access("assembly")
@@ -368,7 +419,7 @@ class AssemblyBackend(AbstractBackend):
                        ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data for some assemblies."""
         ids = affirm_set("id", ids)
-        if not all(self.may_assemble(rs, assembly_id=anid) for anid in ids):
+        if not all(self.may_access(rs, assembly_id=anid) for anid in ids):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
@@ -539,7 +590,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: Mapping of ballot ids to titles.
         """
         assembly_id = affirm("id", assembly_id)
-        if not self.may_assemble(rs, assembly_id=assembly_id):
+        if not self.may_access(rs, assembly_id=assembly_id):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "assembly.ballots", ("id", "title"),
                                (assembly_id,), entity_key="assembly_id")
@@ -572,9 +623,8 @@ class AssemblyBackend(AbstractBackend):
                               if e['ballot_id'] == anid}
                 assert ('candidates' not in ret[anid])
                 ret[anid]['candidates'] = candidates
-            if "member" not in rs.user.roles:
-                ret = {k: v for k, v in ret.items()
-                       if self.check_attendance(rs, ballot_id=k)}
+            ret = {k: v for k, v in ret.items()
+                   if self.may_access(rs, ballot_id=k)}
         return ret
     get_ballot: Callable[[RequestState, int], CdEDBObject] = singularize(
         get_ballots)
@@ -888,7 +938,7 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm("id", assembly_id)
         persona_id = affirm("id", persona_id)
 
-        roles = extract_roles(self.core.get_persona(rs, persona_id))
+        roles = self.core.get_roles_single(rs, persona_id)
         if "member" in roles:
             raise ValueError(n_("Not allowed for members."))
         if "assembly" not in roles:
@@ -1056,7 +1106,7 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm("id", ballot_id)
 
-        if not self.may_assemble(rs, ballot_id=ballot_id):
+        if not self.may_access(rs, ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
@@ -1220,7 +1270,8 @@ class AssemblyBackend(AbstractBackend):
                     {"block": blockers.keys()})
         return ret
 
-    @internal_access("assembly")
+    @internal
+    @access("assembly")
     def check_attachment_access(
             self, rs: RequestState, attachment_ids: Collection[int]) -> bool:
         """Helper to check whether the user may access the given attachments."""
@@ -1233,9 +1284,10 @@ class AssemblyBackend(AbstractBackend):
             if len(assembly_ids) != 1:
                 raise ValueError(n_("Can only access attachments from exactly "
                                     "one assembly at a time."))
-            return self.may_assemble(rs, assembly_id=unwrap(assembly_ids))
+            return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
-    @internal_access("assembly")
+    @internal
+    @access("assembly")
     def check_attachment_locked(self, rs: RequestState,
                                 attachment_id: int) -> bool:
         """Helper to check, whether a attachment may be modified."""
@@ -1614,7 +1666,7 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         assembly_id = affirm("id_or_None", assembly_id)
         ballot_id = affirm("id_or_None", ballot_id)
-        if not self.may_assemble(rs, assembly_id=assembly_id,
+        if not self.may_access(rs, assembly_id=assembly_id,
                                  ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
@@ -1637,6 +1689,11 @@ class AssemblyBackend(AbstractBackend):
         data = self.sql_select(rs, "assembly.attachments",
                                ASSEMBLY_ATTACHMENT_FIELDS, attachment_ids)
         ret = {e['id']: e for e in data}
+        # TODO this should use may_access, but provides assembly and ballot id.
+        #  Maybe this can be corrected after merging PR #1142
+        if not ("member" in rs.user.roles or "assembly_admin" in rs.user.roles):
+            ret = {k: v for k, v in ret.items() if self.check_attendance(
+                rs, assembly_id=v['assembly_id'], ballot_id=v['ballot_id'])}
         return ret
     _get_attachment_info: Callable[[RequestState, int], CdEDBObject]
     _get_attachment_info = singularize(

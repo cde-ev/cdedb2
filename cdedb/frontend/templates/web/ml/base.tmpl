@@ -73,8 +73,12 @@
 
 {% block adminviews %}
     {% if ambience['mailinglist'] %}
-        {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),
-                                    (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
+        {% if user.persona_id in ambience['mailinglist']['moderators'] %}
+            {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),)) }}
+        {% else %}
+            {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),
+                                        (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
+        {% endif %}
     {% else %}
         {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user",
                                                                       "assembly_user", "genesis"], ["ml_user"]),

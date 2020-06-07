@@ -57,7 +57,7 @@ class EventFrontend(AbstractUserFrontend):
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
-            if rs.user.persona_id:
+            if rs.user.persona_id and "event" in rs.user.roles:
                 reg_list = self.eventproxy.list_registrations(
                     rs, rs.ambience['event']['id'], rs.user.persona_id)
                 params['is_registered'] = bool(reg_list)
@@ -596,7 +596,16 @@ class EventFrontend(AbstractUserFrontend):
         params = tuple(("{}_{}".format(key, part_id), value)
                        for part_id in parts if part_id not in deletes
                        for key, value in spec.items())
-        data = request_extractor(rs, params)
+
+        def constraint_maker(part_id):
+            begin = f"part_begin_{part_id}"
+            end = f"part_end_{part_id}"
+            msg = n_("Must be later than part begin.")
+            return (lambda d: d[begin] <= d[end], (end, ValueError(msg)))
+
+        constraints = [constraint_maker(part_id)
+                       for part_id in parts if part_id not in deletes]
+        data = request_extractor(rs, params, constraints)
         ret = {
             part_id: {key: data["{}_{}".format(key, part_id)] for key in spec}
             for part_id in parts if part_id not in deletes
@@ -634,7 +643,8 @@ class EventFrontend(AbstractUserFrontend):
                     raise ValueError(n_("Registrations exist, no creation."))
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
-                data = request_extractor(rs, params)
+                constraints = [constraint_maker(-marker)]
+                data = request_extractor(rs, params, constraints)
                 ret[-marker] = {key: data["{}_-{}".format(key, marker)]
                                 for key in spec}
             else:
@@ -1082,7 +1092,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
-                 ("orga_ids", "str"), ("create_track", "bool"),
+                 ("orga_ids", "cdedbid_csv_list"), ("create_track", "bool"),
                  ("create_orga_list", "bool"),
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
@@ -1091,10 +1101,8 @@ class EventFrontend(AbstractUserFrontend):
     def create_event(self, rs, event_begin, event_end, orga_ids, data,
                      create_track, create_orga_list, create_participant_list):
         """Create a new event, organized via DB."""
-        if orga_ids:
-            data['orgas'] = {check(rs, "cdedbid", anid.strip(), "orga_ids")
-                             for anid in orga_ids.split(",")}
         # multi part events will have to edit this later on
+        data["orgas"] = orga_ids
         new_track = {
             'title': data['title'],
             'shortname': data['shortname'],
@@ -1140,6 +1148,7 @@ class EventFrontend(AbstractUserFrontend):
                 link = cdedburl(rs, "event/register", {'event_id': new_id})
                 descr = participant_ml_data['description'].format(link)
                 participant_ml_data['description'] = descr
+                participant_ml_data['event_id'] = new_id
                 code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
                 self.notify_return_code(
                     rs, code, success=n_("Participant mailinglist created."))
@@ -1169,10 +1178,14 @@ class EventFrontend(AbstractUserFrontend):
                 rs, tuple(e['persona_id'] for e in registrations.values()))
             attendees = self.calculate_groups(
                 (course_id,), rs.ambience['event'], registrations,
-                key="course_id", personas=personas)
+                key="course_id", personas=personas, instructors=True)
+            learners = self.calculate_groups(
+                (course_id,), rs.ambience['event'], registrations,
+                key="course_id", personas=personas, instructors=False)
             params['personas'] = personas
             params['registrations'] = registrations
             params['attendees'] = attendees
+            params['learners'] = learners
             params['blockers'] = self.eventproxy.delete_course_blockers(
                 rs, course_id).keys() - {"instructors", "course_choices",
                                          "course_segments"}
@@ -2118,7 +2131,10 @@ class EventFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            try:
+                self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            except Exception:
+                pass
             return False, index
         if send_notifications:
             persona_ids = tuple(e['persona_id'] for e in data)
@@ -3026,7 +3042,7 @@ class EventFrontend(AbstractUserFrontend):
             'reg_questionnaire': reg_questionnaire, 'preview': preview})
 
     @staticmethod
-    def process_registration_input(rs, event, courses, reg_questionnaire, 
+    def process_registration_input(rs, event, courses, reg_questionnaire,
                                    parts=None):
         """Helper to handle input by participants.
 
@@ -3268,7 +3284,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         return self.render(rs, "amend_registration", {
             'age': age, 'courses': courses, 'course_choices': course_choices,
-            'involved_tracks': involved_tracks, 
+            'involved_tracks': involved_tracks,
             'reg_questionnaire': reg_questionnaire,
         })
 
@@ -3407,7 +3423,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("preview", "bool_or_None"))
-    def additional_questionnaire_form(self, rs, event_id, preview=False, 
+    def additional_questionnaire_form(self, rs, event_id, preview=False,
                                       internal=False):
         """Render form.
 
@@ -3691,7 +3707,7 @@ class EventFrontend(AbstractUserFrontend):
         The internal flag is used if the call comes from another frontend
         function to disable further redirection on validation errors.
         """
-        if rs.has_validation_errors():
+        if rs.has_validation_errors() and not internal:
             return self.redirect(rs, 'event/show_registration')
         tracks = rs.ambience['event']['tracks']
         registration = rs.ambience['registration']
@@ -4094,7 +4110,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @staticmethod
     def calculate_groups(entity_ids, event, registrations, key,
-                         personas=None):
+                         personas=None, instructors=True):
         """Determine inhabitants/attendees of lodgements/courses.
 
         This has to take care only to select registrations which are
@@ -4108,6 +4124,9 @@ class EventFrontend(AbstractUserFrontend):
         :type personas: {int: {str: object}} or None
         :param personas: If provided this is used to sort the resulting
           lists by name, so that the can be displayed sorted.
+        :type instructors: bool
+        :param instructors: Include instructors of courses. No effect for
+          lodgements.
         :rtype: {(int, int): [int]}
         """
         tracks = event['tracks']
@@ -4125,8 +4144,12 @@ class EventFrontend(AbstractUserFrontend):
                 part = instance
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id]['part_id']]
-            return (instance[key] == entity_id and
+            ret = (instance[key] == entity_id and
                     const.RegistrationPartStati(part['status']).is_present())
+            if (ret and key == "course_id" and not instructors
+                    and instance['course_instructor'] == entity_id):
+                ret = False
+            return ret
 
         if personas is None:
             sorter = lambda x: x
@@ -4840,6 +4863,11 @@ class EventFrontend(AbstractUserFrontend):
                                 track_id, temp, f['field_name'])
                             kind = const.FieldDatatypes(f['kind']).name
                             spec[key] = kind
+                for i in range(track['num_choices']):
+                    spec[f"course_choices{track_id}.rank{i}"] = "int"
+                if track['num_choices'] > 1:
+                    spec[",".join(f"course_choices{track_id}.rank{i}"
+                                  for i in range(track['num_choices']))] = "int"
         if len(event['parts']) > 1:
             spec[",".join("part{0}.status".format(part_id)
                           for part_id in event['parts'])] = "int"
@@ -4853,7 +4881,8 @@ class EventFrontend(AbstractUserFrontend):
                           for part_id in event['parts'])] = "str"
             spec[",".join("lodgement{0}.notes".format(part_id)
                           for part_id in event['parts'])] = "str"
-            for f in xsorted(event['fields'].values(), key=EntitySorter.event_field):
+            for f in xsorted(event['fields'].values(),
+                             key=EntitySorter.event_field):
                 if f['association'] == const.FieldAssociations.lodgement:
                     key = ",".join(
                         "lodgement{0}.xfield_{1}".format(
@@ -4887,7 +4916,11 @@ class EventFrontend(AbstractUserFrontend):
                                        for track_id in tracks)
                         kind = const.FieldDatatypes(f['kind']).name
                         spec[key] = kind
-        for f in xsorted(event['fields'].values(), key=EntitySorter.event_field):
+            spec[",".join(f"course_choices{track_id}.rank{i}"
+                          for track_id, track in tracks.items()
+                          for i in range(track['num_choices']))] = "int"
+        for f in xsorted(event['fields'].values(),
+                         key=EntitySorter.event_field):
             if f['association'] == const.FieldAssociations.registration:
                 kind = const.FieldDatatypes(f['kind']).name
                 spec["reg_fields.xfield_{}".format(f['field_name'])] = kind
@@ -4966,27 +4999,35 @@ class EventFrontend(AbstractUserFrontend):
                         OrderedDict(field['entries'])
                     for field in lodge_fields.values() if field['entries']
                 })
-        for track_id in tracks:
+        for track_id, track in tracks.items():
             choices.update({
                 # Course choices for the JS selector
                 "track{0}.course_id".format(track_id): course_choices,
                 "track{0}.course_instructor".format(track_id): course_choices,
             })
+            for i in range(track['num_choices']):
+                choices[f"course_choices{track_id}.rank{i}"] = course_choices
+            if track['num_choices'] > 1:
+                choices[",".join(
+                    f"course_choices{track_id}.rank{i}"
+                    for i in range(track['num_choices']))] = course_choices
             if not fixed_gettext:
                 # Course fields value -> description
                 for temp in ("course", "course_instructor"):
-                    key = "{1}{0}.xfield_{2}"
-                    choices.update({
-                       key.format(track_id, temp, field['field_name']):
-                           OrderedDict(field['entries'])
-                       for field in course_fields.values() if field['entries']
-                    })
+                    for field in course_fields.values():
+                        key = f"{temp}{track_id}.xfield_{field['field_name']}"
+                        if field['entries']:
+                            choices[key]= OrderedDict(field['entries'])
         if len(event['parts']) > 1:
             choices.update({
                 # RegistrationPartStati enum
                 ",".join("part{0}.status".format(part_id)
                          for part_id in event['parts']): reg_part_stati_choices,
             })
+        if len(tracks) > 1:
+            choices[",".join(f"course_choices{track_id}.rank{i}"
+                    for track_id, track in tracks.items()
+                    for i in range(track['num_choices']))] = course_choices
         if not fixed_gettext:
             # Registration fields value -> description
             choices.update({
@@ -5048,6 +5089,13 @@ class EventFrontend(AbstractUserFrontend):
                         field=field['field_name'])
                 for field in course_fields.values()
             })
+            for i in range(track['num_choices']):
+                titles[f"course_choices{track_id}.rank{i}"] = \
+                    prefix + gettext("%s. Choice") % (i + 1)
+            if track['num_choices'] > 1:
+                titles[",".join(f"course_choices{track_id}.rank{i}"
+                                for i in range(track['num_choices']))] = \
+                    prefix + gettext("Any Choice")
         if len(event['tracks']) > 1:
             titles.update({
                 ",".join("track{0}.is_course_instructor".format(track_id)
@@ -5106,6 +5154,10 @@ class EventFrontend(AbstractUserFrontend):
                         field=field['field_name'])
                 for field in course_fields.values()
             })
+            key = ",".join(f"course_choices{track_id}.rank{i}"
+                           for track_id, track in tracks.items()
+                           for i in range(track['num_choices']))
+            titles[key] = gettext("any track: Any Choice")
         for part_id, part in event['parts'].items():
             if len(event['parts']) > 1:
                 prefix = "{shortname}: ".format(shortname=part['shortname'])
@@ -5199,33 +5251,17 @@ class EventFrontend(AbstractUserFrontend):
             'titles': titles, 'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
+        scope = "qview_registration"
         if not rs.has_validation_errors() and is_search:
-            query.scope = "qview_registration"
-            result = self.eventproxy.submit_general_query(rs, query,
-                                                          event_id=event_id)
-            params['result'] = result
-            if download:
-                fields = []
-                for csvfield in query.fields_of_interest:
-                    fields.extend(csvfield.split(','))
-                shortname = rs.ambience['event']['shortname']
-                if download == "csv":
-                    csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_csv_file(
-                        rs, data=csv_data, inline=False,
-                        filename="{}_result.csv".format(shortname))
-                elif download == "json":
-                    json_data = query_result_to_json(result, fields,
-                                                     substitutions=choices)
-                    return self.send_file(
-                        rs, data=json_data, inline=False,
-                        filename="{}_result.json".format(shortname))
+            query.scope = scope
+            params['result'] = self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id)
         else:
             rs.values['is_search'] = is_search = False
-        return self.render(rs, "registration_query", params)
+        return self._send_query_result(rs, download, scope, query, params)
 
     @staticmethod
-    def make_course_view_query_spec(event):
+    def make_course_query_spec(event):
         """Helper to enrich ``QUERY_SPECS['qview_event_course']``.
 
         Since each event has custom course fields we have to amend the query
@@ -5258,7 +5294,7 @@ class EventFrontend(AbstractUserFrontend):
         return spec
 
     @staticmethod
-    def make_course_view_query_aux(rs, event, courses, fixed_gettext=False):
+    def make_course_query_aux(rs, event, courses, fixed_gettext=False):
         """Un-inlined code to prepare input for template.
 
         :type rs: :py:class:`FrontendRequestState`
@@ -5285,7 +5321,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = OrderedDict(
             xsorted((c["id"], course_identifier(c)) for c in courses.values()))
         choices = {
-            "course.id": course_choices
+            "course.course_id": course_choices
         }
         course_fields = {
             field_id: field for field_id, field in event['fields'].items()
@@ -5302,6 +5338,7 @@ class EventFrontend(AbstractUserFrontend):
         # Construct titles.
         titles = {
             "course.id": gettext("course id"),
+            "course.course_id": gettext("course"),
             "course.nr": gettext("course nr"),
             "course.title": gettext("course title"),
             "course.description": gettext("course description"),
@@ -5345,7 +5382,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def course_query(self, rs, event_id, download, is_search):
 
-        spec = self.make_course_view_query_spec(rs.ambience['event'])
+        spec = self.make_course_query_spec(rs.ambience['event'])
         query_input = mangle_query_input(rs, spec)
         if is_search:
             query = check(rs, "query_input", query_input, "query",
@@ -5355,7 +5392,7 @@ class EventFrontend(AbstractUserFrontend):
 
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        choices, titles = self.make_course_view_query_aux(
+        choices, titles = self.make_course_query_aux(
             rs, rs.ambience['event'], courses,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
@@ -5373,30 +5410,198 @@ class EventFrontend(AbstractUserFrontend):
             'titles': titles, 'selection_default': selection_default,
         }
 
+        scope = "qview_event_course"
         if not rs.has_validation_errors() and is_search:
-            query.scope = "qview_event_course"
-            result = self.eventproxy.submit_general_query(
+            query.scope = scope
+            params['result'] = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
-            params['result'] = result
-            if download:
-                fields = []
-                for csvfield in query.fields_of_interest:
-                    fields.extend(csvfield.split(','))
-                shortname = rs.ambience['event']['shortname']
-                if download == "csv":
-                    csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_csv_file(
-                        rs, data=csv_data, inline=False,
-                        filename="{}_course_result.csv".format(shortname))
-                elif download == "json":
-                    json_data = query_result_to_json(
-                        result, fields, substitutions=choices)
-                    return self.send_file(
-                        rs, data=json_data, inline=False,
-                        filename="{}_course_result.json".format(shortname))
         else:
             rs.values['is_search'] = is_search = False
-        return self.render(rs, "course_query", params)
+        return self._send_query_result(rs, download, scope, query, params)
+
+    @staticmethod
+    def make_lodgement_query_spec(event):
+        parts = event["parts"]
+        lodgement_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.lodgement
+        }
+
+        # This is an OrderedDcit, so order should be respected.
+        spec = copy.deepcopy(QUERY_SPECS["qview_event_lodgement"])
+        spec.update({
+            f"lodgement_fields.xfield_{field['field_name']}":
+                const.FieldDatatypes(field['kind']).name
+            for field in lodgement_fields.values()
+        })
+
+        for part_id, part in parts.items():
+            spec[f"part{part_id}.regular_inhabitants"] = "int"
+            spec[f"part{part_id}.reserve_inhabitants"] = "int"
+            spec[f"part{part_id}.total_inhabitants"] = "int"
+            spec[f"part{part_id}.group_regular_inhabitants"] = "int"
+            spec[f"part{part_id}.group_reserve_inhabitants"] = "int"
+            spec[f"part{part_id}.group_total_inhabitants"] = "int"
+
+        return spec
+
+    @staticmethod
+    def make_lodgement_query_aux(rs, event, lodgements, lodgement_groups,
+                                 fixed_gettext=False):
+
+        parts = event['parts']
+
+        if fixed_gettext:
+            gettext = rs.default_gettext
+            enum_gettext = lambda x: x.name
+        else:
+            gettext = rs.gettext
+            enum_gettext: rs.gettext
+
+        # Construct choices.
+        lodgement_choices = OrderedDict(
+            (l_id, l['moniker'])
+            for l_id, l in keydictsort_filter(lodgements,
+                                              EntitySorter.lodgement))
+        lodgement_group_choices = OrderedDict({-1: gettext(n_("--no group--"))})
+        lodgement_group_choices.update(
+            [(lg_id, lg['moniker']) for lg_id, lg in keydictsort_filter(
+                lodgement_groups, EntitySorter.lodgement_group)])
+        choices = {
+            "lodgement.lodgement_id": lodgement_choices,
+            "lodgement_group.id": lodgement_group_choices,
+        }
+        lodgement_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.lodgement
+        }
+        if not fixed_gettext:
+            # Lodgement fields value -> description
+            choices.update({
+                f"lodgement_fields.xfield_{field['field_name']}":
+                    OrderedDict(field['entries'])
+                for field in lodgement_fields.values() if field['entries']
+            })
+
+        # Construct titles.
+        titles = {
+            "lodgement.id": gettext(n_("Lodgement ID")),
+            "lodgement.lodgement_id": gettext(n_("Lodgement")),
+            "lodgement.moniker": gettext(n_("Moniker")),
+            "lodgement.capacity": gettext(n_("Regular Capacity")),
+            "lodgement.reserve": gettext(n_("Camping Mat Capacity")),
+            "lodgement.notes": gettext(n_("Lodgement Notes")),
+            "lodgement.group_id": gettext(n_("Lodgement Group ID")),
+            "lodgement_group.tmp_id": gettext(n_("Lodgement Group")),
+            "lodgement_group.moniker": gettext(n_("Lodgement Group Moniker")),
+            "lodgement_group.capacity":
+                gettext(n_("Lodgement Group Regular Capacity")),
+            "lodgement_group.reserve":
+                gettext(n_("Lodgement Group Camping Mat Capacity")),
+        }
+        titles.update({
+            f"lodgement_fields.xfield_{field['field_name']}":
+                field['field_name']
+            for field in lodgement_fields.values()
+        })
+        for part_id, part in parts.items():
+            if len(parts) > 1:
+                prefix = f"{part['shortname']}: "
+            else:
+                prefix = ""
+            titles.update({
+                f"part{part_id}.regular_inhabitants":
+                    prefix + gettext(n_("Regular Inhabitants")),
+                f"part{part_id}.reserve_inhabitants":
+                    prefix + gettext(n_("Reserve Inhabitants")),
+                f"part{part_id}.total_inhabitants":
+                    prefix + gettext(n_("Total Inhabitants")),
+                f"part{part_id}.group_regular_inhabitants":
+                    prefix + gettext(n_("Group Regular Inhabitants")),
+                f"part{part_id}.group_reserve_inhabitants":
+                    prefix + gettext(n_("Group Reserve Inhabitants")),
+                f"part{part_id}.group_total_inhabitants":
+                    prefix + gettext(n_("Group Total Inhabitants")),
+            })
+
+        return choices, titles
+
+    @access("event")
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    @event_guard()
+    def lodgement_query(self, rs, event_id, download, is_search):
+
+        spec = self.make_lodgement_query_spec(rs.ambience['event'])
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query",
+                          spec=spec, allow_empty=False)
+        else:
+            query = None
+
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(
+            rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(
+            rs, lodgement_group_ids)
+        choices, titles = self.make_lodgement_query_aux(
+            rs, rs.ambience['event'], lodgements, lodgement_groups,
+            fixed_gettext=download is not None)
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+
+        parts = rs.ambience['event']['parts']
+        selection_default = ["lodgement.moniker"] + [
+            f"lodgement_fields.xfield_{field['field_name']}"
+            for field in rs.ambience['event']['fields'].values()
+            if field['association'] == const.FieldAssociations.lodgement]
+        for col in ("regular_inhabitants",):
+            selection_default += list(f"part{p_id}_{col}" for p_id in parts)
+        default_queries = []
+
+        params = {
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'query': query, 'defualt_queries': default_queries,
+            'titles': titles, 'selection_default': selection_default,
+        }
+
+        scope = "qview_event_lodgement"
+        if not rs.has_validation_errors() and is_search:
+            query.scope = scope
+            params['result'] = self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id)
+        else:
+            rs.values['id_search'] = is_search = False
+        return self._send_query_result(rs, download, scope, query, params)
+
+    def _send_query_result(self, rs, download, scope, query, params):
+        if download:
+            fields = []
+            for csvfield in query.fields_of_interest:
+                fields.extend(csvfield.split(','))
+            shortname = rs.ambience['event']['shortname']
+            if download == "csv":
+                csv_data = csv_output(params['result'], fields,
+                                      substitutions=params['choices'])
+                return self.send_csv_file(
+                    rs, data=csv_data, inline=False,
+                    filename="{}_course_result.csv".format(shortname))
+            elif download == "json":
+                json_data = query_result_to_json(
+                    params['result'], fields, substitutions=params['choices'])
+                return self.send_file(
+                    rs, data=json_data, inline=False,
+                    filename="{}_course_result.json".format(shortname))
+        else:
+            if scope == "qview_registration":
+                page = "registration_query"
+            elif scope == "qview_event_course":
+                page = "course_query"
+            elif scope == "qview_event_lodgement":
+                page = "lodgement_query"
+            else:
+                raise RuntimeError(n_("Unknown query scope."))
+            return self.render(rs, page, params)
 
     @access("event")
     @event_guard(check_offline=True)

@@ -55,9 +55,15 @@
                     {{- hard_limit if soft_limit is none else soft_limit|datetime(lang=lang) }}
                     {% if ((values['event_id'] in user.orga or 'event_orga' in user.admin_views)
                         or now() > soft_limit) and soft_limit != hard_limit %}
-                        {% trans date=hard_limit|datetime(lang=lang) %}
-                        	(Late registrations until {{ date }})
-                        {% endtrans %}
+                        {% if hard_limit %}
+                            {% trans date=hard_limit|datetime(lang=lang) %}
+                                (Late registrations until {{ date }})
+                            {% endtrans %}
+                        {% else %}
+                            {% trans %}
+                                (Late registration open)
+                            {% endtrans %}
+                        {% endif %}
                     {% endif %}
                 {% endif %}
             </dd>

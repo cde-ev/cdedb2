@@ -39,9 +39,10 @@
             {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD", type="date") }}
         {% endif %}
 
-        <h4 class="heading-underline">Account</h4>
+        <h4 class="heading-underline">Account & Membership</h4>
         {% if values['is_cde_realm'] and 'cde' in admin_bits %}
             {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable")) }}
+            {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls")) }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="7",
                                     info=gettext("Visible to all Admins, supports %(infolink)s with auto linebreaks.")|format(

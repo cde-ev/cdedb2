@@ -798,7 +798,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation,
                          self.event.get_registration(self.key, 2))
 
-    @as_users("berta", "nina")
+    @as_users("berta", "paul")
     def test_registering(self, user):
         new_reg = {
             'amount_paid': decimal.Decimal("42.00"),
@@ -836,13 +836,14 @@ class TestEventBackend(BackendTest):
             },
             'notes': "Some bla.",
             'payment': None,
-            'persona_id': 14,
+            'persona_id': 16,
             'real_persona_id': None}
-        # try to create a registration for nina
-        if user['id'] == USER_DICT['nina']['id']:
+        # try to create a registration for paul
+        if user['id'] == USER_DICT['paul']['id']:
             new_id = self.event.create_registration(self.key, new_reg)
             self.assertLess(0, new_id)
             new_reg['id'] = new_id
+            # amount_owed include non-member additional fee
             new_reg['amount_owed'] = decimal.Decimal("589.49")
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
@@ -1559,6 +1560,84 @@ class TestEventBackend(BackendTest):
         )
         result = self.event.submit_general_query(self.key, query, event_id=2)
         self.assertEqual(tuple(), result)
+        query = Query(
+            scope="qview_event_lodgement",
+            spec=dict(QUERY_SPECS["qview_event_lodgement"]),
+            fields_of_interest=["lodgement.id"],
+            constraints=[],
+            order=[],
+        )
+        result = self.event.submit_general_query(self.key, query, event_id=2)
+        self.assertEqual(tuple(), result)
+
+    @as_users("garcia")
+    def test_lodgement_query(self, user):
+        query = Query(
+            scope="qview_event_lodgement",
+            spec=dict(QUERY_SPECS['qview_event_lodgement']),
+            fields_of_interest=[
+                "lodgement.capacity",
+                "lodgement.group_id",
+                "lodgement.moniker",
+                "lodgement.reserve",
+                "lodgement_fields.xfield_contamination",
+                "lodgement_group.moniker",
+                "lodgement_group.capacity",
+                "lodgement_group.reserve",
+                "part1.regular_inhabitants",
+                "part1.reserve_inhabitants",
+                "part1.total_inhabitants",
+                "part1.group_regular_inhabitants",
+                "part1.group_reserve_inhabitants",
+                "part1.group_total_inhabitants",
+            ],
+            constraints=[
+                ("lodgement.id", QueryOperators.oneof, [2, 4])
+            ],
+            order=[
+                ("lodgement.id", False),
+            ],
+        )
+        result = self.event.submit_general_query(self.key, query, event_id=1)
+        expectation = (
+            {
+                'id': 4,
+                'lodgement.capacity': 1,
+                'lodgement.group_id': 1,
+                'lodgement.moniker': "Einzelzelle",
+                'lodgement.reserve': 0,
+                'lodgement_fields.xfield_contamination': 'high',
+                'lodgement_group.capacity': 11,
+                'lodgement_group.moniker': 'Haupthaus',
+                'lodgement_group.reserve': 2,
+                'part1.group_regular_inhabitants': 2,
+                'part1.group_reserve_inhabitants': 0,
+                'part1.group_total_inhabitants': 2,
+                'part1.regular_inhabitants': 1,
+                'part1.reserve_inhabitants': 0,
+                'part1.total_inhabitants': 1,
+            },
+            {
+                'id': 2,
+                'lodgement.capacity': 10,
+                'lodgement.group_id': 1,
+                'lodgement.moniker': "Kalte Kammer",
+                'lodgement.reserve': 2,
+                'lodgement_fields.xfield_contamination': 'none',
+                'lodgement_group.capacity': 11,
+                'lodgement_group.moniker': 'Haupthaus',
+                'lodgement_group.reserve': 2,
+                'part1.group_regular_inhabitants': 2,
+                'part1.group_reserve_inhabitants': 0,
+                'part1.group_total_inhabitants': 2,
+                'part1.regular_inhabitants': 1,
+                'part1.reserve_inhabitants': 0,
+                'part1.total_inhabitants': 1,
+            },
+        )
+        self.assertEqual(result, expectation)
+        from pprint import pprint
+        # pprint(result)
 
     @as_users("garcia")
     def test_course_query(self, user):

@@ -3,7 +3,6 @@
 from test.common import as_users, USER_DICT, FrontendTest
 import unittest
 
-# TODO how to tread "Mitgliedschaft"?
 # TODO Profilfoto
 
 
@@ -15,6 +14,7 @@ class TestPrivacyFrontend(FrontendTest):
         "Geschlecht": 'personal-information', "CdEDB-ID": 'account',
         "Account aktiv": 'account', "Bereiche": 'account',
         "Admin-Privilegien": 'account', "Admin-Notizen": 'account',
+        "Gedruckter exPuls": 'paper-expuls',
         "Mitgliedschaft": 'cde-membership', "Guthaben": 'cde-membership',
         "Sichtbarkeit": 'cde-membership', "E-Mail": 'contact-information',
         "Telefon": 'contact-information', "Mobiltelefon": 'contact-information',
@@ -89,7 +89,8 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_cde_admin_view(self, inspected):
         expected = {
-            "Geschlecht", "Mitgliedschaft", "Guthaben", "Sichtbarkeit"
+            "Geschlecht", "Mitgliedschaft", "Guthaben", "Sichtbarkeit",
+            "Gedruckter exPuls"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -112,7 +113,7 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_meta_admin_view(self, inspected):
         # TODO give meta admin a relative admin view for all personas
-        expected = {"Bereiche", "Admin-Privilegien"}
+        expected = {"Bereiche", "Account aktiv", "Admin-Privilegien"}
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         # actual username must not be displayed
@@ -144,7 +145,7 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_of_archived(self, inspected):
         expected = {
-            "Account aktiv", "Bereiche", "Admin-Privilegien"
+            "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -217,8 +218,6 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
-        # TODO should this also be functional if the inspected user is moderator
-        #  and not subscriber of that mailinglist?
         # ... unless they see them as mailinglist associated. Then, they get the
         # same view as a moderator of that mailinglist.
         inspected = USER_DICT['berta']
@@ -241,7 +240,6 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
-    @unittest.expectedFailure
     @as_users("annika")
     def test_profile_as_event_admin(self, user):
         self._disable_searchability('annika')
@@ -265,8 +263,6 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
-        # TODO should this also be functional if the inspected user is orga
-        #  and not registered for that event?
         # ... unless they see them as event associated. Then, they get the same
         # view as an orga of this event.
         self.get(inspected['url'] + "&event_id=1")
@@ -348,10 +344,8 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
-    @unittest.expectedFailure
     @as_users("garcia")
     def test_profile_as_orga(self, user):
-        # TODO should this also be true for "Mit-Orgas"?
         # orgas get a closer view on users associated to their event
         inspected = USER_DICT['berta']
         self.get(inspected['url'] + "&event_id=1")
@@ -510,10 +504,11 @@ class TestPrivacyFrontend(FrontendTest):
                 msg = "Forget {} in case {}.".format(user['given_names'], realm)
                 raise RuntimeError(msg)
 
+    @unittest.expectedFailure
     def test_profile_of_disabled_user(self):
         # a disabled user should be viewable as an equal non-disabled user
         # TODO maybe add all above tests as subtests?
-        pass
+        raise NotImplementedError
 
     @as_users("ferdinand", "martin", "paul")
     def test_profile_of_archived_user(self, user):
@@ -641,7 +636,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... nor the member search page itself
         self.get('/cde/search/member', status="403 FORBIDDEN")
 
-    @as_users("annika", "charly", "daniel", "garcia")
+    @as_users("charly", "daniel", "garcia", "inga")
     def test_show_past_event(self, user):
         akira = "Akira Abukara"
         berta = "Bertålotta Beispie"
@@ -663,7 +658,7 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertNonPresence(participant)
 
         # non-cde admin who doesnt participate should see searchable members only
-        elif user == USER_DICT['annika']:
+        elif user == USER_DICT['inga']:
             visible = [akira, berta, ferdinand]
             invisible = [charly, emilia]
             for participant in visible:
@@ -679,7 +674,7 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertPresence(participant, div='list-participants')
                 self.assertNoLink(participant)
 
-    @as_users("annika", "charly", "daniel", "garcia")
+    @as_users("charly", "daniel", "garcia", "inga")
     def test_show_past_course(self, user):
         akira = "Akira Abukara"
         emilia = "Emilia E. Eventis"
@@ -700,7 +695,7 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertNonPresence(participant)
 
         # non-cde admin who doesnt participate should see searchable members only
-        elif user == USER_DICT['annika']:
+        elif user == USER_DICT['inga']:
             visible = [akira, ferdinand]
             invisible = [emilia]
             for participant in visible:

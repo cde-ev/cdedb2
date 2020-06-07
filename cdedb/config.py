@@ -406,7 +406,8 @@ _DEFAULTS = {
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name", "address",
                  "address_supplement", "postal_code", "location", "country"),
-                (("is_member", QueryOperators.equal, True),),
+                (("is_member", QueryOperators.equal, True),
+                 ("paper_expuls", QueryOperators.equal, True)),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
@@ -578,6 +579,7 @@ class Config(BasicConfig):
         super().__init__()
         _LOGGER.debug("Initialising Config with path {}".format(configpath))
         self._configpath = configpath
+        config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
 
         if configpath:
             spec = importlib.util.spec_from_file_location(
@@ -587,7 +589,7 @@ class Config(BasicConfig):
             spec.loader.exec_module(primaryconf)
             primaryconf = {
                 key: getattr(primaryconf, key)
-                for key in _DEFAULTS.keys() & dir(primaryconf)
+                for key in config_keys & set(dir(primaryconf))
             }
         else:
             primaryconf = {}
@@ -596,7 +598,7 @@ class Config(BasicConfig):
             import cdedb.localconfig as secondaryconf
             secondaryconf = {
                 key: getattr(secondaryconf, key)
-                for key in _DEFAULTS.keys() & dir(secondaryconf)
+                for key in config_keys & set(dir(secondaryconf))
             }
         except ImportError:
             secondaryconf = {}

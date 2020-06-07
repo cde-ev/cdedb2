@@ -6,7 +6,6 @@ sys.path.insert(0, "/cdedb2/")
 from cdedb.script import setup, make_backend
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
-from cdedb.common import ProxyShim
 # Configuration
 
 rs = setup(persona_id=-1, dbuser="cdb",
@@ -15,7 +14,6 @@ rs = setup(persona_id=-1, dbuser="cdb",
 # prepare backends
 
 ml = make_backend("ml")
-mlproxy = ProxyShim(make_backend("ml"))
 
 # Start of actual script.
 
@@ -84,10 +82,10 @@ with Atomizer(rs()):
 
     ml_ids = ml.list_mailinglists(rs(), active_only=False)
     for ml_id in ml_ids:
-        mlproxy.write_subscription_states(rs(), ml_id)
+        ml.write_subscription_states(rs(), ml_id)
 
         # Some debug output.
         pprint(ml_id)
-        pprint(mlproxy.get_subscription_states(rs(), ml_id))
-        pprint(list(filter(None, mlproxy.get_subscription_addresses(
+        pprint(ml.get_subscription_states(rs(), ml_id))
+        pprint(list(filter(None, ml.get_subscription_addresses(
             rs(), ml_id, explicits_only=True).values())))

@@ -51,6 +51,7 @@ PERSONA_TEMPLATE = {
     'decided_search': None,
     'bub_search': None,
     'foto': None,
+    'paper_expuls': None,
 }
 
 
@@ -244,6 +245,7 @@ class TestCoreBackend(BackendTest):
                 'mobile': None,
                 'name_supplement': None,
                 'notes': 'Not Link.',
+                'paper_expuls': None,
                 'postal_code': None,
                 'postal_code2': None,
                 'reviewed_by': None,
@@ -294,6 +296,7 @@ class TestCoreBackend(BackendTest):
             'decided_search': False,
             'bub_search': False,
             'foto': None,
+            'paper_expuls': True,
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -421,6 +424,9 @@ class TestCoreBackend(BackendTest):
             if key in ('trial_member', 'decided_search', 'bub_search'):
                 if persona[key] is None:
                     persona[key] = False
+            if key == "paper_expuls":
+                if persona[key] is None:
+                    persona[key] = True
         merge_dicts(data, persona)
         self.assertLess(0, self.core.change_persona_realms(self.key, data))
         log_entry = {
@@ -778,6 +784,7 @@ class TestCoreBackend(BackendTest):
             'interests': None,
             'specialisation': None,
             'timeline': None,
+            'paper_expuls': True,
         })
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
@@ -864,6 +871,7 @@ class TestCoreBackend(BackendTest):
             'free_form': 'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen',
             'interests': 'Immer',
             'location2': 'Foreign City',
+            'paper_expuls': True,
             'postal_code2': '8XA 45-$',
             'specialisation': 'Alles\nUnd noch mehr',
             'telephone': '+49 (5432) 987654321',
@@ -976,7 +984,7 @@ class TestCoreBackend(BackendTest):
         result = self.core.retrieve_log(self.key)
         self.assertEqual(core_log_expectation, result)
 
-        total = 25
+        total = 31
         changelog_expectation = (total, (
             # Committing the changed admin bits.
             {
@@ -1090,7 +1098,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_changelog_meta(self, user):
-        expectation = (24, (
+        expectation = (30, (
             {'change_note': 'Init.',
              'change_status': const.MemberChangeStati.committed,
              'ctime': nearly_now(),
@@ -1260,7 +1268,48 @@ class TestCoreBackend(BackendTest):
              'persona_id': 18,
              'reviewed_by': None,
              'submitted_by': 1},
-        ))
+            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 22,
+             'reviewed_by': None,
+             'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 23,
+            'reviewed_by': None,
+            'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 27,
+             'reviewed_by': None,
+             'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 32,
+             'reviewed_by': None,
+             'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 13,
+             'reviewed_by': None,
+             'submitted_by': 100},
+            {'change_note': 'Zu Testzwecken Mitgliedschaft entzogen.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 17,
+             'reviewed_by': None,
+             'submitted_by': 100}))
 
         self.assertEqual(expectation,
                          self.core.retrieve_changelog_meta(self.key))
