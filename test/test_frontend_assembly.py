@@ -247,7 +247,7 @@ class TestAssemblyFrontend(FrontendTest):
 
         self.traverse({'description': 'Internationaler Kongress'})
         attendee = ["Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
-                    "Abstimmungen", "Zusammenfassung"]
+                    "Abstimmungen", "Zusammenfassung", "Attachment Overview"]
         admin = ["Konfiguration", "Log"]
 
         # not assembly admins
