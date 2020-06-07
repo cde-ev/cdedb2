@@ -31,9 +31,6 @@ import hmac
 from typing import (
     Set, Dict, List, Union, Callable, Collection
 )
-from pathlib import Path
-from os import PathLike
-PathLike = Union[Path, PathLike]
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, affirm_set_validation as affirm_set,
@@ -43,7 +40,7 @@ from cdedb.common import (
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-    get_hash, mixed_existence_sorter,
+    get_hash, mixed_existence_sorter, PathLike,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers
 )
 from cdedb.security import secure_random_ascii

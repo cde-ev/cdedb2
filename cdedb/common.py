@@ -22,6 +22,7 @@ import shutil
 import string
 import sys
 import hashlib
+from os import PathLike
 from typing import (
     Any, TypeVar, Mapping, Collection, Dict, List, overload, Union, Sequence,
     AbstractSet, Tuple, MutableSequence
@@ -60,6 +61,10 @@ DefaultReturnCode = int
 # For some blockers the value might have a different type, mostly when that
 # blocker blocks deletion without the option to cascadingly delete.
 DeletionBlockers = Dict[str, List[int]]
+
+# Overwrite the os.PathLike interface, because PyCharm fails to
+# recognize `patlib.Path` as an implementation of that interface.
+PathLike = Union[pathlib.Path, PathLike]
 
 
 class RequestState:
