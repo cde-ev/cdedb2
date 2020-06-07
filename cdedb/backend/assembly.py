@@ -1543,6 +1543,17 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
+            query = ("SELECT COUNT(version) as num"
+                     " FROM assembly.attachment_versions"
+                     " WHERE attachment_id = %s AND version != %s"
+                     " AND dtime IS NULL")
+            params = (attachment_id, version)
+            count = unwrap(self.query_one(rs, query, params))
+            if not count:
+                self.logger.warning(f"Deleting last version of "
+                                    f"attachment {attachment_id}")
+                # TODO throw an error here?
+                pass
             deletor = {
                 'attachment_id': attachment_id,
                 'version': version,
