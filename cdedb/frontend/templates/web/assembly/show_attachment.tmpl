@@ -16,7 +16,7 @@
             Attachment Details
         {% endtrans %}
         <small>
-            {{ assembly_util.small_attachment_title(attachment) }}
+            {{ assembly_util.small_attachment_title(attachment, history) }}
         </small>
     </h1>
 {% endblock %}
@@ -27,11 +27,13 @@
         {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), assembly_util.small_attachment_title(attachment, icon=False), active=True, icon="file") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"),
+                            assembly_util.small_attachment_title(attachment, history, icon=False),
+                            active=True, icon="file") }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), gettext("Attachment Details"), active=True) }}
 
 {% endblock %}
 {% block content %}
-    {{ assembly_util.attachment_list({attachment['attachment_id']: attachment}, ballot=ambience.get('ballot'),
-                                     edit=("assembly_contents" in user.admin_views)) }}
+    {{ assembly_util.attachment_list({attachment['id']: attachment}, {attachment['id']: history},
+                                     ballot=ambience.get('ballot'), edit=("assembly_contents" in user.admin_views)) }}
 {% endblock %}

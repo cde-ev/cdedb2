@@ -28,7 +28,7 @@
             </small>
         {% endif %}
         <small>
-            {{ assembly_util.small_attachment_title(history) }}
+            {{ assembly_util.small_attachment_title(attachment, history) }}
         </small>
     </h1>
 {% endblock %}
@@ -39,7 +39,8 @@
         {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), assembly_util.small_attachment_title(history, icon=False), icon="file") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"),
+                            assembly_util.small_attachment_title(attachment, history, icon=False), icon="file") }}
     {{ util.breadcrumb_link(cdedblink("assembly/change_attachment_link"), gettext("Edit Attachment"), active=True) }}
 {% endblock %}
 {% block content %}

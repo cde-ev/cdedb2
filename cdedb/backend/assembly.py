@@ -1624,17 +1624,18 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
-            query = ("SELECT COUNT(version) as num"
-                     " FROM assembly.attachment_versions"
-                     " WHERE attachment_id = %s AND version != %s"
-                     " AND dtime IS NULL")
+            query = ("SELECT dtime FROM assembly.attachment_versions"
+                     " WHERE attachment_id = %s and version = %s")
             params = (attachment_id, version)
-            count = unwrap(self.query_one(rs, query, params))
-            if not count:
-                self.logger.warning(f"Deleting last version of "
-                                    f"attachment {attachment_id}")
-                # TODO throw an error here?
-                pass
+            data = self.query_one(rs, query, params)
+            if not data:
+                raise ValueError(n_("This version does not exist."))
+            if unwrap(data):
+                raise ValueError(n_("This version has already been deleted."))
+            attachment = self.get_attachment(rs, attachment_id)
+            if attachment['num_versions'] <= 1:
+                raise ValueError(n_("Cannot remove the last remaining version "
+                                    "of an attachment."))
             deletor = {
                 'attachment_id': attachment_id,
                 'version': version,
@@ -1715,14 +1716,34 @@ class AssemblyBackend(AbstractBackend):
                               ) -> CdEDBObjectMap:
         """Internal helper to retrieve attachment data without access check."""
         attachment_ids = affirm_set("id", attachment_ids)
-        data = self.sql_select(rs, "assembly.attachments",
-                               ASSEMBLY_ATTACHMENT_FIELDS, attachment_ids)
-        ret = {e['id']: e for e in data}
-        # TODO this should use may_access, but provides assembly and ballot id.
-        #  Maybe this can be corrected after merging PR #1142
-        if not ("member" in rs.user.roles or "assembly_admin" in rs.user.roles):
-            ret = {k: v for k, v in ret.items() if self.check_attendance(
-                rs, assembly_id=v['assembly_id'], ballot_id=v['ballot_id'])}
+        query = f"""SELECT
+                {', '.join(ASSEMBLY_ATTACHMENT_FIELDS +
+                           ('num_versions', 'current_version'))}
+            FROM (
+                (
+                    SELECT
+                        {', '.join(ASSEMBLY_ATTACHMENT_FIELDS)}
+                    FROM
+                        assembly.attachments
+                    WHERE
+                        id = ANY(%s)
+                ) AS attachments
+                LEFT OUTER JOIN (
+                    SELECT
+                        attachment_id, COUNT(version) as num_versions,
+                        MAX(version) as current_version
+                    FROM
+                        assembly.attachment_versions
+                    WHERE
+                        dtime IS NULL
+                    GROUP BY
+                        attachment_id
+                ) AS count ON attachments.id = count.attachment_id
+            )"""
+        params = (attachment_ids,)
+        data = self.query_all(rs, query, params)
+        ret = {e['id']: e for e in data if self.may_access(
+            rs, assembly_id=e['assembly_id'], ballot_id=e['ballot_id'])}
         return ret
     _get_attachment_info: Callable[[RequestState, int], CdEDBObject]
     _get_attachment_info = singularize(

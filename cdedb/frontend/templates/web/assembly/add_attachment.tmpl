@@ -29,7 +29,7 @@
         {% endif %}
         {% if history %}
             <small>
-                {{ assembly_util.small_attachment_title(history) }}
+                {{ assembly_util.small_attachment_title(attachment, history) }}
             </small>
         {% endif %}
     </h1>
@@ -41,8 +41,9 @@
         {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
-    {% if attachment_id %}
-        {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"), assembly_util.small_attachment_title(history, icon=False), icon="file") }}
+    {% if attachment %}
+        {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"),
+                                assembly_util.small_attachment_title(attachment, history, icon=False), icon="file") }}
         {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Add Version"), active=True) }}
     {% else %}
         {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Attach File"), active=True) }}
@@ -52,7 +53,6 @@
     <form action="{{ cdedblink('assembly/add_attachment') }}" method="POST" enctype="multipart/form-data"
             id="addattachmentform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/add_attachment') }}
-        {{ util.input_hidden(name="attachment_id") }}
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}

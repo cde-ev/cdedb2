@@ -220,7 +220,8 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
-        attachments = self.assemblyproxy.get_attachment_histories(
+        attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
+        attachment_histories = self.assemblyproxy.get_attachment_histories(
             rs, attachment_ids)
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
@@ -232,8 +233,11 @@ class AssemblyFrontend(AbstractUserFrontend):
             ballot_attachment_ids = self.assemblyproxy.list_attachments(
                 rs, ballot_id=ballot_id)
             ballot_attachments[ballot_id] = \
-                self.assemblyproxy.get_attachment_histories(
+                self.assemblyproxy.get_attachments(
                     rs, ballot_attachment_ids)
+            attachment_histories.update(
+                self.assemblyproxy.get_attachment_histories(
+                    rs, ballot_attachment_ids))
             has_ballot_attachments = has_ballot_attachments or bool(
                 ballot_attachment_ids)
 
@@ -247,11 +251,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             delete_blockers = {"is_admin": False}
 
         return self.render(rs, "show_assembly", {
-            "attachments": attachments, "attends": attends, "ballots": ballots,
+            "attachments": attachments,
+            "attachment_histories": attachment_histories,
+            "attends": attends, "ballots": ballots,
             "delete_blockers": delete_blockers,
             "conclude_blockers": conclude_blockers,
             "ballot_attachments": ballot_attachments,
-            "has_ballot_attachments": has_ballot_attachments})
+            "has_ballot_attachments": has_ballot_attachments,
+        })
 
     @access("assembly_admin")
     def change_assembly_form(self, rs: RequestState,
@@ -327,6 +334,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         assembly_attachments = self.assemblyproxy.list_attachments(
                 rs, assembly_id=assembly_id)
         all_attachments = {
+            None: self.assemblyproxy.get_attachments(
+                rs, assembly_attachments)
+        }
+        attachment_histories = {
             None: self.assemblyproxy.get_attachment_histories(
                 rs, assembly_attachments)
         }
@@ -335,10 +346,13 @@ class AssemblyFrontend(AbstractUserFrontend):
         for ballot_id in ballot_ids:
             attachment_ids = self.assemblyproxy.list_attachments(
                 rs, ballot_id=ballot_id)
-            all_attachments[ballot_id] = self.assemblyproxy.\
-                get_attachment_histories(rs, attachment_ids)
+            all_attachments[ballot_id] = self.assemblyproxy.get_attachments(
+                rs, attachment_ids)
+            attachment_histories[ballot_id] = (
+                self.assemblyproxy.get_attachment_histories(rs, attachment_ids))
         return self.render(rs, "list_attachments", {
             "all_attachments": all_attachments,
+            "attachment_histories": attachment_histories,
             "ballots": ballots,
         })
 
@@ -543,7 +557,6 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_id})
 
     @access("assembly")
-    @REQUESTdata(("version", "id_or_None"))
     # ballot_id is optional, but comes semantically before attachment_id
     def get_attachment(self, rs: RequestState, assembly_id: int,
                        attachment_id: int, ballot_id: int = None,
@@ -571,9 +584,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                         attachment_id: int, ballot_id: int = None) -> Response:
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        attachment = self.assemblyproxy.get_attachment_history(
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        history = self.assemblyproxy.get_attachment_history(
             rs, attachment_id)
-        return self.render(rs, "show_attachment", {'attachment': attachment})
+        return self.render(rs, "show_attachment", {
+            'attachment': attachment, 'history': history,
+        })
 
     @access("assembly_admin")
     def add_attachment_form(self, rs: RequestState, assembly_id: int,
@@ -596,11 +612,11 @@ class AssemblyFrontend(AbstractUserFrontend):
             history = self.assemblyproxy.get_attachment_history(
                 rs, attachment_id)
         else:
+            attachment = None
             history = None
         return self.render(
             rs, "add_attachment", {
-                'attachment_id': attachment_id,
-                'history': history,
+                'attachment': attachment, 'history': history,
             })
 
     @access("assembly_admin", modi={"POST"})
@@ -688,8 +704,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachment['new_ballot_id'] = attachment['ballot_id']
         merge_dicts(rs.values, attachment)
         return self.render(rs, "change_attachment_link", params={
-            'history': history,
-            'attachment_id': attachment_id,
+            'attachment': attachment, 'history': history,
             'ballot_entries': ballot_entries,
         })
 
@@ -779,7 +794,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, history[version])
         return self.render(rs, "edit_attachment_version", {
-            'attachment_id': attachment_id,
+            'attachment': attachment,
             'history': history,
             'version': version,
         })
@@ -846,16 +861,28 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("attachment_ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
-            if ballot_id:
-                return self.show_ballot(rs, assembly_id, ballot_id)
-            else:
-                return self.show_assembly(rs, assembly_id)
+            return self.redirect(rs, "assembly/show_attachment")
         if version is None:
             cascade = {"versions"}
             code = self.assemblyproxy.delete_attachment(
                 rs, attachment_id, cascade)
             self.notify_return_code(rs, code)
         else:
+            history = self.assemblyproxy.get_attachment_history(
+                rs, attachment_id)
+            if version not in history:
+                rs.notify("error", n_("This version does not exist"))
+                return self.redirect(rs, "assembly/show_attachment")
+            if history[version]['dtime']:
+                rs.notify("error", n_("This version has already been deleted."))
+                return self.redirect(rs, "assembly/show_attachment")
+            count = self.assemblyproxy.count_existing_attachment_versions(
+                rs, attachment_id)
+            if count <= 1:
+                rs.notify("error", n_("Cannot remove the last remaining "
+                                      "version of an attachment."))
+                return self.redirect(rs, "assembly/show_attachment")
+
             code = self.assemblyproxy.remove_attachment_version(
                 rs, attachment_id, version)
             self.notify_return_code(
@@ -895,7 +922,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot = rs.ambience['ballot']
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id)
-        attachments = self.assemblyproxy.get_attachment_histories(
+        attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
+        attachment_histories = self.assemblyproxy.get_attachment_histories(
             rs, attachment_ids)
         if self._update_ballot_state(rs, ballot):
             return self.redirect(rs, "assembly/show_ballot")
@@ -954,9 +982,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
-            'attachments': attachments, 'split_vote': split_vote,
-            'own_vote': own_vote, 'result': result, 'candidates': candidates,
-            'attends': attends, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
+            'attachments': attachments,
+            'attachment_histories': attachment_histories,
+            'split_vote': split_vote, 'own_vote': own_vote, 'result': result,
+            'candidates': candidates, 'attends': attends,
+            'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
             'secret': secret, 'has_voted': has_voted,
         })

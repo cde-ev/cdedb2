@@ -1,18 +1,14 @@
-{% macro print_attachment(history, full_history=False, edit=False, ballot=None) %}
-    {% set x = [] %}
-    {% for i, v in history.items() if v['dtime'] is none %}
-        {% do x.append(i) %}
-    {% endfor %}
-    {% with current_version = history[x|max] if x else history[history.keys()|max] %}
+{% macro print_attachment(attachment, history, full_history=False, edit=False, ballot=None) %}
+    {% with current_version = history[attachment['current_version']] %}
         <div class="p" id="attachment_container_{{ current_version["attachment_id"] }}">
-            {{ print_attachment_link(current_version, edit, ballot, add=not full_history) }}
+            {{ print_attachment_link(attachment, current_version, edit, ballot, add=not full_history) }}
             {% if full_history %}
                 {% if history|length > 1 %}
                     <ul>
                         {% for i, version in history|keydictsort(EntitySorter.attachment_version)|reverse %}
                             {% if i != current_version['version'] %}
                                 <li>
-                                    {{ print_attachment_link(version, edit, ballot) }}
+                                    {{ print_attachment_link(attachment, version, edit, ballot) }}
                                 </li>
                             {% endif %}
                         {% endfor %}
@@ -52,7 +48,7 @@
     {% endwith %}
 {% endmacro %}
 
-{% macro print_attachment_link(version, edit, ballot, add=False) %}
+{% macro print_attachment_link(attachment, version, edit, ballot, add=False) %}
     {% if not version["dtime"] %}
         {{ util.href(cdedblink("assembly/get_attachment",
                                {'attachment_id': version["attachment_id"],
@@ -83,8 +79,10 @@
                     class="hide-hover display-inline">
                 {{ util.anti_csrf_token('assembly/delete_attachment') }}
                 {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
+                {% set deletable = (attachment['num_versions'] > 1) %}
                 {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash-alt",
-                        title=gettext("Delete File")) }}
+                        title=gettext("Delete File") if deletable else gettext("Cannot remove the last remaining version of an attachment"),
+                        readonly=not deletable) }}
             </form>
             </div>
             <script nonce="{{ csp_nonce }}">
@@ -114,13 +112,9 @@
     </div>
 {% endmacro %}
 
-{% macro small_attachment_title(history, version=None, icon=True) %}
+{% macro small_attachment_title(attachment, history, version=None, icon=True) %}
     {% if version is none %}
-        {% set x = [] %}
-        {% for i, v in history.items() if v['dtime'] is none %}
-            {% do x.append(i) %}
-        {% endfor %}
-        {% set version = x|max if x else history.keys()|max %}
+        {% set version = attachment['current_version'] %}
     {% endif %}
     {% with current = history[version] %}
         {% if icon %}
@@ -130,17 +124,17 @@
     {% endwith %}
 {% endmacro %}
 
-{% macro attachment_box(attachments, ballot=None, edit=False, new_attachment_button=False) %}
+{% macro attachment_box(attachments, histories, ballot=None, edit=False, new_attachment_button=False) %}
     {% call util.bootstrap_panel(
                 title=("Files – {link}".format(link=util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot['id']}),
                                                               ballot['title'], icon="thumbs-up"))|s
                       if ballot else gettext("General Files")),
                 icon='file') %}
-        {{ attachment_list(attachments, ballot, edit, new_attachment_button) }}
+        {{ attachment_list(attachments, histories, ballot, edit, new_attachment_button) }}
     {% endcall %}
 {% endmacro %}
 
-{% macro attachment_list(attachments, ballot=None, edit=False, new_attachment_button=False) %}
+{% macro attachment_list(attachments, histories, ballot=None, edit=False, new_attachment_button=False) %}
     <div class="row">
         <div class="col-sm-12">
         {% if not attachments %}
@@ -169,10 +163,11 @@
             </div>
         {% endif %}
             <ul class="slim" id="attachments-{{ "ballot-{}".format(ballot['id']) if ballot else "general"}}">
-                {% for attachment_id, history in attachments.items() %}
+                {% for attachment_id, attachment in attachments.items() %}
                     <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
-                        {{ print_attachment(history, edit=("assembly_contents" in user.admin_views),
-                                            full_history=True, ballot=ballot) }}
+                        {{ print_attachment(
+                                attachment, histories[attachment_id], edit=("assembly_contents" in user.admin_views),
+                                full_history=True, ballot=ballot) }}
                     </li>
                 {% endfor %}
             </ul>

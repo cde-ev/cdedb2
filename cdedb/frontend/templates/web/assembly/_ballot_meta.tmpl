@@ -159,9 +159,11 @@
     {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         {% if attachments %}
             <ul id="attachments">
-                {% for attachment_id, history in attachments.items() %}
+                {% for attachment_id, attachment in attachments.items() %}
                     <li class="hide-hover-container clearfix-after">
-                        {{ assembly_util.print_attachment(history, edit=edit_mode, ballot=ambience['ballot']) }}
+                        {{ assembly_util.print_attachment(
+                                attachment, attachment_histories[attachment_id],
+                                edit=edit_mode, ballot=ambience['ballot']) }}
                     </li>
                 {% endfor %}
             </ul>
