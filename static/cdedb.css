@@ -94,8 +94,9 @@ body{
     border-top-style: none;
     min-width: 20px;
 }
-tr.no-upper-border>td {
-    border-top-style: none;
+table>tbody>tr.no-upper-border>td {
+    padding-top: 0 ;
+    border-top-style: none ;
 }
 ul.slim {
     padding-left: 15px;
