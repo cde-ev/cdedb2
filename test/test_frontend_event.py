@@ -166,14 +166,14 @@ class TestEventFrontend(FrontendTest):
         self._click_admin_view_button(
             re.compile(r"Benutzer-Administration"), current_state=False)
 
-        # Test Event Management Admin View
+        # Test Event Administration Admin View
         self.assertNoLink('/event/event/log')
         self.assertNoLink('/event/event/list')
         self.traverse({'href': '/event/event/1/show'})
         self.assertNotIn('deleteeventform', self.response.forms)
         self.assertNotIn('addorgaform', self.response.forms)
         self.traverse({'href': '/event/event/1/registration/status'})
-        self._click_admin_view_button(re.compile(r"Veranst.-Verwaltung"),
+        self._click_admin_view_button(re.compile(r"Veranstaltungs-Administration"),
                                       current_state=False)
         self.traverse({'href': '/event/event/1/show'})
         self.assertIn('deleteeventform', self.response.forms)
@@ -196,7 +196,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/event/1/course/list'})
         self.assertNoLink('/event/event/1/course/1/show')
 
-        self._click_admin_view_button(re.compile(r"Veranst.-Verwaltung"),
+        self._click_admin_view_button(re.compile(r"Veranstaltungs-Administration"),
                                       current_state=True)
         # Even without the Orga Controls Admin View we should see the Orga
         # Controls of our own event:
@@ -210,6 +210,7 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
         self.assertIn('lockform', self.response.forms)
+        self.assertNoLink("Orga-Schaltflächen")
 
         self.traverse({'href': '/event/'},
                       {'href': '/event/event/1/show'})

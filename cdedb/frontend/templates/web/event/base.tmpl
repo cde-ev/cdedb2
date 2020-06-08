@@ -121,13 +121,13 @@
 {% block adminviews %}
     {% if ambience['event'] %}
         {% if user.persona_id in ambience['event']['orgas'] %}
-            {{ util.admin_views_toggle(((gettext("Event Management"), ["event_mgmt"], None),)) }}
+            {{ util.admin_views_toggle(((gettext("Event Administration"), ["event_mgmt"], None),)) }}
         {% else %}
-            {{ util.admin_views_toggle(((gettext("Event Management"), ["event_mgmt"], None),
+            {{ util.admin_views_toggle(((gettext("Event Administration"), ["event_mgmt"], None),
                                         (gettext("Orga Controls"), ["event_orga"], None))) }}
         {% endif %}
     {% else %}
         {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["event_user"]),
-                                    (gettext("Event Management"), ["event_mgmt"], None))) }}
+                                    (gettext("Event Administration"), ["event_mgmt"], None))) }}
     {% endif %}
 {% endblock %}

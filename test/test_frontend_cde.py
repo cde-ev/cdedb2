@@ -136,7 +136,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence('weitere …')
         self.traverse({'href': '/cde/past/event/1/course/2/show'})
 
-        self._click_admin_view_button(re.compile(r"Verwaltung verg. Veranst."),
+        self._click_admin_view_button(re.compile(r"verg. Veranst. Administration"),
                                       current_state=False)
         self.traverse({'href': '/cde/past/event/1/show'},
                       {'href': '/cde/past/event/1/change'},
