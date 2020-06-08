@@ -156,10 +156,8 @@
 {%- endmacro %}
 
 {% macro show_attachments(edit_mode) -%}
-    {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
-        {{ assembly_util.attachment_list(attachments, attachment_histories, edit=edit_mode, ballot=None,
-                                         new_attachment_button=True) }}
-    {% endcall %}
+    {{ assembly_util.attachment_box(attachments, attachment_histories, edit=edit_mode, title=gettext("Files"),
+                                    ballot=None, new_attachment_button=True, full_history=False) }}
 {%- endmacro %}
 
 {% macro show_navigation() -%}

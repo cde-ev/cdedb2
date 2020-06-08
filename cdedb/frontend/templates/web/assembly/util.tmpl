@@ -125,13 +125,14 @@
 {% endmacro %}
 
 {% macro attachment_box(attachments, histories, title=gettext("General Files"), ballot=None, edit=False,
-                        new_attachment_button=False) %}
+                        new_attachment_button=False, full_history=True) %}
     {% call util.bootstrap_panel(title=title, icon='file') %}
-        {{ attachment_list(attachments, histories, ballot, edit, new_attachment_button) }}
+        {{ attachment_list(attachments, histories, ballot, edit, new_attachment_button, full_history) }}
     {% endcall %}
 {% endmacro %}
 
-{% macro attachment_list(attachments, histories, ballot=None, edit=False, new_attachment_button=False) %}
+{% macro attachment_list(attachments, histories, ballot=None, edit=False, new_attachment_button=False,
+                         full_history=True) %}
     <div class="row">
         <div class="col-sm-12">
         {% if not attachments %}
@@ -164,7 +165,7 @@
                     <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
                         {{ print_attachment(
                                 attachment, histories[attachment_id], edit=("assembly_contents" in user.admin_views),
-                                full_history=True, ballot=ballot) }}
+                                full_history=full_history, ballot=ballot) }}
                     </li>
                 {% endfor %}
             </ul>
