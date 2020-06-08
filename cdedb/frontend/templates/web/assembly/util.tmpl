@@ -124,12 +124,9 @@
     {% endwith %}
 {% endmacro %}
 
-{% macro attachment_box(attachments, histories, ballot=None, edit=False, new_attachment_button=False) %}
-    {% call util.bootstrap_panel(
-                title=("Files – {link}".format(link=util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot['id']}),
-                                                              ballot['title'], icon="thumbs-up"))|s
-                      if ballot else gettext("General Files")),
-                icon='file') %}
+{% macro attachment_box(attachments, histories, title=gettext("General Files"), ballot=None, edit=False,
+                        new_attachment_button=False) %}
+    {% call util.bootstrap_panel(title=title, icon='file') %}
         {{ attachment_list(attachments, histories, ballot, edit, new_attachment_button) }}
     {% endcall %}
 {% endmacro %}

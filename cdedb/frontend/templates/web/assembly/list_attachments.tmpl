@@ -25,7 +25,14 @@
 {% endblock %}
 {% block content %}
     {% for ballot_id, ballot in [(None, None)] + ballots|keydictsort(EntitySorter.ballot) %}
-        {{ assembly_util.attachment_box(all_attachments[ballot_id], attachment_histories[ballot_id], ballot=ballot,
-                                        new_attachment_button=True, edit=("assembly_contents" in user.admin_views)) }}
+        {% set title = gettext("General Files") %}
+        {% if ballot %}
+            {% set title = gettext("Files %(link)s")|format(
+                    link=util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot['id']}), ballot['title'],
+                                   icon="thumbs-up"))|s %}
+        {% endif %}
+        {{ assembly_util.attachment_box(all_attachments[ballot_id], attachment_histories[ballot_id], title=title,
+                                        ballot=None, new_attachment_button=True,
+                                        edit=("assembly_contents" in user.admin_views)) }}
     {% endfor %}
 {% endblock %}
