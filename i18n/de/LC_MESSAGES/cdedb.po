@@ -15547,6 +15547,9 @@ msgstr ""
 msgid "Street, Nr."
 msgstr "Straße, Nr."
 
+msgid "Ranking"
+msgstr "Platzierung"
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 

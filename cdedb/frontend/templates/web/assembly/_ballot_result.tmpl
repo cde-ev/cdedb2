@@ -1,17 +1,19 @@
 {% macro show_result(ballot, result, short=False) -%}
     {% set is_classical_vote = ballot['votes'] %}
-    <table class="table">
+    <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th></th>
-                <th class="col-md-{% if is_classical_vote %}11{% else %}10{% endif %}">
+                <th class="col-sm-1">
+                    {{ util.make_icon('sort-amount-down-alt', title=gettext("Ranking"), fixed_width=False) }}
+                </th>
+                <th class="col-sm-{% if is_classical_vote %}10{% else %}9{% endif %}">
                     {% trans %}Candidates{% endtrans %}
                 </th>
-                <th class="col-md-1">
+                <th class="col-sm-1">
                     {{ util.make_icon('plus', title=gettext("Pro-Votes"), fixed_width=False) }}
                 </th>
             {% if not is_classical_vote %}
-                <th class="col-md-1">
+                <th class="col-sm-1">
                     {{ util.make_icon('minus', title=gettext("Contra-Votes"), fixed_width=False) }}
                 </th>
             {% endif %}
@@ -62,7 +64,7 @@
                         </td>
                     {% endif %}
                         {% if not loop.last %}
-                            <br /><span class="sr-only">{% trans %}and{% endtrans %}</span>
+                            <span class="sr-only">{% trans %}and{% endtrans %}</span>
                         {% endif %}
                     </tr>
                 {% endfor %}
