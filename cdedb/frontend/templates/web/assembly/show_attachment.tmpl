@@ -5,10 +5,16 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}
-    {% trans %}
-        Attachment Details
-    {% endtrans %}
-    – {{ ambience['assembly']['title'] }}
+    {% if ambience['ballot'] %}
+        {% trans title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
+            Attachment Details ({{ title }})
+        {% endtrans %}
+    {% else %}
+        {% trans title=ambience['assembly']['title'] %}
+            Attachment Details ({{ title }})
+        {% endtrans %}
+    {% endif %}
+    – {{ assembly_util.small_attachment_title(attachment, history, icon=False) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">

@@ -4,14 +4,15 @@
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
 {% block title %}
     {% if ambience['ballot'] %}
-        {% trans title_assembly=ambience['assembly']['title'], title_ballot=ambience['ballot']['title'] %}
-            Edit File ({{ title_assembly }}/{{ title_ballot }})
+        {% trans title_assembly=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
+            Edit File ({{ title }})
         {% endtrans %}
     {% else %}
         {% trans title=ambience['assembly']['title'] %}
             Edit File ({{ title }})
         {% endtrans %}
     {% endif %}
+    – {{ assembly_util.small_attachment_title(attachment, history, icon=False) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -46,7 +47,7 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/edit_attachment_version') }}" method="POST" enctype="multipart/form-data"
-            id="editattachmentform" class="form-horizontal">
+            id="editattachmentversionform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/edit_attachment_version') }}
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}

@@ -667,10 +667,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                 data['assembly_id'] = assembly_id
             code = self.assemblyproxy.add_attachment(rs, data, attachment)
         self.notify_return_code(rs, code, success=n_("Attachment added."))
-        if ballot_id:
-            return self.redirect(rs, "assembly/show_ballot")
-        else:
-            return self.redirect(rs, "assembly/show_assembly")
+        return self.redirect(rs, "assembly/show_attachment", {
+            'attachment_id': attachment_id if attachment_id else code,
+        })
 
     @access("assembly_admin")
     def change_attachment_link_form(self, rs: RequestState,
@@ -722,11 +721,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 or (attachment['assembly_id']
                     and attachment['assembly_id'] != assembly_id)):
             rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
+            return self.redirect(rs, "assembly/show_Attachment")
         if attachment['ballot_id']:
             ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
             if now() > ballot['vote_begin']:
@@ -754,11 +749,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             data["ballot_id"] = None
         code = self.assemblyproxy.change_attachment_link(rs, data)
         self.notify_return_code(rs, code)
-        if new_ballot_id:
-            return self.redirect(rs, "assembly/show_ballot",
-                                 {'ballot_id': new_ballot_id})
-        else:
-            return self.redirect(rs, "assembly/show_assembly")
+        return self.redirect(rs, "assembly/show_attachment", {
+            'ballot_id': new_ballot_id,
+        })
 
     @access("assembly_admin")
     # ballot_id comes semantically after assembly_id, but is optional,
@@ -844,10 +837,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         }
         code = self.assemblyproxy.change_attachment_version(rs, data)
         self.notify_return_code(rs, code)
-        if ballot_id:
-            return self.redirect(rs, "assembly/show_ballot")
-        else:
-            return self.redirect(rs, "assembly/show_assembly")
+        return self.redirect(rs, "assembly/show_attachment")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("attachment_ack_delete", "bool"))
@@ -867,6 +857,10 @@ class AssemblyFrontend(AbstractUserFrontend):
             code = self.assemblyproxy.delete_attachment(
                 rs, attachment_id, cascade)
             self.notify_return_code(rs, code)
+            if ballot_id:
+                return self.redirect(rs, "assembly/show_ballot")
+            else:
+                return self.redirect(rs, "assembly/show_assembly")
         else:
             history = self.assemblyproxy.get_attachment_history(
                 rs, attachment_id)
@@ -876,9 +870,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             if history[version]['dtime']:
                 rs.notify("error", n_("This version has already been deleted."))
                 return self.redirect(rs, "assembly/show_attachment")
-            count = self.assemblyproxy.count_existing_attachment_versions(
-                rs, attachment_id)
-            if count <= 1:
+            attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+            if attachment['num_versions'] <= 1:
                 rs.notify("error", n_("Cannot remove the last remaining "
                                       "version of an attachment."))
                 return self.redirect(rs, "assembly/show_attachment")
@@ -887,10 +880,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs, attachment_id, version)
             self.notify_return_code(
                 rs, code, error=n_("Unknown version."))
-        if ballot_id:
-            return self.redirect(rs, "assembly/show_ballot")
-        else:
-            return self.redirect(rs, "assembly/show_assembly")
+            return self.redirect(rs, "assembly/show_attachment")
 
     @access("assembly", modi={"POST"})
     @REQUESTdata(("secret", "str"))

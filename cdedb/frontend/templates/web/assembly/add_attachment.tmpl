@@ -4,13 +4,16 @@
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
 {% block title %}
     {% if ambience['ballot'] %}
-        {% trans title_assembly=ambience['assembly']['title'], title_ballot=ambience['ballot']['title'] %}
-            Attach File ({{ title_assembly }}/{{ title_ballot }})
+        {% trans title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
+            Attach File ({{ title }})
         {% endtrans %}
     {% else %}
         {% trans title=ambience['assembly']['title'] %}
             Attach File ({{ title }})
         {% endtrans %}
+    {% endif %}
+    {% if attachment %}
+        – {{ assembly_util.small_attachment_title(attachment, history, icon=False) }}
     {% endif %}
 {% endblock %}
 {% block heading %}

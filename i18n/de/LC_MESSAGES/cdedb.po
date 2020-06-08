@@ -6645,6 +6645,9 @@ msgstr "Datei anhängen (%(title)s)"
 msgid "Ballots"
 msgstr "Abstimmungen"
 
+msgid "Ballots (%(title)s)"
+msgstr "Abstimmungen (%(title)s)"
+
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:44
 msgid "Label"
 msgstr "Bezeichnung"

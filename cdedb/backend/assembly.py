@@ -1301,8 +1301,8 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     @access("assembly")
-    def check_attachment_access(
-            self, rs: RequestState, attachment_ids: Collection[int]) -> bool:
+    def check_attachment_access(self, rs: RequestState,
+                                attachment_ids: Collection[int]) -> bool:
         """Helper to check whether the user may access the given attachments."""
         attachment_ids = affirm_set("id", attachment_ids)
         with Atomizer(rs):
@@ -1624,13 +1624,10 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
-            query = ("SELECT dtime FROM assembly.attachment_versions"
-                     " WHERE attachment_id = %s and version = %s")
-            params = (attachment_id, version)
-            data = self.query_one(rs, query, params)
-            if not data:
+            history = self.get_attachment_history(rs, attachment_id)
+            if version not in history:
                 raise ValueError(n_("This version does not exist."))
-            if unwrap(data):
+            if history[version]['dtime']:
                 raise ValueError(n_("This version has already been deleted."))
             attachment = self.get_attachment(rs, attachment_id)
             if attachment['num_versions'] <= 1:
