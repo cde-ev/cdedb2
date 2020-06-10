@@ -990,10 +990,7 @@ CREATE TABLE assembly.attachments (
        -- Each attachment may only be attached to one thing (either an
        -- assembly or a ballot).
        assembly_id              integer REFERENCES assembly.assemblies(id),
-       ballot_id                integer REFERENCES assembly.ballots(id),
-       -- The following fields are outdated and will be removed soon.
-       title                    varchar,
-       filename                 varchar
+       ballot_id                integer REFERENCES assembly.ballots(id)
 );
 CREATE INDEX idx_attachments_assembly_id ON assembly.attachments(assembly_id);
 CREATE INDEX idx_attachments_ballot_id ON assembly.attachments(ballot_id);
