@@ -5,7 +5,7 @@ sys.path.insert(0, "/cdedb2/")
 from cdedb.script import setup, make_backend
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
-from cdedb.common import unwrap, get_hash
+from cdedb.common import unwrap, get_hash, now
 
 # Configuration
 
@@ -38,16 +38,23 @@ GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_admin;"""
     data = assembly.query_all(rs, query, tuple())
 
     ctime_query = ("SELECT ctime FROM assembly.log WHERE code = %s"
-                   " AND additional_info = %s")
+                   " AND additional_info = %s ORDER BY ctime DESC LIMIT 1")
+    if not data:
+        print("No attachments found")
     for e in data:
-        ctime = unwrap(assembly.query_one(
+        ctime = assembly.query_one(
             rs, ctime_query, (const.AssemblyLogCodes.attachment_added,
-                              e['title'])))
+                              e['title']))
+        if ctime is None:
+            ctime = now()
+        else:
+            ctime = unwrap(ctime)
         path = assembly.attachment_base_path / str(e['id'])
         if path.exists():
             with open(path, 'rb') as f:
                 file_hash = get_hash(f.read())
-            path.rename(assembly.attachment_base_path / (str(e['id']) + "_v1"))
+            path.copy(assembly.attachment_base_path / (str(e['id']) + "_v1"))
+            print(f"Renamed {e['filename']}.")
         else:
             file_hash = ""
             print(f"File for attachment {e['id']} ({e['title']}) not found.'")
