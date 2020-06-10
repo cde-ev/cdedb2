@@ -325,11 +325,11 @@ class EventBackend(AbstractBackend):
                 event_id = {event_id}""".format(
                 event_id=event_id, lodge_field_columns=lodge_field_columns)
 
-            # The template for registration part and lodgment information.
+            # The template for registration part and lodgement information.
             part_table = \
             """LEFT OUTER JOIN (
                 SELECT
-                    registration_id, status, lodgement_id, is_reserve
+                    registration_id, status, lodgement_id, is_camping_mat
                 FROM
                     event.registration_parts
                 WHERE
@@ -880,9 +880,9 @@ class EventBackend(AbstractBackend):
                 ) AS rp_total ON l.id = rp_total.lodgement_id""".format(
                     event_id=event_id, part_id=p_id,
                     rp_regular=inhabitants_counter(
-                        p_id, "AND is_reserve = False"),
+                        p_id, "AND is_camping_mat = False"),
                     rp_reserve=inhabitants_counter(
-                        p_id, "AND is_reserve = True"),
+                        p_id, "AND is_camping_mat = True"),
                     rp_total=inhabitants_counter(p_id, ""),
             )
 

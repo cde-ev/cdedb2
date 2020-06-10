@@ -110,17 +110,17 @@
 				"3": {
 					"lodgement_id": 1,
 					"status": 2,
-					"is_reserve": true
+					"is_camping_mat": true
 				},
 				"2": {
 					"lodgement_id": null,
 					"status": 3,
-					"is_reserve": false
+					"is_camping_mat": false
 				},
 				"1": {
 					"lodgement_id": 2,
 					"status": 2,
-					"is_reserve": false
+					"is_camping_mat": false
 				}
 			},
 			"checkin": null,
@@ -202,17 +202,17 @@
 				"3": {
 					"lodgement_id": 1,
 					"status": 2,
-					"is_reserve": false
+					"is_camping_mat": false
 				},
 				"2": {
 					"lodgement_id": -1,
 					"status": 1,
-					"is_reserve": false
+					"is_camping_mat": false
 				},
 				"1": {
 					"lodgement_id": null,
 					"status": -1,
-					"is_reserve": false
+					"is_camping_mat": false
 				}
 			},
 			"checkin": null,

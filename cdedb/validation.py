@@ -2730,7 +2730,7 @@ def _registration_part(val, argname=None, *, _convert=True,
     optional_fields = {
         'status': _enum_registrationpartstati,
         'lodgement_id': _id_or_None,
-        'is_reserve': _bool,
+        'is_camping_mat': _bool,
     }
     return _examine_dictionary_fields(
         val, {}, optional_fields, _convert=_convert,
@@ -3568,7 +3568,7 @@ def _partial_registration_part(val, argname=None, *, _convert=True,
     optional_fields = {
         'status': _enum_registrationpartstati,
         'lodgement_id': _partial_import_id_or_None,
-        'is_reserve': _bool,
+        'is_camping_mat': _bool,
     }
     return _examine_dictionary_fields(
         val, {}, optional_fields, _convert=_convert,

@@ -50,7 +50,7 @@ The following fields are avalable in the dynamic tables:
 * ``reg_fields.xfield_{field_name}`` *For every custom registration datafield.*
 * ``part{part_id}.status``
 * ``part{part_id}.lodgement_id``
-* ``part{part_id}.is_reserve``
+* ``part{part_id}.is_camping_mat``
 * ``lodgement{part_id}.xfield_{field_name}`` *For every part and every custom lodgement datafield.*
 * ``lodgement{part_id}.moniker``
 * ``lodgement{part_id}.notes``
@@ -80,7 +80,7 @@ For every part we have two tables.
 The first table contains information from ``event.registration_parts``, including the registration's status in that part: ::
 
   SELECT
-      registration_id, status, lodgement_id, is_reserve
+      registration_id, status, lodgement_id, is_camping_mat
   FROM
       event.registration_parts
   WHERE
@@ -147,7 +147,7 @@ The final view for regisration queries looks something like this: ::
   ) AS reg_fields ON reg.id = reg_fields.id
   LEFT OUTER JOIN (
       SELECT
-          registration_id, status, lodgement_id, is_reserve
+          registration_id, status, lodgement_id, is_camping_mat
       FROM
           event.registration_parts
       WHERE
@@ -163,7 +163,7 @@ The final view for regisration queries looks something like this: ::
   ) AS lodgement1 ON part1.lodgement_id = lodgement1.id
   LEFT OUTER JOIN (
       SELECT
-          registration_id, status, lodgement_id, is_reserve
+          registration_id, status, lodgement_id, is_camping_mat
       FROM
           event.registration_parts
       WHERE
@@ -180,7 +180,7 @@ The final view for regisration queries looks something like this: ::
   ) AS lodgement2 ON part2.lodgement_id = lodgement2.id
   LEFT OUTER JOIN (
       SELECT
-          registration_id, status, lodgement_id, is_reserve
+          registration_id, status, lodgement_id, is_camping_mat
       FROM
           event.registration_parts
       WHERE

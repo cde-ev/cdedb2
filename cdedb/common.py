@@ -1936,7 +1936,7 @@ REGISTRATION_FIELDS = (
 
 #: Fields of a registration which are specific for each part of the event
 REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
-                            "lodgement_id", "is_reserve")
+                            "lodgement_id", "is_camping_mat")
 
 #: Fields of a registration which are specific for each course track
 REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",

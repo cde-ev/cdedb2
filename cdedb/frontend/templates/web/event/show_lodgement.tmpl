@@ -127,7 +127,7 @@
                                                            {'registration_id': registration_id}),
                                                  "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
                                                                 personas[registrations[registration_id]['persona_id']]['family_name'])) }}
-                                    {% if registrations[registration_id]['parts'][part_id]['is_reserve'] %}
+                                    {% if registrations[registration_id]['parts'][part_id]['is_camping_mat'] %}
                                         {{ util.make_icon('campground', title=gettext("Camping Mat")) }}
                                     {% endif %}
                                 </li>

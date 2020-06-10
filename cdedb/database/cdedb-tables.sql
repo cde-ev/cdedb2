@@ -803,7 +803,7 @@ CREATE TABLE event.registration_parts (
         -- see cdedb.database.constants.RegistrationPartStati
         status                  integer NOT NULL,
         lodgement_id            integer REFERENCES event.lodgements(id) DEFAULT NULL,
-        is_reserve              boolean NOT NULL DEFAULT False
+        is_camping_mat          boolean NOT NULL DEFAULT False
 );
 CREATE INDEX idx_registration_parts_registration_id ON event.registration_parts(registration_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.registration_parts TO cdb_persona;

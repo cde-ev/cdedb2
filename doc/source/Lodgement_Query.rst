@@ -193,7 +193,7 @@ The inhabitants counter is a simple query where all inhabitants (with a specific
   GROUP BY
       lodgement_id
 
-Where reserve condition is either "is_reserve = True", "is_reserve = False" or nothing, for regular, reserve,
+Where reserve condition is either "is_camping_mat = True", "is_camping_mat = False" or nothing, for regular, reserve,
 total inhabitants respectively.
 
 The Complete View
@@ -286,7 +286,7 @@ The Complete View
                         event.registration_parts
                     WHERE
                         part_id = 1
-                        AND is_reserve = False
+                        AND is_camping_mat = False
                     GROUP BY
                         lodgement_id
                 ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -297,7 +297,7 @@ The Complete View
                         event.registration_parts
                     WHERE
                         part_id = 1
-                        AND is_reserve = True
+                        AND is_camping_mat = True
                     GROUP BY
                         lodgement_id
                 ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
@@ -337,7 +337,7 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 1
-                            AND is_reserve = False
+                            AND is_camping_mat = False
                         GROUP BY
                             lodgement_id
                         ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -348,7 +348,7 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 1
-                            AND is_reserve = True
+                            AND is_camping_mat = True
                         GROUP BY
                             lodgement_id
                         ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
@@ -396,7 +396,7 @@ The Complete View
                     event.registration_parts
                 WHERE
                     part_id = 2
-                    AND is_reserve = False
+                    AND is_camping_mat = False
                 GROUP BY
                     lodgement_id
                 ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -407,7 +407,7 @@ The Complete View
                     event.registration_parts
                 WHERE
                     part_id = 2
-                    AND is_reserve = True
+                    AND is_camping_mat = True
                 GROUP BY
                     lodgement_id
             ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
@@ -448,7 +448,7 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 2
-                            AND is_reserve = False
+                            AND is_camping_mat = False
                         GROUP BY
                             lodgement_id
                     ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -459,7 +459,7 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 2
-                            AND is_reserve = True
+                            AND is_camping_mat = True
                         GROUP BY
                             lodgement_id
                     ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
@@ -507,7 +507,7 @@ The Complete View
                         event.registration_parts
                     WHERE
                         part_id = 3
-                        AND is_reserve = False
+                        AND is_camping_mat = False
                     GROUP BY
                         lodgement_id
                 ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -518,7 +518,7 @@ The Complete View
                         event.registration_parts
                     WHERE
                         part_id = 3
-                        AND is_reserve = True
+                        AND is_camping_mat = True
                     GROUP BY
                         lodgement_id
                 ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
@@ -559,7 +559,7 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 3
-                            AND is_reserve = False
+                            AND is_camping_mat = False
                         GROUP BY
                             lodgement_id
                     ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -570,7 +570,7 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 3
-                            AND is_reserve = True
+                            AND is_camping_mat = True
                         GROUP BY
                             lodgement_id
                     ) AS rp_reserve ON l.id = rp_reserve.lodgement_id

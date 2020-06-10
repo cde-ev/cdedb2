@@ -379,7 +379,7 @@
     "CDEDB_EXPORT_EVENT_VERSION": 11,
     "event.registration_parts": {
         "2": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 2,
             "part_id": 2,
             "lodgement_id": null,
@@ -387,7 +387,7 @@
             "status": 1
         },
         "9": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 9,
             "part_id": 3,
             "lodgement_id": 2,
@@ -395,7 +395,7 @@
             "status": 2
         },
         "7": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 7,
             "part_id": 1,
             "lodgement_id": 2,
@@ -403,7 +403,7 @@
             "status": 2
         },
         "8": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 8,
             "part_id": 2,
             "lodgement_id": null,
@@ -411,7 +411,7 @@
             "status": 2
         },
         "12": {
-            "is_reserve": true,
+            "is_camping_mat": true,
             "id": 12,
             "part_id": 3,
             "lodgement_id": 2,
@@ -419,7 +419,7 @@
             "status": 2
         },
         "3": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 3,
             "part_id": 3,
             "lodgement_id": 1,
@@ -427,7 +427,7 @@
             "status": 2
         },
         "4": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 4,
             "part_id": 1,
             "lodgement_id": null,
@@ -435,7 +435,7 @@
             "status": 3
         },
         "6": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 6,
             "part_id": 3,
             "lodgement_id": 4,
@@ -443,7 +443,7 @@
             "status": 2
         },
         "10": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 10,
             "part_id": 1,
             "lodgement_id": null,
@@ -451,7 +451,7 @@
             "status": 6
         },
         "1": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 1,
             "part_id": 1,
             "lodgement_id": null,
@@ -459,7 +459,7 @@
             "status": -1
         },
         "5": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 5,
             "part_id": 2,
             "lodgement_id": 4,
@@ -467,7 +467,7 @@
             "status": 4
         },
         "11": {
-            "is_reserve": false,
+            "is_camping_mat": false,
             "id": 11,
             "part_id": 2,
             "lodgement_id": null,
@@ -476,42 +476,42 @@
         },
         "13": {
             "id": 13,
-            "is_reserve": false,
+            "is_camping_mat": false,
             "lodgement_id": 4,
             "part_id": 1,
             "registration_id": 5,
             "status": 2},
         "14": {
             "id": 14,
-            "is_reserve": false,
+            "is_camping_mat": false,
             "lodgement_id": 4,
             "part_id": 2,
             "registration_id": 5,
             "status": 2},
         "15": {
             "id": 15,
-            "is_reserve": false,
+            "is_camping_mat": false,
             "lodgement_id": 1,
             "part_id": 3,
             "registration_id": 5,
             "status": 2},
         "16": {
             "id": 16,
-            "is_reserve": false,
+            "is_camping_mat": false,
             "lodgement_id": null,
             "part_id": 1,
             "registration_id": 6,
             "status": 2},
        "17": {
            "id": 17,
-           "is_reserve": false,
+           "is_camping_mat": false,
            "lodgement_id": null,
            "part_id": 2,
            "registration_id": 6,
            "status": -1},
        "18": {
            "id": 18,
-           "is_reserve": false,
+           "is_camping_mat": false,
            "lodgement_id": null,
            "part_id": 3,
            "registration_id": 6,

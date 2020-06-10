@@ -2980,7 +2980,7 @@ class EventFrontend(AbstractUserFrontend):
             reg_choices["parts.{}.status".format(part_id)] = reg_part_stati_entries
             reg_titles["parts.{}.lodgement_id".format(part_id)] = prefix + rs.gettext("Lodgement")
             reg_choices["parts.{}.lodgement_id".format(part_id)] = lodgement_entries
-            reg_titles["parts.{}.is_reserve".format(part_id)] = prefix + rs.gettext("Camping Mat")
+            reg_titles["parts.{}.is_camping_mat".format(part_id)] = prefix + rs.gettext("Camping Mat")
 
         return reg_titles, reg_choices, course_titles, course_choices, lodgement_titles
 
@@ -3807,7 +3807,7 @@ class EventFrontend(AbstractUserFrontend):
             part_params.extend((
                 ("part{}.status".format(part_id), "enum_registrationpartstati"),
                 ("part{}.lodgement_id".format(part_id), "id_or_None"),
-                ("part{}.is_reserve".format(part_id), "bool")))
+                ("part{}.is_camping_mat".format(part_id), "bool")))
         track_params = []
         for track_id, track in tracks.items():
             track_params.extend(
@@ -3834,7 +3834,7 @@ class EventFrontend(AbstractUserFrontend):
         new_parts = {
             part_id: {
                 key: raw_parts["part{}.{}".format(part_id, key)]
-                for key in ("status", "lodgement_id", "is_reserve")
+                for key in ("status", "lodgement_id", "is_camping_mat")
                 if "part{}.{}".format(part_id, key) in raw_parts
             }
             for part_id in event['parts']
@@ -4209,7 +4209,7 @@ class EventFrontend(AbstractUserFrontend):
             """Un-inlined code to count the number of registrations assigned
             to a lodgement as reserve lodgers."""
             return sum(
-                registrations[reg_id]['parts'][part_id]['is_reserve']
+                registrations[reg_id]['parts'][part_id]['is_camping_mat']
                 for reg_id in group)
 
         def _reserve_problem(lodgement_id, part_id):
@@ -4218,7 +4218,7 @@ class EventFrontend(AbstractUserFrontend):
                 n_("Too many camping mats used."), lodgement_id,
                 part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
-                    if registrations[reg_id]['parts'][part_id]['is_reserve']),
+                    if registrations[reg_id]['parts'][part_id]['is_camping_mat']),
                 1)
 
         # now the actual work
@@ -4276,12 +4276,12 @@ class EventFrontend(AbstractUserFrontend):
         inhabitants = self.calculate_groups(
             lodgements, rs.ambience['event'], registrations, key="lodgement_id")
         regular_inhabitant_nums = {
-            k: sum(
-                1 for r in v if not registrations[r]['parts'][k[1]]['is_reserve'])
+            k: sum(1 for r in v
+                   if not registrations[r]['parts'][k[1]]['is_camping_mat'])
             for k, v in inhabitants.items()}
         reserve_inhabitant_nums = {
-            k: sum(
-                1 for r in v if registrations[r]['parts'][k[1]]['is_reserve'])
+            k: sum(1 for r in v
+                   if registrations[r]['parts'][k[1]]['is_camping_mat'])
             for k, v in inhabitants.items()}
         problems = self.check_lodgement_problems(
             rs.ambience['event'], lodgements, registrations, personas,
@@ -4583,7 +4583,7 @@ class EventFrontend(AbstractUserFrontend):
             merge_dicts(rs.values, {
                 'reserve_{}_{}'.format(part_id, registration_id):
                     registrations[registration_id]['parts'][part_id][
-                        'is_reserve']
+                        'is_camping_mat']
                 for registration_id in inhabitants[(lodgement_id, part_id)]
             })
 
@@ -4678,12 +4678,12 @@ class EventFrontend(AbstractUserFrontend):
                         registration_id in data["new_{}".format(part_id)])
                 deleted_inhabitant = data.get(
                     "delete_{}_{}".format(part_id, registration_id), False)
-                is_reserve = registration['parts'][part_id]['is_reserve']
+                is_camping_mat = registration['parts'][part_id]['is_camping_mat']
                 changed_inhabitant = (
                         registration_id in current_inhabitants[part_id]
                         and data.get("reserve_{}_{}".format(part_id,
                                                             registration_id),
-                                     False) != is_reserve)
+                                     False) != is_camping_mat)
                 if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
                         'lodgement_id': (
@@ -4691,7 +4691,7 @@ class EventFrontend(AbstractUserFrontend):
                     }
                 elif changed_inhabitant:
                     new_reg['parts'][part_id] = {
-                        'is_reserve': data.get(
+                        'is_camping_mat': data.get(
                             "reserve_{}_{}".format(part_id, registration_id),
                             False)
                     }
@@ -4833,7 +4833,7 @@ class EventFrontend(AbstractUserFrontend):
         for part_id, part in keydictsort_filter(event['parts'],
                                                 EntitySorter.event_part):
             spec["part{0}.status".format(part_id)] = "int"
-            spec["part{0}.is_reserve".format(part_id)] = "bool"
+            spec["part{0}.is_camping_mat".format(part_id)] = "bool"
             spec["part{0}.lodgement_id".format(part_id)] = "int"
             spec["lodgement{0}.id".format(part_id)] = "id"
             spec["lodgement{0}.moniker".format(part_id)] = "str"
@@ -4872,7 +4872,7 @@ class EventFrontend(AbstractUserFrontend):
         if len(event['parts']) > 1:
             spec[",".join("part{0}.status".format(part_id)
                           for part_id in event['parts'])] = "int"
-            spec[",".join("part{0}.is_reserve".format(part_id)
+            spec[",".join("part{0}.is_camping_mat".format(part_id)
                           for part_id in event['parts'])] = "bool"
             spec[",".join("part{0}.lodgement_id".format(part_id)
                           for part_id in event['parts'])] = "int"
@@ -5167,7 +5167,7 @@ class EventFrontend(AbstractUserFrontend):
             titles.update({
                 "part{0}.status".format(part_id):
                     prefix + gettext("registration status"),
-                "part{0}.is_reserve".format(part_id):
+                "part{0}.is_camping_mat".format(part_id):
                     prefix + gettext("camping mat user"),
                 "part{0}.lodgement_id".format(part_id):
                     prefix + gettext("lodgement"),
@@ -5190,7 +5190,7 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("part{0}.status".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: registration status"),
-                ",".join("part{0}.is_reserve".format(part_id)
+                ",".join("part{0}.is_camping_mat".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: camping mat user"),
                 ",".join("part{0}.lodgement_id".format(part_id)

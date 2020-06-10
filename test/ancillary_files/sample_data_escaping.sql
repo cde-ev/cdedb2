@@ -156,7 +156,7 @@ INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, pa
     (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.<script>abcdef</script>', date '2014-02-02', NULL, True, NULL, True, '{"registration_id": 2, "brings_balls": true, "transportation": "pedes"}'::jsonb),
     (3, 7, 1, NULL, NULL, date '2014-03-03', NULL, True, NULL, True, '{"registration_id": 3, "transportation": "car<script>abcdef</script>"}'::jsonb),
     (4, 9, 1, NULL, NULL, date '2014-04-04', NULL, False, NULL, True, '{"registration_id": 4, "brings_balls": false, "transportation": "etc<script>abcdef</script>", "may_reserve": true}'::jsonb);
-INSERT INTO event.registration_parts (registration_id, part_id, status, lodgement_id, is_reserve) VALUES
+INSERT INTO event.registration_parts (registration_id, part_id, status, lodgement_id, is_camping_mat) VALUES
     (1, 1, -1, NULL, False),
     (1, 2, 1, NULL, False),
     (1, 3, 2, 1, False),
