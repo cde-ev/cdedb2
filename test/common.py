@@ -16,6 +16,7 @@ import tempfile
 import types
 import unittest
 import urllib.parse
+import json
 from typing import TypeVar, cast
 
 import pytz
@@ -250,6 +251,9 @@ class BackendUsingTest(unittest.TestCase):
                         cls.initialize_raw_backend(classes[backend]))
             else:
                 setattr(cls, backend, cls.initialize_backend(classes[backend]))
+
+        with open("/cdedb2/test/ancillary_files/sample_data.json", "r", encoding="utf8") as f:
+            cls.sample_data = json.load(f)
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),

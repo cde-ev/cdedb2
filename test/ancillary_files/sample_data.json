@@ -2,7 +2,23 @@
     "core.meta_info": [
         {
             "id": 1,
-            "info": "{\"Vorstand\": \"Anton und Berta\", \"CdE_Konto_BIC\": \"BFSWDE33XXX\", \"CdE_Konto_IBAN\": \"DE26370205000008068900\", \"CdE_Konto_Inhaber\": \"CdE e.V.\", \"CdE_Konto_Institut\": \"Bank f\\u00fcr Sozialwirtschaft\", \"Finanzvorstand_Ort\": \"Utopia\", \"banner_after_login\": \"*Dies ist eine Testversion der Datenbank, alles wird gel\\u00f6scht werden!*\", \"Finanzvorstand_Name\": \"Bert\\u00e5lotta Beispiel\", \"banner_before_login\": \"Das Passwort ist secret!\", \"Finanzvorstand_Vorname\": \"Bert\\u00e5lotta\", \"Finanzvorstand_Adresse_Zeile2\": \"bei Spielmanns\", \"Finanzvorstand_Adresse_Zeile3\": \"Im Garten 77\", \"Finanzvorstand_Adresse_Zeile4\": \"34576 Utopia\", \"Finanzvorstand_Adresse_Einzeiler\": \"Bert\\u00e5lotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia\"}"
+            "info": {
+                "Vorstand": "Anton und Berta",
+                "CdE_Konto_BIC": "BFSWDE33XXX",
+                "CdE_Konto_IBAN": "DE26370205000008068900",
+                "CdE_Konto_Inhaber": "CdE e.V.",
+                "CdE_Konto_Institut": "Bank f\u00fcr Sozialwirtschaft",
+                "Finanzvorstand_Ort": "Utopia",
+                "banner_after_login": "*Dies ist eine Testversion der Datenbank, alles wird gel\u00f6scht werden!*",
+                "banner_before_login": "Das Passwort ist secret!",
+                "banner_genesis": "Bei Problemen mit der Accountanfrage wendet Euch bitte an die Verwaltung.",
+                "Finanzvorstand_Name": "Bert\u00e5lotta Beispiel",
+                "Finanzvorstand_Vorname": "Bert\u00e5lotta",
+                "Finanzvorstand_Adresse_Zeile2": "bei Spielmanns",
+                "Finanzvorstand_Adresse_Zeile3": "Im Garten 77",
+                "Finanzvorstand_Adresse_Zeile4": "34576 Utopia",
+                "Finanzvorstand_Adresse_Einzeiler": "Bert\u00e5lotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia"
+            }
         }
     ],
     "core.cron_store": [],

@@ -1852,14 +1852,17 @@ class CoreFrontend(AbstractFrontend):
     def genesis_request_form(self, rs):
         """Render form."""
         allowed_genders = set(const.Genders) - {const.Genders.not_specified}
-        realm_options = [option
+        realm_options = [(option.realm, rs.gettext(option.name))
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in realm_specific_genesis_fields]
+        meta_info = self.coreproxy.get_meta_info(rs)
         return self.render(rs, "genesis_request", {
             'max_rationale': self.conf["MAX_RATIONALE"],
             'allowed_genders': allowed_genders,
             'realm_specific_genesis_fields': realm_specific_genesis_fields,
-            'realm_options': realm_options})
+            'realm_options': realm_options,
+            'meta_info': meta_info,
+        })
 
     @access("anonymous", modi={"POST"})
     @REQUESTdatadict(
