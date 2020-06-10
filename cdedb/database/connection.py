@@ -18,8 +18,8 @@ from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 
 from cdedb.common import n_
 
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, None)
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, None)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,6 +107,7 @@ def connection_pool_factory(dbname, roles, secrets, port,
     return InstantConnectionPool(roles)
 
 
+# noinspection PyProtectedMember
 class Atomizer:
     """Helper to create atomic transactions.
 

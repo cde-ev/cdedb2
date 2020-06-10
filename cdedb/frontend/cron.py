@@ -16,7 +16,7 @@ from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
-from cdedb.common import n_, glue, now, RequestState, User
+from cdedb.common import n_, glue, now, RequestState, User, PathLike
 from cdedb.frontend.common import BaseApp
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -28,10 +28,7 @@ class CronFrontend(BaseApp):
     """This takes care of actually doing the periodic work."""
     realm = "cron"
 
-    def __init__(self, configpath):
-        """
-        :type configpath: str
-        """
+    def __init__(self, configpath: PathLike):
         super().__init__(configpath)
 
         self.urlmap = CDEDB_PATHS

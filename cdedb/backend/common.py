@@ -17,13 +17,13 @@ import psycopg2.extras
 import psycopg2.extensions
 from typing import (
     Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
-    Optional, Sequence, cast
+    Optional, Sequence, cast, overload, Mapping
 )
 
 import cdedb.validation as validate
 from cdedb.common import (
     PrivilegeError, PsycoJson, diacritic_patterns, glue, make_proxy,
-    make_root_logger, n_, unwrap, RequestState, Role, Realms,
+    make_root_logger, n_, unwrap, RequestState, Role, Realm, PathLike,
     CdEDBObject, CdEDBObjectMap,
 )
 from cdedb.query import Query
@@ -36,6 +36,7 @@ from cdedb.validation import parse_date, parse_datetime
 F = TypeVar('F', bound=Callable[..., Any])
 G = TypeVar('G', bound=Callable[..., Any])
 T = TypeVar('T')
+S = TypeVar('S')
 
 
 def singularize(function: F,
@@ -116,8 +117,8 @@ def access(*roles: Role) -> Callable[[F], F]:
     Think of this as an RPC interface, only published functions are
     accessible (and only by users with the necessary roles).
 
-    :type roles: [str]
-    :param roles: required privilege level (any of)
+    Any of the specfied roles suffices. To require more than one role, you can
+    chain two decorators together.
     """
 
     def decorator(function: F) -> F:
@@ -159,10 +160,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     #: abstract str to be specified by children
     realm = None
 
-    def __init__(self, configpath: str, is_core: bool = False) -> None:
+    def __init__(self, configpath: PathLike, is_core: bool = False) -> None:
         """
-        :type configpath: str
-        :type is_core: bool
         :param is_core: If not, we add instantiate a core backend for usage
           by this backend.
         """
@@ -192,13 +191,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             self.core = make_proxy(CoreBackend(configpath), internal=True)
 
     def affirm_realm(self, rs: RequestState, ids: Collection[int],
-                     realms: Realms = None) -> None:
+                     realms: Set[Realm] = None) -> None:
         """Check that all personas corresponding to the ids are in the
         appropriate realm.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :type realms: {str}
         :param realms: Set of realms to check for. By default this is
           the set containing only the realm of this class.
         """
@@ -215,9 +211,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         Maybe this can be beefed up to check for orgas and moderators too,
         but for now it only checks the admin role.
-
-        :type rs: :py:class:`BackendRequestState`
-        :rtype: bool
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
 
@@ -231,16 +224,38 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         Also this wrapper allows future global modifications to the
         outputs, if we want to add some.
-
-        :type output: :py:class:`psycopg2.extras.RealDictRow`
-        :rtype: {str: object}
         """
         if not output:
             return None
         return dict(output)
 
     @staticmethod
+    @overload
+    def _sanitize_db_input(obj: Mapping[S, T]) -> Mapping[S, T]:
+        pass
+
+    @staticmethod
+    @overload
+    def _sanitize_db_input(obj: str) -> str:
+        pass
+
+    @staticmethod
+    @overload
+    def _sanitize_db_input(obj: Iterable[T]) -> List[T]:
+        pass
+
+    @staticmethod
+    @overload
+    def _sanitize_db_input(obj: enum.Enum) -> int:
+        pass
+
+    @staticmethod
+    @overload
     def _sanitize_db_input(obj: T) -> T:
+        pass
+
+    @staticmethod
+    def _sanitize_db_input(obj):
         """Mangle data to make psycopg happy.
 
         Convert :py:class:`tuple`s (and all other iterables, but not strings
@@ -251,9 +266,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         Convert :py:class:`enum.IntEnum` (and all other enums) into
         their numeric value. Everywhere else these automagically work
         like integers, but here they have to be handled explicitly.
-
-        :type obj: object
-        :rtype: object but not tuple or IntEnum
         """
         if (isinstance(obj, collections.abc.Iterable)
                 and not isinstance(obj, (str, collections.abc.Mapping))):
@@ -281,11 +293,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         a ``with`` block) it is unsafe!
 
         This doesn't return anything, but has a side-effect on ``cur``.
-
-        :type cur: :py:class:`psycopg2.extensions.cursor`
-        :type query: str
-        :type params: [object]
-        :rtype: None
         """
         sanitized_params = tuple(self._sanitize_db_input(p) for p in params)
         self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
@@ -293,14 +300,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         cur.execute(query, sanitized_params)
 
     def query_exec(self, rs: RequestState, query: str, params: Sequence) -> int:
-        """Execute a query in a safe way (inside a transaction).
-
-        :type rs: :py:class:`BackendRequestState`
-        :type query: str
-        :type params: [object]
-        :rtype: int
-        :returns: number of affected rows
-        """
+        """Execute a query in a safe way (inside a transaction)."""
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
@@ -310,10 +310,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                   ) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
-        :type rs: :py:class:`BackendRequestState`
-        :type query: str
-        :type params: [object]
-        :rtype: {str: object} or None
         :returns: First result of query or None if there is none
         """
         with rs.conn as conn:
@@ -325,10 +321,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                   ) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
-        :type rs: :py:class:`BackendRequestState`
-        :type query: str
-        :type params: [object]
-        :rtype: [{str: object}]
         :returns: all results of query
         """
         with rs.conn as conn:
@@ -343,11 +335,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :type rs: :py:class:`BackendRequestState`
-        :type table: str
-        :type data: {str: object}
-        :type entity_key: str
-        :rtype: int
         :returns: id of inserted row
         """
         keys = tuple(key for key in data)
@@ -362,13 +349,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :type rs: :py:class:`BackendRequestState`
-        :type table: str
-        :type data: [{str: object}]
-        :rtype: int
         :returns: number of inserted rows
         """
-
         if not data:
             return 0
         keys = tuple(data[0].keys())
@@ -396,13 +378,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         unambiguous. In a minority case of a query which is not covered
         here the formatting and execution are left as an exercise to the
         reader. ;)
-
-        :type rs: :py:class:`BackendRequestState`
-        :type table: str
-        :type columns: [str]
-        :type entities: [int]
-        :type entity_key: str
-        :rtype: [{str: object}]
         """
         query = (f"SELECT {', '.join(columns)} FROM {table}"
                  f" WHERE {entity_key} = ANY(%s)")
@@ -414,13 +389,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
-
-        :type rs: :py:class:`BackendRequestState`
-        :type table: str
-        :type columns: [str]
-        :type entity: int
-        :type entity_key: str
-        :rtype: {str: object}
         """
         query = (f"SELECT {', '.join(columns)} FROM {table}"
                  f" WHERE {entity_key} = %s")
@@ -432,11 +400,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :type rs: :py:class:`BackendRequestState`
-        :type table: str
-        :type data: {str: object}
-        :type entity_key: str
-        :rtype: int
         :returns: number of affected rows
         """
         keys = tuple(key for key in data if key != entity_key)
@@ -458,11 +421,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :type rs: :py:class:`BackendRequestState`
-        :type table: str
-        :type data: {str: object}
-        :type entity_key: str
-        :rtype: int
         :returns: number of affected rows
         """
         keys = tuple(key for key in data if key != entity_key)
@@ -482,11 +440,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :type rs: :py:class:`BackendRequestState`
-        :type table: str
-        :type entities: [int]
-        :type entity_key: str
-        :rtype: int
         :returns: number of affected rows
         """
         query = f"DELETE FROM {table} WHERE {entity_key} = ANY(%s)"
@@ -498,11 +451,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :type rs: :py:class:`BackendRequestState`
-        :type table: str
-        :type entity: int
-        :type entity_key: str
-        :rtype: int
         :returns: number of affected rows
         """
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
@@ -514,14 +462,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
 
-        :type rs: :py:class:`BackendRequestState`
-        :type query: :py:class:`cdedb.query.Query`
-        :type distinct: bool
         :param distinct: whether only unique rows should be returned
-        :type view: str or None
         :param view: Override parameter to specify the target of the FROM
           clause. This is necessary for event stuff and should be used seldom.
-        :rtype: [{str: object}]
         :returns: all results of the query
         """
         query.fix_custom_columns()
@@ -672,35 +615,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         However this handles the finance_log for financial transactions.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type code_validator: str
         :param code_validator: e.g. "enum_mllogcodes"
-        :type entity_name: str
         :param entity_name: e.g. "event" or "mailinglist"
-        :type table: str
         :param table: e.g. "ml.log" or "event.log"
-        :type code_validator: str
-        :param code_validator: e.g. "enum_mllogcodes"
-        :type codes: [int] or None
-        :type entity_ids: [int] or None
-        :type offset: int or None
         :param offset: How many entries to skip at the start.
-        :type length: int or None
         :param length: How many entries to list.
-          entries (works like python sequence slices).
-        :type additional_columns: [str] or None
         :param additional_columns: Extra values to retrieve.
-        :type persona_id: int or None
         :param persona_id: Filter for persona_id column.
-        :type submitted_by: int or None
         :param submitted_by: Filter for submitted_by column.
-        :type additional_info: str or None
         :param additional_info: Filter for additional_info column
-        :type time_start: datetime or None
         :param time_start: lower bound for ctime columns
-        :type time_stop: datetime or None
         :param time_stop: upper bound for ctime column
-        :rtype: [{str: object}]
         """
         codes = affirm_set_validation(code_validator, codes, allow_None=True)
         entity_ids = affirm_set_validation("id", entity_ids, allow_None=True)
@@ -788,9 +713,6 @@ class Silencer:
     """
 
     def __init__(self, rs: RequestState):
-        """
-        :type rs: :py:class:`cdedb.common.RequestState`
-        """
         self.rs = rs
 
     def __enter__(self):
@@ -846,10 +768,6 @@ def cast_fields(data: CdEDBObject, spec: CdEDBObjectMap) -> CdEDBObject:
 
     We serialize some classes as strings and need to undo this upon
     retrieval from the database.
-
-    :type data: {str: object}
-    :type spec: {int: {str: object}}
-    :rtype: {str: object}
     """
     spec = {v['field_name']: v['kind'] for v in spec.values()}
     casters = {

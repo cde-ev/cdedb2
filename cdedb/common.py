@@ -15,12 +15,12 @@ import logging
 import logging.handlers
 import pathlib
 import re
-import shutil
 import string
 import sys
+from os import PathLike as OSPathLike
 from typing import (
     Any, TypeVar, Mapping, Optional, Dict, List, overload, Sequence, Tuple,
-    Callable, Set, Iterable, Union, AnyStr, Generator, Type,
+    Callable, Set, Iterable, Union, Generator, Type,
     OrderedDict as OrderedDictType, Collection, MutableMapping, Container,
     TYPE_CHECKING, cast
 )
@@ -67,18 +67,23 @@ DeletionBlockers = Dict[str, List[int]]
 # is the field that contains the error, second argument is the error itself.
 Error = Tuple[str, Exception]
 
+# A notification to be displayed. First argument ist the notification type
+# (warning, info, error, success, question). Second argument is the message.
+# Third argument are format parameters to be spplied to the message (post i18n).
+NotificationType = str
+Notification = Tuple[NotificationType, str, CdEDBObject]
+
 # A set of roles a user may have.
 Role = str
-Roles = Set[Role]
 
 # A set of realms a persona belongs to.
 Realm = str
-Realms = Set[Realm]
 
 # Admin views a user may activate/deactivate.
 AdminView = str
-AdminViews = Set[Realm]
 
+
+PathLike = Union[pathlib.Path, OSPathLike]
 
 T = TypeVar("T")
 
@@ -86,22 +91,11 @@ T = TypeVar("T")
 class User:
     """Container for a persona."""
 
-    def __init__(self, persona_id: Optional[int] = None, roles: Roles = None,
-                 display_name: str = "", given_names: str = "",
-                 family_name: str = "", username: str = "",
-                 orga: Collection[int] = None,
+    def __init__(self, persona_id: Optional[int] = None,
+                 roles: Set[Role] = None, display_name: str = "",
+                 given_names: str = "", family_name: str = "",
+                 username: str = "", orga: Collection[int] = None,
                  moderator: Collection[int] = None) -> None:
-        """
-        :type persona_id: int or None
-        :type roles: {str}
-        :param roles: python side privilege levels
-        :type display_name: str or None
-        :type given_names: str or None
-        :type family_name or None
-        :type username: str or None
-        :type orga: [int]
-        :type moderator: [int]
-        """
         self.persona_id = persona_id
         self.roles = roles or {"anonymous"}
         self.username = username
@@ -110,10 +104,10 @@ class User:
         self.family_name = family_name
         self.orga = set(orga) if orga else set()
         self.moderator = set(moderator) if moderator else set()
-        self.admin_views: AdminViews = set()
+        self.admin_views: Set[AdminView] = set()
 
     @property
-    def available_admin_views(self) -> AdminViews:
+    def available_admin_views(self) -> Set[AdminView]:
         return roles_to_admin_views(self.roles)
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
@@ -131,7 +125,7 @@ class RequestState:
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str],
                  user: User, request: Optional[werkzeug.Request],
                  response: Optional[werkzeug.Response],
-                 notifications: Collection[Tuple[str, str, CdEDBObject]],
+                 notifications: Collection[Notification],
                  mapadapter: Optional[werkzeug.routing.MapAdapter],
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
@@ -142,49 +136,20 @@ class RequestState:
                  default_gettext: Optional[Callable] = None,
                  default_ngettext: Optional[Callable] = None):
         """
-        :type sessionkey: str or None
-        :type apitoken: str or None
-        :type user: :py:class:`User`
-        :type request: :py:class:`werkzeug.wrappers.Request`
-        :type response: :py:class:`werkzeug.wrappers.Response` or None
-        :type notifications: [(str, str, {str: object})]
-        :param notifications: Messages to be displayed to the user. To be
-          submitted by :py:meth:`notify`. The parameters are
-            * the type of message (e.g. warning),
-            * the message string,
-            * a (possibly empty) dict describing substitutions to be done on
-              the message string (after i18n).
-        :type mapadapter: :py:class:`werkzeug.routing.MapAdapter`
         :param mapadapter: URL generator (specific for this request)
-        :type requestargs: {str: object}
         :param requestargs: verbatim copy of the arguments contained in the URL
-        :type errors: [(str, exception)]
-        :param errors: Validation errors, consisting of a pair of (parameter
-          name, the actual error). The exceptions have one or two
-          parameters. First a string being the error message. And second an
-          optional {str: object} dict, describing substitutions to be done
-          after i18n.
         :type values: {str: object}
         :param values: Parameter values extracted via :py:func:`REQUESTdata`
           and :py:func:`REQUESTdatadict` decorators, which allows automatically
-          filling forms in. This will be a
-          :py:class:`werkzeug.datastructures.MultiDict` to allow seamless
-          integration with the werkzeug provided data.
+          filling forms in.
         :type lang: str
-        :param lang: language code for i18n, currently only 'de' is valid
-        :type gettext: callable
-        :param gettext: translation function as in the gettext module
-        :type ngettext: callable
-        :param ngettext: translation function as in the gettext module
-        :type coders: {str: callable}
+        :param lang: language code for i18n, currently only 'de' and 'en' are
+            valid.
         :param coders: Functions for encoding and decoding parameters primed
           with secrets. This is hacky, but sadly necessary.
-        :type begin: datetime.datetime
         :param begin: time where we started to process the request
-        :type default_gettext: callable
         :param default_gettext: default translation function used to ensure
             stability across different locales
-        :type default_ngettext: callable
         :param default_ngettext: default translation function used to ensure
             stability across different locales
         """
@@ -222,15 +187,9 @@ class RequestState:
         # of this class
         self.validation_appraised = None
 
-    def notify(self, ntype: str, message: str,
+    def notify(self, ntype: NotificationType, message: str,
                params: CdEDBObject = None) -> None:
-        """Store a notification for later delivery to the user.
-
-        :type ntype: str
-        :param ntype: one of :py:data:`NOTIFICATION_TYPES`
-        :type message: str
-        :type params: dict or None
-        """
+        """Store a notification for later delivery to the user."""
         if ntype not in NOTIFICATION_TYPES:
             raise ValueError(n_("Invalid notification type %(t)s found."),
                              {'t': ntype})
@@ -247,13 +206,12 @@ class RequestState:
         However in general the method extend_validation_errors()
         should be preferred since it activates the validation tracking
         even if no errors are present.
-
-        :type error: (str, Exception)
         """
         self.validation_appraised = False
         self._errors.append(error)
 
     def add_validation_error(self, error: Error) -> None:
+        """Register a new error, if the same error is not already present."""
         for k, e in self._errors:
             if k == error[0]:
                 if e.args == error[1].args:
@@ -267,8 +225,6 @@ class RequestState:
         The important side-effect is the activation of the validation
         tracking, that causes the application to throw an error if the
         validation result is not checked.
-
-        :type errors: [(str, Exception)]
         """
         self.validation_appraised = False
         self._errors.extend(errors)
@@ -279,8 +235,6 @@ class RequestState:
         This (or its companion function) must be called in the
         lifetime of a request. Otherwise the application will throw an
         error.
-
-        :rtype: bool
         """
         self.validation_appraised = True
         return bool(self._errors)
@@ -354,19 +308,13 @@ def make_proxy(backend: B, internal=False) -> B:
     return cast(B, Proxy())
 
 
-def make_root_logger(name: str, logfile_path: Union[str, pathlib.Path],
+def make_root_logger(name: str, logfile_path: PathLike,
                      log_level: int, syslog_level: int = None,
                      console_log_level: int = None) -> logging.Logger:
-    """Configure the :py:mod:`logging` module. Since this works hierarchical,
-    it should only be necessary to call this once and then every child
-    logger is routed through this configured logger.
+    """Configure the :py:mod:`logging` module.
 
-    :type name: str
-    :type logfile_path: str or pathlib.Path
-    :type log_level: int
-    :type syslog_level: int or None
-    :type console_log_level: int or None
-    :rtype: logging.Logger
+    Since this works hierarchical, it should only be necessary to call this
+     once and then every child logger is routed through this configured logger.
     """
     logger = logging.getLogger(name)
     if logger.handlers:
@@ -401,9 +349,6 @@ def glue(*args: str) -> str:
     string" "another string")`` instead, but there you have to be
     careful to add boundary white space yourself, so we prefer this
     explicit function.
-
-    :type args: [str]
-    :rtype: str
     """
     return " ".join(args)
 
@@ -421,8 +366,6 @@ def merge_dicts(targetdict: Union[MutableMapping, werkzeug.MultiDict],
 
     Additionally if the target is a MultiDict we use the correct method for
     setting list-type values.
-
-    :type dicts: [{object: object}]
     """
     if targetdict is None:
         raise ValueError("No inputs given.")
@@ -442,8 +385,6 @@ def now() -> datetime.datetime:
 
     This is a separate function so we do not forget to make it time zone
     aware.
-
-    :rtype: datetime.datetime
     """
     return datetime.datetime.now(pytz.utc)
 
@@ -507,12 +448,6 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
 
     For users, the interface of this function should be identical
     to sorted().
-
-    :type iterable: iterable
-    :param key: function to order by
-    :type key: callable
-    :type reverse: boolean
-    :rtype: list
     """
 
     def collate(sortkey: Any) -> Any:
@@ -545,9 +480,7 @@ class EntitySorter:
 
         This way we have a standardized sorting order for entries.
 
-        :type entry: {str: object}
         :param entry: A dataset of a persona from the cde or event realm.
-        :rtype: str
         """
         return (entry['family_name'] + " " + entry['given_names']).lower()
 
@@ -651,9 +584,6 @@ def compute_checkdigit(value: int) -> str:
     handwritten ID or such.
 
     Most of the time, the integer will be a persona id.
-
-    :type value: int
-    :rtype: str
     """
     digits = []
     tmp = value
@@ -668,10 +598,6 @@ def lastschrift_reference(persona_id: int, lastschrift_id: int) -> str:
     """Return an identifier for usage with the bank.
 
     This is the so called 'Mandatsreferenz'.
-
-    :type persona_id: int
-    :type lastschrift_id: int
-    :rtype: str
     """
     return "CDE-I25-{}-{}-{}-{}".format(
         persona_id, compute_checkdigit(persona_id), lastschrift_id,
@@ -683,11 +609,7 @@ def _small_int_to_words(num: int, lang: str) -> str:
 
     Helper for the general function.
 
-    :type num: int
-    :param num: Must be between 0 and 999
-    :type lang: str
     :param lang: Currently we only suppert 'de'.
-    :rtype: str
     """
     if num < 0 or num > 999:
         raise ValueError(n_("Out of supported scope."))
@@ -722,10 +644,7 @@ def int_to_words(num: int, lang: str) -> str:
 
     This is for the usage such as '2 apples' -> 'two apples'.
 
-    :type num: int
-    :type lang: str
     :param lang: Currently we only suppert 'de'.
-    :rtype: str
     """
     if num < 0 or num > 999999:
         raise ValueError(n_("Out of supported scope."))
@@ -762,11 +681,7 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 
 def json_serialize(data: Any, **kwargs: Any) -> str:
-    """Do beefed up JSON serialization.
-
-    :type data: obj
-    :rtype: str
-    """
+    """Do beefed up JSON serialization."""
     return json.dumps(data, indent=4, cls=CustomJSONEncoder, **kwargs)
 
 
@@ -785,9 +700,6 @@ def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
     """Iterate over adjacent pairs of values of an iterable.
 
     For the input [1, 3, 6, 10] this returns [(1, 3), (3, 6), (6, 10)].
-
-    :type iterable: iterable
-    :rtype: iterable
     """
     x, y = itertools.tee(iterable)
     next(y, None)
@@ -847,15 +759,12 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
 
     For a nice set of examples see the test suite.
 
-    :type votes: [str]
-    :type candidates: [str]
     :param candidates: We require that the candidates be explicitly
-      passed. This allows for more flexibility (like returning a useful
-      result for zero votes).
-    :rtype: (str, [{}])
+        passed. This allows for more flexibility (like returning a useful
+        result for zero votes).
     :returns: The first Element is the aggregated result,
-    the second is an more extended list, containing every level (descending) as
-    dict with some extended information.
+        the second is an more extended list, containing every level
+        (descending) as dict with some extended information.
     """
     split_votes = tuple(
         tuple(level.split('=') for level in vote.split('>')) for vote in votes)
@@ -863,9 +772,6 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     def _subindex(alist: Collection[Container[str]], element: str) -> int:
         """The element is in the list at which position in the big list.
 
-        :type alist: [[str]]
-        :type element: str
-        :rtype: int
         :returns: ``ret`` such that ``element in alist[ret]``
         """
         for index, sublist in enumerate(alist):
@@ -900,11 +806,6 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
         test suite give the same result for both of them. Moreover if
         the votes contain no ties both strategies (and several more) are
         totally equivalent.
-
-        :type support: int
-        :type opposition: int
-        :type totalvotes: int
-        :rtype: int
         """
         # the margin strategy would be given by the following line
         # return support - opposition
@@ -1039,10 +940,6 @@ def deduct_years(date: datetime.date, years: int) -> datetime.date:
 
     Dates are nasty, in theory this should be a simple subtraction, but
     leap years create problems.
-
-    :type date: datetime.date
-    :type years: int
-    :rtype: datetime.date
     """
     try:
         return date.replace(year=date.year - years)
@@ -1057,11 +954,8 @@ def determine_age_class(birth: datetime.date, reference: datetime.date
                         ) -> AgeClasses:
     """Basically a constructor for :py:class:`AgeClasses`.
 
-    :type birth: datetime.date
-    :type reference: datetime.date
     :param reference: Time at which to check age status (e.g. the first day of
       a scheduled event).
-    :rtype: :py:class:`AgeClasses`
     """
     if birth <= deduct_years(reference, 18):
         return AgeClasses.full
@@ -1083,28 +977,19 @@ class LineResolutions(enum.IntEnum):
     renew_and_update = 5  #: A combination of renew_trial and update.
 
     def do_trial(self) -> bool:
-        """Whether to grant a trial membership.
-
-        :rtype: bool
-        """
+        """Whether to grant a trial membership."""
         return self in {LineResolutions.renew_trial,
                         LineResolutions.renew_and_update}
 
     def do_update(self) -> bool:
-        """Whether to incorporate the new data (address, ...).
-
-        :rtype: bool
-        """
+        """Whether to incorporate the new data (address, ...)."""
         return self in {LineResolutions.update,
                         LineResolutions.renew_and_update}
 
     def is_modification(self) -> bool:
         """Whether we modify an existing account.
 
-        In this case we do not create a new account.
-
-        :rtype: bool
-        """
+        In this case we do not create a new account."""
         return self in {LineResolutions.renew_trial,
                         LineResolutions.update,
                         LineResolutions.renew_and_update}
@@ -1131,12 +1016,7 @@ def infinite_enum(aclass):
     negative values. In case of an additional enum state, the int is
     None.
 
-    In the code they are stored as an :py:data:`InfiniteEnum`.
-
-    :type aclass: obj
-    :rtype: obj
-
-    """
+    In the code they are stored as an :py:data:`InfiniteEnum`."""
     return aclass
 
 
@@ -1315,8 +1195,6 @@ def mixed_existence_sorter(iterable: Collection[int]
 
     This is the desired order if the UI offers the possibility to
     create multiple new entities enumerated by negative IDs.
-
-    :type iterable: [int]
     """
     for i in xsorted(iterable):
         if i >= 0:
@@ -1341,9 +1219,6 @@ def asciificator(s: str) -> str:
     Replace or omit all characters outside a known good set. This is to
     be used if your use case does not tolerate any fancy characters
     (like SEPA files).
-
-    :type s: str
-    :rtype: str
     """
     umlaut_map = {
         "ä": "ae", "æ": "ae",
@@ -1395,8 +1270,6 @@ def diacritic_patterns(s: MaybeStr, two_way_replace: bool = False) -> MaybeStr:
 
     This is intended for use with regular expressions.
 
-    :type s: str or None
-    :type two_way_replace: bool
     :param two_way_replace: If this is True, replace all letter with a
       potential diacritic (independent of the presence of the diacritic)
       with a pattern matching all diacritic variations. If this is False
@@ -1466,18 +1339,12 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
       describing when the parameter expires (and the latter meaning never)
     * C is an arbitrary amount chars of payload
 
-    :type salt: str
     :param salt: secret used for signing the parameter
-    :type target: str
     :param target: The endpoint the parameter is designated for. If this is
       omitted, there are nasty replay attacks.
-    :type name: str
     :param name: name of parameter, same security implications as ``target``
-    :type param: str
     :param timeout: time until parameter expires, if this is None, the
       parameter never expires
-    :type timeout: datetime.timedelta or None
-    :rtype: str
     """
     h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     if timeout is None:
@@ -1496,11 +1363,6 @@ def decode_parameter(salt: str, target: str, name: str, param: str
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
 
-    :type salt: str
-    :type target: str
-    :type name: str
-    :type param: str
-    :rtype: (bool or None, str or None)
     :returns: The string is the decoded message or ``None`` if any failure
       occured. The boolean is True if the failure was a timeout, False if
       the failure was something else and None if no failure occured.
@@ -1525,7 +1387,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str
 
 
 def extract_roles(session: CdEDBObject, introspection_only: bool = False
-                  ) -> Roles:
+                  ) -> Set[Role]:
     """Associate some roles to a data set.
 
     The data contains the relevant portion of attributes from the
@@ -1535,12 +1397,9 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
 
     Note that this also works on non-personas (i.e. dicts of is_* flags).
 
-    :type session: {str: object}
-    :type introspection_only: bool
     :param introspection_only: If True the result should only be used to
       take an extrinsic look on a persona and not the determine the privilege
       level of the data set passed.
-    :rtype: {str}
     """
     ret = {"anonymous"}
     if session['is_active']:
@@ -1570,18 +1429,16 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
 
 # The following droids are exempt from lockdown to keep our infrastructure
 # working
-INFRASTRUCTURE_DROIDS: Roles = {'rklist', 'resolve'}
+INFRASTRUCTURE_DROIDS: Set[str] = {'rklist', 'resolve'}
 
 
-def droid_roles(identity: str) -> Roles:
+def droid_roles(identity: str) -> Set[Role]:
     """Resolve droid identity to a complete set of roles.
 
     Currently this is rather trivial, but could be more involved in the
     future if more API capabilities are added to the DB.
 
-    :type identity: str
     :param identity: The name for the API functionality, e.g. ``rklist``.
-    :rtype: {str}
     """
     ret = {'anonymous', 'droid', f'droid_{identity}'}
     if identity in INFRASTRUCTURE_DROIDS:
@@ -1605,7 +1462,7 @@ def droid_roles(identity: str) -> Roles:
 #
 # This dict is not evaluated recursively, so recursively implied realms must
 # be added manually to make the implication transitive.
-REALM_INHERITANCE: Dict[Realm, Realms] = {
+REALM_INHERITANCE: Dict[Realm, Set[Role]] = {
     'cde': {'event', 'assembly', 'ml'},
     'event': {'ml'},
     'assembly': {'ml'},
@@ -1613,7 +1470,7 @@ REALM_INHERITANCE: Dict[Realm, Realms] = {
 }
 
 
-def extract_realms(roles: Roles) -> Realms:
+def extract_realms(roles: Set[Role]) -> Set[Realm]:
     """Get the set of realms from a set of user roles.
 
     When checking admin privileges, we must often check, if the user's realms
@@ -1622,41 +1479,35 @@ def extract_realms(roles: Roles) -> Realms:
     set of roles.
 
     :param roles: All roles of a user
-    :type roles: {str}
     :return: The realms the user is member of
-    :rtype: {str}
     """
     return roles & REALM_INHERITANCE.keys()
 
 
-def implied_realms(realm: Realm) -> Realms:
+def implied_realms(realm: Realm) -> Set[Realm]:
     """Get additional realms implied by membership in one realm
 
     :param realm: The name of the realm to check
-    :type realm: str
     :return: A set of the names of all implied realms
-    :rtype: {str}
     """
     return REALM_INHERITANCE.get(realm, set())
 
 
-def implying_realms(realm: Realm) -> Realms:
+def implying_realms(realm: Realm) -> Set[Realm]:
     """Get all realms where membership implies the given realm.
 
     This can be used to determine the realms in which a user must *not* be to be
     listed in a specific realm or be edited by its admins.
 
     :param realm: The realm to search implying realms for
-    :type realm: str
     :return: A set of all realms implying
     """
-    return set(r
-               for r, implied in REALM_INHERITANCE.items()
+    return set(r for r, implied in REALM_INHERITANCE.items()
                if realm in implied)
 
 
-def privilege_tier(roles: Roles, conjunctive: bool = False
-                   ) -> Tuple[Roles, ...]:
+def privilege_tier(roles: Set[Role], conjunctive: bool = False
+                   ) -> Tuple[Set[Role], ...]:
     """Required admin privilege relative to a persona (signified by its roles)
 
     Basically this answers the question: If a user has access to the passed
@@ -1675,11 +1526,7 @@ def privilege_tier(roles: Roles, conjunctive: bool = False
 
     Note that core admins and meta admins are always allowed access.
 
-    :type roles: {str}
-    :type conjunctive: bool
-    :rtype: [{str}]
     :returns: List of sets of admin roles. Any of these sets is sufficient.
-
     """
     # Get primary user realms (those, that don't imply other realms)
     relevant = roles & REALM_INHERITANCE.keys()
@@ -1740,7 +1587,8 @@ PERSONA_DEFAULTS = {
 #: Set of possible values for ``ntype`` in
 #: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
-NOTIFICATION_TYPES = {"success", "info", "question", "warning", "error"}
+NOTIFICATION_TYPES: Set[NotificationType] = {"success", "info", "question",
+                                             "warning", "error"}
 
 #: The form field name used for the anti CSRF token.
 #: It should be added to all data modifying form using the
@@ -1774,12 +1622,8 @@ DB_ROLE_MAPPING: OrderedDictType[Role, str] = collections.OrderedDict((
 ))
 
 
-def roles_to_db_role(roles: Roles) -> str:
-    """Convert a set of application level roles into a database level role.
-
-    :type roles: {str}
-    :rtype: str
-    """
+def roles_to_db_role(roles: Set[Role]) -> str:
+    """Convert a set of application level roles into a database level role."""
     for role in DB_ROLE_MAPPING:
         if role in roles:
             return DB_ROLE_MAPPING[role]
@@ -1787,19 +1631,15 @@ def roles_to_db_role(roles: Roles) -> str:
 
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 
-ALL_ADMIN_VIEWS: AdminViews = {
+ALL_ADMIN_VIEWS: Set[AdminView] = {
     "meta_admin", "core_user", "core", "cde_user", "past_event", "finance",
     "event_user", "event_mgmt", "event_orga", "ml_user", "ml_mgmt",
     "ml_moderator", "assembly_user", "assembly_mgmt", "assembly_contents",
     "genesis"}
 
 
-def roles_to_admin_views(roles: Roles) -> AdminViews:
-    """ Get the set of available admin views for a user with given roles.
-
-    :type roles: {str}
-    :return: {str}
-    """
+def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
+    """ Get the set of available admin views for a user with given roles."""
     result = set()
     if "meta_admin" in roles:
         result |= {"meta_admin"}

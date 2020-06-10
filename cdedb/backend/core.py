@@ -9,7 +9,6 @@ import collections
 import copy
 import datetime
 import decimal
-import hmac
 
 from passlib.hash import sha512_crypt
 
@@ -21,7 +20,7 @@ from cdedb.common import (
     n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
+    PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException, PathLike,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
     decode_parameter, genesis_realm_access_bits, ValidationWarning, xsorted)
@@ -40,10 +39,7 @@ class CoreBackend(AbstractBackend):
     ``@internal`` quite often. """
     realm = "core"
 
-    def __init__(self, configpath):
-        """
-        :type configpath: str
-        """
+    def __init__(self, configpath: PathLike):
         super().__init__(configpath, is_core=True)
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
@@ -288,7 +284,7 @@ class CoreBackend(AbstractBackend):
             conditions.append("%s <= ctime")
             params.append(time_start)
         elif time_stop:
-            cconditions.append("ctime <= %s")
+            conditions.append("ctime <= %s")
             params.append(time_stop)
 
         if conditions:
@@ -1090,7 +1086,7 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
-        :type balance: decimal
+        :type balance: decimal.Decimaö
         :type log_code: :py:class:`cdedb.database.constants.FinanceLogCodes`.
         :type change_note: str or None
         :type trial_member: bool or None

@@ -59,7 +59,9 @@ from cdedb.common import (
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
     decode_parameter, make_proxy, EntitySorter, realm_specific_genesis_fields,
-    ValidationWarning, xsorted, unwrap, CdEDBObject, Role, Error)
+    ValidationWarning, xsorted, unwrap, CdEDBObject, Role, Error, PathLike,
+    NotificationType, Notification
+)
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -101,10 +103,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     inherited by :py:class:`cdedb.frontend.application.Application`.
     """
 
-    def __init__(self, configpath: str, *args: Any, **kwargs: Any) -> None:
-        """
-        :type configpath: str
-        """
+    def __init__(self, configpath: PathLike, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
@@ -133,7 +132,7 @@ class BaseApp(metaclass=abc.ABCMeta):
 
         self.encode_parameter = local_encode
 
-    def encode_notification(self, ntype: str, nmessage: str,
+    def encode_notification(self, ntype: NotificationType, nmessage: str,
                             nparams: CdEDBObject = None) -> str:
         """Wrapper around :py:meth:`encode_parameter` for notifications.
 
@@ -144,11 +143,6 @@ class BaseApp(metaclass=abc.ABCMeta):
         * C is the notification message
         * D is the parameter dict to be substituted in the message
           (json-encoded).
-
-        :type ntype: str
-        :type nmessage: str
-        :type nparams: {str: object}
-        :rtype: str
         """
         nparams = nparams or {}
         message = "{}--{}--{}--{}".format(ntype, len(nmessage), nmessage,
@@ -157,13 +151,9 @@ class BaseApp(metaclass=abc.ABCMeta):
             '_/notification', 'displaynote', message,
             timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
 
-    def decode_notification(self, note: str) -> Union[Tuple[str, str, str],
+    def decode_notification(self, note: str) -> Union[Notification,
                                                       Tuple[None, None, None]]:
-        """Inverse wrapper to :py:meth:`encode_notification`.
-
-        :type note: str
-        :rtype: str, str, {str: object}
-        """
+        """Inverse wrapper to :py:meth:`encode_notification`."""
         timeout, message = self.decode_parameter('_/notification',
                                                  'displaynote', note)
         if not message:
@@ -181,12 +171,6 @@ class BaseApp(metaclass=abc.ABCMeta):
                  ) -> werkzeug.Response:
         """Create a response which diverts the user. Special care has to be
         taken not to lose any notifications.
-
-        :type rs: :py:class:`RequestState`
-        :type target: str
-        :type params: {str: object}
-        :type anchor: str or None
-        :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = params or {}
         if rs.retrieve_validation_errors() and not rs.notifications:
@@ -209,9 +193,6 @@ def sanitize_None(data: Optional[T]) -> Union[str, T]:
     purposes; thus we needn't be careful in this regard. (This is
     coherent with our policy that NULL and the empty string on SQL level
     shall have the same meaning).
-
-    :type data: object
-    :rtype: object
     """
     if data is None:
         return ""
@@ -236,10 +217,6 @@ def safe_filter(val):
     generated code we insert into the templates. It is basically equal to
     Jinja's builtin ``|safe``-Filter, but additionally takes care about None
     values.
-
-    :type val: str
-    :rtype: jinja2.Markup
-
     """
     if val is None:
         return None
@@ -252,17 +229,11 @@ def date_filter(val: Union[datetime.date, str, None],
                 passthrough: bool = False) -> Optional[str]:
     """Custom jinja filter to format ``datetime.date`` objects.
 
-    :type val: datetime.date
-    :type formatstr: str
     :param formatstr: Formatting used, if no l10n happens.
-    :type lang: str or None
     :param lang: If not None, then localize to the passed language.
-    :type verbosity: str
     :param verbosity: Controls localized formatting. Takes one of the
       following values: short, medium, long and full.
-    :type passthrough: bool
     :param passthrough: If True return strings unmodified.
-    :rtype: str
     """
     if val is None or val == '' or not isinstance(val, datetime.date):
         if passthrough and isinstance(val, str) and val:
@@ -280,17 +251,11 @@ def datetime_filter(val: Optional[datetime.datetime],
                     passthrough: bool = False) -> Optional[str]:
     """Custom jinja filter to format ``datetime.datetime`` objects.
 
-    :type val: datetime.datetime
-    :type formatstr: str
     :param formatstr: Formatting used, if no l10n happens.
-    :type lang: str or None
     :param lang: If not None, then localize to the passed language.
-    :type verbosity: str
     :param verbosity: Controls localized formatting. Takes one of the
       following values: short, medium, long and full.
-    :type passthrough: bool
     :param passthrough: If True return strings unmodified.
-    :rtype: str
     """
     if val is None or val == '' or not isinstance(val, datetime.datetime):
         if passthrough and isinstance(val, str) and val:
@@ -320,11 +285,6 @@ def money_filter(val, currency="EUR", lang="de"):
     """Custom jinja filter to format ``decimal.Decimal`` objects.
 
     This is for values representing monetary amounts.
-
-    :type val: decimal.Decimal
-    :type currency: str
-    :type lang: str
-    :rtype: str
     """
     if val is None:
         return None
@@ -343,12 +303,7 @@ def decimal_filter(val: float, lang: str) -> str:
 
 
 def decimal_filter(val, lang):
-    """Cutom jinja filter to format floating point numbers.
-
-    :type val: float
-    :type lang: str
-    :rtype: str
-    """
+    """Cutom jinja filter to format floating point numbers."""
     if val is None:
         return None
 
@@ -370,9 +325,6 @@ def cdedbid_filter(val):
     visible id should be formatted with this filter. The check digit is
     one of the letters between 'A' and 'K' to make a clear distinction
     between the numeric id and the check digit.
-
-    :type val: int
-    :rtype: str
     """
     if val is None:
         return None
@@ -390,12 +342,7 @@ def iban_filter(val: str) -> str:
 
 
 def iban_filter(val):
-    """
-    Custom jinja filter for displaying IBANs in nice to read blocks.
-
-    :type val: str or None
-    :rtype: str or None
-    """
+    """Custom jinja filter for displaying IBANs in nice to read blocks."""
     if val is None:
         return None
     else:
@@ -424,9 +371,6 @@ def escape_filter(val):
       will remain safe when operated on. This means for example that the
       linebreaks filter has to make the string unsafe again, before it can
       work.
-
-    :type val: object or None
-    :rtype: str or None
     """
     if val is None:
         return None
@@ -456,11 +400,7 @@ def tex_escape_filter(val: Any) -> str:
 
 
 def tex_escape_filter(val):
-    """Custom jinja filter for escaping LaTeX-relevant charakters.
-
-    :type val: object or None
-    :rtype: str or None
-    """
+    """Custom jinja filter for escaping LaTeX-relevant charakters."""
     if val is None:
         return None
     else:
@@ -522,10 +462,6 @@ def enum_filter(val, enum):
     """Custom jinja filter to convert enums to something printable.
 
     This exists mainly because of the possibility of None values.
-
-    :type val: int
-    :type enum: Enum
-    :rtype: str
     """
     if val is None:
         return None
@@ -544,14 +480,7 @@ def genus_filter(val: int, female: str, male: str,
 
 
 def genus_filter(val, female, male, unknown=None):
-    """Custom jinja filter to select gendered form of a string.
-
-    :type val: int
-    :type female: str
-    :type male: str
-    :type unknown: str
-    :rtype: str
-    """
+    """Custom jinja filter to select gendered form of a string."""
     if val is None:
         return None
     if unknown is None:
@@ -571,10 +500,6 @@ def stringIn_filter(val: Any, alist: Collection) -> bool:
 
     This has to be an explicit filter becaus jinja does not support list
     comprehension.
-
-    :type val: object
-    :type alist: [object]
-    :rtype: bool
     """
     return str(val) in (str(x) for x in alist)
 
@@ -585,9 +510,6 @@ def querytoparams_filter(val: query_mod.Query) -> CdEDBObject:
 
     This could probably be done in jinja, but this would be pretty
     painful.
-
-    :type val: :py:class:`cdedb.query.Query`
-    :rtype: {str: object}
     """
     params = {}
     for field in val.fields_of_interest:
@@ -626,10 +548,6 @@ def linebreaks_filter(val, replacement="<br>"):
 
     This filter escapes the input value (if required), replaces the linebreaks
     and marks the output as safe html.
-
-    :type val: str or jinja2.Markup
-    :type replacement: jinja2.Markup
-    :rtype: str
     """
     if val is None:
         return None
@@ -692,11 +610,7 @@ def bleach_filter(val: str) -> jinja2.Markup:
 
 
 def bleach_filter(val):
-    """Custom jinja filter to convert sanitize html with bleach.
-
-    :type val: str
-    :rtype: str
-    """
+    """Custom jinja filter to convert sanitize html with bleach."""
     if val is None:
         return None
     return jinja2.Markup(get_bleach_cleaner().clean(val))
@@ -712,10 +626,7 @@ def md_id_wrapper(val: str, sep: str) -> str:
     Wrap the markdown toc slugify function to attach an ID prefix.
 
     :param val: String to be made URL friendly.
-    :type val: str
     :param sep: String to be used instead of Whitespace.
-    :type sep: str
-    :rtype: str
     """
 
     id_prefix = "CDEDB_MD_"
@@ -766,11 +677,7 @@ def md_filter(val: str) -> jinja2.Markup:
 
 
 def md_filter(val):
-    """Custom jinja filter to convert markdown to html.
-
-    :type val: str
-    :rtype: str
-    """
+    """Custom jinja filter to convert markdown to html."""
     if val is None:
         return None
     md = get_markdown_parser()
@@ -808,9 +715,6 @@ def set_filter(value: Iterable[T]) -> Set[T]:
     """
     A simple filter to construct a Python set from an iterable object. Just
     like Jinja's builtin "list" filter, but for sets.
-
-    :type value: Iterable
-    :rtype: set
     """
     return set(value)
 
@@ -824,12 +728,7 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
 
     This obviously only works if the values allow access by key.
 
-    :type value: {object: dict}
-    :type attribute: str
     :param attribute: name of the attribute
-    :type reverse: bool
-    :param reverse: Sort in reversed order
-    :rtype: [(object, dict)]
     """
     key = lambda item: item[1].get(attribute)
     return xsorted(value.items(), key=key, reverse=reverse)
@@ -837,13 +736,7 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
 
 def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
                        reverse: bool = False) -> List[Tuple[T, S]]:
-    """
-
-    :type value: {object: dict}
-    :type sortkey: callable
-    :type reverse: bool
-    :rtype: [(object, dict)]
-    """
+    """Sort a dicts items by thei value."""
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
@@ -855,17 +748,12 @@ def enum_entries_filter(enum: EnumMeta, processing: Callable[[Any], str] = None,
     string is piped trough the passed processing callback function to get the
     human readable and translated caption of the value.
 
-    :type enum: enum.Enum
-    :type processing: callable object -> str
     :param processing: A function to be applied on the value's string
         representation before adding it to the result tuple. Typically this is
         gettext()
-    :type raw: bool
     :param raw: If this is True, the enum entries are passed to processing as
         is, otherwise they are converted to str first.
-    :type prefix: str
     :param prefix: A prefix to prepend to the string output of every entry.
-    :rtype: [(object, object)]
     :return: A list of tuples to be used in the input_checkboxes or
         input_select macros.
     """
@@ -892,13 +780,10 @@ def dict_entries_filter(items: List[Tuple[Any, Mapping[T, S]]],
         >>> dict_entries_filter(items, 'name', 'active')
         [('a', True), ('b', False)]
 
-    :type items: [(object, dict)]
     :param items: A list of 2-element tuples. The first element of each
       tuple is ignored, the second must be a dict
-    :type args: [object] or None
     :param args: Additional positional arguments describing which keys of
       the dicts should be inserted in the resulting tuple
-    :rtype: [[object]]
     :return: A list of tuples (e.g. to be used in the input_checkboxes or
       input_select macros), built from the selected fields of the dicts
     """
@@ -919,17 +804,13 @@ def xdict_entries_filter(items: Sequence[Tuple[Any, CdEDBObject]], *args: str,
         >>> xdict_entries_filter(items, '{id}', '{name} -- {active}')
         [('1', 'a -- True'), ('2', 'b -- False')]
 
-    :type items: [(object, dict)]
     :param items: A list of 2-element tuples. The first element of each
       tuple is ignored, the second must be a dict
-    :type args: [str]
     :param args: Additional positional arguments, which are format strings
       for the resulting tuples. They can use named format specifications to
       access the dicts' fields.
-    :type include: [str] or None
     :param include: An iteratable to search for items' keys. Only items with
       their key being in `include` are included in the results list
-    :rtype: [[str]]
     :return: A list of tuples (e.g. to be used in the input_checkboxes or
       input_select macros), built from the selected fields of the dicts
     """
@@ -974,10 +855,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     #: to be overridden by children
     realm = None
 
-    def __init__(self, configpath: str, *args: Any, **kwargs: Any) -> None:
-        """
-        :type configpath: str
-        """
+    def __init__(self, configpath: PathLike, *args: Any, **kwargs: Any) -> None:
         super().__init__(configpath, *args, **kwargs)
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
@@ -1036,9 +914,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def is_admin(cls, rs: RequestState) -> bool:
         """Since each realm may have its own application level roles, it may
         also have additional roles with elevated privileges.
-
-        :type rs: :py:class:`RequestState`
-        :rtype: bool
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
 
@@ -1050,16 +925,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         .. note:: We change the templating syntax for TeX templates since
                   jinjas default syntax is nasty for this.
 
-        :type rs: :py:class:`RequestState`
-        :type modus: str
         :param modus: Type of thing we want to generate; can be one of
           * web,
           * mail,
           * tex.
-        :type templatename: str
         :param templatename: file name of template without extension
-        :type params: {str: object}
-        :rtype: str
         """
 
         def _cdedblink(endpoint: str, params: CdEDBObject = None,
@@ -1086,12 +956,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             This is lengthy otherwise because of the parameter encoding
             and a pretty frequent operation so that it is beneficial to
             have this helper.
-
-            :type persona_id: int
-            :type quote_me: bool or None
-            :type event_id: int
-            :type ml_id: int
-            :rtype: str
             """
             params = {
                 'persona_id': persona_id,
@@ -1109,9 +973,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             """Determine if a given error is a warning.
 
             They can be suppressed by the user.
-
-            :type parameter_name: str
-            :param parameter_name: of the interesting field
             """
             all_errors = rs.retrieve_validation_errors()
             return all(
@@ -1204,23 +1065,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         Exactly one of the inputs has to be provided.
 
-        :type rs: :py:class:`RequestState`
-        :type mimetype: str or None
         :param mimetype: If not None the mime type of the file to be sent.
-        :type filename: str or None
         :param filename: If not None the default file name used if the user
           tries to save the file to disk
-        :type inline: bool
         :param inline: Set content disposition to force display in browser (if
           True) or to force a download box (if False).
-        :type path: str or pathlib.Path
-        :type afile: file like
         :param afile: should be opened in binary mode
-        :type data: str or bytes
         :param encoding: The character encoding to be uses, if `data` is given
           as str
-        :type encoding: str
-        :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         if not path and not afile and not data:
             raise ValueError(n_("No input specified."))
@@ -1255,12 +1107,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     @staticmethod
     def send_json(rs: RequestState, data: Any) -> Response:
-        """Slim helper to create json responses.
-
-        :type rs: :py:class:`RequestState`
-        :type data: object
-        :rtype: :py:class:`werkzeug.wrappers.Response`
-        """
+        """Slim helper to create json responses."""
         rs.response = Response(json_serialize(data),
                                mimetype='application/json')
         rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
@@ -1270,11 +1117,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                params: CdEDBObject = None) -> Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
-
-        :type rs: :py:class:`RequestState`
-        :type templatename: str
-        :type params: {str: object}
-        :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
@@ -1329,16 +1171,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         list specific bounce address which delivers the bounces to the
         moderators.
 
-        :type rs: :py:class:`RequestState`
-        :type templatename: str
-        :type headers: {str: str}
         :param headers: mandatory headers to supply are To and Subject
-        :type params: {str: object}
-        :type attachments: [{str: object}] or None
         :param attachments: Each dict describes one attachment. The possible
           keys are path (a ``str``), file (a file like), mimetype (a ``str``),
           filename (a ``str``).
-        :rtype: str or None
         :returns: see :py:meth:`_send_mail` for details, we automatically
           store the path in ``rs``
         """
@@ -1358,13 +1194,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def _create_mail(self, text: str, headers: MutableMapping[str, str],
                      attachments: Collection[Attachment],
                      ) -> email.message.Message:
-        """Helper for actual email instantiation from a raw message.
-
-        :type text: str
-        :type headers: {str: str}
-        :type attachments: [{str: object}] or None
-        :rtype: :py:class:`email.message.Message`
-        """
+        """Helper for actual email instantiation from a raw message."""
         defaults = {"From": self.conf["DEFAULT_SENDER"],
                     "Prefix": self.conf["DEFAULT_PREFIX"],
                     "Reply-To": self.conf["DEFAULT_REPLY_TO"],
@@ -1413,9 +1243,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def _create_attachment(attachment: Attachment) -> MIMENonMultipart:
         """Helper instantiating an attachment via the email module.
 
-        :type attachment: {str: object}
         :param attachment: see :py:meth:`do_mail` for a description of keys
-        :rtype: :py:class:`email.message.Message`
         """
         mimetype = attachment.get('mimetype') or 'application/octet-stream'
         maintype, subtype = mimetype.split('/', 1)
@@ -1445,8 +1273,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def _send_mail(self, msg: email.message.Message) -> Optional[str]:
         """Helper for getting an email onto the wire.
 
-        :type msg: :py:class:`email.message.Message`
-        :rtype: str or None
         :returns: Name of the file the email was saved in -- however this
           happens only in development mode. This is intended for consumption
           by the test suite.
@@ -1475,11 +1301,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         The point is, that encoding the ``confirm_id`` parameter is
         somewhat lengthy and only necessary because of our paranoia.
-
-        :type rs: :py:class:`RequestState`
-        :type quote_me: bool or None
-        :type persona_id: int
-        :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         cid = self.encode_parameter(
             "core/show_user", "confirm_id", persona_id, timeout=None)
@@ -1500,9 +1321,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         the number of changed entries, and negative numbers for entries with
         pending review) or None (signalling failure to acquire something).
 
-        :type rs: :py:class:`RequestState`
-        :type success: str
-        :type code: int or bool or None
         :param success: Affirmative message for positive return codes.
         :param pending: Message for negative return codes signalling review.
         :param error: Exception message for zero return codes.
@@ -1524,16 +1342,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         This catches exepctions during compilation and displays a more helpful
         error message instead.
 
-        :type rs: :py:class:`RequestState`
-        :type target_file: str
         :param target_file: name of the file to compile.
-        :type cwd: :py:class:`pathlib.Path`
         :param cwd: Path of the target file.
         :param runs: number of times LaTeX is run (for references etc.)
-        :type errormsg: str or None
         :param errormsg: Error message to display when compilation fails.
             Defaults to error message for event downloads.
-        :rtype: :py:class:`pathlib.Path`
         :returns: Path to the compiled pdf.
         """
         if target_file.endswith('.tex'):
@@ -1572,14 +1385,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         This takes care of the necessary temporary files.
 
-        :type rs: :py:class:`RequestState`
-        :type data: str
-        :type runs: int
         :param runs: number of times LaTeX is run (for references etc.)
-        :type errormsg: str or None
         :param errormsg: Error message to display when compilation fails.
             Defaults to error message for event downloads.
-        :rtype: bytes
         :returns: the compiled document as blob
         """
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -1602,18 +1410,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         This takes care of the necessary temporary files.
 
-        :type rs: :py:class:`RequestState`
-        :type data: str
         :param data: the LaTeX document
-        :type filename: str
         :param filename: name to serve the document as, without extension
-        :type runs: int
         :param runs: Number of times LaTeX is run (for references etc.). If this
           is zero, we serve the source tex file, instead of the compiled pdf.
-        :type errormsg: str or None
         :param errormsg: Error message to display when compilation fails.
             Defaults to error message for event downloads.
-        :rtype: werkzeug.Response
         """
         if not runs:
             return self.send_file(
@@ -1647,25 +1449,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     |------- tex_file.tex
                     +------- ...
 
-        :type rs: :py:class:`RequestState`
-        :type tmp_dir: str or pathlib.Path
         :param tmp_dir: path of temporary directory
-        :type work_dir_name: str
         :param work_dir_name: name of working directory inside temporary
           directory.
-        :type tex_file_name: str
         :param tex_file_name: name of the tex file (including extension),
           this will be used to derived the name to use when serving the
           compiled pdf file.
-        :type runs: int
         :param runs: Number of times LaTeX is run (for references etc.). If this
           is zero, we serve the source tex file, instead of the compiled
           pdf. More specifically we serve a gzipped tar archive containing
           the working directory.
-        :type errormsg: str or None
         :param errormsg: Error message to display when compilation fails.
             Defaults to error message for event downloads.
-        :rtype: werkzeug.Response
         """
         if not runs:
             target = pathlib.Path(
@@ -1710,12 +1505,8 @@ class Worker(threading.Thread):
     def __init__(self, conf: Config, task: Callable, rs: RequestState,
                  *args: Any, **kwargs: Any) -> None:
         """
-        :type confpath: :py:class:`cdedb.Config`
-        :type realm: str
-        :type task: callable
         :param task: Will be called with exactly one argument (the cloned
           request state) until it returns something falsy.
-        :type rs: :py:class:`RequestState`
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
@@ -1744,10 +1535,6 @@ def reconnoitre_ambience(obj: AbstractFrontend,
     as part of the URL path. The naming is not predetermined, but as a
     convention the object name should be the parameter named minus the
     '_id' suffix.
-
-    :type obj: :py:class:`AbstractFrontend`
-    :type rs: :py:class:`RequestState`
-    :rtype: {str: object}
     """
     Scout = collections.namedtuple('Scout', ('getter', 'param_name',
                                              'object_name', 'dependencies'))
@@ -1850,11 +1637,8 @@ def access(*roles: Role, modi: Collection[str] = None,
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
 
-    :type roles: [str]
     :param roles: privilege required (any of the passed)
-    :type modi: {str}
     :param modi: HTTP methods allowed for this invocation
-    :type check_anti_csrf: bool or None
     :param check_anti_csrf: Control if the anti csrf check should be enabled
         on this endpoint. If not specified, it will be enabled, if "POST" is in
         the allowed methods.
@@ -1907,9 +1691,7 @@ def periodic(name: str, period: int = 1) -> Callable[[F], F]:
     This just adds a flag and all of the actual work is done by the
     CronFrontend.
 
-    :type name: str
     :param name: the name of this job
-    :type period: int
     :param period: the interval in which to execute this job (e.g. period ==
       2 means every second invocation of the CronFrontend)
     """
@@ -1928,12 +1710,7 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
              magic_placeholders: Collection[str] = None) -> str:
     """Construct an HTTP URL.
 
-    :type rs: :py:class:`RequestState`
-    :type endpoint: str
     :param endpoint: as defined in :py:data:`cdedb.frontend.paths.CDEDB_PATHS`
-    :type params: {str: object}
-    :type force_external: bool
-    :type magic_placeholders: [str]
     :param magic_placeholders: These are parameter names which behave as if
       the following code would be executed::
 
@@ -1943,7 +1720,6 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
       The use case is that we want to generate string templates of URLs for
       consumption by Javascript code with the possibility of inserting some
       parameters at execution time.
-    :rtype: str
     """
     params = params or {}
     # First handle magic placeholders, this is kind of a hack, but sadly
@@ -1991,24 +1767,16 @@ def staticurl(path: str, version: str = None) -> str:
     directory). We encapsulate this here so moving the directory around
     causes no pain.
 
-    :type path: str
     :param version: If not None, this string is appended to the URL as an URL
         parameter. This can be used to force Browsers to flush their caches on
         code updates.
-    :type version: str
-    :rtype: str
     """
     return str(pathlib.Path("/static", path)) \
         + ('?v=' + version if version else '')
 
 
 def docurl(topic: str, anchor: str = None) -> str:
-    """Construct an HTTP URL to a doc page.
-
-    :type topic: str
-    :type anchor: str or None
-    :rtype: str
-    """
+    """Construct an HTTP URL to a doc page."""
     ret = str(pathlib.Path("/doc", topic + ".html"))
     if anchor:
         ret = ret + "#" + anchor
@@ -2020,7 +1788,6 @@ def REQUESTdata(*spec: Tuple[str, str]) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them. This
     should always be used, so automatic form filling works as expected.
 
-    :type spec: [(str, str)]
     :param spec: Specification of parameters to extract. The
       first value of a tuple is the name of the parameter to look out
       for. The second value of each tuple denotes the sort of parameter to
@@ -2136,15 +1903,10 @@ def request_extractor(
     list of callables that perform a check and associated errors that
     are reported if the check fails.
 
-    :type rs: :py:class:`RequestState`
-    :type args: [(str, str)]
     :param args: handed through to the decorator
-    :type constraints: [(callable, (str, exception))]
     :param constraints: additional constraints that shoud produce
       validation errors
-    :rtype: {str: object}
     :returns: dict containing the requested values
-
     """
     @REQUESTdata(*args)
     def fun(_, rs: RequestState, **kwargs: Any) -> CdEDBObject:
@@ -2163,10 +1925,7 @@ def request_dict_extractor(rs: RequestState,
 
     Like :py:meth:`request_extractor`.
 
-    :type rs: :py:class:`RequestState`
-    :type args: [str]
     :param args: handed through to the decorator
-    :rtype: {str: object}
     :returns: dict containing the requested values
     """
 
@@ -2182,7 +1941,6 @@ def request_dict_extractor(rs: RequestState,
 def REQUESTfile(*args: str) -> Callable[[F], F]:
     """Decorator to extract file uploads from requests.
 
-    :type args: [str]
     :param args: Names of file parameters.
     """
 
@@ -2211,9 +1969,7 @@ def event_guard(argname: str = "event_id",
     users are admitted. Additionally this can check for the offline
     lock, so that no modifications happen to locked events.
 
-    :type argname: str
     :param argname: name of the keyword argument specifying the id
-    :type check_offline: bool
     :param check_offline: defaults to False
     """
 
@@ -2250,9 +2006,7 @@ def mailinglist_guard(argname: str = "mailinglist_id",
     If `allow_moderators` is True, moderators of the mailinglist are allowed,
     otherwise we require a relevant admin for the given mailinglist.
 
-    :type argname: str
     :param argname: name of the keyword argument specifying the id
-    :type allow_moderators: bool
     """
 
     def wrap(fun: F) -> F:
@@ -2284,15 +2038,10 @@ def check_validation(rs: RequestState, assertion: str, value: T,
                      name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
-    :type rs: :py:class:`RequestState`
-    :type assertion: str
     :param assertion: name of validation routine to call
-    :type value: object
-    :type name: str or None
     :param name: name of the parameter to check (bonus points if you find
       out how to nicely get rid of this -- python has huge introspection
       capabilities, but I didn't see how this should be done).
-    :rtype: (object or None, [(str, Exception)])
     """
     checker: Callable[..., Tuple[T, List[Error]]] = getattr(
         validate, "check_{}".format(assertion))
@@ -2308,10 +2057,6 @@ def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
     """Convenience wrapper around :py:func:`construct_redirect`. This should
     be the main thing to use, however it is even more preferable to use
     :py:meth:`BaseApp.redirect`.
-
-    :type rs: :py:class:`RequestState`
-    :type url: str
-    :rtype: :py:class:`werkzeug.wrappers.Response`
     """
     rs.response = construct_redirect(rs.request, url)
     rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
@@ -2323,10 +2068,6 @@ def construct_redirect(request: werkzeug.Request,
     """Construct an HTTP redirect. This should use the 303 status
     code. Unfortunately this code is not available for HTTP 1.0, so we fall
     back to an automatic refresh.
-
-    :type request: :py:class:`werkzeug.wrappers.Request`
-    :type url: str
-    :rtype: :py:class:`werkzeug.wrappers.Response`
     """
     if request.environ['SERVER_PROTOCOL'] == "HTTP/1.0":
         # in case of HTTP 1.0 we cannot use the 303 code
@@ -2357,9 +2098,6 @@ def make_postal_address(persona: CdEDBObject) -> List[str]:
     in that we represent an address to be printed as a list of strings
     each containing one line. The final formatting is now basically join
     on line breaks.
-
-    :type persona: {str: object}
-    :rtype: [str]
     """
     p = persona
     name = "{} {}".format(p['given_names'], p['family_name'])
@@ -2384,9 +2122,6 @@ def make_transaction_subject(persona: CdEDBObject) -> str:
     """Generate a string for users to put on a payment.
 
     This is the "Verwendungszweck".
-
-    :type persona: {str: object}
-    :rtype: str
     """
     return "{}, {}, {}".format(cdedbid_filter(persona['id']),
                                asciificator(persona['family_name']),
@@ -2404,15 +2139,9 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
     - existing, mapped to None (if they were marked to be deleted)
     - new entries, mapped to their (validated) input fields (from spec)
 
-    :type rs: :py:class:`FrontendRequestState`
-    :type existing: [int]
     :param existing: ids of already existent objects
-    :type spec: {str: str}
     :param spec: name of input fields, mapped to their validation
-    :type additional: dict
     :param additional: additional keys added to each output object
-
-    :rtype: {int: {str: object} or None}
     """
     delete_flags = request_extractor(
         rs, ((f"delete_{anid}", "bool") for anid in existing))
@@ -2463,18 +2192,12 @@ def csv_output(data: Collection[CdEDBObject], fields: Iterable[str],
                substitutions: Mapping[str, Mapping] = None) -> str:
     """Generate a csv representation of the passed data.
 
-    :type data: [{str: object}]
-    :type fields: [str]
-    :type writeheader: bool
     :param writeheader: If False, no CSV-Header is written.
-    :type replace_newlines: bool
     :param replace_newlines: If True all line breaks are replaced by several
       spaces.
-    :type substitutions: {str: {object: object}}
     :param substitutions: Allow replacements of values with better
       representations for output. The key of the outer dict is the field
       name.
-    :rtype: str
     """
     substitutions = substitutions or {}
     outfile = io.StringIO()
@@ -2499,13 +2222,9 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
                          substitutions: Mapping[str, Mapping] = None) -> str:
     """Generate a json representation of the passed data.
 
-    :type data: [{str: object}]
-    :type fields: [str]
-    :type substitutions: {str: {object: object}}
     :param substitutions: Allow replacements of values with better
       representations for output. The key of the outer dict is the field
       name.
-    :rtype: str
     """
     substitutions = substitutions or {}
     json_data = []
@@ -2523,10 +2242,7 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
 def calculate_db_logparams(offset: int, length: int) -> Tuple[int, int]:
     """Modify the offset and length values used in the frontend to
     allow for guaranteed valid sql queries.
-
-    :type offset: int
-    :type length: int
-    :rtype (int, int)"""
+    """
     _offset = offset
     _length = length
     if _offset and _offset < 0:
@@ -2543,14 +2259,9 @@ def calculate_loglinks(rs: RequestState, total: int, offset: int, length: int
                                             List[werkzeug.MultiDict]]]:
     """Calculate the target parameters for the links in the log pagination bar.
 
-    :type rs: :py:class:`cdedb.common.RequestState`
-    :type total: int
     :param total: The total count of log entries
-    :type offset: int
     :param offset: The offset, preprocessed for negative offset values
-    :type length: int
     :param length: The requested length (not necessarily the shown length)
-    :rtype: {str: werkzeug.datastructures.MultiDict}
     """
     # The true offset does represent the acutal count of log entries before
     # the first shown entry. This is done magically, if no offset has been

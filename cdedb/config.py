@@ -21,7 +21,7 @@ import uuid
 import pytz
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import n_, deduct_years, now
+from cdedb.common import n_, deduct_years, now, PathLike
 import cdedb.database.constants as const
 
 _LOGGER = logging.getLogger(__name__)
@@ -570,9 +570,8 @@ class Config(BasicConfig):
     overriding the values inherited from :py:class:`BasicConfig`.
     """
 
-    def __init__(self, configpath):
+    def __init__(self, configpath: PathLike):
         """
-        :type configpath: str
         :param configpath: path to file with overrides
         """
         super().__init__()
