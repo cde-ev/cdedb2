@@ -1357,7 +1357,7 @@ class EventBackend(AbstractBackend):
                          this event field.
         * quetionnaire_rows: A questionnaire row that uses this field.
         * lodge_fields: An event that uses this field for lodgement wishes.
-        * reserve_fields: An event that uses this field for reserve wishes.
+        * camping_mat_fields: An event that uses this field for reserve wishes.
         * course_room_fields: An event that uses this field for course room
                               assignment.
 
@@ -1389,11 +1389,12 @@ class EventBackend(AbstractBackend):
         if lodge_fields:
             blockers["lodge_fields"] = [e["id"] for e in lodge_fields]
 
-        reserve_fields = self.sql_select(
+        camping_mat_fields = self.sql_select(
             rs, "event.events", ("id",), (field_id,),
-            entity_key="reserve_field")
-        if reserve_fields:
-            blockers["reserve_fields"] = [e["id"] for e in reserve_fields]
+            entity_key="camping_mat_field")
+        if camping_mat_fields:
+            blockers["camping_mat_fields"] = [
+                e["id"] for e in camping_mat_fields]
 
         course_room_fields = self.sql_select(
             rs, "event.events", ("id",), (field_id,),
@@ -1447,11 +1448,11 @@ class EventBackend(AbstractBackend):
                         'lodge_field': None,
                     }
                     ret += self.sql_update(rs, "event.events", deletor)
-            if "reserve_fields" in cascade:
-                for anid in blockers["reserve_fields"]:
+            if "camping_mat_fields" in cascade:
+                for anid in blockers["camping_mat_fields"]:
                     deletor = {
                         'id': anid,
-                        'reserve_field': None,
+                        'camping_mat_field': None,
                     }
                     ret += self.sql_update(rs, "event.events", deletor)
             if "course_room_fields" in cascade:
@@ -1546,7 +1547,7 @@ class EventBackend(AbstractBackend):
             if len(edata) > 1:
                 indirect_fields = filter(
                     lambda x: x,
-                    [edata.get('lodge_field'), edata.get('reserve_field'),
+                    [edata.get('lodge_field'), edata.get('camping_mat_field'),
                      edata.get('course_room_field')])
                 if indirect_fields:
                     indirect_data = self.sql_select(
@@ -1565,16 +1566,16 @@ class EventBackend(AbstractBackend):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'lodge_field'})
                     correct_datatype = const.FieldDatatypes.bool
-                    if edata.get('reserve_field'):
+                    if edata.get('camping_mat_field'):
                         reserve_data = unwrap(
                             [x for x in indirect_data
-                             if x['id'] == edata['reserve_field']])
+                             if x['id'] == edata['camping_mat_field']])
                         if (reserve_data['event_id'] != data['id']
                                 or reserve_data['kind'] != correct_datatype
                                 or reserve_data[
                                     'association'] != correct_assoc):
                             raise ValueError(n_("Unfit field for %(field)s"),
-                                             {'field': 'reserve_field'})
+                                             {'field': 'camping_mat_field'})
                     correct_assoc = const.FieldAssociations.course
                     # TODO make this include lodgement datatype per Issue #71
                     correct_datatypes = {const.FieldDatatypes.str}
@@ -1962,7 +1963,7 @@ class EventBackend(AbstractBackend):
                         'id': event_id,
                         'course_room_field': None,
                         'lodge_field': None,
-                        'reserve_field': None,
+                        'camping_mat_field': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
                     field_cascade = {"fee_modifiers"} & cascade
@@ -3985,7 +3986,7 @@ class EventBackend(AbstractBackend):
                 for track in part['tracks'].values():
                     del track['id']
                     del track['part_id']
-            for f in ('lodge_field', 'reserve_field', 'course_room_field'):
+            for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
                 if export_event[f]:
                     export_event[f] = event['fields'][event[f]]['field_name']
             new_fields = {

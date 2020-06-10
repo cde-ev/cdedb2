@@ -2161,7 +2161,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'registration_text': _str_or_None,
     'orga_address': _email_or_None,
     'lodge_field': _id_or_None,
-    'reserve_field': _id_or_None,
+    'camping_mat_field': _id_or_None,
     'course_room_field': _id_or_None,
 }
 

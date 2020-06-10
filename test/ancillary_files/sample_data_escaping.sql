@@ -103,7 +103,7 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
 --
 -- events
 --
-INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, iban, mail_text, notes, offline_lock, lodge_field, reserve_field) VALUES
+INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, iban, mail_text, notes, offline_lock, lodge_field, camping_mat_field) VALUES
     (1, 'Große Testakademie 2222<script>abcdef</script>', 1, 'Everybody come!<script>abcdef</script>', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96 3702 0500 0008 0689 01<script>abcdef</script>', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.<script>abcdef</script>', 'Todoliste ... just kidding ;)<script>abcdef</script>', False, NULL, NULL),
     (2, 'CdE-Party 2050<script>abcdef</script>', 1, 'Let''s have a party!<script>abcdef</script>', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, 'DE96 3702 0500 0008 0689 01<script>abcdef</script>', '<script>abcdef</script>', 'Wird anstrengend …<script>abcdef</script>', False, NULL, NULL);
 INSERT INTO event.event_parts (id, event_id, title, shortname, part_begin, part_end, fee) VALUES
@@ -122,7 +122,7 @@ INSERT INTO event.field_definitions (id, event_id, field_name, kind, association
     (4, 1, 'may_reserve', 2, 1, NULL),
     (5, 1, 'room', 1, 2, NULL),
     (6, 1, 'contamination', 1, 3, '{{"high<script>abcdef</script>", "lots of radiation<script>abcdef</script>"}, {"medium<script>abcdef</script>", "elevated level of radiation<script>abcdef</script>"}, {"low<script>abcdef</script>", "some radiation<script>abcdef</script>"}, {"none<script>abcdef</script>", "no radiation<script>abcdef</script>"}}');
-UPDATE event.events SET lodge_field = 3, reserve_field = 4 WHERE id = 1;
+UPDATE event.events SET lodge_field = 3, camping_mat_field = 4 WHERE id = 1;
 INSERT INTO event.courses (id, event_id, title, description, nr, shortname, instructors, max_size, min_size, notes, fields) VALUES
     (1, 1, 'Planetenretten für Anfänger<script>abcdef</script>', 'Wir werden die Bäume drücken.<script>abcdef</script>', 'α<script>abcdef</script>', 'Heldentum<script>abcdef</script>', 'ToFi & Co<script>abcdef</script>', 10, 3, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.<script>abcdef</script>', '{"course_id": 1, "room": "Wald"}'::jsonb),
     (2, 1, 'Lustigsein für Fortgeschrittene<script>abcdef</script>', 'Inklusive Post, Backwaren und frühzeitigem Ableben.<script>abcdef</script>', 'β<script>abcdef</script>', 'Kabarett<script>abcdef</script>', 'Bernd Lucke<script>abcdef</script>', 20, 10, 'Kursleiter hat Sekt angefordert.<script>abcdef</script>', '{"course_id": 2, "room": "Theater"}'::jsonb),

@@ -43,7 +43,7 @@ def prepare_aux(data):
     # require special care, because they contain cycliy references.
     # They will be removed from the initial INSERT and UPDATEd later.
     ret["cyclic_references"] = {
-        "event.events": ("lodge_field", "course_room_field", "reserve_field"),
+        "event.events": ("lodge_field", "course_room_field", "camping_mat_field"),
     }
 
     # This contains a list of replacements performed on the resulting SQL

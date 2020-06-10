@@ -3269,7 +3269,7 @@
             "is_cancelled": false,
             "is_archived": false,
             "lodge_field": 3,
-            "reserve_field": 4,
+            "camping_mat_field": 4,
             "course_room_field": 2
         },
         {
@@ -3297,7 +3297,7 @@
             "is_cancelled": false,
             "is_archived": false,
             "lodge_field": null,
-            "reserve_field": null,
+            "camping_mat_field": null,
             "course_room_field": null
         }
     ],

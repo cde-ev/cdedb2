@@ -3219,7 +3219,7 @@ etc;anything else""", f['entries_2'].value)
                       'registration_soft_limit': '2200-10-30T00:00:00+00:00',
                       'registration_start': '2000-10-30T00:00:00+00:00',
                       'registration_text': None,
-                      'reserve_field': 'may_reserve',
+                      'camping_mat_field': 'may_reserve',
                       'shortname': 'TestAka',
                       'title': 'Große Testakademie 2222',
                       'use_additional_questionnaire': False},

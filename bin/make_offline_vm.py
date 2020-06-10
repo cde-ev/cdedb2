@@ -102,9 +102,9 @@ def make_meta_info(cur):
 
 def update_event(cur, event):
     query = """UPDATE event.events
-               SET (lodge_field, reserve_field, course_room_field)
+               SET (lodge_field, camping_mat_field, course_room_field)
                = (%s, %s, %s)"""
-    params = (event['lodge_field'], event['reserve_field'],
+    params = (event['lodge_field'], event['camping_mat_field'],
               event['course_room_field'])
     cur.execute(query, params)
 
@@ -196,7 +196,7 @@ def work(args):
                 values = copy.deepcopy(data[table])
                 # Prevent forward references
                 if table == 'event.events':
-                    for key in ('lodge_field', 'reserve_field',
+                    for key in ('lodge_field', 'camping_mat_field',
                                 'course_room_field'):
                         values[str(data['id'])][key] = None
                 populate_table(cur, table, values)

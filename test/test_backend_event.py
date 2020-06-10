@@ -129,7 +129,7 @@ class TestEventBackend(BackendTest):
         data['is_cancelled'] = False
         data['is_visible'] = False
         data['lodge_field'] = None
-        data['reserve_field'] = None
+        data['camping_mat_field'] = None
         data['course_room_field'] = None
         data['orga_address'] = None
         data['begin'] = datetime.date(2109, 8, 7)
@@ -2358,7 +2358,7 @@ class TestEventBackend(BackendTest):
                                  'registration_hard_limit': datetime.datetime(2221, 10, 30, 0, 0, tzinfo=pytz.utc),
                                  'registration_soft_limit': datetime.datetime(2200, 10, 30, 0, 0, tzinfo=pytz.utc),
                                  'registration_start': datetime.datetime(2000, 10, 30, 0, 0, tzinfo=pytz.utc),
-                                 'reserve_field': 4,
+                                 'camping_mat_field': 4,
                                  'shortname': 'TestAka',
                                  'title': 'Große Testakademie 2222',
                                  'use_additional_questionnaire': False}},
@@ -3480,7 +3480,7 @@ class TestEventBackend(BackendTest):
                       'registration_soft_limit': datetime.datetime(2200, 10, 30, 0, 0, tzinfo=pytz.utc),
                       'registration_start': datetime.datetime(2000, 10, 30, 0, 0, tzinfo=pytz.utc),
                       'registration_text': None,
-                      'reserve_field': 'may_reserve',
+                      'camping_mat_field': 'may_reserve',
                       'shortname': 'TestAka',
                       'title': 'Große Testakademie 2222',
                       'use_additional_questionnaire': False},

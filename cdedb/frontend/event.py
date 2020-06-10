@@ -392,7 +392,7 @@ class EventFrontend(AbstractUserFrontend):
         "registration_start", "registration_soft_limit",
         "registration_hard_limit", "iban", "orga_address", "registration_text",
         "mail_text", "use_additional_questionnaire", "notes", "lodge_field",
-        "reserve_field", "is_visible", "is_course_list_visible",
+        "camping_mat_field", "is_visible", "is_course_list_visible",
         "is_course_state_visible", "is_participant_list_visible",
         "courses_in_participant_list", "is_cancelled", "course_room_field",
         "nonmember_surcharge")
@@ -922,8 +922,8 @@ class EventFrontend(AbstractUserFrontend):
                     referenced.add(row['field_id'])
         if rs.ambience['event']['lodge_field']:
             referenced.add(rs.ambience['event']['lodge_field'])
-        if rs.ambience['event']['reserve_field']:
-            referenced.add(rs.ambience['event']['reserve_field'])
+        if rs.ambience['event']['camping_mat_field']:
+            referenced.add(rs.ambience['event']['camping_mat_field'])
         if rs.ambience['event']['course_room_field']:
             referenced.add(rs.ambience['event']['course_room_field'])
         for mod in rs.ambience['event']['fee_modifiers'].values():
@@ -2346,7 +2346,7 @@ class EventFrontend(AbstractUserFrontend):
 
         This can be printed and cut to help with distribution of
         participants. This make use of the lodge_field and the
-        reserve_field.
+        camping_mat_field.
         """
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
