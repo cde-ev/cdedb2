@@ -1086,7 +1086,7 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
-        :type balance: decimal.Decimaö
+        :type balance: decimal.Decimal
         :type log_code: :py:class:`cdedb.database.constants.FinanceLogCodes`.
         :type change_note: str or None
         :type trial_member: bool or None
