@@ -30,13 +30,15 @@ from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
     PERSONA_DEFAULTS, diacritic_patterns, asciificator,
-    EntitySorter, TransactionType, xsorted)
+    EntitySorter, TransactionType, xsorted, PathLike, make_root_logger,
+)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
-    calculate_db_logparams, calculate_loglinks, process_dynamic_input)
+    calculate_db_logparams, calculate_loglinks, process_dynamic_input,
+)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
 import cdedb.frontend.parse_statement as parse
@@ -71,6 +73,13 @@ class CdEFrontend(AbstractUserFrontend):
     user_management = {
         "persona_getter": lambda obj: obj.coreproxy.get_cde_user,
     }
+
+    def __init__(self, configpath: PathLike):
+        super().__init__(configpath)
+        make_root_logger(
+            "cdedb.frontend.worker", self.conf["WORKER_LOG"],
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
 
     @classmethod
     def is_admin(cls, rs):
@@ -1871,8 +1880,8 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def task(rrs, rs=None):
-            """Send one billing mail and advance state."""
+        def send_billing_mail(rrs, rs=None):
+            """Send one billing mail and advance semester state."""
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
@@ -1926,7 +1935,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, task, rs)
+        worker = Worker(self.conf, send_billing_mail, rs)
         worker.start()
         time.sleep(1)
         rs.notify("success", n_("Started sending mail."))
@@ -1943,8 +1952,8 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def task(rrs, rs=None):
-            """Check one member for ejection and advance state."""
+        def eject_member(rrs, rs=None):
+            """Check one member for ejection and advance semester state."""
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
@@ -1981,7 +1990,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, task, rs)
+        worker = Worker(self.conf, eject_member, rs)
         worker.start()
         time.sleep(1)
         rs.notify("success", n_("Started ejection."))
@@ -1998,7 +2007,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def task(rrs, rs=None):
+        def update_balance(rrs, rs=None):
             """Update one members balance and advance state."""
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
@@ -2044,7 +2053,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, task, rs)
+        worker = Worker(self.conf, update_balance, rs)
         worker.start()
         time.sleep(1)
         rs.notify("success", n_("Started updating balance."))
@@ -2081,7 +2090,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def task(rrs, rs=None):
+        def send_addresscheck(rrs, rs=None):
             """Send one address check mail and advance state."""
             with Atomizer(rrs):
                 expuls_id = self.cdeproxy.current_expuls(rrs)
@@ -2119,7 +2128,7 @@ class CdEFrontend(AbstractUserFrontend):
             self.cdeproxy.finish_expuls_addresscheck(rs, skip=True)
             rs.notify("success", n_("Not sending mail."))
         else:
-            worker = Worker(self.conf, task, rs)
+            worker = Worker(self.conf, send_addresscheck, rs)
             worker.start()
             time.sleep(1)
             rs.notify("success", n_("Started sending mail."))
