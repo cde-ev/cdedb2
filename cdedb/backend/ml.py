@@ -20,7 +20,7 @@ from cdedb.common import (MAILINGLIST_FIELDS, CdEDBObject, CdEDBObjectMap,
                           DefaultReturnCode, DeletionBlockers, PrivilegeError,
                           make_proxy, RequestState, SubscriptionActions,
                           SubscriptionError, glue, implying_realms, n_, now,
-                          unwrap)
+                          unwrap, PathLike)
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
@@ -33,7 +33,7 @@ class MlBackend(AbstractBackend):
     additional actions available."""
     realm = "ml"
 
-    def __init__(self, configpath: str):
+    def __init__(self, configpath: PathLike):
         super().__init__(configpath)
         self.event = make_proxy(EventBackend(configpath), internal=True)
         self.assembly = make_proxy(AssemblyBackend(configpath), internal=True)

@@ -20,7 +20,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
-    RequestState, CdEDBObject)
+    RequestState, CdEDBObject, PathLike)
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
@@ -34,7 +34,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         "persona_getter": lambda obj: obj.coreproxy.get_ml_user,
     }
 
-    def __init__(self, configpath: str):
+    def __init__(self, configpath: PathLike):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
         self.mailman_create_client = lambda url, user: mailmanclient.Client(
