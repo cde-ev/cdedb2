@@ -22,7 +22,7 @@ from cdedb.common import (
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
     mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
-    xsorted, RequestState
+    xsorted, RequestState, extract_roles
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
@@ -1599,6 +1599,10 @@ class EventBackend(AbstractBackend):
             if 'orgas' in data:
                 if not self.is_admin(rs):
                     raise PrivilegeError(n_("Not privileged."))
+                orgas = self.core.get_personas(rs, data['orgas'])
+                if any('event' not in extract_roles(orga, introspection_only=True)
+                        for orga in orgas.values()):
+                    raise ValueError(n_("User is no event user."))
                 current = self.sql_select(rs, "event.orgas", ("persona_id",),
                                           (data['id'],), entity_key="event_id")
                 existing = {unwrap(e) for e in current}

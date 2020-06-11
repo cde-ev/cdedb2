@@ -420,7 +420,7 @@ class TestEventFrontend(FrontendTest):
             f['orga_id'] = "DB-10-8"
             self.submit(f, check_notification=False)
             self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-            self.assertPresence("User is no event user.")
+            self.assertPresence("Benutzer ist kein Veranstaltunsnutzer.")
             f = self.response.forms['addorgaform']
             f['orga_id'] = "DB-2-7"
             self.submit(f)
@@ -1024,6 +1024,11 @@ etc;anything else""", f['entries_2'].value)
         f['event_end'] = "2345-6-7"
         f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
+        f['orga_ids'] = "DB-10-8"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertPresence("Nicht alle angegebenen Orgas sind Veranstaltungsnutzer.")
+        f = self.response.forms['createeventform']
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
