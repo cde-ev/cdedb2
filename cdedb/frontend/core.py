@@ -2124,7 +2124,7 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdatadict(
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
-        "postal_code", "location", "country")
+        "postal_code", "location", "country", "birth_name")
     @REQUESTdata(("ignore_warnings", "bool_or_None"))
     def genesis_modify(self, rs, genesis_case_id, data, ignore_warnings=False):
         """Edit a case to fix potential issues before creation."""
