@@ -8,7 +8,7 @@
         var boxes = $(this).find('[name="registration_stati"]');
 
         /**
-         * Function to update visiblity of selectboxes and event participant checkboxes.
+         * Function to update visibility of selectboxes and event participant checkboxes.
          * Should be called on every update of one of the selectboxes defined in 'names'.
          */
         function update_view() {

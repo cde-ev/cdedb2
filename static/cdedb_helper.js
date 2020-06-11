@@ -283,7 +283,7 @@
 })(jQuery);
 
 
-/*
+/**
  * Set, get and remove cookies.
  *
  * Source: https://www.quirksmode.org/js/cookies.html
