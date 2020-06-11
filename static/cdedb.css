@@ -1044,3 +1044,7 @@ ul.styleless {
 .display-inline {
     display: inline;
 }
+
+.button-group-below-text {
+    margin-top: 5px
+}

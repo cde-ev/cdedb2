@@ -15,7 +15,8 @@
                     </ul>
                 {% endif %}
                 {% if edit %}
-                    <div class="p" id="attachmentmanagement">
+                    <div class="p button-group-below-text"
+                         id="attachment_management_{{ current_version["attachment_id"] }}">
                         {{ util.href(cdedblink("assembly/add_attachment_form",
                                      {'attachment_id': current_version["attachment_id"],
                                       'ballot_id': ballot['id'] if ballot else None}),
