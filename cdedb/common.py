@@ -953,11 +953,11 @@ class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
     #: default sortkey (currently equal to EntitySorter.lodgement)
     moniker = 1
-    #: (regular_capacity - camping_mat_capacity) which are used in this part
+    #: regular_capacity which is used in this part
     used_regular = 10
     #: camping_mat_capacity which is used in this part
     used_camping_mat = 11
-    #: (regular_capacity - camping_mat_capacity) of this lodgement
+    #: regular_capacity of this lodgement
     total_regular = 20
     #: camping_mat_capacity of this lodgement
     total_camping_mat = 21
@@ -1946,8 +1946,8 @@ REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
 LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
 
 #: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "moniker", "regular_capacity", "camping_mat_capacity", "notes",
-                    "group_id", "fields")
+LODGEMENT_FIELDS = ("id", "event_id", "moniker", "regular_capacity",
+                    "camping_mat_capacity", "notes", "group_id", "fields")
 
 # Fields of a row in a questionnaire.
 # (This can be displayed in different places according to `kind`).

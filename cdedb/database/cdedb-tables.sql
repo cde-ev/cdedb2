@@ -751,7 +751,7 @@ CREATE TABLE event.lodgements (
         moniker                 varchar NOT NULL,
         regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
-        camping_mat_capacity                 integer NOT NULL DEFAULT 0,
+        camping_mat_capacity    integer NOT NULL DEFAULT 0,
         notes                   varchar,
         group_id                integer REFERENCES event.lodgement_groups(id),
         -- additional data, customized by each orga team

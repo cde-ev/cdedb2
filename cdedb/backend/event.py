@@ -1353,11 +1353,12 @@ class EventBackend(AbstractBackend):
 
         Possible blockers:
 
-        * fee_modifiers: A modification to the fee for a part depending on
-                         this event field.
-        * quetionnaire_rows: A questionnaire row that uses this field.
-        * lodge_fields: An event that uses this field for lodgement wishes.
-        * camping_mat_fields: An event that uses this field for camping_mat wishes.
+        * fee_modifiers:      A modification to the fee for a part depending on
+                              this event field.
+        * questionnaire_rows: A questionnaire row that uses this field.
+        * lodge_fields:       An event that uses this field for lodgement wishes.
+        * camping_mat_fields: An event that uses this field for camping mat
+                              wishes.
         * course_room_fields: An event that uses this field for course room
                               assignment.
 
@@ -2356,7 +2357,8 @@ class EventBackend(AbstractBackend):
                     {"type": "course", "block": blockers.keys()})
         return ret
 
-    def _list_registrations_unchecked(self, rs: RequestState, event_id, persona_id=None):
+    def _list_registrations_unchecked(self, rs: RequestState, event_id,
+                                      persona_id=None):
         """List all registrations of an event.
 
         If an ordinary event_user is requesting this, just participants of this

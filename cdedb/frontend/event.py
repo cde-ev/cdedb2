@@ -2344,9 +2344,8 @@ class EventFrontend(AbstractUserFrontend):
     def download_lodgement_puzzle(self, rs, event_id, runs):
         """Aggregate lodgement information.
 
-        This can be printed and cut to help with distribution of
-        participants. This make use of the lodge_field and the
-        camping_mat_field.
+        This can be printed and cut to help with distribution of participants.
+        This make use of the lodge_field and the camping_mat_field.
         """
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
@@ -2604,7 +2603,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/downloads")
 
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        columns = ['id', 'moniker', 'regular_capacity', 'camping_mat_capacity', 'notes']
+        columns = ['id', 'moniker', 'regular_capacity', 'camping_mat_capacity',
+                   'notes']
         columns.extend('fields.' + field['field_name']
                        for field in rs.ambience['event']['fields'].values()
                        if field['association'] ==
@@ -2951,14 +2951,14 @@ class EventFrontend(AbstractUserFrontend):
                 prefix = "{title}: ".format(title=track['shortname'])
             else:
                 prefix = ""
-            reg_titles["tracks.{}.course_id".format(track_id)] = prefix + rs.gettext("Course")
-            reg_choices["tracks.{}.course_id".format(track_id)] = course_entries
-            reg_titles["tracks.{}.course_instructor".format(track_id)] = prefix + rs.gettext("Instructor")
-            reg_choices["tracks.{}.course_instructor".format(track_id)] = course_entries
-            reg_titles["tracks.{}.choices".format(track_id)] = prefix + rs.gettext("Course Choices")
-            reg_choices["tracks.{}.choices".format(track_id)] = course_entries
-            course_titles["segments.{}".format(track_id)] = prefix + rs.gettext("Status")
-            course_choices["segments.{}".format(track_id)] = segment_stati_entries
+            reg_titles[f"tracks.{track_id}.course_id"] = prefix + rs.gettext("Course")
+            reg_choices[f"tracks.{track_id}.course_id"] = course_entries
+            reg_titles[f"tracks.{track_id}.course_instructor"] = prefix + rs.gettext("Instructor")
+            reg_choices[f"tracks.{track_id}.course_instructor"] = course_entries
+            reg_titles[f"tracks.{track_id}.choices"] = prefix + rs.gettext("Course Choices")
+            reg_choices[f"tracks.{track_id}.choices"] = course_entries
+            course_titles[f"segments.{track_id}"] = prefix + rs.gettext("Status")
+            course_choices[f"segments.{track_id}"] = segment_stati_entries
 
         for field in event['fields'].values():
             # TODO add choices?
@@ -2976,11 +2976,11 @@ class EventFrontend(AbstractUserFrontend):
                 prefix = "{title}: ".format(title=part['shortname'])
             else:
                 prefix = ""
-            reg_titles["parts.{}.status".format(part_id)] = prefix + rs.gettext("Status")
-            reg_choices["parts.{}.status".format(part_id)] = reg_part_stati_entries
-            reg_titles["parts.{}.lodgement_id".format(part_id)] = prefix + rs.gettext("Lodgement")
-            reg_choices["parts.{}.lodgement_id".format(part_id)] = lodgement_entries
-            reg_titles["parts.{}.is_camping_mat".format(part_id)] = prefix + rs.gettext("Camping Mat")
+            reg_titles[f"parts.{part_id}.status"] = prefix + rs.gettext("Status")
+            reg_choices[f"parts.{part_id}.status"] = reg_part_stati_entries
+            reg_titles[f"parts.{part_id}.lodgement_id"] = prefix + rs.gettext("Lodgement")
+            reg_choices[f"parts.{part_id}.lodgement_id"] = lodgement_entries
+            reg_titles[f"parts.{part_id}.is_camping_mat"] = prefix + rs.gettext("Camping Mat")
 
         return reg_titles, reg_choices, course_titles, course_choices, lodgement_titles
 
@@ -4227,10 +4227,12 @@ class EventFrontend(AbstractUserFrontend):
                 group = inhabitants[(lodgement_id, part_id)]
                 lodgement = lodgements[lodgement_id]
                 num_camping_mat = _camping_mat(group, part_id)
-                if len(group) > lodgement['regular_capacity'] + lodgement['camping_mat_capacity']:
+                if len(group) > (lodgement['regular_capacity'] +
+                                 lodgement['camping_mat_capacity']):
                     ret.append((n_("Overful lodgement."), lodgement_id, part_id,
                                 tuple(), 2))
-                elif len(group) - num_camping_mat > lodgement['regular_capacity']:
+                elif lodgement['regular_capacity'] < (len(group) -
+                                                      num_camping_mat):
                     ret.append((n_("Too few camping mats used."),
                                 lodgement_id, part_id, tuple(), 2))
                 if num_camping_mat > lodgement['camping_mat_capacity']:
@@ -4272,7 +4274,8 @@ class EventFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
 
-        # All inhabitants (regular and camping_mat) of all lodgements and all parts
+        # All inhabitants (regular and camping_mat) of all lodgements and
+        # all parts
         inhabitants = self.calculate_groups(
             lodgements, rs.ambience['event'], registrations, key="lodgement_id")
         regular_inhabitant_nums = {
@@ -4288,18 +4291,19 @@ class EventFrontend(AbstractUserFrontend):
             inhabitants)
         problems_condensed = {}
 
-        # Calculate regular_inhabitant_sum and camping_mat_inhabitant_sum per part
+        # Calculate regular_inhabitant_sum and camping_mat_inhabitant_sum
+        # per part
         regular_inhabitant_sum = {}
-        for part_id in parts:
-            lodgement_sum = 0
-            for lodgement_id in lodgement_ids:
-                lodgement_sum += regular_inhabitant_nums[(lodgement_id, part_id)]
-            regular_inhabitant_sum[part_id] = lodgement_sum
         camping_mat_inhabitant_sum = {}
         for part_id in parts:
+            regular_lodgement_sum = 0
             camping_mat_lodgement_sum = 0
             for lodgement_id in lodgement_ids:
-                camping_mat_lodgement_sum += camping_mat_inhabitant_nums[(lodgement_id, part_id)]
+                regular_lodgement_sum += regular_inhabitant_nums[
+                    (lodgement_id, part_id)]
+                camping_mat_lodgement_sum += camping_mat_inhabitant_nums[
+                    (lodgement_id, part_id)]
+            regular_inhabitant_sum[part_id] = regular_lodgement_sum
             camping_mat_inhabitant_sum[part_id] = camping_mat_lodgement_sum
 
         # Calculate sum of lodgement regular and camping mat capacities
@@ -4327,11 +4331,13 @@ class EventFrontend(AbstractUserFrontend):
                 if lodgement['group_id'] == group_id
             }
             for group_id, group
-            in (keydictsort_filter(groups, EntitySorter.lodgement_group) + [(None, None)])
+            in (keydictsort_filter(groups, EntitySorter.lodgement_group) +
+                [(None, None)])
         }
 
-        # Calculate group_regular_inhabitants_sum, group_camping_mat_inhabitants_sum,
-        # group_regular_sum and group_camping_mat_sum
+        # Calculate group_regular_inhabitants_sum,
+        #           group_camping_mat_inhabitants_sum,
+        #           group_regular_sum and group_camping_mat_sum
         group_regular_inhabitants_sum = {
             (group_id, part_id):
                 sum(regular_inhabitant_nums[(lodgement_id, part_id)]
@@ -4345,14 +4351,16 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in parts
             for group_id, group in grouped_lodgements.items()}
         group_regular_sum = {
-            group_id: sum(lodgement['regular_capacity'] for lodgement in group.values())
+            group_id: sum(lodgement['regular_capacity']
+                          for lodgement in group.values())
             for group_id, group in grouped_lodgements.items()}
         group_camping_mat_sum = {
-            group_id: sum(lodgement['camping_mat_capacity'] for lodgement in group.values())
+            group_id: sum(lodgement['camping_mat_capacity']
+                          for lodgement in group.values())
             for group_id, group in grouped_lodgements.items()}
 
-        def sort_lodgement(lodgement, group_id):
-            id, lodgement = lodgement
+        def sort_lodgement(lodgement_tuple, group_id):
+            id, lodgement = lodgement_tuple
             lodgement_group = grouped_lodgements[group_id]
             sort = LodgementsSortkeys
             if sort.is_used_sorting(sortkey):
@@ -4364,9 +4372,9 @@ class EventFrontend(AbstractUserFrontend):
                                 else camping_mat)
             elif sort.is_total_sorting(sortkey):
                 regular = (lodgement_group[id]['regular_capacity']
-                            if id in lodgement_group else 0)
-                camping_mat = (lodgement_group[id]['camping_mat_capacity']
                            if id in lodgement_group else 0)
+                camping_mat = (lodgement_group[id]['camping_mat_capacity']
+                               if id in lodgement_group else 0)
                 primary_sort = (regular if sortkey == sort.total_regular
                                 else camping_mat)
             elif sortkey == sort.moniker:
@@ -4386,7 +4394,8 @@ class EventFrontend(AbstractUserFrontend):
                 if lodgement['group_id'] == group_id
             ]))
             for group_id, group
-            in (keydictsort_filter(groups, EntitySorter.lodgement_group) + [(None, None)])
+            in (keydictsort_filter(groups, EntitySorter.lodgement_group) +
+                [(None, None)])
         ])
 
         return self.render(rs, "lodgements", {
@@ -4494,7 +4503,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity", "group_id", "notes")
+    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity",
+                     "group_id", "notes")
     @event_guard(check_offline=True)
     def create_lodgement(self, rs, event_id, data):
         """Add a new lodgement."""
@@ -4529,7 +4539,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity", "notes", "group_id")
+    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity",
+                     "notes", "group_id")
     @event_guard(check_offline=True)
     def change_lodgement(self, rs, event_id, lodgement_id, data):
         """Alter the attributes of a lodgement.
@@ -4692,7 +4703,7 @@ class EventFrontend(AbstractUserFrontend):
                 elif changed_inhabitant:
                     new_reg['parts'][part_id] = {
                         'is_camping_mat': data.get(
-                            "camping_mat_capacity_{}_{}".format(part_id, registration_id),
+                            f"camping_mat_capacity_{part_id}_{registration_id}",
                             False)
                     }
             if new_reg['parts']:
