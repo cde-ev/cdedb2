@@ -61,7 +61,7 @@
 	"lodgements": {
 		"3": null,
 		"2": {
-			"reserve": 5,
+			"camping_mat_capacity": 5,
 			"regular_capacity": 8,
 			"fields": {
 				"contamination": "medium"
@@ -79,7 +79,7 @@
 			"group_id": -1
 		},
 		"-1": {
-			"reserve": 2,
+			"camping_mat_capacity": 2,
 			"regular_capacity": 12,
 			"fields": {
 				"contamination": "none"
@@ -89,7 +89,7 @@
 			"group_id": -1
 		},
 		"-2": {
-			"reserve": 0,
+			"camping_mat_capacity": 0,
 			"regular_capacity": 42,
 			"fields": {
 				"contamination": "low"

@@ -609,7 +609,6 @@ CREATE TABLE event.events (
         is_cancelled                boolean NOT NULL DEFAULT False,
         -- JSON field for lodgement preference functionality
         lodge_field                 integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        -- JSON field for reserve functionality
         camping_mat_field           integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         course_room_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
@@ -752,7 +751,7 @@ CREATE TABLE event.lodgements (
         moniker                 varchar NOT NULL,
         regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
-        reserve                 integer NOT NULL DEFAULT 0,
+        camping_mat_capacity                 integer NOT NULL DEFAULT 0,
         notes                   varchar,
         group_id                integer REFERENCES event.lodgement_groups(id),
         -- additional data, customized by each orga team

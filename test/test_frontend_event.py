@@ -2181,7 +2181,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['createlodgementform']
         f['moniker'] = "Zelte"
         f['regular_capacity'] = 0
-        f['reserve'] = 20
+        f['camping_mat_capacity'] = 20
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
         f['fields.contamination'] = "low"
         self.submit(f)
@@ -2190,7 +2190,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Unterkunft Zelte bearbeiten (Große Testakademie 2222)")
         self.assertPresence("some radiation")
         f = self.response.forms['changelodgementform']
-        self.assertEqual('20', f['reserve'].value)
+        self.assertEqual('20', f['camping_mat_capacity'].value)
         self.assertEqual("oder gleich unter dem Sternenhimmel?", f['notes'].value)
 
     @as_users("garcia")
@@ -2202,10 +2202,10 @@ etc;anything else""", f['entries_2'].value)
 
         expectations = {
             "group_regular_inhabitants_3_1": "2",
-            "lodge_reserve_inhabitants_3_2": "1",
+            "lodge_camping_mat_inhabitants_3_2": "1",
             "group_regular_capacity_1": "11",
             "total_inhabitants_3": "4",
-            "total_reserve": "103",
+            "total_camping_mat": "103",
             "total_regular": "16",
         }
 
@@ -2679,7 +2679,7 @@ etc;anything else""", f['entries_2'].value)
 
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=CustomCSVDialect))
-        self.assertIn('100', tuple(row['reserve'] for row in result))
+        self.assertIn('100', tuple(row['camping_mat_capacity'] for row in result))
         self.assertIn('low', tuple(row['fields.contamination']
                                    for row in result))
 
@@ -3232,25 +3232,25 @@ etc;anything else""", f['entries_2'].value)
                                  'moniker': 'Warme Stube',
                                  'notes': None,
                                  'group_id': 2,
-                                 'reserve': 1},
+                                 'camping_mat_capacity': 1},
                            '2': {'regular_capacity': 10,
                                  'fields': {'contamination': 'none'},
                                  'moniker': 'Kalte Kammer',
                                  'notes': 'Dafür mit Frischluft.',
                                  'group_id': 1,
-                                 'reserve': 2},
+                                 'camping_mat_capacity': 2},
                            '3': {'regular_capacity': 0,
                                  'fields': {'contamination': 'low'},
                                  'moniker': 'Kellerverlies',
                                  'notes': 'Nur für Notfälle.',
                                  'group_id': None,
-                                 'reserve': 100},
+                                 'camping_mat_capacity': 100},
                            '4': {'regular_capacity': 1,
                                  'fields': {'contamination': 'high'},
                                  'moniker': 'Einzelzelle',
                                  'notes': None,
                                  'group_id': 1,
-                                 'reserve': 0}},
+                                 'camping_mat_capacity': 0}},
             'registrations': {'1': {'amount_owed': "573.99",
                                     'amount_paid': "0.00",
                                     'checkin': None,

@@ -750,7 +750,7 @@ class EventBackend(AbstractBackend):
             lodgement_table = """
             SELECT
                 id, id as lodgement_id, event_id,
-                moniker, regular_capacity, reserve, notes, group_id
+                moniker, regular_capacity, camping_mat_capacity, notes, group_id
             FROM
                 event.lodgements"""
 
@@ -782,7 +782,7 @@ class EventBackend(AbstractBackend):
             # Retrieve generic lodgemnt group information.
             lodgement_group_table = \
             """SELECT
-                tmp_id, moniker, regular_capacity, reserve
+                tmp_id, moniker, regular_capacity, camping_mat_capacity
             FROM (
                 (
                     (
@@ -803,7 +803,7 @@ class EventBackend(AbstractBackend):
                     SELECT
                         COALESCE(group_id, -1) as tmp_group_id,
                         SUM(regular_capacity) as regular_capacity,
-                        SUM(reserve) as reserve
+                        SUM(camping_mat_capacity) as camping_mat_capacity
                     FROM
                         event.lodgements
                     WHERE
@@ -861,7 +861,7 @@ class EventBackend(AbstractBackend):
             """SELECT
                 id, tmp_group_id,
                 COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-                COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                COALESCE(rp_camping_mat.inhabitants, 0) AS camping_mat_inhabitants,
                 COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
             FROM
                 (
@@ -873,15 +873,15 @@ class EventBackend(AbstractBackend):
                     {rp_regular}
                 ) AS rp_regular ON l.id = rp_regular.lodgement_id
                 LEFT OUTER JOIN (
-                    {rp_reserve}
-                ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+                    {rp_camping_mat}
+                ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
                 LEFT OUTER JOIN (
                     {rp_total}
                 ) AS rp_total ON l.id = rp_total.lodgement_id""".format(
                     event_id=event_id, part_id=p_id,
                     rp_regular=inhabitants_counter(
                         p_id, "AND is_camping_mat = False"),
-                    rp_reserve=inhabitants_counter(
+                    rp_camping_mat=inhabitants_counter(
                         p_id, "AND is_camping_mat = True"),
                     rp_total=inhabitants_counter(p_id, ""),
             )
@@ -890,7 +890,7 @@ class EventBackend(AbstractBackend):
             """SELECT
                 tmp_group_id,
                 COALESCE(SUM(regular_inhabitants)::bigint, 0) AS group_regular_inhabitants,
-                COALESCE(SUM(reserve_inhabitants)::bigint, 0) AS group_reserve_inhabitants,
+                COALESCE(SUM(camping_mat_inhabitants)::bigint, 0) AS group_camping_mat_inhabitants,
                 COALESCE(SUM(total_inhabitants)::bigint, 0) AS group_total_inhabitants
             FROM (
                 {inhabitants_view}
@@ -1357,7 +1357,7 @@ class EventBackend(AbstractBackend):
                          this event field.
         * quetionnaire_rows: A questionnaire row that uses this field.
         * lodge_fields: An event that uses this field for lodgement wishes.
-        * camping_mat_fields: An event that uses this field for reserve wishes.
+        * camping_mat_fields: An event that uses this field for camping_mat wishes.
         * course_room_fields: An event that uses this field for course room
                               assignment.
 
@@ -1567,12 +1567,12 @@ class EventBackend(AbstractBackend):
                                              {'field': 'lodge_field'})
                     correct_datatype = const.FieldDatatypes.bool
                     if edata.get('camping_mat_field'):
-                        reserve_data = unwrap(
+                        camping_mat_data = unwrap(
                             [x for x in indirect_data
                              if x['id'] == edata['camping_mat_field']])
-                        if (reserve_data['event_id'] != data['id']
-                                or reserve_data['kind'] != correct_datatype
-                                or reserve_data[
+                        if (camping_mat_data['event_id'] != data['id']
+                                or camping_mat_data['kind'] != correct_datatype
+                                or camping_mat_data[
                                     'association'] != correct_assoc):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'camping_mat_field'})

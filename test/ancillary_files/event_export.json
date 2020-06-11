@@ -94,7 +94,7 @@
     "event.lodgements": {
         "2": {
             "regular_capacity": 10,
-            "reserve": 2,
+            "camping_mat_capacity": 2,
             "id": 2,
             "moniker": "Kalte Kammer",
             "event_id": 1,
@@ -106,7 +106,7 @@
         },
         "1": {
             "regular_capacity": 5,
-            "reserve": 1,
+            "camping_mat_capacity": 1,
             "id": 1,
             "moniker": "Warme Stube",
             "event_id": 1,
@@ -118,7 +118,7 @@
         },
         "3": {
             "regular_capacity": 0,
-            "reserve": 100,
+            "camping_mat_capacity": 100,
             "id": 3,
             "moniker": "Kellerverlies",
             "event_id": 1,
@@ -130,7 +130,7 @@
         },
         "4": {
             "regular_capacity": 1,
-            "reserve": 0,
+            "camping_mat_capacity": 0,
             "id": 4,
             "moniker": "Einzelzelle",
             "event_id": 1,
