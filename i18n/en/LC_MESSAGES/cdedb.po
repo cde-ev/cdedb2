@@ -12416,6 +12416,20 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:80
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:75
+msgid ""
+"Example: If the subject prefix is set to \"info\" and a user sends a Mail"
+" with subject \"Invitation to PfingstAka\", the mail will be sent to the "
+"recipients as \"[info] Invitation to PfingstAka\"."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:90
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:85
+#, python-format
+msgid "Preview: %(prefix)sMail'sSubjectHere"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:80
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:75
 msgid "MIME filter / Attachments"
 msgstr ""
 
