@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 import datetime
+import shutil
 
 import magic
 import psycopg2.extensions
@@ -38,7 +39,7 @@ from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     n_, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, json_serialize, glue, CourseChoiceToolActions,
-    CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
+    CourseFilterPositions, diacritic_patterns, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
     LodgementsSortkeys, xsorted, RequestState)
 from cdedb.database.connection import Atomizer
@@ -2270,12 +2271,12 @@ class EventFrontend(AbstractUserFrontend):
             with open(work_dir / filename, 'w') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
-            shutil_copy(src, work_dir / "aka-logo.png")
-            shutil_copy(src, work_dir / "orga-logo.png")
-            shutil_copy(src, work_dir / "minor-pictogram.png")
-            shutil_copy(src, work_dir / "multicourse-logo.png")
+            shutil.copy(src, work_dir / "aka-logo.png")
+            shutil.copy(src, work_dir / "orga-logo.png")
+            shutil.copy(src, work_dir / "minor-pictogram.png")
+            shutil.copy(src, work_dir / "multicourse-logo.png")
             for course_id in courses:
-                shutil_copy(src, work_dir / "logo-{}.png".format(course_id))
+                shutil.copy(src, work_dir / "logo-{}.png".format(course_id))
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 "{}_nametags.tex".format(rs.ambience['event']['shortname']),
@@ -2457,14 +2458,14 @@ class EventFrontend(AbstractUserFrontend):
             with open(work_dir / filename, 'w') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
-            shutil_copy(src, work_dir / "event-logo.png")
+            shutil.copy(src, work_dir / "event-logo.png")
             for course_id in courses:
                 dest = work_dir / "course-logo-{}.png".format(course_id)
                 path = self.conf["STORAGE_DIR"] / "course_logo" / str(course_id)
                 if path.exists():
-                    shutil_copy(path, dest)
+                    shutil.copy(path, dest)
                 else:
-                    shutil_copy(src, dest)
+                    shutil.copy(src, dest)
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 "{}_course_lists.tex".format(rs.ambience['event']['shortname']),
@@ -2502,7 +2503,7 @@ class EventFrontend(AbstractUserFrontend):
             with open(work_dir / filename, 'w') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
-            shutil_copy(src, work_dir / "aka-logo.png")
+            shutil.copy(src, work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 "{}_lodgement_lists.tex".format(
