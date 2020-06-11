@@ -22,22 +22,35 @@ class TestMlFrontend(FrontendTest):
         # Users with no administrated and no moderated mailinglists:
         if user['id'] in {USER_DICT['martin']['id']}:
             ins = ["Übersicht"]
-            out = ["Alle Mailinglisten", "Aktive Mailinglisten",
-                   "Nutzer verwalten", "Log"]
+            out = ["Alle Mailinglisten", "Moderierte Mailinglisten",
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Log"]
         # Users with relative admin privileges for some mailinglists:
-        elif user['id'] in {USER_DICT['annika']['id'], USER_DICT['vera']['id'],
-                            USER_DICT['werner']['id']}:
-            # TODO: replace "Alle Mailinglisten".
-            ins = ["Aktive Mailinglisten", "Alle Mailinglisten", "Log"]
-            out = ["Übersicht", "Nutzer verwalten"]
+        elif user['id'] in {USER_DICT['vera']['id'], USER_DICT['werner']['id']}:
+            ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
+                   "Log"]
+            out = ["Übersicht", "Alle Mailinglisten",
+                   "Moderierte Mailinglisten", "Nutzer verwalten"]
+        # Users with moderated mailinglists and relative admin privileges
+        # for some mailinglists:
+        elif user['id'] in {USER_DICT['annika']['id']}:
+            ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
+                   "Moderierte Mailinglisten", "Log"]
+            out = ["Übersicht", "Alle Mailinglisten",
+                   "Nutzer verwalten"]
         # Users with moderated mailinglists, but no admin privileges.
         elif user['id'] in {USER_DICT['berta']['id']}:
-            ins = ["Aktive Mailinglisten", "Alle Mailinglisten", "Log"]
-            out = ["Übersicht", "Nutzer verwalten"]
+            ins = ["Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"]
+            out = ["Übersicht", "Administrierte Mailinglisten",
+                   "Alle Mailinglisten", "Nutzer verwalten"]
         # Users with full ml-admin privileges.
-        elif user['id'] in {USER_DICT['nina']['id'], USER_DICT['anton']['id']}:
+        elif user['id'] in {USER_DICT['nina']['id']}:
             ins = ["Aktive Mailinglisten", "Alle Mailinglisten",
                    "Nutzer verwalten", "Log"]
+            out = ["Übersicht", "Moderierte Mailinglisten"]
+        # Users with moderated mailinglisrs with full ml-admin privileges.
+        elif user['id'] in {USER_DICT['anton']['id']}:
+            ins = ["Aktive Mailinglisten", "Alle Mailinglisten",
+                   "Moderierte Mailinglisten", "Nutzer verwalten", "Log"]
             out = ["Übersicht"]
         else:
             self.fail("Please adjust users for this test.")
@@ -259,20 +272,11 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn("subscribe-mod-form", self.response.forms)
         self.assertNotIn("subscribe-no-mod-form", self.response.forms)
 
-    # @as_users("nina")
-    # def test_show_other_mailinglist(self, user):
-    #     self.traverse({'href': '/ml/$'},)
-    #     self.assertTitle("Mailinglisten")
-    #     self.assertPresence("Allgemeine Mailinglisten")
-    #     self.assertPresence("Andere Mailinglisten")
-    #     self.assertPresence("Sozialistischer Kampfbrief")
-    #     self.assertNonPresence("Aktivenforum 2001")
-
     @as_users("nina")
     def test_list_all_mailinglist(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list'})
-        self.assertTitle("Mailinglisten Komplettübersicht")
+        self.assertTitle("Alle Mailinglisten")
         self.assertPresence("Mitglieder (Moderiertes Opt-in)")
         self.assertPresence("Große Testakademie 2222")
         self.assertPresence("CdE-Party 2050")
@@ -283,7 +287,50 @@ class TestMlFrontend(FrontendTest):
         self.assertNoLink("Internationaler Kongress")
         self.assertPresence("Andere Mailinglisten")
         self.traverse({'href': '/ml/mailinglist/6'})
+        self.assertTitle("Aktivenforum 2000")
+
+    @as_users("annika")
+    def test_list_event_mailinglist(self, user):
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list'})
+        self.assertTitle("Administrierte Mailinglisten")
+        self.assertPresence("Große Testakademie 2222")
+        self.assertPresence("CdE-Party 2050 Orgateam")
+        self.assertPresence("Veranstaltungslisten")
+        # Moderated, but not administered mailinglists
+        self.assertNonPresence("Versammlungslisten")
+        self.assertNonPresence("Allgemeine Mailinglisten")
+        self.assertNonPresence("Andere Mailinglisten")
+        self.assertNonPresence("CdE-All")
+
+    @as_users("berta")
+    def test_moderated_mailinglis(self, user):
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/moderated'})
+        self.assertTitle("Moderierte Mailinglisten")
+        # Moderated mailinglists
+        self.assertPresence("Allgemeine Mailinglisten")
+        self.assertPresence("Veranstaltungslisten")
+        self.assertPresence("CdE-Party 2050 Orgateam")
+        # Inactive moderated mailinglists
+        self.assertPresence("Aktivenforum 2000")
+        self.traverse({'description': 'Aktivenforum 2000'})
         self.assertTitle("Aktivenforum 2000 – Verwaltung")
+
+    @as_users("annika")
+    def test_admin_moderated_mailinglis(self, user):
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/moderated'})
+        self.assertTitle("Moderierte Mailinglisten")
+        # Moderated mailinglists
+        self.assertPresence("Allgemeine Mailinglisten")
+        self.assertPresence("CdE-All")
+        self.assertPresence("Veranstaltungslisten")
+        self.assertPresence("CdE-Party 2050 Orgateam")
+        # Administrated, not moderated mailinglists
+        self.assertNonPresence("Große Testakademie 2222")
+        self.assertNonPresence("Versammlungslisten")
+        self.assertNonPresence("Andere Mailinglisten")
 
     @as_users("nina", "berta")
     def test_mailinglist_management(self, user):
@@ -494,7 +541,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms["deletemlform"]
         f["ack_delete"].checked = True
         self.submit(f)
-        self.assertTitle("Mailinglisten Komplettübersicht")
+        self.assertTitle("Alle Mailinglisten")
         self.assertNonPresence("Werbung")
 
     def test_subscription_request(self):

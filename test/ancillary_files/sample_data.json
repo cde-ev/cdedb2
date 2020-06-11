@@ -6199,6 +6199,16 @@
             "id": 38,
             "mailinglist_id": 65,
             "persona_id": 5
+        },
+        {
+            "id": 39,
+            "mailinglist_id": 51,
+            "persona_id": 27
+        },
+        {
+            "id": 40,
+            "mailinglist_id": 59,
+            "persona_id": 27
         }
     ],
     "ml.whitelist": [

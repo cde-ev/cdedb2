@@ -47,14 +47,25 @@
         <div class="list-group tear-down">
             {% if 'ml_mgmt' in user.admin_views or user.moderator %}
                 {{ util.href(cdedblink("ml/index"), gettext("Active Mailinglists"), icon="caret-right",
-                        aclass="list-group-item", active=(sidenav_active == 'ml_index')) }}
-                {# TODO Rename this more appropriately for users who only sse some mailinglists here. #}
-                {{ util.href(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists"), icon="cog",
-                        aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}
+                             aclass="list-group-item", active=(sidenav_active == 'ml_index')) }}
             {% else %}
                 {{ util.href(cdedblink("ml/index"), gettext("Overview"), icon="caret-right", aclass="list-group-item",
                         active=(sidenav_active == 'ml_index')) }}
             {% endif %}
+            {% if 'ml_mgmt' in user.admin_views %}
+                {% if 'ml_admin' in user. roles %}
+                    {% set overview=gettext("All Mailinglists") %}
+                {% else %}
+                    {% set overview=gettext("Administered Mailinglists") %}
+                {% endif %}
+                {{ util.href(cdedblink("ml/list_mailinglists"), overview, icon="cog",
+                             aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}
+            {% endif %}
+            {% if user.moderator %}
+                {{ util.href(cdedblink("ml/moderated_mailinglists"), gettext("Moderated Mailinglists"), icon="list",
+                             aclass="list-group-item", active=(sidenav_active == 'ml_moderated')) }}
+            {% endif %}
+
         </div>
         {% if user.moderator or user.admin_views.intersection(('ml_mgmt', 'ml_user')) %}
             <div class="list-group tear-down">

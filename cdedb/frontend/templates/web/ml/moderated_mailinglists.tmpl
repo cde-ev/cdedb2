@@ -1,23 +1,15 @@
-{% set sidenav_active='ml_all' %}
+{% set sidenav_active='ml_moderated' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% if 'ml_admin' in user. roles %}
-        {% trans %}All Mailinglists{% endtrans %}
-    {% else %}
-        {% trans %}Administered Mailinglists{% endtrans %}
-    {% endif %}
+    {% trans %}Moderated Mailinglists{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists"), active=True) }}
+{{ util.breadcrumb_link(cdedblink("ml/moderated_mailinglists"), gettext("Moderated Mailinglists"), active=True) }}
 {% endblock %}
 
 {% block content %}
-    <div class="p">
-        {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
-                aclass="btn btn-sm btn-success") }}
-    </div>
      <p class="text-info">
          {{ util.make_icon('info-circle') }}
          {% trans documentation=util.href(docurl('Architecture_Mailinglists'), gettext('documentation')) %}
@@ -30,7 +22,7 @@
             <h3>{{ gettext(group|string) }}</h3>
             <div class="list-group list-group-hover list-group-condensed">
             {% for mailinglist_id, ml in mailinglists[group]|keydictsort(EntitySorter.mailinglist) %}
-                {{ util.format_ml_entry(mailinglist_id, ml['title'], False) }}
+                {{ util.format_ml_entry(mailinglist_id, ml['title'], True) }}
             {% endfor %}
             </div>
         {% endif %}

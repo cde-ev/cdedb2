@@ -340,15 +340,17 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState, active_only: bool = True,
-                          managed_only: bool = False) -> Dict[int, str]:
+                          mod_only: bool = False, admin_only: bool = False) -> Dict[int, str]:
         """List all mailinglists you may view
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type active_only: bool
         :param active_only: Toggle wether inactive lists should be included.
-        :type managed_only: bool
-        :param managed_only: Toggle whether to only list lists the user may
-            manage.
+        :type mod_only: bool
+        :param mod_only: Toggle whether to only list lists the user is
+            moderator of.
+        :param admin_only: Toggle whether to only list lists the user is
+            admin of.
         :rtype: {int: str}
         :returns: Mapping of mailinglist ids to titles.
         """
@@ -369,12 +371,14 @@ class MlBackend(AbstractBackend):
             mailinglists = self.get_mailinglists(rs, ml_ids)
             ret = {e['id']: e['title'] for e in data}
 
+        if mod_only:
+            return {k: v for k, v in ret.items()
+                    if self.is_moderator(rs, k)}
         if self.is_admin(rs):
             return ret
-        if managed_only:
-            # TODO maybe allow may_mange to take the entire mailinglist.
+        if admin_only:
             return {k: v for k, v in ret.items()
-                    if self.may_manage(rs, mailinglist_id=k)}
+                    if self.is_relevant_admin(rs, mailinglist_id=k)}
         else:
             return {k: v for k, v in ret.items()
                     if self.may_view(rs, mailinglists[k])}
