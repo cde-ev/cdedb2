@@ -750,7 +750,7 @@ CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         moniker                 varchar NOT NULL,
-        capacity                integer NOT NULL,
+        regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
         reserve                 integer NOT NULL DEFAULT 0,
         notes                   varchar,

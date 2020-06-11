@@ -2870,7 +2870,7 @@ def _lodgement_group(val, argname=None, *, creation=False, _convert=True,
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
-    'capacity': _non_negative_int,
+    'regular_capacity': _non_negative_int,
     'reserve': _non_negative_int,
     'notes': _str_or_None,
     'group_id': _id_or_None,
@@ -3418,7 +3418,7 @@ def _partial_lodgement_group(val, argname=None, *, creation=False,
 
 _PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
-    'capacity': _non_negative_int,
+    'regular_capacity': _non_negative_int,
     'reserve': _non_negative_int,
     'notes': _str_or_None,
     'group_id': _partial_import_id_or_None,

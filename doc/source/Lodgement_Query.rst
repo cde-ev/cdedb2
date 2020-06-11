@@ -21,13 +21,13 @@ The final view will be constructed as follows (slightly simplified). ::
   (
       SELECT
           id, id as lodgement_id, event_id,
-          moniker, capacity, reserve, notes, group_id
+          moniker, regular_capacity, reserve, notes, group_id
       FROM
           event.lodgements
   ) AS lodgement
   LEFT OUTER JOIN (
       SELECT
-          id, moniker, capacity, reserve
+          id, moniker, regular_capacity, reserve
       FROM
           event.lodgement_groups
   ) AS lodgement_group ON lodgement.group_id = lodgement_group.id
@@ -51,12 +51,12 @@ The following columns will be available in this view:
 * ``lodgement.id``
 * ``lodgement.event_id``
 * ``lodgement.moniker``
-* ``lodgement.capacity``
+* ``lodgement.regular_capacity``
 * ``lodgement.notes``
 * ``lodgement.group_id``
 * ``lodgement.reserve``
 * ``lodgement_group.moniker``
-* ``lodgement_group.capacity``
+* ``lodgement_group.regular_capacity``
 * ``lodgement_group.reserve``
 * ``lodgement_fields.xfield_{field_name}`` *This is available for every custom data field with course association.*
 * ``part{part_id}.regular_inhabitants``
@@ -203,7 +203,7 @@ The Complete View
     (
         SELECT
             id, id as lodgement_id, event_id,
-            moniker, capacity, reserve, notes, group_id
+            moniker, regular_capacity, reserve, notes, group_id
         FROM
             event.lodgements
     ) AS lodgement
@@ -227,7 +227,7 @@ The Complete View
     ) AS lodgement_fields ON lodgement.id = lodgement_fields.id
     LEFT OUTER JOIN (
         SELECT
-            tmp_id, moniker, capacity, reserve
+            tmp_id, moniker, regular_capacity, reserve
         FROM (
             (
                 (
@@ -247,7 +247,7 @@ The Complete View
             LEFT OUTER JOIN (
                 SELECT
                     COALESCE(group_id, -1) as tmp_group_id,
-                    SUM(capacity) as capacity,
+                    SUM(regular_capacity) as regular_capacity,
                     SUM(reserve) as reserve
                 FROM
                     event.lodgements

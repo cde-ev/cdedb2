@@ -62,7 +62,7 @@
 		"3": null,
 		"2": {
 			"reserve": 5,
-			"capacity": 8,
+			"regular_capacity": 8,
 			"fields": {
 				"contamination": "medium"
 			},
@@ -80,7 +80,7 @@
 		},
 		"-1": {
 			"reserve": 2,
-			"capacity": 12,
+			"regular_capacity": 12,
 			"fields": {
 				"contamination": "none"
 			},
@@ -90,7 +90,7 @@
 		},
 		"-2": {
 			"reserve": 0,
-			"capacity": 42,
+			"regular_capacity": 42,
 			"fields": {
 				"contamination": "low"
 			},

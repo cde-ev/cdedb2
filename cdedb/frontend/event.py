@@ -2604,7 +2604,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/downloads")
 
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        columns = ['id', 'moniker', 'capacity', 'reserve', 'notes']
+        columns = ['id', 'moniker', 'regular_capacity', 'reserve', 'notes']
         columns.extend('fields.' + field['field_name']
                        for field in rs.ambience['event']['fields'].values()
                        if field['association'] ==
@@ -4227,10 +4227,10 @@ class EventFrontend(AbstractUserFrontend):
                 group = inhabitants[(lodgement_id, part_id)]
                 lodgement = lodgements[lodgement_id]
                 num_reserve = _reserve(group, part_id)
-                if len(group) > lodgement['capacity'] + lodgement['reserve']:
+                if len(group) > lodgement['regular_capacity'] + lodgement['reserve']:
                     ret.append((n_("Overful lodgement."), lodgement_id, part_id,
                                 tuple(), 2))
-                elif len(group) - num_reserve > lodgement['capacity']:
+                elif len(group) - num_reserve > lodgement['regular_capacity']:
                     ret.append((n_("Too few camping mats used."),
                                 lodgement_id, part_id, tuple(), 2))
                 if num_reserve > lodgement['reserve']:
@@ -4306,7 +4306,7 @@ class EventFrontend(AbstractUserFrontend):
         regular_sum = 0
         reserve_sum = 0
         for lodgement in lodgements.values():
-            regular_sum += lodgement['capacity']
+            regular_sum += lodgement['regular_capacity']
             reserve_sum += lodgement['reserve']
 
         # Calculate problems_condensed (worst problem)
@@ -4345,7 +4345,7 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in parts
             for group_id, group in grouped_lodgements.items()}
         group_regular_sum = {
-            group_id: sum(lodgement['capacity'] for lodgement in group.values())
+            group_id: sum(lodgement['regular_capacity'] for lodgement in group.values())
             for group_id, group in grouped_lodgements.items()}
         group_reserve_sum = {
             group_id: sum(lodgement['reserve'] for lodgement in group.values())
@@ -4363,7 +4363,7 @@ class EventFrontend(AbstractUserFrontend):
                 primary_sort = (regular if sortkey == sort.used_regular
                                 else reserve)
             elif sort.is_total_sorting(sortkey):
-                regular = (lodgement_group[id]['capacity']
+                regular = (lodgement_group[id]['regular_capacity']
                             if id in lodgement_group else 0)
                 reserve = (lodgement_group[id]['reserve']
                            if id in lodgement_group else 0)
@@ -4494,7 +4494,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "capacity", "reserve", "group_id", "notes")
+    @REQUESTdatadict("moniker", "regular_capacity", "reserve", "group_id", "notes")
     @event_guard(check_offline=True)
     def create_lodgement(self, rs, event_id, data):
         """Add a new lodgement."""
@@ -4529,7 +4529,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "capacity", "reserve", "notes", "group_id")
+    @REQUESTdatadict("moniker", "regular_capacity", "reserve", "notes", "group_id")
     @event_guard(check_offline=True)
     def change_lodgement(self, rs, event_id, lodgement_id, data):
         """Alter the attributes of a lodgement.
@@ -5489,13 +5489,13 @@ class EventFrontend(AbstractUserFrontend):
             "lodgement.id": gettext(n_("Lodgement ID")),
             "lodgement.lodgement_id": gettext(n_("Lodgement")),
             "lodgement.moniker": gettext(n_("Moniker")),
-            "lodgement.capacity": gettext(n_("Regular Capacity")),
+            "lodgement.regular_capacity": gettext(n_("Regular Capacity")),
             "lodgement.reserve": gettext(n_("Camping Mat Capacity")),
             "lodgement.notes": gettext(n_("Lodgement Notes")),
             "lodgement.group_id": gettext(n_("Lodgement Group ID")),
             "lodgement_group.tmp_id": gettext(n_("Lodgement Group")),
             "lodgement_group.moniker": gettext(n_("Lodgement Group Moniker")),
-            "lodgement_group.capacity":
+            "lodgement_group.regular_capacity":
                 gettext(n_("Lodgement Group Regular Capacity")),
             "lodgement_group.reserve":
                 gettext(n_("Lodgement Group Camping Mat Capacity")),

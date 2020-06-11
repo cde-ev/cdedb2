@@ -146,7 +146,7 @@ INSERT INTO event.orgas (persona_id, event_id) VALUES
     (7, 1),
     (1, 2),
     (2, 2);
-INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes, fields) VALUES
+INSERT INTO event.lodgements (id, event_id, moniker, regular_capacity, reserve, notes, fields) VALUES
     (1, 1, 'Warme Stube<script>abcdef</script>', 5, 1, NULL, '{"lodgement_id": 1, "contamination": "high<script>abcdef</script>"}'::jsonb),
     (2, 1, 'Kalte Kammer<script>abcdef</script>', 10, 2, 'Dafür mit Frischluft.<script>abcdef</script>', '{"lodgement_id": 2, "contamination": "none"}'::jsonb),
     (3, 1, 'Kellerverlies<script>abcdef</script>', 0, 100, 'Nur für Notfälle.<script>abcdef</script>', '{"lodgement_id": 3, "contamination": "low"}'::jsonb),

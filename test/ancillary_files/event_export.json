@@ -93,7 +93,7 @@
     },
     "event.lodgements": {
         "2": {
-            "capacity": 10,
+            "regular_capacity": 10,
             "reserve": 2,
             "id": 2,
             "moniker": "Kalte Kammer",
@@ -105,7 +105,7 @@
             }
         },
         "1": {
-            "capacity": 5,
+            "regular_capacity": 5,
             "reserve": 1,
             "id": 1,
             "moniker": "Warme Stube",
@@ -117,7 +117,7 @@
             }
         },
         "3": {
-            "capacity": 0,
+            "regular_capacity": 0,
             "reserve": 100,
             "id": 3,
             "moniker": "Kellerverlies",
@@ -129,7 +129,7 @@
             }
         },
         "4": {
-            "capacity": 1,
+            "regular_capacity": 1,
             "reserve": 0,
             "id": 4,
             "moniker": "Einzelzelle",

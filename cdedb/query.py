@@ -347,7 +347,7 @@ QUERY_SPECS = {
             ("lodgement.id", "id"),
             ("lodgement.lodgement_id", "id"),
             ("lodgement.moniker", "str"),
-            ("lodgement.capacity", "int"),
+            ("lodgement.regular_capacity", "int"),
             ("lodgement.reserve", "int"),
             ("lodgement.notes", "str"),
             ("lodgement.group_id", "int"),

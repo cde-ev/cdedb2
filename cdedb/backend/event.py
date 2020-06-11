@@ -750,7 +750,7 @@ class EventBackend(AbstractBackend):
             lodgement_table = """
             SELECT
                 id, id as lodgement_id, event_id,
-                moniker, capacity, reserve, notes, group_id
+                moniker, regular_capacity, reserve, notes, group_id
             FROM
                 event.lodgements"""
 
@@ -782,7 +782,7 @@ class EventBackend(AbstractBackend):
             # Retrieve generic lodgemnt group information.
             lodgement_group_table = \
             """SELECT
-                tmp_id, moniker, capacity, reserve
+                tmp_id, moniker, regular_capacity, reserve
             FROM (
                 (
                     (
@@ -802,7 +802,7 @@ class EventBackend(AbstractBackend):
                 LEFT OUTER JOIN (
                     SELECT
                         COALESCE(group_id, -1) as tmp_group_id,
-                        SUM(capacity) as capacity,
+                        SUM(regular_capacity) as regular_capacity,
                         SUM(reserve) as reserve
                     FROM
                         event.lodgements

@@ -2157,8 +2157,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/lodgement/4/change'})
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
-        self.assertEqual("1", f['capacity'].value)
-        f['capacity'] = 3
+        self.assertEqual("1", f['regular_capacity'].value)
+        f['regular_capacity'] = 3
         self.assertEqual("", f['notes'].value)
         f['notes'] = "neu mit Anbau"
         self.assertEqual("high", f['fields.contamination'].value)
@@ -2167,7 +2167,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/lodgement/4/change'})
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
-        self.assertEqual("3", f['capacity'].value)
+        self.assertEqual("3", f['regular_capacity'].value)
         self.assertEqual("neu mit Anbau", f['notes'].value)
         self.assertEqual("medium", f['fields.contamination'].value)
         self.traverse({'href': '/event/event/1/lodgement/overview'})
@@ -2180,7 +2180,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/lodgement/create'})
         f = self.response.forms['createlodgementform']
         f['moniker'] = "Zelte"
-        f['capacity'] = 0
+        f['regular_capacity'] = 0
         f['reserve'] = 20
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
         f['fields.contamination'] = "low"
@@ -2214,7 +2214,7 @@ etc;anything else""", f['entries_2'].value)
 
         self.traverse({'href': '/event/event/1/lodgement/1/change'})
         f = self.response.forms['changelodgementform']
-        f['capacity'] = 42
+        f['regular_capacity'] = 42
         self.submit(f)
         self.traverse({'href': '/event/event/1/lodgement/overview'})
 
@@ -3227,25 +3227,25 @@ etc;anything else""", f['entries_2'].value)
             'kind': 'partial',
             'lodgement_groups': {'1': {'moniker': 'Haupthaus'},
                                  '2': {'moniker': 'AußenWohnGruppe'}},
-            'lodgements': {'1': {'capacity': 5,
+            'lodgements': {'1': {'regular_capacity': 5,
                                  'fields': {'contamination': 'high'},
                                  'moniker': 'Warme Stube',
                                  'notes': None,
                                  'group_id': 2,
                                  'reserve': 1},
-                           '2': {'capacity': 10,
+                           '2': {'regular_capacity': 10,
                                  'fields': {'contamination': 'none'},
                                  'moniker': 'Kalte Kammer',
                                  'notes': 'Dafür mit Frischluft.',
                                  'group_id': 1,
                                  'reserve': 2},
-                           '3': {'capacity': 0,
+                           '3': {'regular_capacity': 0,
                                  'fields': {'contamination': 'low'},
                                  'moniker': 'Kellerverlies',
                                  'notes': 'Nur für Notfälle.',
                                  'group_id': None,
                                  'reserve': 100},
-                           '4': {'capacity': 1,
+                           '4': {'regular_capacity': 1,
                                  'fields': {'contamination': 'high'},
                                  'moniker': 'Einzelzelle',
                                  'notes': None,

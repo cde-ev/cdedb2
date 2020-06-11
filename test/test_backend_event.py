@@ -322,7 +322,7 @@ class TestEventBackend(BackendTest):
             new_group, self.event.get_lodgement_group(self.key, new_group_id))
 
         new_lodgement = {
-            'capacity': 42,
+            'regular_capacity': 42,
             'event_id': new_id,
             'moniker': 'Hyrule',
             'notes': "Notizen",
@@ -1199,7 +1199,7 @@ class TestEventBackend(BackendTest):
             new_group, self.event.get_lodgement_group(self.key, new_group_id))
 
         new_lodgement = {
-            'capacity': 42,
+            'regular_capacity': 42,
             'event_id': 1,
             'moniker': 'Hyrule',
             'notes': "Notizen",
@@ -1240,7 +1240,7 @@ class TestEventBackend(BackendTest):
                          self.event.list_lodgements(self.key, event_id))
         expectation_get = {
             1: {
-                'capacity': 5,
+                'regular_capacity': 5,
                 'event_id': 1,
                 'fields': {'contamination': 'high'},
                 'id': 1,
@@ -1250,7 +1250,7 @@ class TestEventBackend(BackendTest):
                 'group_id': 2,
             },
             4: {
-                'capacity': 1,
+                'regular_capacity': 1,
                 'event_id': 1,
                 'fields': {'contamination': 'high'},
                 'id': 4,
@@ -1262,7 +1262,7 @@ class TestEventBackend(BackendTest):
         }
         self.assertEqual(expectation_get, self.event.get_lodgements(self.key, (1,4)))
         new = {
-            'capacity': 42,
+            'regular_capacity': 42,
             'event_id': 1,
             'moniker': 'Hyrule',
             'notes': "Notizen",
@@ -1275,7 +1275,7 @@ class TestEventBackend(BackendTest):
         new['fields'] = {}
         self.assertEqual(new, self.event.get_lodgement(self.key, new_id))
         update = {
-            'capacity': 21,
+            'regular_capacity': 21,
             'notes': None,
             'id': new_id,
         }
@@ -1576,13 +1576,13 @@ class TestEventBackend(BackendTest):
             scope="qview_event_lodgement",
             spec=dict(QUERY_SPECS['qview_event_lodgement']),
             fields_of_interest=[
-                "lodgement.capacity",
+                "lodgement.regular_capacity",
                 "lodgement.group_id",
                 "lodgement.moniker",
                 "lodgement.reserve",
                 "lodgement_fields.xfield_contamination",
                 "lodgement_group.moniker",
-                "lodgement_group.capacity",
+                "lodgement_group.regular_capacity",
                 "lodgement_group.reserve",
                 "part1.regular_inhabitants",
                 "part1.reserve_inhabitants",
@@ -1602,12 +1602,12 @@ class TestEventBackend(BackendTest):
         expectation = (
             {
                 'id': 4,
-                'lodgement.capacity': 1,
+                'lodgement.regular_capacity': 1,
                 'lodgement.group_id': 1,
                 'lodgement.moniker': "Einzelzelle",
                 'lodgement.reserve': 0,
                 'lodgement_fields.xfield_contamination': 'high',
-                'lodgement_group.capacity': 11,
+                'lodgement_group.regular_capacity': 11,
                 'lodgement_group.moniker': 'Haupthaus',
                 'lodgement_group.reserve': 2,
                 'part1.group_regular_inhabitants': 2,
@@ -1619,12 +1619,12 @@ class TestEventBackend(BackendTest):
             },
             {
                 'id': 2,
-                'lodgement.capacity': 10,
+                'lodgement.regular_capacity': 10,
                 'lodgement.group_id': 1,
                 'lodgement.moniker': "Kalte Kammer",
                 'lodgement.reserve': 2,
                 'lodgement_fields.xfield_contamination': 'none',
-                'lodgement_group.capacity': 11,
+                'lodgement_group.regular_capacity': 11,
                 'lodgement_group.moniker': 'Haupthaus',
                 'lodgement_group.reserve': 2,
                 'part1.group_regular_inhabitants': 2,
@@ -2433,7 +2433,7 @@ class TestEventBackend(BackendTest):
                                        2: {'id': 2,
                                            'event_id': 1,
                                            'moniker': 'AußenWohnGruppe'}},
-            'event.lodgements': {1: {'capacity': 5,
+            'event.lodgements': {1: {'regular_capacity': 5,
                                      'event_id': 1,
                                      'fields': {'contamination': 'high'},
                                      'id': 1,
@@ -2441,7 +2441,7 @@ class TestEventBackend(BackendTest):
                                      'notes': None,
                                      'group_id': 2,
                                      'reserve': 1},
-                                 2: {'capacity': 10,
+                                 2: {'regular_capacity': 10,
                                      'event_id': 1,
                                      'fields': {'contamination': 'none'},
                                      'id': 2,
@@ -2449,7 +2449,7 @@ class TestEventBackend(BackendTest):
                                      'notes': 'Dafür mit Frischluft.',
                                      'group_id': 1,
                                      'reserve': 2},
-                                 3: {'capacity': 0,
+                                 3: {'regular_capacity': 0,
                                      'event_id': 1,
                                      'fields': {'contamination': 'low'},
                                      'id': 3,
@@ -2457,7 +2457,7 @@ class TestEventBackend(BackendTest):
                                      'notes': 'Nur für Notfälle.',
                                      'group_id': None,
                                      'reserve': 100},
-                                 4: {'capacity': 1,
+                                 4: {'regular_capacity': 1,
                                      'event_id': 1,
                                      'fields': {'contamination': 'high'},
                                      'id': 4,
@@ -2933,7 +2933,7 @@ class TestEventBackend(BackendTest):
         }
         ## lodgements
         new_data['event.lodgements'][6000] = {
-            'capacity': 1,
+            'regular_capacity': 1,
             'event_id': 1,
             'fields': {},
             'id': 6000,
@@ -3140,7 +3140,7 @@ class TestEventBackend(BackendTest):
             'moniker': 'Nebenan',
         }
         stored_data['event.lodgements'][1001] = {
-            'capacity': 1,
+            'regular_capacity': 1,
             'event_id': 1,
             'fields': {},
             'id': 1001,
@@ -3488,25 +3488,25 @@ class TestEventBackend(BackendTest):
             'kind': 'partial',
             'lodgement_groups': {1: {'moniker': 'Haupthaus'},
                                  2: {'moniker': 'AußenWohnGruppe'}},
-            'lodgements': {1: {'capacity': 5,
+            'lodgements': {1: {'regular_capacity': 5,
                                'fields': {'contamination': 'high'},
                                'moniker': 'Warme Stube',
                                'notes': None,
                                'group_id': 2,
                                'reserve': 1},
-                           2: {'capacity': 10,
+                           2: {'regular_capacity': 10,
                                'fields': {'contamination': 'none'},
                                'moniker': 'Kalte Kammer',
                                'notes': 'Dafür mit Frischluft.',
                                'group_id': 1,
                                'reserve': 2},
-                           3: {'capacity': 0,
+                           3: {'regular_capacity': 0,
                                'fields': {'contamination': 'low'},
                                'moniker': 'Kellerverlies',
                                'notes': 'Nur für Notfälle.',
                                'group_id': None,
                                'reserve': 100},
-                           4: {'capacity': 1,
+                           4: {'regular_capacity': 1,
                                'fields': {'contamination': 'high'},
                                'moniker': 'Einzelzelle',
                                'notes': None,
@@ -4010,13 +4010,13 @@ class TestEventBackend(BackendTest):
                         3: None,
                         4: {'segments': {1: None}}},
             'lodgement_groups': {-1: {'moniker': 'Geheime Etage'}},
-            'lodgements': {-1: {'capacity': 12,
+            'lodgements': {-1: {'regular_capacity': 12,
                                 'fields': {'contamination': 'none'},
                                 'moniker': 'Geheimkabinett',
                                 'notes': 'Einfach den unsichtbaren Schildern folgen.',
                                 'group_id': -1,
                                 'reserve': 2},
-                           -2: {'capacity': 42,
+                           -2: {'regular_capacity': 42,
                                 'fields': {'contamination': 'low'},
                                 'moniker': 'Handtuchraum',
                                 'notes': 'Hier gibt es Handtücher für jeden.',
@@ -4495,7 +4495,7 @@ class TestEventBackend(BackendTest):
         }
         self.event.set_registration(self.key, data)
         new = {
-            'capacity': 42,
+            'regular_capacity': 42,
             'event_id': 1,
             'moniker': 'Hyrule',
             'notes': "Notizen",
@@ -4504,7 +4504,7 @@ class TestEventBackend(BackendTest):
         }
         new_id = self.event.create_lodgement(self.key, new)
         update = {
-            'capacity': 21,
+            'regular_capacity': 21,
             'notes': None,
             'id': new_id,
         }

@@ -122,7 +122,7 @@
                                 {% endif %}
                             </td>
                         {% endfor %}
-                        <td class="b-left text-right" id="lodge_regular_capacity_{{ lodgement_id }}">{{ lodgement['capacity'] }}</td>
+                        <td class="b-left text-right" id="lodge_regular_capacity_{{ lodgement_id }}">{{ lodgement['regular_capacity'] }}</td>
                         <td class=" text-right" id="lodge_reserve_capacity{{ lodgement_id }}">+ {{ lodgement['reserve'] }}</td>
                         <td class="b-left">
                             {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
