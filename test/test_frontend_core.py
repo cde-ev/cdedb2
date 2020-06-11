@@ -1608,6 +1608,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
         self.assertPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
         self.assertNonPresence("Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
+        self.traverse({'href': '/core/genesis/1001/show'})
+        self.assertPresence("Ganondorf")
+        self.assertNonPresence("Zickzack")
+        self.traverse({'href': '/core/genesis/1001/modify'})
+        self.assertTitle("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['birth_name'] = "Zickzack"
+        self.submit(f)
+        self.assertPresence("Zickzack")
+        self.assertNonPresence("Ganondorf")
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
@@ -1615,7 +1625,6 @@ class TestCoreFrontend(FrontendTest):
         f['realm'] = 'ml'
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        self.assertPresence("Ganondorf")
         self.assertPresence("Anhang herunterladen")
         save = self.response
         self.traverse({'description': 'Anhang herunterladen'})
@@ -1673,6 +1682,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Zelda Zeruda-Hime")
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertPresence("12345")
+        self.assertPresence("Zickzack")
         self.traverse({'href': '/cde'})
         self.assertTitle('CdE-Mitgliederbereich')
         self.traverse({'description': 'Sonstiges'})
