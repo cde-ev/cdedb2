@@ -258,6 +258,8 @@ class EventBackend(AbstractBackend):
         view = None
         if query.scope == "qview_registration":
             event_id = affirm("id", event_id)
+            # ml_admins are allowed to do this to be able to manage
+            # subscribers of event mailinglists.
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
                     and "ml_admin" not in rs.user.roles):
@@ -2372,7 +2374,9 @@ class EventBackend(AbstractBackend):
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
         params = (event_id,)
-        # condition for limited access, f. e. for the online participant list
+        # condition for limited access, f. e. for the online participant list.
+        # ml_admins are allowed to do this to be able to manage
+        # subscribers of event mailinglists.
         is_limited = (persona_id != rs.user.persona_id
                       and not self.is_orga(rs, event_id=event_id)
                       and not self.is_admin(rs)
@@ -2400,10 +2404,11 @@ class EventBackend(AbstractBackend):
     def check_registration_status(self, rs, persona_id, event_id, stati):
         """Check if any status for a given event matches one of the given stati.
 
-        This is mostly used to determine mailinglist eligibility.
+        This is mostly used to determine mailinglist eligibility. Thus,
+        ml_admins are allowed to do this to manage subscribers.
 
         A user may do this for themselves, an orga for their event and an
-        admin for every user.
+        event or ml admin for every user.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
@@ -2554,6 +2559,9 @@ class EventBackend(AbstractBackend):
         * parts: per part data (like lodgement),
         * tracks: per track data (like course choices)
 
+        ml_admins are allowed to do this to be able to manage
+        subscribers of event mailinglists.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
@@ -2575,6 +2583,8 @@ class EventBackend(AbstractBackend):
             # Select appropriate stati filter.
             stati = set(const.RegistrationPartStati)
             # orgas and admins have full access to all data
+            # ml_admins are allowed to do this to be able to manage
+            # subscribers of event mailinglists.
             is_privileged = (self.is_orga(rs, event_id=event_id)
                              or self.is_admin(rs)
                              or "ml_admin" in rs.user.roles)

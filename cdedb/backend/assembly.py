@@ -282,6 +282,8 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         if persona_id is None:
             persona_id = rs.user.persona_id
+        # ml_admins are allowed to do this to be able to manage
+        # subscribers of assembly mailinglists.
         if "assembly" not in rs.user.roles and "ml_admin" not in rs.user.roles:
             raise PrivilegeError(n_("Not privileged to access assembly tables"))
         with Atomizer(rs):
@@ -340,6 +342,9 @@ class AssemblyBackend(AbstractBackend):
         to the assembly realm) may view this list -- no condition of
         being an attendee. This seems reasonable since assemblies should
         be public to the entire association.
+
+        ml_admins are allowed to do this to be able to manage
+        subscribers of assembly mailinglists.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
