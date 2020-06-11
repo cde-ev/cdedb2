@@ -46,9 +46,5 @@
             {{ util.href(cdedblink('core/genesis_request_form'), gettext("Request Account")) }}
         </p>
     {% endif %}
-    {% if meta_info.get('banner_before_login') %}
-        {% call util.bootstrap_panel() %}
-            {{ meta_info.get('banner_before_login')|md }}
-        {% endcall %}
-    {% endif %}
+    {{ util.meta_info_banner('banner_before_login') }}
 {% endblock %}
