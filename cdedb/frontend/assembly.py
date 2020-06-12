@@ -584,11 +584,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                         attachment_id: int, ballot_id: int = None) -> Response:
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
         history = self.assemblyproxy.get_attachment_history(
             rs, attachment_id)
         return self.render(rs, "show_attachment", {
-            'attachment': attachment, 'history': history,
+            'attachment': rs.ambience['attachment'], 'history': history,
         })
 
     @access("assembly_admin")
@@ -600,7 +599,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Voting has already begun."))
             return self.redirect(rs, "assembly/show_ballot")
         if attachment_id:
-            attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+            attachment = rs.ambience['attachment']
             if (attachment['ballot_id'] != ballot_id or
                     (attachment['assembly_id']
                      and attachment['assembly_id'] != assembly_id)):
@@ -676,7 +675,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                                     assembly_id: int, attachment_id: int,
                                     ballot_id: int = None) -> Response:
         """Change the association of an existing attachment incl. versions."""
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        attachment = rs.ambience['attachment']
         if (ballot_id != attachment['ballot_id'] or
                 (attachment['assembly_id']
                  and attachment['assembly_id'] != assembly_id)):
@@ -716,7 +715,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.change_attachment_link_form(
                 rs, assembly_id, attachment_id)
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        attachment = rs.ambience['attachment']
         if (ballot_id != attachment['ballot_id']
                 or (attachment['assembly_id']
                     and attachment['assembly_id'] != assembly_id)):
@@ -762,7 +761,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                                      ballot_id: int = None) -> Response:
         """Change an existing version of an attachment."""
         rs.ignore_validation_errors()
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        attachment = rs.ambience['attachment']
         if (attachment['assembly_id']
                 and attachment['assembly_id'] != assembly_id):
             rs.notify("error", n_("Invalid attachment specified."))
@@ -803,7 +802,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.change_attachment_link_form(
                 rs, assembly_id, attachment_id, version)
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        attachment = rs.ambience['attachment']
         if attachment['ballot_id']:
             ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
             if now() > ballot['vote_begin']:
@@ -870,7 +869,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             if history[version]['dtime']:
                 rs.notify("error", n_("This version has already been deleted."))
                 return self.redirect(rs, "assembly/show_attachment")
-            attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+            attachment = rs.ambience['attachment']
             if attachment['num_versions'] <= 1:
                 rs.notify("error", n_("Cannot remove the last remaining "
                                       "version of an attachment."))
