@@ -1005,6 +1005,10 @@ span.color-legend {
     color: #777;
     cursor: not-allowed;
 }
+.link-hidden {
+    /* Make text look like it would not be a link */
+    color: inherit;
+}
 .button-par {
     /* A div containing buttons, which may be wrapped with nice spacing in between */
     margin-bottom: -8px;

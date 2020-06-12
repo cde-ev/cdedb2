@@ -24,12 +24,14 @@
                                {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': not last_reverse}),
                      label,
                      icon="sort-down" if last_reverse else "sort-up",
-                     title=gettext("Sort ascending.") if last_reverse else gettext("Sort descending.")) }}
+                     title=gettext("Sort ascending.") if last_reverse else gettext("Sort descending."),
+                     aclass="link-hidden") }}
     {% else %}
         {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
                      label,
                      icon="sort",
-                     title=gettext("Sort ascending.")) }}
+                     title=gettext("Sort ascending."),
+                     aclass="link-hidden") }}
     {% endif %}
 {% endmacro %}
 
