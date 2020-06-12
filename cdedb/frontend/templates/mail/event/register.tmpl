@@ -2,10 +2,11 @@ Hallo {{ user['display_name'] }},
 
 Du hast dich erfolgreich zur Veranstaltung
     "{{ ambience['event']['title'] }}"
-angemeldet. Beachte bitte, dass Deine Anmeldung erst mit Überweisung des
-Teilnehmerbeitrags gültig wird.
-
+angemeldet.
 {% if fee %}
+
+Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnehmerbeitrags gültig wird.
+
 {% if ambience['event']['iban'] %}
 {% if ambience['event']['mail_text'] %}
 Überweise dazu bitte {{ fee|money }} plus möglicherweise unten erwähnte

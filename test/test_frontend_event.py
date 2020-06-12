@@ -387,7 +387,6 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
 
-
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self, user):
         self.traverse({'description': 'Veranstaltungen'},
@@ -3725,6 +3724,61 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/2/course/choices'})
         self.assertNonPresence('Partywoche')
         self.assertNonPresence('Chillout')
+
+    def test_free_event(self):
+        # first, make Große Testakademie 2222 free
+        self.login(USER_DICT['garcia'])
+        self.traverse({'description': "Veranstaltungen"},
+                      {'description': "Große Testakademie 2222"},
+                      {'description': "Veranstaltungsteile"})
+        f = self.response.forms['partsummaryform']
+        f['fee_1'] = 0
+        f['fee_2'] = 0
+        f['fee_3'] = 0
+        self.submit(f)
+
+        pay_request = "Anmeldung erst mit Überweisung des Teilnehmerbeitrags"
+        iban = "DE96 3702 0500 0008 0689 01"
+        no_member_surcharge = "zusätzlichen Beitrag in Höhe von 5,00"
+
+        # now check ...
+        for user in {'charly', 'daniel'}:
+            self.logout()
+            self.login(USER_DICT[user])
+            self.traverse({'href': '/event/event/1/register'})
+            f = self.response.forms['registerform']
+            f['parts'] = ['1', '3']
+            f['course_choice3_0'] = 2
+            f['course_choice3_1'] = 2
+            f['course_choice3_1'] = 4
+            self.submit(f)
+
+            mail = self.fetch_mail()[0]
+            text = mail.get_body().get_content()
+
+            # ... the registration mail ...
+            # ... as member
+            if user == 'charly':
+                self.assertNotIn(pay_request, text)
+                self.assertNotIn(iban, text)
+                self.assertNotIn(no_member_surcharge, text)
+            # ... as not member (we still need to pay the no member surcharge)
+            else:
+                self.assertIn(pay_request, text)
+                self.assertIn(iban, text)
+                self.assertIn(no_member_surcharge, text)
+
+            # ... the registration page ...
+            # ... as member
+            if user == 'charly':
+                self.assertNotIn(pay_request, text)
+                self.assertNotIn(iban, text)
+                self.assertNotIn(no_member_surcharge, text)
+            # ... as not member (we still need to pay the no member surcharge)
+            else:
+                self.assertIn(pay_request, text)
+                self.assertIn(iban, text)
+                self.assertIn(no_member_surcharge, text)
 
     def test_log(self):
         # First: generate data
