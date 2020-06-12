@@ -192,11 +192,11 @@ auf den Profilen anderer Benutzer sehen darf.
       * Veranstaltungs Admin: "Veranstaltungsbezogen"
       * CdE Admin: "Mitglieder" und "CdE Admin"
 
-    Darüber hinaus existiert die Rolle des Meta-Admins. Dieser alleine hat das
+    Darüber hinaus existiert die Rolle des Meta-Admins. Dieser allein hat das
     Recht, Admin Rechte zu vergeben und zu entziehen. Dazu hat er bei **ALLEN**
-    Nutzern folgenden Zugriff:
+    Nutzern Zugriff auf:
 
-      * Meta Admin: Die Felder "Bereiche" und "Admin-Privilegien"
+      * Meta Admin: "Administrativ"
 
 * Mitglieder
     Mitglieder sind Benutzer, die den CdE-Bereich besitzen und darüber hinaus

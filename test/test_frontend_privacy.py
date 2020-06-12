@@ -107,17 +107,16 @@ class TestPrivacyFrontend(FrontendTest):
         checked.update(self._profile_assembly_admin_view(inspected))
         checked.update(self._profile_event_admin_view(inspected))
         checked.update(self._profile_cde_admin_view(inspected))
-        # this does not work, since meta admins are not allowd to see the username
-        # checked.update(self._profile_meta_admin_view(inspected))
+        checked.update(self._profile_meta_admin_view(inspected))
         return checked
 
     def _profile_meta_admin_view(self, inspected):
-        # TODO give meta admin a relative admin view for all personas
-        expected = {"Bereiche", "Account aktiv", "Admin-Privilegien"}
+        expected = {"Bereiche", "Account aktiv", "Admin-Privilegien", "E-Mail",
+                    "Admin-Notizen"}
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
-        # actual username must not be displayed
-        self.assertNonPresence(inspected['username'])
+        # actual username should be displayed
+        self.assertPresence(inspected['username'])
         checked = self._profile_base_view(inspected)
         return expected | checked
 
@@ -318,8 +317,6 @@ class TestPrivacyFrontend(FrontendTest):
         inspected = USER_DICT['berta']
         self.get(inspected['url'])
         found = self._profile_meta_admin_view(inspected)
-        # The username must not be visible, although "Email" occurs as field
-        self.assertNonPresence(inspected['username'])
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)

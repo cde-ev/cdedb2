@@ -436,11 +436,12 @@ class CoreFrontend(AbstractFrontend):
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
-        if is_relative_admin:
+        if is_relative_admin or "meta" in access_levels:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
             total = self.coreproxy.get_total_persona(rs, persona_id)
             data['notes'] = total['notes']
+            data['username'] = total['username']
 
         # Cull unwanted data
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
@@ -461,8 +462,6 @@ class CoreFrontend(AbstractFrontend):
             for key in masks:
                 if key in data:
                     del data[key]
-        if not is_relative_admin and "notes" in data:
-            del data['notes']
 
         # Add past event participation info
         past_events = None
