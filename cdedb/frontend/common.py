@@ -1577,18 +1577,17 @@ def reconnoitre_ambience(obj, rs):
 
     def attachment_check(a):
         if a['attachment']['ballot_id']:
-            return (a['attachment']['ballot_id']
-                    == rs.requestargs.get(
-                        'ballot_id', a['attachment']['ballot_id']))
+            do_assert(a['attachment']['ballot_id']
+                      == rs.requestargs.get('ballot_id'))
         else:
-            return (a['attachment']['assembly_id']
-                    == rs.requestargs['assembly_id'])
+            do_assert(a['attachment']['assembly_id']
+                      == rs.requestargs['assembly_id'])
 
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
               'persona', t),
-        Scout(lambda anid: obj.coreproxy.get_privilege_change(rs, anid), 'privilege_change_id',
-              'privilege_change', t),
+        Scout(lambda anid: obj.coreproxy.get_privilege_change(rs, anid),
+              'privilege_change_id', 'privilege_change', t),
         Scout(lambda anid: obj.coreproxy.genesis_get_case(rs, anid),
               'genesis_case_id', 'genesis_case', t),
         Scout(lambda anid: obj.cdeproxy.get_lastschrift(rs, anid),
