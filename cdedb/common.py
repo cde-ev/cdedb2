@@ -82,6 +82,7 @@ Realm = str
 # Admin views a user may activate/deactivate.
 AdminView = str
 
+CdEDBLog = Tuple[int, Tuple[CdEDBObject, ...]]
 
 PathLike = Union[pathlib.Path, OSPathLike]
 

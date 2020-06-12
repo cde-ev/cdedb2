@@ -12,7 +12,7 @@ import copy
 import enum
 import functools
 import logging
-from datetime import datetime
+import datetime
 import psycopg2.extras
 import psycopg2.extensions
 from typing import (
@@ -24,7 +24,7 @@ import cdedb.validation as validate
 from cdedb.common import (
     PrivilegeError, PsycoJson, diacritic_patterns, glue, make_proxy,
     make_root_logger, n_, unwrap, RequestState, Role, Realm, PathLike,
-    CdEDBObject, CdEDBObjectMap,
+    CdEDBObject, CdEDBObjectMap, CdEDBLog,
 )
 from cdedb.query import Query
 from cdedb.config import Config
@@ -595,9 +595,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                              additional_columns: Collection[str] = None,
                              persona_id: int = None, submitted_by: int = None,
                              additional_info: str = None,
-                             time_start: datetime = None,
-                             time_stop: datetime = None
-                             ) -> Tuple[int, Tuple[CdEDBObject, ...]]:
+                             time_start: datetime.datetime = None,
+                             time_stop: datetime.datetime = None
+                             ) -> CdEDBLog:
         """Get recorded activity.
 
         Each realm has it's own log as well as potentially additional
