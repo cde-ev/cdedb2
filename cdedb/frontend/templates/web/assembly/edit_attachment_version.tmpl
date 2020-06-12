@@ -52,6 +52,9 @@
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename")) }}
-        {{ util.form_input_submit(cancellink=(cdedblink('assembly/show_ballot') if ambience['ballot'] else cdedblink('assembly/show_assembly'))) }}
+        {{ util.form_input_submit(cancellink=(
+            cdedblink('assembly/show_attachment') if attachment else (
+                cdedblink('assembly/show_ballot') if ambience['ballot']
+                    else cdedblink('assembly/show_assembly')))) }}
     </form>
 {% endblock %}

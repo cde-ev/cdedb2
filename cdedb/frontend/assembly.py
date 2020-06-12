@@ -1094,7 +1094,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # Check for extensions before grouping ballots.
         if any([self._update_ballot_state(rs, ballot)
-                for id, ballot in ballots.items()]):
+                for anid, ballot in ballots.items()]):
             return self.redirect(rs, "assembly/summary_ballots")
 
         done, extended, current, future = self.group_ballots(ballots)

@@ -42,7 +42,7 @@
                 {% endif %}
             {% else %}
                 {{ util.href(cdedblink("assembly/show_attachment", {'attachment_id': current_version['attachment_id'],
-                                                                    'ballot_id': ballot['id'] if ballot else None}),
+                                                                    'ballot_id': attachment['ballot_id']}),
                              gettext("Attachment Details")) }}
             {% endif %}
         </div>
@@ -94,9 +94,8 @@
             </script>
         {% endif %}
         {% if ballot %}
-            <div class="text-muted small">
-                ({{- util.make_icon('thumbs-up', arialabel=gettext("ballot_file_arialabel")) }}
-                {{ ballot['title'] -}})
+            <div class="small">
+                ({{ util.href(cdedblink('assembly/show_ballot', {'ballot_id': ballot['id']}), ballot['title'], icon='thumbs-up') }})
              </div>
         {% endif %}
     {% else %}
@@ -173,8 +172,7 @@
             {% if (ballot is none or now() < ballot['vote_begin']) and new_attachment_button and
                     "assembly_contents" in user.admin_views %}
                 <div class="p">
-                    {{ util.href(cdedblink("assembly/add_attachment_form",
-                                           {'ballot_id': ballot['id'] if ballot else None}),
+                    {{ util.href(cdedblink("assembly/add_attachment_form"),
                                  gettext("Attach File"), aclass="btn btn-success btn-sm", icon="plus") }}
                 </div>
             {% endif %}
