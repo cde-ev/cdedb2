@@ -58,11 +58,15 @@ import pytz
 import werkzeug.datastructures
 import zxcvbn
 
+from typing import (
+    Any, Union, Tuple, List, Optional
+)
+
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
     CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields,
-    ValidationWarning)
+    ValidationWarning, Error)
 from cdedb.database.constants import FieldDatatypes, FieldAssociations
 from cdedb.validationdata import (
     IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,
@@ -83,7 +87,6 @@ zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 _LOGGER = logging.getLogger(__name__)
 
 _ALL = []
-
 
 def _addvalidator(fun):
     """Mark a function for processing into validators.
@@ -478,6 +481,28 @@ def _str(val, argname=None, *, zap='', sieve='', _convert=True,
     if val is not None and not val:
         errs.append((argname, ValueError(n_("Mustn’t be empty."))))
     return val, errs
+
+
+@_addvalidator
+def _bytes(val: Any, argname: str = None, *, _convert: bool = True,
+           _ignore_warnings: bool = False, encoding: str = None
+           ) -> Tuple[Optional[bytes], List[Error]]:
+    if _convert:
+        if isinstance(val, str):
+            if not encoding:
+                raise RuntimeError(
+                    "Not encoding specified to convert str to bytes.")
+            val = bytes(val, encoding=encoding)
+        else:
+            try:
+                val = bytes(val)
+            except ValueError:
+                return None, [(argname,
+                               ValueError(n_("Cannot convert {val} to bytes."),
+                                          {'val': val}))]
+    if not isinstance(val, bytes):
+        return None, [(argname, ValueError(n_("Must be a bytes object.")))]
+    return val, []
 
 
 @_addvalidator
