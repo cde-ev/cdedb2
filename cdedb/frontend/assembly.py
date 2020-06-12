@@ -721,7 +721,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 or (attachment['assembly_id']
                     and attachment['assembly_id'] != assembly_id)):
             rs.notify("error", n_("Invalid attachment specified."))
-            return self.redirect(rs, "assembly/show_Attachment")
+            return self.redirect(rs, "assembly/show_attachment")
         if attachment['ballot_id']:
             ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
             if now() > ballot['vote_begin']:
