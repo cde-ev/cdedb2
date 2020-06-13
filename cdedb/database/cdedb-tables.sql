@@ -609,8 +609,7 @@ CREATE TABLE event.events (
         is_cancelled                boolean NOT NULL DEFAULT False,
         -- JSON field for lodgement preference functionality
         lodge_field                 integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        -- JSON field for reserve functionality
-        reserve_field               integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        camping_mat_field           integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         course_room_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
@@ -672,7 +671,7 @@ GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 
 -- create previously impossible reference
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.events ADD FOREIGN KEY (reserve_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.events ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.fee_modifiers (
@@ -750,9 +749,9 @@ CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         moniker                 varchar NOT NULL,
-        capacity                integer NOT NULL,
+        regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
-        reserve                 integer NOT NULL DEFAULT 0,
+        camping_mat_capacity    integer NOT NULL DEFAULT 0,
         notes                   varchar,
         group_id                integer REFERENCES event.lodgement_groups(id),
         -- additional data, customized by each orga team
@@ -803,7 +802,7 @@ CREATE TABLE event.registration_parts (
         -- see cdedb.database.constants.RegistrationPartStati
         status                  integer NOT NULL,
         lodgement_id            integer REFERENCES event.lodgements(id) DEFAULT NULL,
-        is_reserve              boolean NOT NULL DEFAULT False
+        is_camping_mat          boolean NOT NULL DEFAULT False
 );
 CREATE INDEX idx_registration_parts_registration_id ON event.registration_parts(registration_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.registration_parts TO cdb_persona;

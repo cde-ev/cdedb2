@@ -28,8 +28,8 @@
 <<% block content %>>
     <<% for lodgement_id, lodgement in lodgements|keydictsort(EntitySorter.lodgement) %>>
         <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
-            \lodgement{<<< lodgement['moniker']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['capacity']|te >>>}%
-                      {<<< lodgement['reserve']|te >>>}{<<< lodgement['notes']|te >>>}
+            \lodgement{<<< lodgement['moniker']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['regular_capacity']|te >>>}%
+                      {<<< lodgement['camping_mat_capacity']|te >>>}{<<< lodgement['notes']|te >>>}
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
@@ -50,9 +50,9 @@
                     {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
-                    {<<% if ambience['event']['reserve_field'] and
+                    {<<% if ambience['event']['camping_mat_field'] and
                             registration['fields'].get(
-                                ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
+                                ambience['event']['fields'][ambience['event']['camping_mat_field']]['field_name']) -%>>
                         <<% trans %>> camping mat <<% endtrans %>>
                      <<%- endif %>>}% ID <<< registration_id|te >>>
                     {<<% if ambience['event']['lodge_field']

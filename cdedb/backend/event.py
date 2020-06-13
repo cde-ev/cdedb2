@@ -327,11 +327,11 @@ class EventBackend(AbstractBackend):
                 event_id = {event_id}""".format(
                 event_id=event_id, lodge_field_columns=lodge_field_columns)
 
-            # The template for registration part and lodgment information.
+            # The template for registration part and lodgement information.
             part_table = \
             """LEFT OUTER JOIN (
                 SELECT
-                    registration_id, status, lodgement_id, is_reserve
+                    registration_id, status, lodgement_id, is_camping_mat
                 FROM
                     event.registration_parts
                 WHERE
@@ -752,7 +752,7 @@ class EventBackend(AbstractBackend):
             lodgement_table = """
             SELECT
                 id, id as lodgement_id, event_id,
-                moniker, capacity, reserve, notes, group_id
+                moniker, regular_capacity, camping_mat_capacity, notes, group_id
             FROM
                 event.lodgements"""
 
@@ -784,7 +784,7 @@ class EventBackend(AbstractBackend):
             # Retrieve generic lodgemnt group information.
             lodgement_group_table = \
             """SELECT
-                tmp_id, moniker, capacity, reserve
+                tmp_id, moniker, regular_capacity, camping_mat_capacity
             FROM (
                 (
                     (
@@ -804,8 +804,8 @@ class EventBackend(AbstractBackend):
                 LEFT OUTER JOIN (
                     SELECT
                         COALESCE(group_id, -1) as tmp_group_id,
-                        SUM(capacity) as capacity,
-                        SUM(reserve) as reserve
+                        SUM(regular_capacity) as regular_capacity,
+                        SUM(camping_mat_capacity) as camping_mat_capacity
                     FROM
                         event.lodgements
                     WHERE
@@ -863,7 +863,7 @@ class EventBackend(AbstractBackend):
             """SELECT
                 id, tmp_group_id,
                 COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-                COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                COALESCE(rp_camping_mat.inhabitants, 0) AS camping_mat_inhabitants,
                 COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
             FROM
                 (
@@ -875,16 +875,16 @@ class EventBackend(AbstractBackend):
                     {rp_regular}
                 ) AS rp_regular ON l.id = rp_regular.lodgement_id
                 LEFT OUTER JOIN (
-                    {rp_reserve}
-                ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+                    {rp_camping_mat}
+                ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
                 LEFT OUTER JOIN (
                     {rp_total}
                 ) AS rp_total ON l.id = rp_total.lodgement_id""".format(
                     event_id=event_id, part_id=p_id,
                     rp_regular=inhabitants_counter(
-                        p_id, "AND is_reserve = False"),
-                    rp_reserve=inhabitants_counter(
-                        p_id, "AND is_reserve = True"),
+                        p_id, "AND is_camping_mat = False"),
+                    rp_camping_mat=inhabitants_counter(
+                        p_id, "AND is_camping_mat = True"),
                     rp_total=inhabitants_counter(p_id, ""),
             )
 
@@ -892,7 +892,7 @@ class EventBackend(AbstractBackend):
             """SELECT
                 tmp_group_id,
                 COALESCE(SUM(regular_inhabitants)::bigint, 0) AS group_regular_inhabitants,
-                COALESCE(SUM(reserve_inhabitants)::bigint, 0) AS group_reserve_inhabitants,
+                COALESCE(SUM(camping_mat_inhabitants)::bigint, 0) AS group_camping_mat_inhabitants,
                 COALESCE(SUM(total_inhabitants)::bigint, 0) AS group_total_inhabitants
             FROM (
                 {inhabitants_view}
@@ -1355,11 +1355,12 @@ class EventBackend(AbstractBackend):
 
         Possible blockers:
 
-        * fee_modifiers: A modification to the fee for a part depending on
-                         this event field.
-        * quetionnaire_rows: A questionnaire row that uses this field.
-        * lodge_fields: An event that uses this field for lodgement wishes.
-        * reserve_fields: An event that uses this field for reserve wishes.
+        * fee_modifiers:      A modification to the fee for a part depending on
+                              this event field.
+        * questionnaire_rows: A questionnaire row that uses this field.
+        * lodge_fields:       An event that uses this field for lodgement wishes.
+        * camping_mat_fields: An event that uses this field for camping mat
+                              wishes.
         * course_room_fields: An event that uses this field for course room
                               assignment.
 
@@ -1391,11 +1392,12 @@ class EventBackend(AbstractBackend):
         if lodge_fields:
             blockers["lodge_fields"] = [e["id"] for e in lodge_fields]
 
-        reserve_fields = self.sql_select(
+        camping_mat_fields = self.sql_select(
             rs, "event.events", ("id",), (field_id,),
-            entity_key="reserve_field")
-        if reserve_fields:
-            blockers["reserve_fields"] = [e["id"] for e in reserve_fields]
+            entity_key="camping_mat_field")
+        if camping_mat_fields:
+            blockers["camping_mat_fields"] = [
+                e["id"] for e in camping_mat_fields]
 
         course_room_fields = self.sql_select(
             rs, "event.events", ("id",), (field_id,),
@@ -1449,11 +1451,11 @@ class EventBackend(AbstractBackend):
                         'lodge_field': None,
                     }
                     ret += self.sql_update(rs, "event.events", deletor)
-            if "reserve_fields" in cascade:
-                for anid in blockers["reserve_fields"]:
+            if "camping_mat_fields" in cascade:
+                for anid in blockers["camping_mat_fields"]:
                     deletor = {
                         'id': anid,
-                        'reserve_field': None,
+                        'camping_mat_field': None,
                     }
                     ret += self.sql_update(rs, "event.events", deletor)
             if "course_room_fields" in cascade:
@@ -1548,7 +1550,7 @@ class EventBackend(AbstractBackend):
             if len(edata) > 1:
                 indirect_fields = filter(
                     lambda x: x,
-                    [edata.get('lodge_field'), edata.get('reserve_field'),
+                    [edata.get('lodge_field'), edata.get('camping_mat_field'),
                      edata.get('course_room_field')])
                 if indirect_fields:
                     indirect_data = self.sql_select(
@@ -1567,16 +1569,16 @@ class EventBackend(AbstractBackend):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'lodge_field'})
                     correct_datatype = const.FieldDatatypes.bool
-                    if edata.get('reserve_field'):
-                        reserve_data = unwrap(
+                    if edata.get('camping_mat_field'):
+                        camping_mat_data = unwrap(
                             [x for x in indirect_data
-                             if x['id'] == edata['reserve_field']])
-                        if (reserve_data['event_id'] != data['id']
-                                or reserve_data['kind'] != correct_datatype
-                                or reserve_data[
+                             if x['id'] == edata['camping_mat_field']])
+                        if (camping_mat_data['event_id'] != data['id']
+                                or camping_mat_data['kind'] != correct_datatype
+                                or camping_mat_data[
                                     'association'] != correct_assoc):
                             raise ValueError(n_("Unfit field for %(field)s"),
-                                             {'field': 'reserve_field'})
+                                             {'field': 'camping_mat_field'})
                     correct_assoc = const.FieldAssociations.course
                     # TODO make this include lodgement datatype per Issue #71
                     correct_datatypes = {const.FieldDatatypes.str}
@@ -1964,7 +1966,7 @@ class EventBackend(AbstractBackend):
                         'id': event_id,
                         'course_room_field': None,
                         'lodge_field': None,
-                        'reserve_field': None,
+                        'camping_mat_field': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
                     field_cascade = {"fee_modifiers"} & cascade
@@ -2357,7 +2359,8 @@ class EventBackend(AbstractBackend):
                     {"type": "course", "block": blockers.keys()})
         return ret
 
-    def _list_registrations_unchecked(self, rs: RequestState, event_id, persona_id=None):
+    def _list_registrations_unchecked(self, rs: RequestState, event_id,
+                                      persona_id=None):
         """List all registrations of an event.
 
         If an ordinary event_user is requesting this, just participants of this
@@ -3995,7 +3998,7 @@ class EventBackend(AbstractBackend):
                 for track in part['tracks'].values():
                     del track['id']
                     del track['part_id']
-            for f in ('lodge_field', 'reserve_field', 'course_room_field'):
+            for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
                 if export_event[f]:
                     export_event[f] = event['fields'][event[f]]['field_name']
             new_fields = {

@@ -3285,7 +3285,7 @@
             "is_cancelled": false,
             "is_archived": false,
             "lodge_field": 3,
-            "reserve_field": 4,
+            "camping_mat_field": 4,
             "course_room_field": 2
         },
         {
@@ -3313,7 +3313,7 @@
             "is_cancelled": false,
             "is_archived": false,
             "lodge_field": null,
-            "reserve_field": null,
+            "camping_mat_field": null,
             "course_room_field": null
         }
     ],
@@ -3754,8 +3754,8 @@
             "id": 1,
             "event_id": 1,
             "moniker": "Warme Stube",
-            "capacity": 5,
-            "reserve": 1,
+            "regular_capacity": 5,
+            "camping_mat_capacity": 1,
             "notes": null,
             "group_id": 2,
             "fields": "{\"contamination\": \"high\"}"
@@ -3764,8 +3764,8 @@
             "id": 2,
             "event_id": 1,
             "moniker": "Kalte Kammer",
-            "capacity": 10,
-            "reserve": 2,
+            "regular_capacity": 10,
+            "camping_mat_capacity": 2,
             "notes": "Daf\u00fcr mit Frischluft.",
             "group_id": 1,
             "fields": "{\"contamination\": \"none\"}"
@@ -3774,8 +3774,8 @@
             "id": 3,
             "event_id": 1,
             "moniker": "Kellerverlies",
-            "capacity": 0,
-            "reserve": 100,
+            "regular_capacity": 0,
+            "camping_mat_capacity": 100,
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
             "group_id": null,
             "fields": "{\"contamination\": \"low\"}"
@@ -3784,8 +3784,8 @@
             "id": 4,
             "event_id": 1,
             "moniker": "Einzelzelle",
-            "capacity": 1,
-            "reserve": 0,
+            "regular_capacity": 1,
+            "camping_mat_capacity": 0,
             "notes": null,
             "group_id": 1,
             "fields": "{\"contamination\": \"high\"}"
@@ -3896,7 +3896,7 @@
             "part_id": 1,
             "status": -1,
             "lodgement_id": null,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 2,
@@ -3904,7 +3904,7 @@
             "part_id": 2,
             "status": 1,
             "lodgement_id": null,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 3,
@@ -3912,7 +3912,7 @@
             "part_id": 3,
             "status": 2,
             "lodgement_id": 1,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 4,
@@ -3920,7 +3920,7 @@
             "part_id": 1,
             "status": 3,
             "lodgement_id": null,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 5,
@@ -3928,7 +3928,7 @@
             "part_id": 2,
             "status": 4,
             "lodgement_id": 4,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 6,
@@ -3936,7 +3936,7 @@
             "part_id": 3,
             "status": 2,
             "lodgement_id": 4,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 7,
@@ -3944,7 +3944,7 @@
             "part_id": 1,
             "status": 2,
             "lodgement_id": 2,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 8,
@@ -3952,7 +3952,7 @@
             "part_id": 2,
             "status": 2,
             "lodgement_id": null,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 9,
@@ -3960,7 +3960,7 @@
             "part_id": 3,
             "status": 2,
             "lodgement_id": 2,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 10,
@@ -3968,7 +3968,7 @@
             "part_id": 1,
             "status": 6,
             "lodgement_id": null,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 11,
@@ -3976,7 +3976,7 @@
             "part_id": 2,
             "status": 5,
             "lodgement_id": null,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 12,
@@ -3984,7 +3984,7 @@
             "part_id": 3,
             "status": 2,
             "lodgement_id": 2,
-            "is_reserve": true
+            "is_camping_mat": true
         },
         {
             "id": 13,
@@ -3992,7 +3992,7 @@
             "part_id": 1,
             "status": 2,
             "lodgement_id": 4,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 14,
@@ -4000,7 +4000,7 @@
             "part_id": 2,
             "status": 2,
             "lodgement_id": 4,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 15,
@@ -4008,7 +4008,7 @@
             "part_id": 3,
             "status": 2,
             "lodgement_id": 1,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 16,
@@ -4016,7 +4016,7 @@
             "part_id": 1,
             "status": 2,
             "lodgement_id": null,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 17,
@@ -4024,7 +4024,7 @@
             "part_id": 2,
             "status": -1,
             "lodgement_id": null,
-            "is_reserve": false
+            "is_camping_mat": false
         },
         {
             "id": 18,
@@ -4032,7 +4032,7 @@
             "part_id": 3,
             "status": -1,
             "lodgement_id": null,
-            "is_reserve": false
+            "is_camping_mat": false
         }
     ],
     "event.registration_tracks": [

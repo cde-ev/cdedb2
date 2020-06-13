@@ -102,9 +102,9 @@ def make_meta_info(cur):
 
 def update_event(cur, event):
     query = """UPDATE event.events
-               SET (lodge_field, reserve_field, course_room_field)
+               SET (lodge_field, camping_mat_field, course_room_field)
                = (%s, %s, %s)"""
-    params = (event['lodge_field'], event['reserve_field'],
+    params = (event['lodge_field'], event['camping_mat_field'],
               event['course_room_field'])
     cur.execute(query, params)
 
@@ -116,7 +116,7 @@ def work(args):
     with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data["CDEDB_EXPORT_EVENT_VERSION"] != 11:
+    if data["CDEDB_EXPORT_EVENT_VERSION"] != 12:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -196,7 +196,7 @@ def work(args):
                 values = copy.deepcopy(data[table])
                 # Prevent forward references
                 if table == 'event.events':
-                    for key in ('lodge_field', 'reserve_field',
+                    for key in ('lodge_field', 'camping_mat_field',
                                 'course_room_field'):
                         values[str(data['id'])][key] = None
                 populate_table(cur, table, values)

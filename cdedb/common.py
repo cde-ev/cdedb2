@@ -888,22 +888,22 @@ class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
     #: default sortkey (currently equal to EntitySorter.lodgement)
     moniker = 1
-    #: (capacity - reserve) which are used in this part
+    #: regular_capacity which is used in this part
     used_regular = 10
-    #: reserve which is used in this part
-    used_reserve = 11
-    #: (capacity - reserve) of this lodgement
+    #: camping_mat_capacity which is used in this part
+    used_camping_mat = 11
+    #: regular_capacity of this lodgement
     total_regular = 20
-    #: reserve of this lodgement
-    total_reserve = 21
+    #: camping_mat_capacity of this lodgement
+    total_camping_mat = 21
 
     def is_used_sorting(self) -> bool:
         return self in (LodgementsSortkeys.used_regular,
-                        LodgementsSortkeys.used_reserve)
+                        LodgementsSortkeys.used_camping_mat)
 
     def is_total_sorting(self) -> bool:
         return self in (LodgementsSortkeys.total_regular,
-                        LodgementsSortkeys.total_reserve)
+                        LodgementsSortkeys.total_camping_mat)
 
 
 @enum.unique
@@ -1668,7 +1668,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-CDEDB_EXPORT_EVENT_VERSION = 11
+CDEDB_EXPORT_EVENT_VERSION = 12
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1782,14 +1782,14 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname",
-    "registration_start", "registration_soft_limit", "registration_hard_limit",
-    "iban", "nonmember_surcharge", "orga_address", "registration_text",
-    "mail_text", "use_additional_questionnaire", "notes", "offline_lock",
-    "is_visible", "is_course_list_visible", "is_course_state_visible",
+    "registration_start", "registration_soft_limit",
+    "registration_hard_limit", "iban", "nonmember_surcharge",
+    "orga_address", "registration_text", "mail_text",
+    "use_additional_questionnaire", "notes", "offline_lock", "is_visible",
+    "is_course_list_visible", "is_course_state_visible",
     "is_participant_list_visible", "courses_in_participant_list",
-    "is_cancelled", "is_archived", "lodge_field", "reserve_field",
-    "course_room_field",
-)
+    "is_cancelled", "is_archived", "lodge_field", "camping_mat_field",
+    "course_room_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
@@ -1824,7 +1824,7 @@ REGISTRATION_FIELDS = (
 
 #: Fields of a registration which are specific for each part of the event
 REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
-                            "lodgement_id", "is_reserve")
+                            "lodgement_id", "is_camping_mat")
 
 #: Fields of a registration which are specific for each course track
 REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
@@ -1834,8 +1834,8 @@ REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
 LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
 
 #: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
-                    "group_id", "fields")
+LODGEMENT_FIELDS = ("id", "event_id", "moniker", "regular_capacity",
+                    "camping_mat_capacity", "notes", "group_id", "fields")
 
 # Fields of a row in a questionnaire.
 # (This can be displayed in different places according to `kind`).
