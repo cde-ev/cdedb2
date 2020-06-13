@@ -1146,11 +1146,15 @@ class EventFrontend(AbstractUserFrontend):
             return self.create_event_form(rs)
         if data['orgas']:
             orgas = self.coreproxy.get_personas(rs, orga_ids)
-            if any('event' not in extract_roles(orga, introspection_only=True)
-                    for orga in orgas.values()):
-                rs.append_validation_error(
-                    ('orga_ids', ValueError(n_(
-                        "Not all orgas given are event users."))))
+            for orga in orgas.values():
+                if 'event' not in extract_roles(orga, introspection_only=True):
+                    rs.append_validation_error(
+                        ('orga_ids', ValueError(
+                            n_("%(given_names)s %(family_name)s is not an event user."),
+                            {
+                                'given_names': orga['given_names'],
+                                'family_name': orga['family_name']
+                            })))
         if rs.has_validation_errors():
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)
