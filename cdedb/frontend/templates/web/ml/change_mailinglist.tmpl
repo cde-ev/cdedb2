@@ -44,6 +44,15 @@
                                     addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
             {{ util.form_input_select(name="domain", label=gettext("Domain"), readonly=readonly, defaultvalue=ambience['mailinglist']['domain'].value,
                         entries=available_domains|enum_entries(processing=gettext, prefix="@")) }}
+            <script nonce="{{ csp_nonce }}">
+                dm_inp = $('#changelistform').find("[name='domain']");
+                function update_domain() {
+                    $('#changelistform').find("[name='local_part']").siblings("span.input-group-addon")
+                        .text(dm_inp.children(":selected").text());
+                }
+                dm_inp.on('input', update_domain);
+                update_domain();
+            </script>
             {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", readonly=readonly,
                                         info=gettext("Supports %(infolink)s.")|format(
                                             infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),

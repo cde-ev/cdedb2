@@ -32,9 +32,19 @@
         <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), defaultvalue='True') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
-        {{ util.form_input_text(name="local_part", label=gettext("Address")) }}
+        {{ util.form_input_text(name="local_part", label=gettext("Address"),
+            addon=(available_domains|enum_entries(processing=gettext, prefix="@"))[0][1]) }}
         {{ util.form_input_select(name="domain", entries=available_domains|enum_entries(processing=gettext, prefix="@"),
                                   label=gettext("Domain")) }}
+            <script nonce="{{ csp_nonce }}">
+                dm_inp = $('#createlistform').find("[name='domain']");
+                function update_domain() {
+                    $('#createlistform').find("[name='local_part']").siblings("span.input-group-addon")
+                        .text(dm_inp.children(":selected").text());
+                }
+                dm_inp.on('input', update_domain);
+                update_domain();
+            </script>
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
