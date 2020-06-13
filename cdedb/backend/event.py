@@ -2363,8 +2363,8 @@ class EventBackend(AbstractBackend):
                     {"type": "course", "block": blockers.keys()})
         return ret
 
-    def _list_registrations_unchecked(self, rs: RequestState, event_id,
-                                      persona_id=None):
+    @access("event", "ml_admin")
+    def list_registrations(self, rs: RequestState, event_id, persona_id=None):
         """List all registrations of an event.
 
         If an ordinary event_user is requesting this, just participants of this
@@ -2403,8 +2403,6 @@ class EventBackend(AbstractBackend):
         if is_limited and rs.user.persona_id not in ret.values():
             raise PrivilegeError(n_("Not privileged."))
         return ret
-    list_registrations_for_ml_mods = access("ml")(_list_registrations_unchecked)
-    list_registrations = access("event")(_list_registrations_unchecked)
 
     @internal
     @access("persona")
@@ -2425,25 +2423,21 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         stati = affirm_set("enum_registrationpartstati", stati)
+
+        # First, rule out people who can not participate at any event.
+        if (persona_id == rs.user.persona_id and
+                "event" not in rs.user.roles):
+            return False
+
+        # Check if eligible to check registration status for other users.
         if not (persona_id == rs.user.persona_id
                 or self.is_orga(rs, event_id=event_id)
                 or self.is_admin(rs)
                 or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
 
-        try:
-            registration_ids = self.list_registrations(
-                rs, event_id, persona_id)
-        except PrivilegeError:
-            if (persona_id == rs.user.persona_id
-                or self.is_orga(rs, event_id=event_id)
-                or self.is_admin(rs)
-                or "ml_admin" in rs.user.roles):
-                registration_ids = self.list_registrations_for_ml_mods(
-                    rs, event_id, persona_id)
-            else:
-                raise
-
+        registration_ids = self.list_registrations(
+            rs, event_id, persona_id)
         if not registration_ids:
             return False
         reg_id = unwrap(registration_ids.keys())
