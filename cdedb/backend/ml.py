@@ -604,14 +604,14 @@ class MlBackend(AbstractBackend):
                     # noinspection PyTypeChecker
                     params = (data['id'], set(const.SubscriptionStates) -
                               const.SubscriptionStates.subscribing_states())
-                    ret *= self.query_exec(rs, query, params)
+                    self.query_exec(rs, query, params)
                 if data['ml_type'] != current['ml_type']:
                     ret *= self._ml_type_transition(
                         rs, data['id'], old_type=current['ml_type'],
                         new_type=data['ml_type'])
 
             # Update subscription states.
-            ret *= self.write_subscription_states(rs, data['id'])
+            self.write_subscription_states(rs, data['id'])
         return ret
 
     @access("ml")
