@@ -456,12 +456,17 @@ class CoreFrontend(AbstractFrontend):
                     "is_active", "is_meta_admin", "is_core_admin",
                     "is_cde_admin", "is_event_admin", "is_ml_admin",
                     "is_assembly_admin", "is_cde_realm", "is_event_realm",
-                    "is_ml_realm", "is_assembly_realm", "is_archived"])
+                    "is_ml_realm", "is_assembly_realm", "is_archived",
+                    "notes"])
             if "orga" not in access_levels:
                 masks.extend(["is_member", "gender"])
             for key in masks:
                 if key in data:
                     del data[key]
+        # an user who is no relative admin must not see his own admin notes
+        if (persona_id == rs.user.persona_id and not is_relative_admin
+                and "notes" in data):
+            del data['notes']
 
         # Add past event participation info
         past_events = None
