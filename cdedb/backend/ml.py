@@ -611,7 +611,7 @@ class MlBackend(AbstractBackend):
                         new_type=data['ml_type'])
 
             # Update subscription states.
-            self.write_subscription_states(rs, data['id'])
+            ret *= self.write_subscription_states(rs, data['id'])
         return ret
 
     @access("ml")
