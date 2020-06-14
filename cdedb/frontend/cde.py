@@ -74,13 +74,6 @@ class CdEFrontend(AbstractUserFrontend):
         "persona_getter": lambda obj: obj.coreproxy.get_cde_user,
     }
 
-    def __init__(self, configpath: PathLike):
-        super().__init__(configpath)
-        make_root_logger(
-            "cdedb.frontend.worker", self.conf["WORKER_LOG"],
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-
     @classmethod
     def is_admin(cls, rs):
         return super().is_admin(rs)

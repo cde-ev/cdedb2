@@ -22,7 +22,9 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
     n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
-    ANTI_CSRF_TOKEN_NAME, make_proxy, ADMIN_VIEWS_COOKIE_NAME)
+    ANTI_CSRF_TOKEN_NAME, make_proxy, ADMIN_VIEWS_COOKIE_NAME,
+    make_root_logger,
+)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
     docurl, JINJA_FILTERS, check_validation)
@@ -55,6 +57,11 @@ class Application(BaseApp):
         self.event = EventFrontend(configpath)
         self.assembly = AssemblyFrontend(configpath)
         self.ml = MlFrontend(configpath)
+        # Set up a logger for all Worker instances.
+        make_root_logger(
+            "cdedb.frontend.worker", self.conf["WORKER_LOG"],
+            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
