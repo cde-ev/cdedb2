@@ -415,3 +415,27 @@ function removeDiacritics (str) {
     }
     return str;
 }
+
+
+/**
+ * Escape html chars that can be security relevant so they can be taken from user input and displayed on page.
+ * Chars that will be replaced: &<>"'/`=
+ *
+ * Source: https://stackoverflow.com/a/12034334
+ *
+ * @param string The input string
+ * @returns The input string with escaped chars.
+ */
+function escapeHtml (string) {
+    var entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
+    return String(string).replace(/[&<>"'`=\/]/g, function (s) {return entityMap[s];});
+}
