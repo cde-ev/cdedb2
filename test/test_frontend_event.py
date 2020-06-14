@@ -411,7 +411,16 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("30.10.2001", div='timeframe-registration')
         # orgas
         self.assertNonPresence("Bertålotta")
-        if user["id"] in {1, 6}:
+        if user["id"] in {27, 6}:
+            f = self.response.forms['addorgaform']
+            f['orga_id'] = "DB-10-2"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+            f = self.response.forms['addorgaform']
+            f['orga_id'] = "DB-10-8"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+            self.assertPresence("Benutzer ist kein Veranstaltunsnutzer.")
             f = self.response.forms['addorgaform']
             f['orga_id'] = "DB-2-7"
             self.submit(f)
@@ -1015,6 +1024,11 @@ etc;anything else""", f['entries_2'].value)
         f['event_end'] = "2345-6-7"
         f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
+        f['orga_ids'] = "DB-10-8"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertPresence("Janis Jalapeño ist kein Veranstaltungsnutzer.")
+        f = self.response.forms['createeventform']
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
