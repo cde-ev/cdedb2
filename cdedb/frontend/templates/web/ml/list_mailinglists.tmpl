@@ -1,6 +1,7 @@
 {% set sidenav_active='ml_all' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/ml/generic.tmpl" as generic_ml with context %}
 {% block title %}
     {% if 'ml_admin' in user. roles %}
         {% trans %}All Mailinglists{% endtrans %}
@@ -30,7 +31,7 @@
             <h3>{{ gettext(group|string) }}</h3>
             <div class="list-group list-group-hover list-group-condensed">
             {% for mailinglist_id, ml in mailinglists[group]|keydictsort(EntitySorter.mailinglist) %}
-                {{ util.format_ml_entry(mailinglist_id, ml['title'], False) }}
+                {{ generic_ml.format_entry(mailinglist_infos[mailinglist_id], subscriptions, events, assemblies, False) }}
             {% endfor %}
             </div>
         {% endif %}

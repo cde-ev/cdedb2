@@ -1,6 +1,7 @@
 {% set sidenav_active='ml_moderated' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/ml/generic.tmpl" as generic_ml with context %}
 {% block title %}
     {% trans %}Moderated Mailinglists{% endtrans %}
 {% endblock %}
@@ -22,7 +23,7 @@
             <h3>{{ gettext(group|string) }}</h3>
             <div class="list-group list-group-hover list-group-condensed">
             {% for mailinglist_id, ml in mailinglists[group]|keydictsort(EntitySorter.mailinglist) %}
-                {{ util.format_ml_entry(mailinglist_id, ml['title'], True) }}
+                {{ generic_ml.format_entry(mailinglist_infos[mailinglist_id], subscriptions, events, assemblies, True) }}
             {% endfor %}
             </div>
         {% endif %}

@@ -53,7 +53,7 @@
                         active=(sidenav_active == 'ml_index')) }}
             {% endif %}
             {% if 'ml_mgmt' in user.admin_views %}
-                {% if 'ml_admin' in user. roles %}
+                {% if 'ml_admin' in user.roles %}
                     {% set overview=gettext("All Mailinglists") %}
                 {% else %}
                     {% set overview=gettext("Administered Mailinglists") %}
