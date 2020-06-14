@@ -136,18 +136,33 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         ml_admins can administrate all mailinglists."""
         mailinglists = self.mlproxy.list_mailinglists(
-            rs, active_only=False, admin_only=True)
+            rs, active_only=False, managed='admin').keys()
+        return self._build_mailinglist_list(rs, "list_mailinglists", mailinglists)
+
+    @access("ml")
+    def moderated_mailinglists(self, rs: RequestState) -> Response:
+        """Show all moderated mailinglists."""
+        return self._build_mailinglist_list(rs, "moderated_mailinglists",
+                                            rs.user.moderator)
+
+    def _build_mailinglist_list(self, rs: RequestState, endpoint: str,
+                                mailinglists: Collection[int]) -> Response:
+        """Collect all information required to build a comprehensive ml overview.
+
+        For a collection of given mailinglist ids, this retrieves all relevant
+        information. Querying mailinglists you have no access to will lead to
+        a privilege error."""
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=sub_states)
         grouped = collections.defaultdict(dict)
-        for mailinglist_id, title in mailinglists.items():
-            group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
-            grouped[group_id][mailinglist_id] = {
-                'title': title, 'id': mailinglist_id}
+        for ml_id in mailinglists:
+            group_id = self.mlproxy.get_ml_type(rs, ml_id).sortkey
+            grouped[group_id][ml_id] = {
+                'title': mailinglist_infos[ml_id]['title'], 'id': ml_id}
         event_ids = self.eventproxy.list_db_events(rs)
-        events = dict()
+        events = {}
         for event_id in event_ids:
             event = self.eventproxy.get_event(rs, event_id)
             visible = (
@@ -163,44 +178,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs, mailinglist_ids=mailinglists, states=sub_states)
         for ml_id in subs:
             mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
-        return self.render(rs, "list_mailinglists", {
-            'groups': MailinglistGroup,
-            'mailinglists': grouped,
-            'subscriptions': subscriptions,
-            'mailinglist_infos': mailinglist_infos,
-            'events': events,
-            'assemblies': assemblies})
-
-    @access("ml")
-    def moderated_mailinglists(self, rs: RequestState) -> Response:
-        """Show all moderated mailinglists."""
-        mailinglist_infos = self.mlproxy.get_mailinglists(rs, rs.user.moderator)
-        sub_states = const.SubscriptionStates.subscribing_states()
-        subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id, states=sub_states)
-        grouped = collections.defaultdict(dict)
-        for ml_id in rs.user.moderator:
-            group_id = self.mlproxy.get_ml_type(rs, ml_id).sortkey
-            grouped[group_id][ml_id] = {
-                'title': mailinglist_infos[ml_id]['title'], 'id': ml_id}
-        event_ids = self.eventproxy.list_db_events(rs)
-        events = dict()
-        for event_id in event_ids:
-            event = self.eventproxy.get_event(rs, event_id)
-            visible = (
-                    "event_admin" in rs.user.roles
-                    or rs.user.persona_id in event['orgas']
-                    or event['is_visible'])
-            events[event_id] = {'title': event['title'], 'is_visible': visible}
-        assemblies = self.assemblyproxy.list_assemblies(rs)
-        for assembly_id in assemblies:
-            assemblies[assembly_id]['is_visible'] = self.assemblyproxy.may_assemble(
-                rs, assembly_id=assembly_id)
-        subs = self.mlproxy.get_many_subscription_states(
-            rs, mailinglist_ids=rs.user.moderator, states=sub_states)
-        for ml_id in subs:
-            mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
-        return self.render(rs, "moderated_mailinglists", {
+        return self.render(rs, endpoint, {
             'groups': MailinglistGroup,
             'mailinglists': grouped,
             'subscriptions': subscriptions,
@@ -293,9 +271,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         db_mailinglist_ids = [mailinglist_id] if mailinglist_id else None
 
-        relevant_mls = {
-            **self.mlproxy.list_mailinglists(rs, active_only=False, admin_only=True),
-            **self.mlproxy.list_mailinglists(rs, active_only=False, mod_only=True)}
+        relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False, managed='managed')
         if not self.is_admin(rs):
             if db_mailinglist_ids is None:
                 db_mailinglist_ids = relevant_mls.keys()
