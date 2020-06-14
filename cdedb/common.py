@@ -22,7 +22,7 @@ from typing import (
     Any, TypeVar, Mapping, Optional, Dict, List, overload, Sequence, Tuple,
     Callable, Set, Iterable, Union, Generator, Type,
     OrderedDict as OrderedDictType, Collection, MutableMapping, Container,
-    TYPE_CHECKING, cast
+    TYPE_CHECKING, cast, KeysView
 )
 
 import psycopg2.extras
@@ -103,8 +103,8 @@ class User:
         self.display_name = display_name
         self.given_names = given_names
         self.family_name = family_name
-        self.orga = set(orga) if orga else set()
-        self.moderator = set(moderator) if moderator else set()
+        self.orga: Set[int] = set(orga) if orga else set()
+        self.moderator: Set[int] = set(moderator) if moderator else set()
         self.admin_views: Set[AdminView] = set()
 
     @property
@@ -852,7 +852,7 @@ ASSEMBLY_BAR_MONIKER = "_bar_"
 
 
 @overload
-def unwrap(single_element_list: Sequence[T]) -> T:
+def unwrap(single_element_list: Union[Sequence[T], Set[T], KeysView[T]]) -> T:
     pass
 
 
@@ -1187,7 +1187,7 @@ class TransactionType(enum.IntEnum):
             return repr(self)
 
 
-def mixed_existence_sorter(iterable: Collection[int]
+def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
                            ) -> Generator[int, None, None]:
     """Iterate over a set of indices in the relevant way.
 

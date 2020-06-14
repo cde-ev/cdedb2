@@ -243,13 +243,13 @@ class Application(BaseApp):
                 rs._conn = self.connpool[roles_to_db_role(user.roles)]
 
                 # Insert orga and moderator status context
-                orga = []
+                orga = set()
                 if "event" in user.roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
-                moderator = []
+                moderator = set()
                 if "ml" in user.roles:
-                    moderator = self.mlproxy.moderator_info(rs,
-                                                            user.persona_id)
+                    moderator = self.mlproxy.moderator_info(
+                        rs, user.persona_id)
                 user.orga = orga
                 user.moderator = moderator
                 user.init_admin_views_from_cookie(
