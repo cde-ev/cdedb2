@@ -5,7 +5,9 @@ import datetime
 import decimal
 
 import cdedb.database.constants as const
-from test.common import BackendTest, as_users, USER_DICT, nearly_now
+from test.common import (
+    BackendTest, as_users, USER_DICT, nearly_now, create_mock_image,
+)
 from cdedb.common import (
     PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now, merge_dicts,
     PERSONA_CDE_FIELDS, get_hash)
@@ -159,7 +161,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera", "berta")
     def test_set_foto(self, user):
-        new_foto = b"volltollesfoto"
+        new_foto = create_mock_image('png')
         persona_id = 2
         self.assertLess(0, self.core.change_foto(self.key, persona_id, new_foto))
         cde_user = self.core.get_cde_user(self.key, persona_id)

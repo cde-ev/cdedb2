@@ -846,6 +846,7 @@ class CoreBackend(AbstractBackend):
         Return 1 on successful change, -1 on successful removal, 0 otherwise.
         """
         persona_id = affirm("id", persona_id)
+        foto = affirm("profilepic_or_None", foto, file_storage=False)
         if foto is None:
             with Atomizer(rs):
                 old_hash = unwrap(self.sql_select_one(
@@ -868,7 +869,6 @@ class CoreBackend(AbstractBackend):
                     if path.exists():
                         path.unlink()
         else:
-            foto = affirm("bytes", foto)
             my_hash = get_hash(foto)
             data = {
                 'id': persona_id,

@@ -1649,16 +1649,23 @@ def _csvfile(val, argname=None, *, encoding="utf-8", _convert=True,
 
 
 @_addvalidator
-def _profilepic(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _profilepic(val: Any, argname: str = None, *, _convert: bool = True,
+                _ignore_warnings: bool = False, file_storage: bool = True
+                ) -> Tuple[Optional[bytes], List[Error]]:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (bytes or None, [(str or None, exception)])
+    Validate a file for usage as a profile picture.
+
+    Limit file size, resolution and ratio.
+
+    :param file_storage: If `True` expect the input to be a
+        `werkzeug.FileStorage`, otherwise expect a `bytes` object.
     """
-    val, errs = _input_file(val, argname, _convert=_convert,
-                            _ignore_warnings=_ignore_warnings)
+    if file_storage:
+        val, errs = _input_file(val, argname, _convert=_convert,
+                                _ignore_warnings=_ignore_warnings)
+    else:
+        val, errs = _bytes(val, argname, _convert=_convert,
+                           _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if len(val) < 2 ** 10:
@@ -1680,16 +1687,22 @@ def _profilepic(val, argname=None, *, _convert=True, _ignore_warnings=False):
 
 
 @_addvalidator
-def _pdffile(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _pdffile(val: Any, argname: str = None, *, _convert: bool = True,
+             _ignore_warnings: bool = False, file_storage: bool = True
+             ) -> Tuple[Optional[bytes], List[Error]]:
+    """Validate a file as a pdf.
+
+    Limit the maximum file size.
+
+    :param file_storage: If `True` expect the input to be a
+        `werkzeug.FileStorage`, otherwise expect a `bytes` object.
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (bytes or None, [(str or None, exception)])
-    """
-    val, errs = _input_file(val, argname, _convert=_convert,
-                            _ignore_warnings=_ignore_warnings)
+    if file_storage:
+        val, errs = _input_file(val, argname, _convert=_convert,
+                                _ignore_warnings=_ignore_warnings)
+    else:
+        val, errs = _bytes(val, argname, _convert=_convert,
+                           _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if len(val) > 2 ** 23:  # Disallow files bigger than 8 MB.

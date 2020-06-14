@@ -1498,10 +1498,10 @@ class EventBackend(AbstractBackend):
 
         Return 1 on successful change, -1 on successful deletion, 0 otherwise."""
         event_id = affirm("id", event_id)
+        minor_form = affirm("pdffile_or_None", minor_form, file_storage=False)
         if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
             raise PrivilegeError(n_("Must be orga or admin to change the"
                                     " minor form."))
-        # TODO log minorform changes
         path = self.minor_form_dir / str(event_id)
         if minor_form is None:
             if path.exists():

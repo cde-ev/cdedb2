@@ -379,7 +379,8 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_change_minor_form(self, user):
         event_id = 1
-        minor_form = b"minor_form"
+        with open("/cdedb2/test/ancillary_files/form.pdf", "rb") as f:
+            minor_form = f.read()
         self.assertIsNone(self.event.get_minor_form(self.key, event_id))
         self.assertLess(0, self.event.change_minor_form(self.key, event_id, minor_form))
         self.assertEqual(minor_form, self.event.get_minor_form(self.key, event_id))
