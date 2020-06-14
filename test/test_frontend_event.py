@@ -13,7 +13,7 @@ from test.common import as_users, USER_DICT, FrontendTest, prepsql
 from cdedb.query import QueryOperators
 from cdedb.common import (now, CDEDB_EXPORT_EVENT_VERSION,
     ADMIN_VIEWS_COOKIE_NAME)
-from cdedb.frontend.common import CustomCSVDialect
+from cdedb.frontend.common import CustomCSVDialect, iban_filter
 import cdedb.database.constants as const
 
 
@@ -276,7 +276,8 @@ class TestEventFrontend(FrontendTest):
 
         self.assertPresence("TestAka", div='shortname')
         self.assertPresence("Club der Ehemaligen", div='institution')
-        self.assertPresence("DE96 3702 0500 0008 0689 01", div='cde-iban')
+        iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
+        self.assertPresence(iban, div='cde-iban')
         self.assertPresence("Nein", div='questionnaire-active')
         self.assertPresence("Todoliste … just kidding ;)", div='orga-notes')
         self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem",
@@ -3738,7 +3739,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
         pay_request = "Anmeldung erst mit Überweisung des Teilnehmerbeitrags"
-        iban = "DE96 3702 0500 0008 0689 01"
+        iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
         no_member_surcharge = "zusätzlichen Beitrag in Höhe von 5,00"
 
         # now check ...
