@@ -2067,7 +2067,7 @@ class CdEFrontend(AbstractUserFrontend):
         if not period['balance_done']:
             rs.notify("error", n_("Wrong timing for advancing the semester."))
             return self.redirect(rs, "cde/show_semester")
-        self.cdeproxy.create_period(rs)
+        self.cdeproxy.advance_semester(rs)
         rs.notify("success", n_("New period started."))
         return self.redirect(rs, "cde/show_semester")
 

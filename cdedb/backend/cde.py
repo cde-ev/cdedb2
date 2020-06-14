@@ -517,13 +517,18 @@ class CdEBackend(AbstractBackend):
             return self.sql_update(rs, "cde.org_period", period)
 
     @access("finance_admin")
-    def create_period(self, rs: RequestState) -> DefaultReturnCode:
-        """Make a new semester."""
+    def advance_semester(self, rs: RequestState) -> DefaultReturnCode:
+        """Mark  the current semester as finished and create a new semester."""
         with Atomizer(rs):
             current_id = self.current_period(rs)
             current = self.get_period(rs, current_id)
             if not current['balance_done']:
                 raise RuntimeError(n_("Current period not finalized."))
+            update = {
+                'id': current_id,
+                'semester_done': now(),
+            }
+            ret = self.sql_update(rs, "cde.org_period", update)
             new_period = {
                 'id': current_id + 1,
                 'billing_state': None,
@@ -537,8 +542,9 @@ class CdEBackend(AbstractBackend):
                 'balance_done': None,
                 'balance_trialmembers': 0,
                 'balance_total': decimal.Decimal(0),
+                'semester_done': None,
             }
-            ret = self.sql_insert(rs, "cde.org_period", new_period)
+            ret *= self.sql_insert(rs, "cde.org_period", new_period)
             self.cde_log(rs, const.CdeLogCodes.semester_advance,
                          persona_id=None, additional_info=str(ret))
             return ret
@@ -551,6 +557,8 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
+            if not period['balance_done'] is None:
+                raise RuntimeError(n_("Billing already done for this period."))
             period_update = {
                 'id': period_id,
                 'billing_state': None,
@@ -574,6 +582,11 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
+            if not period['billing_done']:
+                raise RuntimeError(n_("Billing not done for this semester."))
+            if not period['ejection_done'] is None:
+                raise RuntimeError(n_(
+                "Ejection already done for this semester."))
             period_update = {
                 'id': period_id,
                 'ejection_state': None,
@@ -594,6 +607,11 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
+            if not period['ejection_done']:
+                raise RuntimeError(n_("Ejection not done for this period."))
+            if not period['balance_done'] is None:
+                raise RuntimeError(n_(
+                    "Balance update already done for this period."))
             period_update = {
                 'id': period_id,
                 'balance_state': None,
@@ -639,19 +657,25 @@ class CdEBackend(AbstractBackend):
 
     @access("finance_admin")
     def create_expuls(self, rs: RequestState) -> DefaultReturnCode:
-        """Make a new expuls."""
+        """Mark the current expuls as finished and create a new expuls."""
         with Atomizer(rs):
             current_id = self.current_expuls(rs)
             current = self.get_expuls(rs, current_id)
             if not current['addresscheck_done']:
                 raise RuntimeError(n_("Current expuls not finalized."))
+            update = {
+                'id': current_id,
+                'expuls_done': now(),
+            }
+            ret = self.sql_update(rs, "cde.expuls_period", update)
             new_expuls = {
                 'id': current_id + 1,
                 'addresscheck_state': None,
                 'addresscheck_done': None,
                 'addresscheck_count': 0,
+                'expuls_done': None,
             }
-            ret = self.sql_insert(rs, "cde.expuls_period", new_expuls)
+            ret *= self.sql_insert(rs, "cde.expuls_period", new_expuls)
             self.cde_log(rs, const.CdeLogCodes.expuls_advance,
                          persona_id=None, additional_info=str(ret))
             return ret
@@ -664,6 +688,9 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             expuls_id = self.current_expuls(rs)
             expuls = self.get_expuls(rs, expuls_id)
+            if not expuls['addresscheck_done'] is None:
+                raise RuntimeError(n_(
+                    "Addresscheck already done for this expuls."))
             expuls_update = {
                 'id': expuls_id,
                 'addresscheck_state': None,

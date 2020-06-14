@@ -393,7 +393,8 @@ CREATE TABLE cde.org_period (
         balance_state           integer REFERENCES core.personas(id),
         balance_done            timestamp WITH TIME ZONE DEFAULT NULL,
         balance_trialmembers    integer NOT NULL DEFAULT 0,
-        balance_total           numeric(8, 2) NOT NULL DEFAULT 0
+        balance_total           numeric(8, 2) NOT NULL DEFAULT 0,
+        semester_done           timestamp WITH TIME ZONE DEFAULT NULL
 );
 GRANT SELECT ON cde.org_period TO cdb_persona;
 GRANT INSERT, UPDATE ON cde.org_period TO cdb_admin;
@@ -405,7 +406,8 @@ CREATE TABLE cde.expuls_period (
         -- ID (it is done incrementally)
         addresscheck_state      integer REFERENCES core.personas(id),
         addresscheck_done       timestamp WITH TIME ZONE DEFAULT NULL,
-        addresscheck_count      integer NOT NULL DEFAULT 0
+        addresscheck_count      integer NOT NULL DEFAULT 0,
+        expuls_done             timestamp WITH TIME ZONE DEFAULT NULL
 );
 GRANT SELECT, INSERT, UPDATE ON cde.expuls_period TO cdb_admin;
 

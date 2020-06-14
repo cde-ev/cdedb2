@@ -213,10 +213,14 @@
             <tr>
                 <th>{% trans %}Semester{% endtrans %}</th>
                 <th>{% trans %}Billing Mails Sent{% endtrans %}</th>
+                <th>{% trans %}Billing Done{% endtrans %}</th>
                 <th>{% trans %}Members Ejected{% endtrans %}</th>
                 <th>{% trans %}Ejection Balance{% endtrans %}</th>
+                <th>{% trans %}Ejection Done{% endtrans %}</th>
                 <th>{% trans %}Trialmemberships Ended{% endtrans %}</th>
                 <th>{% trans %}Balance Deducted{% endtrans %}</th>
+                <th>{% trans %}Balance Update Done{% endtrans %}</th>
+                <th>{% trans %}Semester Done{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>
@@ -224,10 +228,14 @@
                 <tr>
                     <td>{{ period['id'] }}</td>
                     <td>{{ period['billing_count'] }}</td>
+                    <td>{{ period['billing_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['ejection_count'] }}</td>
                     <td>{{ period['ejection_balance']|money(lang=lang) }}</td>
+                    <td>{{ period['ejection_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['balance_trialmembers'] }}</td>
                     <td>{{ period['balance_total']|money(lang=lang) }}</td>
+                    <td>{{ period['balance_done']|datetime(lang=lang) }}</td>
+                    <td>{{ period['semester_done']|datetime(lang=lang) }}</td>
                 </tr>
             {% endfor %}
         </tbody>
