@@ -580,11 +580,11 @@ class CdEBackend(AbstractBackend):
                 'ejection_done': now(),
             }
             ret = self.set_period(rs, period_update)
+            msg = f"{period['ejection_count']} inaktive Mitglieder gestrichen."
+            msg += f" {period['ejection_balance']} € Guthaben eingezogen."
             self.cde_log(
                 rs, const.CdeLogCodes.semester_ejection, persona_id=None,
-                additional_info="{} inaktive Mitglieder gestrichen. "
-                                "{} € Guthaben eingezogen.".format(
-                    period['ejection_count'], period['ejection_balance']))
+                additional_info=msg)
             return ret
 
     @access("finance_admin")
