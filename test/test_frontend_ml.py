@@ -303,22 +303,24 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Andere Mailinglisten")
         self.assertNonPresence("CdE-All")
 
-    @as_users("berta")
-    def test_moderated_mailinglis(self, user):
+    @as_users("berta", "janis")
+    def test_moderated_mailinglist(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/moderated'})
         self.assertTitle("Moderierte Mailinglisten")
         # Moderated mailinglists
         self.assertPresence("Allgemeine Mailinglisten")
-        self.assertPresence("Veranstaltungslisten")
-        self.assertPresence("CdE-Party 2050 Orgateam")
-        # Inactive moderated mailinglists
-        self.assertPresence("Aktivenforum 2000")
-        self.traverse({'description': 'Aktivenforum 2000'})
-        self.assertTitle("Aktivenforum 2000 – Verwaltung")
+        self.assertPresence("Aktivenforum 2001")
+        if user['id'] == USER_DICT['berta']['id']:
+            self.assertPresence("Veranstaltungslisten")
+            self.assertPresence("CdE-Party 2050 Orgateam")
+            # Inactive moderated mailinglists
+            self.assertPresence("Aktivenforum 2000")
+            self.traverse({'description': 'Aktivenforum 2000'})
+            self.assertTitle("Aktivenforum 2000 – Verwaltung")
 
     @as_users("annika")
-    def test_admin_moderated_mailinglis(self, user):
+    def test_admin_moderated_mailinglist(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/moderated'})
         self.assertTitle("Moderierte Mailinglisten")
