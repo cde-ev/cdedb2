@@ -5,11 +5,11 @@
 {% block title %}
     {% if ambience['ballot'] %}
         {% trans title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
-            Edit Attachment ({{ title }})
+            Change Attachment Link ({{ title }})
         {% endtrans %}
     {% else %}
         {% trans title=ambience['assembly']['title'] %}
-            Edit Attachment ({{ title }})
+            Change Attachment Link ({{ title }})
         {% endtrans %}
     {% endif %}
     – {{ assembly_util.small_attachment_title(attachment, history, icon=False) }}
@@ -17,7 +17,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}
-            Edit Attachment
+            Change Attachment Link
         {% endtrans %}
         {% if ambience['ballot'] %}
             <small>
@@ -45,8 +45,15 @@
     {{ util.breadcrumb_link(cdedblink("assembly/change_attachment_link"), gettext("Edit Attachment"), active=True) }}
 {% endblock %}
 {% block content %}
+    <div class="p text-info">
+        {{ util.make_icon("info") }}
+        {% trans %}
+            Here you can change the association of this attachment.
+            You can link it to a (different) ballot or directly to the assembly as a general file.
+        {% endtrans %}
+    </div>
     <form action="{{ cdedblink('assembly/change_attachment_link') }}" method="POST" enctype="multipart/form-data"
-            id="editattachmentform" class="form-horizontal">
+            id="changeattachmentlinkform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/change_attachment_link') }}
         {{ util.input_hidden(name="attachment_id") }}
         {{ util.form_input_select("new_ballot_id", label=gettext("Ballot"), entries=ballot_entries, nulloption="&nbsp;"|s) }}

@@ -24,7 +24,7 @@
                         {{ util.href(cdedblink("assembly/change_attachment_link_form",
                                      {'attachment_id': current_version["attachment_id"],
                                       'ballot_id': ballot['id'] if ballot else None}),
-                                     gettext("Edit Attachment"), aclass="btn btn-warning btn-sm", icon="pen") }}
+                                     gettext("Change Attachment Link"), aclass="btn btn-warning btn-sm", icon="pen") }}
                         <form action="{{ cdedblink("assembly/delete_attachment",
                                                    {'attachment_id': current_version["attachment_id"],
                                                     'ballot_id': ballot['id'] if ballot else None}) }}"

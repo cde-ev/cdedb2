@@ -694,10 +694,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         history = self.assemblyproxy.get_attachment_history(rs, attachment_id)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        timestamp = now()
         ballot_entries = [
             (ballot['id'], ballot['title'])
             for ballot in xsorted(ballots.values(), key=EntitySorter.ballot)
-            if now() < ballot['vote_begin']
+            if timestamp < ballot['vote_begin']
         ]
         attachment['new_ballot_id'] = attachment['ballot_id']
         merge_dicts(rs.values, attachment)
@@ -755,12 +756,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     # ballot_id comes semantically after assembly_id, but is optional,
     # so needs to be at the end.
-    def edit_attachment_version_form(self, rs: RequestState,
-                                     assembly_id: int, attachment_id: int,
-                                     version: int,
-                                     ballot_id: int = None) -> Response:
+    def edit_attachment_version_form(
+            self, rs: RequestState, assembly_id: int, attachment_id: int,
+            version: int, ballot_id: int = None) -> Response:
         """Change an existing version of an attachment."""
-        rs.ignore_validation_errors()
         attachment = rs.ambience['attachment']
         if (attachment['assembly_id']
                 and attachment['assembly_id'] != assembly_id):
