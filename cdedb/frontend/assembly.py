@@ -586,8 +586,10 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         history = self.assemblyproxy.get_attachment_history(
             rs, attachment_id)
+        edit = not self.assemblyproxy.check_attachment_locked(rs, attachment_id)
         return self.render(rs, "show_attachment", {
             'attachment': rs.ambience['attachment'], 'history': history,
+            'edit': edit,
         })
 
     @access("assembly_admin")

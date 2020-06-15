@@ -1311,26 +1311,32 @@ class AssemblyBackend(AbstractBackend):
                                     "one assembly at a time."))
             return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
-    @internal
+    @access("assembly")
+    def check_ballot_locked(self, rs: RequestState, ballot_id: int) -> bool:
+        """Helper to check, whether a ballot may be modified.
+
+        :returns: True if the ballot may not be edited, False otherwise.
+        """
+        ballot_id = affirm("id", ballot_id)
+        ballot = self.get_ballot(rs, ballot_id)
+        return ballot['vote_begin'] < now()
+
     @access("assembly")
     def check_attachment_locked(self, rs: RequestState,
                                 attachment_id: int) -> bool:
-        """Helper to check, whether a attachment may be modified."""
+        """Helper to check, whether a attachment may be modified.
+
+        :returns: True if the attachment may not be edited, False otherwise.
+        """
         attachment_id = affirm("id", attachment_id)
         with Atomizer(rs):
             attachment = self.get_attachment(rs, attachment_id)
             if attachment['ballot_id']:
-                ballot = self.get_ballot(rs, attachment['ballot_id'])
-                if ballot['vote_begin'] < now():
+                if self.check_ballot_locked(rs, attachment['ballot_id']):
                     return True
-                assembly_id = ballot['assembly_id']
-            else:
-                assembly_id = attachment['assembly_id']
+            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             assembly = self.get_assembly(rs, assembly_id)
-            if not assembly['is_active']:
-                return True
-
-            return False
+            return not assembly['is_active']
 
     @access("assembly")
     def get_attachment_histories(self, rs: RequestState,
