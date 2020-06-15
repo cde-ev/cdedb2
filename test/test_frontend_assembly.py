@@ -254,7 +254,7 @@ class TestAssemblyFrontend(FrontendTest):
 
         self.traverse({'description': 'Internationaler Kongress'})
         attendee = ["Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
-                    "Abstimmungen", "Zusammenfassung", "Attachment Overview"]
+                    "Abstimmungen", "Zusammenfassung", "Datei-Übersicht"]
         admin = ["Konfiguration", "Log"]
 
         # not assembly admins
@@ -483,8 +483,8 @@ class TestAssemblyFrontend(FrontendTest):
             data = datafile.read()
         self.traverse({'description': 'Versammlungen$'},
                       {'description': 'Internationaler Kongress'},
-                      {'description': 'Datei anhängen'},)
-        self.assertTitle("Datei anhängen (Internationaler Kongress)")
+                      {'description': 'Datei hinzufügen'},)
+        self.assertTitle("Datei hinzufügen (Internationaler Kongress)")
 
         # First try upload with invalid default filename
         f = self.response.forms['addattachmentform']
@@ -497,7 +497,7 @@ class TestAssemblyFrontend(FrontendTest):
         f['attachment'] = webtest.Upload("form….pdf", data, "application/octet-stream")
         f['filename'] = "beschluss.pdf"
         self.submit(f)
-        self.assertTitle("Attachment Details (Internationaler Kongress) – Maßgebliche Beschlussvorlage")
+        self.assertTitle("Datei-Details (Internationaler Kongress) – Maßgebliche Beschlussvorlage")
 
         # Check file content.
         saved_response = self.response
@@ -507,33 +507,33 @@ class TestAssemblyFrontend(FrontendTest):
 
         # Change version data.
         self.traverse({'href': '/assembly/assembly/1/attachment/1001/version/1/edit'})
-        self.assertTitle("Edit File (Internationaler Kongress) – Maßgebliche Beschlussvorlage")
+        self.assertTitle("Version bearbeiten (Internationaler Kongress) – Maßgebliche Beschlussvorlage (Version 1)")
         f = self.response.forms['editattachmentversionform']
         f['title'] = "Insignifikante Beschlussvorlage"
         f['authors'] = "Der Vorstand"
         self.submit(f)
-        self.assertTitle("Attachment Details (Internationaler Kongress) – Insignifikante Beschlussvorlage")
-        self.traverse({'description': 'Edit Attachment'})
-        self.assertTitle("Edit Attachment (Internationaler Kongress) – Insignifikante Beschlussvorlage")
-        f = self.response.forms['editattachmentform']
+        self.assertTitle("Datei-Details (Internationaler Kongress) – Insignifikante Beschlussvorlage")
+        self.traverse({'description': 'Datei-Verknüpfung ändern'})
+        self.assertTitle("Datei-Verknüpfung ändern (Internationaler Kongress) – Insignifikante Beschlussvorlage")
+        f = self.response.forms['changeattachmentlinkform']
         f['new_ballot_id'] = 2
         self.submit(f)
-        self.assertTitle("Attachment Details (Internationaler Kongress/Farbe des Logos) – Insignifikante Beschlussvorlage")
-        self.traverse({'description': 'Add Version'})
-        self.assertTitle("Datei anhängen (Internationaler Kongress/Farbe des Logos) – Insignifikante Beschlussvorlage")
+        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Insignifikante Beschlussvorlage")
+        self.traverse({'description': 'Version hinzufügen'})
+        self.assertTitle("Version hinzufügen (Internationaler Kongress/Farbe des Logos) – Insignifikante Beschlussvorlage")
         f = self.response.forms['addattachmentform']
         f['title'] = "Alternative Beschlussvorlage"
         f['authors'] = "Die Wahlleitung"
         f['attachment'] = webtest.Upload("beschluss2.pdf", data + b'123', "application/octet-stream")
         self.submit(f)
-        self.assertTitle("Attachment Details (Internationaler Kongress/Farbe des Logos) – Alternative Beschlussvorlage")
+        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Alternative Beschlussvorlage")
         self.assertPresence("Insignifikante Beschlussvorlage (Version 1)")
         self.assertPresence("Alternative Beschlussvorlage (Version 2)")
         f = self.response.forms['removeattachmentversionform1001_1']
         f['attachment_ack_delete'].checked = True
         self.submit(f)
-        self.assertTitle("Attachment Details (Internationaler Kongress/Farbe des Logos) – Alternative Beschlussvorlage")
-        self.assertPresence("Version 1 was deleted")
+        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Alternative Beschlussvorlage")
+        self.assertPresence("Version 1 wurde gelöscht")
         f = self.response.forms['deleteattachmentform1001']
         f['attachment_ack_delete'].checked = True
         self.submit(f)

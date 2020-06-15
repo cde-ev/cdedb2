@@ -7092,7 +7092,7 @@ msgstr "Versammlungs-Nutzer verwalten"
 #: cdedb/frontend/templates/web/assembly/edit_attachment_version.tmpl:11
 #, python-format
 msgid "Edit Version (%(title)s)"
-msgstr "Version bearbeiten (%title)s)"
+msgstr "Version bearbeiten (%(title)s)"
 
 #: cdedb/frontend/templates/web/assembly/edit_attachment_version.tmpl:19
 #: cdedb/frontend/templates/web/assembly/edit_attachment_version.tmpl:47
