@@ -93,6 +93,7 @@
 
         {# This makes a list per part. If the event has only one part, part_id is set by the frontend on this part_id by default. #}
         {% if part_id %}
+            <div class="table-container">
             <table class="table table-condensed">
                 <thead>
                     <tr>
@@ -134,10 +135,12 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
 
 
         {# this makes an overview over all event parts #}
         {% else %}
+            <div class="table-container">
             <table class="table table-condensed">
                 <thead>
                     <tr>
@@ -185,6 +188,7 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
         <p>
             {% trans count=registrations|length %}There are {{ count }} participants in total.{% endtrans %}
