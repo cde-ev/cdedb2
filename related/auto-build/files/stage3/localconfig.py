@@ -25,6 +25,9 @@ PAST_EVENT_BACKEND_LOG = "/log/cdedb-backend-past-event.log"
 ML_BACKEND_LOG = "/log/cdedb-backend-ml.log"
 ASSEMBLY_BACKEND_LOG = "/log/cdedb-backend-assembly.log"
 
+CRON_FRONTEND_LOG = "/log/cdedb-frontend-cron.log"
+WORKER_LOG = "/log/cdedb-frontend-worker.log"
+
 try:
     import cdedb.testconfig
     CONSOLE_LOG_LEVEL = cdedb.testconfig.CONSOLE_LOG_LEVEL
