@@ -865,7 +865,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             history = self.assemblyproxy.get_attachment_history(
                 rs, attachment_id)
             if version not in history:
-                rs.notify("error", n_("This version does not exist"))
+                rs.notify("error", n_("This version does not exist."))
                 return self.redirect(rs, "assembly/show_attachment")
             if history[version]['dtime']:
                 rs.notify("error", n_("This version has already been deleted."))

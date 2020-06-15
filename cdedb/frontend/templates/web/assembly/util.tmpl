@@ -104,7 +104,7 @@
                         {% set deletable = (attachment['num_versions'] > 1) %}
                         {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash-alt",
                                 title=(gettext("Delete Version %(version)s")|format(version=version['version']) if deletable
-                                       else gettext("Cannot remove the last remaining version of an attachment")),
+                                       else gettext("Cannot remove the last remaining version of an attachment.")),
                                 readonly=not deletable) }}
                     </form>
                     <script nonce="{{ csp_nonce }}">
@@ -213,7 +213,7 @@
             {% if new_attachment_button and edit %}
                 <div class="p">
                     {{ util.href(cdedblink("assembly/add_attachment_form"),
-                                 gettext("Attach File"), aclass="btn btn-success btn-sm", icon="plus") }}
+                                 gettext("Add File"), aclass="btn btn-success btn-sm", icon="plus") }}
                 </div>
             {% endif %}
         </div>
