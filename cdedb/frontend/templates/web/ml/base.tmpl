@@ -17,6 +17,8 @@
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
                         gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
+            {% endif %}
+            {% if data['id'] in user.moderator or ('ml_moderator' in user.admin_views and is_relevant_admin(mailinglist_id=data['id'])) %}
                 {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), gettext("Log"),
                              aclass="list-group-item", icon="far fa-list-alt", active=(sidenav_active == 'ml_ml_log')) }}
             {% endif %}
@@ -74,14 +76,14 @@
 {% block adminviews %}
     {% if ambience['mailinglist'] %}
         {% if user.persona_id in ambience['mailinglist']['moderators'] %}
-            {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),)) }}
+            {{ util.admin_views_toggle(((gettext("Mailinglist Administration"), ["ml_mgmt"], None),)) }}
         {% else %}
-            {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),
+            {{ util.admin_views_toggle(((gettext("Mailinglist Administration"), ["ml_mgmt"], None),
                                         (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
         {% endif %}
     {% else %}
         {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user",
                                                                       "assembly_user", "genesis"], ["ml_user"]),
-                                    (gettext("Mailinglist Management"), ["ml_mgmt"], None))) }}
+                                    (gettext("Mailinglist Administration"), ["ml_mgmt"], None))) }}
     {% endif %}
 {% endblock %}

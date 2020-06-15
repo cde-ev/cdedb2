@@ -61,8 +61,8 @@ class PastEventBackend(AbstractBackend):
         for pevent in pevents:
             pevent['courses'] = {
                 c['id']: {k: c[k] for k in course_fields}
-                for c in pcourse if c['persona_id'] == pevent['persona_id']
-                                    and c['pevent_id'] == pevent['id']
+                for c in pcourse if (c['persona_id'] == pevent['persona_id']
+                                     and c['pevent_id'] == pevent['id'])
             }
         for anid in ids:
             ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}

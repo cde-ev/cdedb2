@@ -2,8 +2,10 @@ Hallo {{ user['display_name'] }},
 
 Du hast dich erfolgreich zur Veranstaltung
     "{{ ambience['event']['title'] }}"
-angemeldet. Beachte bitte, dass Deine Anmeldung erst mit Überweisung des
-Teilnehmerbeitrags gültig wird.
+angemeldet.
+{% if fee %}
+
+Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnehmerbeitrags gültig wird.
 
 {% if ambience['event']['iban'] %}
 {% if ambience['event']['mail_text'] %}
@@ -37,6 +39,7 @@ Wenn Du dies tust, überweise Mitgliedsbeitrag und Teilnahmebeitrag bitte separa
 Wir werden Dir separat mitteilen, wie Du den Beitrag von {{ fee|money }}
 bezahlen kannst.
 {% endif%}
+{% endif %}
 
 {% if age.is_minor() %}
 Da Du zur Veranstaltung nicht volljährig sein wirst, musst Du außerdem noch

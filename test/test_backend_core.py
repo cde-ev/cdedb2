@@ -477,22 +477,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_meta_info(self, user):
-        expectation = {
-            'CdE_Konto_BIC': 'BFSWDE33XXX',
-            'CdE_Konto_IBAN': 'DE26370205000008068900',
-            'CdE_Konto_Inhaber': 'CdE e.V.',
-            'CdE_Konto_Institut': 'Bank für Sozialwirtschaft',
-            'Finanzvorstand_Adresse_Einzeiler':
-                'Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia',
-            'Finanzvorstand_Adresse_Zeile2': 'bei Spielmanns',
-            'Finanzvorstand_Adresse_Zeile3': 'Im Garten 77',
-            'Finanzvorstand_Adresse_Zeile4': '34576 Utopia',
-            'Finanzvorstand_Name': 'Bertålotta Beispiel',
-            'Finanzvorstand_Ort': 'Utopia',
-            'Finanzvorstand_Vorname': 'Bertålotta',
-            'banner_before_login': 'Das Passwort ist secret!',
-            'Vorstand': 'Anton und Berta',
-            'banner_after_login': '*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*'}
+        expectation = self.sample_data['core.meta_info'][0]['info']
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
             'Finanzvorstand_Name': 'Zelda'

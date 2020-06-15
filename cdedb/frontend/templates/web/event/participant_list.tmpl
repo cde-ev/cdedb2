@@ -45,12 +45,14 @@
                                {'part_id': part_id, 'sortkey': sortkey, 'reverse': not last_reverse}),
                      label,
                      icon="sort-down" if last_reverse else "sort-up",
-                     title=gettext("Sort ascending.") if last_reverse else gettext("Sort descending.")) }}
+                     title=gettext("Sort ascending.") if last_reverse else gettext("Sort descending."),
+                     aclass="link-hidden") }}
     {% else %}
         {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
                      label,
                      icon="sort",
-                     title=gettext("Sort ascending.")) }}
+                     title=gettext("Sort ascending."),
+                     aclass="link-hidden") }}
     {% endif %}
 {% endmacro %}
 
@@ -91,6 +93,7 @@
 
         {# This makes a list per part. If the event has only one part, part_id is set by the frontend on this part_id by default. #}
         {% if part_id %}
+            <div class="table-container">
             <table class="table table-condensed">
                 <thead>
                     <tr>
@@ -132,10 +135,12 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
 
 
         {# this makes an overview over all event parts #}
         {% else %}
+            <div class="table-container">
             <table class="table table-condensed">
                 <thead>
                     <tr>
@@ -183,6 +188,7 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
         <p>
             {% trans count=registrations|length %}There are {{ count }} participants in total.{% endtrans %}

@@ -1706,6 +1706,7 @@ def _period(val, argname=None, *, _convert=True, _ignore_warnings=False):
     optional_fields = {
         'billing_state': _id_or_None,
         'billing_done': _datetime,
+        'billing_count': _non_negative_int,
         'ejection_state': _id_or_None,
         'ejection_done': _datetime,
         'ejection_count': _non_negative_int,
@@ -1737,6 +1738,7 @@ def _expuls(val, argname=None, *, _convert=True, _ignore_warnings=False):
     optional_fields = {
         'addresscheck_state': _id_or_None,
         'addresscheck_done': _datetime,
+        'addresscheck_count': _non_negative_int,
     }
     return _examine_dictionary_fields(
         val, {'id': _id}, optional_fields, _convert=_convert,
@@ -2175,7 +2177,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'registration_text': _str_or_None,
     'orga_address': _email_or_None,
     'lodge_field': _id_or_None,
-    'reserve_field': _id_or_None,
+    'camping_mat_field': _id_or_None,
     'course_room_field': _id_or_None,
 }
 
@@ -2744,7 +2746,7 @@ def _registration_part(val, argname=None, *, _convert=True,
     optional_fields = {
         'status': _enum_registrationpartstati,
         'lodgement_id': _id_or_None,
-        'is_reserve': _bool,
+        'is_camping_mat': _bool,
     }
     return _examine_dictionary_fields(
         val, {}, optional_fields, _convert=_convert,
@@ -2884,8 +2886,8 @@ def _lodgement_group(val, argname=None, *, creation=False, _convert=True,
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
-    'capacity': _non_negative_int,
-    'reserve': _non_negative_int,
+    'regular_capacity': _non_negative_int,
+    'camping_mat_capacity': _non_negative_int,
     'notes': _str_or_None,
     'group_id': _id_or_None,
 }
@@ -3432,8 +3434,8 @@ def _partial_lodgement_group(val, argname=None, *, creation=False,
 
 _PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
-    'capacity': _non_negative_int,
-    'reserve': _non_negative_int,
+    'regular_capacity': _non_negative_int,
+    'camping_mat_capacity': _non_negative_int,
     'notes': _str_or_None,
     'group_id': _partial_import_id_or_None,
 }
@@ -3582,7 +3584,7 @@ def _partial_registration_part(val, argname=None, *, _convert=True,
     optional_fields = {
         'status': _enum_registrationpartstati,
         'lodgement_id': _partial_import_id_or_None,
-        'is_reserve': _bool,
+        'is_camping_mat': _bool,
     }
     return _examine_dictionary_fields(
         val, {}, optional_fields, _convert=_convert,

@@ -21,13 +21,13 @@ The final view will be constructed as follows (slightly simplified). ::
   (
       SELECT
           id, id as lodgement_id, event_id,
-          moniker, capacity, reserve, notes, group_id
+          moniker, regular_capacity, camping_mat_capacity, notes, group_id
       FROM
           event.lodgements
   ) AS lodgement
   LEFT OUTER JOIN (
       SELECT
-          id, moniker, capacity, reserve
+          id, moniker, regular_capacity, camping_mat_capacity
       FROM
           event.lodgement_groups
   ) AS lodgement_group ON lodgement.group_id = lodgement_group.id
@@ -51,19 +51,19 @@ The following columns will be available in this view:
 * ``lodgement.id``
 * ``lodgement.event_id``
 * ``lodgement.moniker``
-* ``lodgement.capacity``
+* ``lodgement.regular_capacity``
 * ``lodgement.notes``
 * ``lodgement.group_id``
-* ``lodgement.reserve``
+* ``lodgement.camping_mat_capacity``
 * ``lodgement_group.moniker``
-* ``lodgement_group.capacity``
-* ``lodgement_group.reserve``
+* ``lodgement_group.regular_capacity``
+* ``lodgement_group.camping_mat_capacity``
 * ``lodgement_fields.xfield_{field_name}`` *This is available for every custom data field with course association.*
 * ``part{part_id}.regular_inhabitants``
-* ``part{part_id}.reserve_inhabitants``
+* ``part{part_id}.camping_mat_inhabitants``
 * ``part[part_id}.total_inhabitants``
 * ``part{part_id}.group_regular_inhabitants``
-* ``part{part_id}.group_reserve_inhabitants``
+* ``part{part_id}.group_camping_mat_inhabitants``
 * ``part[part_id}.group_total_inhabitants``
 
 *Note that some additional columns are present but omitted here, since they are not really useful like
@@ -146,7 +146,7 @@ The part table consists of two components, both of which use the *inhabitants_vi
   SELECT
       id, tmp_group_id,
       COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-      COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+      COALESCE(rp_camping_mat.inhabitants, 0) AS camping_mat_inhabitants,
       COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
   FROM
       (
@@ -158,8 +158,8 @@ The part table consists of two components, both of which use the *inhabitants_vi
           *regular_inhabitants_counter*
       ) AS rp_regular ON l.id = rp_regular.lodgement_id
       LEFT OUTER JOIN (
-          *reserve_inahbitants_counter*
-      ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+          *camping_mat_inahbitants_counter*
+      ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
       LEFT OUTER JOIN (
           *total_inhabitants_counter*
       ) AS rp_total ON l.id = rp_total.lodgement_id
@@ -169,7 +169,7 @@ The second component is the *group_inhabitants_view*: ::
   SELECT
       tmp_group_id,
       COALESCE(SUM(regular_inhabitants)::bigint, 0) AS group_regular_inhabitants,
-      COALESCE(SUM(reserve_inhabitants)::bigint, 0) AS group_reserve_inhabitants,
+      COALESCE(SUM(camping_mat_inhabitants)::bigint, 0) AS group_camping_mat_inhabitants,
       COALESCE(SUM(total_inhabitants)::bigint, 0) AS group_total_inhabitants
   FROM (
       *inhabitants_view*
@@ -181,7 +181,7 @@ The second component is the *group_inhabitants_view*: ::
 The inhabitants counter
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The inhabitants counter is a simple query where all inhabitants (with a specific reserve status are counted: ::
+The inhabitants counter is a simple query where all inhabitants (with a specific camping_mat status are counted: ::
 
   SELECT
       lodgement_id, COUNT(registration_id) AS inhabitants
@@ -189,11 +189,11 @@ The inhabitants counter is a simple query where all inhabitants (with a specific
       event.registration_parts
   WHERE
       part_id = X
-      *reserve_condition*
+      *camping_mat_condition*
   GROUP BY
       lodgement_id
 
-Where reserve condition is either "is_reserve = True", "is_reserve = False" or nothing, for regular, reserve,
+Where camping_mat condition is either "is_camping_mat = True", "is_camping_mat = False" or nothing, for regular, camping_mat,
 total inhabitants respectively.
 
 The Complete View
@@ -203,7 +203,7 @@ The Complete View
     (
         SELECT
             id, id as lodgement_id, event_id,
-            moniker, capacity, reserve, notes, group_id
+            moniker, regular_capacity, camping_mat_capacity, notes, group_id
         FROM
             event.lodgements
     ) AS lodgement
@@ -227,7 +227,7 @@ The Complete View
     ) AS lodgement_fields ON lodgement.id = lodgement_fields.id
     LEFT OUTER JOIN (
         SELECT
-            tmp_id, moniker, capacity, reserve
+            tmp_id, moniker, regular_capacity, camping_mat_capacity
         FROM (
             (
                 (
@@ -247,8 +247,8 @@ The Complete View
             LEFT OUTER JOIN (
                 SELECT
                     COALESCE(group_id, -1) as tmp_group_id,
-                    SUM(capacity) as capacity,
-                    SUM(reserve) as reserve
+                    SUM(regular_capacity) as regular_capacity,
+                    SUM(camping_mat_capacity) as camping_mat_capacity
                 FROM
                     event.lodgements
                 WHERE
@@ -271,7 +271,7 @@ The Complete View
             SELECT
                 id, tmp_group_id,
                 COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-                COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                COALESCE(rp_camping_mat.inhabitants, 0) AS camping_mat_inhabitants,
                 COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
             FROM
                 (
@@ -286,7 +286,7 @@ The Complete View
                         event.registration_parts
                     WHERE
                         part_id = 1
-                        AND is_reserve = False
+                        AND is_camping_mat = False
                     GROUP BY
                         lodgement_id
                 ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -297,10 +297,10 @@ The Complete View
                         event.registration_parts
                     WHERE
                         part_id = 1
-                        AND is_reserve = True
+                        AND is_camping_mat = True
                     GROUP BY
                         lodgement_id
-                ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+                ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
                 LEFT OUTER JOIN (
                     SELECT
                         lodgement_id, COUNT(registration_id) AS inhabitants
@@ -316,13 +316,13 @@ The Complete View
             SELECT
                 tmp_group_id,
                 COALESCE(SUM(regular_inhabitants)::bigint, 0) AS group_regular_inhabitants,
-                COALESCE(SUM(reserve_inhabitants)::bigint, 0) AS group_reserve_inhabitants,
+                COALESCE(SUM(camping_mat_inhabitants)::bigint, 0) AS group_camping_mat_inhabitants,
                 COALESCE(SUM(total_inhabitants)::bigint, 0) AS group_total_inhabitants
             FROM (
                 SELECT
                     id, tmp_group_id,
                     COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-                    COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                    COALESCE(rp_camping_mat.inhabitants, 0) AS camping_mat_inhabitants,
                     COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
                 FROM
                     (
@@ -337,7 +337,7 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 1
-                            AND is_reserve = False
+                            AND is_camping_mat = False
                         GROUP BY
                             lodgement_id
                         ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -348,10 +348,10 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 1
-                            AND is_reserve = True
+                            AND is_camping_mat = True
                         GROUP BY
                             lodgement_id
-                        ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+                        ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
                         LEFT OUTER JOIN (
                             SELECT
                                 lodgement_id, COUNT(registration_id) AS inhabitants
@@ -381,7 +381,7 @@ The Complete View
             SELECT
                 id, tmp_group_id,
                 COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-                COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                COALESCE(rp_camping_mat.inhabitants, 0) AS camping_mat_inhabitants,
                 COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
             FROM
                 (
@@ -396,7 +396,7 @@ The Complete View
                     event.registration_parts
                 WHERE
                     part_id = 2
-                    AND is_reserve = False
+                    AND is_camping_mat = False
                 GROUP BY
                     lodgement_id
                 ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -407,10 +407,10 @@ The Complete View
                     event.registration_parts
                 WHERE
                     part_id = 2
-                    AND is_reserve = True
+                    AND is_camping_mat = True
                 GROUP BY
                     lodgement_id
-            ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+            ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
             LEFT OUTER JOIN (
                 SELECT
                     lodgement_id, COUNT(registration_id) AS inhabitants
@@ -427,13 +427,13 @@ The Complete View
             SELECT
                 tmp_group_id,
                 COALESCE(SUM(regular_inhabitants)::bigint, 0) AS group_regular_inhabitants,
-                COALESCE(SUM(reserve_inhabitants)::bigint, 0) AS group_reserve_inhabitants,
+                COALESCE(SUM(camping_mat_inhabitants)::bigint, 0) AS group_camping_mat_inhabitants,
                 COALESCE(SUM(total_inhabitants)::bigint, 0) AS group_total_inhabitants
             FROM (
                 SELECT
                     id, tmp_group_id,
                     COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-                    COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                    COALESCE(rp_camping_mat.inhabitants, 0) AS camping_mat_inhabitants,
                     COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
                 FROM
                     (
@@ -448,7 +448,7 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 2
-                            AND is_reserve = False
+                            AND is_camping_mat = False
                         GROUP BY
                             lodgement_id
                     ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -459,10 +459,10 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 2
-                            AND is_reserve = True
+                            AND is_camping_mat = True
                         GROUP BY
                             lodgement_id
-                    ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+                    ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
                     LEFT OUTER JOIN (
                         SELECT
                             lodgement_id, COUNT(registration_id) AS inhabitants
@@ -492,7 +492,7 @@ The Complete View
             SELECT
                 id, tmp_group_id,
                 COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-                COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                COALESCE(rp_camping_mat.inhabitants, 0) AS camping_mat_inhabitants,
                 COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
             FROM
                 (
@@ -507,7 +507,7 @@ The Complete View
                         event.registration_parts
                     WHERE
                         part_id = 3
-                        AND is_reserve = False
+                        AND is_camping_mat = False
                     GROUP BY
                         lodgement_id
                 ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -518,10 +518,10 @@ The Complete View
                         event.registration_parts
                     WHERE
                         part_id = 3
-                        AND is_reserve = True
+                        AND is_camping_mat = True
                     GROUP BY
                         lodgement_id
-                ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+                ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
                 LEFT OUTER JOIN (
                     SELECT
                     lodgement_id, COUNT(registration_id) AS inhabitants
@@ -538,13 +538,13 @@ The Complete View
             SELECT
                 tmp_group_id,
                 COALESCE(SUM(regular_inhabitants)::bigint, 0) AS group_regular_inhabitants,
-                COALESCE(SUM(reserve_inhabitants)::bigint, 0) AS group_reserve_inhabitants,
+                COALESCE(SUM(camping_mat_inhabitants)::bigint, 0) AS group_camping_mat_inhabitants,
                 COALESCE(SUM(total_inhabitants)::bigint, 0) AS group_total_inhabitants
             FROM (
                 SELECT
                     id, tmp_group_id,
                     COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-                    COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                    COALESCE(rp_camping_mat.inhabitants, 0) AS camping_mat_inhabitants,
                     COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
                 FROM
                     (
@@ -559,7 +559,7 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 3
-                            AND is_reserve = False
+                            AND is_camping_mat = False
                         GROUP BY
                             lodgement_id
                     ) AS rp_regular ON l.id = rp_regular.lodgement_id
@@ -570,10 +570,10 @@ The Complete View
                             event.registration_parts
                         WHERE
                             part_id = 3
-                            AND is_reserve = True
+                            AND is_camping_mat = True
                         GROUP BY
                             lodgement_id
-                    ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+                    ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
                     LEFT OUTER JOIN (
                         SELECT
                             lodgement_id, COUNT(registration_id) AS inhabitants

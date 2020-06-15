@@ -1,6 +1,9 @@
 {% set sidenav_active='ml_show' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% block title %}{{ ambience['mailinglist']['title'] }}{% endblock %}
 {% block breadcrumb %}
     {{ super() }}

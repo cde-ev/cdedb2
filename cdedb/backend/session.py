@@ -10,12 +10,15 @@ special in here.
 """
 
 import logging
-
 import psycopg2.extensions
+
+from typing import (
+    Optional
+)
 
 from cdedb.database.connection import connection_pool_factory
 from cdedb.common import (glue, make_root_logger, now, PERSONA_STATUS_FIELDS,
-                          User, extract_roles, droid_roles)
+                          User, extract_roles, droid_roles, PathLike)
 from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
 
@@ -29,10 +32,7 @@ class SessionBackend:
     """
     realm = "session"
 
-    def __init__(self, configpath):
-        """
-        :type configpath: str
-        """
+    def __init__(self, configpath: PathLike):
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
 
@@ -58,17 +58,13 @@ class SessionBackend:
             secrets, self.conf["DB_PORT"],
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
 
-    def lookupsession(self, sessionkey, ip):
+    def lookupsession(self, sessionkey: str, ip: str) -> Optional[User]:
         """Raison d'etre.
 
         Resolve a session key (originally stored in a cookie) into the
         User wrapper required for a :py:class:`cdedb.common.RequestState`. We
         bind sessions to IPs, so they get automatically invalidated if
         the IP changes.
-
-        :type sessionkey: str
-        :type ip: str
-        :rtype: User or None
         """
         persona_id = None
         data = None
@@ -90,7 +86,8 @@ class SessionBackend:
             if data["is_active"]:
                 if data["ip"] == ip:
                     timestamp = now()
-                    if data["atime"] + self.conf["SESSION_TIMEOUT"] >= timestamp:
+                    if (data["atime"] + self.conf["SESSION_TIMEOUT"]
+                            >= timestamp):
                         if (data["ctime"] + self.conf["SESSION_LIFESPAN"]
                                 >= timestamp):
                             # here we finally verified the session key
@@ -132,7 +129,7 @@ class SessionBackend:
                 cur.execute(query2, (persona_id,))
                 data = cur.fetchone()
         if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
-                                       or data['is_core_admin']):
+                                          or data['is_core_admin']):
             # Short circuit in case of lockdown
             return User()
         if not data["is_active"]:
@@ -144,27 +141,19 @@ class SessionBackend:
                           'display_name', 'family_name')}
         return User(roles=extract_roles(data), **vals)
 
-    def lookuptoken(self, apitoken, ip):
+    def lookuptoken(self, apitoken: str, ip: str) -> User:
         """Raison d'etre deux.
 
         Resolve an API token (originally submitted via header) into the
         User wrapper required for a :py:class:`cdedb.common.RequestState`.
-
-        :type apitoken: str
-        :type ip: str
-        :rtype: User or None
         """
         ret = User()
         identity = self.api_token_lookup(apitoken)
         if identity:
-            ret = User(persona_id=None, username=None, given_names=None,
-                       display_name=None, family_name=None,
-                       roles=droid_roles(identity))
-            if self.conf['LOCKDOWN'] and not 'droid_infra' in ret.roles:
+            ret = User(roles=droid_roles(identity))
+            if self.conf['LOCKDOWN'] and 'droid_infra' not in ret.roles:
                 ret = User()
         else:
             # log message to be picked up by fail2ban
             self.logger.warning(f"CdEDB invalid API token from {ip}")
         return ret
-
-

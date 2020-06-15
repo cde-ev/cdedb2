@@ -7,6 +7,11 @@ variant for external participants.
 import collections
 import copy
 import decimal
+import datetime
+
+from typing import (
+    Dict, Set, Collection, Callable, Tuple, Optional, List, Sequence
+)
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
@@ -21,10 +26,11 @@ from cdedb.common import (
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
     mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
-    xsorted, get_hash, RequestState
+    xsorted, RequestState, extract_roles, CdEDBObject, CdEDBObjectMap, CdEDBLog,
+    DefaultReturnCode, DeletionBlockers, InfiniteEnum, get_hash
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import QueryOperators
+from cdedb.query import QueryOperators, Query
 import cdedb.database.constants as const
 from cdedb.validation import parse_date, parse_datetime
 
@@ -35,20 +41,14 @@ class EventBackend(AbstractBackend):
     realm = "event"
 
     @classmethod
-    def is_admin(cls, rs):
+    def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def is_orga(self, rs, *, event_id=None, course_id=None,
-                registration_id=None):
+    def is_orga(self, rs: RequestState, *, event_id: int = None,
+                course_id: int = None, registration_id: int = None) -> bool:
         """Check for orga privileges as specified in the event.orgas table.
 
         Exactly one of the inputs has to be provided.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int or None
-        :type course_id: int or None
-        :type registration_id: int or None
-        :rtype: bool
         """
         num_inputs = sum(1 for anid in (event_id, course_id, registration_id)
                          if anid is not None)
@@ -65,16 +65,12 @@ class EventBackend(AbstractBackend):
         return event_id in rs.user.orga
 
     @access("event")
-    def is_offline_locked(self, rs, *, event_id=None, course_id=None):
+    def is_offline_locked(self, rs: RequestState, *, event_id: int = None,
+                          course_id: int = None) -> bool:
         """Helper to determine if an event or course is locked for offline
         usage.
 
         Exactly one of the inputs has to be provided.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int or None
-        :type course_id: int or None
-        :rtype: bool
         """
         if event_id is not None and course_id is not None:
             raise ValueError(n_("Too many inputs specified."))
@@ -93,15 +89,12 @@ class EventBackend(AbstractBackend):
         data = self.query_one(rs, query, (anid,))
         return data['offline_lock']
 
-    def assert_offline_lock(self, rs, *, event_id=None, course_id=None):
+    def assert_offline_lock(self, rs: RequestState, *, event_id: int = None,
+                            course_id: int = None) -> None:
         """Helper to check locking state of an event or course.
 
         This raises an exception in case of the wrong locking state. Exactly
         one of the inputs has to be provided.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int or None
-        :type course_id: int or None
         """
         # the following does the argument checking
         is_locked = self.is_offline_locked(rs, event_id=event_id,
@@ -110,13 +103,9 @@ class EventBackend(AbstractBackend):
             raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
-    def orga_infos(self, rs, ids):
-        """List events organized by specific personas.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {int}}
-        """
+    def orga_infos(self, rs: RequestState,
+                   ids: Collection[int]) -> Dict[int, Set[int]]:
+        """List events organized by specific personas."""
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "event.orgas", ("persona_id", "event_id"),
                                ids, entity_key="persona_id")
@@ -124,25 +113,18 @@ class EventBackend(AbstractBackend):
         for anid in ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
-    orga_info = singularize(orga_infos)
+    orga_info: Callable[[RequestState, int], Set[int]] = singularize(orga_infos)
 
-    def event_log(self, rs, code, event_id, persona_id=None,
-                  additional_info=None):
+    def event_log(self, rs: RequestState, code: const.EventLogCodes,
+                  event_id: Optional[int], persona_id: int = None,
+                  additional_info: str = None) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type code: int
-        :param code: One of :py:class:`cdedb.database.constants.EventLogCodes`.
-        :type event_id: int or None
-        :type persona_id: int or None
         :param persona_id: ID of affected user
-        :type additional_info: str or None
         :param additional_info: Infos not conveyed by other columns.
-        :rtype: int
-        :returns: default return code
         """
         if rs.is_quiet:
             return 0
@@ -156,25 +138,16 @@ class EventBackend(AbstractBackend):
         return self.sql_insert(rs, "event.log", data)
 
     @access("event")
-    def retrieve_log(self, rs, codes=None, event_id=None, offset=None,
-                     length=None, persona_id=None, submitted_by=None,
-                     additional_info=None, time_start=None, time_stop=None):
+    def retrieve_log(self, rs: RequestState, codes: const.EventLogCodes = None,
+                     event_id: int = None, offset: int = None,
+                     length: int = None, persona_id: int = None,
+                     submitted_by: int = None, additional_info: str = None,
+                     time_start: datetime.datetime = None,
+                     time_stop: datetime.datetime = None) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type codes: [int] or None
-        :type event_id: int or None
-        :type offset: int or None
-        :type length: int or None
-        :type persona_id: int or None
-        :type submitted_by: int or None
-        :type additional_info: str or None
-        :type time_start: datetime or None
-        :type time_stop: datetime or None
-        :rtype: [{str: object}]
         """
         event_id = affirm("id_or_None", event_id)
         if (not (event_id and self.is_orga(rs, event_id=event_id))
@@ -189,14 +162,11 @@ class EventBackend(AbstractBackend):
             time_stop=time_stop)
 
     @access("anonymous")
-    def list_db_events(self, rs, visible=None, current=None, archived=None):
+    def list_db_events(self, rs: RequestState, visible: bool = None,
+                       current: bool = None,
+                       archived: bool = None) -> CdEDBObjectMap:
         """List all events organized via DB.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type visible: bool or None
-        :type current: bool or None
-        :type archived: bool or None
-        :rtype: {int: str}
         :returns: Mapping of event ids to titles.
         """
         subquery = glue(
@@ -229,12 +199,10 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def list_db_courses(self, rs, event_id):
+    def list_db_courses(self, rs: RequestState,
+                        event_id: int) -> CdEDBObjectMap:
         """List all courses organized via DB.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :rtype: {int: str}
         :returns: Mapping of course ids to titles.
         """
         event_id = affirm("id", event_id)
@@ -243,20 +211,19 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("event", "ml_admin")
-    def submit_general_query(self, rs, query, event_id=None):
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             event_id: int = None) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type query: :py:class:`cdedb.query.Query`
-        :type event_id: int or None
         :param event_id: For registration queries, specify the event.
-        :rtype: [{str: object}]
         """
         query = affirm("query", query)
         view = None
         if query.scope == "qview_registration":
             event_id = affirm("id", event_id)
+            # ml_admins are allowed to do this to be able to manage
+            # subscribers of event mailinglists.
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
                     and "ml_admin" not in rs.user.roles):
@@ -276,6 +243,7 @@ class EventBackend(AbstractBackend):
             {modification_date_table}"""
 
             # Dynamically construct columns for custom registration datafields.
+            # noinspection PyArgumentList
             reg_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
@@ -302,6 +270,7 @@ class EventBackend(AbstractBackend):
                     event_id=event_id, reg_field_columns=reg_field_columns)
 
             # Dynamically construct the columns for custom lodgement fields.
+            # noinspection PyArgumentList
             lodgement_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
@@ -324,11 +293,11 @@ class EventBackend(AbstractBackend):
                 event_id = {event_id}""".format(
                 event_id=event_id, lodge_field_columns=lodge_field_columns)
 
-            # The template for registration part and lodgment information.
+            # The template for registration part and lodgement information.
             part_table = \
             """LEFT OUTER JOIN (
                 SELECT
-                    registration_id, status, lodgement_id, is_reserve
+                    registration_id, status, lodgement_id, is_camping_mat
                 FROM
                     event.registration_parts
                 WHERE
@@ -345,6 +314,7 @@ class EventBackend(AbstractBackend):
                 for part in event['parts'].values()
             )
             # Dynamically construct columns for custom course fields.
+            # noinspection PyArgumentList
             course_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
@@ -368,19 +338,22 @@ class EventBackend(AbstractBackend):
                 event_id = {event_id}""".format(
                 event_id=event_id, course_field_columns=course_field_columns)
 
-            course_choices_template = """SELECT
-                {columns}
-            FROM (
-                (
-                    SELECT
-                        id as base_id
-                    FROM
-                        event.registrations
-                    WHERE
-                        event_id = {event_id}
-                ) AS base
-                {rank_tables}
-            )
+            course_choices_template = """
+            LEFT OUTER JOIN (
+                SELECT
+                    {columns}
+                FROM (
+                    (
+                        SELECT
+                            id as base_id
+                        FROM
+                            event.registrations
+                        WHERE
+                            event_id = {event_id}
+                    ) AS base
+                    {rank_tables}
+                )
+            ) AS course_choices{t_id} ON reg.id = course_choices{t_id}.base_id
             """
             rank_template = \
             """LEFT OUTER JOIN (
@@ -393,13 +366,17 @@ class EventBackend(AbstractBackend):
             ) AS rank{rank} ON base.base_id = rank{rank}.registration_id"""
 
             def course_choices_table(t_id: int, ranks: int) -> str:
+                # Trying to join these tables fails if there are no choices.
+                if ranks < 1:
+                    return ""
                 rank_tables = "\n".join(
                     rank_template.format(rank=i, track_id=t_id)
                     for i in range(ranks))
                 columns = ", ".join(["base_id"] +
                                     [f"rank{i}" for i in range(ranks)])
                 return course_choices_template.format(
-                    columns=columns, event_id=event_id, rank_tables=rank_tables)
+                    columns=columns, event_id=event_id, rank_tables=rank_tables,
+                    t_id=t_id)
 
             track_table = \
             """LEFT OUTER JOIN (
@@ -421,10 +398,7 @@ class EventBackend(AbstractBackend):
             ) AS course_instructor{track_id}
                 ON track{track_id}.course_instructor =
                 course_instructor{track_id}.id
-            LEFT OUTER JOIN (
-                {course_choices_table}
-            ) AS course_choices{track_id}
-                ON reg.id = course_choices{track_id}.base_id"""
+            {course_choices_table}"""
 
             track_tables = " ".join(
                 track_table.format(
@@ -525,6 +499,7 @@ class EventBackend(AbstractBackend):
             FROM event.courses"""
 
             # Dynamically construct the custom field view.
+            # noinspection PyArgumentList
             course_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
@@ -569,7 +544,8 @@ class EventBackend(AbstractBackend):
                     ) AS attendees{track_id} ON base_id = attendees{track_id}.id
                     LEFT OUTER JOIN (
                         {instructors_table}
-                    ) AS instructors{track_id} ON base_id = instructors{track_id}.id
+                    ) AS instructors{track_id}
+                        ON base_id = instructors{track_id}.id
                     LEFT OUTER JOIN (
                         {choices_tables}
                     ) AS choices{track_id} ON base_id = choices{track_id}.id
@@ -742,18 +718,20 @@ class EventBackend(AbstractBackend):
             ) AS lodgement_fields ON lodgement.id = lodgement_fields.id
             LEFT OUTER JOIN (
                 {lodgement_group_table}
-            ) AS lodgement_group ON tmp_group.tmp_group_id = lodgement_group.tmp_id
+            ) AS lodgement_group
+                ON tmp_group.tmp_group_id = lodgement_group.tmp_id
             {part_tables}
             """
 
             lodgement_table = """
             SELECT
                 id, id as lodgement_id, event_id,
-                moniker, capacity, reserve, notes, group_id
+                moniker, regular_capacity, camping_mat_capacity, notes, group_id
             FROM
                 event.lodgements"""
 
             # Dynamically construct the view for custom event-fields:
+            # noinspection PyArgumentList
             lodgement_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
@@ -781,7 +759,7 @@ class EventBackend(AbstractBackend):
             # Retrieve generic lodgemnt group information.
             lodgement_group_table = \
             """SELECT
-                tmp_id, moniker, capacity, reserve
+                tmp_id, moniker, regular_capacity, camping_mat_capacity
             FROM (
                 (
                     (
@@ -801,15 +779,16 @@ class EventBackend(AbstractBackend):
                 LEFT OUTER JOIN (
                     SELECT
                         COALESCE(group_id, -1) as tmp_group_id,
-                        SUM(capacity) as capacity,
-                        SUM(reserve) as reserve
+                        SUM(regular_capacity) as regular_capacity,
+                        SUM(camping_mat_capacity) as camping_mat_capacity
                     FROM
                         event.lodgements
                     WHERE
                         event_id = {event_id}
                     GROUP BY
                         tmp_group_id
-                ) AS group_totals ON group_base.tmp_id = group_totals.tmp_group_id
+                ) AS group_totals
+                    ON group_base.tmp_id = group_totals.tmp_group_id
             )""".format(event_id=event_id)
 
             # Template for retrieveing lodgement information for one
@@ -860,7 +839,8 @@ class EventBackend(AbstractBackend):
             """SELECT
                 id, tmp_group_id,
                 COALESCE(rp_regular.inhabitants, 0) AS regular_inhabitants,
-                COALESCE(rp_reserve.inhabitants, 0) AS reserve_inhabitants,
+                COALESCE(rp_camping_mat.inhabitants, 0)
+                    AS camping_mat_inhabitants,
                 COALESCE(rp_total.inhabitants, 0) AS total_inhabitants
             FROM
                 (
@@ -872,25 +852,28 @@ class EventBackend(AbstractBackend):
                     {rp_regular}
                 ) AS rp_regular ON l.id = rp_regular.lodgement_id
                 LEFT OUTER JOIN (
-                    {rp_reserve}
-                ) AS rp_reserve ON l.id = rp_reserve.lodgement_id
+                    {rp_camping_mat}
+                ) AS rp_camping_mat ON l.id = rp_camping_mat.lodgement_id
                 LEFT OUTER JOIN (
                     {rp_total}
                 ) AS rp_total ON l.id = rp_total.lodgement_id""".format(
                     event_id=event_id, part_id=p_id,
                     rp_regular=inhabitants_counter(
-                        p_id, "AND is_reserve = False"),
-                    rp_reserve=inhabitants_counter(
-                        p_id, "AND is_reserve = True"),
+                        p_id, "AND is_camping_mat = False"),
+                    rp_camping_mat=inhabitants_counter(
+                        p_id, "AND is_camping_mat = True"),
                     rp_total=inhabitants_counter(p_id, ""),
             )
 
             group_inhabitants_view = lambda p_id: \
             """SELECT
                 tmp_group_id,
-                COALESCE(SUM(regular_inhabitants)::bigint, 0) AS group_regular_inhabitants,
-                COALESCE(SUM(reserve_inhabitants)::bigint, 0) AS group_reserve_inhabitants,
-                COALESCE(SUM(total_inhabitants)::bigint, 0) AS group_total_inhabitants
+                COALESCE(SUM(regular_inhabitants)::bigint, 0)
+                    AS group_regular_inhabitants,
+                COALESCE(SUM(camping_mat_inhabitants)::bigint, 0)
+                    AS group_camping_mat_inhabitants,
+                COALESCE(SUM(total_inhabitants)::bigint, 0)
+                    AS group_total_inhabitants
             FROM (
                 {inhabitants_view}
             ) AS inhabitants_view{part_id}
@@ -916,7 +899,8 @@ class EventBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("anonymous")
-    def get_events(self, rs, ids):
+    def get_events(self, rs: RequestState,
+                   ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data for some events organized via DB.
 
         This queries quite a lot of additional tables since there is quite
@@ -935,11 +919,6 @@ class EventBackend(AbstractBackend):
         * begin,
         * end,
         * is_open.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
-
         """
         ids = affirm_set("id", ids)
         with Atomizer(rs):
@@ -994,9 +973,11 @@ class EventBackend(AbstractBackend):
                     and (ret[anid]['registration_hard_limit'] is None
                          or ret[anid]['registration_hard_limit'] >= now()))
         return ret
+    get_event: Callable[[RequestState, int], CdEDBObject]
     get_event = singularize(get_events)
 
-    def _get_event_fields(self, rs, event_id):
+    def _get_event_fields(self, rs: RequestState,
+                          event_id: int) -> CdEDBObjectMap:
         """
         Helper function to retrieve the custom field definitions of an event.
         This is required by multiple backend functions.
@@ -1011,7 +992,8 @@ class EventBackend(AbstractBackend):
             [event_id], entity_key="event_id")
         return {d['id']: d for d in data}
 
-    def _delete_course_track_blockers(self, rs, track_id):
+    def _delete_course_track_blockers(self, rs: RequestState,
+                                      track_id: int) -> DeletionBlockers:
         """Determine what keeps a course track from being deleted.
 
         Possible blockers:
@@ -1021,9 +1003,6 @@ class EventBackend(AbstractBackend):
             This includes course_assignment and possible course instructors.
         * course_choices: Course choices for this track.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type track_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -1050,18 +1029,15 @@ class EventBackend(AbstractBackend):
 
         return blockers
 
-    def _delete_course_track(self, rs, track_id, cascade=None):
+    def _delete_course_track(self, rs: RequestState, track_id: int,
+                             cascade: Collection[str] = None
+                             ) -> DefaultReturnCode:
         """Remove course track.
 
         This has to be called from an atomized context.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type track_id: int
-        :type cascade: {str} or None
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :rtype: int
-        :returns: default return code
         """
         track_id = affirm("id", track_id)
         blockers = self._delete_course_track_blockers(rs, track_id)
@@ -1110,19 +1086,14 @@ class EventBackend(AbstractBackend):
                 {"type": "course track", "block": blockers.keys()})
         return ret
 
-    def _set_tracks(self, rs, event_id, part_id, data):
+    def _set_tracks(self, rs: RequestState, event_id: int, part_id: int,
+                    data: Dict[int, Optional[CdEDBObject]]
+                    ) -> DefaultReturnCode:
         """Helper for handling of course tracks.
 
         This is basically uninlined code from ``set_event()``.
 
         :note: This has to be called inside an atomized context.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :type part_id: int
-        :type data: {int: {str: object} or None}
-        :rtype: int
-        :returns: default return code
         """
         ret = 1
         if not data:
@@ -1182,13 +1153,13 @@ class EventBackend(AbstractBackend):
                 self._delete_course_track(rs, track_id, cascade=cascade)
         return ret
 
-    def _delete_field_values(self, rs, field_data):
+    def _delete_field_values(self, rs: RequestState,
+                             field_data: CdEDBObject) -> None:
         """
         Helper function for ``set_event()`` to clean up all the JSON data, when
         removing a field definition.
 
         :param field_data: The data of the field definition to be deleted
-        :type field_data: dict
         """
         if field_data['association'] == const.FieldAssociations.registration:
             table = 'event.registrations'
@@ -1199,22 +1170,19 @@ class EventBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("This should not happen."))
 
-        query = glue("UPDATE {table}",
-                     "SET fields = fields - %s",
-                     "WHERE event_id = %s").format(table=table)
+        query = f"UPDATE {table} SET fields = fields - %s WHERE event_id = %s"
         self.query_exec(rs, query, (field_data['field_name'],
                                     field_data['event_id']))
 
-    def _cast_field_values(self, rs, field_data, new_kind):
+    def _cast_field_values(self, rs: RequestState, field_data: CdEDBObject,
+                           new_kind: const.FieldDatatypes) -> None:
         """
         Helper function for ``set_event()`` to cast the existing JSON data to
         a new datatype (or set it to None, if casting fails), when a field
         defintion is updated with a new datatype.
 
         :param field_data: The data of the field definition to be updated
-        :type field_data: dict
         :param new_kind: The new kind/datatype of the field.
-        :type new_kind: const.FieldDatatypes
         """
         if field_data['association'] == const.FieldAssociations.registration:
             table = 'event.registrations'
@@ -1252,7 +1220,8 @@ class EventBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
-    def _delete_event_part_blockers(self, rs, part_id):
+    def _delete_event_part_blockers(self, rs: RequestState,
+                                    part_id: int) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.
 
         Possible blockers:
@@ -1262,9 +1231,6 @@ class EventBackend(AbstractBackend):
         * course_tracks: A course track in this part.
         * registration_part: A registration part for this part.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type part_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -1292,18 +1258,15 @@ class EventBackend(AbstractBackend):
 
         return blockers
 
-    def _delete_event_part(self, rs, part_id, cascade=None):
+    def _delete_event_part(self, rs: RequestState, part_id: int,
+                           cascade: Collection[str] = None
+                           ) -> DefaultReturnCode:
         """Remove event part.
 
         This has to be called from an atomized context.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type part_id: int
-        :type cascade: {str} or None
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :rtype: int
-        :returns: default return code
         """
         part_id = affirm("id", part_id)
         blockers = self._delete_event_part_blockers(rs, part_id)
@@ -1326,7 +1289,6 @@ class EventBackend(AbstractBackend):
             if "course_tracks" in cascade:
                 cascade = ("course_segments", "registration_tracks",
                            "course_choices")
-                # TODO use Silencer?
                 for anid in blockers["course_tracks"]:
                     ret *= self._delete_course_track(rs, anid, cascade)
             if "registration_parts" in cascade:
@@ -1347,22 +1309,21 @@ class EventBackend(AbstractBackend):
                 {"type": "event part", "block": blockers.keys()})
         return ret
 
-    def _delete_event_field_blockers(self, rs, field_id):
+    def _delete_event_field_blockers(self, rs: RequestState,
+                                     field_id: int) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.
 
         Possible blockers:
 
-        * fee_modifiers: A modification to the fee for a part depending on
-                         this event field.
-        * quetionnaire_rows: A questionnaire row that uses this field.
-        * lodge_fields: An event that uses this field for lodgement wishes.
-        * reserve_fields: An event that uses this field for reserve wishes.
+        * fee_modifiers:      A modification to the fee for a part depending on
+                              this event field.
+        * questionnaire_rows: A questionnaire row that uses this field.
+        * lodge_fields:       An event that uses this field for lodging wishes.
+        * camping_mat_fields: An event that uses this field for camping mat
+                              wishes.
         * course_room_fields: An event that uses this field for course room
                               assignment.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type field_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -1388,11 +1349,12 @@ class EventBackend(AbstractBackend):
         if lodge_fields:
             blockers["lodge_fields"] = [e["id"] for e in lodge_fields]
 
-        reserve_fields = self.sql_select(
+        camping_mat_fields = self.sql_select(
             rs, "event.events", ("id",), (field_id,),
-            entity_key="reserve_field")
-        if reserve_fields:
-            blockers["reserve_fields"] = [e["id"] for e in reserve_fields]
+            entity_key="camping_mat_field")
+        if camping_mat_fields:
+            blockers["camping_mat_fields"] = [
+                e["id"] for e in camping_mat_fields]
 
         course_room_fields = self.sql_select(
             rs, "event.events", ("id",), (field_id,),
@@ -1403,18 +1365,16 @@ class EventBackend(AbstractBackend):
 
         return blockers
 
-    def _delete_event_field(self, rs, field_id, cascade=None):
+    def _delete_event_field(self, rs: RequestState, field_id: int,
+                            cascade: Collection[str] = None
+                            ) -> DefaultReturnCode:
         """Remove an event field.
 
         This needs to be called from an atomized context.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type field_id: int:type cascade: {str} or None
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
 
-        :rtype: int
-        :returns: default return code
         """
         field_id = affirm("id", field_id)
         blockers = self._delete_event_field_blockers(rs, field_id)
@@ -1446,11 +1406,11 @@ class EventBackend(AbstractBackend):
                         'lodge_field': None,
                     }
                     ret += self.sql_update(rs, "event.events", deletor)
-            if "reserve_fields" in cascade:
-                for anid in blockers["reserve_fields"]:
+            if "camping_mat_fields" in cascade:
+                for anid in blockers["camping_mat_fields"]:
                     deletor = {
                         'id': anid,
-                        'reserve_field': None,
+                        'camping_mat_field': None,
                     }
                     ret += self.sql_update(rs, "event.events", deletor)
             if "course_room_fields" in cascade:
@@ -1480,15 +1440,11 @@ class EventBackend(AbstractBackend):
 
     @internal
     @access("event")
-    def set_event_archived(self, rs, data):
+    def set_event_archived(self, rs: RequestState, data: CdEDBObject) -> None:
         """Wrapper around ``set_event()`` for archiving an event.
         
         This exists to emit the correct log message. It delegates
         everything else (like validation) to the wrapped method.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: None
         """
         with Atomizer(rs):
             with Silencer(rs):
@@ -1497,7 +1453,8 @@ class EventBackend(AbstractBackend):
                            data['id'])
 
     @access("event")
-    def set_event(self, rs, data):
+    def set_event(self, rs: RequestState,
+                  data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
 
         The syntax for updating the associated data on orgas, parts and
@@ -1528,12 +1485,6 @@ class EventBackend(AbstractBackend):
           combinations that cannot currently be detected at this point,
           e.g. trying to create a field with a `field_name` that already
           exists for this event. See Issue #1140.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: default return code
-
         """
         data = affirm("event", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
@@ -1543,10 +1494,10 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             if len(edata) > 1:
-                indirect_fields = filter(
-                    lambda x: x,
-                    [edata.get('lodge_field'), edata.get('reserve_field'),
-                     edata.get('course_room_field')])
+                indirect_fields = set(filter(
+                    None, [edata.get('lodge_field'),
+                           edata.get('camping_mat_field'),
+                           edata.get('course_room_field')]))
                 if indirect_fields:
                     indirect_data = self.sql_select(
                         rs, "event.field_definitions",
@@ -1564,16 +1515,16 @@ class EventBackend(AbstractBackend):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'lodge_field'})
                     correct_datatype = const.FieldDatatypes.bool
-                    if edata.get('reserve_field'):
-                        reserve_data = unwrap(
+                    if edata.get('camping_mat_field'):
+                        camping_mat_data = unwrap(
                             [x for x in indirect_data
-                             if x['id'] == edata['reserve_field']])
-                        if (reserve_data['event_id'] != data['id']
-                                or reserve_data['kind'] != correct_datatype
-                                or reserve_data[
+                             if x['id'] == edata['camping_mat_field']])
+                        if (camping_mat_data['event_id'] != data['id']
+                                or camping_mat_data['kind'] != correct_datatype
+                                or camping_mat_data[
                                     'association'] != correct_assoc):
                             raise ValueError(n_("Unfit field for %(field)s"),
-                                             {'field': 'reserve_field'})
+                                             {'field': 'camping_mat_field'})
                     correct_assoc = const.FieldAssociations.course
                     # TODO make this include lodgement datatype per Issue #71
                     correct_datatypes = {const.FieldDatatypes.str}
@@ -1594,6 +1545,11 @@ class EventBackend(AbstractBackend):
             if 'orgas' in data:
                 if not self.is_admin(rs):
                     raise PrivilegeError(n_("Not privileged."))
+                orgas = self.core.get_personas(rs, data['orgas'])
+                if any('event' not in extract_roles(orga,
+                                                    introspection_only=True)
+                        for orga in orgas.values()):
+                    raise ValueError(n_("User is no event user."))
                 current = self.sql_select(rs, "event.orgas", ("persona_id",),
                                           (data['id'],), entity_key="event_id")
                 existing = {unwrap(e) for e in current}
@@ -1714,7 +1670,7 @@ class EventBackend(AbstractBackend):
                 # deleted
                 if deleted:
                     for x in mixed_existence_sorter(deleted):
-                        # TODO what should be cascaded here?
+                        # We only allow deletion of unused fields.
                         cascade = None
                         self._delete_event_field(rs, x, cascade)
 
@@ -1780,14 +1736,9 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event_admin")
-    def create_event(self, rs, data):
-        """Make a new event organized via DB.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: the id of the new event
-        """
+    def create_event(self, rs: RequestState,
+                     data: CdEDBObject) -> DefaultReturnCode:
+        """Make a new event organized via DB."""
         data = affirm("event", data, creation=True)
         if 'parts' not in data:
             raise ValueError(n_("At least one event part required."))
@@ -1805,7 +1756,8 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event_admin")
-    def delete_event_blockers(self, rs, event_id):
+    def delete_event_blockers(self, rs: RequestState,
+                              event_id: int) -> DeletionBlockers:
         """Determine what keeps an event from being deleted.
 
         Possible blockers:
@@ -1827,9 +1779,6 @@ class EventBackend(AbstractBackend):
                         reference will be removed but the mailinglist will
                         not be deleted.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -1898,16 +1847,12 @@ class EventBackend(AbstractBackend):
         return blockers
 
     @access("event_admin")
-    def delete_event(self, rs, event_id, cascade=None):
+    def delete_event(self, rs: RequestState, event_id: int,
+                     cascade: Collection[str] = None) -> DefaultReturnCode:
         """Remove event.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :type cascade: {str} or None
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :rtype: int
-        :returns: default return code
         """
         event_id = affirm("id", event_id)
         blockers = self.delete_event_blockers(rs, event_id)
@@ -1961,7 +1906,7 @@ class EventBackend(AbstractBackend):
                         'id': event_id,
                         'course_room_field': None,
                         'lodge_field': None,
-                        'reserve_field': None,
+                        'camping_mat_field': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
                     field_cascade = {"fee_modifiers"} & cascade
@@ -1997,15 +1942,12 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("anonymous")
-    def get_courses(self, rs, ids):
+    def get_courses(self, rs: RequestState,
+                    ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data for some courses organized via DB.
 
         They must be associated to the same event. This contains additional
         information on the parts in which the course takes place.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
         with Atomizer(rs):
@@ -2033,10 +1975,12 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
+    get_course: Callable[[RequestState, int], CdEDBObject]
     get_course = singularize(get_courses)
 
     @access("event")
-    def set_course(self, rs, data):
+    def set_course(self, rs: RequestState,
+                   data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a course linked to an event organized via DB.
 
         If the 'segments' key is present you have to pass the complete list
@@ -2046,12 +1990,6 @@ class EventBackend(AbstractBackend):
         complete list of active track IDs, which will superseed the current
         list of active tracks. This has to be a subset of the segments of
         the course.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: default return code
-
         """
         data = affirm("course", data)
         if not self.is_orga(rs, course_id=data['id']) and not self.is_admin(rs):
@@ -2099,7 +2037,7 @@ class EventBackend(AbstractBackend):
                     # course
                     tracks = self.sql_select(
                         rs, "event.course_tracks", ("part_id",), new)
-                    associated_parts = map(unwrap, tracks)
+                    associated_parts = list(unwrap(e) for e in tracks)
                     associated_events = self.sql_select(
                         rs, "event.event_parts", ("event_id",),
                         associated_parts)
@@ -2153,14 +2091,9 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def create_course(self, rs, data):
-        """Make a new course organized via DB.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: the id of the new course
-        """
+    def create_course(self, rs: RequestState,
+                      data: CdEDBObject) -> DefaultReturnCode:
+        """Make a new course organized via DB."""
         data = affirm("course", data, creation=True)
         # direct validation since we already have an event_id
         event_fields = self._get_event_fields(rs, data['event_id'])
@@ -2196,7 +2129,8 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event")
-    def delete_course_blockers(self, rs, course_id):
+    def delete_course_blockers(self, rs: RequestState,
+                               course_id: int) -> DeletionBlockers:
         """Determine what keeps a course from beeing deleted.
 
         Possible blockers:
@@ -2208,9 +2142,6 @@ class EventBackend(AbstractBackend):
         * course_choices: A course choice of the course.
         * course_segments: The course segments of the course.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type course_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -2244,16 +2175,12 @@ class EventBackend(AbstractBackend):
         return blockers
 
     @access("event")
-    def delete_course(self, rs, course_id, cascade=None):
+    def delete_course(self, rs: RequestState, course_id: int,
+                      cascade: Collection[str] = None) -> DefaultReturnCode:
         """Remove a course organized via DB from the DB.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type course_id: int
-        :type cascade: {str} or None
         :param cascade: Specify which deletion blockers to cascadingly remove
             or ignore. If None or empty, cascade none.
-        :rtype: int
-        :returns: standard return code
         """
         course_id = affirm("id", course_id)
         if (not self.is_orga(rs, course_id=course_id)
@@ -2354,24 +2281,24 @@ class EventBackend(AbstractBackend):
                     {"type": "course", "block": blockers.keys()})
         return ret
 
-    def _list_registrations_unchecked(self, rs: RequestState, event_id, persona_id=None):
+    @access("event", "ml_admin")
+    def list_registrations(self, rs: RequestState, event_id: int,
+                           persona_id: int = None) -> Dict[int, int]:
         """List all registrations of an event.
 
         If an ordinary event_user is requesting this, just participants of this
         event are returned and he himself must have the status 'participant'.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :type persona_id: int or None
         :param persona_id: If passed restrict to registrations by this persona.
-        :rtype: {int: int}
         """
         event_id = affirm("id", event_id)
         persona_id = affirm("id_or_None", persona_id)
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
         params = (event_id,)
-        # condition for limited access, f. e. for the online participant list
+        # condition for limited access, f. e. for the online participant list.
+        # ml_admins are allowed to do this to be able to manage
+        # subscribers of event mailinglists.
         is_limited = (persona_id != rs.user.persona_id
                       and not self.is_orga(rs, event_id=event_id)
                       and not self.is_admin(rs)
@@ -2391,46 +2318,37 @@ class EventBackend(AbstractBackend):
         if is_limited and rs.user.persona_id not in ret.values():
             raise PrivilegeError(n_("Not privileged."))
         return ret
-    list_registrations_for_ml_mods = access("ml")(_list_registrations_unchecked)
-    list_registrations = access("event")(_list_registrations_unchecked)
 
     @internal
     @access("persona")
-    def check_registration_status(self, rs, persona_id, event_id, stati):
+    def check_registration_status(
+            self, rs: RequestState, persona_id: int, event_id: int,
+            stati: Collection[const.RegistrationPartStati]) -> bool:
         """Check if any status for a given event matches one of the given stati.
 
-        This is mostly used to determine mailinglist eligibility.
+        This is mostly used to determine mailinglist eligibility. Thus,
+        ml_admins are allowed to do this to manage subscribers.
 
         A user may do this for themselves, an orga for their event and an
-        admin for every user.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :type event_id: int
-        :type stati: [const.RegistrationPartStati
-        :rtype: bool
+        event or ml admin for every user.
         """
         event_id = affirm("id", event_id)
         stati = affirm_set("enum_registrationpartstati", stati)
+
+        # First, rule out people who can not participate at any event.
+        if (persona_id == rs.user.persona_id and
+                "event" not in rs.user.roles):
+            return False
+
+        # Check if eligible to check registration status for other users.
         if not (persona_id == rs.user.persona_id
                 or self.is_orga(rs, event_id=event_id)
                 or self.is_admin(rs)
                 or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
 
-        try:
-            registration_ids = self.list_registrations(
-                rs, event_id, persona_id)
-        except PrivilegeError:
-            if (persona_id == rs.user.persona_id
-                or self.is_orga(rs, event_id=event_id)
-                or self.is_admin(rs)
-                or "ml_admin" in rs.user.roles):
-                registration_ids = self.list_registrations_for_ml_mods(
-                    rs, event_id, persona_id)
-            else:
-                raise
-
+        registration_ids = self.list_registrations(
+            rs, event_id, persona_id)
         if not registration_ids:
             return False
         reg_id = unwrap(registration_ids.keys())
@@ -2438,13 +2356,9 @@ class EventBackend(AbstractBackend):
         return any(part['status'] in stati for part in reg['parts'].values())
 
     @access("event")
-    def get_registration_map(self, rs, event_ids):
-        """Retrieve a map of personas to their registrations.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_ids: [int]
-        :rtype {(int, int): int}
-        """
+    def get_registration_map(self, rs: RequestState, event_ids: Collection[int]
+                             ) -> Dict[Tuple[int, int], int]:
+        """Retrieve a map of personas to their registrations."""
         event_ids = affirm_set("id", event_ids)
         if (not all(self.is_orga(rs, event_id=anid) for anid in event_ids) and
                 not self.is_admin(rs)):
@@ -2459,24 +2373,17 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def registrations_by_course(
-            self, rs, event_id, course_id=None, track_id=None, position=None,
-            reg_ids=None,
-            reg_states=(const.RegistrationPartStati.participant,)):
+            self, rs: RequestState, event_id: int, course_id: int = None,
+            track_id: int = None, position: InfiniteEnum = None,
+            reg_ids: Collection[int] = None,
+            reg_states: Collection[const.RegistrationPartStati] =
+            (const.RegistrationPartStati.participant,)) -> Dict[int, int]:
         """List registrations of an event pertaining to a certain course.
 
         This is a filter function, mainly for the course assignment tool.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :type track_id: int or None
-        :type course_id: int or None
         :param position: A :py:class:`cdedb.common.CourseFilterPositions`
-        :type position: :py:class:`cdedb.common.InfiniteEnum`
-        :param reg_ids: List of registration ids to filter for
-        :type reg_ids: [int] or None
         :param reg_ids: List of registration states (in any part) to filter for
-        :type reg_states: [const.RegistrationPartStati]
-        :rtype: {int: int}
         """
         event_id = affirm("id", event_id)
         track_id = affirm("id_or_None", track_id)
@@ -2540,7 +2447,8 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event", "ml_admin")
-    def get_registrations(self, rs, ids):
+    def get_registrations(self, rs: RequestState,
+                          ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data for some registrations.
 
         All have to be from the same event.
@@ -2553,9 +2461,8 @@ class EventBackend(AbstractBackend):
         * parts: per part data (like lodgement),
         * tracks: per track data (like course choices)
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
+        ml_admins are allowed to do this to be able to manage
+        subscribers of event mailinglists.
         """
         ids = affirm_set("id", ids)
         ret = {}
@@ -2572,8 +2479,10 @@ class EventBackend(AbstractBackend):
                     "Only registrations from exactly one event allowed."))
             event_id = unwrap(events)
             # Select appropriate stati filter.
-            stati = set(const.RegistrationPartStati)
+            stati = set(m for m in const.RegistrationPartStati)
             # orgas and admins have full access to all data
+            # ml_admins are allowed to do this to be able to manage
+            # subscribers of event mailinglists.
             is_privileged = (self.is_orga(rs, event_id=event_id)
                              or self.is_admin(rs)
                              or "ml_admin" in rs.user.roles)
@@ -2626,16 +2535,12 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
+    get_registration: Callable[[RequestState, int], CdEDBObject]
     get_registration = singularize(get_registrations)
 
     @access("event")
-    def has_registrations(self, rs, event_id):
-        """Determine whether there exist registrations for an event.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :rtype: bool
-        """
+    def has_registrations(self, rs: RequestState, event_id: int) -> bool:
+        """Determine whether there exist registrations for an event."""
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
@@ -2644,47 +2549,43 @@ class EventBackend(AbstractBackend):
                          "WHERE event_id = %s LIMIT 1")
             return bool(unwrap(self.query_one(rs, query, (event_id,))))
 
-    def _get_event_course_segments(self, rs, event_id):
+    def _get_event_course_segments(self, rs: RequestState,
+                                   event_id: int) -> Dict[int, List[int]]:
         """
         Helper function to get course segments of all courses of an event.
 
         Required for _set_course_choices().
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
         :returns: A dict mapping each course id (of the event) to a list of
             track ids (which correspond to its segments)
-        :rtype {int: [int]}
         """
-        query = glue("SELECT courses.id,",
-                     "    array_agg(segments.track_id) AS segments",
-                     "FROM event.courses as courses",
-                     "    LEFT JOIN event.course_segments AS segments",
-                     "    ON courses.id = segments.course_id",
-                     "WHERE courses.event_id = %s",
-                     "GROUP BY courses.id")
+        query = """
+            SELECT courses.id, array_agg(segments.track_id) AS segments
+            FROM (
+                event.courses AS courses
+                LEFT OUTER JOIN event.course_segments AS segments
+                ON courses.id = segments.course_id
+            )
+            WHERE courses.event_id = %s
+            GROUP BY courses.id"""
         return {row['id']: row['segments']
                 for row in self.query_all(rs, query, (event_id,))}
 
-    def _set_course_choices(self, rs, registration_id, track_id, choices,
-                            course_segments, new_registration=False):
+    def _set_course_choices(self, rs: RequestState, registration_id: int,
+                            track_id: int, choices: Sequence[int],
+                            course_segments: Dict[int, Sequence[int]],
+                            new_registration: bool = False
+                            ) -> DefaultReturnCode:
         """Helper for handling of course choices.
 
         This is basically uninlined code from ``set_registration()``.
 
         :note: This has to be called inside an atomized context.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type registration_id: int
-        :type track_id: int
-        :type choices: [int]
         :param course_segments: Dict, course segments, as returned by
             _get_event_course_segments()
-        :type course_segments: {int: [int]}
         :param new_registration: Performance optimization for creating
-            registrations: If true, the delition of existing choices is skipped.
-        :rtype: int
-        :returns: default return code
+            registrations: If true, the deletion of existing choices is skipped.
         """
         ret = 1
         if choices is None:
@@ -2708,18 +2609,15 @@ class EventBackend(AbstractBackend):
                                    new_choice)
         return ret
 
-    def _get_registration_info(self, rs, reg_id):
-        """Helper to retrieve basic registration information.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type reg_id: int
-        :rtype: {str: object}
-        """
+    def _get_registration_info(self, rs: RequestState,
+                               reg_id: int) -> CdEDBObject:
+        """Helper to retrieve basic registration information."""
         return self.sql_select_one(
             rs, "event.registrations", ("persona_id", "event_id"), reg_id)
 
     @access("event")
-    def set_registration(self, rs, data):
+    def set_registration(self, rs: RequestState,
+                         data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a registration.
 
         The syntax for updating the non-trivial keys fields, parts and
@@ -2737,11 +2635,6 @@ class EventBackend(AbstractBackend):
           modified. Entries are created/updated as applicable. The
           'choices' key is handled separately and if present replaces
           the current list of course choices.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: default return code
         """
         data = affirm("registration", data)
         with Atomizer(rs):
@@ -2849,17 +2742,13 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def create_registration(self, rs, data):
+    def create_registration(self, rs: RequestState,
+                            data: CdEDBObject) -> DefaultReturnCode:
         """Make a new registration.
 
         The data must contain a dataset for each part and each track
         and may not contain a value for 'fields', which is initialized
         to a default value.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: the id of the new registration
         """
         data = affirm("registration", data, creation=True)
         event = self.get_event(rs, data['event_id'])
@@ -2916,7 +2805,8 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event")
-    def delete_registration_blockers(self, rs, registration_id):
+    def delete_registration_blockers(self, rs: RequestState,
+                                     registration_id: int) -> DeletionBlockers:
         """Determine what keeps a registration from being deleted.
 
         Possible blockers:
@@ -2925,9 +2815,6 @@ class EventBackend(AbstractBackend):
         * registration_tracks: The registration's registration tracks.
         * course_choices: The registrations course choices.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type registration_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -2955,16 +2842,13 @@ class EventBackend(AbstractBackend):
         return blockers
 
     @access("event")
-    def delete_registration(self, rs, registration_id, cascade=None):
+    def delete_registration(self, rs: RequestState, registration_id: int,
+                            cascade: Collection[str] = None
+                            ) -> DefaultReturnCode:
         """Remove a registration.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type registration_id: int
-        :type cascade: {str} or None
         :param cascade: Specify which deletion blockers to cascadingly remove
             or ignore. If None or empty, cascade none.
-        :rtype: int
-        :returns: standard return code
         """
         registration_id = affirm("id", registration_id)
         reg = self.get_registration(rs, registration_id)
@@ -3014,20 +2898,16 @@ class EventBackend(AbstractBackend):
                     {"type": "registration", "block": blockers.keys()})
         return ret
 
-    def _calculate_single_fee(self, rs, reg, *, event=None, event_id=None,
-                              is_member=None):
+    def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
+                              event: CdEDBObject = None, event_id: int = None,
+                              is_member: bool = None) -> decimal.Decimal:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
         so we take the full registration and event as input instead of
         retrieving them via id.
 
-        :type reg: {str: object}
-        :type event: {str: object}
-        :type event_id: int
-        :type is_member: bool or None
         :param is_member: If this is None, retrieve membership status here.
-        :rtype: decimal.Decimal
         """
         fee = decimal.Decimal(0)
         rps = const.RegistrationPartStati
@@ -3059,7 +2939,8 @@ class EventBackend(AbstractBackend):
         return fee
 
     @access("event")
-    def calculate_fees(self, rs, ids):
+    def calculate_fees(self, rs: RequestState,
+                       ids: Collection[int]) -> Dict[int, decimal.Decimal]:
         """Calculate the total fees for some registrations.
 
         This should be called once for multiple registrations, as it would be
@@ -3068,10 +2949,6 @@ class EventBackend(AbstractBackend):
         All registrations need to belong to the same event.
 
         The caller must have priviliged acces to that event.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: decimal.Decimal}
         """
         ids = affirm_set("id", ids)
 
@@ -3104,19 +2981,18 @@ class EventBackend(AbstractBackend):
                 ret[reg_id] = self._calculate_single_fee(
                     rs, reg, event=event, is_member=is_member)
         return ret
+    calculate_fee: Callable[[RequestState, int], decimal.Decimal]
     calculate_fee = singularize(calculate_fees)
 
     @access("event")
-    def check_orga_addition_limit(self, rs, event_id):
+    def check_orga_addition_limit(self, rs: RequestState,
+                                  event_id: int) -> bool:
         """Implement a rate limiting check for orgas adding persons.
 
         Since adding somebody as participant or orga to an event gives all
         orgas basically full access to their data, we rate limit this
         operation.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :rtype: bool
         :returns: True if limit has not been reached.
         """
         event_id = affirm("id", event_id)
@@ -3127,21 +3003,19 @@ class EventBackend(AbstractBackend):
             # Admins are exempt
             return True
         with Atomizer(rs):
-            query = glue(
-                "SELECT COUNT(*) AS num FROM event.log WHERE event_id = %s",
-                "AND code = %s AND submitted_by != persona_id",
-                "AND ctime >= now() - interval '24 hours'")
+            query = ("SELECT COUNT(*) AS num FROM event.log"
+                     " WHERE event_id = %s AND code = %s "
+                     " AND submitted_by != persona_id "
+                     " AND ctime >= now() - interval '24 hours'")
             params = (event_id, const.EventLogCodes.registration_created)
             num = unwrap(self.query_one(rs, query, params))
         return num < self.conf["ORGA_ADD_LIMIT"]
 
     @access("event")
-    def list_lodgement_groups(self, rs, event_id):
+    def list_lodgement_groups(self, rs: RequestState,
+                              event_id: int) -> Dict[int, str]:
         """List all lodgement groups for an event.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :rtype: {int: str}
         :returns: dict mapping ids to names
         """
         event_id = affirm("id", event_id)
@@ -3152,14 +3026,11 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['moniker'] for e in data}
 
     @access("event")
-    def get_lodgement_groups(self, rs, ids):
+    def get_lodgement_groups(self, rs: RequestState,
+                             ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data for some lodgement groups.
 
         All have to be from the same event.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
         with Atomizer(rs):
@@ -3176,17 +3047,13 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
+    get_lodgement_group: Callable[[RequestState, int], CdEDBObject]
     get_lodgement_group = singularize(get_lodgement_groups)
 
     @access("event")
-    def set_lodgement_group(self, rs, data):
-        """Update some keys of a lodgement group.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: default return code
-        """
+    def set_lodgement_group(self, rs: RequestState,
+                            data: CdEDBObject) -> DefaultReturnCode:
+        """Update some keys of a lodgement group."""
         data = affirm("lodgement_group", data)
         ret = 1
         with Atomizer(rs):
@@ -3206,14 +3073,9 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def create_lodgement_group(self, rs, data):
-        """Make a new lodgement group.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: the id of the new lodgement group
-        """
+    def create_lodgement_group(self, rs: RequestState,
+                               data: CdEDBObject) -> DefaultReturnCode:
+        """Make a new lodgement group."""
         data = affirm("lodgement_group", data, creation=True)
 
         if (not self.is_orga(rs, event_id=data['event_id'])
@@ -3228,16 +3090,14 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event")
-    def delete_lodgement_group_blockers(self, rs, group_id):
+    def delete_lodgement_group_blockers(self, rs: RequestState,
+                                        group_id: int) -> DeletionBlockers:
         """Determine what keeps a lodgement group from being deleted.
 
         Possible blockers:
 
         * lodgements: A lodgement that is part of this lodgement group.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type group_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -3253,16 +3113,13 @@ class EventBackend(AbstractBackend):
         return blockers
 
     @access("event")
-    def delete_lodgement_group(self, rs, group_id, cascade=None):
+    def delete_lodgement_group(self, rs: RequestState, group_id: int,
+                               cascade: Collection[str] = None
+                               ) -> DefaultReturnCode:
         """Delete a lodgement group.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type group_id: int
-        :type cascade: {str}
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :rtype: int
-        :returns: default return code
         """
         group_id = affirm("id", group_id)
         blockers = self.delete_lodgement_group_blockers(rs, group_id)
@@ -3305,12 +3162,10 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def list_lodgements(self, rs, event_id):
+    def list_lodgements(self, rs: RequestState,
+                        event_id: int) -> Dict[int, str]:
         """List all lodgements for an event.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :rtype: {int: str}
         :returns: dict mapping ids to names
         """
         event_id = affirm("id", event_id)
@@ -3321,14 +3176,11 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['moniker'] for e in data}
 
     @access("event")
-    def get_lodgements(self, rs, ids):
+    def get_lodgements(self, rs: RequestState,
+                       ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data for some lodgements.
 
         All have to be from the same event.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
         with Atomizer(rs):
@@ -3349,17 +3201,13 @@ class EventBackend(AbstractBackend):
             for entry in ret.values():
                 entry['fields'] = cast_fields(entry['fields'], event_fields)
         return {e['id']: e for e in data}
+    get_lodgement: Callable[[RequestState, int], CdEDBObject]
     get_lodgement = singularize(get_lodgements)
 
     @access("event")
-    def set_lodgement(self, rs, data):
-        """Update some keys of a lodgement.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: default return code
-        """
+    def set_lodgement(self, rs: RequestState, data: CdEDBObject
+                      ) -> DefaultReturnCode:
+        """Update some keys of a lodgement."""
         data = affirm("lodgement", data)
         with Atomizer(rs):
             current = self.sql_select_one(
@@ -3396,14 +3244,9 @@ class EventBackend(AbstractBackend):
             return ret
 
     @access("event")
-    def create_lodgement(self, rs, data):
-        """Make a new lodgement.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: the id of the new lodgement
-        """
+    def create_lodgement(self, rs: RequestState,
+                         data: CdEDBObject) -> DefaultReturnCode:
+        """Make a new lodgement."""
         data = affirm("lodgement", data, creation=True)
         # direct validation since we already have an event_id
         event_fields = self._get_event_fields(rs, data['event_id'])
@@ -3424,7 +3267,8 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event")
-    def delete_lodgement_blockers(self, rs, lodgement_id):
+    def delete_lodgement_blockers(self, rs: RequestState,
+                                  lodgement_id: int) -> DeletionBlockers:
         """Determine what keeps a lodgement from beeing deleted.
 
         Possible blockers:
@@ -3432,9 +3276,6 @@ class EventBackend(AbstractBackend):
         * inhabitants: A registration part that assigns a registration to the
                        lodgement as an inhabitant.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type lodgement_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -3450,16 +3291,12 @@ class EventBackend(AbstractBackend):
         return blockers
 
     @access("event")
-    def delete_lodgement(self, rs, lodgement_id, cascade=None):
-        """Make a new lodgement.
+    def delete_lodgement(self, rs: RequestState, lodgement_id: int,
+                         cascade: Collection[str] = None) -> DefaultReturnCode:
+        """Delete a lodgement.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type lodgement_id: int
-        :type cascade: bool
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :rtype: int
-        :returns: default return code
         """
         lodgement_id = affirm("id", lodgement_id)
         lodgement = self.get_lodgement(rs, lodgement_id)
@@ -3504,17 +3341,14 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def get_questionnaire(self, rs, event_id, kinds=None):
+    def get_questionnaire(self, rs: RequestState, event_id: int,
+                          kinds: Collection[const.QuestionnaireUsages] = None
+                          ) -> Dict[const.QuestionnaireUsages,
+                                    List[CdEDBObject]]:
         """Retrieve the questionnaire rows for a specific event.
 
         Rows are seperated by kind. Specifying a kinds will get you only rows
         of those kinds, otherwise you get them all.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :type kinds: [const.QuestionnaireUsages] or None
-        :rtype: [{str: object}]
-        :returns: list of questionnaire row entries
         """
         event_id = affirm("id", event_id)
         kinds = kinds or []
@@ -3529,6 +3363,7 @@ class EventBackend(AbstractBackend):
         query += " WHERE " + " AND ".join(c for c in constraints)
         d = self.query_all(rs, query, params)
         for row in d:
+            # noinspection PyArgumentList
             row['kind'] = const.QuestionnaireUsages(row['kind'])
         ret = {
             k: sorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
@@ -3537,19 +3372,15 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def set_questionnaire(self, rs, event_id, data):
+    def set_questionnaire(self, rs: RequestState, event_id: int,
+                          data: Dict[const.QuestionnaireUsages,
+                                     List[CdEDBObject]]) -> DefaultReturnCode:
         """Replace current questionnaire rows for a specific event, by kind.
 
         This superseeds the current questionnaire for all given kinds.
         Kinds that are not present in data, will not be touched.
 
         To delete all questionnaire rows, you can specify data as None.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :type data: {int: [{str: object}]} or None
-        :rtype: int
-        :returns: default return code
         """
         event_id = affirm("id", event_id)
         event = self.get_event(rs, event_id)
@@ -3591,14 +3422,8 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def lock_event(self, rs, event_id):
-        """Lock an event for offline usage.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :rtype: int
-        :returns: standard return code
-        """
+    def lock_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+        """Lock an event for offline usage."""
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
@@ -3614,15 +3439,12 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def export_event(self, rs, event_id):
+    def export_event(self, rs: RequestState, event_id: int) -> CdEDBObject:
         """Export an event for offline usage or after offline usage.
 
         This provides a more general export functionality which could
         also be used without locking.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :rtype: dict
         :returns: dict holding all data of the exported event
         """
         event_id = affirm("id", event_id)
@@ -3694,16 +3516,14 @@ class EventBackend(AbstractBackend):
             return ret
 
     @classmethod
-    def translate(cls, data, translations, extra_translations=None):
+    def translate(cls, data: CdEDBObject,
+                  translations: Dict[str, Dict[int, int]],
+                  extra_translations: Dict[str, str] = None
+                  ) -> CdEDBObject:
         """Helper to do the actual translation of IDs which got out of sync.
 
         This does some additional sanitizing besides applying the
         translation.
-
-        :type data: [{str: object}]
-        :type translations: {str: {int: int}}
-        :type extra_translations: {str: str}
-        :rtype: [{str: object}]
         """
         extra_translations = extra_translations or {}
         ret = copy.deepcopy(data)
@@ -3722,8 +3542,12 @@ class EventBackend(AbstractBackend):
             del ret['amount_owed']
         return ret
 
-    def synchronize_table(self, rs, table, data, current, translations,
-                          entity=None, extra_translations=None):
+    def synchronize_table(self, rs: RequestState, table: str,
+                          data: CdEDBObjectMap, current: CdEDBObjectMap,
+                          translations: Dict[str, Dict[int, int]],
+                          entity: str = None,
+                          extra_translations: Dict[str, str] = None
+                          ) -> DefaultReturnCode:
         """Replace one data set in a table with another.
 
         This is a bit involved, since both DB instances may have been
@@ -3774,15 +3598,11 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def unlock_import_event(self, rs, data):
+    def unlock_import_event(self, rs: RequestState,
+                            data: CdEDBObject) -> DefaultReturnCode:
         """Unlock an event after offline usage and import changes.
 
         This is a combined action so that we stay consistent.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: dict
-        :rtype: int
-        :returns: standard return code
         """
         data = affirm("serialized_event", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
@@ -3854,16 +3674,12 @@ class EventBackend(AbstractBackend):
             return ret
 
     @access("event", "droid_quick_partial_export")
-    def partial_export_event(self, rs, event_id):
+    def partial_export_event(self, rs: RequestState,
+                             event_id: int) -> CdEDBObject:
         """Export an event for third-party applications.
 
         This provides a consumer-friendly package of event data which can
         later on be reintegrated with the partial import facility.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
-        :rtype: dict
-        :returns: dict holding all data of the exported event
         """
         event_id = affirm("id", event_id)
         access_ok = (
@@ -3874,7 +3690,7 @@ class EventBackend(AbstractBackend):
         if not access_ok:
             raise PrivilegeError(n_("Not privileged."))
 
-        def list_to_dict(alist):
+        def list_to_dict(alist: Collection) -> Dict:
             return {e['id']: e for e in alist}
 
         with Atomizer(rs):
@@ -3984,7 +3800,7 @@ class EventBackend(AbstractBackend):
                 for track in part['tracks'].values():
                     del track['id']
                     del track['part_id']
-            for f in ('lodge_field', 'reserve_field', 'course_room_field'):
+            for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
                 if export_event[f]:
                     export_event[f] = event['fields'][event[f]]['field_name']
             new_fields = {
@@ -4027,20 +3843,17 @@ class EventBackend(AbstractBackend):
             return ret
 
     @access("event")
-    def partial_import_event(self, rs, data, dryrun, token=None):
+    def partial_import_event(self, rs: RequestState, data: CdEDBObject,
+                             dryrun: bool, token: str = None
+                             ) -> Tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 
         In contrast to the full import in this case the data describes a
         delta to be applied to the current online state.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: dict
-        :type dryrun: bool
         :param dryrun: If True we do not modify any state.
-        :type token: str
         :param token: Expected transaction token. If the transaction would
           generate a different token a PartialImportError is raised.
-        :rtype: (str, dict)
         :returns: A tuple of a transaction token and the datasets that
           are changed by the operation (in the state after the change). The
           transaction token describes the change and can be submitted to

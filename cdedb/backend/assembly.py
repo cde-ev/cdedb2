@@ -28,8 +28,9 @@ do it.
 
 import copy
 import hmac
+import datetime
 from typing import (
-    Set, Dict, List, Union, Callable, Collection, Optional
+    Set, Dict, Tuple, Union, Callable, Collection, Optional
 )
 
 from cdedb.backend.common import (
@@ -196,27 +197,18 @@ class AssemblyBackend(AbstractBackend):
                   additional_info)
         return self.query_exec(rs, query, params)
 
-    # TODO add type hints after merge of log pagination branch.
     @access("assembly_admin")
-    def retrieve_log(self, rs, codes=None, assembly_id=None, offset=None,
-                     length=None, persona_id=None, submitted_by=None,
-                     additional_info=None, time_start=None, time_stop=None):
+    def retrieve_log(self, rs: RequestState,
+                     codes: Collection[const.AssemblyLogCodes] = None,
+                     assembly_id: int = None, offset=None,
+                     length: int = None, persona_id: int = None,
+                     submitted_by: int = None, additional_info: str = None,
+                     time_start: datetime.datetime = None,
+                     time_stop: datetime.datetime = None):
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type codes: [int] or None
-        :type assembly_id: int or None
-        :type offset: int or None
-        :type length: int or None
-        :type persona_id: int or None
-        :type submitted_by: int or None
-        :type additional_info: str or None
-        :type time_start: datetime or None
-        :type time_stop: datetime or None
-        :rtype: [{str: object}]
         """
         assembly_id = affirm("id_or_None", assembly_id)
         assembly_ids = [assembly_id] if assembly_id else None
@@ -229,7 +221,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def submit_general_query(self, rs: RequestState,
-                             query: Query) -> List[CdEDBObject]:
+                             query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
@@ -324,6 +316,8 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         if persona_id is None:
             persona_id = rs.user.persona_id
+        # ml_admins are allowed to do this to be able to manage
+        # subscribers of assembly mailinglists.
         if "assembly" not in rs.user.roles and "ml_admin" not in rs.user.roles:
             raise PrivilegeError(n_("Not privileged to access assembly tables"))
         with Atomizer(rs):
@@ -350,7 +344,6 @@ class AssemblyBackend(AbstractBackend):
         return self.check_attendance(rs, assembly_id=assembly_id,
                                      ballot_id=ballot_id)
 
-    # TODO this is strictly a super-set of `does_attend`.
     @access("assembly")
     def check_attends(self, rs: RequestState, persona_id: int,
                       assembly_id: int) -> bool:
@@ -375,6 +368,9 @@ class AssemblyBackend(AbstractBackend):
         to the assembly realm) may view this list -- no condition of
         being an attendee. This seems reasonable since assemblies should
         be public to the entire association.
+
+        ml_admins are allowed to do this to be able to manage
+        subscribers of assembly mailinglists.
         """
         assembly_id = affirm("id", assembly_id)
         if not (self.may_access(rs, assembly_id=assembly_id)
@@ -1400,9 +1396,9 @@ class AssemblyBackend(AbstractBackend):
                 f.write(content)
             assembly_id = data.get('assembly_id') or self.get_assembly_id(
                 rs, ballot_id=data['ballot_id'])
-            # TODO addtional info?
             self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
-                              assembly_id=assembly_id)
+                              assembly_id=assembly_id,
+                              additional_info=version['title'])
             return new_id
 
     @access("assembly_admin")

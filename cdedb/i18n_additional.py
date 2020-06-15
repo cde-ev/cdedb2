@@ -332,5 +332,6 @@ I18N_STRINGS = (
     n_("Vorstand"),
     n_("banner_before_login"),
     n_("banner_after_login"),
+    n_("banner_genesis"),
     n_("cde_misc"),
 )

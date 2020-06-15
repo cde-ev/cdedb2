@@ -124,7 +124,7 @@ class TestMlFrontend(FrontendTest):
         self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
                                       current_state=False)
 
-        # Test Event Management Admin View
+        # Test Event Administration Admin View
         # This is still available because we are a moderator.
         # self.assertNoLink('/ml/mailinglist/list')
         # self.assertNoLink('/ml/log')
@@ -132,12 +132,11 @@ class TestMlFrontend(FrontendTest):
         self.assertNoLink('/ml/mailinglist/1/change')
         self.assertNoLink('/ml/mailinglist/1/log')
         self.assertPresence("Du hast diese Mailingliste abonniert.")
-        self._click_admin_view_button(re.compile(r"Mailinglisten-Verwaltung"),
+        self._click_admin_view_button(re.compile(r"Mailinglisten-Administration"),
                                       current_state=False)
         self.traverse({'href': '/ml/mailinglist/1/change'})
         self.assertPresence('Speichern')
-        self.traverse({'href': '/ml/mailinglist/1/log'},
-                      {'href': '/ml/'},
+        self.traverse({'href': '/ml/'},
                       {'href': '/ml/mailinglist/list'},
                       {'href': '/ml/mailinglist/create'})
 
@@ -147,7 +146,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNoLink('/ml/mailinglist/1/management')
         self.assertNoLink('/ml/mailinglist/1/management/advanced')
 
-        self._click_admin_view_button(re.compile(r"Mailinglisten-Verwaltung"),
+        self._click_admin_view_button(re.compile(r"Mailinglisten-Administration"),
                                       current_state=True)
         self._click_admin_view_button(re.compile(r"Moderator-Schaltflächen"),
                                       current_state=False)

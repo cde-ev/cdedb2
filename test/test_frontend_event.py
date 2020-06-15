@@ -13,7 +13,7 @@ from test.common import as_users, USER_DICT, FrontendTest, prepsql
 from cdedb.query import QueryOperators
 from cdedb.common import (now, CDEDB_EXPORT_EVENT_VERSION,
     ADMIN_VIEWS_COOKIE_NAME)
-from cdedb.frontend.common import CustomCSVDialect
+from cdedb.frontend.common import CustomCSVDialect, iban_filter
 import cdedb.database.constants as const
 
 
@@ -166,14 +166,14 @@ class TestEventFrontend(FrontendTest):
         self._click_admin_view_button(
             re.compile(r"Benutzer-Administration"), current_state=False)
 
-        # Test Event Management Admin View
+        # Test Event Administration Admin View
         self.assertNoLink('/event/event/log')
         self.assertNoLink('/event/event/list')
         self.traverse({'href': '/event/event/1/show'})
         self.assertNotIn('deleteeventform', self.response.forms)
         self.assertNotIn('addorgaform', self.response.forms)
         self.traverse({'href': '/event/event/1/registration/status'})
-        self._click_admin_view_button(re.compile(r"Veranst.-Verwaltung"),
+        self._click_admin_view_button(re.compile(r"Veranstaltungs-Administration"),
                                       current_state=False)
         self.traverse({'href': '/event/event/1/show'})
         self.assertIn('deleteeventform', self.response.forms)
@@ -196,7 +196,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/event/1/course/list'})
         self.assertNoLink('/event/event/1/course/1/show')
 
-        self._click_admin_view_button(re.compile(r"Veranst.-Verwaltung"),
+        self._click_admin_view_button(re.compile(r"Veranstaltungs-Administration"),
                                       current_state=True)
         # Even without the Orga Controls Admin View we should see the Orga
         # Controls of our own event:
@@ -210,6 +210,7 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
         self.assertIn('lockform', self.response.forms)
+        self.assertNoLink("Orga-Schaltflächen")
 
         self.traverse({'href': '/event/'},
                       {'href': '/event/event/1/show'})
@@ -275,7 +276,8 @@ class TestEventFrontend(FrontendTest):
 
         self.assertPresence("TestAka", div='shortname')
         self.assertPresence("Club der Ehemaligen", div='institution')
-        self.assertPresence("DE96 3702 0500 0008 0689 01", div='cde-iban')
+        iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
+        self.assertPresence(iban, div='cde-iban')
         self.assertPresence("Nein", div='questionnaire-active')
         self.assertPresence("Todoliste … just kidding ;)", div='orga-notes')
         self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem",
@@ -386,7 +388,6 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
 
-
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self, user):
         self.traverse({'description': 'Veranstaltungen'},
@@ -410,7 +411,16 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("30.10.2001", div='timeframe-registration')
         # orgas
         self.assertNonPresence("Bertålotta")
-        if user["id"] in {1, 6}:
+        if user["id"] in {27, 6}:
+            f = self.response.forms['addorgaform']
+            f['orga_id'] = "DB-10-2"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+            f = self.response.forms['addorgaform']
+            f['orga_id'] = "DB-10-8"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+            self.assertPresence("Benutzer ist kein Veranstaltunsnutzer.")
             f = self.response.forms['addorgaform']
             f['orga_id'] = "DB-2-7"
             self.submit(f)
@@ -1014,6 +1024,11 @@ etc;anything else""", f['entries_2'].value)
         f['event_end'] = "2345-6-7"
         f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
+        f['orga_ids'] = "DB-10-8"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertPresence("Janis Jalapeño ist kein Veranstaltungsnutzer.")
+        f = self.response.forms['createeventform']
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
@@ -2156,8 +2171,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/lodgement/4/change'})
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
-        self.assertEqual("1", f['capacity'].value)
-        f['capacity'] = 3
+        self.assertEqual("1", f['regular_capacity'].value)
+        f['regular_capacity'] = 3
         self.assertEqual("", f['notes'].value)
         f['notes'] = "neu mit Anbau"
         self.assertEqual("high", f['fields.contamination'].value)
@@ -2166,7 +2181,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/lodgement/4/change'})
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
-        self.assertEqual("3", f['capacity'].value)
+        self.assertEqual("3", f['regular_capacity'].value)
         self.assertEqual("neu mit Anbau", f['notes'].value)
         self.assertEqual("medium", f['fields.contamination'].value)
         self.traverse({'href': '/event/event/1/lodgement/overview'})
@@ -2179,8 +2194,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/lodgement/create'})
         f = self.response.forms['createlodgementform']
         f['moniker'] = "Zelte"
-        f['capacity'] = 0
-        f['reserve'] = 20
+        f['regular_capacity'] = 0
+        f['camping_mat_capacity'] = 20
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
         f['fields.contamination'] = "low"
         self.submit(f)
@@ -2189,7 +2204,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Unterkunft Zelte bearbeiten (Große Testakademie 2222)")
         self.assertPresence("some radiation")
         f = self.response.forms['changelodgementform']
-        self.assertEqual('20', f['reserve'].value)
+        self.assertEqual('20', f['camping_mat_capacity'].value)
         self.assertEqual("oder gleich unter dem Sternenhimmel?", f['notes'].value)
 
     @as_users("garcia")
@@ -2201,10 +2216,10 @@ etc;anything else""", f['entries_2'].value)
 
         expectations = {
             "group_regular_inhabitants_3_1": "2",
-            "lodge_reserve_inhabitants_3_2": "1",
+            "lodge_camping_mat_inhabitants_3_2": "1",
             "group_regular_capacity_1": "11",
             "total_inhabitants_3": "4",
-            "total_reserve": "103",
+            "total_camping_mat": "103",
             "total_regular": "16",
         }
 
@@ -2213,7 +2228,7 @@ etc;anything else""", f['entries_2'].value)
 
         self.traverse({'href': '/event/event/1/lodgement/1/change'})
         f = self.response.forms['changelodgementform']
-        f['capacity'] = 42
+        f['regular_capacity'] = 42
         self.submit(f)
         self.traverse({'href': '/event/event/1/lodgement/overview'})
 
@@ -2678,7 +2693,7 @@ etc;anything else""", f['entries_2'].value)
 
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=CustomCSVDialect))
-        self.assertIn('100', tuple(row['reserve'] for row in result))
+        self.assertIn('100', tuple(row['camping_mat_capacity'] for row in result))
         self.assertIn('low', tuple(row['fields.contamination']
                                    for row in result))
 
@@ -3218,7 +3233,7 @@ etc;anything else""", f['entries_2'].value)
                       'registration_soft_limit': '2200-10-30T00:00:00+00:00',
                       'registration_start': '2000-10-30T00:00:00+00:00',
                       'registration_text': None,
-                      'reserve_field': 'may_reserve',
+                      'camping_mat_field': 'may_reserve',
                       'shortname': 'TestAka',
                       'title': 'Große Testakademie 2222',
                       'use_additional_questionnaire': False},
@@ -3226,30 +3241,30 @@ etc;anything else""", f['entries_2'].value)
             'kind': 'partial',
             'lodgement_groups': {'1': {'moniker': 'Haupthaus'},
                                  '2': {'moniker': 'AußenWohnGruppe'}},
-            'lodgements': {'1': {'capacity': 5,
+            'lodgements': {'1': {'regular_capacity': 5,
                                  'fields': {'contamination': 'high'},
                                  'moniker': 'Warme Stube',
                                  'notes': None,
                                  'group_id': 2,
-                                 'reserve': 1},
-                           '2': {'capacity': 10,
+                                 'camping_mat_capacity': 1},
+                           '2': {'regular_capacity': 10,
                                  'fields': {'contamination': 'none'},
                                  'moniker': 'Kalte Kammer',
                                  'notes': 'Dafür mit Frischluft.',
                                  'group_id': 1,
-                                 'reserve': 2},
-                           '3': {'capacity': 0,
+                                 'camping_mat_capacity': 2},
+                           '3': {'regular_capacity': 0,
                                  'fields': {'contamination': 'low'},
                                  'moniker': 'Kellerverlies',
                                  'notes': 'Nur für Notfälle.',
                                  'group_id': None,
-                                 'reserve': 100},
-                           '4': {'capacity': 1,
+                                 'camping_mat_capacity': 100},
+                           '4': {'regular_capacity': 1,
                                  'fields': {'contamination': 'high'},
                                  'moniker': 'Einzelzelle',
                                  'notes': None,
                                  'group_id': 1,
-                                 'reserve': 0}},
+                                 'camping_mat_capacity': 0}},
             'registrations': {'1': {'amount_owed': "573.99",
                                     'amount_paid': "0.00",
                                     'checkin': None,
@@ -3262,13 +3277,13 @@ etc;anything else""", f['entries_2'].value)
                                     'notes': None,
                                     'orga_notes': None,
                                     'parental_agreement': True,
-                                    'parts': {'1': {'is_reserve': False,
+                                    'parts': {'1': {'is_camping_mat': False,
                                                     'lodgement_id': None,
                                                     'status': -1},
-                                              '2': {'is_reserve': False,
+                                              '2': {'is_camping_mat': False,
                                                     'lodgement_id': None,
                                                     'status': 1},
-                                              '3': {'is_reserve': False,
+                                              '3': {'is_camping_mat': False,
                                                     'lodgement_id': 1,
                                                     'status': 2}},
                                     'payment': None,
@@ -3313,13 +3328,13 @@ etc;anything else""", f['entries_2'].value)
                                              'Frühstück am Bett',
                                     'orga_notes': 'Unbedingt in die Einzelzelle.',
                                     'parental_agreement': True,
-                                    'parts': {'1': {'is_reserve': False,
+                                    'parts': {'1': {'is_camping_mat': False,
                                                     'lodgement_id': None,
                                                     'status': 3},
-                                              '2': {'is_reserve': False,
+                                              '2': {'is_camping_mat': False,
                                                     'lodgement_id': 4,
                                                     'status': 4},
-                                              '3': {'is_reserve': False,
+                                              '3': {'is_camping_mat': False,
                                                     'lodgement_id': 4,
                                                     'status': 2}},
                                     'payment': '2014-02-02',
@@ -3362,13 +3377,13 @@ etc;anything else""", f['entries_2'].value)
                                     'notes': None,
                                     'orga_notes': None,
                                     'parental_agreement': True,
-                                    'parts': {'1': {'is_reserve': False,
+                                    'parts': {'1': {'is_camping_mat': False,
                                                     'lodgement_id': 2,
                                                     'status': 2},
-                                              '2': {'is_reserve': False,
+                                              '2': {'is_camping_mat': False,
                                                     'lodgement_id': None,
                                                     'status': 2},
-                                              '3': {'is_reserve': False,
+                                              '3': {'is_camping_mat': False,
                                                     'lodgement_id': 2,
                                                     'status': 2}},
                                     'payment': '2014-03-03',
@@ -3413,13 +3428,13 @@ etc;anything else""", f['entries_2'].value)
                                     'notes': None,
                                     'orga_notes': None,
                                     'parental_agreement': False,
-                                    'parts': {'1': {'is_reserve': False,
+                                    'parts': {'1': {'is_camping_mat': False,
                                                     'lodgement_id': None,
                                                     'status': 6},
-                                              '2': {'is_reserve': False,
+                                              '2': {'is_camping_mat': False,
                                                     'lodgement_id': None,
                                                     'status': 5},
-                                              '3': {'is_reserve': True,
+                                              '3': {'is_camping_mat': True,
                                                     'lodgement_id': 2,
                                                     'status': 2}},
                                     'payment': '2014-04-04',
@@ -3462,13 +3477,13 @@ etc;anything else""", f['entries_2'].value)
                                     'notes': None,
                                     'orga_notes': None,
                                     'parental_agreement': True,
-                                    'parts': {'1': {'is_reserve': False,
+                                    'parts': {'1': {'is_camping_mat': False,
                                                     'lodgement_id': 4,
                                                     'status': 2},
-                                              '2': {'is_reserve': False,
+                                              '2': {'is_camping_mat': False,
                                                     'lodgement_id': 4,
                                                     'status': 2},
-                                              '3': {'is_reserve': False,
+                                              '3': {'is_camping_mat': False,
                                                     'lodgement_id': 1,
                                                     'status': 2}},
                                     'payment': None,
@@ -3511,13 +3526,13 @@ etc;anything else""", f['entries_2'].value)
                                     'notes': None,
                                     'orga_notes': None,
                                     'parental_agreement': True,
-                                    'parts': {'1': {'is_reserve': False,
+                                    'parts': {'1': {'is_camping_mat': False,
                                                     'lodgement_id': None,
                                                     'status': 2},
-                                              '2': {'is_reserve': False,
+                                              '2': {'is_camping_mat': False,
                                                     'lodgement_id': None,
                                                     'status': -1},
-                                              '3': {'is_reserve': False,
+                                              '3': {'is_camping_mat': False,
                                                     'lodgement_id': None,
                                                     'status': -1}},
                                     'payment': None,
@@ -3724,6 +3739,61 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/2/course/choices'})
         self.assertNonPresence('Partywoche')
         self.assertNonPresence('Chillout')
+
+    def test_free_event(self):
+        # first, make Große Testakademie 2222 free
+        self.login(USER_DICT['garcia'])
+        self.traverse({'description': "Veranstaltungen"},
+                      {'description': "Große Testakademie 2222"},
+                      {'description': "Veranstaltungsteile"})
+        f = self.response.forms['partsummaryform']
+        f['fee_1'] = 0
+        f['fee_2'] = 0
+        f['fee_3'] = 0
+        self.submit(f)
+
+        pay_request = "Anmeldung erst mit Überweisung des Teilnehmerbeitrags"
+        iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
+        no_member_surcharge = "zusätzlichen Beitrag in Höhe von 5,00"
+
+        # now check ...
+        for user in {'charly', 'daniel'}:
+            self.logout()
+            self.login(USER_DICT[user])
+            self.traverse({'href': '/event/event/1/register'})
+            f = self.response.forms['registerform']
+            f['parts'] = ['1', '3']
+            f['course_choice3_0'] = 2
+            f['course_choice3_1'] = 2
+            f['course_choice3_1'] = 4
+            self.submit(f)
+
+            mail = self.fetch_mail()[0]
+            text = mail.get_body().get_content()
+
+            # ... the registration mail ...
+            # ... as member
+            if user == 'charly':
+                self.assertNotIn(pay_request, text)
+                self.assertNotIn(iban, text)
+                self.assertNotIn(no_member_surcharge, text)
+            # ... as not member (we still need to pay the no member surcharge)
+            else:
+                self.assertIn(pay_request, text)
+                self.assertIn(iban, text)
+                self.assertIn(no_member_surcharge, text)
+
+            # ... the registration page ...
+            # ... as member
+            if user == 'charly':
+                self.assertNotIn(pay_request, text)
+                self.assertNotIn(iban, text)
+                self.assertNotIn(no_member_surcharge, text)
+            # ... as not member (we still need to pay the no member surcharge)
+            else:
+                self.assertIn(pay_request, text)
+                self.assertIn(iban, text)
+                self.assertIn(no_member_surcharge, text)
 
     def test_log(self):
         # First: generate data

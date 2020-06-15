@@ -17,7 +17,7 @@ def prepare_aux(data):
     # Set up the database connection.
     sys.path.insert(0, "/cdedb2")
 
-    from cdedb.script import setup, make_backend
+    from cdedb.script import setup
     from cdedb.backend.core import CoreBackend
     from cdedb.backend.common import PsycoJson
 
@@ -43,7 +43,7 @@ def prepare_aux(data):
     # require special care, because they contain cycliy references.
     # They will be removed from the initial INSERT and UPDATEd later.
     ret["cyclic_references"] = {
-        "event.events": ("lodge_field", "course_room_field", "reserve_field"),
+        "event.events": ("lodge_field", "course_room_field", "camping_mat_field"),
     }
 
     # This contains a list of replacements performed on the resulting SQL
@@ -107,6 +107,7 @@ def build_commands(data, aux):
                                 * len(table_data))
         query = "INSERT INTO {table} ({keys}) VALUES {value_list};".format(
             table=table, keys=", ".join(keys), value_list=value_list)
+        # noinspection PyProtectedMember
         params = tuple(aux["core"]._sanitize_db_input(p) for p in params)
 
         # This is a bit hacky, but it gives us access to a psycopg2.cursor

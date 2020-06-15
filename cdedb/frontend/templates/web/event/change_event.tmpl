@@ -109,7 +109,7 @@
                 if field['kind'] == enums['FieldDatatypes'].bool and field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
-        {{ util.form_input_select(name="reserve_field", label=gettext("Field for Camping Mat"), entries=myentries,
+        {{ util.form_input_select(name="camping_mat_field", label=gettext("Field for Camping Mat"), entries=myentries,
                                   nulloption="&nbsp;"|s, info=gettext("The custom field in which the participants’ "
                                   "willingness to sleep on a camping mat will be saved. It is used for the PDF "
                                   "lodgement puzzle download. Fieldtype: Yes/No")) }}

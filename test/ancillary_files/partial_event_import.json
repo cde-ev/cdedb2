@@ -61,8 +61,8 @@
 	"lodgements": {
 		"3": null,
 		"2": {
-			"reserve": 5,
-			"capacity": 8,
+			"camping_mat_capacity": 5,
+			"regular_capacity": 8,
 			"fields": {
 				"contamination": "medium"
 			},
@@ -79,8 +79,8 @@
 			"group_id": -1
 		},
 		"-1": {
-			"reserve": 2,
-			"capacity": 12,
+			"camping_mat_capacity": 2,
+			"regular_capacity": 12,
 			"fields": {
 				"contamination": "none"
 			},
@@ -89,8 +89,8 @@
 			"group_id": -1
 		},
 		"-2": {
-			"reserve": 0,
-			"capacity": 42,
+			"camping_mat_capacity": 0,
+			"regular_capacity": 42,
 			"fields": {
 				"contamination": "low"
 			},
@@ -110,17 +110,17 @@
 				"3": {
 					"lodgement_id": 1,
 					"status": 2,
-					"is_reserve": true
+					"is_camping_mat": true
 				},
 				"2": {
 					"lodgement_id": null,
 					"status": 3,
-					"is_reserve": false
+					"is_camping_mat": false
 				},
 				"1": {
 					"lodgement_id": 2,
 					"status": 2,
-					"is_reserve": false
+					"is_camping_mat": false
 				}
 			},
 			"checkin": null,
@@ -202,17 +202,17 @@
 				"3": {
 					"lodgement_id": 1,
 					"status": 2,
-					"is_reserve": false
+					"is_camping_mat": false
 				},
 				"2": {
 					"lodgement_id": -1,
 					"status": 1,
-					"is_reserve": false
+					"is_camping_mat": false
 				},
 				"1": {
 					"lodgement_id": null,
 					"status": -1,
-					"is_reserve": false
+					"is_camping_mat": false
 				}
 			},
 			"checkin": null,
@@ -252,5 +252,5 @@
 			}
 		}
 	},
-	"CDEDB_EXPORT_EVENT_VERSION": 11
+	"CDEDB_EXPORT_EVENT_VERSION": 12
 }

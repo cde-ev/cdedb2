@@ -23,11 +23,7 @@
         </div>
     {% endif %}
 
-    {% if meta_info.get('banner_after_login') %}
-        {% call util.bootstrap_panel() %}
-            {{ meta_info.get('banner_after_login')|md }}
-        {% endcall %}
-    {% endif %}
+    {{ util.meta_info_banner('banner_after_login') }}
 
     <div class="row">
         {% if "core_user" in user.admin_views %}

@@ -143,11 +143,11 @@
                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="&nbsp;"|s,
                                      anid="part{}_lodgement_id".format(part_id)) }}
             {% endcall %}
-            {% call form_input_optional("part{}.is_reserve".format(part_id),
-                                        anid="part{}_is_reserve".format(part_id)) %}
+            {% call form_input_optional("part{}.is_camping_mat".format(part_id),
+                                        anid="part{}_is_camping_mat".format(part_id)) %}
                 <div class="checkbox">
-                    {{ util.input_checkbox(name="part{}.is_reserve".format(part_id), label=gettext("Uses Camping Mat"),
-                                           anid="part{}_is_reserve".format(part_id)) }}
+                    {{ util.input_checkbox(name="part{}.is_camping_mat".format(part_id), label=gettext("Uses Camping Mat"),
+                                           anid="part{}_is_camping_mat".format(part_id)) }}
                 </div>
             {% endcall %}
 

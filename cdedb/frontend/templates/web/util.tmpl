@@ -894,3 +894,11 @@ mailto:
     persona.get("{}username".format(prefix), "")
 ) }}
 {%- endmacro %}
+
+{% macro meta_info_banner(fieldname) %}
+    {% if meta_info.get(fieldname) %}
+        {% call util.bootstrap_panel() %}
+            {{ meta_info.get(fieldname)|md }}
+        {% endcall %}
+    {% endif %}
+{% endmacro %}

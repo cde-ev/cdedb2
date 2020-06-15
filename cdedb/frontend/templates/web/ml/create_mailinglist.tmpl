@@ -71,7 +71,23 @@
         </script>
 
         <h4 class="heading-underline">{% trans %}Mails{% endtrans %}</h4>
-        {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix")) }}
+        {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix"),
+                    info=gettext("Example: If the subject prefix is set to \"info\" and a user sends a Mail with "
+                                "subject \"Invitation to PfingstAka\", the mail will be sent to the recipients as "
+                                "\"[info] Invitation to PfingstAka\".")) }}
+            <script nonce="{{ csp_nonce }}">
+                var sp_inp = $('#createlistform').find("[name='subject_prefix']");
+                function build_preview() {
+                    if (Boolean(sp_inp.val())===true) // if no subject_prefix is given, mailman also won't add any braces
+                        var repl = "[" + escapeHtml(sp_inp.val()) +  "] ";
+                    else var repl = "";
+                    sp_inp.siblings("p.help-block").html('{{ util.make_icon('info-circle') }} ' +
+                        "{{ gettext("Preview: %(prefix)sMail'sSubjectHere") }}"
+                            .replace('%(prefix)s', repl));
+                }
+                sp_inp.on("input", build_preview);
+                build_preview();
+            </script>
         {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
                 entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number") }}

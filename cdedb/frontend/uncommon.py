@@ -11,9 +11,12 @@ dependencies.
 
 import abc
 
-from cdedb.common import n_, merge_dicts, PERSONA_DEFAULTS
-from cdedb.frontend.common import AbstractFrontend
-from cdedb.frontend.common import check_validation as check
+from cdedb.common import (
+    n_, merge_dicts, PERSONA_DEFAULTS, RequestState, CdEDBObject
+)
+from cdedb.frontend.common import (
+    AbstractFrontend, Response, check_validation as check
+)
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
@@ -28,23 +31,25 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def is_admin(cls, rs):
+    def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
     # @access("realm_admin")
     @abc.abstractmethod
-    def create_user_form(self, rs):
+    def create_user_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(rs, "create_user")
 
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
     @abc.abstractmethod
-    def create_user(self, rs, data, ignore_warnings=False):
+    def create_user(self, rs: RequestState, data: CdEDBObject,
+                    ignore_warnings: bool = False) -> Response:
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
         data = check(
-            rs, "persona", data, creation=True, _ignore_warnings=ignore_warnings)
+            rs, "persona", data, creation=True,
+            _ignore_warnings=ignore_warnings)
         if data:
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:
