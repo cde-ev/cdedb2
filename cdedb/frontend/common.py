@@ -1896,7 +1896,8 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
                 elif argtype == "[str]":
                     data[name] = tuple(rs.request.values.getlist(name))
                 else:
-                    raise ValueError(n_(f"Invalid argtype {argtype} found."))
+                    raise ValueError(n_("Invalid argtype {t} found.").format(
+                        t=repr(argtype)))
                 rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
 
