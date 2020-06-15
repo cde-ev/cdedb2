@@ -114,18 +114,19 @@ class TestCoreBackend(BackendTest):
     def test_invalidate_session(self, user):
         # Login with another user.
         other_user = copy.deepcopy(USER_DICT["berta"])
+        new_foto = create_mock_image()
         other_key = self.core.login(
             None, other_user["username"], other_user["password"], "127.0.0.0")
         self.assertIsNotNone(other_key)
         self.assertLess(
-            0, self.core.change_foto(other_key, other_user["id"], b"xyz"))
+            0, self.core.change_foto(other_key, other_user["id"], new_foto))
 
         # Invalidate the other users password and session.
         self.assertLess(
             0, self.core.invalidate_password(self.key, other_user["id"]))
 
         with self.assertRaises(PrivilegeError):
-            self.core.change_foto(other_key, other_user["id"], b"myFoto")
+            self.core.change_foto(other_key, other_user["id"], new_foto)
         self.assertIsNone(self.login(other_user))
 
     @as_users("anton", "berta", "janis")
