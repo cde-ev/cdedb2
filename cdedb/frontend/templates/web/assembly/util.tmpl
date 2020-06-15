@@ -39,14 +39,16 @@
         {% set aclass = "btn btn-success btn-xs hide-hover" %}
         {% set label = util.make_icon("plus") %}
         {% set icon = None %}
+        {% set title = gettext("Add Version") %}
     {% else %}
         {% set aclass = "btn btn-success btn-sm" %}
         {% set label = gettext("Add Version") %}
         {% set icon = "plus" %}
+        {% set title = None %}
     {% endif %}
     {{ util.href(cdedblink("assembly/add_attachment_form", {'attachment_id': attachment_id,
                                                             'ballot_id': ballot['id'] if ballot else None}),
-                 label=label, aclass=aclass, icon=icon) }}
+                 label=label, aclass=aclass, icon=icon, title=title) }}
 {% endmacro %}
 
 {% macro change_attachment_link_button(attachment_id, ballot=None) %}
