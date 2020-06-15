@@ -17,7 +17,7 @@ from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend,
     affirm_set_validation as affirm_set, singularize, batchify)
 from cdedb.common import (
-    n_, glue, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
+    n_, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
     LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS,
     implying_realms, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, CdEDBLog,
     RequestState,
@@ -457,64 +457,58 @@ class CdEBackend(AbstractBackend):
             return ret
 
     @access("finance_admin")
-    def finance_statistics(self, rs):
+    def finance_statistics(self, rs: RequestState) -> CdEDBObject:
         """Compute some financial statistics.
 
         Mostly for use by the 'Semesterverwaltung'.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: {str: object}
         """
-        ret = {}
         with Atomizer(rs):
-            query = glue("SELECT COUNT(*) FROM core.personas",
-                         "WHERE is_member = True AND balance < %s",
-                         "AND trial_member = False")
-            ret['low_balance_members'] = unwrap(self.query_one(
-                rs, query, (self.conf["MEMBERSHIP_FEE"],)))
-            query = glue("SELECT COUNT(*) FROM core.personas",
-                         "WHERE is_member = True AND trial_member = True")
+            query = ("SELECT COALESCE(SUM(balance), 0) as total,"
+                     " COUNT(*) as count FROM core.personas "
+                     " WHERE is_member = True AND balance < %s "
+                     " AND trial_member = False")
+            data = self.query_one(
+                rs, query, (self.conf["MEMBERSHIP_FEE"],))
+            ret = {
+                'low_balance_members': data['count'],
+                'low_balance_total': data['total'],
+            }
+            query = "SELECT COUNT(*) FROM core.personas WHERE is_member = True"
+            ret['total_members'] = unwrap(self.query_one(rs, query, tuple()))
+            query = ("SELECT COUNT(*) FROM core.personas"
+                     " WHERE is_member = True AND trial_member = True")
             ret['trial_members'] = unwrap(self.query_one(rs, query, tuple()))
-            query = glue("SELECT COUNT(*) FROM core.personas AS p",
-                         "JOIN cde.lastschrift AS l ON p.id = l.persona_id",
-                         "WHERE p.is_member = True AND p.balance < %s",
-                         "AND p.trial_member = False AND l.revoked_at IS NULL")
+            query = ("SELECT COUNT(*) FROM core.personas AS p"
+                     " JOIN cde.lastschrift AS l ON p.id = l.persona_id"
+                     " WHERE p.is_member = True AND p.balance < %s"
+                     " AND p.trial_member = False AND l.revoked_at IS NULL")
             ret['lastschrift_low_balance_members'] = unwrap(self.query_one(
                 rs, query, (self.conf["MEMBERSHIP_FEE"],)))
             return ret
 
-    @access("cde")
-    def current_period(self, rs):
-        """Check for the current semester
+    @access("finance_admin")
+    def get_period_history(self, rs: RequestState) -> CdEDBObjectMap:
+        """Get the history of all org periods."""
+        query = f"SELECT {', '.join(ORG_PERIOD_FIELDS)} FROM cde.org_period"
+        return {e['id']: e for e in self.query_all(rs, query, tuple())}
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: int
-        :returns: Id of the current org period.
-        """
+    @access("cde")
+    def current_period(self, rs: RequestState) -> int:
+        """Check for the current semester."""
         query = "SELECT MAX(id) FROM cde.org_period"
         return unwrap(self.query_one(rs, query, tuple()))
 
     @access("cde")
-    def get_period(self, rs, period_id):
-        """Get data for a semester
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type period_id: int
-        :rtype: {str: object}
-        """
+    def get_period(self, rs: RequestState, period_id: int) -> CdEDBObject:
+        """Get data for a semester."""
         period_id = affirm("id", period_id)
         return self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS,
                                    period_id)
 
     @access("finance_admin")
-    def set_period(self, rs, period):
-        """Set data for the current semester
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type period: {str: object}
-        :rtype: int
-        :returns: standard return code
-        """
+    def set_period(self, rs: RequestState,
+                   period: CdEDBObject) -> DefaultReturnCode:
+        """Set data for the current semester."""
         period = affirm("period", period)
         with Atomizer(rs):
             current_id = self.current_period(rs)
@@ -523,22 +517,23 @@ class CdEBackend(AbstractBackend):
             return self.sql_update(rs, "cde.org_period", period)
 
     @access("finance_admin")
-    def create_period(self, rs):
-        """Make a new semester.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: int
-        :returns: ID of new semester
-        """
+    def advance_semester(self, rs: RequestState) -> DefaultReturnCode:
+        """Mark  the current semester as finished and create a new semester."""
         with Atomizer(rs):
             current_id = self.current_period(rs)
             current = self.get_period(rs, current_id)
             if not current['balance_done']:
                 raise RuntimeError(n_("Current period not finalized."))
+            update = {
+                'id': current_id,
+                'semester_done': now(),
+            }
+            ret = self.sql_update(rs, "cde.org_period", update)
             new_period = {
                 'id': current_id + 1,
                 'billing_state': None,
                 'billing_done': None,
+                'billing_count': 0,
                 'ejection_state': None,
                 'ejection_done': None,
                 'ejection_count': 0,
@@ -547,117 +542,112 @@ class CdEBackend(AbstractBackend):
                 'balance_done': None,
                 'balance_trialmembers': 0,
                 'balance_total': decimal.Decimal(0),
+                'semester_done': None,
             }
-            ret = self.sql_insert(rs, "cde.org_period", new_period)
+            ret *= self.sql_insert(rs, "cde.org_period", new_period)
             self.cde_log(rs, const.CdeLogCodes.semester_advance,
                          persona_id=None, additional_info=str(ret))
             return ret
 
     @access("finance_admin")
-    def finish_semester_bill(self, rs, addresscheck=False):
-        """Conclude the semester bill step.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type addresscheck: bool
-        :returns: default return code
-        """
+    def finish_semester_bill(self, rs: RequestState,
+                             addresscheck: bool = False) -> DefaultReturnCode:
+        """Conclude the semester bill step."""
         addresscheck = affirm("bool", addresscheck)
         with Atomizer(rs):
             period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if not period['balance_done'] is None:
+                raise RuntimeError(n_("Billing already done for this period."))
             period_update = {
                 'id': period_id,
                 'billing_state': None,
                 'billing_done': now(),
             }
             ret = self.set_period(rs, period_update)
+            msg = f"{period['billing_count']} E-Mails versandt."
             if addresscheck:
                 self.cde_log(
                     rs, const.CdeLogCodes.semester_bill_with_addresscheck,
-                    persona_id=None, additional_info=None)
+                    persona_id=None, additional_info=msg)
             else:
                 self.cde_log(
                     rs, const.CdeLogCodes.semester_bill,
-                    persona_id=None, additional_info=None)
+                    persona_id=None, additional_info=msg)
             return ret
 
     @access("finance_admin")
-    def finish_semester_ejection(self, rs):
-        """Conclude the semester ejection step.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :returns: default return code
-        """
+    def finish_semester_ejection(self, rs: RequestState) -> DefaultReturnCode:
+        """Conclude the semester ejection step."""
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
+            if not period['billing_done']:
+                raise RuntimeError(n_("Billing not done for this semester."))
+            if not period['ejection_done'] is None:
+                raise RuntimeError(n_(
+                "Ejection already done for this semester."))
             period_update = {
                 'id': period_id,
                 'ejection_state': None,
                 'ejection_done': now(),
             }
             ret = self.set_period(rs, period_update)
+            msg = f"{period['ejection_count']} inaktive Mitglieder gestrichen."
+            msg += f" {period['ejection_balance']} € Guthaben eingezogen."
             self.cde_log(
                 rs, const.CdeLogCodes.semester_ejection, persona_id=None,
-                additional_info="{} inaktive Mitglieder gestrichen."
-                                "{} € Guthaben eingezogen.".format(
-                    period['ejection_count'], period['ejection_balance']))
+                additional_info=msg)
             return ret
 
     @access("finance_admin")
-    def finish_semester_balance_update(self, rs):
-        """Conclude the semester balance update step.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :returns: default return code
-        """
+    def finish_semester_balance_update(
+            self, rs: RequestState) -> DefaultReturnCode:
+        """Conclude the semester balance update step."""
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
+            if not period['ejection_done']:
+                raise RuntimeError(n_("Ejection not done for this period."))
+            if not period['balance_done'] is None:
+                raise RuntimeError(n_(
+                    "Balance update already done for this period."))
             period_update = {
                 'id': period_id,
                 'balance_state': None,
                 'balance_done': now(),
             }
             ret = self.set_period(rs, period_update)
-            msg = "{} Probemitgliedschaften beendet, {} € Guthaben abgebucht."
+            msg = "{} Probemitgliedschaften beendet. {} € Guthaben abgebucht."
             self.cde_log(
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
                 additional_info=msg.format(period['balance_trialmembers'],
                                            period['balance_total']))
             return ret
 
-    @access("cde")
-    def current_expuls(self, rs):
-        """Check for the current expuls number
+    @access("finance_admin")
+    def get_expuls_history(self, rs: RequestState) -> CdEDBObjectMap:
+        """Get the history of all expuls semesters."""
+        q = f"SELECT {', '.join(EXPULS_PERIOD_FIELDS)} FROM cde.expuls_period"
+        return {e['id']: e for e in self.query_all(rs, q, tuple())}
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: int
-        :returns: Id of the current expuls period.
-        """
+    @access("cde")
+    def current_expuls(self, rs: RequestState) -> int:
+        """Check for the current expuls number."""
         query = "SELECT MAX(id) FROM cde.expuls_period"
         return unwrap(self.query_one(rs, query, tuple()))
 
     @access("cde")
-    def get_expuls(self, rs, expuls_id):
-        """Get data for the an expuls.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type expuls_id: int
-        :rtype: {str: object}
-        """
+    def get_expuls(self, rs: RequestState, expuls_id: int) -> CdEDBObject:
+        """Get data for the an expuls."""
         expuls_id = affirm("id", expuls_id)
         return self.sql_select_one(rs, "cde.expuls_period",
                                    EXPULS_PERIOD_FIELDS, expuls_id)
 
     @access("finance_admin")
-    def set_expuls(self, rs, expuls):
-        """Set data for the an expuls
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type expuls: {str: object}
-        :rtype: int
-        :returns: standard return code
-        """
+    def set_expuls(self, rs: RequestState,
+                   expuls: CdEDBObject) -> DefaultReturnCode:
+        """Set data for the an expuls."""
         expuls = affirm("expuls", expuls)
         with Atomizer(rs):
             current_id = self.current_expuls(rs)
@@ -666,51 +656,54 @@ class CdEBackend(AbstractBackend):
             return self.sql_update(rs, "cde.expuls_period", expuls)
 
     @access("finance_admin")
-    def create_expuls(self, rs):
-        """Make a new expuls.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: int
-        :returns: ID of new expuls
-        """
+    def create_expuls(self, rs: RequestState) -> DefaultReturnCode:
+        """Mark the current expuls as finished and create a new expuls."""
         with Atomizer(rs):
             current_id = self.current_expuls(rs)
             current = self.get_expuls(rs, current_id)
             if not current['addresscheck_done']:
                 raise RuntimeError(n_("Current expuls not finalized."))
+            update = {
+                'id': current_id,
+                'expuls_done': now(),
+            }
+            ret = self.sql_update(rs, "cde.expuls_period", update)
             new_expuls = {
                 'id': current_id + 1,
                 'addresscheck_state': None,
                 'addresscheck_done': None,
+                'addresscheck_count': 0,
+                'expuls_done': None,
             }
-            ret = self.sql_insert(rs, "cde.expuls_period", new_expuls)
+            ret *= self.sql_insert(rs, "cde.expuls_period", new_expuls)
             self.cde_log(rs, const.CdeLogCodes.expuls_advance,
                          persona_id=None, additional_info=str(ret))
             return ret
 
     @access("finance_admin")
-    def finish_expuls_addresscheck(self, rs, skip=False):
-        """Conclude the expuls addresscheck step.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type skip: bool
-        :returns: default return code
-        """
+    def finish_expuls_addresscheck(self, rs: RequestState,
+                                   skip: bool = False) -> DefaultReturnCode:
+        """Conclude the expuls addresscheck step."""
         skip = affirm("bool", skip)
         with Atomizer(rs):
             expuls_id = self.current_expuls(rs)
+            expuls = self.get_expuls(rs, expuls_id)
+            if not expuls['addresscheck_done'] is None:
+                raise RuntimeError(n_(
+                    "Addresscheck already done for this expuls."))
             expuls_update = {
                 'id': expuls_id,
                 'addresscheck_state': None,
                 'addresscheck_done': now(),
             }
             ret = self.set_expuls(rs, expuls_update)
+            msg = f"{expuls['addresscheck_count']} E-Mails versandt."
             if skip:
                 self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck_skipped,
-                             persona_id=None, additional_info=None)
+                             persona_id=None, additional_info=msg)
             else:
                 self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck,
-                             persona_id=None, additional_info=None)
+                             persona_id=None, additional_info=msg)
             return ret
 
     @access("searchable", "cde_admin")

@@ -58,15 +58,15 @@
                 <div class="panel-body">
                     {% if period['billing_done'] %}
                         <span class="text-success">
-                            {% trans date=period['billing_done']|datetime(lang=lang) %}
-                                Done on the {{ date }}.
+                            {% trans date=period['billing_done']|datetime(lang=lang), count=period['billing_count'] %}
+                                Done on the {{ date }}. {{ count }} emails were sent.
                             {% endtrans %}
                         </span>
                     {% else %}
                         {% if period['billing_state'] %}
                             <p>
-                                {% trans state=period['billing_state']|cdedbid %}
-                                    Done up until {{ state }}.
+                                {% trans state=period['billing_state']|cdedbid, count=period['billing_count'] %}
+                                    Done up until {{ state }}. {{ count }} emails have been sent so far.
                                 {% endtrans %}
                             </p>
                         {% endif %}
@@ -94,24 +94,33 @@
                 <div class="panel-body">
                     {% if period['ejection_done'] %}
                         <span class="text-success">
-                            {% trans date=period['ejection_done']|datetime(lang=lang) %}
+                            {% trans date=period['ejection_done']|datetime(lang=lang),
+                                     count=period['ejection_count'],
+                                     balance=period['ejection_balance']|money(lang=lang) %}
                                 Done on the {{ date }}.
+                                {{ count }} memberships were ended.
+                                A total of {{ balance }} was deducted.
                             {% endtrans %}
                         </span>
                     {% elif period['billing_done'] %}
                         {% if period['ejection_state'] %}
                             <p>
-                                {% trans state=period['ejection_state']|cdedbid %}
+                                {% trans state=period['ejection_state']|cdedbid,
+                                         count=period['ejection_count'],
+                                         balance=period['ejection_balance']|money(lang=lang) %}
                                     Done up until {{ state }}.
+                                    {{ count }} memberships have been ended so far.
+                                    A total of {{ balance }} has been deducted so far.
                                 {% endtrans %}
                             </p>
                         {% else %}
                             <p>
                                 {% trans low_count=stats['low_balance_members'],
+                                         low_total=stats['low_balance_total']|money(lang=lang),
                                          trial_count=stats['trial_members'],
                                          low_last_count=stats['lastschrift_low_balance_members'] -%}
-                                    {{ low_count }} members have insufficient balance right now
-                                    (from this {{ low_last_count }} with lastschrift). Additionally
+                                    {{ low_count }} members have insufficient balance (total of {{ low_total }})
+                                    right now ({{ low_last_count }} of these with an active lastschrift). Additionally
                                     we have {{ trial_count }} trial members.
                                 {% endtrans %}
                             </p>
@@ -136,21 +145,30 @@
                 <div class="panel-body">
                     {% if period['balance_done'] %}
                         <span class="text-success">
-                            {% trans date=period['balance_done']|datetime(lang=lang) %}
+                            {% trans date=period['balance_done']|datetime(lang=lang),
+                                     count=period['balance_trialmembers'],
+                                     total=period['balance_total']|money(lang=lang) %}
                                 Done on the {{ date }}.
+                                {{ count }} trial memberships were ended.
+                                A total of {{ total }} was deducted.
                             {% endtrans %}
                         </span>
                     {% elif period['ejection_done'] %}
                         {% if period['balance_state'] %}
                             <p>
-                                {% trans state=period['balance_state']|cdedbid %}
+                                {% trans date=period['balance_done']|datetime(lang=lang),
+                                     count=period['balance_trialmembers'],
+                                     total=period['balance_total']|money(lang=lang) %}
                                     Done up until {{ state }}.
+                                    {{ count }} trial meberships have been ended so far.
+                                    A total of {{ total }} has been deducted so far.
                                 {% endtrans %}
                             </p>
                         {% else %}
                             <p>
-                                {% trans count=stats['trial_members'] %}
-                                    {{ count }} Members have a Trial-Membership right now.
+                                {% trans total_count=stats['total_members'],
+                                         trial_count=stats['trial_members'] %}
+                                    {{ total_count }} Members total, {{ trial_count }} of which have a Trial-Membership right now.
                                 {% endtrans %}
                             </p>
                         {% endif %}
@@ -189,6 +207,42 @@
         </div>
     </div>
 
+    <h2>{% trans %}Semester History{% endtrans %}</h2>
+    <table id="period-history" class="table table-condensed">
+        <thead>
+            <tr>
+                <th>{% trans %}Semester{% endtrans %}</th>
+                <th>{% trans %}Billing Mails Sent{% endtrans %}</th>
+                <th>{% trans %}Billing Done{% endtrans %}</th>
+                <th>{% trans %}Members Ejected{% endtrans %}</th>
+                <th>{% trans %}Ejection Balance{% endtrans %}</th>
+                <th>{% trans %}Ejection Done{% endtrans %}</th>
+                <th>{% trans %}Trialmemberships Ended{% endtrans %}</th>
+                <th>{% trans %}Balance Deducted{% endtrans %}</th>
+                <th>{% trans %}Balance Update Done{% endtrans %}</th>
+                <th>{% trans %}Semester Done{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for period_id, period in period_history|dictsort %}
+                <tr>
+                    <td>{{ period['id'] }}</td>
+                    <td>{{ period['billing_count'] }}</td>
+                    <td>{{ period['billing_done']|datetime(lang=lang) }}</td>
+                    <td>{{ period['ejection_count'] }}</td>
+                    <td>{{ period['ejection_balance']|money(lang=lang) }}</td>
+                    <td>{{ period['ejection_done']|datetime(lang=lang) }}</td>
+                    <td>{{ period['balance_trialmembers'] }}</td>
+                    <td>{{ period['balance_total']|money(lang=lang) }}</td>
+                    <td>{{ period['balance_done']|datetime(lang=lang) }}</td>
+                    <td>{{ period['semester_done']|datetime(lang=lang) }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
     <h2>{% trans %}exPuls-Semester{% endtrans %}</h2>
 
     <p id="expuls-number">
@@ -206,15 +260,15 @@
                 <div class="panel-body">
                     {% if expuls['addresscheck_done'] %}
                         <span class="text-success">
-                            {% trans date=expuls['addresscheck_done']|datetime(lang=lang) %}
-                                Done on the {{ date }}.
+                            {% trans date=expuls['addresscheck_done']|datetime(lang=lang), count=expuls['addresscheck_count'] %}
+                                Done on the {{ date }}. {{ count }} emails were sent.
                             {% endtrans %}
                         </span>
                     {% else %}
                         {% if expuls['addresscheck_state'] %}
                             <p>
-                                {% trans state=expuls['addresscheck_state']|cdedbid %}
-                                    Done up until {{ state }}.
+                                {% trans state=expuls['addresscheck_state']|cdedbid, count=expuls['addresscheck_count'] %}
+                                    Done up until {{ state }}. {{ count }} emails have been sent so far.
                                 {% endtrans %}
                             </p>
                         {% endif %}
@@ -257,4 +311,23 @@
             </div>
         </div>
     </div>
+
+    <h2>{% trans %}exPuls History{% endtrans %}</h2>
+    <table id="expuls-history" class="table table-condensed">
+        <thead>
+            <tr>
+                <th>{% trans %}Issue{% endtrans %}</th>
+                <th>{% trans %}Addresscheck Mails Sent{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for expuls_id, expuls in expuls_history|dictsort %}
+                <tr>
+                    <td>{{ expuls['id'] }}</td>
+                    <td>{{ expuls['addresscheck_count'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 {% endblock %}

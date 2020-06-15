@@ -1510,19 +1510,41 @@ class Worker(threading.Thread):
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
-            rs.sessionkey, rs.apitoken, rs.user, rs.request, None, [], rs.urls,
-            rs.requestargs, [], copy.deepcopy(rs.values),
-            rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin)
+            sessionkey=rs.sessionkey, apitoken=rs.apitoken, user=rs.user,
+            request=rs.request, response=None, notifications=[],
+            mapadapter=rs.urls, requestargs=rs.requestargs, errors=[],
+            values=copy.deepcopy(rs.values), lang=rs.lang, gettext=rs.gettext,
+            ngettext=rs.ngettext, coders=rs._coders, begin=rs.begin)
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
             conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets, conf["DB_PORT"])
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
+        logger = logging.getLogger("cdedb.frontend.worker")
 
         def runner():
             """Implement the actual loop running the task inside the Thread."""
-            while task(rrs):
-                pass
+            name = task.__name__
+            doc = f" {task.__doc__.splitlines()[0]}" if task.__doc__ else ""
+            p_id = rrs.user.persona_id if rrs.user else None
+            username = rrs.user.username if rrs.user else None
+            logger.debug(
+                f"Task `{name}`{doc} started by user {p_id} ({username}).")
+            count = 0
+            while True:
+                try:
+                    count += 1
+                    if not task(rrs):
+                        logger.debug(
+                            f"Finished task `{name}` successfully"
+                            f" after {count} iterations.")
+                        return
+                except Exception as e:
+                    logger.exception(
+                        f"The following error occurred during the {count}th"
+                        f" iteration of `{name}: {e}")
+                    logger.debug(f"Task {name} aborted.")
+                    raise
 
         super().__init__(target=runner, daemon=False, *args, **kwargs)
 

@@ -30,13 +30,15 @@ from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
     PERSONA_DEFAULTS, diacritic_patterns, asciificator,
-    EntitySorter, TransactionType, xsorted)
+    EntitySorter, TransactionType, xsorted, PathLike, make_root_logger,
+)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
-    calculate_db_logparams, calculate_loglinks, process_dynamic_input)
+    calculate_db_logparams, calculate_loglinks, process_dynamic_input,
+)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
 import cdedb.frontend.parse_statement as parse
@@ -1839,11 +1841,15 @@ class CdEFrontend(AbstractUserFrontend):
         """Show information."""
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
+        period_history = self.cdeproxy.get_period_history(rs)
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
+        expuls_history = self.cdeproxy.get_expuls_history(rs)
         stats = self.cdeproxy.finance_statistics(rs)
         return self.render(rs, "show_semester", {
-            'period': period, 'expuls': expuls, 'stats': stats})
+            'period': period, 'expuls': expuls, 'stats': stats,
+            'period_history': period_history, 'expuls_history': expuls_history,
+        })
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("addresscheck", "bool"), ("testrun", "bool"))
@@ -1867,13 +1873,14 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def task(rrs, rs=None):
-            """Send one billing mail and advance state."""
+        def send_billing_mail(rrs, rs=None):
+            """Send one billing mail and advance semester state."""
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
                 meta_info = self.coreproxy.get_meta_info(rrs)
                 previous = period['billing_state'] or 0
+                count = period['billing_count'] or 0
                 persona_id = self.coreproxy.next_persona(rrs, previous)
                 if testrun:
                     persona_id = rrs.user.persona_id
@@ -1916,11 +1923,12 @@ class CdEFrontend(AbstractUserFrontend):
                 period_update = {
                     'id': period_id,
                     'billing_state': persona_id,
+                    'billing_count': count + 1,
                 }
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, task, rs)
+        worker = Worker(self.conf, send_billing_mail, rs)
         worker.start()
         time.sleep(1)
         rs.notify("success", n_("Started sending mail."))
@@ -1937,8 +1945,8 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def task(rrs, rs=None):
-            """Check one member for ejection and advance state."""
+        def eject_member(rrs, rs=None):
+            """Check one member for ejection and advance semester state."""
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
@@ -1975,7 +1983,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, task, rs)
+        worker = Worker(self.conf, eject_member, rs)
         worker.start()
         time.sleep(1)
         rs.notify("success", n_("Started ejection."))
@@ -1992,7 +2000,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def task(rrs, rs=None):
+        def update_balance(rrs, rs=None):
             """Update one members balance and advance state."""
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
@@ -2038,7 +2046,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, task, rs)
+        worker = Worker(self.conf, update_balance, rs)
         worker.start()
         time.sleep(1)
         rs.notify("success", n_("Started updating balance."))
@@ -2052,7 +2060,7 @@ class CdEFrontend(AbstractUserFrontend):
         if not period['balance_done']:
             rs.notify("error", n_("Wrong timing for advancing the semester."))
             return self.redirect(rs, "cde/show_semester")
-        self.cdeproxy.create_period(rs)
+        self.cdeproxy.advance_semester(rs)
         rs.notify("success", n_("New period started."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2075,12 +2083,13 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def task(rrs, rs=None):
+        def send_addresscheck(rrs, rs=None):
             """Send one address check mail and advance state."""
             with Atomizer(rrs):
                 expuls_id = self.cdeproxy.current_expuls(rrs)
                 expuls = self.cdeproxy.get_expuls(rrs, expuls_id)
                 previous = expuls['addresscheck_state'] or 0
+                count = expuls['addresscheck_count'] or 0
                 persona_id = self.coreproxy.next_persona(rrs, previous)
                 if testrun:
                     persona_id = rrs.user.persona_id
@@ -2103,6 +2112,7 @@ class CdEFrontend(AbstractUserFrontend):
                 expuls_update = {
                     'id': expuls_id,
                     'addresscheck_state': persona_id,
+                    'addresscheck_count': count + 1,
                 }
                 self.cdeproxy.set_expuls(rrs, expuls_update)
                 return True
@@ -2111,7 +2121,7 @@ class CdEFrontend(AbstractUserFrontend):
             self.cdeproxy.finish_expuls_addresscheck(rs, skip=True)
             rs.notify("success", n_("Not sending mail."))
         else:
-            worker = Worker(self.conf, task, rs)
+            worker = Worker(self.conf, send_addresscheck, rs)
             worker.start()
             time.sleep(1)
             rs.notify("success", n_("Started sending mail."))
