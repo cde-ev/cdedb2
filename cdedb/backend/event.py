@@ -371,19 +371,22 @@ class EventBackend(AbstractBackend):
                 event_id = {event_id}""".format(
                 event_id=event_id, course_field_columns=course_field_columns)
 
-            course_choices_template = """SELECT
-                {columns}
-            FROM (
-                (
-                    SELECT
-                        id as base_id
-                    FROM
-                        event.registrations
-                    WHERE
-                        event_id = {event_id}
-                ) AS base
-                {rank_tables}
-            )
+            course_choices_template = """
+            LEFT OUTER JOIN (
+                SELECT
+                    {columns}
+                FROM (
+                    (
+                        SELECT
+                            id as base_id
+                        FROM
+                            event.registrations
+                        WHERE
+                            event_id = {event_id}
+                    ) AS base
+                    {rank_tables}
+                )
+            ) AS course_choices{t_id} ON reg.id = course_choices{t_id}.base_id
             """
             rank_template = \
             """LEFT OUTER JOIN (
@@ -396,13 +399,17 @@ class EventBackend(AbstractBackend):
             ) AS rank{rank} ON base.base_id = rank{rank}.registration_id"""
 
             def course_choices_table(t_id: int, ranks: int) -> str:
+                # Trying to join these tables fails if there are no choices.
+                if ranks < 1:
+                    return ""
                 rank_tables = "\n".join(
                     rank_template.format(rank=i, track_id=t_id)
                     for i in range(ranks))
                 columns = ", ".join(["base_id"] +
                                     [f"rank{i}" for i in range(ranks)])
                 return course_choices_template.format(
-                    columns=columns, event_id=event_id, rank_tables=rank_tables)
+                    columns=columns, event_id=event_id, rank_tables=rank_tables,
+                    t_id=t_id)
 
             track_table = \
             """LEFT OUTER JOIN (
@@ -424,10 +431,7 @@ class EventBackend(AbstractBackend):
             ) AS course_instructor{track_id}
                 ON track{track_id}.course_instructor =
                 course_instructor{track_id}.id
-            LEFT OUTER JOIN (
-                {course_choices_table}
-            ) AS course_choices{track_id}
-                ON reg.id = course_choices{track_id}.base_id"""
+            {course_choices_table}"""
 
             track_tables = " ".join(
                 track_table.format(
