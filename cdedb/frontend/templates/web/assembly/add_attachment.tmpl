@@ -4,23 +4,24 @@
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
 {% block title %}
     {% if ambience['ballot'] %}
-        {% trans title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
-            Attach File ({{ title }})
-        {% endtrans %}
+        {% set title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
     {% else %}
-        {% trans title=ambience['assembly']['title'] %}
-            Attach File ({{ title }})
-        {% endtrans %}
+        {% set title=ambience['assembly']['title'] %}
     {% endif %}
     {% if attachment %}
+        {% trans title=title %}Add Version ({{ title }}){% endtrans %}
         – {{ assembly_util.small_attachment_title(attachment, history, icon=False) }}
+    {% else %}
+        {% trans title=title %}Add File ({{ title }}){% endtrans %}
     {% endif %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans %}
-            Attach File
-        {% endtrans %}
+        {% if attachment %}
+            {% trans %}Add Version{% endtrans %}
+        {% else %}
+            {% trans %}Add File{% endtrans %}
+        {% endif %}
         {% if ambience['ballot'] %}
             <small>
                 {{- util.make_icon('thumbs-up', arialabel=gettext("Ballot")) }} {{ ambience['ballot']['title'] -}}
@@ -30,7 +31,7 @@
                 {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] -}}
             </small>
         {% endif %}
-        {% if history %}
+        {% if attachment %}
             <small>
                 {{ assembly_util.small_attachment_title(attachment, history) }}
             </small>

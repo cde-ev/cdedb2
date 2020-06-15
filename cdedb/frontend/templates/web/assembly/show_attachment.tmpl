@@ -40,6 +40,32 @@
 
 {% endblock %}
 {% block content %}
+    {% set edit = edit and ("assembly_contents" in user.admin_views) %}
+    {% set ballot = ambience.get('ballot') %}
+    {% if edit %}
+        <div class="p">
+            {{ assembly_util.add_attachment_version_button(attachment['id'], ballot=ballot, xs=False) }}
+            {{ assembly_util.change_attachment_link_button(attachment['id'], ballot=ballot) }}
+        </div>
+    {% endif %}
     {{ assembly_util.attachment_list({attachment['id']: attachment}, {attachment['id']: history},
-                                     ballot=ambience.get('ballot'), edit=("assembly_contents" in user.admin_views)) }}
+                                     ballot=ambience.get('ballot'), edit=edit, edit_buttons_below=False) }}
+    {% if edit %}
+        {% call util.bootstrap_panel(gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                        {{ assembly_util.delete_attachment_button(attachment['id'], ballot=ballot) }}
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <div class="p text-muted">
+                        {% trans %}
+                            Permanently deletes this attachment including all versions.
+                        {% endtrans %}
+                    </div>
+                </div>
+            </div>
+        {% endcall %}
+    {% endif %}
 {% endblock %}

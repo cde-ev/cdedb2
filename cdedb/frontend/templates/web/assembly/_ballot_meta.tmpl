@@ -157,7 +157,7 @@
 
 {% macro show_attachments(edit_mode) -%}
     {{ assembly_util.attachment_box(attachments, attachment_histories, edit=edit_mode, title=gettext("Files"),
-                                    ballot=None, new_attachment_button=True, full_history=False) }}
+                                    ballot=ambience['ballot'], new_attachment_button=True, full_history=False) }}
 {%- endmacro %}
 
 {% macro show_navigation() -%}

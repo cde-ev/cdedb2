@@ -4,20 +4,20 @@
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
 {% block title %}
     {% if ambience['ballot'] %}
-        {% trans title_assembly=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
-            Edit File ({{ title }})
+        {% trans title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
+            Edit Version ({{ title }})
         {% endtrans %}
     {% else %}
         {% trans title=ambience['assembly']['title'] %}
-            Edit File ({{ title }})
+            Edit Version ({{ title }})
         {% endtrans %}
     {% endif %}
-    – {{ assembly_util.small_attachment_title(attachment, history, icon=False) }}
+    – {{ assembly_util.small_attachment_title(attachment, history, icon=False, version_info=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}
-            Edit File
+            Edit Version
         {% endtrans %}
         {% if ambience['ballot'] %}
             <small>
@@ -29,8 +29,8 @@
             </small>
         {% endif %}
         <small>
-            {{ assembly_util.small_attachment_title(attachment, history, version) }}
-        <small>
+            {{ assembly_util.small_attachment_title(attachment, history, version, version_info=True) }}
+        </small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -41,9 +41,10 @@
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"),
-                            assembly_util.small_attachment_title(attachment, history, version, icon=False),
+                            assembly_util.small_attachment_title(attachment, history, version, icon=False,
+                                                                 version_info=True),
                             icon="file") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/edit_attachment_version"), gettext("Edit File"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/edit_attachment_version"), gettext("Edit Version"), active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/edit_attachment_version') }}" method="POST" enctype="multipart/form-data"
