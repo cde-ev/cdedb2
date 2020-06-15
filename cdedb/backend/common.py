@@ -17,7 +17,7 @@ import psycopg2.extras
 import psycopg2.extensions
 from typing import (
     Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
-    Optional, Sequence, cast, overload, Mapping
+    Optional, Sequence, cast, overload, Mapping, Union, KeysView
 )
 
 import cdedb.validation as validate
@@ -367,7 +367,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_exec(rs, query, params)
 
     def sql_select(self, rs: RequestState, table: str, columns: Sequence[str],
-                   entities: Collection, entity_key: str = "id"
+                   entities: Union[Collection, KeysView], entity_key: str = "id"
                    ) -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
