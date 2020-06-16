@@ -36,12 +36,12 @@
         {{ util.form_input_select(name="domain", entries=available_domains|enum_entries(processing=gettext, prefix="@"),
                                   label=gettext("Domain")) }}
             <script nonce="{{ csp_nonce }}">
-                $('#createlistform').find("[name='local_part']").parents('.form-group')
+                $("#createlistform [name='local_part']").parents('.form-group')
                     .replaceWith(`{{ util.form_input_text(name="local_part", label=gettext("Address"), addon=" ") }}`);
-                domain_inp = $('#createlistform').find("[name='domain']");
+                domain_inp = $("#createlistform [name='domain']");
                 function update_domain() {
-                    $('#createlistform').find("[name='local_part']").siblings("span.input-group-addon")
-                        .text(domain_inp.children(":selected").text());
+                    $("#createlistform [name='local_part'] ~ .input-group-addon")
+                        .text(domain_inp[0].options[domain_inp[0].selectedIndex].innerHTML);
                 }
                 domain_inp.on('input', update_domain);
                 update_domain();
