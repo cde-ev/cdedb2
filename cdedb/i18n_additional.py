@@ -249,8 +249,6 @@ I18N_STRINGS = (
     n_("MailinglistGroup.cde"),
     n_("MailinglistGroup.team"),
     n_("MailinglistGroup.event"),
-    n_("MailinglistGroup.orga"),
-    n_("MailinglistGroup.event_associated"),
     n_("MailinglistGroup.assembly"),
     n_("MailinglistGroup.cdelokal"),
 

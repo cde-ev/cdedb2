@@ -282,9 +282,16 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         if persona_id is None:
             persona_id = rs.user.persona_id
+
+        # Rule out people who can not participate at any assembly to prevent
+        # privilege errors
+        if (persona_id == rs.user.persona_id and
+                "assembly" not in rs.user.roles):
+            return False
+
         # ml_admins are allowed to do this to be able to manage
         # subscribers of assembly mailinglists.
-        if "assembly" not in rs.user.roles and "ml_admin" not in rs.user.roles:
+        if not {"assembly", "ml_admin"} | rs.user.roles:
             raise PrivilegeError(n_("Not privileged to access assembly tables"))
         with Atomizer(rs):
             if ballot_id is not None:
