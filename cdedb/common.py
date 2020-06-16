@@ -8,6 +8,7 @@ import datetime
 import decimal
 import enum
 import functools
+import hashlib
 import hmac
 import itertools
 import json
@@ -379,6 +380,22 @@ def merge_dicts(targetdict: Union[MutableMapping, werkzeug.MultiDict],
                     targetdict.setlist(key, adict[key])
                 else:
                     targetdict[key] = adict[key]
+
+
+def get_hash(*args: Union[bytes, bytearray, memoryview]) -> str:
+    """Helper to calculate a hexadecimal hash of an arbitrary object.
+
+    This uses SHA512. Use this function to assure the same hash is used
+    everywhere.
+
+    Note that this is not a replacement for the cryptographic hashing with
+    salts used in assembly votes, but rather for identifying and
+    differentiating files, like attachments and profile pictures.
+    """
+    hasher = hashlib.sha512()
+    for obj in args:
+        hasher.update(obj)
+    return hasher.hexdigest()
 
 
 def now() -> datetime.datetime:

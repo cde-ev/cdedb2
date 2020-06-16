@@ -240,8 +240,8 @@ class EventFrontend(AbstractUserFrontend):
                 rs, ml_type.full_address(ml_data))
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
-            params['minor_form_present'] = (self.conf["STORAGE_DIR"] / 'minor_form'
-                                            / str(event_id)).exists()
+            params['minor_form_present'] = (
+                    self.eventproxy.get_minor_form(rs, event_id) is not None)
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(
                 n_("The event is not published yet."))
@@ -416,12 +416,11 @@ class EventFrontend(AbstractUserFrontend):
                 or self.is_admin(rs)):
             raise werkzeug.exceptions.Forbidden(
                 n_("The event is not published yet."))
-        path = self.conf["STORAGE_DIR"] / "minor_form" / str(event_id)
+        minor_form = self.eventproxy.get_minor_form(rs, event_id)
         return self.send_file(
-            rs, mimetype="application/pdf",
+            rs, data=minor_form, mimetype="application/pdf",
             filename="{}_minor_form.pdf".format(
-                rs.ambience['event']['shortname']),
-            path=path)
+                rs.ambience['event']['shortname']))
 
     @access("event", modi={"POST"})
     @REQUESTfile("minor_form")
@@ -439,17 +438,10 @@ class EventFrontend(AbstractUserFrontend):
                 ("minor_form", ValueError(n_("Mustn't be empty."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        path = self.conf["STORAGE_DIR"] / 'minor_form' / str(event_id)
-        if delete and not minor_form:
-            if path.exists():
-                path.unlink()
-                rs.notify("success", n_("Minor form has been removed."))
-            else:
-                rs.notify("info", n_("Nothing to remove."))
-        elif minor_form:
-            with open(str(path), 'wb') as f:
-                f.write(minor_form)
-            rs.notify("success", n_("Minor form updated."))
+        code = self.eventproxy.change_minor_form(rs, event_id, minor_form)
+        self.notify_return_code(rs, code, success=n_("Minor form updated."),
+                                pending=n_("Minor form has been removed."),
+                                error=n_("Nothing to remove."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})

@@ -13766,6 +13766,21 @@ msgstr ""
 msgid "Addresscheck Mails Sent"
 msgstr ""
 
+msgid "EventLogCodes.fee_modifier_created"
+msgstr "Fee Modifier created"
+
+msgid "EventLogCodes.fee_modifier_changed"
+msgstr "Fee modifier changed"
+
+msgid "EventLogCodes.fee_modifier_deleted"
+msgstr "Fee Modifier deleted"
+
+msgid "EventLogCodes.minor_form_updated"
+msgstr "Minor Form updated"
+
+msgid "EventLogCodes.minor_form_removed"
+msgstr "Minor Form removed"
+
 #~ msgid "CoreLogCodes.password_invalidated"
 #~ msgstr "Password deleted"
 

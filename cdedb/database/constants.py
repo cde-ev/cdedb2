@@ -450,6 +450,8 @@ class EventLogCodes(enum.IntEnum):
     fee_modifier_created = 80  #:
     fee_modifier_changed = 81  #:
     fee_modifier_deleted = 82  #:
+    minor_form_updated = 85  #:
+    minor_form_removed = 86  #:
 
 
 @enum.unique

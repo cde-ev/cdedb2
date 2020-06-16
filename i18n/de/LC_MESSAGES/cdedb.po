@@ -14416,6 +14416,30 @@ msgstr "Ausgabe"
 msgid "Addresscheck Mails Sent"
 msgstr "Adressabfragen"
 
+msgid "EventLogCodes.lodgement_group_changed"
+msgstr "Unterkunftgruppe geändert"
+
+msgid "EventLogCodes.lodgement_group_deleted"
+msgstr "Unterkunftgruppe gelöscht"
+
+msgid "EventLogCodes.fee_modifier_created"
+msgstr "Beitragsmodifikator angelegt"
+
+msgid "EventLogCodes.fee_modifier_changed"
+msgstr "Beitragsmodifikator geändert"
+
+msgid "EventLogCodes.fee_modifier_deleted"
+msgstr "Beitragsmodifikator entfernt"
+
+msgid "EventLogCodes.minor_form_updated"
+msgstr "Minderjährigenformular geändert"
+
+msgid "EventLogCodes.minor_form_removed"
+msgstr "Minderjährigenformular entfernt"
+
+msgid "Foto removed."
+msgstr "Profilbild entfernt."
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 
@@ -16178,12 +16202,6 @@ msgstr "Adressabfragen"
 
 #~ msgid "CoreLogCodes.password_invalidated"
 #~ msgstr "Passwort gelöscht"
-
-#~ msgid "EventLogCodes.lodgement_group_changed"
-#~ msgstr "Unterkunftgruppe geändert"
-
-#~ msgid "EventLogCodes.lodgement_group_deleted"
-#~ msgstr "Unterkunftgruppe gelöscht"
 
 #~ msgid "Not all orgas {} given are event users."
 #~ msgstr "Nicht alle angegebenen Orgas {} sind Veranstaltungsnutzer."

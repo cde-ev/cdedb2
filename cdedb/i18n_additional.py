@@ -98,6 +98,11 @@ I18N_STRINGS = (
     n_("EventLogCodes.lodgement_group_created"),
     n_("EventLogCodes.lodgement_group_changed"),
     n_("EventLogCodes.lodgement_group_deleted"),
+    n_("EventLogCodes.fee_modifier_created"),
+    n_("EventLogCodes.fee_modifier_changed"),
+    n_("EventLogCodes.fee_modifier_deleted"),
+    n_("EventLogCodes.minor_form_updated"),
+    n_("EventLogCodes.minor_form_removed"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),

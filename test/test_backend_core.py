@@ -5,10 +5,12 @@ import datetime
 import decimal
 
 import cdedb.database.constants as const
-from test.common import BackendTest, as_users, USER_DICT, nearly_now
+from test.common import (
+    BackendTest, as_users, USER_DICT, nearly_now, create_mock_image,
+)
 from cdedb.common import (
     PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now, merge_dicts,
-    PERSONA_CDE_FIELDS)
+    PERSONA_CDE_FIELDS, get_hash)
 from cdedb.validation import (_PERSONA_CDE_CREATION, _PERSONA_EVENT_CREATION)
 
 PERSONA_TEMPLATE = {
@@ -112,18 +114,19 @@ class TestCoreBackend(BackendTest):
     def test_invalidate_session(self, user):
         # Login with another user.
         other_user = copy.deepcopy(USER_DICT["berta"])
+        new_foto = create_mock_image()
         other_key = self.core.login(
             None, other_user["username"], other_user["password"], "127.0.0.0")
         self.assertIsNotNone(other_key)
         self.assertLess(
-            0, self.core.change_foto(other_key, other_user["id"], "xyz"))
+            0, self.core.change_foto(other_key, other_user["id"], new_foto))
 
         # Invalidate the other users password and session.
         self.assertLess(
             0, self.core.invalidate_password(self.key, other_user["id"]))
 
         with self.assertRaises(PrivilegeError):
-            self.core.change_foto(other_key, other_user["id"], "myFoto")
+            self.core.change_foto(other_key, other_user["id"], new_foto)
         self.assertIsNone(self.login(other_user))
 
     @as_users("anton", "berta", "janis")
@@ -159,10 +162,14 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera", "berta")
     def test_set_foto(self, user):
-        new_foto = "rkorechkorekchoreckhoreckhorechkrocehkrocehk"
-        self.assertLess(0, self.core.change_foto(self.key, 2, new_foto))
-        result = self.core.get_cde_users(self.key, (1, 2))
-        self.assertEqual({1: None, 2: new_foto}, {k: result[k]['foto'] for k in result})
+        new_foto = create_mock_image('png')
+        persona_id = 2
+        self.assertLess(0, self.core.change_foto(self.key, persona_id, new_foto))
+        cde_user = self.core.get_cde_user(self.key, persona_id)
+        self.assertEqual(get_hash(new_foto), cde_user['foto'])
+        self.assertEqual(new_foto, self.core.get_foto(self.key, cde_user['foto']))
+        self.assertGreater(0, self.core.change_foto(self.key, persona_id, None))
+        self.assertIsNone(self.core.get_cde_user(self.key, persona_id)['foto'])
 
     def test_verify_existence(self):
         self.assertTrue(self.core.verify_existence(self.key, "anton@example.cde"))

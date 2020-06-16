@@ -1057,7 +1057,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     @staticmethod
     def send_file(rs: RequestState, mimetype: str = None, filename: str = None,
-                  inline: bool = True, *, path: Union[str, pathlib.Path] = None,
+                  inline: bool = True, *, path: PathLike = None,
                   afile: io.BytesIO = None, data: AnyStr = None,
                   encoding: str = 'utf-8') -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for

@@ -17,6 +17,9 @@ import types
 import unittest
 import urllib.parse
 import json
+import io
+import PIL.Image
+
 from typing import TypeVar, cast
 
 import pytz
@@ -59,6 +62,18 @@ class NearlyNow(datetime.datetime):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+def create_mock_image(file_type: str = "png") -> bytes:
+    """This returns a bytes object representing a picture of the given type.
+
+    The picture will pass validation by the `profilepic` validator.
+    """
+    afile = io.BytesIO()
+    image = PIL.Image.new('RGBA', (1000, 1000), color=(255, 0, 0))
+    image.save(afile, file_type)
+    afile.seek(0)
+    return afile.read()
 
 
 def nearly_now():
@@ -580,6 +595,9 @@ class FrontendTest(unittest.TestCase):
             # create a temporary directory and print it
             cls.scrap_path = tempfile.mkdtemp()
             print(cls.scrap_path, file=sys.stderr)
+
+        with open("/cdedb2/test/ancillary_files/sample_data.json", "r", encoding="utf8") as f:
+            cls.sample_data = json.load(f)
 
     @classmethod
     def tearDownClass(cls):

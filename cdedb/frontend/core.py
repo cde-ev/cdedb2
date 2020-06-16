@@ -21,12 +21,14 @@ from cdedb.frontend.common import (
     check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, querytoparams_filter,
     csv_output, query_result_to_json, enum_entries_filter, periodic,
-    calculate_db_logparams, calculate_loglinks)
+    calculate_db_logparams, calculate_loglinks, Response)
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
-    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier, xsorted)
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier, xsorted,
+    RequestState,
+)
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
@@ -1473,14 +1475,14 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde")
-    def get_foto(self, rs, foto):
+    def get_foto(self, rs: RequestState, foto: str) -> Response:
         """Retrieve profile picture."""
-        path = self.conf["STORAGE_DIR"] / "foto" / foto
-        mimetype = magic.from_file(str(path), mime=True)
-        return self.send_file(rs, path=path, mimetype=mimetype)
+        ret = self.coreproxy.get_foto(rs, foto)
+        mimetype = magic.from_buffer(ret, mime=True)
+        return self.send_file(rs, data=ret, mimetype=mimetype)
 
     @access("cde")
-    def set_foto_form(self, rs, persona_id):
+    def set_foto_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -1493,7 +1495,8 @@ class CoreFrontend(AbstractFrontend):
     @access("cde", modi={"POST"})
     @REQUESTfile("foto")
     @REQUESTdata(("delete", "bool"))
-    def set_foto(self, rs, persona_id, foto, delete):
+    def set_foto(self, rs: RequestState, persona_id: int,
+                 foto: werkzeug.FileStorage, delete: bool) -> Response:
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -1503,24 +1506,9 @@ class CoreFrontend(AbstractFrontend):
                 ("foto", ValueError("Mustn't be empty.")))
         if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
-        previous = self.coreproxy.get_cde_user(rs, persona_id)['foto']
-        myhash = None
-        if foto:
-            myhash = hashlib.sha512()
-            myhash.update(foto)
-            myhash = myhash.hexdigest()
-            path = self.conf["STORAGE_DIR"] / 'foto' / myhash
-            if not path.exists():
-                with open(str(path), 'wb') as f:
-                    f.write(foto)
-        with Atomizer(rs):
-            code = self.coreproxy.change_foto(rs, persona_id, foto=myhash)
-            if previous:
-                if not self.coreproxy.foto_usage(rs, previous):
-                    path = self.conf["STORAGE_DIR"] / 'foto' / previous
-                    if path.exists():
-                        path.unlink()
-        self.notify_return_code(rs, code, success=n_("Foto updated."))
+        code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
+        self.notify_return_code(rs, code, success=n_("Foto updated."),
+                                pending=n_("Foto removed."))
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin", modi={"POST"})
