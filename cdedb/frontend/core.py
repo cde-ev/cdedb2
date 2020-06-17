@@ -26,7 +26,7 @@ from cdedb.common import (
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
     ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier, xsorted,
-    RequestState, get_hash
+    RequestState, get_hash)
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
