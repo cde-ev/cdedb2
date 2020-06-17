@@ -35,6 +35,17 @@
         {{ util.form_input_text(name="local_part", label=gettext("Address")) }}
         {{ util.form_input_select(name="domain", entries=available_domains|enum_entries(processing=gettext, prefix="@"),
                                   label=gettext("Domain")) }}
+            <script nonce="{{ csp_nonce }}">
+                $("#createlistform [name='local_part']").parents('.form-group')
+                    .replaceWith(`{{ util.form_input_text(name="local_part", label=gettext("Address"), addon=" ") }}`);
+                domain_inp = $("#createlistform [name='domain']");
+                function update_domain() {
+                    $("#createlistform [name='local_part'] ~ .input-group-addon")
+                        .text(domain_inp[0].options[domain_inp[0].selectedIndex].innerHTML);
+                }
+                domain_inp.on('input', update_domain);
+                update_domain();
+            </script>
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
