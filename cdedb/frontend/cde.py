@@ -6,7 +6,6 @@ import cgitb
 from collections import OrderedDict, defaultdict
 import copy
 import csv
-import hashlib
 import itertools
 import pathlib
 import random
@@ -29,8 +28,8 @@ from cdedb.database.connection import Atomizer
 from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
-    PERSONA_DEFAULTS, diacritic_patterns, asciificator,
-    EntitySorter, TransactionType, xsorted, PathLike, make_root_logger,
+    PERSONA_DEFAULTS, diacritic_patterns, asciificator, EntitySorter,
+    TransactionType, xsorted, get_hash,
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
@@ -696,8 +695,7 @@ class CdEFrontend(AbstractUserFrontend):
             dataset['resolution'] = tmp["resolution{}".format(lineno)]
             dataset['doppelganger_id'] = tmp["doppelganger_id{}".format(lineno)]
             dataset['old_hash'] = tmp["hash{}".format(lineno)]
-            dataset['new_hash'] = hashlib.md5(
-                accountlines[lineno].encode()).hexdigest()
+            dataset['new_hash'] = get_hash(accountlines[lineno].encode())
             rs.values["hash{}".format(lineno)] = dataset['new_hash']
             lineno += 1
             dataset['lineno'] = lineno
@@ -1211,7 +1209,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.values['checksum'] = None
             return self.money_transfers_form(rs, data=data, csvfields=fields,
                                              saldo=saldo)
-        current_checksum = hashlib.md5(transfers.encode()).hexdigest()
+        current_checksum = get_hash(transfers.encode())
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
             return self.money_transfers_form(rs, data=data, csvfields=fields,

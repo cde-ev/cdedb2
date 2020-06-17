@@ -5,6 +5,7 @@ import re
 import time
 import webtest
 import unittest
+import json
 
 from test.common import as_users, USER_DICT, FrontendTest
 
@@ -253,7 +254,7 @@ class TestAssemblyFrontend(FrontendTest):
 
         self.traverse({'description': 'Internationaler Kongress'})
         attendee = ["Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
-                    "Abstimmungen", "Zusammenfassung"]
+                    "Abstimmungen", "Zusammenfassung", "Datei-Übersicht"]
         admin = ["Konfiguration", "Log"]
 
         # not assembly admins
@@ -416,7 +417,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'description': 'Versammlungen$'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},)
-        self.assertTitle("Internationaler Kongress – Abstimmungen")
+        self.assertTitle("Abstimmungen (Internationaler Kongress)")
         self.assertNonPresence("Maximale Länge der Satzung")
         self.assertNonPresence("Es wurden noch keine Abstimmungen angelegt")
         bdata = {
@@ -441,7 +442,7 @@ class TestAssemblyFrontend(FrontendTest):
         f = self.response.forms['changeballotform']
         self.assertEqual("April, April!", f['notes'].value)
         self.traverse({'description': 'Abstimmungen'},)
-        self.assertTitle("Internationaler Kongress – Abstimmungen")
+        self.assertTitle("Abstimmungen (Internationaler Kongress)")
         self.assertPresence("Maximale Länge der Satzung")
         self.traverse({'description': 'Maximale Länge der Satzung'},)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
@@ -449,7 +450,7 @@ class TestAssemblyFrontend(FrontendTest):
         f['ack_delete'].checked = True
         self.submit(f)
         self.traverse({'description': 'Abstimmungen'},)
-        self.assertTitle("Internationaler Kongress – Abstimmungen")
+        self.assertTitle("Abstimmungen (Internationaler Kongress)")
         self.assertNonPresence("Maximale Länge der Satzung")
 
     @as_users("werner")
@@ -461,7 +462,7 @@ class TestAssemblyFrontend(FrontendTest):
         f = self.response.forms['deleteballotform']
         f['ack_delete'].checked = True
         self.submit(f)
-        self.assertTitle("Internationaler Kongress – Abstimmungen")
+        self.assertTitle("Abstimmungen (Internationaler Kongress)")
         self.assertNonPresence("Farbe des Logos")
         self.assertNonPresence("Zukünftige Abstimmungen")
         self.traverse({"description": "Lieblingszahl"})
@@ -478,12 +479,12 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("werner")
     def test_attachments(self, user):
-        self.traverse({'description': 'Versammlungen$'},
-                      {'description': 'Internationaler Kongress'},
-                      {'description': 'Datei anhängen'},)
-        self.assertTitle("Datei anhängen (Internationaler Kongress)")
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
             data = datafile.read()
+        self.traverse({'description': 'Versammlungen$'},
+                      {'description': 'Internationaler Kongress'},
+                      {'description': 'Datei hinzufügen'},)
+        self.assertTitle("Datei hinzufügen (Internationaler Kongress)")
 
         # First try upload with invalid default filename
         f = self.response.forms['addattachmentform']
@@ -496,36 +497,47 @@ class TestAssemblyFrontend(FrontendTest):
         f['attachment'] = webtest.Upload("form….pdf", data, "application/octet-stream")
         f['filename'] = "beschluss.pdf"
         self.submit(f)
-        self.assertPresence("Maßgebliche Beschlussvorlage", div='attachments')
+        self.assertTitle("Datei-Details (Internationaler Kongress) – Maßgebliche Beschlussvorlage")
 
+        # Check file content.
         saved_response = self.response
         self.traverse({'description': 'Maßgebliche Beschlussvorlage'},)
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
-            self.assertEqual(f.read(), self.response.body)
+        self.assertEqual(data, self.response.body)
         self.response = saved_response
 
-        self.traverse({'description': 'Abstimmungen'},
-                      {'description': 'Farbe des Logos'},
-                      {'description': 'Datei anhängen'},)
-        self.assertTitle("Datei anhängen (Internationaler Kongress/Farbe des Logos)")
-        f = self.response.forms['addattachmentform']
-        f['title'] = "Magenta wie die Telekom"
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
-            data = datafile.read()
-        f['attachment'] = webtest.Upload("form.pdf", data, "application/octet-stream")
+        # Change version data.
+        self.traverse({'href': '/assembly/assembly/1/attachment/1001/version/1/edit'})
+        self.assertTitle("Version bearbeiten (Internationaler Kongress) – Maßgebliche Beschlussvorlage (Version 1)")
+        f = self.response.forms['editattachmentversionform']
+        f['title'] = "Insignifikante Beschlussvorlage"
+        f['authors'] = "Der Vorstand"
         self.submit(f)
-        self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        saved_response = self.response
-        self.assertPresence("Magenta wie die Telekom", div='attachments')
-        self.traverse({'description': 'Magenta wie die Telekom'},)
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
-            self.assertEqual(f.read(), self.response.body)
-        self.response = saved_response
-        f = self.response.forms['removeattachmentform1002']
+        self.assertTitle("Datei-Details (Internationaler Kongress) – Insignifikante Beschlussvorlage")
+        self.traverse({'description': 'Datei-Verknüpfung ändern'})
+        self.assertTitle("Datei-Verknüpfung ändern (Internationaler Kongress) – Insignifikante Beschlussvorlage")
+        f = self.response.forms['changeattachmentlinkform']
+        f['new_ballot_id'] = 2
+        self.submit(f)
+        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Insignifikante Beschlussvorlage")
+        self.traverse({'description': 'Version hinzufügen'})
+        self.assertTitle("Version hinzufügen (Internationaler Kongress/Farbe des Logos) – Insignifikante Beschlussvorlage")
+        f = self.response.forms['addattachmentform']
+        f['title'] = "Alternative Beschlussvorlage"
+        f['authors'] = "Die Wahlleitung"
+        f['attachment'] = webtest.Upload("beschluss2.pdf", data + b'123', "application/octet-stream")
+        self.submit(f)
+        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Alternative Beschlussvorlage")
+        self.assertPresence("Insignifikante Beschlussvorlage (Version 1)")
+        self.assertPresence("Alternative Beschlussvorlage (Version 2)")
+        f = self.response.forms['removeattachmentversionform1001_1']
+        f['attachment_ack_delete'].checked = True
+        self.submit(f)
+        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Alternative Beschlussvorlage")
+        self.assertPresence("Version 1 wurde gelöscht")
+        f = self.response.forms['deleteattachmentform1001']
         f['attachment_ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertNonPresence("Magenta wie die Telekom")
 
     @as_users("werner", "inga", "kalif")
     def test_vote(self, user):
@@ -688,7 +700,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},)
-        self.assertTitle("Internationaler Kongress – Abstimmungen")
+        self.assertTitle("Abstimmungen (Internationaler Kongress)")
         mail = self.fetch_mail()[0]
         text = mail.get_body().get_content()
         self.assertIn('"Antwort auf die letzte aller Fragen"', text)
@@ -696,7 +708,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'description': 'Antwort auf die letzte aller Fragen'},
                       {'description': 'Ergebnisdatei herunterladen'},)
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
-            self.assertEqual(f.read(), self.response.body)
+            self.assertEqual(json.load(f), json.loads(self.response.body))
 
     @as_users("werner")
     def test_extend(self, user):
@@ -832,6 +844,12 @@ class TestAssemblyFrontend(FrontendTest):
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
+
+        self.traverse({'description': 'Abstimmungen'},
+                      {'description': 'Ganz wichtige Wahl'})
+        f = self.response.forms['deleteballotform']
+        f['ack_delete'].checked = True
+        self.submit(f)
 
         # Conclude assembly.
         self.traverse({'description': 'Archiv-Sammlung'})

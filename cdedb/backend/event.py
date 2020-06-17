@@ -6,7 +6,6 @@ variant for external participants.
 
 import collections
 import copy
-import hashlib
 import decimal
 import datetime
 import pathlib
@@ -1297,7 +1296,6 @@ class EventBackend(AbstractBackend):
             if "course_tracks" in cascade:
                 cascade = ("course_segments", "registration_tracks",
                            "course_choices")
-                # TODO use Silencer?
                 for anid in blockers["course_tracks"]:
                     ret *= self._delete_course_track(rs, anid, cascade)
             if "registration_parts" in cascade:
@@ -1720,7 +1718,7 @@ class EventBackend(AbstractBackend):
                 # deleted
                 if deleted:
                     for x in mixed_existence_sorter(deleted):
-                        # TODO what should be cascaded here?
+                        # We only allow deletion of unused fields.
                         cascade = None
                         self._delete_event_field(rs, x, cascade)
 
@@ -4247,12 +4245,10 @@ class EventBackend(AbstractBackend):
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious
 
-            m = hashlib.sha512()
-            m.update(json_serialize(total_previous, sort_keys=True).encode(
-                'utf-8'))
-            m.update(json_serialize(total_delta, sort_keys=True).encode(
-                'utf-8'))
-            result = m.hexdigest()
+            result = get_hash(
+                json_serialize(total_delta, sort_keys=True).encode('utf-8'),
+                json_serialize(total_previous, sort_keys=True).encode('utf-8')
+            )
             if token is not None and result != token:
                 raise PartialImportError("The delta changed.")
             if not dryrun:

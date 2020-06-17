@@ -4,7 +4,6 @@
 
 import collections
 import copy
-import hashlib
 import json
 import pathlib
 import quopri
@@ -27,8 +26,7 @@ from cdedb.common import (
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
     ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier, xsorted,
-    RequestState,
-)
+    RequestState, get_hash
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
@@ -1872,9 +1870,7 @@ class CoreFrontend(AbstractFrontend):
             attachment = check(rs, 'pdffile', attachment, 'attachment')
         attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
         if attachment:
-            myhash = hashlib.sha512()
-            myhash.update(attachment)
-            myhash = myhash.hexdigest()
+            myhash = get_hash(attachment)
             path = attachment_base_path / myhash
             if not path.exists():
                 with open(path, 'wb') as f:

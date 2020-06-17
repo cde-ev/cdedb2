@@ -1,6 +1,10 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/assembly/base.tmpl" %}
-{% block title %}{{ gettext("%(title)s – Ballots")|format(title=ambience['assembly']['title']) }}{% endblock %}
+{% block title %}
+    {% trans title=ambience['assembly']['title'] %}
+        Ballots ({{ title }})
+    {% endtrans %}
+{% endblock %}
 {% block heading %}
     <h1 class="title">
         {{ gettext("Ballots") }}

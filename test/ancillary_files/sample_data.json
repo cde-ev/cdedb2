@@ -4605,14 +4605,14 @@
             "vote_begin": "1999-12-31T22:00:00+00:00",
             "vote_end": "2000-02-01T22:00:00+00:00",
             "vote_extension_end": null,
-            "extended": null,
+            "extended": false,
             "use_bar": false,
             "quorum": 0,
             "votes": 1,
             "is_tallied": false,
             "notes": null
         },
-       {
+        {
             "id": 7,
             "assembly_id": 2,
             "title": "Entlastung des Vorstands",
@@ -4635,7 +4635,7 @@
             "vote_begin": "900-09-29T22:00:00+00:00",
             "vote_end": "1000-01-01T23:00:00+00:00",
             "vote_extension_end": "1999-09-05T23:00:00+00:00",
-            "extended": null,
+            "extended": true,
             "use_bar": true,
             "quorum": 100000,
             "votes": 1,
@@ -4650,7 +4650,7 @@
             "vote_begin": "2019-04-04T22:00:00+00:00",
             "vote_end": "2020-03-09T23:00:00+00:00",
             "vote_extension_end": null,
-            "extended": null,
+            "extended": false,
             "use_bar": true,
             "quorum": 0,
             "votes": 2,
@@ -4665,7 +4665,7 @@
             "vote_begin": "2014-11-20T22:00:00+00:00",
             "vote_end": "2015-10-04T23:00:00+00:00",
             "vote_extension_end": "2016-07-31T23:00:00+00:00",
-            "extended": null,
+            "extended": true,
             "use_bar": false,
             "quorum": 4444,
             "votes": null,
@@ -4680,7 +4680,7 @@
             "vote_begin": "2020-01-30T22:00:00+00:00",
             "vote_end": "2200-12-01T23:00:10+00:00",
             "vote_extension_end": null,
-            "extended": null,
+            "extended": false,
             "use_bar": false,
             "quorum": 0,
             "votes": 1,
@@ -4743,6 +4743,21 @@
             "extended": null,
             "use_bar": false,
             "quorum": 2000,
+            "votes": null,
+            "is_tallied": false,
+            "notes": null
+        },
+        {
+            "id": 16,
+            "assembly_id": 3,
+            "title": "Ganz wichtige Wahl",
+            "description": null,
+            "vote_begin": "2222-02-22T00:00+00:00",
+            "vote_end": "2222-02-22T00:01+00:00",
+            "vote_extension_end": null,
+            "extended": null,
+            "use_bar": false,
+            "quorum": 0,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5056,7 +5071,75 @@
             "moniker": "Akademien"
         }
     ],
-    "assembly.attachments": [],
+    "assembly.attachments": [
+        {
+            "id": 1,
+            "ballot_id": null,
+            "assembly_id": 3
+        },
+        {
+            "id": 2,
+            "ballot_id": null,
+            "assembly_id": 3
+        },
+        {
+            "id": 3,
+            "ballot_id": 16,
+            "assembly_id": null
+        }
+    ],
+    "assembly.attachment_versions": [
+        {
+            "attachment_id": 1,
+            "version": 1,
+            "title": "Rechenschaftsbericht",
+            "authors": "Farin",
+            "ctime": "---now---",
+            "dtime": null,
+            "filename": "rechen.pdf",
+            "file_hash": "abc"
+        },
+        {
+            "attachment_id": 2,
+            "version": 1,
+            "title": "Kassenprüferbericht",
+            "authors": "Berta",
+            "ctime": "---now---",
+            "dtime": null,
+            "filename": "kasse.pdf",
+            "file_hash": "bcd"
+        },
+        {
+            "attachment_id": 2,
+            "version": 2,
+            "title": null,
+            "authors": null,
+            "ctime": "---now---",
+            "dtime": "---now---",
+            "filename": null,
+            "file_hash": "del"
+        },
+        {
+            "attachment_id": 2,
+            "version": 3,
+            "title": "Kassenprüferbericht 2",
+            "authors": "Garcia",
+            "ctime": "---now---",
+            "dtime": null,
+            "filename": "kasse.pdf",
+            "file_hash": "cde"
+        },
+        {
+            "attachment_id": 3,
+            "version": 1,
+            "title": "Liste der Kanditaten",
+            "authors": "Wahlleitung",
+            "ctime": "---now---",
+            "dtime": null,
+            "filename": "kandidaten.pdf",
+            "file_hash": "xyz"
+        }
+    ],
     "assembly.votes": [
         {
             "id": 1,

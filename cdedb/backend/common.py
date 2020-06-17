@@ -17,7 +17,7 @@ import psycopg2.extras
 import psycopg2.extensions
 from typing import (
     Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
-    Optional, Sequence, cast, overload, Mapping, Union, KeysView
+    Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict
 )
 
 import cdedb.validation as validate
@@ -366,6 +366,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES {value_list}"
         return self.query_exec(rs, query, params)
 
+    # KeysView should be a subclass of Collection, but PyCharm disagrees :/
     def sql_select(self, rs: RequestState, table: str, columns: Sequence[str],
                    entities: Union[Collection, KeysView], entity_key: str = "id"
                    ) -> Tuple[CdEDBObject, ...]:
@@ -722,8 +723,7 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def affirm_validation(assertion: str, value: T,
-                      **kwargs: Any) -> Optional[T]:
+def affirm_validation(assertion: str, value: T, **kwargs: Any) -> Optional[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
@@ -731,7 +731,7 @@ def affirm_validation(assertion: str, value: T,
 
 # Ignore the parameter name allow_None
 # noinspection PyPep8Naming
-def affirm_array_validation(assertion: str, values: Iterable[T],
+def affirm_array_validation(assertion: str, values: Optional[Iterable[T]],
                             allow_None: bool = False,
                             **kwargs: Any) -> Optional[Tuple[T, ...]]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
@@ -748,7 +748,7 @@ def affirm_array_validation(assertion: str, values: Iterable[T],
 
 # Ignore the parameter name allow_None
 # noinspection PyPep8Naming
-def affirm_set_validation(assertion: str, values: Iterable[T],
+def affirm_set_validation(assertion: str, values: Optional[Iterable[T]],
                           allow_None: bool = False,
                           **kwargs: Any) -> Optional[Set[T]]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
@@ -763,13 +763,14 @@ def affirm_set_validation(assertion: str, values: Iterable[T],
     return {checker(value, **kwargs) for value in values}
 
 
-def cast_fields(data: CdEDBObject, spec: CdEDBObjectMap) -> CdEDBObject:
+def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
     """Helper to deserialize json fields.
 
     We serialize some classes as strings and need to undo this upon
     retrieval from the database.
     """
-    spec = {v['field_name']: v['kind'] for v in spec.values()}
+    spec: Dict[str, FieldDatatypes]
+    spec = {v['field_name']: v['kind'] for v in fields.values()}
     casters = {
         FieldDatatypes.int: lambda x: x,
         FieldDatatypes.str: lambda x: x,

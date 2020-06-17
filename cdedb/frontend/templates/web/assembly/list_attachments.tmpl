@@ -1,0 +1,45 @@
+{% set sidenav_active='assembly_attachments' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/util.tmpl" as assembly_util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint = 'weak' %}
+{% block title %}
+    {% trans title=ambience['assembly']['title'] %}
+        Attachment Overview ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans %}
+            Attachment Overview
+        {% endtrans %}
+        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
+    </h1>
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), icon="file", active=True) }}
+
+{% endblock %}
+{% block content %}
+    {% set edit = ("assembly_contents" in user.admin_views) and ambience['assembly']['is_active'] %}
+    {% set timestamp = now() %}
+    {% for ballot_id, ballot in [(None, None)] + ballots|keydictsort(EntitySorter.ballot) %}
+        {% set attachments = all_attachments[ballot_id] %}
+        {% set ballot_edit = edit and ((timestamp < ballot['vote_begin']) if ballot else True) %}
+        {% set title = gettext("General Files") %}
+        {% set icon = 'file' %}
+        {% if ballot %}
+            {% set title = gettext("Files for %(link)s")|format(
+                    link=util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot['id']}), ballot['title'],
+                                   icon="thumbs-up"))|s %}
+            {% set icon = None %}
+        {% endif %}
+        {% if attachments or ballot_edit %}
+            {{ assembly_util.attachment_box(attachments, attachment_histories[ballot_id], title=title,
+                                            ballot=ballot, new_attachment_button=edit, icon=icon, edit=ballot_edit) }}
+        {% endif %}
+    {% endfor %}
+{% endblock %}

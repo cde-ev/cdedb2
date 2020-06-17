@@ -18,12 +18,13 @@ import pathlib
 import re
 import string
 import sys
+import hashlib
 from os import PathLike as OSPathLike
 from typing import (
     Any, TypeVar, Mapping, Optional, Dict, List, overload, Sequence, Tuple,
     Callable, Set, Iterable, Union, Generator, Type,
     OrderedDict as OrderedDictType, Collection, MutableMapping, Container,
-    TYPE_CHECKING, cast, KeysView
+    TYPE_CHECKING, cast, KeysView, AbstractSet, MutableSequence
 )
 
 import psycopg2.extras
@@ -51,7 +52,7 @@ CdEDBObject = Dict[str, Any]
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
 
-CdEDBObjectMap = Mapping[int, CdEDBObject]
+CdEDBObjectMap = Dict[int, CdEDBObject]
 
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
@@ -85,6 +86,9 @@ AdminView = str
 
 CdEDBLog = Tuple[int, Tuple[CdEDBObject, ...]]
 
+# TODO remove this
+# This is a workaround for the fact that PyCharm does not recognize
+# pathlib.Path as implementing the os.PathLike interface.
 PathLike = Union[pathlib.Path, OSPathLike]
 
 T = TypeVar("T")
@@ -567,6 +571,10 @@ class EntitySorter:
         return (attachment['title'], attachment['id'])
 
     @staticmethod
+    def attachment_version(version: CdEDBObject) -> Sortkey:
+        return (version['attachment_id'], version['version'])
+
+    @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
         return (past_event['tempus'], past_event['id'])
 
@@ -869,7 +877,8 @@ ASSEMBLY_BAR_MONIKER = "_bar_"
 
 
 @overload
-def unwrap(single_element_list: Union[Sequence[T], Set[T], KeysView[T]]) -> T:
+def unwrap(single_element_list: Union[AbstractSet[T], MutableSequence[T],
+                                      Tuple[T, ...]]) -> T:
     pass
 
 
@@ -1879,8 +1888,11 @@ BALLOT_FIELDS = (
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)
-ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id", "title",
-                              "filename")
+ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id")
+
+ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
+                                      "authors", "filename", "ctime", "dtime",
+                                      "file_hash")
 
 #: Fields of a semester
 ORG_PERIOD_FIELDS = (

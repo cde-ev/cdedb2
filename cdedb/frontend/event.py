@@ -9,7 +9,6 @@ import copy
 import csv
 import decimal
 import functools
-import hashlib
 import itertools
 import json
 import operator
@@ -41,7 +40,8 @@ from cdedb.common import (
     unwrap, now, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
-    LodgementsSortkeys, xsorted, RequestState, extract_roles)
+    LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
+)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -2218,7 +2218,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.batch_fees_form(rs, event_id, data=data,
                                         csvfields=fields)
 
-        current_checksum = hashlib.md5(fee_data.encode()).hexdigest()
+        current_checksum = get_hash(fee_data.encode())
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
             return self.batch_fees_form(rs, event_id, data=data,
