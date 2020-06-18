@@ -33,7 +33,7 @@ class MlBackend(AbstractBackend):
     additional actions available."""
     realm = "ml"
 
-    def __init__(self, configpath: PathLike):
+    def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
         self.event = make_proxy(EventBackend(configpath), internal=True)
         self.assembly = make_proxy(AssemblyBackend(configpath), internal=True)

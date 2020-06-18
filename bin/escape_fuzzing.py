@@ -9,7 +9,6 @@ token "<script>abcdef</script>" in every user definable string:
     make sample-data-test
     sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
     sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql
-    cp cdedb/testconfig.py.off cdedb/testconfig.py
 
 This script logs in as Anton (our testing meta admin account) and traverses all
 links and forms it can find. In every response it checks for the magic string
@@ -32,9 +31,12 @@ this script, as follows:
 import itertools
 import queue
 import logging
+import os
 import pathlib
 
 import webtest
+
+os.environ['CDEDB_TEST'] = "True"
 
 from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
@@ -42,7 +44,7 @@ _BASICCONF = BasicConfig()
 
 outdir = pathlib.Path('./out')
 
-app = Application(_BASICCONF["REPOSITORY_PATH"] / _BASICCONF["TESTCONFIG_PATH"])
+app = Application()
 wt_app = webtest.TestApp(app, extra_environ={
     'REMOTE_ADDR': "127.0.0.0",
     'SERVER_PROTOCOL': "HTTP/1.1",

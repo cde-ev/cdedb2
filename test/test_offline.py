@@ -2,6 +2,7 @@
 
 import pathlib
 import subprocess
+import sys
 
 import webtest
 
@@ -13,7 +14,6 @@ from test.common import FrontendTest
 class TestOffline(FrontendTest):
     def test_offline_vm(self):
         base = pathlib.Path(__file__).parent.parent
-        configpath = self.app.app.conf._configpath
         user = {
             'username': "garcia@example.cde",
             'password': "notthenormalpassword",
@@ -30,7 +30,11 @@ class TestOffline(FrontendTest):
                 cwd=base, check=True, stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL)
             # Reset web test app for changed configuration
-            new_app = Application(configpath)
+            try:
+                del sys.modules['cdedb.localconfig']
+            except AttributeError:
+                pass
+            new_app = Application()
             self.app = webtest.TestApp(new_app, extra_environ={
                 'REMOTE_ADDR': "127.0.0.0",
                 'SERVER_PROTOCOL': "HTTP/1.1",
@@ -94,7 +98,9 @@ class TestOffline(FrontendTest):
             # Due to the expensive setup of this test these should not
             # be split out.
         finally:
-            subprocess.run(["git", "checkout", str(configpath)], check=True)
+            subprocess.run(
+                ["cp", "related/auto-build/files/stage3/localconfig.py",
+                 "cdedb/localconfig.py"], check=True)
             subprocess.run(["sudo", "rm", "-f", "/OFFLINEVM"], check=True)
             subprocess.run(
                 ["make", "reload"], check=True, cwd=base,

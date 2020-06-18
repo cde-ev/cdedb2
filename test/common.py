@@ -277,8 +277,7 @@ class BackendUsingTest(unittest.TestCase):
 
     @staticmethod
     def initialize_raw_backend(backendcls):
-        return backendcls(_BASICCONF["REPOSITORY_PATH"]
-                          / _BASICCONF["TESTCONFIG_PATH"])
+        return backendcls()
 
     @staticmethod
     def initialize_backend(backendcls):
@@ -580,8 +579,7 @@ class FrontendTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = Application(_BASICCONF["REPOSITORY_PATH"]
-                          / _BASICCONF["TESTCONFIG_PATH"])
+        app = Application()
         lang = "de"
         cls.gettext = app.translations[lang].gettext
         cls.app = webtest.TestApp(app, extra_environ={
@@ -1042,8 +1040,7 @@ class CronTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.cron = CronFrontend(_BASICCONF["REPOSITORY_PATH"]
-                                / _BASICCONF["TESTCONFIG_PATH"])
+        cls.cron = CronFrontend()
         cls.core = CronBackendShim(cls.cron, cls.cron.core.coreproxy)
         cls.cde = CronBackendShim(cls.cron, cls.cron.core.cdeproxy)
         cls.event = CronBackendShim(cls.cron, cls.cron.core.eventproxy)

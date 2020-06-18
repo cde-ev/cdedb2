@@ -97,8 +97,6 @@ echo "--------------------------------------------"
 cp /cdedb2/related/auto-build/files/stage3/localconfig.py /cdedb2/cdedb/
 chown cdedb:cdedb /cdedb2/cdedb/localconfig.py
 chmod 644 /cdedb2/cdedb/localconfig.py
-cp /cdedb2/related/auto-build/files/stage3/applicationconfig.py \
-   /etc/cdedb-application-config.py
 cp /cdedb2/related/auto-build/files/stage3/mailman-htpasswd \
    /etc/cdedb-mailman-htpasswd
 chown www-data:www-data /etc/cdedb-application-config.py \

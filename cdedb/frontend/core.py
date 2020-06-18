@@ -52,7 +52,7 @@ class CoreFrontend(AbstractFrontend):
     anonymous access and personas. """
     realm = "core"
 
-    def __init__(self, configpath):
+    def __init__(self, configpath=None):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
         self.resolve_api_token_check = lambda x: x == secrets["RESOLVE_API_TOKEN"]

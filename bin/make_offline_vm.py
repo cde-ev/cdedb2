@@ -247,10 +247,7 @@ def work(args):
         print("Everything in place.")
 
     print("Enabling offline mode")
-    if args.test:
-        config_path = args.repopath / "test/localconfig.py"
-    else:
-        config_path = args.repopath / "cdedb/localconfig.py"
+    config_path = args.repopath / "cdedb/localconfig.py"
     subprocess.run(
         ["sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
          str(config_path)], check=True)

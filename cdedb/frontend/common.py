@@ -103,7 +103,8 @@ class BaseApp(metaclass=abc.ABCMeta):
     inherited by :py:class:`cdedb.frontend.application.Application`.
     """
 
-    def __init__(self, configpath: PathLike, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, configpath: PathLike = None, *args: Any,
+                 **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
@@ -855,7 +856,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     #: to be overridden by children
     realm = None
 
-    def __init__(self, configpath: PathLike, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, configpath: PathLike = None, *args: Any,
+                 **kwargs: Any) -> None:
         super().__init__(configpath, *args, **kwargs)
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(

@@ -34,7 +34,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         "persona_getter": lambda obj: obj.coreproxy.get_ml_user,
     }
 
-    def __init__(self, configpath: PathLike):
+    def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
         self.mailman_create_client = lambda url, user: mailmanclient.Client(

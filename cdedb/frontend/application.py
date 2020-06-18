@@ -42,7 +42,7 @@ class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
     appropriate frontend."""
 
-    def __init__(self, configpath):
+    def __init__(self, configpath=None):
         """
         :type configpath: str
         """

@@ -28,7 +28,7 @@ class CronFrontend(BaseApp):
     """This takes care of actually doing the periodic work."""
     realm = "cron"
 
-    def __init__(self, configpath: PathLike):
+    def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
 
         self.urlmap = CDEDB_PATHS

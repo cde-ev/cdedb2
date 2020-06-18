@@ -160,7 +160,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     #: abstract str to be specified by children
     realm = None
 
-    def __init__(self, configpath: PathLike, is_core: bool = False) -> None:
+    def __init__(self, configpath: PathLike = None,
+                 is_core: bool = False) -> None:
         """
         :param is_core: If not, we add instantiate a core backend for usage
           by this backend.
