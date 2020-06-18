@@ -89,6 +89,27 @@ class CoreBackend(AbstractBackend):
                               introspection_only=True)
         return any(admin <= rs.user.roles for admin in privilege_tier(roles))
 
+    @access("persona")
+    def is_relative_admin_view(self, rs: RequestState, persona_id: int,
+                               allow_meta_admin: bool = False) -> bool:
+        """Check whether the user has the right admin views activated.
+
+        This must not be used as privilege check, but only for hiding
+        information which the user can view anyway.
+
+        :param allow_meta_admin: In some cases we need to allow meta admins
+            access where they should not normally have it. This is to allow that
+            override.
+        """
+        if allow_meta_admin and "meta_admin" in rs.user.admin_views:
+            return True
+        roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))),
+                              introspection_only=True)
+        return any(
+            admin_views <= {v.replace('_user', '_admin')
+                            for v in rs.user.admin_views}
+            for admin_views in privilege_tier(roles))
+
     def verify_persona_password(self, rs: RequestState, password: str,
                                 persona_id: int) -> bool:
         """Helper to retrieve a personas password hash and verify the password.
