@@ -124,6 +124,9 @@ class CronFrontend(BaseApp):
                                                              context=7))
                             except Exception:
                                 pass
+
+                            if self.conf["CDEDB_TEST"]:
+                                raise
                         else:
                             self.core.set_cron_store(rs, hook.cron['name'],
                                                      tmp)
