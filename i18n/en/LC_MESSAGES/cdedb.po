@@ -4829,7 +4829,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:86
 #: cdedb/frontend/templates/web/generic.tmpl:43
 #: cdedb/frontend/templates/web/generic.tmpl:51
-msgid "Street"
+msgid "Street, Nr."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49

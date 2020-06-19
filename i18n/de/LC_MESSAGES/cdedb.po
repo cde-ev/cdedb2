@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
 "POT-Creation-Date: 2020-06-04 21:10+0200\n"
-"PO-Revision-Date: 2020-06-04 21:11+0200\n"
+"PO-Revision-Date: 2020-06-19 18:38+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -4916,8 +4916,8 @@ msgstr "Adresse"
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:86
 #: cdedb/frontend/templates/web/generic.tmpl:43
 #: cdedb/frontend/templates/web/generic.tmpl:51
-msgid "Street"
-msgstr "Straße"
+msgid "Street, Nr."
+msgstr "Straße, Nr."
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:30
