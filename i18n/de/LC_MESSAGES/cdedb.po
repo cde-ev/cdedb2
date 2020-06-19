@@ -15532,6 +15532,21 @@ msgstr ""
 msgid "Semester Done"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:62
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:70
+#: cdedb/frontend/templates/web/core/change_user.tmpl:55
+#: cdedb/frontend/templates/web/core/change_user.tmpl:69
+#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:59
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:65
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:79
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:86
+#: cdedb/frontend/templates/web/core/promote_user.tmpl:86
+#: cdedb/frontend/templates/web/generic.tmpl:43
+#: cdedb/frontend/templates/web/generic.tmpl:51
+msgid "Street, Nr."
+msgstr "Straße, Nr."
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 
