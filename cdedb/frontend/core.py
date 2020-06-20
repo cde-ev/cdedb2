@@ -341,6 +341,13 @@ class CoreFrontend(AbstractFrontend):
                 n_("Only admins may view archived datasets."))
 
         is_relative_admin = self.coreproxy.is_relative_admin(rs, persona_id)
+        is_relative_or_meta_admin = self.coreproxy.is_relative_admin(
+            rs, persona_id, allow_meta_admin=True)
+
+        is_relative_admin_view = self.coreproxy.is_relative_admin_view(
+            rs, persona_id)
+        is_relative_or_meta_admin_view = self.coreproxy.is_relative_admin_view(
+            rs, persona_id, allow_meta_admin=True)
 
         ALL_ACCESS_LEVELS = {
             "persona", "ml", "assembly", "event", "cde", "core", "meta",
@@ -436,11 +443,12 @@ class CoreFrontend(AbstractFrontend):
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
-        if is_relative_admin:
+        if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
             total = self.coreproxy.get_total_persona(rs, persona_id)
             data['notes'] = total['notes']
+            data['username'] = total['username']
 
         # Cull unwanted data
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
@@ -455,14 +463,13 @@ class CoreFrontend(AbstractFrontend):
                     "is_active", "is_meta_admin", "is_core_admin",
                     "is_cde_admin", "is_event_admin", "is_ml_admin",
                     "is_assembly_admin", "is_cde_realm", "is_event_realm",
-                    "is_ml_realm", "is_assembly_realm", "is_archived"])
+                    "is_ml_realm", "is_assembly_realm", "is_archived",
+                    "notes"])
             if "orga" not in access_levels:
                 masks.extend(["is_member", "gender"])
             for key in masks:
                 if key in data:
                     del data[key]
-        if not is_relative_admin and "notes" in data:
-            del data['notes']
 
         # Add past event participation info
         past_events = None
@@ -476,17 +483,6 @@ class CoreFrontend(AbstractFrontend):
                      and rs.ambience['persona']['is_searchable'])
 
         meta_info = self.coreproxy.get_meta_info(rs)
-
-        # Check if the current user has the right admin *views* activated to
-        # show the admin-only information and controls of this persona
-        # This code is basically a modified version of
-        # CoreBackend.is_relative_admin() with a string-replace hack to make
-        # use of cdedb.common.privilege_tier()
-        is_relative_admin_view = any(
-            admin_views <= {v.replace('_user', '_admin')
-                            for v in rs.user.admin_views}
-            for admin_views in privilege_tier(
-                extract_roles(rs.ambience['persona'], introspection_only=True)))
 
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
