@@ -11,8 +11,9 @@ import unittest
 from test.common import as_users, USER_DICT, FrontendTest, prepsql
 
 from cdedb.query import QueryOperators
-from cdedb.common import (now, CDEDB_EXPORT_EVENT_VERSION,
-    ADMIN_VIEWS_COOKIE_NAME)
+from cdedb.common import (
+    now, CDEDB_EXPORT_EVENT_VERSION, ADMIN_VIEWS_COOKIE_NAME,
+    EVENT_SCHEMA_VERSION)
 from cdedb.frontend.common import CustomCSVDialect, iban_filter
 import cdedb.database.constants as const
 
@@ -2663,6 +2664,7 @@ etc;anything else""", f['entries_2'].value)
         with open("/tmp/cdedb-store/testfiles/event_export.json") as datafile:
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
+        del result['CDEDB_EXPORT_EVENT_VERSION']
         expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
         self.assertEqual(expectation, result)
 
@@ -2912,6 +2914,7 @@ etc;anything else""", f['entries_2'].value)
         data = saved.click(href='/event/event/1/export$').body
         data = data.replace(b"Gro\\u00dfe Testakademie 2222",
                             b"Mittelgro\\u00dfe Testakademie 2222")
+        data = data.replace(b'"CDEDB_EXPORT_EVENT_VERSION": 13,', b'')
         self.response = saved
         self.assertPresence(
             "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
@@ -3089,6 +3092,7 @@ etc;anything else""", f['entries_2'].value)
         result = json.loads(self.response.text)
         expectation = {
             'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
+            'EVENT_SCHEMA_VERSION': list(EVENT_SCHEMA_VERSION),
             'courses': {'1': {'description': 'Wir werden die Bäume drücken.',
                               'fields': {'room': 'Wald'},
                               'instructors': 'ToFi & Co',
@@ -3582,6 +3586,7 @@ etc;anything else""", f['entries_2'].value)
 
         upload = copy.deepcopy(first)
         del upload['event']
+        del upload['CDEDB_EXPORT_EVENT_VERSION']
         for reg in upload['registrations'].values():
             del reg['persona']
         self.get('/')

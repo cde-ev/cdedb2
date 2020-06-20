@@ -41,7 +41,7 @@ Format ist wie der partielle Export minus einige unveränderliche Felder. Im
 Wesentlichen enthält der Export die folgenden Elemente::
 
   {
-      "CDEDB_EXPORT_EVENT_VERSION": <numeric id>,
+      "EVENT_SCHEMA_VERSION": [<numeric id>, <numeric id>],
       "id": <numeric event id>,
       "kind": "partial",
       "timestamp": <ISO 8601 encoded timestamp>,
@@ -56,10 +56,11 @@ Wesentlichen enthält der Export die folgenden Elemente::
                             <dict with registration properties>},
   }
 
-Dabei gibt ``CDEDB_EXPORT_EVENT_VERSION`` das verwendete Format an um
-Inkonsistenzen zu vermeiden, diese muss der aktuellen Version entsprechen
-und kann dem Export entnommen werden. Ebenso wird für das restliche Schema
-auf den Export verwiesen.
+Dabei gibt ``EVENT_SCHEMA_VERSION`` das verwendete Format an um
+Inkonsistenzen zu vermeiden, diese muss mit der aktuellen Version kompatibel
+sein (siehe :ref:`handbuch-partieller-import-versionierung`) und kann dem
+Export entnommen werden. Ebenso wird für das restliche Schema auf den Export
+verwiesen.
 
 Der Schlüssel ``event``, sowie der Schlüssel ``persona`` der in jeder
 Anmeldung vorhanden ist, dürfen beim Import nicht vorkommen. Sie stellen
@@ -109,6 +110,31 @@ Hinweise
   Außerdem ist es bei der Erstellung einer Anmeldungen erforderlich die
   zugehörige Person mit dem Attribut ``persona_id`` anzugeben.
 
+.. _handbuch-partieller-import-versionierung:
+
+Versionierung
+-------------
+
+Der Schlüssel ``EVENT_SCHEMA_VERSION`` ist ein Tupel aus zwei
+Integern. Diese werden lexikographisch geordnet, es gilt also::
+
+  (6, 17) < (7, 14) < (7, 19) < (8, 12) < (13, 5)
+
+wobei größere Tupel für neuere Schemaversionen stehen. Die zweite Komponente
+wird erhöht, falls eine Änderung vorwärtskompatibel bezüglich des partiellen
+Exports und Imports ist. Genauer gesagt können dabei die folgenden
+Schemaveränderungen passieren.
+
+* Hinzufügen einer optionalen Spalte (entweder nullbar oder mit Standardwert)
+* Hinzufügen einer neuen Tabelle
+
+Wesentlicher Fall ist ein externes Werkzeug, das mit Schemaversion (x, y)
+arbeitet, wobei die DB auf Schemaversion (x, y+z) aktualisiert hat. In
+diesem Fall kann das Werkzeug einen Export der Version (x, y+z) lesen indem
+es die neuen Objekte ignoriert. Außerdem wird die DB einen partiellen Import
+mit Schemaversion (x, y) akzeptieren, da die enthaltenen Änderungen
+weiterhin gültig sind.
+
 .. _handbuch-partieller-import-beispiel:
 
 Beispiel
@@ -129,6 +155,8 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (13, 1): Umstellung von CDEDB_EXPORT_EVENT_VERSION auf
+  EVENT_SCHEMA_VERSION.
 * Version 12: Umbenennen von ``reserve`` zu ``camping_mat``. Infolge dessen
   wurden drei Spalten des ``event`` Schemas umbenannt.
 * Version 11: Für Anmeldungen wird gespeichert, wie viel ein Teilnehmer bezahlen
