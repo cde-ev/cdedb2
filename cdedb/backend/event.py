@@ -42,7 +42,7 @@ class EventBackend(AbstractBackend):
     additional actions available."""
     realm = "event"
 
-    def __init__(self, configpath: PathLike):
+    def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
         self.minor_form_dir = Union[pathlib.Path, PathLike]
         self.minor_form_dir = self.conf['STORAGE_DIR'] / 'minor_form'

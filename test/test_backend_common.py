@@ -10,8 +10,7 @@ _BASICCONF = BasicConfig()
 
 class TestBackendCommon(unittest.TestCase):
     def test_make_proxy(self):
-        backend = CoreBackend(_BASICCONF["REPOSITORY_PATH"]
-                              / _BASICCONF["TESTCONFIG_PATH"])
+        backend = CoreBackend()
         proxy = make_proxy(backend)
         self.assertTrue(callable(proxy.get_persona))
         self.assertTrue(callable(proxy.login))

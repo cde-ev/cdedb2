@@ -28,7 +28,7 @@ class CronFrontend(BaseApp):
     """This takes care of actually doing the periodic work."""
     realm = "cron"
 
-    def __init__(self, configpath: PathLike):
+    def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
 
         self.urlmap = CDEDB_PATHS
@@ -124,6 +124,9 @@ class CronFrontend(BaseApp):
                                                              context=7))
                             except Exception:
                                 pass
+
+                            if self.conf["CDEDB_TEST"]:
+                                raise
                         else:
                             self.core.set_cron_store(rs, hook.cron['name'],
                                                      tmp)

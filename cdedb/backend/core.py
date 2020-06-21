@@ -50,7 +50,7 @@ class CoreBackend(AbstractBackend):
     ``@internal`` quite often. """
     realm = "core"
 
-    def __init__(self, configpath: PathLike) -> None:
+    def __init__(self, configpath: PathLike = None) -> None:
         super().__init__(configpath, is_core=True)
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(

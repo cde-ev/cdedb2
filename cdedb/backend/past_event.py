@@ -25,7 +25,7 @@ class PastEventBackend(AbstractBackend):
     """
     realm = "past_event"
 
-    def __init__(self, configpath):
+    def __init__(self, configpath=None):
         super().__init__(configpath)
         self.event = make_proxy(EventBackend(configpath), internal=True)
 

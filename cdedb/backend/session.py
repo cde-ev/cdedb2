@@ -32,7 +32,7 @@ class SessionBackend:
     """
     realm = "session"
 
-    def __init__(self, configpath: PathLike):
+    def __init__(self, configpath: PathLike = None):
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
 

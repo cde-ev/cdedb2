@@ -45,8 +45,6 @@ _BASIC_DEFAULTS = {
     "GLOBAL_LOG": pathlib.Path("/tmp/cdedb.log"),
     # file system path to this repository
     "REPOSITORY_PATH": _repopath,
-    # relative path to config file with settings for the test suite
-    "TESTCONFIG_PATH": pathlib.Path("test/localconfig.py"),
     # default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
     # path to log file for recording performance information during test runs
@@ -572,7 +570,7 @@ class Config(BasicConfig):
     overriding the values inherited from :py:class:`BasicConfig`.
     """
 
-    def __init__(self, configpath: PathLike):
+    def __init__(self, configpath: PathLike = None):
         """
         :param configpath: path to file with overrides
         """
@@ -619,7 +617,7 @@ class SecretsConfig(collections.abc.Mapping):
     should not be left in a globally accessible spot.
     """
 
-    def __init__(self, configpath):
+    def __init__(self, configpath: PathLike = None):
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
         if configpath:
             spec = importlib.util.spec_from_file_location(
