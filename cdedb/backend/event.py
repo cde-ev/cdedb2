@@ -29,7 +29,8 @@ from cdedb.common import (
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
     mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
     xsorted, RequestState, extract_roles, CdEDBObject, CdEDBObjectMap, CdEDBLog,
-    DefaultReturnCode, DeletionBlockers, InfiniteEnum, get_hash, PathLike
+    DefaultReturnCode, DeletionBlockers, InfiniteEnum, get_hash, PathLike,
+    EVENT_SCHEMA_VERSION
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators, Query
@@ -3505,6 +3506,7 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             ret = {
                 'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
+                'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
                 'kind': "full",  # could also be "partial"
                 'id': event_id,
                 'event.events': list_to_dict(self.sql_select(
@@ -3660,7 +3662,7 @@ class EventBackend(AbstractBackend):
                                        "happen via shell scripts.")))
         if not self.is_offline_locked(rs, event_id=data['id']):
             raise RuntimeError(n_("Not locked."))
-        if data["CDEDB_EXPORT_EVENT_VERSION"] != CDEDB_EXPORT_EVENT_VERSION:
+        if data["EVENT_SCHEMA_VERSION"] != EVENT_SCHEMA_VERSION:
             raise ValueError(n_("Version mismatch – aborting."))
 
         with Atomizer(rs):
@@ -3746,6 +3748,7 @@ class EventBackend(AbstractBackend):
             # basics
             ret = {
                 'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
+                'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
                 'kind': "partial",  # could also be "full"
                 'id': event_id,
                 'timestamp': now(),
@@ -3912,7 +3915,8 @@ class EventBackend(AbstractBackend):
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['id'])
-        if data["CDEDB_EXPORT_EVENT_VERSION"] != CDEDB_EXPORT_EVENT_VERSION:
+        if not ((EVENT_SCHEMA_VERSION[0], 0) <= data["EVENT_SCHEMA_VERSION"]
+                <= EVENT_SCHEMA_VERSION):
             raise ValueError(n_("Version mismatch – aborting."))
 
         def dict_diff(old, new):

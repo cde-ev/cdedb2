@@ -65,7 +65,7 @@ from typing import (
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
-    CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields,
+    realm_specific_genesis_fields, EVENT_SCHEMA_VERSION,
     ValidationWarning, Error)
 from cdedb.database.constants import FieldDatatypes, FieldAssociations
 from cdedb.validationdata import (
@@ -1728,6 +1728,23 @@ def _pdffile(val: Any, argname: str = None, *, _convert: bool = True,
 
 
 @_addvalidator
+def _pair_of_int(val: Any, argname: str = None, *, _convert: bool = True,
+                 _ignore_warnings: bool = False,
+                 ) -> Tuple[Optional[Tuple[int, int]], List[Error]]:
+    """Validate a pair of integers."""
+    argname = argname or "pair"
+    val, errs = _list_of(val, _int, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
+    if errs:
+        return val, errs
+    if len(val) != 2:
+        errs.append((argname,
+                     ValueError(n_("Must contain exactly two elements."))))
+        return None, errs
+    return tuple(val), errs
+
+
+@_addvalidator
 def _period(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
@@ -3165,7 +3182,7 @@ def _serialized_event(val, argname=None, *, _convert=True,
             "Only full exports are supported.")))]
 
     mandatory_fields = {
-        'CDEDB_EXPORT_EVENT_VERSION': _int,
+        'EVENT_SCHEMA_VERSION': _pair_of_int,
         'kind': _str,
         'id': _id,
         'timestamp': _datetime,
@@ -3194,7 +3211,7 @@ def _serialized_event(val, argname=None, *, _convert=True,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    if val['CDEDB_EXPORT_EVENT_VERSION'] != CDEDB_EXPORT_EVENT_VERSION:
+    if val['EVENT_SCHEMA_VERSION'] != EVENT_SCHEMA_VERSION:
         return None, [(argname, ValueError(n_("Schema version mismatch.")))]
     # Second a thorough investigation
     #
@@ -3269,7 +3286,7 @@ def _serialized_event(val, argname=None, *, _convert=True,
             and val['id'] != val['event.events'][val['id']]['id']):
         errs.append(('event.events', ValueError(n_("Wrong event specified."))))
     for k, v in val.items():
-        if k not in ('id', 'CDEDB_EXPORT_EVENT_VERSION', 'timestamp', 'kind'):
+        if k not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
             for e in v.values():
                 if e.get('event_id') and e['event_id'] != val['id']:
                     errs.append((k, ValueError(n_("Mismatched event."))))
@@ -3324,7 +3341,7 @@ def _serialized_partial_event(val, argname=None, *, _convert=True,
             "Only partial exports are supported.")))]
 
     mandatory_fields = {
-        'CDEDB_EXPORT_EVENT_VERSION': _int,
+        'EVENT_SCHEMA_VERSION': _pair_of_int,
         'kind': _str,
         'id': _id,
         'timestamp': _datetime,
@@ -3340,7 +3357,8 @@ def _serialized_partial_event(val, argname=None, *, _convert=True,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    if val['CDEDB_EXPORT_EVENT_VERSION'] != CDEDB_EXPORT_EVENT_VERSION:
+    if not((EVENT_SCHEMA_VERSION[0], 0) <= val['EVENT_SCHEMA_VERSION']
+           <= EVENT_SCHEMA_VERSION):
         return None, [(argname, ValueError(n_("Schema version mismatch.")))]
     domain_validators = {
         'courses': _partial_course_or_None,

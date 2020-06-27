@@ -14,8 +14,8 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.common import cast_fields
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
 from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PartialImportError, CDEDB_EXPORT_EVENT_VERSION, now,
-    PrivilegeError)
+    PERSONA_EVENT_FIELDS, PartialImportError, EVENT_SCHEMA_VERSION, now,
+    CDEDB_EXPORT_EVENT_VERSION, PrivilegeError)
 from cdedb.enums import ENUMS_DICT
 import cdedb.database.constants as const
 
@@ -1850,6 +1850,7 @@ class TestEventBackend(BackendTest):
     def test_export_event(self, user):
         expectation =  {
             'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
+            'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
             'core.personas': {1: {'address': 'Auf der Düne 42',
                                   'address_supplement': None,
                                   'birthday': datetime.date(1991, 3, 30),
@@ -2936,6 +2937,7 @@ class TestEventBackend(BackendTest):
         self.assertTrue(self.event.lock_event(self.key, 1))
         data = self.event.export_event(self.key, 1)
         new_data = copy.deepcopy(data)
+        del new_data['CDEDB_EXPORT_EVENT_VERSION']
         stored_data = copy.deepcopy(data)
         ##
         ## Apply some changes
@@ -3370,6 +3372,7 @@ class TestEventBackend(BackendTest):
     def test_partial_export_event(self, user):
         expectation = {
             'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
+            'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
             'courses': {1: {'description': 'Wir werden die Bäume drücken.',
                             'fields': {'room': 'Wald'},
                             'instructors': 'ToFi & Co',
@@ -3955,6 +3958,8 @@ class TestEventBackend(BackendTest):
             updated['registrations'][1002]['amount_paid'])
         updated['registrations'][1002]['amount_owed'] = str(
             updated['registrations'][1002]['amount_owed'])
+        expectation['EVENT_SCHEMA_VERSION'] = tuple(
+            expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, updated)
 
     @as_users("annika")
@@ -3964,7 +3969,7 @@ class TestEventBackend(BackendTest):
             orig_data = json.load(datafile)
 
         base_data = {
-            k: orig_data[k] for k in ("id", "CDEDB_EXPORT_EVENT_VERSION",
+            k: orig_data[k] for k in ("id", "EVENT_SCHEMA_VERSION",
                                       "timestamp", "kind")
         }
 
