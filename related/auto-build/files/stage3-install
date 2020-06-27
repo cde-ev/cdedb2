@@ -99,9 +99,8 @@ chown cdedb:cdedb /cdedb2/cdedb/localconfig.py
 chmod 644 /cdedb2/cdedb/localconfig.py
 cp /cdedb2/related/auto-build/files/stage3/mailman-htpasswd \
    /etc/cdedb-mailman-htpasswd
-chown www-data:www-data /etc/cdedb-application-config.py \
-      /etc/cdedb-mailman-htpasswd
-chmod 640 /etc/cdedb-application-config.py /etc/cdedb-mailman-htpasswd
+chown www-data:www-data /etc/cdedb-mailman-htpasswd
+chmod 640 /etc/cdedb-mailman-htpasswd
 
 echo ""
 echo "Create central directory for log files..."
