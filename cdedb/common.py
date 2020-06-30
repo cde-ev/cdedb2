@@ -670,7 +670,7 @@ def int_to_words(num: int, lang: str) -> str:
 
     This is for the usage such as '2 apples' -> 'two apples'.
 
-    :param lang: Currently we only suppert 'de'.
+    :param lang: Currently we only support 'de'.
     """
     if num < 0 or num > 999999:
         raise ValueError(n_("Out of supported scope."))

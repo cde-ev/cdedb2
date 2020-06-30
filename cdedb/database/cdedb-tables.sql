@@ -43,7 +43,7 @@ CREATE TABLE core.personas (
         is_assembly_admin       boolean NOT NULL DEFAULT False,
         -- allows usage of cde functionality
         is_cde_realm            boolean NOT NULL,
-        -- allows usage of cde functionality
+        -- allows usage of event functionality
         is_event_realm          boolean NOT NULL,
         -- allows usage of mailinglist functionality
         is_ml_realm             boolean NOT NULL,
@@ -190,7 +190,7 @@ GRANT SELECT, UPDATE ON core.genesis_cases_id_seq TO cdb_anonymous;
 GRANT UPDATE (case_status) ON core.genesis_cases TO cdb_anonymous;
 GRANT UPDATE, DELETE ON core.genesis_cases TO cdb_admin;
 
--- this table tracks pending priviledge changes
+-- this table tracks pending privilege changes
 CREATE TABLE core.privilege_changes (
         id                      bigserial PRIMARY KEY,
         -- creation time

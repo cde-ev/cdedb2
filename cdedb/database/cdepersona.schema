@@ -5,7 +5,7 @@
 #       (which depends on core.schema and cosine.schema)
 
 # isActive
-# Controles whether this account is active and thus allowed to log in.
+# Controls whether this account is active and thus allowed to log in.
 attributetype ( 2.25.424242424242424242420003
         NAME 'isActive'
         DESC 'enabling/disabling the account'
