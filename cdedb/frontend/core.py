@@ -20,7 +20,8 @@ from cdedb.frontend.common import (
     check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, querytoparams_filter,
     csv_output, query_result_to_json, enum_entries_filter, periodic,
-    calculate_db_logparams, calculate_loglinks, Response)
+    calculate_db_logparams, calculate_loglinks, Response,
+    make_membership_fee_reference)
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
@@ -483,11 +484,13 @@ class CoreFrontend(AbstractFrontend):
                      and rs.ambience['persona']['is_searchable'])
 
         meta_info = self.coreproxy.get_meta_info(rs)
+        reference = make_membership_fee_reference(data)
 
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
-            'is_relative_admin': is_relative_admin_view,
-            'quoteable': quoteable, 'access_mode': access_mode})
+            'is_relative_admin': is_relative_admin_view, 'reference': reference,
+            'quoteable': quoteable, 'access_mode': access_mode,
+        })
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")

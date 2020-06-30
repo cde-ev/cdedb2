@@ -21,8 +21,7 @@ Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
 IBAN:             {{ ambience['event']['iban']|iban }}
 BIC:              {{ meta_info['CdE_Konto_BIC'] }}
 Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
-Verwendungszweck: {{ user['given_names'] }} {{ user['family_name'] }}, {{ user['persona_id']|cdedbid }}
-                  {{ ambience['event']['title'] }}
+Verwendungszweck: {{ reference }}
 
 
 {% if "member" not in user.roles and ambience["event"]["nonmember_surcharge"] > 0 %}
