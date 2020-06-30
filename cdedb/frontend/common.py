@@ -2161,8 +2161,8 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
 
     This is the "Verwendungszweck".
     """
-    return "Teilnahmebeitrag {en}, {gn} {fn}, {cdedbid}".format(
-        en=asciificator(event['title']),
+    return "Teilnahmebeitrag {event}, {gn} {fn}, {cdedbid}".format(
+        event=asciificator(event['title']),
         gn=asciificator(persona['given_names']),
         fn=asciificator(persona['family_name']),
         cdedbid=cdedbid_filter(persona['id'])
