@@ -3186,7 +3186,7 @@ etc;anything else""", f['entries_2'].value)
                                                                  'own car available'],
                                                                 ['etc', 'anything else']],
                                                     'kind': 1}},
-                      'iban': 'DE96370205000008068901',
+                      'iban': 'DE26370205000008068900',
                       'nonmember_surcharge': "5.00",
                       'institution': 1,
                       'is_archived': False,
