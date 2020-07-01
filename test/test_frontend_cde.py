@@ -4,7 +4,6 @@ import csv
 import itertools
 import json
 import re
-import time
 import unittest
 from test.common import USER_DICT, FrontendTest, as_users
 
@@ -1203,8 +1202,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("farin")
     def test_semester(self, user):
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Semesterverwaltung'})
+        link = {'description': 'Semesterverwaltung'}
+        self.traverse({'description': 'Mitglieder'}, link)
         self.assertTitle("Semesterverwaltung")
 
         # 1.1 Payment Request
@@ -1215,25 +1214,13 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['billform']
         f['testrun'].checked = True
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'billform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('billform', link)
         self.assertTitle("Semesterverwaltung")
 
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'ejectform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('ejectform', link)
         self.assertTitle("Semesterverwaltung")
 
         # 1.2 Remove Inactive Members
@@ -1254,13 +1241,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['ejectform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'balanceform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('balanceform', link)
         self.assertTitle("Semesterverwaltung")
 
         # 1.3 Update Balances
@@ -1278,13 +1259,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['balanceform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'proceedform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('proceedform', link)
         self.assertTitle("Semesterverwaltung")
 
         # 1.4 Next Semester
@@ -1301,15 +1276,10 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['proceedform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'billform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('billform', link)
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Semester Nummer 44", div='current-semester')
+
         # Check error handling for proceed
         self.submit(f, check_notification=False)
         self.assertPresence('Falscher Zeitpunkt für Beendigung des Semesters',
@@ -1319,13 +1289,7 @@ class TestCdEFrontend(FrontendTest):
         # 2.1 Payment Request
         f = self.response.forms['billform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'ejectform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('ejectform', link)
         self.assertTitle("Semesterverwaltung")
 
         # 2.2 Remove Inactive Members
@@ -1336,13 +1300,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['ejectform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'balanceform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('balanceform', link)
         self.assertTitle("Semesterverwaltung")
 
         # 2.3 Update Balances
@@ -1351,13 +1309,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['balanceform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'proceedform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('proceedform', link)
         self.assertTitle("Semesterverwaltung")
 
         # 2.4 Next Semester
@@ -1365,13 +1317,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['proceedform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'billform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('billform', link)
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Semester Nummer 45", div='current-semester')
         self.assertIn('billform', self.response.forms)
@@ -1389,8 +1335,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("farin")
     def test_expuls(self, user):
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Semesterverwaltung'})
+        link = {'description': 'Semesterverwaltung'}
+        self.traverse({'description': 'Mitglieder'}, link)
         self.assertTitle("Semesterverwaltung")
 
         # Address Check
@@ -1398,25 +1344,13 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['addresscheckform']
         f['testrun'].checked = True
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'addresscheckform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('addresscheckform', link)
         self.assertTitle("Semesterverwaltung")
 
         self.assertPresence("Später zu erledigen.", div='expuls-next')
         f = self.response.forms['addresscheckform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'proceedexpulsform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('proceedexpulsform', link)
         self.assertTitle("Semesterverwaltung")
 
         # Next exPuls
@@ -1430,26 +1364,14 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'addresscheckform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('addresscheckform', link)
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("exPuls trägt die Nummer 43", div='expuls-number')
 
         # No Address-Check
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'proceedexpulsform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('proceedexpulsform', link)
         self.assertTitle("Semesterverwaltung")
 
         # Next exPuls
@@ -1463,13 +1385,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        count = 0
-        while count < 42:
-            time.sleep(.1)
-            self.traverse({'description': 'Semesterverwaltung'})
-            if 'addresscheckform' in self.response.forms:
-                break
-            count += 1
+        self.reload_and_check_form('addresscheckform', link)
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("exPuls trägt die Nummer 44", div='expuls-number')
         self.assertIn('addresscheckform', self.response.forms)
@@ -2012,49 +1928,57 @@ class TestCdEFrontend(FrontendTest):
         logs = []
 
         # Payment Request
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Semesterverwaltung'})
+        link = {'description': 'Semesterverwaltung'}
+        self.traverse({'description': 'Mitglieder'}, link)
         f = self.response.forms['billform']
         self.submit(f)
         logs.append({1001: const.CdeLogCodes.semester_bill})
 
         # Remove Inactive Members
+        self.reload_and_check_form('ejectform', link)
         f = self.response.forms['ejectform']
         self.submit(f)
         logs.append({1002: const.CdeLogCodes.semester_ejection})
 
         # Update Balances
+        self.reload_and_check_form('balanceform', link)
         f = self.response.forms['balanceform']
         self.submit(f)
         logs.append({1003: const.CdeLogCodes.semester_balance_update})
 
         # Next Semester
+        self.reload_and_check_form('proceedform', link)
         f = self.response.forms['proceedform']
         self.submit(f)
         logs.append({1004: const.CdeLogCodes.semester_advance})
 
         # Payment Request with addresscheck
+        self.reload_and_check_form('billform', link)
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
         logs.append({1005: const.CdeLogCodes.semester_bill_with_addresscheck})
 
         # exPuls with addresscheck
+        self.reload_and_check_form('addresscheckform', link)
         f = self.response.forms['addresscheckform']
         self.submit(f)
         logs.append({1006: const.CdeLogCodes.expuls_addresscheck})
 
         # Next exPuls
+        self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         logs.append({1007: const.CdeLogCodes.expuls_advance})
 
         # exPuls without addresscheck
+        self.reload_and_check_form('noaddresscheckform', link)
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
         logs.append({1008: const.CdeLogCodes.expuls_addresscheck_skipped})
 
         # Next exPuls
+        self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         logs.append({1009: const.CdeLogCodes.expuls_advance})
@@ -2064,10 +1988,10 @@ class TestCdEFrontend(FrontendTest):
         self.log_pagination("CdE-Log", logs)
 
     def test_finance_log(self):
-        ## First: generate data
+        # First: generate data
         pass
 
-        ## Now check it
+        # Now check it
         self.login(USER_DICT['farin'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/finances'})
