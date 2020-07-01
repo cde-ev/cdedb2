@@ -32,7 +32,8 @@ from cdedb.frontend.common import (
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     xdictsort_filter, enum_entries_filter, safe_filter, cdedburl,
     CustomCSVDialect, keydictsort_filter, calculate_db_logparams,
-    calculate_loglinks, process_dynamic_input)
+    calculate_loglinks, process_dynamic_input, make_event_fee_reference,
+)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -3009,9 +3010,7 @@ class EventFrontend(AbstractUserFrontend):
         age = determine_age_class(
             persona['birthday'],
             event['begin'])
-        minor_form_present = (
-                self.conf["STORAGE_DIR"] / 'minor_form' / str(event_id)
-                ).exists()
+        minor_form = self.eventproxy.get_minor_form(rs, event_id)
         rs.ignore_validation_errors()
         if not preview:
             if rs.user.persona_id in registrations.values():
@@ -3026,7 +3025,7 @@ class EventFrontend(AbstractUserFrontend):
             if rs.ambience['event']['is_archived']:
                 rs.notify("error", n_("Event is already archived."))
                 return self.redirect(rs, "event/show_event")
-            if not minor_form_present and age.is_minor():
+            if not minor_form and age.is_minor():
                 rs.notify("info", n_("No minors may register. "
                                      "Please contact the Orgateam."))
                 return self.redirect(rs, "event/show_event")
@@ -3182,12 +3181,12 @@ class EventFrontend(AbstractUserFrontend):
             return self.register_form(rs, event_id)
         registration['event_id'] = event_id
         registration['persona_id'] = rs.user.persona_id
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
+        persona = self.coreproxy.get_event_user(
+            rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
-        minor_form_present = (
-                self.conf["STORAGE_DIR"] / 'minor_form' / str(event_id)).exists()
-        if not minor_form_present and age.is_minor():
+        minor_form = self.eventproxy.get_minor_form(rs, event_id)
+        if not minor_form and age.is_minor():
             rs.notify("error", n_("No minors may register. "
                                   "Please contact the Orgateam."))
             return self.redirect(rs, "event/show_event")
@@ -3202,13 +3201,14 @@ class EventFrontend(AbstractUserFrontend):
         subject = "Anmeldung für {}".format(rs.ambience['event']['title'])
         reply_to = (rs.ambience['event']['orga_address'] or
                     self.conf["EVENT_ADMIN_ADDRESS"])
+        reference = make_event_fee_reference(persona, rs.ambience['event'])
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
              'Subject': subject,
              'Reply-To': reply_to},
             {'fee': fee, 'age': age, 'meta_info': meta_info,
-             'semester_fee': semester_fee})
+             'semester_fee': semester_fee, 'reference': reference})
         self.notify_return_code(rs, new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")
 
@@ -3228,6 +3228,7 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         meta_info = self.coreproxy.get_meta_info(rs)
+        reference = make_event_fee_reference(persona, rs.ambience['event'])
         fee = self.eventproxy.calculate_fee(rs, registration_id)
         semester_fee = self.conf["MEMBERSHIP_FEE"]
         part_order = xsorted(
@@ -3241,7 +3242,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
-            'reg_questionnaire': reg_questionnaire,
+            'reg_questionnaire': reg_questionnaire, 'reference': reference,
         })
 
     @access("event")
@@ -3699,10 +3700,12 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         meta_info = self.coreproxy.get_meta_info(rs)
+        reference = make_event_fee_reference(persona, rs.ambience['event'])
         fee = self.eventproxy.calculate_fee(rs, registration_id)
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
+            'reference': reference,
         })
 
     @access("event")

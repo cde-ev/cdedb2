@@ -34,7 +34,7 @@ from cdedb.common import (
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
-    make_postal_address, make_transaction_subject, query_result_to_json,
+    make_postal_address, make_membership_fee_reference, query_result_to_json,
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
     calculate_db_logparams, calculate_loglinks, process_dynamic_input,
 )
@@ -83,6 +83,7 @@ class CdEFrontend(AbstractUserFrontend):
         meta_info = self.coreproxy.get_meta_info(rs)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         deadline = None
+        reference = make_membership_fee_reference(data)
         user_lastschrift = []
         if "member" in rs.user.roles:
             user_lastschrift = self.cdeproxy.list_lastschrift(
@@ -109,7 +110,9 @@ class CdEFrontend(AbstractUserFrontend):
                     deadline = deadline.replace(year=deadline.year + 1, month=2)
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0), 'data': data,
-            'meta_info': meta_info, 'deadline': deadline})
+            'meta_info': meta_info, 'deadline': deadline,
+            'reference': reference,
+        })
 
     @access("member")
     def consent_decision_form(self, rs):
@@ -1896,7 +1899,7 @@ class CdEFrontend(AbstractUserFrontend):
                     lastschrift['reference'] = lastschrift_reference(
                         persona['id'], lastschrift['id'])
                 address = make_postal_address(persona)
-                transaction_subject = make_transaction_subject(persona)
+                transaction_subject = make_membership_fee_reference(persona)
                 endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                               and not persona['trial_member']
                               and not lastschrift)
@@ -1967,7 +1970,7 @@ class CdEFrontend(AbstractUserFrontend):
                         period['ejection_count'] + 1
                     period_update['ejection_balance'] = \
                         period['ejection_balance'] + persona['balance']
-                    transaction_subject = make_transaction_subject(persona)
+                    transaction_subject = make_membership_fee_reference(persona)
                     meta_info = self.coreproxy.get_meta_info(rrs)
                     self.do_mail(
                         rrs, "ejection",

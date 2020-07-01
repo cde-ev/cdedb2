@@ -270,7 +270,7 @@ IBAN:               {{ ambience['event']['iban']|iban }}
 BIC:                {{ meta_info['CdE_Konto_BIC'] }}
 Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
 Betrag:             {{ fee|money(lang=lang) }}
-Verwendungszweck:   {{ persona['given_names'] }} {{ persona['family_name'] }}, {{ persona['id']|cdedbid }}, {{ ambience['event']['title'] }}
+Verwendungszweck:   {{ reference }}
 </pre>
 
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}

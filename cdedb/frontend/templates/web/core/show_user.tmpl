@@ -407,7 +407,7 @@ Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
 IBAN:               {{ meta_info['CdE_Konto_IBAN']|iban }}
 BIC:                {{ meta_info['CdE_Konto_BIC'] }}
 Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
-Verwendungszweck:   {{ data['id']|cdedbid }}, {{ data['family_name'] }}, {{ data['given_names'] }}
+Verwendungszweck:   {{ reference }}
 
 Bei Überweisungen aus dem Ausland achte bitte darauf, dass der
 Empfänger keine Gebühren bezahlen muss.

@@ -2144,14 +2144,29 @@ def make_postal_address(persona: CdEDBObject) -> List[str]:
     return ret
 
 
-def make_transaction_subject(persona: CdEDBObject) -> str:
-    """Generate a string for users to put on a payment.
+def make_membership_fee_reference(persona: CdEDBObject) -> str:
+    """Generate the desired reference for membership fee payment.
 
     This is the "Verwendungszweck".
     """
-    return "{}, {}, {}".format(cdedbid_filter(persona['id']),
-                               asciificator(persona['family_name']),
-                               asciificator(persona['given_names']))
+    return "Mitgliedsbeitrag {gn} {fn}, {cdedbid}".format(
+        gn=asciificator(persona['given_names']),
+        fn=asciificator(persona['family_name']),
+        cdedbid=cdedbid_filter(persona['id']),
+    )
+
+
+def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
+    """Generate the desired reference for event fee payment.
+
+    This is the "Verwendungszweck".
+    """
+    return "Teilnahmebeitrag {event}, {gn} {fn}, {cdedbid}".format(
+        event=asciificator(event['title']),
+        gn=asciificator(persona['given_names']),
+        fn=asciificator(persona['family_name']),
+        cdedbid=cdedbid_filter(persona['id'])
+    )
 
 
 def process_dynamic_input(rs: RequestState, existing: Collection[int],
