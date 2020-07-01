@@ -215,14 +215,10 @@ class PastEventBackend(AbstractBackend):
             ON institutions.id = events.institution
             LEFT OUTER JOIN (
                 SELECT
-                    events.id AS pevent_id, COUNT(*) AS course_count
-                FROM (
-                    past_event.events
-                    INNER JOIN
-                        past_event.courses
-                    ON courses.pevent_id = events.id
-                )
-                GROUP BY events.id
+                    pevent_id, COUNT(*) AS course_count
+                FROM
+                    past_event.courses
+                GROUP BY pevent_id
             ) AS course_counts ON course_counts.pevent_id = events.id
             LEFT OUTER JOIN (
                 SELECT
@@ -231,13 +227,9 @@ class PastEventBackend(AbstractBackend):
                     -- counting of more than one distinct column.
                 FROM (
                     SELECT DISTINCT
-                        events.id AS pevent_id, participants.persona_id
-                    FROM (
-                        past_event.events
-                        INNER JOIN
-                            past_event.participants
-                        ON participants.pevent_id = events.id
-                    )
+                        pevent_id, persona_id
+                    FROM
+                        past_event.participants
                 ) AS distinct_participants
                 GROUP BY
                     pevent_id
