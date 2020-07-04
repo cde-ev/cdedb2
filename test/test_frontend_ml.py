@@ -176,6 +176,21 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
+    @as_users("berta", "emilia", "annika", "nina")
+    def test_hide_admin_notes(self, user):
+        # CdElokal Hogwarts
+        ml_data = self.sample_data['ml.mailinglists'][65]
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': ml_data['title']})
+        # Make sure that admin notes exist.
+        self.assertTrue(ml_data['notes'])
+        if user['id'] in {5, 14}:
+            # Nina is admin, Emilia is moderator, they should see the notes.
+            self.assertPresence(ml_data['notes'])
+        else:
+            # Berta has no admin privileges, Annika has none _for this list_.
+            self.assertNonPresence(ml_data['notes'])
+
     @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner")
     def test_sidebar_one_mailinglist(self, user):
         self.traverse({'description': 'Mailinglisten'},

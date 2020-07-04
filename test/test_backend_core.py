@@ -484,7 +484,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_meta_info(self, user):
-        expectation = self.sample_data['core.meta_info'][0]['info']
+        expectation = self.sample_data['core.meta_info'][1]['info']
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
             'Finanzvorstand_Name': 'Zelda'

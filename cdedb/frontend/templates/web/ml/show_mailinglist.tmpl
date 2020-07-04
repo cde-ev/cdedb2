@@ -54,7 +54,9 @@
 
     {{ ambience['mailinglist']['description']|md }}
 
-    {% if 'ml_mgmt' in user.admin_views and ambience['mailinglist']['notes'] %}
+    {% if ambience['mailinglist']['notes']
+            and (ambience['mailinglist']['id'] in user.moderator
+                 or ('ml_mgmt' in user.admin_views and is_relevant_admin(mailinglist=ambience['mailinglist']))) %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['mailinglist']['notes']|md }}
         {% endcall %}

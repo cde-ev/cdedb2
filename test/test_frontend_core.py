@@ -1063,7 +1063,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("berta")
     def test_reset_foto(self, user):
         self.traverse({'description': user['display_name']},)
-        foto_hash = self.sample_data['core.personas'][user['id'] - 1]['foto']
+        foto_hash = self.sample_data['core.personas'][user['id']]['foto']
         self.assertIn(f'foto/{foto_hash}', self.response.text)
         self.traverse({'description': 'Profilbild ändern'})
         f = self.response.forms['resetfotoform']

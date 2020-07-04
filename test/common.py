@@ -20,7 +20,7 @@ import json
 import io
 import PIL.Image
 
-from typing import TypeVar, cast
+from typing import TypeVar, cast, Dict, List
 
 import pytz
 import webtest
@@ -33,9 +33,10 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.common import (ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS,
-                          PrivilegeError, RequestState, glue, n_,
-                          roles_to_db_role, unwrap)
+from cdedb.common import (
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, PrivilegeError, RequestState, n_,
+    roles_to_db_role, unwrap, PathLike, CdEDBObject, CdEDBObjectMap,
+)
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -108,7 +109,28 @@ def json_keys_to_int(obj):
         ret = obj
     return ret
 
+
+def read_sample_data(filename: PathLike = "/cdedb2/test/ancillary_files/"
+                                          "sample_data.json"
+                     ) -> Dict[str, CdEDBObjectMap]:
+    """Helper to turn the sample data from the JSON file into usable format."""
+    with open(filename, "r", encoding="utf8") as f:
+        sample_data: Dict[str, List[CdEDBObject]] = json.load(f)
+    ret: Dict[str, CdEDBObjectMap] = {}
+    for table, table_data in sample_data.items():
+        data = {}
+        _id = 1
+        for e in table_data:
+            _id = e.get('id', _id)
+            assert _id not in data
+            data[_id] = e
+            _id += 1
+        ret[table] = data
+    return ret
+
+
 B = TypeVar("B", bound=AbstractBackend)
+
 
 def make_backend_shim(backend: B, internal=False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
@@ -267,8 +289,7 @@ class BackendUsingTest(unittest.TestCase):
             else:
                 setattr(cls, backend, cls.initialize_backend(classes[backend]))
 
-        with open("/cdedb2/test/ancillary_files/sample_data.json", "r", encoding="utf8") as f:
-            cls.sample_data = json.load(f)
+        cls.sample_data = read_sample_data()
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),
@@ -594,8 +615,7 @@ class FrontendTest(unittest.TestCase):
             cls.scrap_path = tempfile.mkdtemp()
             print(cls.scrap_path, file=sys.stderr)
 
-        with open("/cdedb2/test/ancillary_files/sample_data.json", "r", encoding="utf8") as f:
-            cls.sample_data = json.load(f)
+        cls.sample_data = read_sample_data()
 
     @classmethod
     def tearDownClass(cls):
