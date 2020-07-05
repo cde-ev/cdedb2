@@ -36,10 +36,7 @@
 
         {% if values['is_cde_realm'] and values['is_member'] %}
             <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>
-            {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
-                                        info=gettext("The exPuls is published semi-anually printed and online. "
-                                                     "You can find further information about the online version at %(link)s.")|format(
-                                                     link=util.href(cdedblink('cde/view_misc'), gettext("Members / Miscellaneous")))|s) }}
+            {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls")) }}
         {% endif %}
 
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
