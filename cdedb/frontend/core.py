@@ -4,16 +4,19 @@
 
 import collections
 import copy
-import json
 import pathlib
 import quopri
-import re
 import tempfile
 import datetime
 import operator
+import decimal
 
 import magic
 import werkzeug.exceptions
+
+from typing import (
+    Optional, Collection, Set, cast, List, Tuple, Any
+)
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
@@ -21,13 +24,16 @@ from cdedb.frontend.common import (
     request_dict_extractor, querytoparams_filter,
     csv_output, query_result_to_json, enum_entries_filter, periodic,
     calculate_db_logparams, calculate_loglinks, Response,
-    make_membership_fee_reference)
+    make_membership_fee_reference
+)
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
-    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, privilege_tier, xsorted,
-    RequestState, get_hash)
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, xsorted, RequestState, get_hash,
+    CdEDBObject, PathLike, Realm, DefaultReturnCode, persona_fields_by_realm,
+    restricted_fields_by_realm,
+)
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
@@ -53,21 +59,21 @@ class CoreFrontend(AbstractFrontend):
     anonymous access and personas. """
     realm = "core"
 
-    def __init__(self, configpath=None):
+    def __init__(self, configpath: PathLike = None) -> None:
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
-        self.resolve_api_token_check = lambda x: x == secrets["RESOLVE_API_TOKEN"]
+        self.resolve_api_token_check = (
+            lambda x: x == secrets["RESOLVE_API_TOKEN"])
 
     @classmethod
-    def is_admin(cls, rs):
+    def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
     @access("anonymous")
     @REQUESTdata(("wants", "#str_or_None"))
-    def index(self, rs, wants=None):
+    def index(self, rs: RequestState, wants: str = None) -> Response:
         """Basic entry point.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
         :param wants: URL to redirect to upon login
         """
         rs.ignore_validation_errors()  # drop an invalid "wants"
@@ -179,14 +185,14 @@ class CoreFrontend(AbstractFrontend):
                 'meta_info': meta_info, 'dashboard': dashboard})
 
     @access("core_admin")
-    def meta_info_form(self, rs):
+    def meta_info_form(self, rs: RequestState) -> Response:
         """Render form."""
         info = self.coreproxy.get_meta_info(rs)
         merge_dicts(rs.values, info)
         return self.render(rs, "meta_info")
 
     @access("core_admin", modi={"POST"})
-    def change_meta_info(self, rs):
+    def change_meta_info(self, rs: RequestState) -> Response:
         """Change the meta info constants."""
         info = self.coreproxy.get_meta_info(rs)
         data_params = tuple((key, "str_or_None") for key in info)
@@ -201,12 +207,10 @@ class CoreFrontend(AbstractFrontend):
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("username", "printable_ascii"), ("password", "str"),
                  ("wants", "#str_or_None"))
-    def login(self, rs, username, password, wants):
+    def login(self, rs: RequestState, username: str, password: str,
+              wants: Optional[str]) -> Response:
         """Create session.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type username: printable_ascii
-        :type password: str
         :param wants: URL to redirect to
         """
         if rs.has_validation_errors():
@@ -236,7 +240,7 @@ class CoreFrontend(AbstractFrontend):
 
     # We don't check anti CSRF tokens here, since logging does not harm anyone.
     @access("persona", modi={"POST"}, check_anti_csrf=False)
-    def logout(self, rs):
+    def logout(self, rs: RequestState) -> Response:
         """Invalidate session."""
         self.coreproxy.logout(rs)
         self.redirect(rs, "core/index")
@@ -245,10 +249,10 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))
-    def change_locale(self, rs, locale, wants):
+    def change_locale(self, rs: RequestState, locale: str, wants: Optional[str]
+                      ) -> Response:
         """Set 'locale' cookie to override default locale for this user/browser.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
         :param locale: The target locale
         :param wants: URL to redirect to (typically URL of the previous page)
         """
@@ -269,7 +273,8 @@ class CoreFrontend(AbstractFrontend):
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata(("view_specifier", "printable_ascii"),
                  ("wants", "#str_or_None"))
-    def modify_active_admin_views(self, rs, view_specifier, wants):
+    def modify_active_admin_views(self, rs: RequestState, view_specifier: str,
+                                  wants: Optional[str]) -> Response:
         """
         Enable or disable admin views for the current user.
 
@@ -305,15 +310,16 @@ class CoreFrontend(AbstractFrontend):
         return rs.response
 
     @access("persona")
-    def mydata(self, rs):
+    def mydata(self, rs: RequestState) -> Response:
         """Convenience entry point for own data."""
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("persona")
     @REQUESTdata(("confirm_id", "#int"), ("quote_me", "bool"),
                  ("event_id", "id_or_None"), ("ml_id", "id_or_None"))
-    def show_user(self, rs, persona_id, confirm_id, quote_me, event_id, ml_id,
-                  internal=False):
+    def show_user(self, rs: RequestState, persona_id: int, confirm_id: int,
+                  quote_me: bool, event_id: Optional[int], ml_id: Optional[int],
+                  internal: bool = False) -> Response:
         """Display user details.
 
         This has an additional encoded parameter to make links to this
@@ -334,7 +340,8 @@ class CoreFrontend(AbstractFrontend):
         frontend function and not an incoming request. This allows to access
         this endpoint without a redirect to preserve validation results.
         """
-        if (persona_id != confirm_id or rs.has_validation_errors()) and not internal:
+        if (persona_id != confirm_id or rs.has_validation_errors()) \
+                and not internal:
             return self.index(rs)
         if (rs.ambience['persona']['is_archived']
                 and "core_admin" not in rs.user.roles):
@@ -350,7 +357,7 @@ class CoreFrontend(AbstractFrontend):
         is_relative_or_meta_admin_view = self.coreproxy.is_relative_admin_view(
             rs, persona_id, allow_meta_admin=True)
 
-        ALL_ACCESS_LEVELS = {
+        all_access_levels = {
             "persona", "ml", "assembly", "event", "cde", "core", "meta",
             "orga", "moderator"}
         # kind of view with which the user is shown (f.e. relative_admin, orga)
@@ -361,12 +368,14 @@ class CoreFrontend(AbstractFrontend):
         access_levels = {"persona"}
         # Let users see themselves
         if persona_id == rs.user.persona_id:
-            access_levels.update(ALL_ACCESS_LEVELS)
+            access_levels.update(all_access_levels)
         # Core admins see everything
-        if "core_admin" in rs.user.roles and "core_user" in rs.user.admin_views:
-            access_levels.update(ALL_ACCESS_LEVELS)
+        if ("core_admin" in rs.user.roles
+                and "core_user" in rs.user.admin_views):
+            access_levels.update(all_access_levels)
         # Meta admins are meta
-        if "meta_admin" in rs.user.roles and "meta_admin" in rs.user.admin_views:
+        if ("meta_admin" in rs.user.roles
+                and "meta_admin" in rs.user.admin_views):
             access_levels.add("meta")
         # Other admins see their realm if they are relative admin
         if is_relative_admin:
@@ -411,8 +420,9 @@ class CoreFrontend(AbstractFrontend):
             relevant_stati = [s for s in const.SubscriptionStates
                               if s != const.SubscriptionStates.unsubscribed]
             if is_admin or is_moderator:
-                is_subscriber = persona_id in self.mlproxy.get_subscription_states(
+                subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)
+                is_subscriber = (persona_id in subscriptions)
                 if (is_moderator or is_viewing_admin) and is_subscriber:
                     access_levels.add("ml")
                     # the moderator access level currently does nothing, but we
@@ -494,7 +504,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
-    def show_history(self, rs, persona_id):
+    def show_history(self, rs: RequestState, persona_id: int) -> Response:
         """Display user history."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -572,7 +582,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("phrase", "str"))
-    def admin_show_user(self, rs, phrase):
+    def admin_show_user(self, rs: RequestState, phrase: str) -> Response:
         """Allow admins to view any user data set.
 
         The search phrase may be anything: a numeric id (wellformed with
@@ -627,7 +637,8 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
                  ("variant", "non_negative_int_or_None"))
-    def select_persona(self, rs, phrase, kind, aux, variant=None):
+    def select_persona(self, rs: RequestState, phrase: str, kind: str,
+                       aux: Optional[int], variant: int = None) -> Response:
         """Provide data for intelligent input fields.
 
         This searches for users by name so they can be easily selected
@@ -750,6 +761,7 @@ class CoreFrontend(AbstractFrontend):
             if not valid:
                 data = []
             else:
+                search: List[Tuple[str, QueryOperators, Any]]
                 search = [("username,family_name,given_names,display_name",
                            QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
@@ -810,7 +822,7 @@ class CoreFrontend(AbstractFrontend):
         return self.send_json(rs, {'personas': ret})
 
     @access("persona")
-    def change_user_form(self, rs):
+    def change_user_form(self, rs: RequestState) -> Response:
         """Render form."""
         generation = self.coreproxy.changelog_get_generation(
             rs, rs.user.persona_id)
@@ -825,32 +837,18 @@ class CoreFrontend(AbstractFrontend):
     @access("persona", modi={"POST"})
     @REQUESTdata(("generation", "int"),
                  ("ignore_warnings", "bool_or_None"))
-    def change_user(self, rs, generation, ignore_warnings=False):
+    def change_user(self, rs: RequestState, generation: int,
+                    ignore_warnings: bool = False) -> Response:
         """Change own data set."""
-        REALM_ATTRIBUTES = {
-            'persona': {
-                "display_name", "family_name", "given_names", "title",
-                "name_supplement"},
-            'ml': set(),
-            'assembly': set(),
-            'event': {
-                "telephone", "mobile", "address_supplement", "address",
-                "postal_code", "location", "country"},
-            'cde': {
-                "telephone", "mobile", "address_supplement", "address",
-                "postal_code", "location", "country",
-                "address_supplement2", "address2", "postal_code2", "location2",
-                "country2", "weblink", "specialisation", "affiliation",
-                "timeline", "interests", "free_form", "paper_expuls",
-                "birth_name"}
-        }
-        attributes = REALM_ATTRIBUTES['persona']
-        for realm in ('ml', 'assembly', 'event', 'cde'):
+        attributes = set()
+        for realm in persona_fields_by_realm:
             if realm in rs.user.roles:
-                attributes = attributes.union(REALM_ATTRIBUTES[realm])
+                attributes |= persona_fields_by_realm[realm]
+                attributes -= restricted_fields_by_realm[realm]
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
-        data = check(rs, "persona", data, "persona", _ignore_warnings=ignore_warnings)
+        data = check(rs, "persona", data, "persona",
+                     _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.change_user_form(rs)
         change_note = "Normale Änderung."
@@ -862,7 +860,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
-    def user_search(self, rs, download, is_search, query=None):
+    def user_search(self, rs: RequestState, download: Optional[str],
+                    is_search: bool, query: Query = None) -> Response:
         """Perform search.
 
         The parameter ``download`` signals whether the output should be a
@@ -919,7 +918,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
-    def archived_user_search(self, rs, download, is_search):
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
         """Perform search.
 
         Archived users are somewhat special since they are not visible
@@ -970,15 +970,12 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "archived_user_search", params)
 
     @staticmethod
-    def admin_bits(rs):
+    def admin_bits(rs: RequestState) -> Set[Realm]:
         """Determine realms this admin can see.
 
         This is somewhat involved due to realm inheritance.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: {str}
         """
-        ret = set()
+        ret = {"persona"}
         if "core_admin" in rs.user.roles:
             ret |= REALM_INHERITANCE.keys()
         for realm in REALM_INHERITANCE:
@@ -988,7 +985,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
-    def admin_change_user_form(self, rs, persona_id):
+    def admin_change_user_form(self, rs: RequestState, persona_id: int
+                               ) -> Response:
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -1012,36 +1010,18 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("generation", "int"),
                  ("change_note", "str_or_None"),
                  ("ignore_warnings", "bool_or_None"))
-    def admin_change_user(self, rs, persona_id, generation, change_note,
-                          ignore_warnings=False):
+    def admin_change_user(self, rs: RequestState, persona_id: int,
+                          generation: int, change_note: Optional[str],
+                          ignore_warnings: Optional[bool] = False) -> Response:
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-
-        REALM_ATTRIBUTES = {
-            'persona': {
-                "display_name", "family_name", "given_names", "title",
-                "name_supplement", "notes"},
-            'ml': set(),
-            'assembly': set(),
-            'event': {
-                "gender", "birthday", "telephone", "mobile",
-                "address_supplement", "address", "postal_code", "location",
-                "country"},
-            'cde': {
-                "gender", "birthday", "telephone", "mobile",
-                "address_supplement", "address", "postal_code", "location",
-                "country",
-                "birth_name", "address_supplement2", "address2", "postal_code2",
-                "location2", "country2", "weblink", "specialisation",
-                "affiliation", "timeline", "interests", "free_form",
-                "is_searchable", "paper_expuls"}
-        }
-        attributes = REALM_ATTRIBUTES['persona']
+        # Assure we don't accidently change the original.
+        attributes = set()
         roles = extract_roles(rs.ambience['persona'])
-        for realm in ('ml', 'assembly', 'event', 'cde'):
+        for realm in persona_fields_by_realm:
             if realm in roles and realm in self.admin_bits(rs):
-                attributes = attributes.union(REALM_ATTRIBUTES[realm])
+                attributes |= persona_fields_by_realm[realm]
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
         data = check(rs, "persona", data, _ignore_warnings=ignore_warnings)
@@ -1055,7 +1035,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("persona")
-    def view_admins(self, rs):
+    def view_admins(self, rs: RequestState) -> Response:
         """Render list of all admins of the users realms."""
 
         admins = {
@@ -1085,7 +1065,8 @@ class CoreFrontend(AbstractFrontend):
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
     @access("meta_admin")
-    def change_privileges_form(self, rs, persona_id):
+    def change_privileges_form(self, rs: RequestState, persona_id: int
+                               ) -> Response:
         """Render form."""
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
@@ -1108,9 +1089,11 @@ class CoreFrontend(AbstractFrontend):
         ("is_cde_admin", "bool"), ("is_finance_admin", "bool"),
         ("is_event_admin", "bool"), ("is_ml_admin", "bool"),
         ("is_assembly_admin", "bool"), ("notes", "str"))
-    def change_privileges(self, rs, persona_id, is_meta_admin, is_core_admin,
-                          is_cde_admin, is_finance_admin, is_event_admin,
-                          is_ml_admin, is_assembly_admin, notes):
+    def change_privileges(self, rs: RequestState, persona_id: int,
+                          is_meta_admin: bool, is_core_admin: bool,
+                          is_cde_admin: bool, is_finance_admin: bool,
+                          is_event_admin: bool, is_ml_admin: bool,
+                          is_assembly_admin: bool, notes: str) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
@@ -1193,7 +1176,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("meta_admin")
-    def list_privilege_changes(self, rs):
+    def list_privilege_changes(self, rs: RequestState) -> Response:
         """Show list of privilege changes pending review."""
         case_ids = self.coreproxy.list_privilege_changes(
             rs, stati=(const.PrivilegeChangeStati.pending,))
@@ -1205,13 +1188,14 @@ class CoreFrontend(AbstractFrontend):
 
         cases = collections.OrderedDict(
             xsorted(cases.items(),
-                   key=lambda item: EntitySorter.persona(personas[item[0]])))
+                    key=lambda item: EntitySorter.persona(personas[item[0]])))
 
         return self.render(rs, "list_privilege_changes",
                            {"cases": cases, "personas": personas})
 
     @access("meta_admin")
-    def show_privilege_change(self, rs, privilege_change_id):
+    def show_privilege_change(self, rs: RequestState, privilege_change_id: int
+                              ) -> Response:
         """Show detailed infromation about pending privilege change."""
         privilege_change = rs.ambience['privilege_change']
         if privilege_change["status"] != const.PrivilegeChangeStati.pending:
@@ -1238,7 +1222,9 @@ class CoreFrontend(AbstractFrontend):
 
     @access("meta_admin", modi={"POST"})
     @REQUESTdata(("ack", "bool"))
-    def decide_privilege_change(self, rs, privilege_change_id, ack):
+    def decide_privilege_change(self, rs: RequestState,
+                                privilege_change_id: int,
+                                ack: bool) -> Response:
         """Approve or reject a privilege change."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'core/show_privilege_change')
@@ -1276,7 +1262,8 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)
-    def privilege_change_remind(self, rs, store):
+    def privilege_change_remind(self, rs: RequestState, store: CdEDBObject
+                                ) -> CdEDBObject:
         """Cron job for privilege changes to review.
 
         Send a reminder after four hours and then daily.
@@ -1308,7 +1295,9 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("target_realm", "realm_or_None"))
-    def promote_user_form(self, rs, persona_id, target_realm, internal=False):
+    def promote_user_form(self, rs: RequestState, persona_id: int,
+                          target_realm: Optional[realm], internal: bool = False
+                          ) -> Response:
         """Render form.
 
         This has two parts. If the target realm is absent, we let the
@@ -1336,7 +1325,8 @@ class CoreFrontend(AbstractFrontend):
         "title", "name_supplement", "birthday", "gender", "free_form",
         "telephone", "mobile", "address", "address_supplement", "postal_code",
         "location", "country", "trial_member")
-    def promote_user(self, rs, persona_id, target_realm, data):
+    def promote_user(self, rs: RequestState, persona_id: int,
+                     target_realm: Realm, data: CdEDBObject) -> Response:
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
             # remove irrelevant keys, due to the possible combinations it is
@@ -1381,7 +1371,8 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
-    def modify_membership_form(self, rs, persona_id):
+    def modify_membership_form(self, rs: RequestState, persona_id: int
+                               ) -> Response:
         """Render form."""
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
@@ -1390,7 +1381,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("is_member", "bool"))
-    def modify_membership(self, rs, persona_id, is_member):
+    def modify_membership(self, rs: RequestState, persona_id: int,
+                          is_member: bool) -> Response:
         """Change association status.
 
         This is CdE-functionality so we require a cde_admin instead of a
@@ -1433,7 +1425,8 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("finance_admin")
-    def modify_balance_form(self, rs, persona_id):
+    def modify_balance_form(self, rs: RequestState, persona_id: int
+                            ) -> Response:
         """Serve form to manually modify a personas balance."""
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
@@ -1449,8 +1442,9 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("new_balance", "non_negative_decimal"),
                  ("trial_member", "bool"),
                  ("change_note", "str"))
-    def modify_balance(self, rs, persona_id, new_balance, trial_member,
-                       change_note):
+    def modify_balance(self, rs: RequestState, persona_id: int,
+                       new_balance: decimal.Decimal, trial_member: bool,
+                       change_note: str) -> Response:
         """Set the new balance."""
         if rs.has_validation_errors():
             return self.modify_balance_form(rs, persona_id)
@@ -1510,7 +1504,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata(("confirm_username", "str"))
-    def invalidate_password(self, rs, persona_id, confirm_username):
+    def invalidate_password(self, rs: RequestState, persona_id: int,
+                            confirm_username: str) -> Response:
         """Delete a users current password to force them to set a new one."""
         if confirm_username != rs.ambience['persona']['username']:
             rs.append_validation_error(
@@ -1529,14 +1524,15 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
     @access("persona")
-    def change_password_form(self, rs):
+    def change_password_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(rs, "change_password")
 
     @access("persona", modi={"POST"})
     @REQUESTdata(("old_password", "str"), ("new_password", "str"),
                  ("new_password2", "str"))
-    def change_password(self, rs, old_password, new_password, new_password2):
+    def change_password(self, rs: RequestState, old_password: str,
+                        new_password: str, new_password2: str) -> Response:
         """Update your own password."""
         if rs.has_validation_errors():
             return self.change_password_form(rs)
@@ -1575,7 +1571,7 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("anonymous")
-    def reset_password_form(self, rs):
+    def reset_password_form(self, rs: RequestState) -> Response:
         """Render form.
 
         This starts the process of anonymously resetting a password.
@@ -1584,7 +1580,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata(("email", "email"))
-    def send_password_reset_link(self, rs, email):
+    def send_password_reset_link(self, rs: RequestState, email: str
+                                 ) -> Response:
         """Send a confirmation mail.
 
         To prevent an adversary from changing random passwords.
@@ -1628,7 +1625,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", "meta_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin", modi={"POST"})
-    def admin_send_password_reset_link(self, rs, persona_id, internal=False):
+    def admin_send_password_reset_link(self, rs: RequestState, persona_id: int,
+                                       internal: bool = False) -> Response:
         """Generate a password reset email for an arbitrary persona.
 
         This is the only way to reset the password of an administrator (for
@@ -1667,7 +1665,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata(("email", "#email"), ("cookie", "str"))
-    def do_password_reset_form(self, rs, email, cookie, internal=False):
+    def do_password_reset_form(self, rs: RequestState, email: str,
+                               cookie: str, internal: bool = False) -> Response:
         """Second form.
 
         Pretty similar to first form, but now we know, that the account
@@ -1689,7 +1688,8 @@ class CoreFrontend(AbstractFrontend):
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("email", "#email"), ("new_password", "str"),
                  ("new_password2", "str"), ("cookie", "str"))
-    def do_password_reset(self, rs, email, new_password, new_password2, cookie):
+    def do_password_reset(self, rs: RequestState, email: str, new_password: str,
+                          new_password2: str, cookie: str) -> Response:
         """Now we can reset to a new password."""
         if rs.has_validation_errors():
             return self.reset_password_form(rs)
@@ -1720,13 +1720,14 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect(rs, "core/index")
 
     @access("persona")
-    def change_username_form(self, rs):
+    def change_username_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(rs, "change_username")
 
     @access("persona")
     @REQUESTdata(("new_username", "email"))
-    def send_username_change_link(self, rs, new_username):
+    def send_username_change_link(self, rs: RequestState, new_username: str
+                                  ) -> Response:
         """First verify new name with test email."""
         if new_username == rs.user.username:
             rs.append_validation_error(
@@ -1751,7 +1752,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("persona")
     @REQUESTdata(("new_username", "#email"))
-    def do_username_change_form(self, rs, new_username):
+    def do_username_change_form(self, rs: RequestState, new_username: str
+                                ) -> Response:
         """Email is now verified or we are admin."""
         if rs.has_validation_errors():
             return self.change_username_form(rs)
@@ -1762,7 +1764,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("persona", modi={"POST"})
     @REQUESTdata(('new_username', '#email'), ('password', 'str'))
-    def do_username_change(self, rs, new_username, password):
+    def do_username_change(self, rs: RequestState, new_username: str,
+                           password: str) -> Response:
         """Now we can do the actual change."""
         if rs.has_validation_errors():
             return self.change_username_form(rs)
@@ -1781,7 +1784,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
-    def admin_username_change_form(self, rs, persona_id):
+    def admin_username_change_form(self, rs: RequestState, persona_id: int
+                                   ) -> Response:
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -1794,7 +1798,8 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin", modi={"POST"})
     @REQUESTdata(('new_username', 'email_or_None'))
-    def admin_username_change(self, rs, persona_id, new_username):
+    def admin_username_change(self, rs: RequestState, persona_id: int,
+                              new_username: str) -> Response:
         """Change username without verification."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -1812,7 +1817,8 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin", modi={"POST"})
     @REQUESTdata(("activity", "bool"))
-    def toggle_activity(self, rs, persona_id, activity):
+    def toggle_activity(self, rs: RequestState, persona_id: int, activity: bool
+                        ) -> Response:
         """Enable/disable an account."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -1834,9 +1840,10 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("anonymous")
-    def genesis_request_form(self, rs):
+    def genesis_request_form(self, rs: RequestState) -> Response:
         """Render form."""
-        allowed_genders = set(const.Genders) - {const.Genders.not_specified}
+        allowed_genders = (set(x for x in const.Genders)
+                           - {const.Genders.not_specified})
         realm_options = [(option.realm, rs.gettext(option.name))
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in realm_specific_genesis_fields]
@@ -1858,15 +1865,19 @@ class CoreFrontend(AbstractFrontend):
                  ("attachment_filename", "str_or_None"),
                  ("ignore_warnings", "bool_or_None"))
     @REQUESTfile("attachment")
-    def genesis_request(self, rs, data, attachment, attachment_hash,
-                        attachment_filename=None, ignore_warnings=False):
+    def genesis_request(self, rs: RequestState, data: CdEDBObject,
+                        attachment: Optional[werkzeug.FileStorage],
+                        attachment_hash: Optional[str],
+                        attachment_filename: str = None,
+                        ignore_warnings: bool = False) -> Response:
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
         if attachment:
             attachment_filename = attachment.filename
-            attachment = check(rs, 'pdffile', attachment, 'attachment')
+            attachment = cast(Optional[bytes],
+                              check(rs, 'pdffile', attachment, 'attachment'))
         attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
         if attachment:
             myhash = get_hash(attachment)
@@ -1946,7 +1957,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata(("genesis_case_id", "#int"))
-    def genesis_verify(self, rs, genesis_case_id):
+    def genesis_verify(self, rs: RequestState, genesis_case_id: int
+                       ) -> Response:
         """Verify the email address entered in :py:meth:`genesis_request`.
 
         This is not a POST since the link is shared via email.
@@ -1966,7 +1978,8 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect(rs, "core/index")
 
     @periodic("genesis_remind")
-    def genesis_remind(self, rs, store):
+    def genesis_remind(self, rs: RequestState, store: CdEDBObject
+                       ) -> CdEDBObject:
         """Cron job for genesis cases to review.
 
         Send a reminder after four hours and then daily.
@@ -2013,7 +2026,8 @@ class CoreFrontend(AbstractFrontend):
         return store
 
     @periodic("genesis_forget", period=96)
-    def genesis_forget(self, rs, store):
+    def genesis_forget(self, rs: RequestState, store: CdEDBObject
+                       ) -> CdEDBObject:
         """Cron job for deleting unconfirmed or rejected genesis cases.
 
         This allows the username to be used once more.
@@ -2029,7 +2043,8 @@ class CoreFrontend(AbstractFrontend):
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        genesis_attachment_path : pathlib.Path = self.conf["STORAGE_DIR"] / "genesis_attachment"
+        genesis_attachment_path: pathlib.Path = (
+                self.conf["STORAGE_DIR"] / "genesis_attachment")
 
         attachment_count = 0
         for attachment in genesis_attachment_path.iterdir():
@@ -2048,7 +2063,8 @@ class CoreFrontend(AbstractFrontend):
                             for realm, fields in
                             realm_specific_genesis_fields.items()
                             if "attachment" in fields))
-    def genesis_get_attachment(self, rs, attachment):
+    def genesis_get_attachment(self, rs: RequestState, attachment: str
+                               ) -> Response:
         """Retrieve attachment for genesis case."""
         path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment
         mimetype = magic.from_file(str(path), mime=True)
@@ -2056,7 +2072,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in realm_specific_genesis_fields))
-    def genesis_list_cases(self, rs):
+    def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
         realms = [realm for realm in realm_specific_genesis_fields.keys()
                   if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
@@ -2071,7 +2087,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in realm_specific_genesis_fields))
-    def genesis_show_case(self, rs, genesis_case_id):
+    def genesis_show_case(self, rs: RequestState, genesis_case_id: int
+                          ) -> Response:
         """View a specific case."""
         case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
@@ -2084,7 +2101,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in realm_specific_genesis_fields))
-    def genesis_modify_form(self, rs, genesis_case_id):
+    def genesis_modify_form(self, rs: RequestState, genesis_case_id: int
+                            ) -> Response:
         """Edit a specific case it."""
         case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
@@ -2109,7 +2127,9 @@ class CoreFrontend(AbstractFrontend):
         "birthday", "telephone", "mobile", "address_supplement", "address",
         "postal_code", "location", "country", "birth_name")
     @REQUESTdata(("ignore_warnings", "bool_or_None"))
-    def genesis_modify(self, rs, genesis_case_id, data, ignore_warnings=False):
+    def genesis_modify(self, rs: RequestState, genesis_case_id: int,
+                       data: CdEDBObject, ignore_warnings: bool = False
+                       ) -> Response:
         """Edit a case to fix potential issues before creation."""
         data['id'] = genesis_case_id
         data = check(rs, "genesis_case", data, _ignore_warnings=ignore_warnings)
@@ -2131,7 +2151,8 @@ class CoreFrontend(AbstractFrontend):
                             for realm in realm_specific_genesis_fields),
             modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"))
-    def genesis_decide(self, rs, genesis_case_id, case_status):
+    def genesis_decide(self, rs: RequestState, genesis_case_id: int,
+                       case_status: const.GenesisStati) -> Response:
         """Approve or decline a genensis case.
 
         This either creates a new account or declines account creation.
@@ -2158,10 +2179,11 @@ class CoreFrontend(AbstractFrontend):
                 persona_id = self.coreproxy.genesis(rs, genesis_case_id)
         if not persona_id:
             rs.notify("error", n_("Failed."))
-            return rs.genesis_list_cases(rs)
+            return self.genesis_list_cases(rs)
         if case_status == const.GenesisStati.approved:
             success, cookie = self.coreproxy.make_reset_cookie(
-                rs, case['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                rs, case['username'],
+                timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             self.do_mail(
                 rs, "genesis_approved",
                 {'To': (case['username'],),
@@ -2183,14 +2205,15 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect(rs, "core/genesis_list_cases")
 
     @access("core_admin")
-    def list_pending_changes(self, rs):
+    def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
         pending = self.coreproxy.changelog_get_changes(
             rs, stati=(const.MemberChangeStati.pending,))
         return self.render(rs, "list_pending_changes", {'pending': pending})
 
     @periodic("pending_changelog_remind")
-    def pending_changelog_remind(self, rs, store):
+    def pending_changelog_remind(self, rs: RequestState, store: CdEDBObject
+                                 ) -> CdEDBObject:
         """Cron job for pending changlog entries to decide.
 
         Send a reminder after twelve hours and then daily.
@@ -2198,13 +2221,13 @@ class CoreFrontend(AbstractFrontend):
         current = now()
         data = self.coreproxy.changelog_get_changes(
             rs, stati=(const.MemberChangeStati.pending,))
-        ids = {"{}/{}".format(id, e['generation']) for id, e in data.items()}
+        ids = {"{}/{}".format(_id, e['generation']) for _id, e in data.items()}
         old = set(store.get('ids', [])) & ids
         new = ids - set(old)
         remind = False
-        if any(data[int(id.split('/')[0])]['ctime']
+        if any(data[int(anid.split('/')[0])]['ctime']
                + datetime.timedelta(hours=12) < current
-               for id in new):
+               for anid in new):
             remind = True
         if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
             remind = True
@@ -2221,7 +2244,7 @@ class CoreFrontend(AbstractFrontend):
         return store
 
     @access("core_admin")
-    def inspect_change(self, rs, persona_id):
+    def inspect_change(self, rs: RequestState, persona_id: int) -> Response:
         """Look at a pending change."""
         history = self.coreproxy.changelog_get_history(rs, persona_id,
                                                        generations=None)
@@ -2239,7 +2262,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata(("generation", "int"), ("ack", "bool"))
-    def resolve_change(self, rs, persona_id, generation, ack):
+    def resolve_change(self, rs: RequestState, persona_id: int,
+                       generation: int, ack: bool) -> Response:
         """Make decision."""
         if rs.has_validation_errors():
             return self.list_pending_changes(rs)
@@ -2251,7 +2275,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdata(("ack_delete", "bool"), ("note", "str"))
-    def archive_persona(self, rs, persona_id, ack_delete, note):
+    def archive_persona(self, rs: RequestState, persona_id: int,
+                        ack_delete: bool, note: str) -> Response:
         """Move a persona to the attic."""
         if not ack_delete:
             rs.append_validation_error(
@@ -2271,7 +2296,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    def dearchive_persona(self, rs, persona_id):
+    def dearchive_persona(self, rs: RequestState, persona_id: int) -> Response:
         """Reinstate a persona from the attic."""
         if rs.has_validation_errors():
             return self.redirect_show_user(rs, persona_id)
@@ -2282,7 +2307,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdata(("ack_delete", "bool"))
-    def purge_persona(self, rs, persona_id, ack_delete):
+    def purge_persona(self, rs: RequestState, persona_id: int, ack_delete: bool
+                      ) -> Response:
         """Delete all identifying information for a persona."""
         if not ack_delete:
             rs.append_validation_error(
@@ -2304,9 +2330,15 @@ class CoreFrontend(AbstractFrontend):
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_changelog_meta(self, rs, stati, offset, length, persona_id,
-                            submitted_by, additional_info, time_start,
-                            time_stop, reviewed_by):
+    def view_changelog_meta(self, rs: RequestState,
+                            stati: Collection[const.MemberChangeStati],
+                            offset: Optional[int], length: Optional[int],
+                            persona_id: Optional[int],
+                            submitted_by: Optional[int],
+                            additional_info: Optional[str],
+                            time_start: Optional[datetime.datetime],
+                            time_stop: Optional[datetime.datetime],
+                            reviewed_by: Optional[int]) -> Response:
         """View changelog activity."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -2332,7 +2364,6 @@ class CoreFrontend(AbstractFrontend):
             'log': log, 'total': total, 'length': _length,
             'personas': personas, 'loglinks': loglinks})
 
-
     @access("core_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
@@ -2341,8 +2372,12 @@ class CoreFrontend(AbstractFrontend):
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_log(self, rs, codes, offset, length, persona_id, submitted_by,
-                 additional_info, time_start, time_stop):
+    def view_log(self, rs: RequestState, codes: Collection[const.CoreLogCodes],
+                 offset: Optional[int], length: Optional[int],
+                 persona_id: Optional[int], submitted_by: Optional[int],
+                 additional_info: Optional[str],
+                 time_start: Optional[datetime.datetime],
+                 time_stop: Optional[datetime.datetime]) -> Response:
         """View activity."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -2367,7 +2402,7 @@ class CoreFrontend(AbstractFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("anonymous")
-    def debug_email(self, rs, token):
+    def debug_email(self, rs: RequestState, token: str) -> Response:
         """Debug functionality to view emails stored to HDD.
 
         In test instances emails are stored to disk since most of the time
@@ -2390,15 +2425,16 @@ class CoreFrontend(AbstractFrontend):
         emailtext = quopri.decodestring(rawtext).decode('utf-8')
         return self.render(rs, "debug_email", {'emailtext': emailtext})
 
-    def get_cron_store(self, rs, name):
+    def get_cron_store(self, rs: RequestState, name: str) -> CdEDBObject:
         return self.coreproxy.get_cron_store(rs, name)
 
-    def set_cron_store(self, rs, name, data):
+    def set_cron_store(self, rs: RequestState, name: str, data: CdEDBObject
+                       ) -> DefaultReturnCode:
         return self.coreproxy.set_cron_store(rs, name, data)
 
     @access("droid_resolve")
     @REQUESTdata(("username", "email"))
-    def api_resolve_username(self, rs, username):
+    def api_resolve_username(self, rs: RequestState, username: str) -> Response:
         """API to resolve username to that users given names and family name."""
         if rs.has_validation_errors():
             err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}

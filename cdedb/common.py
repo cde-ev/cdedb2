@@ -386,7 +386,10 @@ def merge_dicts(targetdict: Union[MutableMapping, werkzeug.MultiDict],
                     targetdict[key] = adict[key]
 
 
-def get_hash(*args: Union[bytes, bytearray, memoryview]) -> str:
+BytesLike = Union[bytes, bytearray, memoryview]
+
+
+def get_hash(*args: BytesLike) -> str:
     """Helper to calculate a hexadecimal hash of an arbitrary object.
 
     This uses SHA512. Use this function to assure the same hash is used
@@ -1795,6 +1798,39 @@ genesis_realm_override = {
         'decided_search': False,
         'bub_search': False,
         'paper_expuls': True,
+    }
+}
+
+persona_fields_by_realm = {
+    'persona': {
+        "display_name", "family_name", "given_names", "title",
+        "name_supplement", "notes"
+    },
+    'ml': set(),
+    'assembly': set(),
+    'event': {
+        "gender", "birthday", "telephone", "mobile", "address_supplement",
+        "address", "postal_code", "location", "country"
+    },
+    'cde': {
+        "birth_name", "weblink", "specialisation", "affiliation", "timeline",
+        "interests", "free_form", "is_searchable", "paper_expuls",
+        "address_supplement2", "address2", "postal_code2", "location2",
+        "country2",
+    }
+}
+
+restricted_fields_by_realm = {
+    'persona': {
+        "notes",
+    },
+    'ml': set(),
+    'assembly': set(),
+    'event': {
+        "gender", "birthday",
+    },
+    'cde': {
+        "is_searchable",
     }
 }
 
