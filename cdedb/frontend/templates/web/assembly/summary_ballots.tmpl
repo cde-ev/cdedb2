@@ -22,10 +22,8 @@
                                  ballot['title']) %}
         {% call util.bootstrap_panel(title=title, icon='thumbs-up') %}
         <div class="row">
-            <div class="col-sm-12">
-                {{ ballot['description']|md }}
-                {{ ballot_result.show_result(ballot, result[ballot_id], short=True) }}
-            </div>
+            <div class="col-md-7">{{ ballot['description']|md }}</div>
+            <div class="col-md-5">{{ ballot_result.show_result(ballot, result[ballot_id], short=True) }}</div>
         </div>
         {% endcall %}
     {% endfor %}
