@@ -3169,6 +3169,14 @@ msgstr "Bereits angemeldet."
 msgid "Empty File."
 msgstr "Leere Datei."
 
+msgid "The exPuls is published semi-anually printed and online. "
+      "You can find further information about the online version at %(link)s."
+msgstr "Der exPuls erscheint halbjährlich als Druck- und Online-Ausgabe. "
+       "Weitere Informationen zur Online-Ausgabe findest du unter %(link)s."
+
+msgid "Members / Miscellaneous"
+msgstr "Mitglieder / Sonstiges"
+
 #: cdedb/frontend/assembly.py:401 cdedb/frontend/assembly.py:422
 #: cdedb/frontend/assembly.py:465
 msgid "Unable to conclude assembly with open ballot."
