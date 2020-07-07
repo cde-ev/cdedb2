@@ -267,6 +267,12 @@
                 <dd>
                     {{ util.deko_checkbox(checked=data['paper_expuls'], anid="paper_expuls_checkbox",
                                           titles=[gettext("No"), gettext("Yes")]) }}
+                    {{ util.output_info(
+                            gettext("The exPuls is published semi-anually printed and online. "
+                                    "You can find further information about the online version at %(link)s.")|format(
+                                     link=util.href(cdedblink('cde/view_misc'),
+                                                    gettext("Members") + " / " + gettext("Miscellaneous")))|s
+                    ) }}
                 </dd>
             </dl>
         {% endif %}
