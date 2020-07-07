@@ -11,7 +11,8 @@ folgenden Schritte.
 
 1. Nutzer in Offline-VM anlegen
 
-   Es ist nötig einen Account für die neue Anmeldung anzulegen, auch wenn die Person 
+   Es ist nötig einen Account für die neue Anmeldung anzulegen, auch wenn die
+   Person in der Online-Datenbank bereits einen Account besitzt.
 
    Dies geht unter "Veranstaltungen" > "Nutzer verwalten" > "Nutzer
    anlegen". Erfasst bei Personen die noch keinen Account in der
@@ -181,7 +182,7 @@ angeben können, was auf sie zutrifft:
    * Schreibgeschützt: Nein
 
 2. * Titel: "Ich möchte schon Silvester als Gast dabei sein."
-   * Abfrage: "solidarity"
+   * Abfrage: "silvester"
    * Test: "Bitte wähle diese Option nur dann, wenn Du __nicht__ zur ersten Hälfte kommst."
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein

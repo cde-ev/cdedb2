@@ -348,6 +348,7 @@ class MlBackend(AbstractBackend):
         :param active_only: Toggle wether inactive lists should be included.
         :type managed: str
         :param managed: Valid values:
+
             * None:         no additional filter
             * admin:        list only lists administrated
             * managed:      list only lists moderated or administrated
@@ -669,6 +670,7 @@ class MlBackend(AbstractBackend):
         """Determine what blocks a mailinglist from being deleted.
 
         Possible blockers:
+
         * subscriptions: A subscription to the mailinglist.
         * addresses: A non-default subscribtion address for the mailinglist.
         * whitelist: An entry on the whitelist of the mailinglist.
