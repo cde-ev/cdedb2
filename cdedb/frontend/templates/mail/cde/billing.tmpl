@@ -65,11 +65,6 @@ Jahr mit dem Lastschrifteinzug pausieren möchtest.
 
 == Adresskontrolle ==
 
-Neuerdings kannst Du auch in der Datenbank unter
-{{ cdedblink('core/change_user', {'persona_id': persona['id']}) }}
-den gedruckten exPuls abbestellen! Den exPuls kannst Du weiterhin
-in PDF-Form über die CdE-Info Mailingliste erhalten.
-
 Unter anderem für den Versand des exPuls ist es wichtig, dass wir
 Deine aktuelle Adresse kennen. Deine in der Datenbank eingetragene
 Adresse ist:
@@ -80,6 +75,16 @@ Falls diese nicht mehr aktuell ist, so kannst Du Dich in die
 CdE-Datenbank unter der Adresse
 {{ cdedblink("core/index") }}
 einloggen und die Adresse korrigieren.
+
+Der exPuls erscheint sowohl gedruckt als auch online.
+Die gedruckte Ausgabe kannst du in der Datenbank unter
+{{ cdedblink('core/change_user', {'persona_id': persona['id']}) }}
+abbestellen.
+Alle Online-Ausgaben findest du im exPuls-Archiv, den Link
+zum Archiv findest du in der Datenbank unter
+{{ cdedblink('cde/view_misc') }}
+Über die CdE-Info Mailingliste wirst du über das Erscheinen einer
+neuen Online-Ausgabe benachrichtig.
 {% endif %}
 {% if (persona['balance'] >= fee or persona['trial_member']) and not lastschrift %}
 
