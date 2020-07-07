@@ -1710,7 +1710,17 @@ def access(*roles: Role, modi: Collection[str] = None,
     return decorator
 
 
-def periodic(name: str, period: int = 1) -> Callable[[F], F]:
+class PeriodicMethod:
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
+        pass
+
+
+class PeriodicJob(PeriodicMethod):
+    cron: CdEDBObject = None
+
+
+def periodic(name: str, period: int = 1
+             ) -> Callable[[PeriodicMethod], PeriodicJob]:
     """This decorator marks a function of a frontend for periodic execution.
 
     This just adds a flag and all of the actual work is done by the
@@ -1720,7 +1730,7 @@ def periodic(name: str, period: int = 1) -> Callable[[F], F]:
     :param period: the interval in which to execute this job (e.g. period ==
       2 means every second invocation of the CronFrontend)
     """
-    def decorator(fun: F) -> F:
+    def decorator(fun: PeriodicMethod) -> PeriodicJob:
         fun.cron = {
             'name': name,
             'period': period,

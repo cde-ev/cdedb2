@@ -11,13 +11,15 @@ import inspect
 import pathlib
 import sys
 
+from typing import Collection, Generator
+
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import n_, glue, now, RequestState, User, PathLike
-from cdedb.frontend.common import BaseApp
+from cdedb.frontend.common import BaseApp, AbstractFrontend, PeriodicJob
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -28,7 +30,7 @@ class CronFrontend(BaseApp):
     """This takes care of actually doing the periodic work."""
     realm = "cron"
 
-    def __init__(self, configpath: PathLike = None):
+    def __init__(self, configpath: PathLike = None) -> None:
         super().__init__(configpath)
 
         self.urlmap = CDEDB_PATHS
@@ -53,7 +55,7 @@ class CronFrontend(BaseApp):
         self.assembly = AssemblyFrontend(configpath)
         self.ml = MlFrontend(configpath)
 
-    def make_request_state(self):
+    def make_request_state(self) -> RequestState:
         roles = {
             "anonymous", "persona", "cde", "event", "ml", "assembly",
             "member", "searchable",
@@ -61,8 +63,7 @@ class CronFrontend(BaseApp):
             "core_admin",
             "meta_admin",
         }
-        user = User(roles=roles, persona_id=None, username=None,
-                    given_names=None, display_name=None, family_name=None)
+        user = User(roles=roles, persona_id=None)
         lang = "en"
         coders = {
             "encode_parameter": self.encode_parameter,
@@ -73,18 +74,17 @@ class CronFrontend(BaseApp):
         urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/",
                                 url_scheme="https")
         rs = RequestState(
-            None, None, user, None, None, [], urls, {},
-            [], {}, lang,
-            self.translations[lang].gettext,
-            self.translations[lang].ngettext, coders, None,
-            None)
+            sessionkey=None, apitoken=None, user=user, request=None,
+            response=None, notifications=[], mapadapter=urls, requestargs={},
+            errors=[], values=None, lang=lang, coders=coders, begin=None,
+            gettext=self.translations[lang].gettext,
+            ngettext=self.translations[lang].ngettext)
         rs._conn = self.connpool['cdb_admin']
         return rs
 
-    def execute(self, jobs=None):
+    def execute(self, jobs: Collection[str] = None) -> bool:
         """
         :param jobs: If jobs is given execute only these jobs.
-        :type jobs: [str]
         """
         rs = self.make_request_state()
         base_state = self.core.get_cron_store(rs, "_base")
@@ -113,12 +113,14 @@ class CronFrontend(BaseApp):
                             or self.conf["CDEDB_DEV"]):
                         rs.begin = now()
                         state = self.core.get_cron_store(rs, hook.cron['name'])
+                        # noinspection PyBroadException
                         try:
                             tmp = hook(rs, state)
                         except Exception:
                             self.logger.error(banner.format(hook.cron['name']))
                             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                             self.logger.error("SECOND TRY CGITB")
+                            # noinspection PyBroadException
                             try:
                                 self.logger.error(cgitb.text(sys.exc_info(),
                                                              context=7))
@@ -135,7 +137,8 @@ class CronFrontend(BaseApp):
         return True
 
     @staticmethod
-    def find_periodics(frontend):
+    def find_periodics(frontend: AbstractFrontend
+                       ) -> Generator[PeriodicJob, None, None]:
         for name, func in inspect.getmembers(frontend, inspect.ismethod):
             if hasattr(func, "cron"):
                 yield func

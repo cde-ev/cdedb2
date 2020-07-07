@@ -19,6 +19,7 @@ import urllib.parse
 import json
 import io
 import PIL.Image
+import time
 
 from typing import TypeVar, cast, Dict, List
 
@@ -1026,6 +1027,23 @@ class FrontendTest(unittest.TestCase):
                 self.assertNotIn("active", button['class'])
         self.submit(f, 'view_specifier', False, value=button['value'])
         return button
+
+    def reload_and_check_form(self, form, link, max_tries: int = 42,
+                              waittime: float = 0.1, fail: bool = True) -> None:
+        """Helper to repeatedly reload a page until a certain form is present.
+
+        This is mostly required for the "Semesterverwaltung".
+        """
+        count = 0
+        while count < max_tries:
+            time.sleep(waittime)
+            self.traverse(link)
+            if form in self.response.forms:
+                break
+            count += 1
+        else:
+            if fail:
+                self.fail(f"Form {form} not found after {count} reloads.")
 
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])

@@ -18,9 +18,14 @@ import datetime
 import time
 import dateutil.easter
 import shutil
+import decimal
 
 import psycopg2.extensions
 import werkzeug
+
+from typing import (
+    Tuple, Optional, List, Collection, Set
+)
 
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -29,7 +34,8 @@ from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
     PERSONA_DEFAULTS, diacritic_patterns, asciificator, EntitySorter,
-    TransactionType, xsorted, get_hash,
+    TransactionType, xsorted, get_hash, RequestState, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
@@ -37,6 +43,7 @@ from cdedb.frontend.common import (
     make_postal_address, make_membership_fee_reference, query_result_to_json,
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
     calculate_db_logparams, calculate_loglinks, process_dynamic_input,
+    Response
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
@@ -74,11 +81,11 @@ class CdEFrontend(AbstractUserFrontend):
     }
 
     @classmethod
-    def is_admin(cls, rs):
+    def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
     @access("cde")
-    def index(self, rs):
+    def index(self, rs: RequestState) -> Response:
         """Render start page."""
         meta_info = self.coreproxy.get_meta_info(rs)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
@@ -115,7 +122,7 @@ class CdEFrontend(AbstractUserFrontend):
         })
 
     @access("member")
-    def consent_decision_form(self, rs):
+    def consent_decision_form(self, rs: RequestState) -> Response:
         """After login ask cde members for decision about searchability. Do
         this only if no decision has been made in the past.
 
@@ -128,7 +135,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("member", modi={"POST"})
     @REQUESTdata(("ack", "bool"))
-    def consent_decision(self, rs, ack):
+    def consent_decision(self, rs: RequestState, ack: bool) -> Response:
         """Record decision."""
         if rs.has_validation_errors():
             return self.consent_decision_form(rs)
@@ -153,7 +160,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("searchable")
     @REQUESTdata(("is_search", "bool"))
-    def member_search(self, rs, is_search):
+    def member_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for members."""
         defaults = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
@@ -203,13 +210,13 @@ class CdEFrontend(AbstractUserFrontend):
         elif is_search:
 
             def restrict(constraint):
-                filter, operation, value = constraint
-                if filter == 'fulltext':
+                field, operation, value = constraint
+                if field == 'fulltext':
                     value = [r"\m{}\M".format(val) if len(val) <= 3 else val
                              for val in value]
                 elif len(str(value)) <= 3:
                     operation = QueryOperators.equal
-                constraint = (filter, operation, value)
+                constraint = (field, operation, value)
                 return constraint
 
             query.constraints = [restrict(constrain)
@@ -233,7 +240,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
-    def user_search(self, rs, download, is_search):
+    def user_search(self, rs: RequestState, download: str, is_search: bool
+                    ) -> Response:
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_user'])
         # mangle the input, so we can prefill the form
@@ -282,7 +290,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "user_search", params)
 
     @access("cde_admin")
-    def create_user_form(self, rs):
+    def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,
             'bub_search': False,
@@ -301,7 +309,7 @@ class CdEFrontend(AbstractUserFrontend):
         "address_supplement2", "postal_code2", "location2", "country2",
         "is_member", "is_searchable", "trial_member", "bub_search", "notes",
         "paper_expuls")
-    def create_user(self, rs, data):
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': True,
             'is_event_realm': True,
@@ -315,7 +323,9 @@ class CdEFrontend(AbstractUserFrontend):
         return super().create_user(rs, data)
 
     @access("cde_admin")
-    def batch_admission_form(self, rs, data=None, csvfields=None):
+    def batch_admission_form(self, rs: RequestState,
+                             data: List[CdEDBObject] = None,
+                             csvfields: Tuple[str, ...] = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -342,15 +352,13 @@ class CdEFrontend(AbstractUserFrontend):
             'data': data, 'pevents': pevents, 'pcourses': pcourses,
             'csvfields': csv_position})
 
-    def examine_for_admission(self, rs, datum):
+    def examine_for_admission(self, rs: RequestState, datum: CdEDBObject
+                              ) -> CdEDBObject:
         """Check one line of batch admission.
 
         We test for fitness of the data itself, as well as possible
         existing duplicate accounts.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: object}
-        :rtype: {str: object}
         :returns: The processed input datum.
         """
         warnings = []
@@ -362,14 +370,14 @@ class CdEFrontend(AbstractUserFrontend):
         persona = copy.deepcopy(datum['raw'])
         # Adapt input of gender from old convention (this is the format
         # used by external processes, i.e. BuB)
-        GENDER_CONVERT = {
+        gender_convert = {
             "0": str(const.Genders.other.value),
             "1": str(const.Genders.male.value),
             "2": str(const.Genders.female.value),
             "3": str(const.Genders.not_specified.value),
         }
         gender = persona.get('gender') or "3"
-        persona['gender'] = GENDER_CONVERT.get(
+        persona['gender'] = gender_convert.get(
             gender.strip(), str(const.Genders.not_specified.value))
         del persona['event']
         del persona['course']
@@ -408,7 +416,7 @@ class CdEFrontend(AbstractUserFrontend):
             problems.extend(p)
         else:
             warnings.append(("course", ValueError(n_("No course available."))))
-        doppelgangers = tuple()
+        doppelgangers: Optional[CdEDBObjectMap] = None
         if (datum['resolution'] == LineResolutions.create
                 and self.coreproxy.verify_existence(rs, persona['username'])):
             warnings.append(
@@ -472,15 +480,11 @@ class CdEFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def _perform_one_batch_admission(self, rs, datum, trial_membership,
-                                     consent):
+    def _perform_one_batch_admission(self, rs: RequestState, datum: CdEDBObject,
+                                     trial_membership: bool, consent: bool
+                                     ) -> int:
         """Uninlined code from perform_batch_admission().
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: object}
-        :type trial_membership: bool
-        :type consent: bool
-        :rtype: int
         :returns: number of created accounts (0 or 1)
         """
         ret = 0
@@ -568,8 +572,9 @@ class CdEFrontend(AbstractUserFrontend):
                 persona_id, is_instructor=False, is_orga=False)
         return ret
 
-    def perform_batch_admission(self, rs, data, trial_membership, consent,
-                                sendmail):
+    def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
+                                trial_membership: bool, consent: bool,
+                                sendmail: bool) -> Tuple[bool, Optional[int]]:
         """Resolve all entries in the batch admission form.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -583,6 +588,7 @@ class CdEFrontend(AbstractUserFrontend):
           where an exception was triggered or None if it was a DB
           serialization error.
         """
+        # noinspection PyBroadException
         try:
             with Atomizer(rs):
                 count = 0
@@ -593,7 +599,7 @@ class CdEFrontend(AbstractUserFrontend):
             # We perform a rather big transaction, so serialization errors
             # could happen.
             return False, None
-        except:
+        except Exception:
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
@@ -604,6 +610,7 @@ class CdEFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
+            # noinspection PyBroadException
             try:
                 self.logger.error(cgitb.text(sys.exc_info(), context=7))
             except Exception:
@@ -634,7 +641,7 @@ class CdEFrontend(AbstractUserFrontend):
         return True, count
 
     @staticmethod
-    def similarity_score(ds1, ds2):
+    def similarity_score(ds1: CdEDBObject, ds2: CdEDBObject) -> str:
         """Helper to determine similar input lines.
 
         This is separate from the detection of existing accounts, and
@@ -662,10 +669,11 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("membership", "bool"), ("trial_membership", "bool"),
-                 ("consent", "bool"), ("sendmail", "bool"), ("accounts", "str"),
-                 ("finalized", "bool"))
-    def batch_admission(self, rs, membership, trial_membership, consent,
-                        sendmail, finalized, accounts):
+                 ("consent", "bool"), ("sendmail", "bool"),
+                 ("finalized", "bool"), ("accounts", "str"))
+    def batch_admission(self, rs: RequestState, membership: bool,
+                        trial_membership: bool, consent: bool, sendmail: bool,
+                        finalized: bool, accounts: str) -> Response:
         """Make a lot of new accounts.
 
         This is rather involved to make this job easier for the administration.
@@ -762,7 +770,8 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("finance_admin")
-    def parse_statement_form(self, rs, data=None, params=None):
+    def parse_statement_form(self, rs: RequestState, data: CdEDBObject = None,
+                             params: CdEDBObject = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -785,18 +794,11 @@ class CdEFrontend(AbstractUserFrontend):
         }
         return self.render(rs, "parse_statement", params)
 
-    def organize_transaction_data(self, rs, transactions, start, end,
-                                  timestamp):
-        """
-        Organize transactions into data and params usable in the form.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type transactions: [parse.Transaction]
-        :type start: datetime.date or None
-        :type end: datetime.date or None
-        :type timestamp: datetime.time
-        :rtype: {str: object}, {str: object}
-        """
+    def organize_transaction_data(
+            self, rs: RequestState, transactions: List[parse.Transaction],
+            start: Optional[datetime.date], end: Optional[datetime.date],
+            timestamp: datetime.datetime) -> Tuple[CdEDBObject, CdEDBObject]:
+        """Organize transactions into data and params usable in the form."""
         data = {"{}{}".format(k, t.t_id): v
                 for t in transactions
                 for k, v in t.to_dict(rs, self.coreproxy.get_persona,
@@ -837,7 +839,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTfile("statement_file")
-    def parse_statement(self, rs, statement_file):
+    def parse_statement(self, rs: RequestState,
+                        statement_file: werkzeug.FileStorage) -> Response:
         """
         Parse the statement into multiple CSV files.
 
@@ -856,9 +859,6 @@ class CdEFrontend(AbstractUserFrontend):
         used on further validation.
 
         This uses POST because the expected data is too large for GET.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type statement_file: file or None
         """
 
         filename = pathlib.Path(statement_file.filename).parts[-1]
@@ -917,9 +917,12 @@ class CdEFrontend(AbstractUserFrontend):
                  ("excel", "str_or_None"),
                  ("gnucash", "str_or_None"),
                  ("ignore_warnings", "bool"))
-    def parse_download(self, rs, count, start, end, timestamp, validate=None,
-                       event=None, membership=None, excel=None, gnucash=None,
-                       ignore_warnings=False):
+    def parse_download(self, rs: RequestState, count: int, start: datetime.date,
+                       end: Optional[datetime.date],
+                       timestamp: datetime.datetime, validate: str = None,
+                       event: int = None, membership: str = None,
+                       excel: str = None, gnucash: str = None,
+                       ignore_warnings: bool = False) -> Response:
         """
         Provide data as CSV-Download with the given filename.
 
@@ -1000,7 +1003,10 @@ class CdEFrontend(AbstractUserFrontend):
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
     @access("finance_admin")
-    def money_transfers_form(self, rs, data=None, csvfields=None, saldo=None):
+    def money_transfers_form(self, rs: RequestState,
+                             data: List[CdEDBObject] = None,
+                             csvfields: Tuple[str, ...] = None,
+                             saldo: decimal.Decimal = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -1011,12 +1017,12 @@ class CdEFrontend(AbstractUserFrontend):
         data = data or {}
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
-        return self.render(rs, "money_transfers",
-                           {'data': data, 'csvfields': csv_position,
-                            'saldo': saldo,
-                            })
+        return self.render(rs, "money_transfers", {
+            'data': data, 'csvfields': csv_position, 'saldo': saldo,
+        })
 
-    def examine_money_transfer(self, rs, datum):
+    def examine_money_transfer(self, rs: RequestState, datum: CdEDBObject
+                               ) -> CdEDBObject:
         """Check one line specifying a money transfer.
 
         We test for fitness of the data itself.
@@ -1076,24 +1082,24 @@ class CdEFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def perform_money_transfers(self, rs, data, sendmail):
+    def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject],
+                                sendmail: bool
+                                ) -> Tuple[bool, Optional[int], Optional[int]]:
         """Resolve all entries in the money transfers form.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: [{str: object}]
-        :type sendmail: bool
-        :rtype: bool, int, int
-        :returns: Success information and
-
-          * for positive outcome the number of recorded transfer as well as
-            the number of new members or
-          * for negative outcome the line where an exception was triggered
-            or None if it was a DB serialization error as first number and
-            None as second number.
+        :returns: A bool indicating success and:
+            * In case of success:
+                * The number of recorded transactions
+                * The number of new members.
+            * In case of error:
+                * The index of the erronous line or None
+                    if a DB-serialization error occurred.
+                * None
         """
         index = 0
         note_template = ("Guthabenänderung um {amount} auf {new_balance} "
                          "(Überwiesen am {date})")
+        # noinspection PyBroadException
         try:
             with Atomizer(rs):
                 count = 0
@@ -1127,7 +1133,7 @@ class CdEFrontend(AbstractUserFrontend):
             # We perform a rather big transaction, so serialization errors
             # could happen.
             return False, None, None
-        except:
+        except Exception:
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
@@ -1158,8 +1164,10 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("sendmail", "bool"), ("transfers", "str_or_None"),
                  ("checksum", "str_or_None"))
     @REQUESTfile("transfers_file")
-    def money_transfers(self, rs, sendmail, transfers, checksum,
-                        transfers_file):
+    def money_transfers(self, rs: RequestState, sendmail: bool,
+                        transfers: Optional[str], checksum: Optional[str],
+                        transfers_file: Optional[werkzeug.FileStorage]
+                        ) -> Response:
         """Update member balances.
 
         The additional parameter sendmail modifies the behaviour and can
@@ -1235,17 +1243,16 @@ class CdEFrontend(AbstractUserFrontend):
             return self.money_transfers_form(rs, data=data, csvfields=fields,
                                              saldo=saldo)
 
-    def determine_open_permits(self, rs, lastschrift_ids=None):
+    def determine_open_permits(self, rs: RequestState,
+                               lastschrift_ids: Collection[int] = None
+                               ) -> Set[int]:
         """Find ids, which to debit this period.
 
         Helper to find out which of the passed lastschrift permits has
-        not been debitted for a year.
+        not been debited for a year.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type lastschrift_ids: [int] or None
         :param lastschrift_ids: If None is passed all existing permits
           are checked.
-        :rtype: {int}
         """
         if lastschrift_ids is None:
             lastschrift_ids = self.cdeproxy.list_lastschrift(rs).keys()
@@ -1259,7 +1266,7 @@ class CdEFrontend(AbstractUserFrontend):
         return set(lastschrift_ids) - set(transaction_ids.values())
 
     @access("finance_admin")
-    def lastschrift_index(self, rs):
+    def lastschrift_index(self, rs: RequestState) -> Response:
         """General lastschrift overview.
 
         This presents open items as well as all permits.
@@ -1293,7 +1300,7 @@ class CdEFrontend(AbstractUserFrontend):
             'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
 
     @access("member", "finance_admin")
-    def lastschrift_show(self, rs, persona_id):
+    def lastschrift_show(self, rs: RequestState, persona_id: int) -> Response:
         """Display all lastschrift information for one member.
 
         Especially all permits and transactions.
@@ -1328,7 +1335,8 @@ class CdEFrontend(AbstractUserFrontend):
         })
 
     @access("finance_admin")
-    def lastschrift_change_form(self, rs, lastschrift_id):
+    def lastschrift_change_form(self, rs: RequestState, lastschrift_id: int
+                                ) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['lastschrift'])
         persona = self.coreproxy.get_persona(
@@ -1338,7 +1346,8 @@ class CdEFrontend(AbstractUserFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
-    def lastschrift_change(self, rs, lastschrift_id, data):
+    def lastschrift_change(self, rs: RequestState, lastschrift_id: int,
+                           data: CdEDBObject):
         """Modify one permit."""
         data['id'] = lastschrift_id
         data = check(rs, "lastschrift", data)
@@ -1350,14 +1359,16 @@ class CdEFrontend(AbstractUserFrontend):
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     @access("finance_admin")
-    def lastschrift_create_form(self, rs, persona_id):
+    def lastschrift_create_form(self, rs: RequestState, persona_id: int
+                                ) -> Response:
         """Render form."""
         return self.render(rs, "lastschrift_create")
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
-    def lastschrift_create(self, rs, persona_id, data):
+    def lastschrift_create(self, rs: RequestState, persona_id: int,
+                           data: CdEDBObject) -> Response:
         """Create a new permit."""
         data['persona_id'] = persona_id
         data = check(rs, "lastschrift", data, creation=True)
@@ -1373,7 +1384,8 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/lastschrift_show")
 
     @access("finance_admin", modi={"POST"})
-    def lastschrift_revoke(self, rs, lastschrift_id):
+    def lastschrift_revoke(self, rs: RequestState, lastschrift_id: int
+                           ) -> Response:
         """Disable a permit."""
         if rs.has_validation_errors():
             return self.lastschrift_show(
@@ -1399,7 +1411,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
-    def _calculate_payment_date(self):
+    def _calculate_payment_date(self) -> datetime.date:
         """Helper to calculate a payment date that is a valid TARGET2 bankday.
 
         :rtype: datetime.date
@@ -1435,7 +1447,8 @@ class CdEFrontend(AbstractUserFrontend):
 
         return payment_date
 
-    def create_sepapain(self, rs, transactions):
+    def create_sepapain(self, rs: RequestState, transactions: List[CdEDBObject]
+                        ) -> Optional[str]:
         """Create an XML document for submission to a bank.
 
         The relevant document is the EBICS (Electronic Banking Internet
@@ -1486,7 +1499,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("finance_admin")
     @REQUESTdata(("lastschrift_id", "id_or_None"))
-    def lastschrift_download_sepapain(self, rs, lastschrift_id):
+    def lastschrift_download_sepapain(
+            self, rs: RequestState, lastschrift_id: Optional[int]) -> Response:
         """Provide the sepapain file without actually issueing the transactions.
 
         Creates and returns an XML-file for one lastschrift is a
@@ -1554,7 +1568,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("lastschrift_id", "id_or_None"))
-    def lastschrift_generate_transactions(self, rs, lastschrift_id):
+    def lastschrift_generate_transactions(
+            self, rs: RequestState, lastschrift_id: Optional[int]) -> Response:
         """Issue direct debit transactions.
 
         This creates new transactions either for the lastschrift_id
@@ -1614,7 +1629,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
-    def lastschrift_skip(self, rs, lastschrift_id, persona_id):
+    def lastschrift_skip(self, rs: RequestState, lastschrift_id: int,
+                         persona_id: Optional[int]):
         """Do not do a direct debit transaction for this year.
 
         If persona_id is given return to the persona-specific
@@ -1634,16 +1650,10 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    def lastschrift_process_transaction(self, rs, transaction_id, status):
-        """Process one transaction and store the outcome.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type transaction_id: int
-        :type status:
-          :py:class:`cdedb.database.constants.LastschriftTransactionStati`
-        :rtype: int
-        :returns: default return code
-        """
+    def lastschrift_process_transaction(
+            self, rs: RequestState, transaction_id: int,
+            status: const.LastschriftTransactionStati) -> DefaultReturnCode:
+        """Process one transaction and store the outcome."""
         tally = None
         if status == const.LastschriftTransactionStati.failure:
             tally = -self.conf["SEPA_ROLLBACK_FEE"]
@@ -1653,8 +1663,10 @@ class CdEFrontend(AbstractUserFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("status", "enum_lastschrifttransactionstati"),
                  ("persona_id", "id_or_None"))
-    def lastschrift_finalize_transaction(self, rs, lastschrift_id,
-                                         transaction_id, status, persona_id):
+    def lastschrift_finalize_transaction(
+            self, rs: RequestState, lastschrift_id: int, transaction_id: int,
+            status: const.LastschriftTransactionStati,
+            persona_id: Optional[int]) -> Response:
         """Finish one transaction.
 
         If persona_id is given return to the persona-specific
@@ -1674,12 +1686,13 @@ class CdEFrontend(AbstractUserFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("transaction_ids", "[id]"), ("success", "bool_or_None"),
                  ("cancelled", "bool_or_None"), ("failure", "bool_or_None"))
-    def lastschrift_finalize_transactions(self, rs, transaction_ids, success,
-                                          cancelled, failure):
+    def lastschrift_finalize_transactions(
+            self, rs: RequestState, transaction_ids: Collection[int],
+            success: bool, cancelled: bool, failure: bool) -> Response:
         """Finish many transaction."""
         if sum(1 for s in (success, cancelled, failure) if s) != 1:
             rs.append_validation_error(
-                (None, ValueError(n_("Wrong number of actions."))))
+                ("action", ValueError(n_("Wrong number of actions."))))
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         if not transaction_ids:
@@ -1693,6 +1706,7 @@ class CdEFrontend(AbstractUserFrontend):
         if failure:
             status = const.LastschriftTransactionStati.failure
         code = 1
+        # TODO: this should be atomized across all lastscrift transactions.
         for transaction_id in transaction_ids:
             code *= self.lastschrift_process_transaction(rs, transaction_id,
                                                          status)
@@ -1701,8 +1715,9 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
-    def lastschrift_rollback_transaction(self, rs, lastschrift_id,
-                                         transaction_id, persona_id):
+    def lastschrift_rollback_transaction(
+            self, rs: RequestState, lastschrift_id: int, transaction_id: int,
+            persona_id: Optional[int]) -> Response:
         """Revert a successful transaction.
 
         The user can cancel a direct debit transaction after the
@@ -1731,7 +1746,8 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "cde/lastschrift_index")
 
     @access("finance_admin")
-    def lastschrift_receipt(self, rs, lastschrift_id, transaction_id):
+    def lastschrift_receipt(self, rs: RequestState, lastschrift_id: int,
+                            transaction_id: int) -> Response:
         """Generate a donation certificate.
 
         This allows tax deductions.
@@ -1746,9 +1762,11 @@ class CdEFrontend(AbstractUserFrontend):
             addressee = addressee[:1]
             addressee.extend(
                 rs.ambience['lastschrift']['account_address'].split('\n'))
+        # We do not support receipts or number conversion in other locales.
+        lang = "de"
         words = (
-            int_to_words(int(transaction['amount']), rs.lang),
-            int_to_words(int(transaction['amount'] * 100) % 100, rs.lang))
+            int_to_words(int(transaction['amount']), lang),
+            int_to_words(int(transaction['amount'] * 100) % 100, lang))
         transaction['amount_words'] = words
         meta_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_receipt", {
@@ -1773,7 +1791,7 @@ class CdEFrontend(AbstractUserFrontend):
                     {"persona_id": rs.ambience['lastschrift']['persona_id']})
 
     @access("anonymous")
-    def lastschrift_subscription_form_fill(self, rs):
+    def lastschrift_subscription_form_fill(self, rs: RequestState) -> Response:
         """Generate a form for configuring direct debit authorization.
 
         If we are not anonymous we prefill this with known information.
@@ -1796,10 +1814,13 @@ class CdEFrontend(AbstractUserFrontend):
                  ("location", "str_or_None"), ("country", "str_or_None"),
                  ("amount", "positive_decimal_or_None"),
                  ("iban", "iban_or_None"), ("account_holder", "str_or_None"))
-    def lastschrift_subscription_form(self, rs, full_name, db_id, username,
-                                      not_minor, address_supplement, address,
-                                      postal_code, location, country, amount,
-                                      iban, account_holder):
+    def lastschrift_subscription_form(
+            self, rs: RequestState, full_name: Optional[str],
+            db_id: Optional[int], username: Optional[str], not_minor: bool,
+            address_supplement: Optional[str], address: Optional[str],
+            postal_code: Optional[str], location: Optional[str],
+            country: Optional[str], amount: Optional[decimal.Decimal],
+            iban: Optional[str], account_holder: Optional[str]) -> Response:
         """Fill the direct debit authorization template with information."""
 
         if rs.has_validation_errors():
@@ -1826,19 +1847,19 @@ class CdEFrontend(AbstractUserFrontend):
         errormsg = n_("Form could not be created. Please refrain from using "
                       "special characters if possible.")
         pdf = self.serve_latex_document(
-            rs, tex, "lastschrift_subscription_form", errormsg=errormsg)
+            rs, tex, "lastschrift_subscription_form", errormsg=errormsg, runs=1)
         if pdf:
             return pdf
         else:
             return self.redirect(rs, "cde/lastschrift_subscription_form_fill")
 
     @access("anonymous")
-    def i25p_index(self, rs):
+    def i25p_index(self, rs: RequestState) -> Response:
         """Show information about 'Initiative 25+'."""
         return self.render(rs, "i25p_index")
 
     @access("finance_admin")
-    def show_semester(self, rs):
+    def show_semester(self, rs: RequestState) -> Response:
         """Show information."""
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
@@ -1854,7 +1875,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("addresscheck", "bool"), ("testrun", "bool"))
-    def semester_bill(self, rs, addresscheck, testrun):
+    def semester_bill(self, rs: RequestState, addresscheck: bool, testrun: bool
+                      ) -> Response:
         """Send billing mail to all members.
 
         In case of a test run we send only a single mail to the button
@@ -1874,7 +1896,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def send_billing_mail(rrs, rs=None):
+        def send_billing_mail(rrs: RequestState, rs: None = None) -> bool:
             """Send one billing mail and advance semester state."""
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
@@ -1931,12 +1953,11 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, send_billing_mail, rs)
         worker.start()
-        time.sleep(1)
         rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
-    def semester_eject(self, rs):
+    def semester_eject(self, rs: RequestState) -> Response:
         """Eject members without enough credit."""
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
@@ -1946,7 +1967,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def eject_member(rrs, rs=None):
+        def eject_member(rrs: RequestState, rs: None = None) -> bool:
             """Check one member for ejection and advance semester state."""
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
@@ -1986,12 +2007,11 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, eject_member, rs)
         worker.start()
-        time.sleep(1)
         rs.notify("success", n_("Started ejection."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
-    def semester_balance_update(self, rs):
+    def semester_balance_update(self, rs: RequestState) -> Response:
         """Deduct membership fees from all member accounts."""
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
@@ -2001,7 +2021,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def update_balance(rrs, rs=None):
+        def update_balance(rrs: RequestState, rs: None = None) -> bool:
             """Update one members balance and advance state."""
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
@@ -2042,19 +2062,19 @@ class CdEFrontend(AbstractUserFrontend):
                             rrs, persona_id, new_b,
                             const.FinanceLogCodes.deduct_membership_fee,
                             change_note=note)
-                        period_update['balance_total'] = \
-                            period['balance_total'] + self.conf["MEMBERSHIP_FEE"]
+                        new_total = (period['balance_total']
+                                     + self.conf["MEMBERSHIP_FEE"])
+                        period_update['balance_total'] = new_total
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
         worker = Worker(self.conf, update_balance, rs)
         worker.start()
-        time.sleep(1)
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
-    def semester_advance(self, rs):
+    def semester_advance(self, rs: RequestState) -> Response:
         """Proceed to next period."""
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
@@ -2067,7 +2087,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("testrun", "bool"), ("skip", "bool"))
-    def expuls_addresscheck(self, rs, testrun, skip):
+    def expuls_addresscheck(self, rs: RequestState, testrun: bool, skip: bool
+                            ) -> Response:
         """Send address check mail to all members.
 
         In case of a test run we send only a single mail to the button
@@ -2084,7 +2105,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
-        def send_addresscheck(rrs, rs=None):
+        def send_addresscheck(rrs: RequestState, rs: None = None) -> bool:
             """Send one address check mail and advance state."""
             with Atomizer(rrs):
                 expuls_id = self.cdeproxy.current_expuls(rrs)
@@ -2129,7 +2150,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
-    def expuls_advance(self, rs):
+    def expuls_advance(self, rs: RequestState) -> Response:
         """Proceed to next expuls."""
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
@@ -2143,7 +2164,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/show_semester")
 
     @access("cde_admin")
-    def institution_summary_form(self, rs):
+    def institution_summary_form(self, rs: RequestState) -> Response:
         """Render form."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
         institutions = self.pasteventproxy.get_institutions(
@@ -2166,7 +2187,7 @@ class CdEFrontend(AbstractUserFrontend):
             'institutions': institutions, 'is_referenced': is_referenced})
 
     @access("cde_admin", modi={"POST"})
-    def institution_summary(self, rs):
+    def institution_summary(self, rs: RequestState) -> Response:
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
         spec = {'title': "str", 'moniker': "str"}
@@ -2191,7 +2212,9 @@ class CdEFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/institution_summary_form")
 
-    def process_participants(self, rs, pevent_id, pcourse_id=None):
+    def process_participants(self, rs: RequestState, pevent_id: int,
+                             pcourse_id: int = None
+                             ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
         The problem is, that multiple participations can be logged for a
@@ -2204,12 +2227,8 @@ class CdEFrontend(AbstractUserFrontend):
 
         Note that the returned dict of participants is already sorted.
 
-        :type rs: :py:class:`FrontendRequestState`
-        :type pevent_id: int
-        :type pcourse_id: int or None
         :param pcourse_id: if not None, restrict to participants of this
           course
-        :rtype: ({int: {str: object}}, {int: {str: object}}, int)
         :returns: This returns three things: the processed participants,
           the persona data sets of the participants and the number of
           redacted participants.
@@ -2234,11 +2253,10 @@ class CdEFrontend(AbstractUserFrontend):
                     'pevent_id': pevent_id,
                     'persona_id': persona_id,
                     'is_orga': any(x['is_orga'] for x in base_set),
-                }
-                entry['pcourse_ids'] = tuple(x['pcourse_id'] for x in base_set)
-                entry['is_instructor'] = any(
-                    x['is_instructor'] for x in base_set
-                    if (x['pcourse_id'] == pcourse_id or not pcourse_id))
+                    'pcourse_ids': tuple(x['pcourse_id'] for x in base_set),
+                    'is_instructor': any(x['is_instructor'] for x in base_set
+                                         if (x['pcourse_id'] == pcourse_id
+                                             or not pcourse_id))}
                 if pcourse_id and pcourse_id not in entry['pcourse_ids']:
                     # remove non-participants with respect to the relevant
                     # course if there is a relevant course
@@ -2271,7 +2289,8 @@ class CdEFrontend(AbstractUserFrontend):
         return participants, personas, extra_participants
 
     @access("cde_admin")
-    def download_past_event_participantlist(self, rs, pevent_id):
+    def download_past_event_participantlist(self, rs: RequestState,
+                                            pevent_id: int) -> Response:
         """Provide a download of a participant list for a past event."""
         query = Query(
             "qview_past_event_user", QUERY_SPECS['qview_past_event_user'],
@@ -2291,7 +2310,7 @@ class CdEFrontend(AbstractUserFrontend):
             filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
 
     @access("member", "cde_admin")
-    def show_past_event(self, rs, pevent_id):
+    def show_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Display concluded event."""
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
@@ -2319,7 +2338,8 @@ class CdEFrontend(AbstractUserFrontend):
         })
 
     @access("member", "cde_admin")
-    def show_past_course(self, rs, pevent_id, pcourse_id):
+    def show_past_course(self, rs: RequestState, pevent_id: int,
+                         pcourse_id: int) -> Response:
         """Display concluded course."""
         participants, personas, extra_participants = self.process_participants(
             rs, pevent_id, pcourse_id=pcourse_id)
@@ -2329,7 +2349,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("member", "cde_admin")
     @REQUESTdata(("institution_id", "id_or_None"))
-    def list_past_events(self, rs, institution_id=None):
+    def list_past_events(self, rs: RequestState, institution_id: int = None
+                         ) -> Response:
         """List all concluded events."""
         if rs.has_validation_errors():
             rs.notify('warning', n_("Institution parameter got lost."))
@@ -2368,7 +2389,8 @@ class CdEFrontend(AbstractUserFrontend):
         })
 
     @access("cde_admin")
-    def change_past_event_form(self, rs, pevent_id):
+    def change_past_event_form(self, rs: RequestState, pevent_id: int
+                               ) -> Response:
         """Render form."""
         institution_ids = self.pasteventproxy.list_institutions(rs).keys()
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
@@ -2379,7 +2401,8 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict("title", "shortname", "institution", "description",
                      "tempus", "notes")
-    def change_past_event(self, rs, pevent_id, data):
+    def change_past_event(self, rs: RequestState, pevent_id: int,
+                          data: CdEDBObject) -> Response:
         """Modify a concluded event."""
         data['id'] = pevent_id
         data = check(rs, "past_event", data)
@@ -2390,7 +2413,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin")
-    def create_past_event_form(self, rs):
+    def create_past_event_form(self, rs: RequestState) -> Response:
         """Render form."""
         institution_ids = self.pasteventproxy.list_institutions(rs).keys()
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
@@ -2401,7 +2424,8 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("courses", "str_or_None"))
     @REQUESTdatadict("title", "shortname", "institution", "description",
                      "tempus", "notes")
-    def create_past_event(self, rs, courses, data):
+    def create_past_event(self, rs: RequestState, courses: Optional[str],
+                          data: CdEDBObject) -> Response:
         """Add new concluded event."""
         data = check(rs, "past_event", data, creation=True)
         thecourses = []
@@ -2411,12 +2435,14 @@ class CdEFrontend(AbstractUserFrontend):
                 courselines, fieldnames=("nr", "title", "description"),
                 dialect=CustomCSVDialect)
             lineno = 0
-            for entry in reader:
+            for pcourse in reader:
                 lineno += 1
-                entry['pevent_id'] = 1
-                entry = check(rs, "past_course", entry, creation=True)
-                if entry:
-                    thecourses.append(entry)
+                # This is a placeholder for validation and will be substituted
+                # later. The typechecker expects a str here.
+                pcourse['pevent_id'] = "1"
+                pcourse = check(rs, "past_course", pcourse, creation=True)
+                if pcourse:
+                    thecourses.append(pcourse)
                 else:
                     rs.notify("warning", n_("Line %(lineno)s is faulty."),
                               {'lineno': lineno})
@@ -2432,7 +2458,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("ack_delete", "bool"))
-    def delete_past_event(self, rs, pevent_id, ack_delete):
+    def delete_past_event(self, rs: RequestState, pevent_id: int,
+                          ack_delete: bool) -> Response:
         """Remove a past event."""
         if not ack_delete:
             rs.append_validation_error(
@@ -2446,14 +2473,16 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/list_past_events")
 
     @access("cde_admin")
-    def change_past_course_form(self, rs, pevent_id, pcourse_id):
+    def change_past_course_form(self, rs: RequestState, pevent_id: int,
+                                pcourse_id: int) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pcourse'])
         return self.render(rs, "change_past_course")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict("nr", "title", "description")
-    def change_past_course(self, rs, pevent_id, pcourse_id, data):
+    def change_past_course(self, rs: RequestState, pevent_id: int,
+                           pcourse_id: int, data: CdEDBObject) -> Response:
         """Modify a concluded course."""
         data['id'] = pcourse_id
         data = check(rs, "past_course", data)
@@ -2464,13 +2493,15 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/show_past_course")
 
     @access("cde_admin")
-    def create_past_course_form(self, rs, pevent_id):
+    def create_past_course_form(self, rs: RequestState, pevent_id: int
+                                ) -> Response:
         """Render form."""
         return self.render(rs, "create_past_course")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict("nr", "title", "description")
-    def create_past_course(self, rs, pevent_id, data):
+    def create_past_course(self, rs: RequestState, pevent_id: int,
+                           data: CdEDBObject) -> Response:
         """Add new concluded course."""
         data['pevent_id'] = pevent_id
         data = check(rs, "past_course", data, creation=True)
@@ -2482,7 +2513,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("ack_delete", "bool"))
-    def delete_past_course(self, rs, pevent_id, pcourse_id, ack_delete):
+    def delete_past_course(self, rs: RequestState, pevent_id: int,
+                           pcourse_id: int, ack_delete: bool) -> Response:
         """Delete a concluded course.
 
         This also deletes all participation information w.r.t. this course.
@@ -2501,8 +2533,9 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("pcourse_id", "id_or_None"), ("persona_id", "cdedbid"),
                  ("is_instructor", "bool"), ("is_orga", "bool"))
-    def add_participant(self, rs, pevent_id, pcourse_id, persona_id,
-                        is_instructor, is_orga):
+    def add_participant(self, rs: RequestState, pevent_id: int,
+                        pcourse_id: Optional[int], persona_id: int,
+                        is_instructor: bool, is_orga: bool) -> Response:
         """Add participant to concluded event."""
         if rs.has_validation_errors():
             if pcourse_id:
@@ -2531,7 +2564,9 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id"), ("pcourse_id", "id_or_None"))
-    def remove_participant(self, rs, pevent_id, persona_id, pcourse_id):
+    def remove_participant(self, rs: RequestState, pevent_id: int,
+                           persona_id: int, pcourse_id: Optional[int]
+                           ) -> Response:
         """Remove participant."""
         if rs.has_validation_errors():
             return self.show_past_event(rs, pevent_id)
@@ -2545,7 +2580,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "cde/show_past_event")
 
     @access("member", "cde_admin")
-    def view_misc(self, rs):
+    def view_misc(self, rs: RequestState) -> Response:
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
         cde_misc = meta_data.get("cde_misc", rs.gettext("*Nothing here yet.*"))
@@ -2559,8 +2594,13 @@ class CdEFrontend(AbstractUserFrontend):
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_cde_log(self, rs, codes, offset, length, persona_id, submitted_by,
-                     additional_info, time_start, time_stop):
+    def view_cde_log(self, rs: RequestState,
+                     codes: Collection[const.CdeLogCodes],
+                     offset: Optional[int], length: Optional[int],
+                     persona_id: Optional[int], submitted_by: Optional[int],
+                     additional_info: Optional[str],
+                     time_start: Optional[datetime.datetime],
+                     time_stop: Optional[datetime.datetime]) -> Response:
         """View general activity."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -2592,8 +2632,13 @@ class CdEFrontend(AbstractUserFrontend):
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_finance_log(self, rs, codes, offset, length, persona_id, submitted_by,
-                         additional_info, time_start, time_stop):
+    def view_finance_log(self, rs: RequestState,
+                         codes: Optional[Collection[const.FinanceLogCodes]],
+                         offset: Optional[int], length: Optional[int],
+                         persona_id: Optional[int], submitted_by: Optional[int],
+                         additional_info: Optional[str],
+                         time_start: Optional[datetime.datetime],
+                         time_stop: Optional[datetime.datetime]) -> Response:
         """View financial activity."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -2626,8 +2671,14 @@ class CdEFrontend(AbstractUserFrontend):
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_past_log(self, rs, codes, pevent_id, offset, length, persona_id,
-                      submitted_by, additional_info, time_start, time_stop):
+    def view_past_log(self, rs: RequestState,
+                      codes: Optional[Collection[const.PastEventLogCodes]],
+                      pevent_id: Optional[int], offset: Optional[int],
+                      length: Optional[int], persona_id: Optional[int],
+                      submitted_by: Optional[int],
+                      additional_info: Optional[str],
+                      time_start: Optional[datetime.datetime],
+                      time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning concluded events."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically

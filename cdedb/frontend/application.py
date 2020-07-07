@@ -15,6 +15,10 @@ import werkzeug.routing
 import werkzeug.exceptions
 import werkzeug.wrappers
 
+from typing import (
+    Tuple, Optional
+)
+
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
@@ -23,11 +27,11 @@ from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
     n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
     ANTI_CSRF_TOKEN_NAME, make_proxy, ADMIN_VIEWS_COOKIE_NAME,
-    make_root_logger,
+    make_root_logger, PathLike
 )
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
-    docurl, JINJA_FILTERS, check_validation)
+    docurl, JINJA_FILTERS)
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -42,10 +46,7 @@ class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
     appropriate frontend."""
 
-    def __init__(self, configpath=None):
-        """
-        :type configpath: str
-        """
+    def __init__(self, configpath: PathLike = None) -> None:
         super().__init__(configpath)
         self.eventproxy = make_proxy(EventBackend(configpath))
         self.mlproxy = make_proxy(MlBackend(configpath))
@@ -94,7 +95,9 @@ class Application(BaseApp):
                 raise RuntimeError(
                     n_("Refusing to start in debug/offline mode."))
 
-    def make_error_page(self, error, request, message=None):
+    def make_error_page(self, error: werkzeug.exceptions.HTTPException,
+                        request: werkzeug.wrappers.Request, message: str = None,
+                        ) -> Response:
         """Helper to format an error page.
 
         This is similar to
@@ -102,14 +105,11 @@ class Application(BaseApp):
         but creates a Response instead of only a string. It also has a more
         minimalistic setup to work, even when normal application startup fails.
 
-        :type error: :py:class:`werkzeug.exceptions.HTTPException`
-        :type request: :py:class:`werkzeug.wrappers.Request`
         :param message: An additional help string. If given, the default help
                      string for each HTTP code (below the error description) is
                      prepended by this string (or its translation).
-        :type message: str
-        :rtype: :py:class:`Response`
         """
+        # noinspection PyBroadException
         try:
             # We don't like werkzeug's default 404 description:
             if isinstance(error, werkzeug.exceptions.NotFound) \
@@ -151,10 +151,7 @@ class Application(BaseApp):
                             status=error.code)
 
     @werkzeug.wrappers.Request.application
-    def __call__(self, request):
-        """
-        :type request: :py:class:`werkzeug.wrappers.Request`
-        """
+    def __call__(self, request: werkzeug.wrappers.Request) -> Response:
         # first try for handling exceptions
         try:
             # second try for logging exceptions
@@ -184,7 +181,8 @@ class Application(BaseApp):
                         params = {
                             'wants': self.encode_parameter(
                                 "core/index", "wants", request.url,
-                                timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
+                                timeout=self.conf[
+                                    "UNCRITICAL_PARAMETER_TIMEOUT"])
                         }
                         ret = construct_redirect(
                             request, urls.build("core/index", params))
@@ -203,7 +201,7 @@ class Application(BaseApp):
                 rs = RequestState(
                     sessionkey=sessionkey, apitoken=apitoken, user=user,
                     request=request, response=None, notifications=[],
-                    mapadapter=urls, requestargs=args, errors=[], values={},
+                    mapadapter=urls, requestargs=args, errors=[], values=None,
                     lang=lang, gettext=self.translations[lang].gettext,
                     ngettext=self.translations[lang].ngettext,
                     coders=coders, begin=begin,
@@ -214,6 +212,7 @@ class Application(BaseApp):
                 component, action = endpoint.split('/')
                 raw_notifications = rs.request.cookies.get("displaynote")
                 if raw_notifications:
+                    # noinspection PyBroadException
                     try:
                         notifications = json.loads(raw_notifications)
                         for note in notifications:
@@ -268,7 +267,9 @@ class Application(BaseApp):
                         raise RuntimeError("Input validation forgotten.")
                     return ret
                 finally:
+                    # noinspection PyProtectedMember
                     rs._conn.commit()
+                    # noinspection PyProtectedMember
                     rs._conn.close()
             except werkzeug.exceptions.HTTPException:
                 # do not log these, since they are not interesting and
@@ -280,6 +281,7 @@ class Application(BaseApp):
                     "<<<\n<<<\n<<<\n<<<").format(request.url))
                 self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                 self.logger.error("SECOND TRY CGITB")
+                # noinspection PyBroadException
                 try:
                     self.logger.error(cgitb.text(sys.exc_info(), context=7))
                 except Exception:
@@ -292,7 +294,7 @@ class Application(BaseApp):
         except psycopg2.extensions.TransactionRollbackError as e:
             # Serialization error
             return self.make_error_page(
-                werkzeug.exceptions.InternalServerError(e.args),
+                werkzeug.exceptions.InternalServerError(str(e.args)),
                 request,
                 n_("A modification to the database could not be executed due "
                    "to simultaneous access. Please reload the page to try "
@@ -322,13 +324,12 @@ class Application(BaseApp):
                 werkzeug.exceptions.InternalServerError(repr(e)),
                 request)
 
-    def get_locale(self, request):
+    def get_locale(self, request: werkzeug.wrappers.Request) -> str:
         """
         Extract a locale from the request headers (cookie and/or
         Accept-Language)
 
         :return: Language code of the requested locale
-        :rtype: str
         """
         if 'locale' in request.cookies \
                 and request.cookies['locale'] in self.conf["I18N_LANGUAGES"]:
@@ -343,7 +344,8 @@ class Application(BaseApp):
         return 'de'
 
 
-def check_anti_csrf(rs, component, action):
+def check_anti_csrf(rs: RequestState, component: str, action: str
+                    ) -> Tuple[bool, Optional[str]]:
     """
     A helper function to check the anti CSRF token
 
@@ -357,16 +359,14 @@ def check_anti_csrf(rs, component, action):
     template macro.
 
     :param action: The name of the endpoint, checked by 'decode_parameter'
-    :type component: str
     :param component: The name of the realm, checked by 'decode_parameter'
-    :type action: str
-    :rtype: (bool, str)
     :return: The status of the CSRF token (True if okay, False if not) and the
          error pertaining to it)
     """
     val = rs.request.values.get(ANTI_CSRF_TOKEN_NAME, "").strip()
     if not val:
         return False, n_("Anti CSRF token is required for this form.")
+    # noinspection PyProtectedMember
     timeout, val = rs._coders['decode_parameter'](
         "{}/{}".format(component, action), ANTI_CSRF_TOKEN_NAME, val)
     if not val:

@@ -5,7 +5,7 @@
 import copy
 from datetime import datetime
 import collections
-from typing import Dict, Any, Set, Iterable, Optional, Collection
+from typing import Dict, Any, Iterable, Optional, Collection
 
 import mailmanclient
 import werkzeug
@@ -137,7 +137,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         ml_admins can administrate all mailinglists."""
         mailinglists = self.mlproxy.list_mailinglists(
             rs, active_only=False, managed='admin').keys()
-        return self._build_mailinglist_list(rs, "list_mailinglists", mailinglists)
+        return self._build_mailinglist_list(rs, "list_mailinglists",
+                                            mailinglists)
 
     @access("ml")
     def moderated_mailinglists(self, rs: RequestState) -> Response:
@@ -147,7 +148,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     def _build_mailinglist_list(self, rs: RequestState, endpoint: str,
                                 mailinglists: Collection[int]) -> Response:
-        """Collect all information required to build a comprehensive ml overview.
+        """Collect all information required to build a comprehensive overview.
 
         For a collection of given mailinglist ids, this retrieves all relevant
         information. Querying mailinglists you have no access to will lead to
@@ -172,8 +173,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             events[event_id] = {'title': event['title'], 'is_visible': visible}
         assemblies = self.assemblyproxy.list_assemblies(rs)
         for assembly_id in assemblies:
-            assemblies[assembly_id]['is_visible'] = self.assemblyproxy.may_assemble(
-                rs, assembly_id=assembly_id)
+            assemblies[assembly_id]['is_visible'] = \
+                self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id)
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
         for ml_id in subs:
@@ -271,7 +272,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         db_mailinglist_ids = [mailinglist_id] if mailinglist_id else None
 
-        relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False, managed='managed')
+        relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
+                                                      managed='managed')
         if not self.is_admin(rs):
             if db_mailinglist_ids is None:
                 db_mailinglist_ids = relevant_mls.keys()

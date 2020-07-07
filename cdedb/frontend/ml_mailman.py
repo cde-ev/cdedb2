@@ -120,9 +120,9 @@ class MailmanMixin(MlBaseFrontend):
     def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
                                mm_list: MailingList) -> None:
-        SS = const.SubscriptionStates
+        subscribing_states = const.SubscriptionStates.subscribing_states()
         persona_ids = set(self.mlproxy.get_subscription_states(
-            rs, db_list['id'], states=SS.subscribing_states()))
+            rs, db_list['id'], states=subscribing_states))
         db_addresses = self.mlproxy.get_subscription_addresses(
             rs, db_list['id'], persona_ids)
         personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -198,6 +198,7 @@ class MailmanMixin(MlBaseFrontend):
         This has an @periodic decorator in the frontend.
         """
         mailman = self.mailman_connect()
+        # noinspection PyBroadException
         try:
             _ = mailman.system  # cause the client to connect
         except Exception as e:  # sadly this throws many different exceptions

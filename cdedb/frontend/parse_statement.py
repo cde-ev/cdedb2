@@ -4,7 +4,15 @@ import re
 import decimal
 import collections
 import json
-from cdedb.common import diacritic_patterns, Accounts, TransactionType, now, n_
+
+from typing import (
+    Tuple, Optional, List, Union, Dict, Callable
+)
+
+from cdedb.common import (
+    diacritic_patterns, Accounts, TransactionType, now, n_, CdEDBObject, Error,
+    RequestState, CdEDBObjectMap
+)
 from cdedb.frontend.common import cdedbid_filter
 import cdedb.validation as validate
 
@@ -128,13 +136,16 @@ STATEMENT_DB_ID_REMOVE = (
 AMOUNT_MIN_EVENT_FEE = 20
 
 
-def dates_from_filename(filename):
+BackendGetter = Callable[[RequestState, int], CdEDBObject]
+
+
+def dates_from_filename(filename: str) -> Tuple[datetime.date,
+                                                Optional[datetime.date],
+                                                datetime.datetime]:
     """
     Use the known format of the inputfile name to find out the date range.
 
     Example filename from BSF: "20200223_bis_20200229_20200229160818.csv"
-    :type filename: str
-    :rtype: (datetime.date, datetime.date, datetime.datetime)
     """
     try:
         start, sep, end, timestamp = filename.split("_", 3)
@@ -149,13 +160,10 @@ def dates_from_filename(filename):
         return start, end, timestamp
 
 
-def get_event_name_pattern(event):
+def get_event_name_pattern(event: CdEDBObject) -> str:
     """
     Turn event_name into a re pattern that hopefully matches most
     variants of the event name.
-
-    :type event: {str: object}
-    :rtype: str
     """
     y_p = re.compile(r"(\d\d)(\d\d)")
     replacements = [
@@ -206,13 +214,8 @@ def get_event_name_pattern(event):
     return result_pattern
 
 
-def parse_amount(amount):
-    """
-    Safely determine how to interpret a string as Decimal.
-
-    :type amount: str
-    :rtype: decimal.Decimal
-    """
+def parse_amount(amount: str) -> decimal.Decimal:
+    """Safely determine how to interpret a string as Decimal."""
     if not amount:
         raise ValueError("Could not parse.")
     try:
@@ -226,7 +229,7 @@ def parse_amount(amount):
     return ret
 
 
-def _reconstruct_cdedbid(db_id):
+def _reconstruct_cdedbid(db_id: str) -> Tuple[int, List[Error]]:
     """
     Uninlined code from `Transaction._find_cdedb_ids`.
 
@@ -246,13 +249,8 @@ def _reconstruct_cdedbid(db_id):
     return p_id, p
 
 
-def number_to_german(number):
-    """
-    Helper to convert an input to a number in german format.
-
-    :type number: decimal.Decimal or int or str.
-    :rtype: str
-    """
+def number_to_german(number: Union[decimal.Decimal, int, str]) -> str:
+    """Helper to convert an input to a number in german format."""
     if isinstance(number, decimal.Decimal):
         ret = "{:,.2f}".format(number)
     else:
@@ -261,20 +259,15 @@ def number_to_german(number):
     return ret
 
 
-def number_from_german(number):
-    """
-    Helper to convert a number in german format to english format.
-
-    :type number: str
-    :rtype: str
-    """
+def number_from_german(number: str) -> str:
+    """Helper to convert a number in german format to english format."""
     if not isinstance(number, str):
         raise ValueError
     ret = number.replace(".", "_").replace(",", ".")
     return ret
 
 
-def simplify_amount(amt):
+def simplify_amount(amt: Union[decimal.Decimal, int, str]) -> str:
     """Helper to convert a number to german and strip decimal zeros."""
     return str(number_to_german(amt)).rstrip("0").rstrip(",")
 
@@ -292,13 +285,13 @@ class ConfidenceLevel(enum.IntEnum):
     def destroy(cls):
         return cls.Null
 
-    def decrease(self, amount=1):
+    def decrease(self, amount: int = 1) -> "ConfidenceLevel":
         if self.value - amount > self.__class__.Null.value:
             return self.__class__(self.value - amount)
         else:
             return self.__class__.Null
 
-    def increase(self, amount=1):
+    def increase(self, amount: int = 1) -> "ConfidenceLevel":
         if self.value + amount < self.__class__.Full.value:
             return self.__class__(self.value + amount)
         else:
@@ -311,7 +304,7 @@ class ConfidenceLevel(enum.IntEnum):
 class Transaction:
     """Class to hold all transaction information,"""
 
-    def __init__(self, data):
+    def __init__(self, data: CdEDBObject) -> None:
         """We reconstruct a Transaction from the validation form dict here."""
         # These fields are all very essential and need to be present.
         self.t_id = data["t_id"]
@@ -360,12 +353,11 @@ class Transaction:
             self.event_id_confidence = cl.Null
 
     @classmethod
-    def from_csv(cls, raw):
+    def from_csv(cls, raw: CdEDBObject) -> "Transaction":
         """
         Convert DictReader line of BFS import to Transaction.
         
         :param raw: DictReader line of parse_statement input.
-        :type raw: {str: str}
         """
         data = {}
         t_id = raw["id"] + 1
@@ -461,12 +453,11 @@ class Transaction:
 
         return Transaction(data)
 
-    def _find_cdedbids(self, confidence=ConfidenceLevel.Full):
+    def _find_cdedbids(self, confidence: ConfidenceLevel = ConfidenceLevel.Full
+                       ) -> Dict[int, ConfidenceLevel]:
         """Find db_ids in a reference.
 
         Check the reference parts in order of relevancy.
-
-        :rtype {int: ConfidenceLevel}
         """
         ret = {}
         patterns = [STATEMENT_DB_ID_EXACT, STATEMENT_DB_ID_CLOSE]
@@ -493,18 +484,16 @@ class Transaction:
 
         return ret
 
-    def analyze(self, rs, events, get_persona):
+    def analyze(self, rs: RequestState, events: CdEDBObjectMap,
+                get_persona: BackendGetter) -> None:
         """
         Try to guess the TransactionType.
 
         Assign the best guess for transaction type to self.type
         and the confidence level to self.type_confidence.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
         :param events: Current Events organized via DB.
-        :type events: {str: object}
         :param get_persona: Backend method to retrieve a persona via their id.
-        :type get_persona: callable
         """
 
         confidence = ConfidenceLevel.Full
@@ -596,18 +585,13 @@ class Transaction:
         else:
             raise RuntimeError("Impossible!")
 
-    def _match_members(self, rs, get_persona):
+    def _match_members(self, rs: RequestState, get_persona: BackendGetter
+                       ) -> None:
         """
         Assign all matching members to self.member_matches.
         
         Assign the best match to self.best_member_match and it's Confidence to
         self.best_member_confidence.
-        
-        
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :param get_persona: The function to be called to retrieve a persona
-            via their id.
-        :type get_persona: callable
         """
 
         members = []
@@ -693,15 +677,12 @@ class Transaction:
                 self.persona_id = best_match.persona_id
                 self.persona_id_confidence = best_confidence
 
-    def _match_event(self, events):
+    def _match_event(self, events: CdEDBObjectMap) -> None:
         """
         Assign all matching Events to self.event_matches.
 
         Assign the best match to self.best_event_match and
         the confidence of the best match to self.best_event_confidence.
-        
-        :param events: Current Events organizd via DB.
-        :type events: {str: object}
         """
 
         confidence = ConfidenceLevel.Full
@@ -738,7 +719,7 @@ class Transaction:
                 self.event_id = best_match.event_id
                 self.event_id_confidence = best_confidence
 
-    def inspect(self, rs, get_persona):
+    def inspect(self, rs: RequestState, get_persona: BackendGetter) -> None:
         """Inspect transaction for problems."""
         cl = ConfidenceLevel
 
@@ -813,21 +794,22 @@ class Transaction:
                 self.warnings.append(p)
 
     @property
-    def amount_german(self):
+    def amount_german(self) -> str:
         """German way of writing the amount (without thousands separators)"""
         return number_to_german(self.amount)
 
     @property
-    def amount_english(self):
+    def amount_english(self) -> str:
         """English way of writing the amount."""
         return "{:.2f}".format(self.amount)
 
     @property
-    def amount_simplified(self):
+    def amount_simplified(self) -> str:
         """German way of writing the amount with simplified decimal places."""
         return simplify_amount(self.amount)
 
-    def to_dict(self, rs, get_persona, get_event):
+    def to_dict(self, rs: RequestState, get_persona: BackendGetter,
+                get_event: BackendGetter) -> CdEDBObject:
         """
         Convert the transaction to a dict to be displayed in the validation
         form or to be written to a csv file.
