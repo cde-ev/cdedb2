@@ -65,7 +65,7 @@ from typing import (
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
-    realm_specific_genesis_fields, EVENT_SCHEMA_VERSION,
+    REALM_SPECIFIC_GENESIS_FIELDS, EVENT_SCHEMA_VERSION,
     ValidationWarning, Error)
 from cdedb.database.constants import FieldDatatypes, FieldAssociations
 from cdedb.validationdata import (
@@ -1526,13 +1526,13 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True,
         return val, errs
     additional_fields = {}
     if 'realm' in val:
-        if val['realm'] not in realm_specific_genesis_fields:
+        if val['realm'] not in REALM_SPECIFIC_GENESIS_FIELDS:
             errs.append(('realm', ValueError(n_(
                 "This realm is not supported for genesis."))))
         else:
             additional_fields = {
                 k: v for k, v in _GENESIS_CASE_ADDITIONAL_FIELDS().items()
-                if k in realm_specific_genesis_fields[val['realm']]}
+                if k in REALM_SPECIFIC_GENESIS_FIELDS[val['realm']]}
     else:
         raise ValueError(n_("Must specify realm."))
 

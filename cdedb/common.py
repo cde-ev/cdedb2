@@ -1690,7 +1690,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
                    "ml_mgmt", "ml_moderator"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
-            for realm in realm_specific_genesis_fields)):
+            for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
         result |= {"genesis"}
     return result
 
@@ -1758,7 +1758,7 @@ GENESIS_CASE_FIELDS = (
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
 # realms genesis requrests are allowed
-realm_specific_genesis_fields = {
+REALM_SPECIFIC_GENESIS_FIELDS = {
     "ml": tuple(),
     "event": ("gender", "birthday", "telephone", "mobile",
               "address_supplement", "address", "postal_code", "location",
@@ -1770,7 +1770,7 @@ realm_specific_genesis_fields = {
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
 # defaults for genesis account creation.
-genesis_realm_override = {
+GENESIS_REALM_OVERRIDE = {
     'event': {
         'is_cde_realm': False,
         'is_event_realm': True,
@@ -1801,7 +1801,8 @@ genesis_realm_override = {
     }
 }
 
-persona_fields_by_realm = {
+# This defines which fields are available for which realm. They are cumulative.
+PERSONA_FIELDS_BY_REALM = {
     'persona': {
         "display_name", "family_name", "given_names", "title",
         "name_supplement", "notes"
@@ -1820,7 +1821,9 @@ persona_fields_by_realm = {
     }
 }
 
-restricted_fields_by_realm = {
+# Some of the above fields cannot be edited by the users themselves.
+# These are defined here.
+RESTRICTED_FIELDS_BY_REALM = {
     'persona': {
         "notes",
     },
@@ -1842,11 +1845,11 @@ def get_persona_fields_by_realm(roles: Set[Role], restricted: bool = True
     :param restricted: If True, only return fields the user may change
         themselves, i.e. remove the restricted fields."""
     ret = set()
-    for role, fields in persona_fields_by_realm.items():
+    for role, fields in PERSONA_FIELDS_BY_REALM.items():
         if role in roles:
             ret |= fields
             if restricted:
-                ret -= restricted_fields_by_realm[role]
+                ret -= RESTRICTED_FIELDS_BY_REALM[role]
     return ret
 
 

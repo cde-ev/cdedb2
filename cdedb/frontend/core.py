@@ -29,10 +29,10 @@ from cdedb.frontend.common import (
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
-    REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
+    REALM_INHERITANCE, EntitySorter, REALM_SPECIFIC_GENESIS_FIELDS,
     ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, xsorted, RequestState, get_hash,
-    CdEDBObject, PathLike, Realm, DefaultReturnCode, persona_fields_by_realm,
-    restricted_fields_by_realm, get_persona_fields_by_realm,
+    CdEDBObject, PathLike, Realm, DefaultReturnCode,
+    get_persona_fields_by_realm,
 )
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
@@ -93,7 +93,7 @@ class CoreFrontend(AbstractFrontend):
 
             # genesis cases
             genesis_realms = []
-            for realm in realm_specific_genesis_fields:
+            for realm in REALM_SPECIFIC_GENESIS_FIELDS:
                 if {"core_admin", "{}_admin".format(realm)} & rs.user.roles:
                     genesis_realms.append(realm)
             if genesis_realms and "genesis" in rs.user.admin_views:
@@ -1848,12 +1848,12 @@ class CoreFrontend(AbstractFrontend):
                               if x != const.Genders.not_specified)
         realm_options = [(option.realm, rs.gettext(option.name))
                          for option in GENESIS_REALM_OPTION_NAMES
-                         if option.realm in realm_specific_genesis_fields]
+                         if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
         meta_info = self.coreproxy.get_meta_info(rs)
         return self.render(rs, "genesis_request", {
             'max_rationale': self.conf["MAX_RATIONALE"],
             'allowed_genders': allowed_genders,
-            'realm_specific_genesis_fields': realm_specific_genesis_fields,
+            'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'realm_options': realm_options,
             'meta_info': meta_info,
         })
@@ -1909,7 +1909,7 @@ class CoreFrontend(AbstractFrontend):
                 ("notes", ValueError(n_("Rationale too long."))))
         # We dont actually want gender == not_specified as a valid option if it
         # is required for the requested realm)
-        if 'gender' in realm_specific_genesis_fields.get(data.get('realm'), {}):
+        if 'gender' in REALM_SPECIFIC_GENESIS_FIELDS.get(data.get('realm'), {}):
             if data['gender'] == const.Genders.not_specified:
                 rs.append_validation_error(
                     ("gender", ValueError(n_(
@@ -2063,7 +2063,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm, fields in
-                            realm_specific_genesis_fields.items()
+                            REALM_SPECIFIC_GENESIS_FIELDS.items()
                             if "attachment" in fields))
     def genesis_get_attachment(self, rs: RequestState, attachment: str
                                ) -> Response:
@@ -2073,10 +2073,10 @@ class CoreFrontend(AbstractFrontend):
         return self.send_file(rs, path=path, mimetype=mimetype)
 
     @access("core_admin", *("{}_admin".format(realm)
-                            for realm in realm_specific_genesis_fields))
+                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
-        realms = [realm for realm in realm_specific_genesis_fields.keys()
+        realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS.keys()
                   if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
             rs, stati=(const.GenesisStati.to_review,), realms=realms)
@@ -2088,7 +2088,7 @@ class CoreFrontend(AbstractFrontend):
             'cases_by_realm': cases_by_realm})
 
     @access("core_admin", *("{}_admin".format(realm)
-                            for realm in realm_specific_genesis_fields))
+                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def genesis_show_case(self, rs: RequestState, genesis_case_id: int
                           ) -> Response:
         """View a specific case."""
@@ -2102,7 +2102,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "genesis_show_case", {'reviewer': reviewer})
 
     @access("core_admin", *("{}_admin".format(realm)
-                            for realm in realm_specific_genesis_fields))
+                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def genesis_modify_form(self, rs: RequestState, genesis_case_id: int
                             ) -> Response:
         """Edit a specific case it."""
@@ -2116,13 +2116,13 @@ class CoreFrontend(AbstractFrontend):
         merge_dicts(rs.values, case)
         realm_options = [option
                          for option in GENESIS_REALM_OPTION_NAMES
-                         if option.realm in realm_specific_genesis_fields]
+                         if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
         return self.render(rs, "genesis_modify_form", {
-            'realm_specific_genesis_fields': realm_specific_genesis_fields,
+            'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'realm_options': realm_options})
 
     @access("core_admin", *("{}_admin".format(realm)
-                            for realm in realm_specific_genesis_fields),
+                            for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
     @REQUESTdatadict(
         "notes", "realm", "username", "given_names", "family_name", "gender",
@@ -2150,7 +2150,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect(rs, "core/genesis_show_case")
 
     @access("core_admin", *("{}_admin".format(realm)
-                            for realm in realm_specific_genesis_fields),
+                            for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"))
     def genesis_decide(self, rs: RequestState, genesis_case_id: int,
