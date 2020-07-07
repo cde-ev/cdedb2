@@ -32,7 +32,7 @@ from cdedb.common import (
     REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
     ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, xsorted, RequestState, get_hash,
     CdEDBObject, PathLike, Realm, DefaultReturnCode, persona_fields_by_realm,
-    restricted_fields_by_realm,
+    restricted_fields_by_realm, get_persona_fields_by_realm,
 )
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
@@ -832,7 +832,12 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
-        return self.render(rs, "change_user", {'username': data['username']})
+        shown_fields = get_persona_fields_by_realm(rs.user.roles,
+                                                   restricted=True)
+        return self.render(rs, "change_user", {
+            'username': data['username'],
+            'shown_fields': shown_fields,
+        })
 
     @access("persona", modi={"POST"})
     @REQUESTdata(("generation", "int"),
@@ -840,11 +845,7 @@ class CoreFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int,
                     ignore_warnings: bool = False) -> Response:
         """Change own data set."""
-        attributes = set()
-        for realm in persona_fields_by_realm:
-            if realm in rs.user.roles:
-                attributes |= persona_fields_by_realm[realm]
-                attributes -= restricted_fields_by_realm[realm]
+        attributes = get_persona_fields_by_realm(rs.user.roles, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, "persona", data, "persona",
@@ -1002,8 +1003,12 @@ class CoreFrontend(AbstractFrontend):
         merge_dicts(rs.values, data)
         if data['change_status'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        return self.render(rs, "admin_change_user",
-                           {'admin_bits': self.admin_bits(rs)})
+        shown_fields = get_persona_fields_by_realm(
+            extract_roles(rs.ambience['persona']), restricted=False)
+        return self.render(rs, "admin_change_user", {
+            'admin_bits': self.admin_bits(rs),
+            'shown_fields': shown_fields,
+        })
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin", modi={"POST"})
@@ -1017,11 +1022,8 @@ class CoreFrontend(AbstractFrontend):
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         # Assure we don't accidently change the original.
-        attributes = set()
         roles = extract_roles(rs.ambience['persona'])
-        for realm in persona_fields_by_realm:
-            if realm in roles and realm in self.admin_bits(rs):
-                attributes |= persona_fields_by_realm[realm]
+        attributes = get_persona_fields_by_realm(roles, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
         data = check(rs, "persona", data, _ignore_warnings=ignore_warnings)
