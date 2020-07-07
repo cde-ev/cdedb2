@@ -1672,8 +1672,6 @@ class TestEventBackend(BackendTest):
             },
         )
         self.assertEqual(result, expectation)
-        from pprint import pprint
-        # pprint(result)
 
     @as_users("garcia")
     def test_course_query(self, user):

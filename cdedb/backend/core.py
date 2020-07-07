@@ -1851,11 +1851,10 @@ class CoreBackend(AbstractBackend):
                     raise PrivilegeError(n_("Preventing reset of admin."))
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
-            # This uses the encode_parameter function in a somewhat sloppy
-            # manner, but the security guarantees still keep
+            # This defines a specific account/password combination as purpose
             cookie = encode_parameter(
-                salt, str(persona_id), password_hash, self.RESET_COOKIE_PAYLOAD,
-                timeout=timeout)
+                salt, str(persona_id), password_hash,
+                self.RESET_COOKIE_PAYLOAD, persona_id=None, timeout=timeout)
             return cookie
 
     def _verify_reset_cookie(self, rs: RequestState, persona_id: int, salt: str,
@@ -1868,8 +1867,8 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
-            timeout, msg = decode_parameter(salt, str(persona_id),
-                                            password_hash, cookie)
+            timeout, msg = decode_parameter(
+                salt, str(persona_id), password_hash, cookie, persona_id=None)
             if msg is None:
                 if timeout:
                     return False, n_("Link expired.")
@@ -2023,8 +2022,8 @@ class CoreBackend(AbstractBackend):
 
     @access("anonymous")
     def make_reset_cookie(self, rs: RequestState, email: str,
-                          timeout: datetime.timedelta = None
-                          ) -> Tuple[bool, str]:
+                          timeout: datetime.timedelta = datetime.timedelta(
+                              seconds=60)) -> Tuple[bool, str]:
         """Perform preparation for a recovery.
 
         This generates a reset cookie which can be used in a second step

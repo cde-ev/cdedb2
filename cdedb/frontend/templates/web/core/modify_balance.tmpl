@@ -7,7 +7,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
                                                                                   ambience['persona']['family_name']),
         icon="user") }}
 {{ util.breadcrumb_link(cdedblink("core/modify_balance_form"), gettext("Modify Balance"), active="True") }}
@@ -26,7 +26,7 @@
             {{ util.form_input_checkbox(name="trial_member", label=gettext("Trial Membership"), defaultvalue="True" if trial_member else "", small=True) }}
             {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes"), small=True) }}
             {{ util.form_input_submit(value=gettext("Save"), small=True,
-                    cancellink=show_user_link(ambience['persona']['id'])) }}
+                    cancellink=show_user_link(user, ambience['persona']['id'])) }}
         </div>
     </form>
 

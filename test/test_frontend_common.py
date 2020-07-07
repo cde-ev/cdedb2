@@ -22,27 +22,61 @@ class TestFrontendCommon(unittest.TestCase):
             target = rand_str(12, exclude='-')
             name = rand_str(12, exclude='-')
             param = rand_str(200, exclude='-')
-            encoded = encode_parameter(salt, target, name, param)
-            timeout, decoded = decode_parameter(salt, target, name, encoded)
+            persona_id = random.randint(1, 10000)
+            encoded = encode_parameter(salt, target, name, param, persona_id)
+            timeout, decoded = decode_parameter(salt, target, name, encoded,
+                                                persona_id)
             self.assertEqual(param, decoded)
         salt = "a salt"
         target = "some target"
         name = "fancy name"
         param = "an arbitrary message"
-        encoded = encode_parameter(salt, target, name, param,
+        persona_id = 42
+        encoded = encode_parameter(salt, target, name, param, persona_id,
                                    timeout=datetime.timedelta(seconds=-1))
-        self.assertEqual((True, None),
-                         decode_parameter(salt, target, name, encoded))
-        encoded = encode_parameter(salt, target, name, param)
-        self.assertEqual((False, None),
-                         decode_parameter("wrong", target, name, encoded))
-        self.assertEqual((False, None),
-                         decode_parameter(salt, "wrong", name, encoded))
-        self.assertEqual((False, None),
-                         decode_parameter(salt, target, "wrong", encoded))
+        self.assertEqual(
+            (True, None),
+            decode_parameter(salt, target, name, encoded, persona_id))
+
+        encoded = encode_parameter(salt, target, name, param, persona_id)
+        self.assertEqual(
+            (False, None),
+            decode_parameter("wrong", target, name, encoded, persona_id))
+        self.assertEqual(
+            (False, None),
+            decode_parameter(salt, "wrong", name, encoded, persona_id))
+        self.assertEqual(
+            (False, None),
+            decode_parameter(salt, target, "wrong", encoded, persona_id))
+        self.assertEqual(
+            (False, None),
+            decode_parameter(salt, target, name, encoded, -1))
         wrong_encoded = "G" + encoded[1:]
-        self.assertEqual((False, None),
-                         decode_parameter(salt, target, name, wrong_encoded))
+        self.assertEqual(
+            (False, None),
+            decode_parameter(salt, target, name, wrong_encoded, persona_id))
+
+        encoded = encode_parameter(salt, target, name, param, persona_id=None,
+                                   timeout=datetime.timedelta(hours=12))
+        self.assertEqual(
+            (None, param),
+            decode_parameter(salt, target, name, encoded, None))
+        self.assertEqual(
+            (None, param),
+            decode_parameter(salt, target, name, encoded, persona_id))
+        self.assertEqual(
+            (False, None),
+            decode_parameter("wrong", target, name, encoded, None))
+        self.assertEqual(
+            (False, None),
+            decode_parameter(salt, "wrong", name, encoded, None))
+        self.assertEqual(
+            (False, None),
+            decode_parameter(salt, target, "wrong", encoded, None))
+        self.assertEqual(
+            (False, None),
+            decode_parameter(salt, target, name, wrong_encoded, None))
+
 
     def test_date_filters(self):
         dt_naive = datetime.datetime(2010, 5, 22, 4, 55)

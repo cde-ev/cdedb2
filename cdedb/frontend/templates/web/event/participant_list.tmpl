@@ -58,7 +58,7 @@
 
 
 {% macro profile_link(persona, display) %}
-    {{ util.href(show_user_link(persona['id'], quote_me=not is_admin, event_id=ambience['event']['id']), display) }}
+    {{ util.href(show_user_link(user, persona['id'], quote_me=not is_admin, event_id=ambience['event']['id']), display) }}
 {% endmacro %}
 
 

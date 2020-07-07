@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(values['id']), values['given_names'] + " " + values['family_name'],
+    {{ util.breadcrumb_link(show_user_link(user, values['id']), values['given_names'] + " " + values['family_name'],
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
 {% endblock %}
@@ -99,6 +99,6 @@
                 {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
             </div>
         </div>
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(values['persona_id']), differentiate_warnings=True) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user, values['persona_id']), differentiate_warnings=True) }}
     </form>
 {% endblock %}

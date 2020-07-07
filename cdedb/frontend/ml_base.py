@@ -863,7 +863,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 {'To': (email,),
                  'Subject': "E-Mail-Adresse für Mailingliste bestätigen"},
                 {'email': self.encode_parameter(
-                    "ml/do_address_change", "email", email)})
+                    "ml/do_address_change", "email", email, rs.user.persona_id)})
             rs.notify("info", n_("Confirmation email sent."))
         return self.redirect(rs, "ml/show_mailinglist")
 

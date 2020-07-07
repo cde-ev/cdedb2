@@ -223,3 +223,38 @@ auf den Profilen anderer Benutzer sehen darf.
     und archiverten) Benutzer.
 
       * Core Admin: Alle Felder auf allen Profilen
+
+
+Technische Details zu den Profilseiten
+--------------------------------------
+
+In diesem Abschnitt werden die technischen Maßnahmen zum Schutz der
+Benutzerprofile erläutert.
+
+Verlinkung
+^^^^^^^^^^
+
+Die Profilseiten sind jeweils mit einem zufälligen Link versehen. Dies
+bedeutet, dass der Link nicht geraten werden kann, selbst wenn der
+Betrachter die interne ID eines Profils kennt, sondern von der DB
+herausgegeben werden muss. Insbesondere ist es also nicht möglich einfach
+alle Links ohne Hilfe der DB zu generieren.
+
+Die DB stellt an einigen Stellen diese Links im Rahmen ihrer ganz normalen
+Funktionalität zur Verfügung. Es gibt aber nur eine einzige Stelle an der
+diese für normale Nutzer in großer Zahl generierbar sind: die
+Mitgliedersuche.
+
+Die Mitgliedersuche schränkt einerseits die Anzahl der angezeigten Treffer
+ein und erlaubt andererseits keine sehr unspezifischen Anfragen (etwa alle
+Namen die ein "e" enthalten). Dadurch wird die systematische Generierung der
+Links erschwert.
+
+Quota
+^^^^^
+
+Außerdem nehmen wir an, dass jede Person nur eine überschaubare Anzahl an
+Profilen pro Zeitintervall betrachten möchte. Daher gibt es eine Quota, die
+verhindert, dass mehr Zugriffe erfolgen. Dies ist der wesentliche technische
+Schutzmechanismus, der verhindert, dass jemand die Profildaten aus der DB
+extrahiert.

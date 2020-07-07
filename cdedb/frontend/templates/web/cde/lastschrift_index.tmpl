@@ -199,7 +199,7 @@
                             {% set persona = personas[lastschrift['persona_id']] %}
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
-                            {{ util.href(show_user_link(lastschrift['persona_id']),
+                            {{ util.href(show_user_link(user, lastschrift['persona_id']),
                                          gettext("Profile"), icon='user', aclass="btn btn-xs btn-default") }}
                         </li>
                     {% endfor %}

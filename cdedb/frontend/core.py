@@ -77,6 +77,7 @@ class CoreFrontend(AbstractFrontend):
             if wants:
                 rs.values['wants'] = self.encode_parameter(
                     "core/login", "wants", wants,
+                    persona_id=rs.user.persona_id,
                     timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
             return self.render(rs, "login", {'meta_info': meta_info})
 
@@ -1612,7 +1613,7 @@ class CoreFrontend(AbstractFrontend):
                     {'To': (email,), 'Subject': "Passwort zurücksetzen"},
                     {'email': self.encode_parameter(
                         "core/do_password_reset_form", "email", email,
-                        timeout=self.conf["PARAMETER_TIMEOUT"]),
+                        persona_id=None, timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
                 msg = "Sent password reset mail to {} for IP {}."
                 self.logger.info(msg.format(email, rs.request.remote_addr))
@@ -1658,7 +1659,7 @@ class CoreFrontend(AbstractFrontend):
                 {'To': (email,), 'Subject': "Passwort zurücksetzen"},
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email,
-                    timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
+                    persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
                     'cookie': message})
             msg = "Sent password reset mail to {} for admin {}."
             self.logger.info(msg.format(email, rs.user.persona_id))
@@ -1683,7 +1684,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("info", n_("Please try again."))
             return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
-            "core/do_password_reset", "email", email)
+            "core/do_password_reset", "email", email, persona_id=None)
         return self.render(rs, "do_password_reset")
 
     @access("anonymous", modi={"POST"})
@@ -1743,7 +1744,7 @@ class CoreFrontend(AbstractFrontend):
                       'Subject': "Neue E-Mail-Adresse verifizieren"},
                      {'new_username': self.encode_parameter(
                          "core/do_username_change_form", "new_username",
-                         new_username)})
+                         new_username, rs.user.persona_id)})
         self.logger.info("Sent username change mail to {} for {}.".format(
             new_username, rs.user.username))
         rs.notify("success", "Email sent.")
@@ -1756,7 +1757,8 @@ class CoreFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.change_username_form(rs)
         rs.values['new_username'] = self.encode_parameter(
-            "core/do_username_change", "new_username", new_username)
+            "core/do_username_change", "new_username", new_username,
+            rs.user.persona_id)
         return self.render(rs, "do_username_change", {
             'raw_email': new_username})
 
@@ -1935,7 +1937,7 @@ class CoreFrontend(AbstractFrontend):
                      {
                          'genesis_case_id': self.encode_parameter(
                              "core/genesis_verify", "genesis_case_id",
-                             case_id),
+                             case_id, persona_id=None),
                          'given_names': data['given_names'],
                          'family_name': data['family_name'],
                      })
@@ -2168,8 +2170,8 @@ class CoreFrontend(AbstractFrontend):
                  'Subject': "CdEDB-Account erstellt",
                  },
                 {'email': self.encode_parameter(
-                     "core/do_password_reset_form", "email", case['username'],
-                     timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
+                    "core/do_password_reset_form", "email", case['username'],
+                    persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
                  'cookie': cookie,
                  })
             rs.notify("success", n_("Case approved."))
