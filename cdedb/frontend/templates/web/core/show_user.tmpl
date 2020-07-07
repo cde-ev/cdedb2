@@ -16,7 +16,7 @@
 {% endblock %}
 
 
-{# This is a bit special, because also non-core roles determinate what a user can see from another one #}
+{# This is a bit special, because also non-core roles determinate what a user can see or modify from another one #}
 {% block adminviews %}
     {% set views = [] %}
     {% if "relative_admin" in access_mode %}
@@ -24,6 +24,7 @@
     {% endif %}
     {{ views.append((gettext("Admin Administration"), ["meta_admin"], None)) }}
     {{ views.append((gettext("Core Administration"), ["core"], None)) }}
+    {{ views.append((gettext("Finance Administration"), ["finance"], None)) }}
     {% if "moderator" in access_mode %}
         {{ views.append((gettext("Moderator Controls"), ["ml_moderator"], None)) }}
     {% endif %}
