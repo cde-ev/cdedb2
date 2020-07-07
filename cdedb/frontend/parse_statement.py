@@ -137,7 +137,6 @@ AMOUNT_MIN_EVENT_FEE = 20
 
 
 BackendGetter = Callable[[RequestState, int], CdEDBObject]
-AnyNumber = Union[decimal.Decimal, int, str]
 
 
 def dates_from_filename(filename: str) -> Tuple[datetime.date,
@@ -250,7 +249,7 @@ def _reconstruct_cdedbid(db_id: str) -> Tuple[int, List[Error]]:
     return p_id, p
 
 
-def number_to_german(number: AnyNumber) -> str:
+def number_to_german(number: Union[decimal.Decimal, int, str]) -> str:
     """Helper to convert an input to a number in german format."""
     if isinstance(number, decimal.Decimal):
         ret = "{:,.2f}".format(number)
@@ -268,7 +267,7 @@ def number_from_german(number: str) -> str:
     return ret
 
 
-def simplify_amount(amt: AnyNumber) -> str:
+def simplify_amount(amt: Union[decimal.Decimal, int, str]) -> str:
     """Helper to convert a number to german and strip decimal zeros."""
     return str(number_to_german(amt)).rstrip("0").rstrip(",")
 
