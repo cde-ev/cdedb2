@@ -28,13 +28,13 @@
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
-        {% if values['is_cde_realm'] %}
+        {% if "birth_name" in shown_fields %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
         {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
 
-        {% if values['is_cde_realm'] and values['is_member'] %}
+        {% if "paper_expuls" in shown_fields and values['is_member'] %}
             <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls")) }}
         {% endif %}
@@ -42,28 +42,30 @@
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         {{ util.form_input_static(label=gettext("E-Mail"), value=username,
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}
-        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+        {% if "telephone" in shown_fields or "mobile" in shown_fields %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone")) }}
         {% endif %}
-        {% if values['is_cde_realm'] %}
+        {% if "weblink" in shown_fields %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
         {% endif %}
 
-        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+        {% if "address" in shown_fields %}
             <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
-            <p>
-            {% trans %}
-                This should be your primary address. The exPuls will be sent here.
-            {% endtrans %}
-            </p>
+            {% if "paper_expuls" in shown_fields %}
+                <p>
+                {% trans %}
+                    This should be your primary address. The exPuls will be sent here.
+                {% endtrans %}
+                </p>
+            {% endif %}
             {{ util.form_input_text(name="address", label=gettext("Street, Nr.")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
             {{ util.form_input_text(name="country", label=gettext("Country")) }}
         {% endif %}
-        {% if values['is_cde_realm'] %}
+        {% if "address2" in shown_fields %}
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
             <p>
             {% trans %}
@@ -76,7 +78,8 @@
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
             {{ util.form_input_text(name="country2", label=gettext("Country")) }}
-
+        {% endif %}
+        {% if "specialisation" in shown_fields %}
             <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"),
                                         info=gettext("Supports %(infolink)s.")|format(
@@ -94,7 +97,6 @@
                                         info=gettext("Supports %(infolink)s.")|format(
                                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {% endif %}
-
         {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user.persona_id), differentiate_warnings=True) }}
     </form>
 {% endblock %}
