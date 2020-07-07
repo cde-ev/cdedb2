@@ -422,7 +422,7 @@ class CoreFrontend(AbstractFrontend):
             if is_admin or is_moderator:
                 subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)
-                is_subscriber = (persona_id in subscriptions)
+                is_subscriber = persona_id in subscriptions
                 if (is_moderator or is_viewing_admin) and is_subscriber:
                     access_levels.add("ml")
                     # the moderator access level currently does nothing, but we
@@ -1842,8 +1842,8 @@ class CoreFrontend(AbstractFrontend):
     @access("anonymous")
     def genesis_request_form(self, rs: RequestState) -> Response:
         """Render form."""
-        allowed_genders = (set(x for x in const.Genders)
-                           - {const.Genders.not_specified})
+        allowed_genders = set(x for x in const.Genders
+                              if x != const.Genders.not_specified)
         realm_options = [(option.realm, rs.gettext(option.name))
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in realm_specific_genesis_fields]
@@ -2221,7 +2221,7 @@ class CoreFrontend(AbstractFrontend):
         current = now()
         data = self.coreproxy.changelog_get_changes(
             rs, stati=(const.MemberChangeStati.pending,))
-        ids = {"{}/{}".format(_id, e['generation']) for _id, e in data.items()}
+        ids = {f"{anid}/{e['generation']}" for anid, e in data.items()}
         old = set(store.get('ids', [])) & ids
         new = ids - set(old)
         remind = False
