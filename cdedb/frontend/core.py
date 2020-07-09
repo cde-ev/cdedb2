@@ -666,8 +666,9 @@ class CoreFrontend(AbstractFrontend):
         mailinglist id.
 
         Required aux value based on the 'kind':
-        * mod_ml_user: Id of the mailinglist you are moderator of
-        * orga_event_user: Id of the event you are orga of
+
+        * ``mod_ml_user``: Id of the mailinglist you are moderator of
+        * ``orga_event_user``: Id of the event you are orga of
 
         The variant parameter allows to supply an additional integer to
         distinguish between different variants of a given search kind.
@@ -675,7 +676,7 @@ class CoreFrontend(AbstractFrontend):
 
         Possible variants based on the 'kind':
 
-        - mod_ml_user: Which action you are going to execute on this user.
+        - ``mod_ml_user``: Which action you are going to execute on this user.
           A member of the SubscriptionActions enum.
         """
         if rs.has_validation_errors():

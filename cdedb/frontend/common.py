@@ -928,6 +928,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                   jinjas default syntax is nasty for this.
 
         :param modus: Type of thing we want to generate; can be one of
+
           * web,
           * mail,
           * tex.

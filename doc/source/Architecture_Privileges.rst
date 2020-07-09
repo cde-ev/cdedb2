@@ -21,7 +21,7 @@ untested (for example by default access to the cde realm is linked to access
 to all other realms). Former members are those with cde realm but not
 membership privileges.
 
-These privileges controle what actions the user may call and are determined
+These privileges control what actions the user may call and are determined
 by the core.personas table. These are enforced throughout the python code
 via the ``@access`` decorator.
 

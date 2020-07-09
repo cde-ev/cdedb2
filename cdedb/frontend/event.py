@@ -5931,7 +5931,8 @@ class EventFrontend(AbstractUserFrontend):
         probably be an event id in the overwhelming majority of cases.
 
         Required aux value based on the 'kind':
-        * orga_registration: Id of the event you are orga of
+
+        * ``orga_registration``: Id of the event you are orga of
         """
         if rs.has_validation_errors():
             return self.send_json(rs, {})

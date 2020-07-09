@@ -1164,12 +1164,14 @@ class CoreBackend(AbstractBackend):
 
         We keep the following data to enable us to recognize them
         later on to allow readmission:
+
         * name,
         * date of birth,
         * past events.
 
         Additionally not all data is purged, since we have separate
         life cycles for different realms. This affects the following.
+
         * finances: we preserve a log of all transactions for bookkeeping,
         * lastschrift: similarily to finances
         * events: to ensure consistency, events are only deleted en bloc
