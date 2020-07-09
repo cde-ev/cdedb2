@@ -4944,9 +4944,10 @@ class EventFrontend(AbstractUserFrontend):
                                        for track_id in tracks)
                         kind = const.FieldDatatypes(f['kind']).name
                         spec[key] = kind
-            spec[",".join(f"course_choices{track_id}.rank{i}"
-                          for track_id, track in tracks.items()
-                          for i in range(track['num_choices']))] = "int"
+            if sum(track['num_choices'] for track in tracks.values()) > 1:
+                spec[",".join(f"course_choices{track_id}.rank{i}"
+                              for track_id, track in tracks.items()
+                              for i in range(track['num_choices']))] = "int"
         for f in xsorted(event['fields'].values(),
                          key=EntitySorter.event_field):
             if f['association'] == const.FieldAssociations.registration:
@@ -5270,8 +5271,8 @@ class EventFrontend(AbstractUserFrontend):
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
-        default_queries = \
-            self.conf["DEFAULT_QUERIES_REGISTRATION"](rs.ambience['event'], spec)
+        default_queries = self.conf["DEFAULT_QUERIES_REGISTRATION"](
+            rs.ambience['event'], spec)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
