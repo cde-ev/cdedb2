@@ -386,7 +386,10 @@ def merge_dicts(targetdict: Union[MutableMapping, werkzeug.MultiDict],
                     targetdict[key] = adict[key]
 
 
-def get_hash(*args: Union[bytes, bytearray, memoryview]) -> str:
+BytesLike = Union[bytes, bytearray, memoryview]
+
+
+def get_hash(*args: BytesLike) -> str:
     """Helper to calculate a hexadecimal hash of an arbitrary object.
 
     This uses SHA512. Use this function to assure the same hash is used
@@ -1687,7 +1690,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
                    "ml_mgmt", "ml_moderator"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
-            for realm in realm_specific_genesis_fields)):
+            for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
         result |= {"genesis"}
     return result
 
@@ -1755,7 +1758,7 @@ GENESIS_CASE_FIELDS = (
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
 # realms genesis requrests are allowed
-realm_specific_genesis_fields = {
+REALM_SPECIFIC_GENESIS_FIELDS = {
     "ml": tuple(),
     "event": ("gender", "birthday", "telephone", "mobile",
               "address_supplement", "address", "postal_code", "location",
@@ -1767,7 +1770,7 @@ realm_specific_genesis_fields = {
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
 # defaults for genesis account creation.
-genesis_realm_override = {
+GENESIS_REALM_OVERRIDE = {
     'event': {
         'is_cde_realm': False,
         'is_event_realm': True,
@@ -1797,6 +1800,58 @@ genesis_realm_override = {
         'paper_expuls': True,
     }
 }
+
+# This defines which fields are available for which realm. They are cumulative.
+PERSONA_FIELDS_BY_REALM = {
+    'persona': {
+        "display_name", "family_name", "given_names", "title",
+        "name_supplement", "notes"
+    },
+    'ml': set(),
+    'assembly': set(),
+    'event': {
+        "gender", "birthday", "telephone", "mobile", "address_supplement",
+        "address", "postal_code", "location", "country"
+    },
+    'cde': {
+        "birth_name", "weblink", "specialisation", "affiliation", "timeline",
+        "interests", "free_form", "is_searchable", "paper_expuls",
+        "address_supplement2", "address2", "postal_code2", "location2",
+        "country2",
+    }
+}
+
+# Some of the above fields cannot be edited by the users themselves.
+# These are defined here.
+RESTRICTED_FIELDS_BY_REALM = {
+    'persona': {
+        "notes",
+    },
+    'ml': set(),
+    'assembly': set(),
+    'event': {
+        "gender", "birthday",
+    },
+    'cde': {
+        "is_searchable",
+    }
+}
+
+
+def get_persona_fields_by_realm(roles: Set[Role], restricted: bool = True
+                                ) -> Set[str]:
+    """Helper to retrieve the appropriate fields for a user.
+
+    :param restricted: If True, only return fields the user may change
+        themselves, i.e. remove the restricted fields."""
+    ret = set()
+    for role, fields in PERSONA_FIELDS_BY_REALM.items():
+        if role in roles:
+            ret |= fields
+            if restricted:
+                ret -= RESTRICTED_FIELDS_BY_REALM[role]
+    return ret
+
 
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (

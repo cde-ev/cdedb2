@@ -58,7 +58,7 @@ from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
-    decode_parameter, make_proxy, EntitySorter, realm_specific_genesis_fields,
+    decode_parameter, make_proxy, EntitySorter, REALM_SPECIFIC_GENESIS_FIELDS,
     ValidationWarning, xsorted, unwrap, CdEDBObject, Role, Error, PathLike,
     NotificationType, Notification
 )
@@ -886,7 +886,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'roles_allow_genesis_management':
                 lambda roles: roles & ({'core_admin'} | set(
                     "{}_admin".format(realm)
-                    for realm in realm_specific_genesis_fields)),
+                    for realm in REALM_SPECIFIC_GENESIS_FIELDS)),
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,
