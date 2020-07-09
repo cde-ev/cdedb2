@@ -37,7 +37,9 @@ CREATE INDEX idx_attachment_versions_attachment_id ON assembly.attachment_versio
 CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version);
 GRANT SELECT ON assembly.attachment_versions TO cdb_member;
 GRANT INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_admin;
-GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_admin;"""
+GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_admin;
+
+GRANT UPDATE ON assembly.attachments TO cdb_admin;"""
     assembly.query_exec(rs, query, tuple())
 
     # Second retrieve the data for all current attachments.
