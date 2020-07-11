@@ -26,8 +26,8 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
     n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
-    ANTI_CSRF_TOKEN_NAME, make_proxy, ADMIN_VIEWS_COOKIE_NAME,
-    make_root_logger, PathLike
+    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, make_proxy,
+    ADMIN_VIEWS_COOKIE_NAME, make_root_logger, PathLike
 )
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
@@ -181,6 +181,7 @@ class Application(BaseApp):
                         params = {
                             'wants': self.encode_parameter(
                                 "core/index", "wants", request.url,
+                                user.persona_id,
                                 timeout=self.conf[
                                     "UNCRITICAL_PARAMETER_TIMEOUT"])
                         }
@@ -188,7 +189,7 @@ class Application(BaseApp):
                             request, urls.build("core/index", params))
                         ret.delete_cookie("sessionkey")
                         notifications = json.dumps([self.encode_notification(
-                            "error", n_("Session expired."))])
+                            rs, "error", n_("Session expired."))])
                         ret.set_cookie("displaynote", notifications)
                         return ret
                 coders = {
@@ -217,7 +218,7 @@ class Application(BaseApp):
                         notifications = json.loads(raw_notifications)
                         for note in notifications:
                             ntype, nmessage, nparams = (
-                                self.decode_notification(note))
+                                self.decode_notification(rs, note))
                             if ntype:
                                 rs.notify(ntype, nmessage, nparams)
                             else:
@@ -368,19 +369,17 @@ def check_anti_csrf(rs: RequestState, component: str, action: str
         return False, n_("Anti CSRF token is required for this form.")
     # noinspection PyProtectedMember
     timeout, val = rs._coders['decode_parameter'](
-        "{}/{}".format(component, action), ANTI_CSRF_TOKEN_NAME, val)
+        "{}/{}".format(component, action), ANTI_CSRF_TOKEN_NAME, val,
+        rs.user.persona_id)
     if not val:
         if timeout:
             return False, n_("Anti CSRF token expired. Please try again.")
         else:
             return False, n_("Anti CSRF token is forged.")
-    val, errs = validate.check_id(val, ANTI_CSRF_TOKEN_NAME)
-    if not val:
-        return False, n_("Anti CSRF token is no valid user id.")
-    if val != rs.user.persona_id:
-        return False, n_("Anti CSRF token is forged.")
+    if val != ANTI_CSRF_TOKEN_PAYLOAD:
+        return False, n_("Anti CSRF token is invalid.")
     # do not trigger validation checking if no errors exist
-    if errs:
+    if rs.retrieve_validation_errors():
         # this is just defense in depth; this should not be necessary
         rs.extend_validation_errors(errs)
     return True, None

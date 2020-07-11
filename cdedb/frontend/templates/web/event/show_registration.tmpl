@@ -36,7 +36,7 @@
             {{ persona['name_supplement'] }}
         </dd>
         <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
-        <dd>{{ util.href(show_user_link(persona['id'], event_id=ambience['event']['id']), persona['id']|cdedbid) }}</dd>
+        <dd>{{ util.href(show_user_link(user, persona['id'], event_id=ambience['event']['id']), persona['id']|cdedbid) }}</dd>
         {% if ambience['registration']['real_persona_id'] %}
             <dt>{% trans %}Online CdEDB-ID{% endtrans %}</dt>
             <dd>{{ ambience['registration']['real_persona_id']|cdedbid }}</dd>

@@ -57,10 +57,10 @@ from typing import (
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
-    decode_parameter, make_proxy, EntitySorter, REALM_SPECIFIC_GENESIS_FIELDS,
-    ValidationWarning, xsorted, unwrap, CdEDBObject, Role, Error, PathLike,
-    NotificationType, Notification
+    json_serialize, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
+    encode_parameter, decode_parameter, make_proxy, EntitySorter,
+    REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap,
+    CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User
 )
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -123,18 +123,19 @@ class BaseApp(metaclass=abc.ABCMeta):
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
         self.decode_parameter = (
-            lambda target, name, param: decode_parameter(
-                secrets["URL_PARAMETER_SALT"], target, name, param))
+            lambda target, name, param, persona_id: decode_parameter(
+                secrets["URL_PARAMETER_SALT"], target, name, param,
+                persona_id))
 
-        def local_encode(target, name, param,
+        def local_encode(target, name, param, persona_id,
                          timeout=self.conf["PARAMETER_TIMEOUT"]):
             return encode_parameter(secrets["URL_PARAMETER_SALT"], target, name,
-                                    param, timeout=timeout)
+                                    param, persona_id, timeout)
 
         self.encode_parameter = local_encode
 
-    def encode_notification(self, ntype: NotificationType, nmessage: str,
-                            nparams: CdEDBObject = None) -> str:
+    def encode_notification(self, rs: RequestState, ntype: NotificationType,
+                            nmessage: str, nparams: CdEDBObject = None) -> str:
         """Wrapper around :py:meth:`encode_parameter` for notifications.
 
         The message format is A--B--C--D, with
@@ -150,13 +151,14 @@ class BaseApp(metaclass=abc.ABCMeta):
                                           json_serialize(nparams))
         return self.encode_parameter(
             '_/notification', 'displaynote', message,
+            persona_id=rs.user.persona_id,
             timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
 
-    def decode_notification(self, note: str) -> Union[Notification,
-                                                      Tuple[None, None, None]]:
+    def decode_notification(self, rs: RequestState, note: str
+                            ) -> Union[Notification, Tuple[None, None, None]]:
         """Inverse wrapper to :py:meth:`encode_notification`."""
-        timeout, message = self.decode_parameter('_/notification',
-                                                 'displaynote', note)
+        timeout, message = self.decode_parameter(
+            '_/notification', 'displaynote', note, rs.user.persona_id)
         if not message:
             return None, None, None
         parts = message.split("--")
@@ -181,7 +183,8 @@ class BaseApp(metaclass=abc.ABCMeta):
             url += "#" + anchor
         ret = basic_redirect(rs, url)
         if rs.notifications:
-            notifications = [self.encode_notification(ntype, nmessage, nparams)
+            notifications = [self.encode_notification(rs, ntype, nmessage,
+                                                      nparams)
                              for ntype, nmessage, nparams in rs.notifications]
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
@@ -879,7 +882,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'docurl': docurl,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
+            'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
+                "UNCRITICAL_PARAMETER_TIMEOUT"],
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
+            'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
             'GIT_COMMIT': self.conf["GIT_COMMIT"],
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'EntitySorter': EntitySorter,
@@ -952,7 +958,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             force_external=(modus != "web"),
                             magic_placeholders=magic_placeholders)
 
-        def _show_user_link(persona_id: int, quote_me: bool = None,
+        def _show_user_link(user: User, persona_id: int, quote_me: bool = None,
                             event_id: int = None, ml_id: int = None) -> str:
             """Convenience method to create link to user data page.
 
@@ -963,7 +969,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params = {
                 'persona_id': persona_id,
                 'confirm_id': self.encode_parameter(
-                    "core/show_user", "confirm_id", persona_id, timeout=None)}
+                    "core/show_user", "confirm_id", persona_id,
+                    persona_id=user.persona_id, timeout=None)}
             if quote_me:
                 params['quote_me'] = True
             if event_id:
@@ -1306,7 +1313,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         somewhat lengthy and only necessary because of our paranoia.
         """
         cid = self.encode_parameter(
-            "core/show_user", "confirm_id", persona_id, timeout=None)
+            "core/show_user", "confirm_id", persona_id,
+            persona_id=rs.user.persona_id, timeout=None)
         params = {'confirm_id': cid, 'persona_id': persona_id}
         if quote_me is not None:
             params['quote_me'] = True
@@ -1687,13 +1695,14 @@ def access(*roles: Role, modi: Collection[str] = None,
                     params = {
                         'wants': rs._coders['encode_parameter'](
                             "core/index", "wants", rs.request.url,
-                            timeout=None),
+                            persona_id=rs.user.persona_id,
+                            timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
                     }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     # noinspection PyProtectedMember
                     notifications = json_serialize([
                         rs._coders['encode_notification'](
-                            "error", n_("You must login."))])
+                            rs, "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
                 raise werkzeug.exceptions.Forbidden(
@@ -1862,7 +1871,7 @@ def REQUESTdata(*spec: Tuple[str, str]) -> Callable[[F], F]:
                                 # noinspection PyProtectedMember
                                 timeout, val = rs._coders['decode_parameter'](
                                     "{}/{}".format(obj.realm, fun.__name__),
-                                    name, val)
+                                    name, val, persona_id=rs.user.persona_id)
                                 if timeout is True:
                                     rs.notify("warning", n_("Link expired."))
                                 if timeout is False:

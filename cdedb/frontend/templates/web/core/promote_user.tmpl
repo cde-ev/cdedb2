@@ -7,7 +7,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']),
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']),
             ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Add Realm"),
             active=(values['target_realm'] == '')) }}
@@ -96,7 +96,7 @@
                             infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
                 {% endif %}
                 {{ util.form_input_submit(value=gettext("Add Realm"),
-                        cancellink=show_user_link(ambience['persona']['id'])) }}
+                        cancellink=show_user_link(user, ambience['persona']['id'])) }}
             </form>
         {% endif %}
     {% endwith %}

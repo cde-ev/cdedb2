@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
-from test.common import as_users, USER_DICT, FrontendTest
+import datetime
 import unittest
+import urllib.parse
+
+from cdedb.common import encode_parameter
+from test.common import as_users, USER_DICT, FrontendTest
 
 # TODO Profilfoto
 
@@ -164,6 +168,12 @@ class TestPrivacyFrontend(FrontendTest):
         self.submit(f)
         self.logout()
 
+    def show_user_link(self, persona_id):
+        confirm_id = urllib.parse.quote_plus(self.app.app.encode_parameter(
+            "core/show_user", "confirm_id", persona_id,
+            persona_id=None, timeout=datetime.timedelta(hours=12)))
+        return f'/core/persona/{persona_id}/show?confirm_id={confirm_id}'
+
     def test_profile_base_information(self):
         # non-searchable user views normal account
         case1 = {
@@ -188,7 +198,7 @@ class TestPrivacyFrontend(FrontendTest):
 
         for case in [case1, case2, case3, case4]:
             self.login(case['viewer'])
-            self.get(case['inspected']['url'])
+            self.get(self.show_user_link(case['inspected']['id']))
             found = self._profile_base_view(case['inspected'])
             # The username must not be visible, although "Email" occurs as field
             self.assertNonPresence(case['inspected']['username'])
@@ -201,7 +211,7 @@ class TestPrivacyFrontend(FrontendTest):
     def test_profile_as_ml_admin(self, user):
         # on ml only users, ml admins get full view
         inspected = USER_DICT['janis']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_ml_admin_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -209,7 +219,7 @@ class TestPrivacyFrontend(FrontendTest):
 
         # on other users, they get no special view ...
         inspected = USER_DICT['berta']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_base_view(inspected)
         # The username must not be visible, although "Email" occurs as field
         self.assertNonPresence(inspected['username'])
@@ -220,7 +230,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... unless they see them as mailinglist associated. Then, they get the
         # same view as a moderator of that mailinglist.
         inspected = USER_DICT['berta']
-        self.get(inspected['url'] + "&ml_id=51")
+        self.get(self.show_user_link(inspected['id']) + "&ml_id=51")
         found = self._profile_moderator_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -233,7 +243,7 @@ class TestPrivacyFrontend(FrontendTest):
         # on (assembly and ml) only users, assembly admins get full view
         self.login(user)
         inspected = USER_DICT['kalif']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_assembly_admin_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -246,7 +256,7 @@ class TestPrivacyFrontend(FrontendTest):
         # on event but not cde users, event admins get full view
         self.login(user)
         inspected = USER_DICT['emilia']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_event_admin_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -254,7 +264,7 @@ class TestPrivacyFrontend(FrontendTest):
 
         # on other users, they get no special view ...
         inspected = USER_DICT['berta']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_base_view(inspected)
         # The username must not be visible, although "Email" occurs as field
         self.assertNonPresence(inspected['username'])
@@ -264,7 +274,7 @@ class TestPrivacyFrontend(FrontendTest):
 
         # ... unless they see them as event associated. Then, they get the same
         # view as an orga of this event.
-        self.get(inspected['url'] + "&event_id=1")
+        self.get(self.show_user_link(inspected['id']) + "&event_id=1")
         found = self._profile_orga_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -276,7 +286,7 @@ class TestPrivacyFrontend(FrontendTest):
 
         # on cde users, cde admins get full view ...
         inspected = USER_DICT['berta']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_cde_admin_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -286,7 +296,7 @@ class TestPrivacyFrontend(FrontendTest):
         self._disable_searchability('berta')
         self.login(user)
         inspected = USER_DICT['berta']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_cde_admin_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -299,13 +309,13 @@ class TestPrivacyFrontend(FrontendTest):
         # core admin gets full access to all users...
         self.login(user)
         inspected = USER_DICT['berta']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_core_admin_view(inspected)
         self.assertEqual((self.ALL_FIELDS - found), set())
 
         # ... especially also on archived users.
         inspected = USER_DICT['hades']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_of_archived(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -315,7 +325,7 @@ class TestPrivacyFrontend(FrontendTest):
     def test_profile_as_meta_admin(self, user):
         # meta admins get the same view for every user
         inspected = USER_DICT['berta']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_meta_admin_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -324,7 +334,7 @@ class TestPrivacyFrontend(FrontendTest):
     @as_users("inga")
     def test_profile_as_member(self, user):
         inspected = USER_DICT['berta']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
 
         # members got first an un-quoted view on a profile, showing the basics
         found = self._profile_base_view(inspected)
@@ -345,14 +355,14 @@ class TestPrivacyFrontend(FrontendTest):
     def test_profile_as_orga(self, user):
         # orgas get a closer view on users associated to their event
         inspected = USER_DICT['berta']
-        self.get(inspected['url'] + "&event_id=1")
+        self.get(self.show_user_link(inspected['id']) + "&event_id=1")
         found = self._profile_orga_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
         # otherwise, they have no special privileges ...
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_base_view(inspected)
         # The username must not be visible, although "Email" occurs as field
         self.assertNonPresence(inspected['username'])
@@ -363,7 +373,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... especially also for (event but not cde) users
         # (in contrast to event admins)
         inspected = USER_DICT['emilia']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_base_view(inspected)
         # The username must not be visible, although "Email" occurs as field
         self.assertNonPresence(inspected['username'])
@@ -375,7 +385,7 @@ class TestPrivacyFrontend(FrontendTest):
     def test_profile_as_moderator(self, user):
         # moderators get a closer view on users associated to their mailinglist
         inspected = USER_DICT['berta']
-        self.get(inspected['url'] + "&ml_id=2")
+        self.get(self.show_user_link(inspected['id']) + "&ml_id=2")
         found = self._profile_moderator_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
@@ -383,7 +393,7 @@ class TestPrivacyFrontend(FrontendTest):
 
         # otherwise, they have no special privileges ...
         inspected = USER_DICT['berta']
-        self.get(inspected['url'])
+        self.get(self.show_user_link(inspected['id']))
         found = self._profile_base_view(inspected)
         # The username must not be visible, although "Email" occurs as field
         self.assertNonPresence(inspected['username'])
@@ -394,7 +404,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... especially also for ml only users (in contrast to ml admins)
         # TODO this is actual not possible caused by our sample-data
         # inspected = USER_DICT['emilia']
-        # self.get(inspected['url'])
+        # self.get(self.show_user_link(inspected['id']))
         # found = self._profile_base_view(inspected)
         # # The username must not be visible, although "Email" occurs as field
         # self.assertNonPresence(inspected['username'])
@@ -486,7 +496,7 @@ class TestPrivacyFrontend(FrontendTest):
         # now the actual testing
         for realm, case in cases.items():
             inspected = case['inspected']
-            self.get(inspected['url'])
+            self.get(self.show_user_link(inspected['id']))
             if user in case['access']:
                 # username is only visible on extended profile views
                 self.assertPresence(inspected['username'], div='contact-email')
@@ -513,10 +523,10 @@ class TestPrivacyFrontend(FrontendTest):
 
         # they should be visible to core admins only ...
         if user == USER_DICT['paul']:
-            self.get(inspected['url'])
+            self.get(self.show_user_link(inspected['id']))
         # ... not for any other admin type
         elif user in [USER_DICT['ferdinand'], USER_DICT['martin']]:
-            self.get(inspected['url'], status="403 FORBIDDEN")
+            self.get(self.show_user_link(inspected['id']), status="403 FORBIDDEN")
 
     @as_users("annika", "berta", "farin", "martin", "nina", "quintus", "paul",
               "werner")

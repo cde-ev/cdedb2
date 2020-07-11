@@ -374,7 +374,7 @@ def merge_dicts(targetdict: Union[MutableMapping, werkzeug.MultiDict],
     setting list-type values.
     """
     if targetdict is None:
-        raise ValueError("No inputs given.")
+        raise ValueError(n_("No inputs given."))
     for adict in dicts:
         for key in adict:
             if key not in targetdict:
@@ -1342,9 +1342,12 @@ def diacritic_patterns(s: MaybeStr, two_way_replace: bool = False) -> MaybeStr:
     return s
 
 
+_tdelta = datetime.timedelta
+
+
 def encode_parameter(salt: str, target: str, name: str, param: str,
-                     timeout: Optional[datetime.timedelta] =
-                     datetime.timedelta(seconds=60)) -> str:
+                     persona_id: Optional[int],
+                     timeout: Optional[_tdelta] = _tdelta(seconds=60)) -> str:
     """Crypographically secure a parameter. This allows two things:
 
     * trust user submitted data (which we beforehand gave to the user in
@@ -1358,24 +1361,40 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
       to generate a short-lived reset link to be sent via mail, without
       storing a challenge in the database.
 
-    All ingredients used here are necessary for security. The timestamp
-    guarantees a short lifespan via the decoding function.
+    The threat model is an attacker obtaining an encoded parameter and using
+    it in an unforseen way to gain an advantage (we assume, that the crypto
+    part is secure).
+
+    Our counter measures restrict the usage of each instance in the
+    following ways:
+
+    * by purpose: the `target` and `name` components specify a unique purpose
+    * by time: the `timeout` component binds to a time window
+    * by identity: the `persona_id` component binds to a specific account
+
+    The latter two can be individually relaxed, but at least one of them is
+    required for security.
 
     The message format is A--B--C, where
 
-    * A is 128 chars sha512 checksum of 'X--Y--Z--B--C' where X == salt, Y
-      == target, Z == name
+    * A is 128 chars sha512 checksum of 'W--X--Y--Z--B--C' where W == salt,
+      X == str(persona_id), Y == target, Z == name
     * B is 24 chars timestamp of format '%Y-%m-%d %H:%M:%S%z' or 24 dots
       describing when the parameter expires (and the latter meaning never)
     * C is an arbitrary amount chars of payload
 
     :param salt: secret used for signing the parameter
+    :param persona_id: The id of the persona utilizing the parameter, may be
+      None in which case everybody (including anonymous requests) can do so.
     :param target: The endpoint the parameter is designated for. If this is
       omitted, there are nasty replay attacks.
     :param name: name of parameter, same security implications as ``target``
     :param timeout: time until parameter expires, if this is None, the
       parameter never expires
     """
+    if persona_id is None and timeout is None:
+        raise ValueError(n_(
+            "Security degradation: anonymous and non-expiring parameter"))
     h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     if timeout is None:
         timestamp = 24 * '.'
@@ -1383,12 +1402,13 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
         ttl = now() + timeout
         timestamp = ttl.strftime("%Y-%m-%d %H:%M:%S%z")
     message = "{}--{}".format(timestamp, param)
-    tohash = "{}--{}--{}".format(target, name, message)
+    tohash = "{}--{}--{}--{}".format(target, str(persona_id), name, message)
     h.update(tohash.encode("utf-8"))
     return "{}--{}".format(h.hexdigest(), message)
 
 
-def decode_parameter(salt: str, target: str, name: str, param: str
+def decode_parameter(salt: str, target: str, name: str, param: str,
+                     persona_id: Optional[int]
                      ) -> Union[Tuple[bool, None], Tuple[None, str]]:
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
@@ -1399,9 +1419,12 @@ def decode_parameter(salt: str, target: str, name: str, param: str
     """
     h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     mac, message = param[0:128], param[130:]
-    tohash = "{}--{}--{}".format(target, name, message)
+    tohash = "{}--{}--{}--{}".format(target, str(persona_id), name, message)
     h.update(tohash.encode("utf-8"))
     if not hmac.compare_digest(h.hexdigest(), mac):
+        if persona_id:
+            # Allow non-anonymous requests for parameters with anonymous access
+            return decode_parameter(salt, target, name, param, persona_id=None)
         _LOGGER.debug("Hash mismatch ({} != {}) for {}".format(
             h.hexdigest(), mac, tohash))
         return False, None
@@ -1625,6 +1648,8 @@ NOTIFICATION_TYPES: Set[NotificationType] = {"success", "info", "question",
 #: It should be added to all data modifying form using the
 #: util.anti_csrf_token template macro and is check by the application.
 ANTI_CSRF_TOKEN_NAME = "_anti_csrf"
+#: The value the anti CSRF token is expected to have
+ANTI_CSRF_TOKEN_PAYLOAD = "_anti_csrf_check"
 
 #: Map of available privilege levels to those present in the SQL database
 #: (where we have less differentiation for the sake of simplicity).

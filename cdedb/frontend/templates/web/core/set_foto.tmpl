@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
                                                                                   ambience['persona']['family_name']),
         icon="user") }}
 {{ util.breadcrumb_link(cdedblink('core/set_foto_form'), gettext("Set Profile Picture"), active="True") }}
@@ -69,5 +69,5 @@
         </div>
     </div>
 
-    {{ util.href(show_user_link(ambience['persona']['id']), gettext("Go Back"), icon="arrow-left", aclass="btn btn-default") }}
+    {{ util.href(show_user_link(user, ambience['persona']['id']), gettext("Go Back"), icon="arrow-left", aclass="btn btn-default") }}
 {% endblock %}

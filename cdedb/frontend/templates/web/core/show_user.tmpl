@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
                                                                                   ambience['persona']['family_name']),
         icon="user", active=True) }}
 {% endblock %}
@@ -51,7 +51,7 @@
     {% endif %}
 
     {% if quoteable %}
-        {{ util.href(show_user_link(ambience['persona']['id'], quote_me=True), gettext("Show complete Profile"),
+        {{ util.href(show_user_link(user, ambience['persona']['id'], quote_me=True), gettext("Show complete Profile"),
                      aclass="btn btn-info btn-sm", icon='eye-slash') }}
     {% endif %}
     {% if data['id'] == user.persona_id or is_relative_admin %}

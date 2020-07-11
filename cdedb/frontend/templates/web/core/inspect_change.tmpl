@@ -39,7 +39,7 @@
     <button type="button" class="btn btn-default btn-sm softhide" id="unhide-button">
         {{ util.make_icon('eye-slash') }} {% trans %}Show all Fields{% endtrans %}
     </button>
-    {{ util.href(show_user_link(pending['id']), gettext("Show Profile"), icon="share", aclass="btn btn-sm btn-info") }}
+    {{ util.href(show_user_link(user, pending['id']), gettext("Show Profile"), icon="share", aclass="btn btn-sm btn-info") }}
     {{ util.href(cdedblink("core/show_history", {'persona_id': pending['id']}), gettext("Change History"),
                  aclass="btn btn-info btn-sm", icon="clock") }}
     <script nonce="{{ csp_nonce }}">
@@ -64,7 +64,7 @@
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
         {% call(next) show_diff('id', gettext("CdEDB-ID"), True) %}
-            {{ util.href(show_user_link(pending['id']), pending['id']|cdedbid, aclass='nowrap') }}
+            {{ util.href(show_user_link(user, pending['id']), pending['id']|cdedbid, aclass='nowrap') }}
         {% endcall %}
         {{ show_diff('is_member', gettext("CdE-Membership"), True) }}
         {{ show_diff('balance', gettext("Balance")) }}

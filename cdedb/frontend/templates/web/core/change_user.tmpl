@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(values['id']), values['given_names'] + " " + values['family_name'],
+    {{ util.breadcrumb_link(show_user_link(user, values['id']), values['given_names'] + " " + values['family_name'],
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_user_form"), gettext("Edit Your Data"), active=True) }}
 {% endblock %}
@@ -102,6 +102,6 @@
                                         info=gettext("Supports %(infolink)s.")|format(
                                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {% endif %}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user.persona_id), differentiate_warnings=True) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user, user.persona_id), differentiate_warnings=True) }}
     </form>
 {% endblock %}
