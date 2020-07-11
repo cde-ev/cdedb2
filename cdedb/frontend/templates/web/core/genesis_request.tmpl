@@ -66,10 +66,10 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="address", label=gettext("Street, Nr."), small=True,
-                                    aclass="genesis-realm-specific", info=gettext("Here also the house number, "
-                                    "formatted as usual: Musterstraße 32")) }}
+                                    aclass="genesis-realm-specific", info=gettext("Example: Dream Alley 1")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement"), small=True,
-                                    aclass="genesis-realm-specific") }}
+                                    aclass="genesis-realm-specific",
+                                    info=gettext("Example: Apartment 4, c/o Doc Brown")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode"), small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="location", label=gettext("City"), small=True,

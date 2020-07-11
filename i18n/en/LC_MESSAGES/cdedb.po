@@ -14891,7 +14891,10 @@ msgstr ""
 msgid "Street, Nr."
 msgstr ""
 
-msgid "Here also the house number, formatted as usual: Musterstraße 32"
+msgid "Example: Dream Alley 1"
+msgstr ""
+
+msgid "Example: Apartment 4, c/o Doc Brown"
 msgstr ""
 
 #~ msgid "CoreLogCodes.password_invalidated"
