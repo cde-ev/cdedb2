@@ -124,10 +124,11 @@
                                     </button>
                                 </form>
                             {% elif not login_form and original_request %}
-                                {{ util.href(cdedblink('core/index', {'wants': encode_parameter("core/index", "wants",
-                                                                                                original_request.url,
-                                                                                                user.persona_id)}),
-                                             gettext("Login"), aclass='btn navbar-button btn-default', icon='power-off') }}
+                                {% set encoded_parameter = encode_parameter(
+                                           "core/index", "wants", original_request.url, user.persona_id,
+                                           timeout=UNCRITICAL_PARAMETER_TIMEOUT) %}
+                                {{ util.href(cdedblink('core/index', {'wants': encoded_parameter}), gettext("Login"),
+                                             aclass='btn navbar-button btn-default', icon='power-off') }}
                             {% endif %}
                         </li>
                     </ul>
