@@ -43,9 +43,11 @@
 {% macro href(ref, label, readonly=False, icon=None, aclass='', active=False, title='', rel='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {{ dict(
-    class=aclass
-        + (" active" if active)
-        + ((" " + ("link-" if not 'btn' in aclass) + "disabled") if readonly),
+    class=" ".join(filter(None, [
+        aclass,
+        "active" if active,
+        ("disabled" if 'btn' in aclass else "link-disabled") if readonly,
+    ])),
     title=title,
     **{ "aria-current": "page" if active }
 )|xmlattr }}{# We use the `active` attribute for navigation only #}>
@@ -65,9 +67,11 @@
               Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
 {% macro make_icon(icon, fixed_width=True, aclass="", title=None, arialabel=None) -%}
     <span{{ dict(
-        class=("fas fa-{}".format(icon) if " " not in icon else icon)
-            + (" fa-fw" if fixed_width else "")
-            + (" {}".format(aclass) if aclass else ""),
+        class=" ".join(filter(None, [
+            aclass,
+            "fas fa-{}".format(icon) if " " not in icon else icon,
+            "fa-fw" if fixed_width,
+        ])),
         title=title,
         **{ "aria-hidden": "true" }
     )|xmlattr }}></span>
@@ -149,7 +153,7 @@
 {% endmacro %}
 
 {% macro web_link(weblink) %}
-    {%- if weblink.startswith("http") -%}
+    {%- if weblink.startswith(("http://", "https://")) -%}
         {{ util.href(weblink, weblink) }}
     {%- else -%}
         {{ util.href('https://%s'|format(weblink), weblink) }}
@@ -178,14 +182,14 @@
    at the event/change_course template.
   #}
 {% macro breadcrumb_link(ref, label, icon=None, active=False, readonly=False) %}
-    {%- if active or readonly -%} {# TODO use actual bootstrap readonly anchor #}
-        <li {% if active %}class="active" aria-current="location"{% endif %}>
-            {{ make_icon(icon) + " " if icon }}
+    {%- if active or readonly -%} {#- TODO use actual bootstrap readonly anchor -#}
+        <li{% if active %} class="active" aria-current="location"{% endif %}>
+            {{ make_icon(icon) }}
             {{ label -}}
         </li>
     {%- else -%}
         <li><a href="{{ ref }}">
-            {{ make_icon(icon) + " " if icon }}
+            {{ make_icon(icon) }}
             {{ label -}}
         </a></li>
     {%- endif -%}
@@ -282,10 +286,12 @@
                 class=(("col-sm-2" if small else "col-sm-4") if horizontal) + " control-label",
             )|xmlattr }}>{{ label }}</label>
         {%- endif %}
-        {%- if horizontal %}<div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}
-                                       {%- if not label %}
-                                           {%- if small %} col-sm-offset-2{% else %} col-sm-offset-4{% endif %}
-                                       {%- endif %}">{% endif %}
+        {%- if horizontal %}
+            <div class="
+                {{ "col-sm-6" if small else "col-sm-8" }}
+                {{ ("col-sm-offset-2" if small else "col-sm-offset-4") if not label }}
+            ">
+        {%- endif %}
         {% if addon %}<div class="input-group">{% endif %}
             {{- caller() }}
         {% if addon %}<span class="input-group-addon">{{ addon }}</span></div>{% endif %}
@@ -307,15 +313,13 @@
         disabled="disabled" if readonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
-        {%- if type != 'password' %}
-            {%- if type == 'date' %}
-                value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True) }}"
-            {%- elif type == 'datetime-local' %}
-                value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True) }}"
-            {%- else %}
-                value="{{ values.get(name, defaultvalue) }}"
-            {%- endif %}
-        {%- endif -%}
+        {%- if type == 'date' %}
+            value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True) }}"
+        {%- elif type == 'datetime-local' %}
+            value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True) }}"
+        {%- elif type != 'password' %}
+            value="{{ values.get(name, defaultvalue) }}"
+        {%- endif %}
         {{ attributes }}/>
         {# TODO use actual readonly and bootstrap styles #}
 {%- endmacro %}
@@ -334,7 +338,7 @@
 {% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='', arialabel='') %}
     <input{{ dict(
         type="file",
-        name=name
+        name=name,
         id=anid,
         class=aclass,
         accept=accept,
@@ -355,11 +359,11 @@
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=none, rows=3,
                         arialabel='', attributes='') %}
     <textarea{{ dict(
-        name=name
+        name=name,
         id=anid,
         class=aclass,
         rows=rows,
-        maxlength=maxlength
+        maxlength=maxlength,
         disabled="disabled" if readonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
@@ -389,7 +393,7 @@
             class=aclass,
             value=value,
             checked="checked" if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue),
-            disabled="disabled" if readonly
+            disabled="disabled" if readonly,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }}/>
         {{ label -}}
@@ -398,13 +402,15 @@
 
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
         arialabeledby="", sort=False) %}
-    <div role="{% if radio %}radio{% endif %}group"
-            {%- if arialabeledby %} aria-labelledby="{{ arialabeledby }}"{% endif %}>
+    <div{{ dict(
+        role="radiogroup" if radio else "group",
+        **{'aria-labelledby': arialabeledby}
+    )|xmlattr }}>
         {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for entry_value, entry_label in entries %}
             {% if not inline -%}
-                <div class="{% if radio %}radio{% else %}checkbox{% endif %}{% if readonly %} disabled{% endif %}">
+                <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly}}">
             {%- endif -%}
                 {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
                                   aclass=aclass) }}
@@ -417,16 +423,13 @@
         anid='', horizontal=True, small=False, attributes='', infolink='', differentiate_warnings=True) %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
-    <div class="form-group {% if name in errors %}
-                           {% if differentiate_warnings and is_warning(name) %}
-                               has-warning
-                           {% else %}
-                               has-error
-                           {% endif %}
-                       {% endif %}">
-        <div {% if horizontal %}class="{% if small %}col-sm-6 col-sm-offset-2{% else -%}
-                col-sm-8 col-sm-offset-4{% endif %}"{% endif %}>
-            <div class="checkbox {% if readonly %}disabled{% endif %}">
+    <div class="form-group
+        {{ ("has-warning" if differentiate_warnings and is_warning(name) else "has-error") if name in errors }}
+    ">
+        <div{% if horizontal %} class="
+            {{ "col-sm-6 col-sm-offset-2" if small else "col-sm-8 col-sm-offset-4" }}
+        "{% endif %}>
+            <div class="checkbox{{ " disabled" if readonly }}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, anid, attributes=attributes) }}
             </div>
             {{- output_errors(name, displayerrors) }}
@@ -493,7 +496,7 @@
     {%- call form_input_general(None, label, anid, small, info, False, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         <div class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
-            {{{ make_icon(icon) + " " if icon }}
+            {{ make_icon(icon) if icon }}
             {{- value -}}
         </div>
     {%- endcall %}
@@ -511,7 +514,7 @@
         disabled="disabled" if readonly,
         **{ 'aria-label': arialabeledby }
     )|xmlattr }}>
-        {{ make_icon(icon) + " " if icon }}
+        {{ make_icon(icon) if icon }}
         {{ value }}
     </button>
 {%- endmacro %}
@@ -520,14 +523,15 @@
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
         small=False, horizontal=True, differentiate_warnings=False) %}
     <div class="form-group mosp">
-        <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
-                col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
+        <div{% if horizontal %} class="
+            {{ "col-sm-offset-2 col-sm-10" if small else "col-sm-offset-4 col-sm-8" }}
+        "{% endif %}>
             {{- input_submit(gettext(value), name, anid, aclass, icon, readonly) }}
             {% if differentiate_warnings and has_warnings() %}
                 {{ input_submit(gettext("Ignore Warnings"), name="ignore_warnings", anid=anid, aclass=aclass, icon=icon, readonly=readonly) }}
             {% endif %}
             {%- if cancellink %}
-                &emsp; {{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
+                &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
             {%- endif %}
         </div>
     </div>
@@ -540,11 +544,11 @@
 
 {% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True,
         horizontal=True, infolink='') %}
-    <div class="form-group {% if name1 in errors or name2 in errors %}has-error{% endif %}">
-        <label class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
+    <div class="form-group{{ " has-error" if name1 in errors or name2 in errors }}">
+        <label class="control-label{% if horizontal %} {{ "col-sm-2" if small else "col-sm-4" }}{% endif %}">
             {{- label -}}
         </label>
-        <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
+        <div{% if horizontal %} class="{{ "col-sm-6" if small else "col-sm-8" }}"{% endif %}>
             <div class="input-group">
                 <span class="input-group-addon">{% trans %}from{% endtrans %}</span>
                 {{ input_text(name=name1, type=type, arialabel=gettext('%s from')|format(label)) }}
@@ -848,9 +852,7 @@
                 {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
                                                           original_request.url, user.persona_id, timeout=None)) }}
             {% endif %}
-            <div class="list-group tear-down">
-                {{ inner }}
-            </div>
+            <div class="list-group tear-down">{{ inner }}</div>
         </form>
     {% endif %}
 {% endmacro %}
@@ -868,7 +870,7 @@
                 type="submit",
                 name="view_specifier",
                 value=("-" if active else "+") + view_names|join(','),
-                class="list-group-item list-group-item-info " + ("active" if active),
+                class="list-group-item list-group-item-info" + (" active" if active else ""),
                 title=(gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label)
             )|xmlattr }}>
                 {{- make_icon('wrench') }} {{ label -}}
@@ -879,7 +881,7 @@
 {% endmacro %}
 
 {#
-    Creates a HTML compliant mailto: link (though not neccessarily RFC compliant)
+    Creates a HTML compliant mailto: URL (though not neccessarily RFC compliant)
     Additional header such as to, subject, body, cc, or bcc can be passed as kwargs
 #}
 {% macro mailto(address, name) -%}
