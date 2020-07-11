@@ -7,6 +7,7 @@ import gettext
 import json
 import pathlib
 import sys
+import types
 
 import jinja2
 import psycopg2.extensions
@@ -188,8 +189,14 @@ class Application(BaseApp):
                         ret = construct_redirect(
                             request, urls.build("core/index", params))
                         ret.delete_cookie("sessionkey")
+                        # Having to mock a request state here is kind of ugly
+                        # and depends on the implementation details of
+                        # `encode_notification`. However all alternatives
+                        # look even uglier.
+                        fake_rs = types.SimpleNamespace()
+                        fake_rs.user = user
                         notifications = json.dumps([self.encode_notification(
-                            rs, "error", n_("Session expired."))])
+                            fake_rs, "error", n_("Session expired."))])
                         ret.set_cookie("displaynote", notifications)
                         return ret
                 coders = {
