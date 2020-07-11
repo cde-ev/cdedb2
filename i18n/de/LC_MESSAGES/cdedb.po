@@ -15555,6 +15555,9 @@ msgstr "Straße, Nr."
 msgid "Ranking"
 msgstr "Platzierung"
 
+msgid "Here also the house number, formatted as usual: Musterstraße 32"
+msgstr "Hierhin auch die Hausnummer, formatiert wie üblich: Musterstraße 32"
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 

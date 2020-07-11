@@ -14891,6 +14891,9 @@ msgstr ""
 msgid "Street, Nr."
 msgstr ""
 
+msgid "Here also the house number, formatted as usual: Musterstraße 32"
+msgstr ""
+
 #~ msgid "CoreLogCodes.password_invalidated"
 #~ msgstr "Password deleted"
 
