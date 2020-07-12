@@ -1931,9 +1931,8 @@ def _lastschrift_transaction(val, argname=None, *, creation=False,
         }
         optional_fields = _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS()
     else:
-        mandatory_fields = {'id': _id}
-        optional_fields = dict(_LASTSCHRIFT_TRANSACTION_COMMON_FIELDS,
-                               **_LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS())
+        return None, [(argname, ValueError(n_("Modification of lastschrift"
+                                              " transactions not supported.")))]
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)
