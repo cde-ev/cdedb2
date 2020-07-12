@@ -490,6 +490,7 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
     domains = (MailinglistDomain.cdelokal,
                MailinglistDomain.cdemuenchen)
+    relevant_admins = {"cdelokal_admin"}
 
 
 MLTypeLike = Union[const.MailinglistTypes, Type[GeneralMailinglist]]

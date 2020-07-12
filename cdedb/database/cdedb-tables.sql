@@ -41,6 +41,8 @@ CREATE TABLE core.personas (
         is_ml_admin             boolean NOT NULL DEFAULT False,
         -- allows managing of assemblies and assembly users
         is_assembly_admin       boolean NOT NULL DEFAULT False,
+        -- allows managing a subset of all mailinglists, those related to CdE Lokalgruppen
+        is_cdelokal_admin       boolean NOT NULL DEFAULT False,
         -- allows usage of cde functionality
         is_cde_realm            boolean NOT NULL,
         -- allows usage of event functionality
@@ -210,6 +212,7 @@ CREATE TABLE core.privilege_changes (
         is_event_admin          boolean DEFAULT NULL,
         is_ml_admin             boolean DEFAULT NULL,
         is_assembly_admin       boolean DEFAULT NULL,
+        is_cdelokal_admin       boolean DEFAULT NULL,
         -- justification supplied by the submitter
         notes                   varchar,
         -- persona who approved the change
@@ -309,6 +312,7 @@ CREATE TABLE core.changelog (
         is_event_admin          boolean,
         is_ml_admin             boolean,
         is_assembly_admin       boolean,
+        is_cdelokal_admin       boolean,
         is_cde_realm            boolean,
         is_event_realm          boolean,
         is_ml_realm             boolean,

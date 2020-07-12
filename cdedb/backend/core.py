@@ -669,7 +669,7 @@ class CoreBackend(AbstractBackend):
                 raise PrivilegeError(n_("Realm modification prevented."))
         admin_keys = {'is_cde_admin', 'is_finance_admin', 'is_event_admin',
                       'is_ml_admin', 'is_assembly_admin', 'is_core_admin',
-                      'is_meta_admin'}
+                      'is_meta_admin', 'is_cdelokal_admin'}
         if (set(data) & admin_keys
                 and ("meta_admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
@@ -869,8 +869,13 @@ class CoreBackend(AbstractBackend):
                         and not data.get('is_cde_admin'))):
                     raise ValueError(errormsg)
 
-            if data.get('is_core_admin') or data.get('is_meta_admin'):
+            if (data.get('is_core_admin') or data.get('is_meta_admin')
+                    or data.get('is_cdelokal_admin')):
                 if not persona['is_cde_realm']:
+                    raise ValueError(errormsg)
+
+            if data.get('is_cdelokal_admin'):
+                if not persona['is_ml_realm']:
                     raise ValueError(errormsg)
 
             self.core_log(
@@ -933,7 +938,8 @@ class CoreBackend(AbstractBackend):
                 }
                 admin_keys = {"is_meta_admin", "is_core_admin", "is_cde_admin",
                               "is_finance_admin", "is_event_admin",
-                              "is_ml_admin", "is_assembly_admin"}
+                              "is_ml_admin", "is_assembly_admin",
+                              "is_cdelokal_admin"}
                 for key in admin_keys:
                     if case[key] is not None:
                         data[key] = case[key]
@@ -1036,7 +1042,9 @@ class CoreBackend(AbstractBackend):
             "finance": "is_finance_admin = TRUE",
             "event": "is_event_admin = TRUE",
             "ml": "is_ml_admin = TRUE",
-            "assembly": "is_assembly_admin = TRUE"}
+            "assembly": "is_assembly_admin = TRUE",
+            "cdelokal": "is_cdelokal_admin = TRUE",
+        }
         constraint = constraints.get(realm)
 
         if constraint is None:
