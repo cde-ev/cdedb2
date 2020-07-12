@@ -31,7 +31,7 @@
 {% block navigation %}
     {% if ambience['mailinglist'] %}
         <p>
-            {% if not ambience['mailinglist']['is_active'] and ("ml_mgmt" in user.admin_views and is_relevant_admin(mailinglist_id=data['id'])) %}
+            {% if not ambience['mailinglist']['is_active'] and ("ml_mgmt" in user.admin_views and is_relevant_admin(mailinglist_id=ambience['mailinglist']['id'])) %}
                 {{ util.href(cdedblink("ml/list_mailinglists"), gettext("Mailinglist-Overview"),
                              icon="arrow-alt-circle-up") }}
             {% else %}
