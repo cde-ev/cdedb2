@@ -3802,6 +3802,24 @@ etc;anything else""", f['entries_2'].value)
                 self.assertIn(iban, text)
                 self.assertIn(no_member_surcharge, text)
 
+    @as_users("garcia")
+    def test_no_tracks(self, user):
+        """This is a regression test for #1224 and #1271."""
+        self.traverse({"description": "Veranstaltungen"},
+                      {"description": "Große Testakademie 2222"},
+                      {"description": "Veranstaltungsteile"})
+        f = self.response.forms['partsummaryform']
+        f['track_num_choices_2_1'] = 0
+        f['track_min_choices_2_1'] = 0
+        f['track_num_choices_2_2'] = 0
+        f['track_min_choices_2_2'] = 0
+        f['track_num_choices_3_3'] = 0
+        f['track_min_choices_3_3'] = 0
+        self.submit(f)
+        self.traverse({"description": "Anmeldungen"})
+        f = self.response.forms['queryform']
+        self.submit(f)
+
     def test_log(self):
         # First: generate data
         self.test_register()
