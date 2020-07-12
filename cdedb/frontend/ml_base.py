@@ -232,6 +232,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["moderators"] = moderator_ids
         data['ml_type'] = ml_type
         data = check(rs, "mailinglist", data, creation=True)
+        if rs.has_validation_errors():
+            return self.create_mailinglist_form(rs, ml_type=ml_type)
         # Check if mailinglist address is unique
         try:
             self.mlproxy.validate_address(rs, data)
@@ -387,6 +389,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         data['id'] = mailinglist_id
         data['registration_stati'] = registration_stati
         data = check(rs, "mailinglist", data)
+        if rs.has_validation_errors():
+            return self.change_mailinglist_form(rs, mailinglist_id)
         if data['ml_type'] != rs.ambience['mailinglist']['ml_type']:
             rs.append_validation_error(
                 ("ml_type", ValueError(n_(
