@@ -31,7 +31,7 @@
 {% block navigation %}
     {% if ambience['mailinglist'] %}
         <p>
-            {% if not ambience['mailinglist']['is_active'] and "ml_mgmt" in user.admin_views %}
+            {% if not ambience['mailinglist']['is_active'] and ("ml_mgmt" in user.admin_views and is_relevant_admin(mailinglist_id=data['id'])) %}
                 {{ util.href(cdedblink("ml/list_mailinglists"), gettext("Mailinglist-Overview"),
                              icon="arrow-alt-circle-up") }}
             {% else %}
@@ -86,11 +86,13 @@
 
 {% block adminviews %}
     {% if ambience['mailinglist'] %}
-        {% if user.persona_id in ambience['mailinglist']['moderators'] %}
-            {{ util.admin_views_toggle(((gettext("Mailinglist Administration"), ["ml_mgmt"], None),)) }}
-        {% else %}
-            {{ util.admin_views_toggle(((gettext("Mailinglist Administration"), ["ml_mgmt"], None),
-                                        (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
+        {% if is_relevant_admin(mailinglist_id=ambience['mailinglist']['id']) %}
+            {% if user.persona_id in ambience['mailinglist']['moderators'] %}
+                {{ util.admin_views_toggle(((gettext("Mailinglist Administration"), ["ml_mgmt"], None),)) }}
+            {% else %}
+                {{ util.admin_views_toggle(((gettext("Mailinglist Administration"), ["ml_mgmt"], None),
+                                            (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
+            {% endif %}
         {% endif %}
     {% else %}
         {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user",
