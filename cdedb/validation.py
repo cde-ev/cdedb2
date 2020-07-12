@@ -1639,9 +1639,12 @@ def _input_file(val, argname=None, *, _convert=True, _ignore_warnings=False):
 
 
 @_addvalidator
-def _csvfile(val, argname=None, *, encoding="utf-8", _convert=True,
+def _csvfile(val, argname=None, *, encoding="utf-8-sig", _convert=True,
              _ignore_warnings=False):
     """
+    We default to 'utf-8-sig', since it behaves exactly like 'utf-8' if the
+    file is 'utf-8' but it gets rid of the BOM if the file is 'utf-8-sig'.
+
     :type val: object
     :type argname: str or None
     :type _convert: bool
