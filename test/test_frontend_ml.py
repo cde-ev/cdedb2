@@ -11,6 +11,7 @@ from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
 import cdedb.ml_type_aux as ml_type
 
+
 class TestMlFrontend(FrontendTest):
     @as_users("berta", "emilia", "janis")
     def test_index(self, user):
