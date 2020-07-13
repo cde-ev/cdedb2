@@ -423,23 +423,24 @@ class MlBaseFrontend(AbstractUserFrontend):
         })
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("ml_type", "enum_mailinglisttypes"))
+    @REQUESTdata(("registration_stati", "[enum_registrationpartstati]"))
+    @REQUESTdatadict("ml_type", "event_id", "assembly_id")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes) -> Response:
+                           registration_stati: Collection[
+                               const.RegistrationPartStati],
+                           data: CdEDBObject) -> Response:
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
         ml = rs.ambience['mailinglist']
-        new_type = get_type(ml_type)
+        data['id'] = mailinglist_id
+        data['registration_stati'] = registration_stati
+        new_type = get_type(data['ml_type'])
 
-        data = {
-            'id': mailinglist_id,
-            'ml_type': ml_type,
-        }
         if ml['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
-        params = new_type.mandatory_validation_fields + \
-                 new_type.optional_validation_fields
-        data.update(request_extractor(rs, params))
+        data = check(rs, 'mailinglist', data)
+        if rs.has_validation_errors():
+            return self.change_ml_type_form(rs, mailinglist_id)
         code = self.mlproxy.set_mailinglist(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/change_mailinglist")
