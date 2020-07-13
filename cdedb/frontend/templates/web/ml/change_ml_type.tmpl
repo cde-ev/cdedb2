@@ -36,14 +36,15 @@
         {{ util.anti_csrf_token("ml/change_ml_type") }}
         {{ util.form_input_select(name="ml_type", entries=available_types|enum_entries(processing=gettext), label=gettext("Mailinglist Type")) }}
         <div id="additional-fields">
-            <noscript>
-                <h3 class="heading-underline">{% trans %}Additional Fields{% endtrans %}</h3>
-                <p class="text-info">
-                    {% trans %}
-                        The following fields are only relevant for some of the mailinglist types.
-                    {% endtrans %}
-                </p>
-            </noscript>
+            <h3 class="heading-underline non-js-hint">{% trans %}Additional Fields{% endtrans %}</h3>
+            <p class="text-info non-js-hint">
+                {% trans %}
+                    The following fields are only relevant for some of the mailinglist types.
+                {% endtrans %}
+            </p>
+            <script nonce="{{ csp_nonce }}">
+                $('.non-js-hint').hide()
+            </script>
             {{ util.form_input_select(name="event_id", entries=events|dictsort|dict_entries('id', 'title'),
                                       nulloption="&nbsp;"|s, label=gettext("Event"), sort=True,
                                       info=gettext("The participants of this event will be subscribers of this "
