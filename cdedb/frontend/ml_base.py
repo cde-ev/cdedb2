@@ -14,7 +14,7 @@ from werkzeug import Response
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
     check_validation as check, mailinglist_guard, query_result_to_json,
-    cdedbid_filter as cdedbid, request_extractor, keydictsort_filter,
+    cdedbid_filter as cdedbid, keydictsort_filter,
     calculate_db_logparams, calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
@@ -24,7 +24,9 @@ from cdedb.common import (
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
-from cdedb.ml_type_aux import MailinglistGroup, TYPE_MAP, get_type
+from cdedb.ml_type_aux import (
+    MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type)
+
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -221,8 +223,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "attachment_policy", "ml_type", "subject_prefix",
-        "maxsize", "is_active", "notes", "event_id", "registration_stati",
-        "assembly_id")
+        "maxsize", "is_active", "notes", *ADDITIONAL_TYPE_FIELDS)
     @REQUESTdata(("ml_type", "enum_mailinglisttypes"),
                  ("moderator_ids", "cdedbid_csv_list"))
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
@@ -376,18 +377,14 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdata(("registration_stati", "[enum_registrationpartstati]"))
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
-        "is_active", "event_id", "assembly_id")
+        "is_active", *ADDITIONAL_TYPE_FIELDS)
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
-                           registration_stati: Collection[
-                               const.RegistrationPartStati],
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
-        data['registration_stati'] = registration_stati
         data = check(rs, "mailinglist", data)
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
@@ -425,24 +422,18 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdata(("registration_stati", "[enum_registrationpartstati]"))
-    @REQUESTdatadict("ml_type", "event_id", "assembly_id")
+    @REQUESTdatadict("ml_type", *ADDITIONAL_TYPE_FIELDS)
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                           registration_stati: Collection[
-                               const.RegistrationPartStati],
-                           data: CdEDBObject) -> Response:
-        if rs.has_validation_errors():
-            return self.change_ml_type_form(rs, mailinglist_id)
+                       data: CdEDBObject) -> Response:
         ml = rs.ambience['mailinglist']
         data['id'] = mailinglist_id
-        data['registration_stati'] = registration_stati
         new_type = get_type(data['ml_type'])
-
         if ml['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
         data = check(rs, 'mailinglist', data)
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
+
         code = self.mlproxy.set_mailinglist(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/change_mailinglist")
