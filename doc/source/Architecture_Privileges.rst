@@ -13,6 +13,7 @@ Each persona can have the following privileges:
 * admin privileges in a realm (core, cde, event, ml, assembly)
 * meta admin
 * finance admin
+* cdelokal admin
 * membership
 * searchability
 

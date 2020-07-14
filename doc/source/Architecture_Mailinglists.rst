@@ -120,7 +120,7 @@ CdElokal Mailinglists
     Semi-public mailinglists with a special sortkey.
 
     * visible to: all users
-    * additional admins: None
+    * additional admins: cdelokal
     * sortkey: cdelokal
 
 

@@ -65,7 +65,7 @@ There is a default data set for the development it contains some users
    daniel@example.cde      secret     former member (but not disabled)                 DB-4-3
    emilia@example.cde      secret     event user                                       DB-5-1
    ferdinand@example.cde   secret     admin in all realms, but not globally            DB-6-X
-   garcia@example.cde      secret     orga of an event                                 DB-7-8
+   garcia@example.cde      secret     orga of an event and CdElokal-admin              DB-7-8
    hades                   secret     archived member                                  DB-8-6
    inga@example.cde        secret     minor member                                     DB-9-4
    janis@example.cde       secret     mailinglist user                                 DB-10-8
