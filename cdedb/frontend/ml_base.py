@@ -408,6 +408,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
+    @mailinglist_guard(allow_moderators=False)
     def change_ml_type_form(self, rs: RequestState,
                             mailinglist_id: int) -> Response:
         """Render form."""
@@ -423,6 +424,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         })
 
     @access("ml", modi={"POST"})
+    @mailinglist_guard(allow_moderators=False)
     @REQUESTdata(("registration_stati", "[enum_registrationpartstati]"))
     @REQUESTdatadict("ml_type", "event_id", "assembly_id")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
