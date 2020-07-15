@@ -233,6 +233,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["moderators"] = moderator_ids
         data['ml_type'] = ml_type
         data = check(rs, "mailinglist", data, creation=True)
+        if not self.coreproxy.verify_ids(rs, moderator_ids, is_archived=False):
+            rs.append_validation_error(
+                ("moderator_ids", ValueError(n_(
+                    "Some of these users do not exist or are archived."))))
+        if not self.coreproxy.verify_personas(rs, moderator_ids, {"ml"}):
+            rs.append_validation_error(
+                ("moderator_ids", ValueError(n_(
+                    "Some of these users are not ml-users."))))
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         # Check if mailinglist address is unique
@@ -604,6 +612,17 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.management(rs, mailinglist_id)
 
         moderator_ids = set(moderator_ids)
+        if not self.coreproxy.verify_ids(rs, moderator_ids, is_archived=False):
+            rs.append_validation_error(
+                ("moderator_ids", ValueError(n_(
+                    "Some of these users do not exist or are archived."))))
+        if not self.coreproxy.verify_personas(rs, moderator_ids, {"ml"}):
+            rs.append_validation_error(
+                ("moderator_ids", ValueError(n_(
+                    "Some of these users are not ml-users."))))
+        if rs.has_validation_errors():
+            return self.management(rs, mailinglist_id)
+
         moderator_ids |= set(rs.ambience['mailinglist']['moderators'])
         code = self.mlproxy.set_moderators(rs, mailinglist_id, moderator_ids)
         self.notify_return_code(rs, code)
@@ -615,6 +634,10 @@ class MlBaseFrontend(AbstractUserFrontend):
     def remove_moderator(self, rs: RequestState, mailinglist_id: int,
                          moderator_id: int) -> Response:
         """Demote persona from moderator status."""
+        moderator_ids = set(rs.ambience['mailinglist']['moderators'])
+        if moderator_id is not None and moderator_id not in moderator_ids:
+            rs.append_validation_error(
+                ("moderator_id", ValueError(n_("User is no moderator."))))
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         if (moderator_id == rs.user.persona_id
@@ -624,7 +647,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                       n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
 
-        moderator_ids = set(rs.ambience['mailinglist']['moderators'])
         moderator_ids -= {moderator_id}
         code = self.mlproxy.set_moderators(rs, mailinglist_id, moderator_ids)
         self.notify_return_code(rs, code)

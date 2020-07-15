@@ -593,11 +593,11 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
         anid, errs = validate.check_cdedbid(phrase, "phrase")
         if not errs:
-            if self.coreproxy.verify_ids(rs, (anid,)):
+            if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
                 return self.redirect_show_user(rs, anid)
         anid, errs = validate.check_id(phrase, "phrase")
         if not errs:
-            if self.coreproxy.verify_ids(rs, (anid,)):
+            if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
                 return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         search = [("username,family_name,given_names,display_name",

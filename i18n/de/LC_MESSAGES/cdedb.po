@@ -16388,6 +16388,12 @@ msgstr "Beispiel: Traumgasse 1"
 msgid "Example: Apartment 4, c/o Doc Brown"
 msgstr "Beispiel: Wohnung 4, c/o Dr. Brown"
 
+msgid "Some of these users are not ml-users."
+msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
+
+msgid "Some of these users do not exist or are archived."
+msgstr "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 

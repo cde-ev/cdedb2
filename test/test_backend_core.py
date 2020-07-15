@@ -174,6 +174,16 @@ class TestCoreBackend(BackendTest):
     def test_verify_existence(self):
         self.assertTrue(self.core.verify_existence(self.key, "anton@example.cde"))
         self.assertFalse(self.core.verify_existence(self.key, "nonexistent@example.cde"))
+        self.login(USER_DICT["berta"])
+        self.assertTrue(self.core.verify_ids(self.key, {1, 2, 5, 100}))
+        self.assertFalse(self.core.verify_ids(self.key, {123456}))
+        # Hades is archived.
+        self.assertFalse(self.core.verify_ids(self.key, {8}))
+        self.assertFalse(self.core.verify_ids(self.key, {8}, is_archived=False))
+        self.assertTrue(self.core.verify_ids(self.key, {8}, is_archived=None))
+        self.assertTrue(self.core.verify_ids(self.key, {1, 8}, is_archived=None))
+        self.assertTrue(self.core.verify_ids(self.key, {8}, is_archived=True))
+        self.assertFalse(self.core.verify_ids(self.key, {1, 8}, is_archived=True))
 
     def test_password_reset(self):
         new_pass = "rK;7e$ekgReW2t"
