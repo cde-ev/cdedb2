@@ -8,19 +8,30 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_orderrow.js') }}{% endblock %}
 {% block title %}
-    {% trans kind=gettext(kind|string), title=ambience['event']['title'] %}
-        Reorder Questionnaire ({{ kind }}) ({{ title }})
-    {% endtrans %}
+    {% if kind == enums['QuestionnaireUsages'].registration %}
+        {% trans title=ambience['event']['title'] %}Reorder Registration ({{ title }}){% endtrans %}
+    {% else %}
+        {% trans title=ambience['event']['title'] %}Reorder Questionnaire ({{ title }}){% endtrans %}
+    {% endif %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire")) }}
-    {{ util.breadcrumb_link(cdedblink("event/reorder_questionnaire"), gettext("Reorder Questionnaire"), active=True) }}
+    {% if kind == enums['QuestionnaireUsages'].registration %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration")) }}
+        {{ util.breadcrumb_link(cdedblink("event/reorder_questionnaire"), gettext("Reorder Registration"), active=True) }}
+    {% elif kind == enums['QuestionnaireUsages'].additional %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire")) }}
+        {{ util.breadcrumb_link(cdedblink("event/reorder_questionnaire"), gettext("Reorder Questionnaire"), active=True) }}
+    {% endif %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans kind=gettext(kind|string) %}Reorder Questionnaire ({{ kind }}){% endtrans %}
+        {% if kind == enums['QuestionnaireUsages'].registration %}
+            {% trans kind=gettext(kind|string) %}Reorder Registration{% endtrans %}
+        {% else %}
+            {% trans kind=gettext(kind|string) %}Reorder Questionnaire{% endtrans %}
+        {% endif %}
         <small>{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}

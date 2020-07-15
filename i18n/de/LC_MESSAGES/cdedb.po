@@ -15118,13 +15118,13 @@ msgstr "nicht"
 
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:11
 #, python-format
-msgid "Reorder Questionnaire (%(kind)s) (%(title)s)"
-msgstr "Fragebogen umordnen (%(kind)s) (%(title)s)"
+msgid "Reorder Questionnaire (%(title)s)"
+msgstr "Fragebogen umordnen (%(title)s)"
 
-#: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:23
+#: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:11
 #, python-format
-msgid "Reorder Questionnaire (%(kind)s)"
-msgstr "Fragebogen umordnen (%(kind)s)"
+msgid "Reorder Registration (%(title)s)"
+msgstr "Anmeldung umordnen (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:81
 msgid "Order"
