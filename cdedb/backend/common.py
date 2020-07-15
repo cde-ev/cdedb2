@@ -17,7 +17,8 @@ import psycopg2.extras
 import psycopg2.extensions
 from typing import (
     Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
-    Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict
+    Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict,
+    TYPE_CHECKING,
 )
 
 import cdedb.validation as validate
@@ -39,10 +40,10 @@ T = TypeVar('T')
 S = TypeVar('S')
 
 
-def singularize(function: F,
+def singularize(function: Callable,
                 array_param_name: str = "ids",
                 singular_param_name: str = "anid",
-                passthrough: bool = False) -> G:
+                passthrough: bool = False) -> Callable:
     """This takes a function and returns a singularized version.
 
     The function has to accept an array as a parameter and return a dict
@@ -75,9 +76,9 @@ def singularize(function: F,
     return singularized
 
 
-def batchify(function: F,
+def batchify(function: Callable,
              array_param_name: str = "data",
-             singular_param_name: str = "data") -> G:
+             singular_param_name: str = "data") -> Callable[..., List]:
     """This takes a function and returns a batchified version.
 
     The function has to accept an a singular parameter.
@@ -132,7 +133,7 @@ def access(*roles: Role) -> Callable[[F], F]:
                 )
             return function(self, rs, *args, **kwargs)
 
-        wrapper.access = True
+        setattr(wrapper, "access", True)
         return cast(F, wrapper)
 
     return decorator
@@ -145,7 +146,7 @@ def internal(function: F) -> F:
     internal mode.
     """
 
-    function.internal = True
+    setattr(function, "internal", True)
     return function
 
 
@@ -158,7 +159,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     which is sufficient for some cases).
     """
     #: abstract str to be specified by children
-    realm = None
+    realm: str
 
     def __init__(self, configpath: PathLike = None,
                  is_core: bool = False) -> None:
@@ -183,13 +184,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
         # Everybody needs access to the core backend
-        if is_core:
-            self.core = self  # type: CoreBackend
-        else:
-            # Import here since we otherwise have a cyclic import.
-            # I don't see how we can get out of this ...
+        if TYPE_CHECKING:
             from cdedb.backend.core import CoreBackend
-            self.core = make_proxy(CoreBackend(configpath), internal=True)
+            self.core = cast(CoreBackend, self)
+        else:
+            if is_core:
+                self.core = self
+            else:
+                # Import here since we otherwise have a cyclic import.
+                # I don't see how we can get out of this ...
+                from cdedb.backend.core import CoreBackend
+                self.core = make_proxy(CoreBackend(configpath), internal=True)
 
     def affirm_realm(self, rs: RequestState, ids: Collection[int],
                      realms: Set[Realm] = None) -> None:
@@ -215,9 +220,19 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
 
+    # mypy treats all imports from `psycopg2` as `Any`, so we have overlap
+    # with `None`.
     @staticmethod
-    def _sanitize_db_output(output: Optional[psycopg2.extras.RealDictRow]
-                            ) -> Optional[CdEDBObject]:
+    @overload
+    def _sanitize_db_output(output: None) -> None: ...  # type: ignore
+
+    @staticmethod
+    @overload
+    def _sanitize_db_output(output: psycopg2.extras.RealDictRow
+                            ) -> CdEDBObject: ...
+
+    @staticmethod
+    def _sanitize_db_output(output):
         """Convert a :py:class:`psycopg2.extras.RealDictRow` into a normal
         :py:class:`dict`. We only use the outputs as dictionaries and
         the psycopg variant has some rough edges (e.g. it does not survive
@@ -230,30 +245,28 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return None
         return dict(output)
 
+    # mypy unfortunately does not allow annotations for treating some iterables
+    # differently than others, so we just ignore everything here.
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: Mapping[S, T]) -> Mapping[S, T]:
-        pass
+    def _sanitize_db_input(obj: Mapping[S, T]       # type: ignore
+                           ) -> Mapping[S, T]: ...  # type: ignore
 
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: str) -> str:
-        pass
+    def _sanitize_db_input(obj: str) -> str: ...  # type: ignore
 
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: Iterable[T]) -> List[T]:
-        pass
+    def _sanitize_db_input(obj: Iterable[T]) -> List[T]: ...  # type: ignore
 
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: enum.Enum) -> int:
-        pass
+    def _sanitize_db_input(obj: enum.Enum) -> int: ...  # type: ignore
 
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: T) -> T:
-        pass
+    def _sanitize_db_input(obj: T) -> T: ...  # type: ignore
 
     @staticmethod
     def _sanitize_db_input(obj):
@@ -295,7 +308,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         This doesn't return anything, but has a side-effect on ``cur``.
         """
-        sanitized_params = tuple(self._sanitize_db_input(p) for p in params)
+        sanitized_params = tuple(
+            self._sanitize_db_input(p) for p in params)  # type: ignore
         self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
@@ -316,7 +330,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
-                return self._sanitize_db_output(cur.fetchone())
+                return self._sanitize_db_output(cur.fetchone())  # type: ignore
 
     def query_all(self, rs: RequestState, query: str, params: Sequence
                   ) -> Tuple[CdEDBObject, ...]:
@@ -328,7 +342,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return tuple(
-                    self._sanitize_db_output(x) for x in cur.fetchall())
+                    self._sanitize_db_output(x)  # type: ignore
+                    for x in cur.fetchall())
 
     def sql_insert(self, rs: RequestState, table: str, data: CdEDBObject,
                    entity_key: str = "id") -> int:
@@ -342,7 +357,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = (f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
                  f" ({', '.join(('%s',) * len(keys))}) RETURNING {entity_key}")
         params = tuple(data[key] for key in keys)
-        return unwrap(self.query_one(rs, query, params))
+        return unwrap(self.query_one(rs, query, params)) or 0
 
     def sql_insert_many(self, rs: RequestState, table: str,
                         data: Sequence[CdEDBObject]) -> int:
@@ -356,7 +371,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return 0
         keys = tuple(data[0].keys())
         key_set = set(keys)
-        params = []
+        params: List[Any] = []
         for entry in data:
             if entry.keys() != key_set:
                 raise ValueError(n_("Dict keys do not match."))
@@ -481,7 +496,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         view = view or QUERY_VIEWS[query.scope]
         q = "SELECT {} {} FROM {}".format("DISTINCT" if distinct else "",
                                           select, view)
-        params = []
+        params: List[Any] = []
         constraints = []
         _ops = QueryOperators
         for field, operator, value in query.constraints:
@@ -646,7 +661,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         # First, define the common WHERE filter clauses
         conditions = []
-        params = []
+        params: List[Any] = []
         if codes:
             conditions.append("code = ANY(%s)")
             params.append(codes)
@@ -680,7 +695,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         # The first query determines the absolute number of logs existing
         # matching the given criteria
         query = f"SELECT COUNT(*) AS count FROM {table} {condition}"
-        total = unwrap(self.query_one(rs, query, params))
+        total = unwrap(self.query_one(rs, query, params)) or 0
         if offset and offset > total:
             # Why you do this
             return total, tuple()
@@ -724,7 +739,7 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def affirm_validation(assertion: str, value: T, **kwargs: Any) -> Optional[T]:
+def affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
@@ -732,34 +747,63 @@ def affirm_validation(assertion: str, value: T, **kwargs: Any) -> Optional[T]:
 
 # Ignore the parameter name allow_None
 # noinspection PyPep8Naming
-def affirm_array_validation(assertion: str, values: Optional[Iterable[T]],
-                            allow_None: bool = False,
-                            **kwargs: Any) -> Optional[Tuple[T, ...]]:
+@overload
+def affirm_array_validation(assertion: str, values: None,
+                            allow_None: bool = False, **kwargs: Any
+                            ) -> None: ...
+
+
+# noinspection PyPep8Naming
+@overload
+def affirm_array_validation(assertion: str, values: Iterable[T],
+                            allow_None: bool = False, **kwargs: Any
+                            ) -> Tuple[T, ...]: ...
+
+
+# noinspection PyPep8Naming
+def affirm_array_validation(assertion, values, allow_None=False, **kwargs: Any):
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
     :param allow_None: Since we don't have the luxury of an automatic
       '_or_None' variant like with other validators we have this parameter.
     """
-    if allow_None and values is None:
-        return None
-    checker: Callable[[T, ...], T] = getattr(
+    if values is None:
+        if allow_None:
+            return None
+        else:
+            raise ValueError(n_(f"{values!r} is not iterable."))
+    checker: Callable[..., T] = getattr(
         validate, "assert_{}".format(assertion))
     return tuple(checker(value, **kwargs) for value in values)
 
 
 # Ignore the parameter name allow_None
 # noinspection PyPep8Naming
-def affirm_set_validation(assertion: str, values: Optional[Iterable[T]],
-                          allow_None: bool = False,
-                          **kwargs: Any) -> Optional[Set[T]]:
+@overload
+def affirm_set_validation(assertion: str, values: None,
+                          allow_None: bool = False, **kwargs: Any) -> None: ...
+
+
+# noinspection PyPep8Naming
+@overload
+def affirm_set_validation(assertion: str, values: Iterable[T],
+                          allow_None: bool = False, **kwargs: Any
+                          ) -> Set[T]: ...
+
+
+# noinspection PyPep8Naming
+def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
 
     :param allow_None: Since we don't have the luxury of an automatic
       '_or_None' variant like with other validators we have this parameter.
     """
-    if allow_None and values is None:
-        return None
-    checker: Callable[[T, ...], T] = getattr(
+    if values is None:
+        if allow_None:
+            return None
+        else:
+            raise ValueError(n_(f"{values!r} is not iterable."))
+    checker: Callable[..., T] = getattr(
         validate, "assert_{}".format(assertion))
     return {checker(value, **kwargs) for value in values}
 
