@@ -8,19 +8,17 @@ import string
 
 from secrets import choice, token_hex
 
-def secure_token_hex(*args, **kwargs):
+
+def secure_token_hex(*args, **kwargs) -> str:
     """Wrapper around secrets.token_hex."""
     return token_hex(*args, **kwargs)
 
 
-def secure_random_ascii(length=12, chars=None):
+def secure_random_ascii(length: int = 12, chars: str = None) -> str:
     """Create a random string of printable ASCII characters.
 
-    :type length: int
     :param length: number of characters in the returned string
-    :type chars: str
     :param chars: string of characters to choose from
-    :rtype: str
     """
     chars = chars or (string.ascii_letters + string.digits + string.punctuation)
     return ''.join(choice(chars) for _ in range(length))
