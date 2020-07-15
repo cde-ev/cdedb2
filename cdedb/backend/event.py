@@ -981,7 +981,7 @@ class EventBackend(AbstractBackend):
                     and (ret[anid]['registration_hard_limit'] is None
                          or ret[anid]['registration_hard_limit'] >= now()))
         return ret
-    get_event: Callable[[RequestState, int], CdEDBObject]
+    get_event: Callable[['EventBackend', RequestState, int], CdEDBObject]
     get_event = singularize(get_events)
 
     def _get_event_fields(self, rs: RequestState,
