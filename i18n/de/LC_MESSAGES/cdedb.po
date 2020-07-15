@@ -13802,10 +13802,8 @@ msgstr ""
 "könnenden Status eines Kurses zur Zeit nicht sehen."
 
 #: cdedb/frontend/templates/web/event/course_list.tmpl:52
-msgid ""
-"The instructors for each course are only visible to logged in event users."
-msgstr ""
-"Die Kursleiter sind nur für eingeloggte Veranstaltungs Nutzer sichtbar."
+msgid "The instructors for each course are only visible to logged in event users."
+msgstr "Die Kursleiter sind nur für eingeloggte Veranstaltungs-Nutzer sichtbar."
 
 #: cdedb/frontend/templates/web/event/course_list.tmpl:72
 #, python-format
@@ -15206,6 +15204,13 @@ msgstr "Kurs löschen."
 #: cdedb/frontend/templates/web/event/show_course.tmpl:183
 msgid "The course will be permanently deleted."
 msgstr "Der Kurs wird irreversibel gelöscht."
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:27
+msgid ""
+"More detailed information about the event is visible to logged in event "
+"users."
+msgstr "Detailliertere Informationen über die Veranstaltung sind für "
+"eingeloggte Veranstaltungs-Nutzer sichtbar."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:28
 msgid "Timeframe"
