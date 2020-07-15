@@ -32,9 +32,9 @@
             {% else %}
                 {% with (icon, caption) = {
                         'ml': ('envelope', gettext("Mailinglists")),
-                        'event': ('blackboard', gettext("Events")),
+                        'event': ('chalkboard-teacher', gettext("Events")),
                         'cde': ('education', gettext("Members")),
-                        'bullhorn': ('education', gettext("Assemblies"))
+                        'assembly': ('bullhorn', gettext("Assemblies"))
                     }.get(values['realm']) %}
                     {{ util.form_input_static(label=gettext("Realm"), small=True, icon=icon, value=caption) }}
                 {% endwith %}
