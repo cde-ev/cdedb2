@@ -7,7 +7,7 @@ concluded events.
 import datetime
 
 from typing import (
-    Collection, Dict, Callable, Optional, Tuple, Union, List
+    Collection, Dict, Callable, Optional, Tuple, Union, List, Set
 )
 
 from cdedb.backend.common import (
@@ -99,7 +99,7 @@ class PastEventBackend(AbstractBackend):
                           codes: Collection[const.PastEventLogCodes] = None,
                           pevent_id: int = None, offset: int = None,
                           length: int = None, persona_id: int = None,
-                          submitted_by: int = None, additional_info: int = None,
+                          submitted_by: int = None, additional_info: str = None,
                           time_start: datetime.datetime = None,
                           time_stop: datetime.datetime = None) -> CdEDBLog:
         """Get recorded activity for concluded events.
@@ -246,7 +246,8 @@ class PastEventBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, ids)
         return {e['id']: e for e in data}
-    get_past_event: Callable[[RequestState, int], CdEDBObject]
+    get_past_event: Callable[
+        ['PastEventBackend', RequestState, int], CdEDBObject]
     get_past_event = singularize(get_past_events)
 
     @access("cde_admin", "event_admin")
@@ -377,7 +378,8 @@ class PastEventBackend(AbstractBackend):
         data = self.sql_select(rs, "past_event.courses", PAST_COURSE_FIELDS,
                                ids)
         return {e['id']: e for e in data}
-    get_past_course: Callable[[RequestState, int], CdEDBObject]
+    get_past_course: Callable[
+        ['PastEventBackend', RequestState, int], CdEDBObject]
     get_past_course = singularize(get_past_courses)
 
     @access("cde_admin", "event_admin")
@@ -385,9 +387,13 @@ class PastEventBackend(AbstractBackend):
                         ) -> DefaultReturnCode:
         """Update some keys of a concluded course."""
         data = affirm("past_course", data)
-        ret = self.sql_update(rs, "past_event.courses", data)
         current = self.sql_select_one(rs, "past_event.courses",
                                       ("title", "pevent_id"), data['id'])
+        # TODO do more checking here?
+        if current is None:
+            raise ValueError(n_("Referenced past course does not exist."))
+        ret = self.sql_update(rs, "past_event.courses", data)
+        current.update(data)
         self.past_event_log(
             rs, const.PastEventLogCodes.course_changed, current['pevent_id'],
             additional_info=current['title'])
@@ -564,7 +570,7 @@ class PastEventBackend(AbstractBackend):
         reference = today - datetime.timedelta(days=200)
         reference = reference.replace(day=1, month=1)
         ret = self.query_all(rs, query, (moniker, moniker, reference))
-        warnings = []
+        warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
         if len(ret) == 0:
@@ -605,7 +611,7 @@ class PastEventBackend(AbstractBackend):
         q3 = query + " AND similarity(title, %s) > %s"
         params: Tuple = (pevent_id, phrase)
         ret = self.query_all(rs, q1, params)
-        warnings = []
+        warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
         if len(ret) == 0:
@@ -661,7 +667,7 @@ class PastEventBackend(AbstractBackend):
         courses_seen = set()
         # we want to add each participant/course combination at
         # most once
-        combinations_seen = set()
+        combinations_seen: Set[Tuple[int, Optional[int]]] = set()
         for reg in regs.values():
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
@@ -733,9 +739,8 @@ class PastEventBackend(AbstractBackend):
                 return None, "Event locked."
             self.event.set_event_archived(rs, {'id': event_id,
                                                'is_archived': True})
+            new_ids = None
             if create_past_event:
                 new_ids = tuple(self.archive_one_part(rs, event, part_id)
                                 for part_id in xsorted(event['parts']))
-            else:
-                new_ids = None
         return new_ids, None
