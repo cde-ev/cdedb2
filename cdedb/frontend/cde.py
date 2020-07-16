@@ -800,10 +800,11 @@ class CdEFrontend(AbstractUserFrontend):
             start: Optional[datetime.date], end: Optional[datetime.date],
             timestamp: datetime.datetime) -> Tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
+        get_persona = lambda p_id: self.coreproxy.get_persona(rs, p_id)
+        get_event = lambda event_id: self.eventproxy.get_event(rs, event_id)
         data = {"{}{}".format(k, t.t_id): v
                 for t in transactions
-                for k, v in t.to_dict(rs, self.coreproxy.get_persona,
-                                      self.eventproxy.get_event).items()}
+                for k, v in t.to_dict(get_persona, get_event).items()}
         data["count"] = len(transactions)
         data["start"] = start
         data["end"] = end
@@ -864,17 +865,17 @@ class CdEFrontend(AbstractUserFrontend):
 
         filename = pathlib.Path(statement_file.filename).parts[-1]
         start, end, timestamp = parse.dates_from_filename(filename)
-
         # The statements from BFS are encoded in latin-1
         statement_file = check(rs, "csvfile", statement_file,
                                "statement_file", encoding="latin-1")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
-
         statementlines = statement_file.splitlines()
 
         event_list = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_list)
+
+        get_persona = lambda p_id: self.coreproxy.get_persona(rs, p_id)
 
         # This does not use the cde csv dialect, but rather the bank's.
         reader = csv.DictReader(statementlines, delimiter=";",
@@ -897,8 +898,8 @@ class CdEFrontend(AbstractUserFrontend):
                 continue
             line["id"] = i
             t = parse.Transaction.from_csv(line)
-            t.analyze(rs, events, self.coreproxy.get_persona)
-            t.inspect(rs, self.coreproxy.get_persona)
+            t.analyze(events, get_persona)
+            t.inspect(get_persona)
 
             transactions.append(t)
         if rs.has_validation_errors():
@@ -951,11 +952,13 @@ class CdEFrontend(AbstractUserFrontend):
             ("event_id_confirm{}".format(i), "bool_or_None"),
         )
 
+        get_persona = lambda p_id: self.coreproxy.get_persona(rs, p_id)
+        get_event = lambda event_id: self.eventproxy.get_event(rs, event_id)
         transactions = []
         for i in range(1, count + 1):
             t = request_extractor(rs, params(i))
             t = parse.Transaction({k.rstrip(str(i)): v for k, v in t.items()})
-            t.inspect(rs, self.coreproxy.get_persona)
+            t.inspect(get_persona)
             transactions.append(t)
 
         data, params = self.organize_transaction_data(
@@ -997,8 +1000,7 @@ class CdEFrontend(AbstractUserFrontend):
             filename += "_{}".format(start)
         else:
             filename += "_{}_bis_{}.csv".format(start, end)
-        csv_data = [t.to_dict(rs, self.coreproxy.get_persona,
-                              self.eventproxy.get_event)
+        csv_data = [t.to_dict(get_persona, get_event)
                     for t in transactions]
         csv_data = csv_output(csv_data, fields, write_header)
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)

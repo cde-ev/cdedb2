@@ -136,7 +136,7 @@ STATEMENT_DB_ID_REMOVE = (
 AMOUNT_MIN_EVENT_FEE = 20
 
 
-BackendGetter = Callable[[RequestState, int], CdEDBObject]
+BackendGetter = Callable[[int], CdEDBObject]
 
 
 def dates_from_filename(filename: str) -> Tuple[datetime.date,
@@ -148,11 +148,11 @@ def dates_from_filename(filename: str) -> Tuple[datetime.date,
     Example filename from BSF: "20200223_bis_20200229_20200229160818.csv"
     """
     try:
-        start, sep, end, timestamp = filename.split("_", 3)
+        start_str, sep, end_str, timestamp = filename.split("_", 3)
         if sep != "bis" or timestamp[-4:] != ".csv":
             raise ValueError()
-        start = datetime.datetime.strptime(start, "%Y%m%d").date()
-        end = datetime.datetime.strptime(end, "%Y%m%d").date()
+        start = datetime.datetime.strptime(start_str, "%Y%m%d").date()
+        end = datetime.datetime.strptime(end_str, "%Y%m%d").date()
         timestamp = datetime.datetime.strptime(timestamp[:-4], "%Y%m%d%H%M%S")
     except ValueError:
         return now().date(), None, now()
@@ -484,7 +484,7 @@ class Transaction:
 
         return ret
 
-    def analyze(self, rs: RequestState, events: CdEDBObjectMap,
+    def analyze(self, events: CdEDBObjectMap,
                 get_persona: BackendGetter) -> None:
         """
         Try to guess the TransactionType.
@@ -501,7 +501,7 @@ class Transaction:
         # Try to find and match an event.
         self._match_event(events)
         # Try to find and match cdedbids.
-        self._match_members(rs, get_persona)
+        self._match_members(get_persona)
 
         # Sanity check whether we know the Account.
         if self.account == Accounts.Unknown:
@@ -585,8 +585,7 @@ class Transaction:
         else:
             raise RuntimeError("Impossible!")
 
-    def _match_members(self, rs: RequestState, get_persona: BackendGetter
-                       ) -> None:
+    def _match_members(self, get_persona: BackendGetter) -> None:
         """
         Assign all matching members to self.member_matches.
         
@@ -609,7 +608,7 @@ class Transaction:
             for p_id, confidence in result.items():
 
                 try:
-                    persona = get_persona(rs, p_id)
+                    persona = get_persona(p_id)
                 except KeyError as e:
                     if p_id in e.args:
                         p = ("persona_id",
@@ -719,7 +718,7 @@ class Transaction:
                 self.event_id = best_match.event_id
                 self.event_id_confidence = best_confidence
 
-    def inspect(self, rs: RequestState, get_persona: BackendGetter) -> None:
+    def inspect(self, get_persona: BackendGetter) -> None:
         """Inspect transaction for problems."""
         cl = ConfidenceLevel
 
@@ -765,7 +764,7 @@ class Transaction:
         if self.type == TransactionType.MembershipFee:
             if self.persona_id:
                 try:
-                    persona = get_persona(rs, self.persona_id)
+                    persona = get_persona(self.persona_id)
                 except KeyError as e:
                     if self.persona_id in e.args:
                         p = ("persona_id",
@@ -808,8 +807,8 @@ class Transaction:
         """German way of writing the amount with simplified decimal places."""
         return simplify_amount(self.amount)
 
-    def to_dict(self, rs: RequestState, get_persona: BackendGetter,
-                get_event: BackendGetter) -> CdEDBObject:
+    def to_dict(self, get_persona: BackendGetter, get_event: BackendGetter
+                ) -> CdEDBObject:
         """
         Convert the transaction to a dict to be displayed in the validation
         form or to be written to a csv file.
@@ -854,13 +853,13 @@ class Transaction:
             "category_old": self.type.old(),
         }
         if self.persona_id:
-            persona = get_persona(rs, self.persona_id)
+            persona = get_persona(self.persona_id)
             ret.update({
                 "given_names": persona["given_names"],
                 "family_name": persona["family_name"],
             })
         if self.event_id:
-            event = get_event(rs, self.event_id)
+            event = get_event(self.event_id)
             ret.update({
                 "event_name": event["shortname"],
                 "category": event["shortname"] + "-" + str(self.type),
