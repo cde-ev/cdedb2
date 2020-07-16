@@ -542,63 +542,66 @@ class TestMlFrontend(FrontendTest):
     @as_users("nina")
     def test_change_ml_type(self, user):
         # TODO: check auto subscription for opt-out lists
+        assembly_types = {const.MailinglistTypes.assembly_associated}
+        # MailinglistTypes.assembly_opt_in is not bound to an assembly
+        event_types = {const.MailinglistTypes.event_associated,
+                       const.MailinglistTypes.event_orga}
+        general_types = {t for t in const.MailinglistTypes
+                            if t not in (assembly_types.union(event_types))}
+
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Alle Mailinglisten'},
                       {'description': 'Mitgestaltungsforum'},
                       {'description': 'Konfiguration'}, )
-        assembly_types = (30, )  # type 31 is not bound to an assembly
-        event_types = (20, 21)
-        general_types = tuple(int(t) for t in const.MailinglistTypes
-                              if int(t) not in (assembly_types + event_types))
-        for ml_type in general_types + event_types + assembly_types:
-            self.assertTitle("Mitgestaltungsforum – Konfiguration")
-            self.traverse({'description': 'Typ ändern'})
-            self.assertTitle("Mitgestaltungsforum – Typ ändern")
-            f = self.response.forms['changemltypeform']
-            f['ml_type'] = ml_type
+        self.assertTitle("Mitgestaltungsforum – Konfiguration")
+        self.traverse({'description': 'Typ ändern'})
+        self.assertTitle("Mitgestaltungsforum – Typ ändern")
+        f = self.response.forms['changemltypeform']
 
-            f['event_id'] = 1
-            f['registration_stati'] = [1, 2]
-            f['assembly_id'] = 1
-            # no ml type should allow event *and* assembly fields to be set
-            self.submit(f, check_notification=False)
-            self.assertIn("alert alert-danger", self.response.text)
-            if ml_type not in event_types:
-                self.assertValidationError('event_id', "Muss „None“ sein.")
-                self.assertPresence("Muss eine leere Liste sein.")
-            else:
-                self.assertNonPresence("Muss eine leere Liste sein.")
-            if ml_type not in assembly_types:
-                self.assertValidationError('assembly_id', "Muss „None“ sein.")
-
-            f['event_id'] = ''
-            f['registration_stati'] = []
-            f['assembly_id'] = ''
-            if ml_type in general_types:
-                self.submit(f)
-            elif ml_type in event_types:
+        for ml_type in const.MailinglistTypes:
+            with self.subTest(ml_type=ml_type):
+                f['ml_type'] = ml_type.value
                 f['event_id'] = 1
-                self.submit(f)
-                self.traverse({'href': "mailinglist/53/show"})
-                self.assertPresence("Mailingliste zur Veranstaltung "
-                                    "Große Testakademie 2222")
-                self.traverse({'description': 'Konfiguration'},
-                              {'description': 'Typ ändern'})
-                f['event_id'] = ''
-                self.submit(f)
-                self.traverse({'href': "mailinglist/53/show"})
-                self.assertNonPresence("Mailingliste zur Veranstaltung")
-                self.traverse({'description': 'Konfiguration'})
-            elif ml_type in assembly_types:
-                self.submit(f, check_notification=False)
-                self.assertValidationError('assembly_id', "Ungültige Eingabe "
-                                                          "für eine Ganzzahl.")
+                f['registration_stati'] = [1, 2]
                 f['assembly_id'] = 1
-                self.submit(f)
-                self.traverse({'href': "mailinglist/53/show"})
-                self.assertPresence("Mailingliste zur Versammlung "
-                                    "Internationaler Kongress")
-                self.traverse({'description': "Konfiguration"})
+                # no ml type should allow event *and* assembly fields to be set
+                self.submit(f, check_notification=False)
+                self.assertIn("alert alert-danger", self.response.text)
+                if ml_type not in event_types:
+                    self.assertValidationError('event_id',
+                                               "Muss „None“ sein.")
+                    self.assertPresence("Muss eine leere Liste sein.")
+                else:
+                    self.assertNonPresence("Muss eine leere Liste sein.")
+                if ml_type not in assembly_types:
+                    self.assertValidationError('assembly_id',
+                                               "Muss „None“ sein.")
+
+                f['event_id'] = ''
+                f['registration_stati'] = []
+                f['assembly_id'] = ''
+                if ml_type in general_types:
+                    self.submit(f)
+                elif ml_type in event_types:
+                    self.submit(f)  # only works if all event-associated ml
+                    # types can also not be associated with an event, which may
+                    # change in future
+                    self.traverse({'description': "Übersicht", 'index': 1})
+                    self.assertNonPresence("Mailingliste zur Veranstaltung")
+                    f['event_id'] = 1
+                    self.submit(f)
+                    self.traverse({'description': "Übersicht", 'index': 1})
+                    self.assertPresence("Mailingliste zur Veranstaltung "
+                                        "Große Testakademie 2222")
+                elif ml_type in assembly_types:
+                    self.submit(f, check_notification=False)
+                    self.assertValidationError('assembly_id', "Ungültige "
+                                                "Eingabe für eine Ganzzahl.")
+                    f['assembly_id'] = 1
+                    self.submit(f)
+                    self.traverse({'description': "Übersicht", 'index': 1})
+                    self.assertPresence("Mailingliste zur Versammlung "
+                                        "Internationaler Kongress")
 
     @as_users("nina")
     def test_change_mailinglist_registration_stati(self, user):
