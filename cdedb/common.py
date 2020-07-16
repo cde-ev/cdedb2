@@ -179,11 +179,11 @@ class RequestState:
         self.begin = begin
         # Visible version of the database connection
         # noinspection PyTypeChecker
-        self.conn: IrradiatedConnection = None
+        self.conn: IrradiatedConnection = None  # type: ignore
         # Private version of the database connection, only visible in the
         # backends (mediated by the make_proxy)
         # noinspection PyTypeChecker
-        self._conn: IrradiatedConnection = None
+        self._conn: IrradiatedConnection = None  # type: ignore
         # Toggle to disable logging
         self.is_quiet = False
         # Is true, if the application detected an invalid (or no) CSRF token
@@ -295,7 +295,7 @@ def make_proxy(backend: B, internal=False) -> B:
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
-                    rs.conn = None
+                    rs.conn = None  # type: ignore
         return cast(F, wrapper)
 
     class Proxy:
