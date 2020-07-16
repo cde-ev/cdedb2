@@ -16,7 +16,6 @@ import importlib.util
 import logging
 import pathlib
 import subprocess
-import uuid
 
 import pytz
 
@@ -581,10 +580,10 @@ class Config(BasicConfig):
 
         if configpath:
             spec = importlib.util.spec_from_file_location(
-                "primaryconf", configpath
+                "primaryconf", str(configpath)
             )
             primaryconf = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(primaryconf)
+            spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
                 for key in config_keys & set(dir(primaryconf))
@@ -593,10 +592,10 @@ class Config(BasicConfig):
             primaryconf = {}
 
         try:
-            import cdedb.localconfig as secondaryconf
+            import cdedb.localconfig as secondaryconf_mod
             secondaryconf = {
-                key: getattr(secondaryconf, key)
-                for key in config_keys & set(dir(secondaryconf))
+                key: getattr(secondaryconf_mod, key)
+                for key in config_keys & set(dir(secondaryconf_mod))
             }
         except ImportError:
             secondaryconf = {}
@@ -605,7 +604,7 @@ class Config(BasicConfig):
             primaryconf, secondaryconf, _DEFAULTS, _BASIC_DEFAULTS
         )
 
-        for key in _BASIC_DEFAULTS.keys() & dir(primaryconf):
+        for key in _BASIC_DEFAULTS.keys() & set(dir(primaryconf)):
             _LOGGER.info(f"Ignored basic config entry {key} in {configpath}.")
 
 
@@ -621,22 +620,23 @@ class SecretsConfig(collections.abc.Mapping):
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
         if configpath:
             spec = importlib.util.spec_from_file_location(
-                "primaryconf", configpath
+                "primaryconf", str(configpath)
             )
             primaryconf = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(primaryconf)
+            spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
-                for key in _SECRECTS_DEFAULTS.keys() & dir(primaryconf)
+                for key in _SECRECTS_DEFAULTS.keys() & set(dir(primaryconf))
             }
         else:
             primaryconf = {}
 
         try:
-            import cdedb.localconfig as secondaryconf
+            import cdedb.localconfig as secondaryconf_mod
             secondaryconf = {
-                key: getattr(secondaryconf, key)
-                for key in _SECRECTS_DEFAULTS.keys() & dir(secondaryconf)
+                key: getattr(secondaryconf_mod, key)
+                for key in _SECRECTS_DEFAULTS.keys() & set(
+                    dir(secondaryconf_mod))
             }
         except ImportError:
             secondaryconf = {}

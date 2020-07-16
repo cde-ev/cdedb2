@@ -18,8 +18,8 @@ CONSOLE_LOG_LEVEL = logging.INFO
 GLOBAL_LOG = pathlib.Path("/log/cdedb.log")
 
 if CDEDB_TEST:
-    SYSLOG_LOG_LEVEL = None
-    CONSOLE_LOG_LEVEL = None
+    SYSLOG_LOG_LEVEL = None  # type: ignore
+    CONSOLE_LOG_LEVEL = None  # type: ignore
     GLOBAL_LOG = pathlib.Path("/tmp/test-cdedb.log")
 
 # Config
