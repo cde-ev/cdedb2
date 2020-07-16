@@ -22,7 +22,10 @@ cdedb/localconfig.py
 # cache data
 .mypy_cache/
 .coverage
+
+# ide data
 .idea
+.vscode
 
 # autobuild temporary data
 related/auto-build/distfiles/**
