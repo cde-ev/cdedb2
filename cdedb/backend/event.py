@@ -8,11 +8,10 @@ import collections
 import copy
 import decimal
 import datetime
-import pathlib
-from os import PathLike
 
 from typing import (
-    Dict, Set, Collection, Callable, Tuple, Optional, List, Sequence, Union
+    Dict, Set, Collection, Callable, Tuple, Optional, List, Sequence, Any,
+    Mapping
 )
 
 from cdedb.backend.common import (
@@ -45,7 +44,7 @@ class EventBackend(AbstractBackend):
 
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
-        self.minor_form_dir = Union[pathlib.Path, PathLike]
+        self.minor_form_dir: PathLike
         self.minor_form_dir = self.conf['STORAGE_DIR'] / 'minor_form'
 
     @classmethod
@@ -95,6 +94,8 @@ class EventBackend(AbstractBackend):
             raise ValueError(n_("No input specified."))
 
         data = self.query_one(rs, query, (anid,))
+        if data is None:
+            raise ValueError(n_("Event does not exist"))
         return data['offline_lock']
 
     def assert_offline_lock(self, rs: RequestState, *, event_id: int = None,
@@ -146,7 +147,8 @@ class EventBackend(AbstractBackend):
         return self.sql_insert(rs, "event.log", data)
 
     @access("event")
-    def retrieve_log(self, rs: RequestState, codes: const.EventLogCodes = None,
+    def retrieve_log(self, rs: RequestState,
+                     codes: Collection[const.EventLogCodes] = None,
                      event_id: int = None, offset: int = None,
                      length: int = None, persona_id: int = None,
                      submitted_by: int = None, additional_info: str = None,
@@ -230,6 +232,7 @@ class EventBackend(AbstractBackend):
         view = None
         if query.scope == "qview_registration":
             event_id = affirm("id", event_id)
+            assert event_id is not None
             # ml_admins are allowed to do this to be able to manage
             # subscribers of event mailinglists.
             if (not self.is_orga(rs, event_id=event_id)
@@ -302,23 +305,22 @@ class EventBackend(AbstractBackend):
                 event_id=event_id, lodge_field_columns=lodge_field_columns)
 
             # The template for registration part and lodgement information.
-            part_table = \
-            """LEFT OUTER JOIN (
-                SELECT
-                    registration_id, status, lodgement_id, is_camping_mat
-                FROM
-                    event.registration_parts
-                WHERE
-                    part_id = {part_id}
-            ) AS part{part_id} ON reg.id = part{part_id}.registration_id
-            LEFT OUTER JOIN (
-                {lodge_view}
-            ) AS lodgement{part_id}
-            ON part{part_id}.lodgement_id = lodgement{part_id}.id"""
+            part_table = lambda part_id: \
+                f"""LEFT OUTER JOIN (
+                    SELECT
+                        registration_id, status, lodgement_id, is_camping_mat
+                    FROM
+                        event.registration_parts
+                    WHERE
+                        part_id = {part_id}
+                ) AS part{part_id} ON reg.id = part{part_id}.registration_id
+                LEFT OUTER JOIN (
+                    {lodge_view}
+                ) AS lodgement{part_id}
+                ON part{part_id}.lodgement_id = lodgement{part_id}.id"""
 
             part_tables = " ".join(
-                part_table.format(
-                    part_id=part['id'], lodge_view=lodge_view)
+                part_table(part['id'])
                 for part in event['parts'].values()
             )
             # Dynamically construct columns for custom course fields.
@@ -386,35 +388,33 @@ class EventBackend(AbstractBackend):
                     columns=columns, event_id=event_id, rank_tables=rank_tables,
                     t_id=t_id)
 
-            track_table = \
-            """LEFT OUTER JOIN (
-                SELECT
-                    registration_id, course_id, course_instructor,
-                    (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
-                     AND course_id = course_instructor) AS is_course_instructor
-                FROM
-                    event.registration_tracks
-                WHERE
-                    track_id = {track_id}
-            ) AS track{track_id} ON reg.id = track{track_id}.registration_id
-            LEFT OUTER JOIN (
-                {course_view}
-            ) AS course{track_id}
-                ON track{track_id}.course_id = course{track_id}.id
-            LEFT OUTER JOIN (
-                {course_view}
-            ) AS course_instructor{track_id}
-                ON track{track_id}.course_instructor =
-                course_instructor{track_id}.id
-            {course_choices_table}"""
+            track_table = lambda track: \
+                f"""LEFT OUTER JOIN (
+                    SELECT
+                        registration_id, course_id, course_instructor,
+                        (NOT(course_id IS NULL
+                             AND course_instructor IS NOT NULL)
+                         AND course_id = course_instructor)
+                        AS is_course_instructor
+                    FROM
+                        event.registration_tracks
+                    WHERE
+                        track_id = {track['id']}
+                ) AS track{track['id']}
+                    ON reg.id = track{track['id']}.registration_id
+                LEFT OUTER JOIN (
+                    {course_view}
+                ) AS course{track['id']}
+                    ON track{track['id']}.course_id = course{track['id']}.id
+                LEFT OUTER JOIN (
+                    {course_view}
+                ) AS course_instructor{track['id']}
+                    ON track{track['id']}.course_instructor =
+                    course_instructor{track['id']}.id
+                {course_choices_table(track['id'], track['num_choices'])}"""
 
             track_tables = " ".join(
-                track_table.format(
-                    track_id=track['id'], course_view=course_view,
-                    course_choices_table=course_choices_table(
-                        track['id'], track['num_choices']),
-                )
-                for track in event['tracks'].values()
+                track_table(track) for track in event['tracks'].values()
             )
 
             # Retrieve creation and modification timestamps from log.
@@ -481,6 +481,7 @@ class EventBackend(AbstractBackend):
                 query.spec["is_{}_realm".format(realm)] = "bool"
         elif query.scope == "qview_event_course":
             event_id = affirm("id", event_id)
+            assert event_id is not None
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
@@ -534,8 +535,9 @@ class EventBackend(AbstractBackend):
             # Template for retrieving course information for one specific track.
             # We don't use the {base} table from below, because we need
             # the id to be distinct.
-            track_table = lambda track: \
-                """LEFT OUTER JOIN (
+            def track_table(track):
+                track_id = track['id']
+                return f"""LEFT OUTER JOIN (
                     (
                         SELECT
                             id AS base_id
@@ -545,26 +547,20 @@ class EventBackend(AbstractBackend):
                             event_id = {event_id}
                     ) AS base
                     LEFT OUTER JOIN (
-                        {segment_table}
+                        {segment_table(track_id)}
                     ) AS segment{track_id} ON base_id = segment{track_id}.id
                     LEFT OUTER JOIN (
-                        {attendees_table}
+                        {attendees_table(track_id)}
                     ) AS attendees{track_id} ON base_id = attendees{track_id}.id
                     LEFT OUTER JOIN (
-                        {instructors_table}
+                        {instructors_table(track_id)}
                     ) AS instructors{track_id}
                         ON base_id = instructors{track_id}.id
                     LEFT OUTER JOIN (
-                        {choices_tables}
+                        {choices_tables(track)}
                     ) AS choices{track_id} ON base_id = choices{track_id}.id
                 ) AS track{track_id}
-                    ON course.id = track{track_id}.base_id""".format(
-                    event_id=event_id, track_id=track['id'],
-                    segment_table=segment_table(track['id']),
-                    attendees_table=attendees_table(track['id']),
-                    instructors_table=instructors_table(track['id']),
-                    choices_tables=choices_tables(track),  # pass full track.
-                )
+                    ON course.id = track{track_id}.base_id"""
 
             # A base table with all course ids we need in the following tables.
             base = "(SELECT id FROM event.courses WHERE event_id = {}) AS c".\
@@ -699,7 +695,8 @@ class EventBackend(AbstractBackend):
                 ("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = "id"
         elif query.scope == "qview_event_lodgement":
-            event_id: int = affirm("id", event_id)
+            event_id = affirm("id", event_id)
+            assert event_id is not None
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
@@ -1122,15 +1119,17 @@ class EventBackend(AbstractBackend):
                    if x > 0 and data[x] is None}
         # new
         for x in reversed(xsorted(new)):
+            track_data = data[x]
+            assert track_data is not None
             new_track = {
                 "part_id": part_id,
-                **data[x]
+                **track_data
             }
             new_track_id = self.sql_insert(rs, "event.course_tracks", new_track)
             ret *= new_track_id
             self.event_log(
                 rs, const.EventLogCodes.track_added, event_id,
-                additional_info=data[x]['title'])
+                additional_info=track_data['title'])
             reg_ids = self.list_registrations(rs, event_id)
             for reg_id in reg_ids:
                 reg_track = {
@@ -1143,15 +1142,17 @@ class EventBackend(AbstractBackend):
                     rs, "event.registration_tracks", reg_track)
         # updated
         for x in updated:
-            if current[x] != data[x]:
+            track_data = data[x]
+            assert track_data is not None
+            if current[x] != track_data:
                 update = {
                     'id': x,
-                    **data[x]
+                    **track_data
                 }
                 ret *= self.sql_update(rs, "event.course_tracks", update)
                 self.event_log(
                     rs, const.EventLogCodes.track_updated, event_id,
-                    additional_info=data[x]['title'])
+                    additional_info=track_data['title'])
 
         # deleted
         if deleted:
@@ -1201,7 +1202,7 @@ class EventBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("This should not happen."))
 
-        casters = {
+        casters: Dict[const.FieldDatatypes, Callable] = {
             const.FieldDatatypes.int: int,
             const.FieldDatatypes.str: str,
             const.FieldDatatypes.float: float,
@@ -1290,15 +1291,16 @@ class EventBackend(AbstractBackend):
 
         ret = 1
         # Implicit atomized context.
+        self.affirm_atomized_context(rs)
         if cascade:
             if "fee_modifiers" in cascade:
                 ret *= self.sql_delete(rs, "event.fee_modifiers",
                                        blockers["fee_modifiers"])
             if "course_tracks" in cascade:
-                cascade = ("course_segments", "registration_tracks",
-                           "course_choices")
+                track_cascade = ("course_segments", "registration_tracks",
+                                 "course_choices")
                 for anid in blockers["course_tracks"]:
-                    ret *= self._delete_course_track(rs, anid, cascade)
+                    ret *= self._delete_course_track(rs, anid, track_cascade)
             if "registration_parts" in cascade:
                 ret *= self.sql_delete(rs, "event.registration_parts",
                                        blockers["registration_parts"])
@@ -1307,6 +1309,7 @@ class EventBackend(AbstractBackend):
         if not blockers:
             part = self.sql_select_one(rs, "event.event_parts",
                                        ("event_id", "title"), part_id)
+            assert part is not None
             ret *= self.sql_delete_one(rs, "event.event_parts", part_id)
             self.event_log(rs, const.EventLogCodes.part_deleted,
                            event_id=part["event_id"],
@@ -1434,6 +1437,7 @@ class EventBackend(AbstractBackend):
             current = self.sql_select_one(
                 rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
                 field_id)
+            assert current is not None
             ret *= self.sql_delete_one(rs, "event.field_definitions", field_id)
             self._delete_field_values(rs, current)
             self.event_log(
@@ -1543,10 +1547,10 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             if len(edata) > 1:
-                indirect_fields = set(filter(
-                    None, [edata.get('lodge_field'),
-                           edata.get('camping_mat_field'),
-                           edata.get('course_room_field')]))
+                indirect_fields: Set[int] = set(
+                    f for f in [edata.get('lodge_field'),
+                                edata.get('camping_mat_field'),
+                                edata.get('course_room_field')] if f)
                 if indirect_fields:
                     indirect_data = self.sql_select(
                         rs, "event.field_definitions",
@@ -1720,8 +1724,8 @@ class EventBackend(AbstractBackend):
                 if deleted:
                     for x in mixed_existence_sorter(deleted):
                         # We only allow deletion of unused fields.
-                        cascade = None
-                        self._delete_event_field(rs, x, cascade)
+                        field_cascade = None
+                        self._delete_event_field(rs, x, field_cascade)
 
             if 'fee_modifiers' in data:
                 fee_modifiers = data['fee_modifiers']
@@ -2024,7 +2028,7 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
-    get_course: Callable[[RequestState, int], CdEDBObject]
+    get_course: Callable[['EventBackend', RequestState, int], CdEDBObject]
     get_course = singularize(get_courses)
 
     @access("event")
@@ -2048,6 +2052,7 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             current = self.sql_select_one(rs, "event.courses",
                                           ("title", "event_id"), data['id'])
+            assert current is not None
 
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS and k != "fields"}
@@ -2287,13 +2292,13 @@ class EventBackend(AbstractBackend):
                         rs, "event.course_choices", blockers["course_choices"])
 
                     # Construct list of inserts.
-                    choices = []
+                    choices: List[CdEDBObject] = []
                     for track_id, reg_ids in data_by_tracks.items():
                         query = (
-                            "SELECT id, course_id, track_id, registration_id "
-                            "FROM event.course_choices "
-                            "WHERE track_id = {} AND registration_id = ANY(%s) "
-                            "ORDER BY registration_id, rank").format(track_id)
+                            "SELECT id, course_id, track_id, registration_id"
+                            " FROM event.course_choices"
+                            " WHERE track_id = {} AND registration_id = ANY(%s)"
+                            " ORDER BY registration_id, rank").format(track_id)
                         choices.extend(self.query_all(rs, query, (reg_ids,)))
 
                     deletion_ids = {e['id'] for e in choices}
@@ -2342,9 +2347,9 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         persona_id = affirm("id_or_None", persona_id)
-        query = glue("SELECT id, persona_id FROM event.registrations",
-                     "WHERE event_id = %s")
-        params = (event_id,)
+        query = "SELECT id, persona_id FROM event.registrations"
+        conditions = ["event_id = %s"]
+        params: List[Any] = [event_id]
         # condition for limited access, f. e. for the online participant list.
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
@@ -2353,15 +2358,20 @@ class EventBackend(AbstractBackend):
                       and not self.is_admin(rs)
                       and "ml_admin" not in rs.user.roles)
         if is_limited:
-            query = ("SELECT DISTINCT regs.id, regs.persona_id "
-                     "FROM event.registrations AS regs "
-                     "LEFT OUTER JOIN event.registration_parts AS rparts "
-                     "ON rparts.registration_id = regs.id "
-                     "WHERE regs.event_id = %s AND rparts.status = %s")
-            params += (const.RegistrationPartStati.participant,)
-        if persona_id and not is_limited:
-            query = glue(query, "AND persona_id = %s")
-            params += (persona_id,)
+            query = """SELECT DISTINCT
+                regs.id, regs.persona_id
+            FROM
+                event.registrations AS regs
+                LEFT OUTER JOIN
+                    event.registration_parts AS rparts
+                ON rparts.registration_id = regs.id"""
+            conditions = ["regs.event_id = %s", "rparts.status = %s"]
+            params.append(const.RegistrationPartStati.participant)
+        elif persona_id:
+            conditions.append("persona_id = %s")
+            params.append(persona_id)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e['persona_id'] for e in data}
         if is_limited and rs.user.persona_id not in ret.values():
@@ -2445,53 +2455,61 @@ class EventBackend(AbstractBackend):
         if (not self.is_admin(rs)
                 and not self.is_orga(rs, event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
-        query = glue(
-            "SELECT DISTINCT regs.id, regs.persona_id",
-            "FROM event.registrations AS regs",
-            "LEFT OUTER JOIN event.registration_parts AS rparts",
-            "ON rparts.registration_id = regs.id",
-            "LEFT OUTER JOIN event.course_tracks AS course_tracks",
-            "ON course_tracks.part_id = rparts.part_id",
-            "LEFT OUTER JOIN event.registration_tracks AS rtracks",
-            "ON rtracks.registration_id = regs.id",
-            "AND rtracks.track_id = course_tracks.id",
-            "LEFT OUTER JOIN event.course_choices AS choices",
-            "ON choices.registration_id = regs.id",
-            "AND choices.track_id = course_tracks.id",
-            "WHERE regs.event_id = %s AND rparts.status = ANY(%s)")
-        params = (event_id, reg_states)
+        query = """SELECT DISTINCT
+            regs.id, regs.persona_id
+        FROM
+            event.registrations AS regs
+            LEFT OUTER JOIN
+                event.registration_parts
+            AS rparts ON rparts.registration_id = regs.id
+            LEFT OUTER JOIN
+                event.course_tracks
+            AS course_tracks ON course_tracks.part_id = rparts.part_id
+            LEFT OUTER JOIN
+                event.registration_tracks
+            AS rtracks ON rtracks.registration_id = regs.id
+                AND rtracks.track_id = course_tracks.id
+            LEFT OUTER JOIN
+                event.course_choices
+            AS choices ON choices.registration_id = regs.id
+                AND choices.track_id = course_tracks.id"""
+        conditions = ["regs.event_id = %s", "rparts.status = ANY(%s)"]
+        params: List[Any] = [event_id, reg_states]
         if track_id:
-            query = glue(query, "AND course_tracks.id = %s")
-            params += (track_id,)
+            conditions.append("course_tracks.id = %s")
+            params.append(track_id)
         if position is not None:
             cfp = CourseFilterPositions
-            conditions = []
+            sub_conditions = []
             if position.enum in (cfp.instructor, cfp.anywhere):
                 if course_id:
-                    conditions.append("rtracks.course_instructor = %s")
-                    params += (course_id,)
+                    sub_conditions.append("rtracks.course_instructor = %s")
+                    params.append(course_id)
                 else:
-                    conditions.append("rtracks.course_instructor IS NULL")
+                    sub_conditions.append("rtracks.course_instructor IS NULL")
             if position.enum in (cfp.any_choice, cfp.anywhere) and course_id:
-                conditions.append(
+                sub_conditions.append(
                     "(choices.course_id = %s AND "
                     " choices.rank < course_tracks.num_choices)")
-                params += (course_id,)
+                params.append(course_id)
             if position.enum == cfp.specific_rank and course_id:
-                conditions.append(
+                sub_conditions.append(
                     "(choices.course_id = %s AND choices.rank = %s)")
-                params += (course_id, position.int)
+                params.extend((course_id, position.int))
             if position.enum in (cfp.assigned, cfp.anywhere):
                 if course_id:
-                    conditions.append("rtracks.course_id = %s")
-                    params += (course_id,)
+                    sub_conditions.append("rtracks.course_id = %s")
+                    params.append(course_id)
                 else:
-                    conditions.append("rtracks.course_id IS NULL")
-            if conditions:
-                query = glue(query, "AND (", " OR ".join(conditions), ")")
+                    sub_conditions.append("rtracks.course_id IS NULL")
+            if sub_conditions:
+                conditions.append(f"( {' OR '.join(sub_conditions)} )")
         if reg_ids:
-            query = glue(query, "AND regs.id = ANY(%s)")
-            params += (reg_ids,)
+            conditions.append("regs.id = ANY(%s)")
+            params.append(reg_ids)
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
@@ -2514,7 +2532,6 @@ class EventBackend(AbstractBackend):
         subscribers of event mailinglists.
         """
         ids = affirm_set("id", ids)
-        ret = {}
         with Atomizer(rs):
             # Check associations.
             associated = self.sql_select(rs, "event.registrations",
@@ -2584,7 +2601,7 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event_fields)
         return ret
-    get_registration: Callable[[RequestState, int], CdEDBObject]
+    get_registration: Callable[['EventBackend', RequestState, int], CdEDBObject]
     get_registration = singularize(get_registrations)
 
     @access("event")
@@ -2622,7 +2639,7 @@ class EventBackend(AbstractBackend):
 
     def _set_course_choices(self, rs: RequestState, registration_id: int,
                             track_id: int, choices: Sequence[int],
-                            course_segments: Dict[int, Sequence[int]],
+                            course_segments: Mapping[int, Collection[int]],
                             new_registration: bool = False
                             ) -> DefaultReturnCode:
         """Helper for handling of course choices.
@@ -2637,6 +2654,7 @@ class EventBackend(AbstractBackend):
             registrations: If true, the deletion of existing choices is skipped.
         """
         ret = 1
+        self.affirm_atomized_context(rs)
         if choices is None:
             # Nothing specified, hence nothing to do
             return ret
@@ -2659,7 +2677,7 @@ class EventBackend(AbstractBackend):
         return ret
 
     def _get_registration_info(self, rs: RequestState,
-                               reg_id: int) -> CdEDBObject:
+                               reg_id: int) -> Optional[CdEDBObject]:
         """Helper to retrieve basic registration information."""
         return self.sql_select_one(
             rs, "event.registrations", ("persona_id", "event_id"), reg_id)
@@ -2689,6 +2707,8 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
             current = self._get_registration_info(rs, reg_id=data['id'])
+            if current is None:
+                raise ValueError(n_("Registration does not exist."))
             persona_id, event_id = current['persona_id'], current['event_id']
             self.assert_offline_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
@@ -2967,6 +2987,7 @@ class EventBackend(AbstractBackend):
             raise ValueError("Only one input for event allowed.")
         elif event_id is not None:
             event = self.get_event(rs, event_id)
+        assert event is not None
         for part_id, rpart in reg['parts'].items():
             part = event['parts'][part_id]
             if rps(rpart['status']).is_involved():
@@ -3001,7 +3022,6 @@ class EventBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
 
-        ret = {}
         with Atomizer(rs):
             associated = self.sql_select(rs, "event.registrations",
                                          ("event_id",), ids)
@@ -3024,7 +3044,7 @@ class EventBackend(AbstractBackend):
             personas = self.core.get_personas(rs, persona_ids)
 
             event = self.get_event(rs, event_id)
-            ret = {}
+            ret: Dict[int, decimal.Decimal] = {}
             for reg_id, reg in regs.items():
                 is_member = personas[reg['persona_id']]['is_member']
                 ret[reg_id] = self._calculate_single_fee(
@@ -3250,7 +3270,7 @@ class EventBackend(AbstractBackend):
             for entry in ret.values():
                 entry['fields'] = cast_fields(entry['fields'], event_fields)
         return {e['id']: e for e in data}
-    get_lodgement: Callable[[RequestState, int], CdEDBObject]
+    get_lodgement: Callable[['EventBackend', RequestState, int], CdEDBObject]
     get_lodgement = singularize(get_lodgements)
 
     @access("event")
@@ -3261,6 +3281,8 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             current = self.sql_select_one(
                 rs, "event.lodgements", ("event_id", "moniker"), data['id'])
+            if current is None:
+                raise ValueError(n_("Lodgement does not exist."))
             event_id, moniker = current['event_id'], current['moniker']
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
@@ -3405,7 +3427,7 @@ class EventBackend(AbstractBackend):
         query = "SELECT {fields} FROM event.questionnaire_rows".format(
             fields=", ".join(QUESTIONNAIRE_ROW_FIELDS))
         constraints = ["event_id = %s"]
-        params = [event_id]
+        params: List[Any] = [event_id]
         if kinds:
             constraints.append("kind = ANY(%s)")
             params.append(kinds)
@@ -3514,7 +3536,7 @@ class EventBackend(AbstractBackend):
                 'timestamp': now(),
             }
             # Table name; column to scan; fields to extract
-            tables = (
+            tables: List[Tuple[str, str, Tuple[str, ...]]] = [
                 ('event.event_parts', "event_id", EVENT_PART_FIELDS),
                 ('event.course_tracks', "part_id", COURSE_TRACK_FIELDS),
                 ('event.courses', "event_id", COURSE_FIELDS),
@@ -3540,7 +3562,7 @@ class EventBackend(AbstractBackend):
                 ('event.log', "event_id", (
                     'id', 'ctime', 'code', 'submitted_by', 'event_id',
                     'persona_id', 'additional_info')),
-            )
+            ]
             personas = set()
             for table, id_name, columns in tables:
                 if id_name == "event_id":
@@ -3550,7 +3572,7 @@ class EventBackend(AbstractBackend):
                 elif id_name == "track_id":
                     id_range = set(ret['event.course_tracks'])
                 else:
-                    id_range = None
+                    raise RuntimeError("Impossible.")
                 if 'id' not in columns:
                     columns += ('id',)
                 ret[table] = list_to_dict(self.sql_select(
@@ -3677,6 +3699,7 @@ class EventBackend(AbstractBackend):
 
             ret = 1
             # Second synchronize the data sets
+            translations: Dict[str, Dict[int, int]]
             translations = collections.defaultdict(dict)
             for reg in data['event.registrations'].values():
                 if reg['real_persona_id']:
@@ -3740,13 +3763,13 @@ class EventBackend(AbstractBackend):
         if not access_ok:
             raise PrivilegeError(n_("Not privileged."))
 
-        def list_to_dict(alist: Collection) -> Dict:
+        def list_to_dict(alist: Collection[CdEDBObject]) -> CdEDBObjectMap:
             return {e['id']: e for e in alist}
 
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             # basics
-            ret = {
+            ret: CdEDBObject = {
                 'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
                 'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
                 'kind': "partial",  # could also be "full"
@@ -3761,7 +3784,7 @@ class EventBackend(AbstractBackend):
                 rs, 'event.course_segments',
                 ('course_id', 'track_id', 'is_active'), courses.keys(),
                 entity_key='course_id')
-            lookup = collections.defaultdict(dict)
+            lookup: Dict[int, Dict[int, bool]] = collections.defaultdict(dict)
             for e in temp:
                 lookup[e['course_id']][e['track_id']] = e['is_active']
             for course_id, course in courses.items():
@@ -3798,6 +3821,7 @@ class EventBackend(AbstractBackend):
                 rs, 'event.registration_parts',
                 REGISTRATION_PART_FIELDS, registrations.keys(),
                 entity_key='registration_id')
+            part_lookup: Dict[int, Dict[int, CdEDBObject]]
             part_lookup = collections.defaultdict(dict)
             for e in temp:
                 part_lookup[e['registration_id']][e['part_id']] = e
@@ -3805,6 +3829,7 @@ class EventBackend(AbstractBackend):
                 rs, 'event.registration_tracks',
                 REGISTRATION_TRACK_FIELDS, registrations.keys(),
                 entity_key='registration_id')
+            track_lookup: Dict[int, Dict[int, CdEDBObject]]
             track_lookup = collections.defaultdict(dict)
             for e in temp:
                 track_lookup[e['registration_id']][e['track_id']] = e
@@ -3919,7 +3944,8 @@ class EventBackend(AbstractBackend):
                 <= EVENT_SCHEMA_VERSION):
             raise ValueError(n_("Version mismatch – aborting."))
 
-        def dict_diff(old, new):
+        def dict_diff(old: Mapping, new: Mapping
+                      ) -> Tuple[Dict, Dict]:
             delta = {}
             previous = {}
             # keys missing in the new dict are simply ignored
@@ -3992,7 +4018,7 @@ class EventBackend(AbstractBackend):
                 raise ValueError(
                     "Referential integrity of lodgements violated.")
 
-            used_course_ids = set()
+            used_course_ids: Set[int] = set()
             for registration in data.get('registrations', {}).values():
                 if registration:
                     for track in registration.get('tracks', {}).values():
@@ -4018,10 +4044,12 @@ class EventBackend(AbstractBackend):
 
             # We handle these in the specific order of mixed_existence_sorter
             mes = mixed_existence_sorter
+            IDMap = Dict[int, int]
+            DiffMap = Dict[int, Optional[CdEDBObject]]
 
-            gmap = {}
-            gdelta = {}
-            gprevious = {}
+            gmap: IDMap= {}
+            gdelta: DiffMap = {}
+            gprevious: DiffMap = {}
             for group_id in mes(data.get('lodgement_groups', {}).keys()):
                 new_group = data['lodgement_groups'][group_id]
                 current = all_current_data['lodgement_groups'].get(group_id)
@@ -4056,9 +4084,9 @@ class EventBackend(AbstractBackend):
                 total_delta['lodgement_groups'] = gdelta
                 total_previous['lodgement_groups'] = gprevious
 
-            lmap = {}
-            ldelta = {}
-            lprevious = {}
+            lmap: IDMap = {}
+            ldelta: DiffMap = {}
+            lprevious: DiffMap = {}
             for lodgement_id in mes(data.get('lodgements', {}).keys()):
                 new_lodgement = data['lodgements'][lodgement_id]
                 current = all_current_data['lodgements'].get(lodgement_id)
@@ -4100,9 +4128,9 @@ class EventBackend(AbstractBackend):
                 total_delta['lodgements'] = ldelta
                 total_previous['lodgements'] = lprevious
 
-            cmap = {}
-            cdelta = {}
-            cprevious = {}
+            cmap: IDMap = {}
+            cdelta: DiffMap = {}
+            cprevious: DiffMap = {}
             check_seg = lambda track_id, delta, original: (
                  (track_id in delta and delta[track_id] is not None)
                  or (track_id not in delta and track_id in original))
@@ -4160,9 +4188,9 @@ class EventBackend(AbstractBackend):
                 total_delta['courses'] = cdelta
                 total_previous['courses'] = cprevious
 
-            rmap = {}
-            rdelta = {}
-            rprevious = {}
+            rmap: IDMap = {}
+            rdelta: DiffMap = {}
+            rprevious: DiffMap = {}
 
             dup = {
                 old_reg['persona_id']: old_reg['id']
