@@ -11,13 +11,10 @@ import datetime
 import decimal
 from passlib.hash import sha512_crypt
 import pathlib
-from os import PathLike
-from typing import (
-    Union, Optional
-)
 
 from typing import (
-    Optional, Collection, Dict, Tuple, Set, List
+    Optional, Collection, Dict, Tuple, Set, List, Union, Any, TYPE_CHECKING,
+    cast
 )
 
 from cdedb.backend.common import AbstractBackend
@@ -33,7 +30,7 @@ from cdedb.common import (
     ArchiveError, extract_realms, implied_realms, encode_parameter,
     decode_parameter, GENESIS_REALM_OVERRIDE, xsorted, Role, Realm, Error,
     CdEDBObject, CdEDBObjectMap, CdEDBLog, DefaultReturnCode, RequestState,
-    DeletionBlockers, get_hash, ValidationWarning
+    DeletionBlockers, get_hash
 )
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
@@ -117,6 +114,8 @@ class CoreBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         password_hash = unwrap(self.sql_select_one(
             rs, "core.personas", ("password_hash",), persona_id))
+        if password_hash is None:
+            return False
         return self.verify_password(password, password_hash)
 
     @staticmethod
@@ -192,10 +191,17 @@ class CoreBackend(AbstractBackend):
             "additional_info": additional_info
         }
         with Atomizer(rs):
-            query = glue("SELECT COUNT(*) AS members, SUM(balance) AS total",
-                         "FROM core.personas WHERE is_member = True")
+            query = """
+                SELECT COUNT(*) AS members, COALESCE(SUM(balance), 0) AS total
+                FROM core.personas
+                WHERE is_member = True"""
             tmp = self.query_one(rs, query, tuple())
-            data.update(tmp)
+            if tmp:
+                data.update(tmp)
+            else:
+                self.logger.error(f"Could not determine member count and total"
+                                  f" balance for creating log entry {data!r}.")
+                data.update(members=0, total=0)
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin")
@@ -243,8 +249,8 @@ class CoreBackend(AbstractBackend):
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
 
-        conditions = []
-        params = []
+        conditions: List[str] = []
+        params: List[Any] = []
         if stati:
             conditions.append("change_status = ANY(%s)")
             params.append(stati)
@@ -271,15 +277,14 @@ class CoreBackend(AbstractBackend):
             params.append(time_stop)
 
         if conditions:
-            condition = "WHERE {}".format(" AND ".join(conditions))
+            condition = "WHERE " + " AND ".join(conditions)
         else:
             condition = ""
 
         # First query determines the absolute number of logs existing matching
         # the given criteria
-        query = "SELECT COUNT(*) AS count FROM core.changelog {condition}"
-        query = query.format(condition=condition)
-        total = unwrap(self.query_one(rs, query, params))
+        query = f"SELECT COUNT(*) AS count FROM core.changelog {condition}"
+        total = unwrap(self.query_one(rs, query, params)) or 0
         if offset and offset > total:
             # Why you do this
             return total, tuple()
@@ -390,8 +395,8 @@ class CoreBackend(AbstractBackend):
             # prepare for inserting a new changelog entry
             query = glue("SELECT MAX(generation) AS gen FROM core.changelog",
                          "WHERE persona_id = %s")
-            next_generation = unwrap(self.query_one(
-                rs, query, (data['id'],))) + 1
+            max_gen = unwrap(self.query_one(rs, query, (data['id'],))) or 1
+            next_generation = max_gen + 1
             # the following is a nop, if there is no pending change
             query = glue("UPDATE core.changelog SET change_status = %s",
                          "WHERE persona_id = %s AND change_status = %s")
@@ -470,12 +475,16 @@ class CoreBackend(AbstractBackend):
             data = history[generation]
             if data['change_status'] != const.MemberChangeStati.pending:
                 return 0
-            query = glue(
-                "UPDATE core.changelog SET {} change_status = %s",
-                "WHERE persona_id = %s AND generation = %s")
-            query = query.format("reviewed_by = %s," if reviewed else "")
-            params = ((rs.user.persona_id,) if reviewed else tuple()) + (
-                const.MemberChangeStati.committed, persona_id, generation)
+            query = "UPDATE core.changelog SET {setters} WHERE {conditions}"
+            setters = ["change_status = %s"]
+            params: List[Any] = [const.MemberChangeStati.committed]
+            if reviewed:
+                setters.append("reviewed_by = %s")
+                params.append(rs.user.persona_id)
+            conditions = ["persona_id = %s", "generation = %s"]
+            params.extend([persona_id, generation])
+            query = query.format(setters=', '.join(setters),
+                                 conditions=' AND '.join(conditions))
             self.query_exec(rs, query, params)
 
             # determine changed fields
@@ -548,12 +557,14 @@ class CoreBackend(AbstractBackend):
         fields.append("persona_id AS id")
         fields.extend(("submitted_by", "reviewed_by", "ctime", "generation",
                        "change_status", "change_note"))
-        query = "SELECT {} FROM core.changelog WHERE persona_id = %s".format(
-            ", ".join(fields))
-        params = [persona_id]
+        query = "SELECT {fields} FROM core.changelog WHERE {conditions}"
+        conditions = ["persona_id = %s"]
+        params: List[Any] = [persona_id]
         if generations:
-            query = glue(query, "AND generation = ANY(%s)")
+            conditions.append("generation = ANY(%s)")
             params.append(generations)
+        query = query.format(fields=', '.join(fields),
+                             conditions=' AND '.join(conditions))
         data = self.query_all(rs, query, params)
         return {e['generation']: e for e in data}
 
@@ -656,6 +667,8 @@ class CoreBackend(AbstractBackend):
 
         current = self.sql_select_one(
             rs, "core.personas", ("is_archived", "decided_search"), data['id'])
+        if current is None:
+            raise ValueError(n_("Persona does not exist."))
         if not may_wait and generation is not None:
             raise ValueError(
                 n_("Non-waiting change without generation override."))
@@ -778,6 +791,7 @@ class CoreBackend(AbstractBackend):
         """
         persona_id = affirm("id", persona_id)
         foto = affirm("profilepic_or_None", foto, file_storage=False)
+        data: CdEDBObject
         if foto is None:
             with Atomizer(rs):
                 old_hash = unwrap(self.sql_select_one(
@@ -987,11 +1001,9 @@ class CoreBackend(AbstractBackend):
         stati = stati or set()
         stati = affirm_set("enum_privilegechangestati", stati)
 
-        query = glue("SELECT id, persona_id, status",
-                     "FROM core.privilege_changes")
-
+        query = "SELECT id, persona_id, status FROM core.privilege_changes"
         constraints = []
-        params = []
+        params: List[Any] = []
         if persona_id:
             constraints.append("persona_id = %s")
             params.append(persona_id)
@@ -1000,10 +1012,7 @@ class CoreBackend(AbstractBackend):
             params.append(stati)
 
         if constraints:
-            query = glue(query,
-                         "WHERE",
-                         " AND ".join(constraints))
-
+            query += " WHERE " + " AND ".join(constraints)
         data = self.query_all(rs, query, params)
         return {e["id"]: e for e in data}
 
@@ -1062,7 +1071,7 @@ class CoreBackend(AbstractBackend):
         log_code = affirm("enum_financelogcodes", log_code)
         trial_member = affirm("bool_or_None", trial_member)
         change_note = affirm("str_or_None", change_note)
-        update = {
+        update: CdEDBObject = {
             'id': persona_id,
         }
         with Atomizer(rs):
@@ -1093,7 +1102,7 @@ class CoreBackend(AbstractBackend):
         """Special modification function for membership."""
         persona_id = affirm("id", persona_id)
         is_member = affirm("bool", is_member)
-        update = {
+        update: CdEDBObject = {
             'id': persona_id,
             'is_member': is_member,
         }
@@ -1112,7 +1121,7 @@ class CoreBackend(AbstractBackend):
                 update['balance'] = decimal.Decimal(0)
             else:
                 delta = None
-                new_balance = None
+                new_balance = None  # type: ignore
                 code = const.FinanceLogCodes.gain_membership
             ret = self.set_persona(
                 rs, update, may_wait=False,
@@ -1354,9 +1363,12 @@ class CoreBackend(AbstractBackend):
                 "SELECT id FROM core.changelog WHERE persona_id = %s",
                 "ORDER BY generation DESC LIMIT 1")
             newest = self.query_one(rs, query, (persona_id,))
-            query = glue(
-                "DELETE FROM core.changelog",
-                "WHERE persona_id = %s AND NOT id = %s")
+            if not newest:
+                # TODO do we want to allow this?
+                # This could happen if this call is wrapped in a Silencer.
+                raise ArchiveError(n_("Cannot archive silently."))
+            query = ("DELETE FROM core.changelog"
+                     " WHERE persona_id = %s AND NOT id = %s")
             ret = self.query_exec(rs, query, (persona_id, newest['id']))
             #
             # 12. Finish
@@ -1431,6 +1443,9 @@ class CoreBackend(AbstractBackend):
                 "SELECT id FROM core.changelog WHERE persona_id = %s",
                 "ORDER BY generation DESC LIMIT 1")
             newest = self.query_one(rs, query, (persona_id,))
+            if not newest:
+                # TODO allow this?
+                raise ArchiveError(n_("Cannot purge silently."))
             query = glue(
                 "DELETE FROM core.changelog",
                 "WHERE persona_id = %s AND NOT id = %s")
@@ -1485,7 +1500,7 @@ class CoreBackend(AbstractBackend):
         So we know when a foto is up for garbage collection."""
         foto = affirm("str", foto)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE foto = %s"
-        return unwrap(self.query_one(rs, query, (foto,)))
+        return unwrap(self.query_one(rs, query, (foto,))) or 0
 
     @access("persona")
     def get_personas(self, rs: RequestState,
@@ -1522,22 +1537,30 @@ class CoreBackend(AbstractBackend):
         if event_id:
             orga = ("SELECT event_id FROM event.orgas WHERE persona_id = %s"
                     " AND event_id = %s")
-            is_orga = self.query_all(rs, orga, (rs.user.persona_id, event_id))
+            is_orga = bool(
+                self.query_all(rs, orga, (rs.user.persona_id, event_id)))
         else:
             is_orga = False
         if (ids != {rs.user.persona_id}
                 and not (rs.user.roles
                          & {"event_admin", "cde_admin", "core_admin",
                             "droid_quick_partial_export"})):
-            query = ("SELECT DISTINCT regs.id, regs.persona_id"
-                     " FROM event.registrations AS regs"
-                     " LEFT OUTER JOIN event.registration_parts AS rparts"
-                     " ON rparts.registration_id = regs.id"
-                     " WHERE regs.event_id = %s")
-            params = (event_id,)
+            query = """
+                SELECT DISTINCT
+                    regs.id, regs.persona_id
+                FROM
+                    event.registrations AS regs
+                    LEFT OUTER JOIN
+                        event.registration_parts AS rparts
+                    ON rparts.registration_id = regs.id
+                WHERE
+                    {conditions}"""
+            conditions = ["regs.event_id = %s"]
+            params: List[Any] = [event_id]
             if not is_orga:
-                query += " AND rparts.status = %s"
-                params += (const.RegistrationPartStati.participant,)
+                conditions.append("rparts.status = %s")
+                params.append(const.RegistrationPartStati.participant)
+            query = query.format(conditions=' AND '.join(conditions))
             data = self.query_all(rs, query, params)
             all_users_inscope = set(e['persona_id'] for e in data)
             same_event = set(ret) <= all_users_inscope
@@ -1699,10 +1722,9 @@ class CoreBackend(AbstractBackend):
         password = affirm("str", password)
         ip = affirm("printable_ascii", ip)
         # note the lower-casing for email addresses
-        query = glue(
-            "SELECT id, password_hash, is_meta_admin, is_core_admin",
-            "FROM core.personas",
-            "WHERE username = lower(%s) AND is_active = True")
+        query = ("SELECT id, password_hash, is_meta_admin, is_core_admin"
+                 " FROM core.personas"
+                 " WHERE username = lower(%s) AND is_active = True")
         data = self.query_one(rs, query, (username,))
         verified = bool(data) and self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
         if not verified and data:
@@ -1713,6 +1735,7 @@ class CoreBackend(AbstractBackend):
                 ip, username))
             return None
         else:
+            assert data is not None
             if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
                                               or data['is_core_admin']):
                 # Short circuit in case of lockdown
@@ -1745,6 +1768,7 @@ class CoreBackend(AbstractBackend):
             # Get more information about user (for immediate use in frontend)
             data = self.sql_select_one(rs, "core.personas",
                                        PERSONA_CORE_FIELDS, data["id"])
+            assert data is not None
             vals = {k: data[k] for k in (
                 'username', 'given_names', 'display_name', 'family_name')}
             vals['persona_id'] = data['id']
@@ -1767,8 +1791,8 @@ class CoreBackend(AbstractBackend):
         if ids == {rs.user.persona_id}:
             return True
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE id = ANY(%s)"
-        data = self.query_one(rs, query, (ids,))
-        return data['num'] == len(ids)
+        num = unwrap(self.query_one(rs, query, (ids,))) or 0
+        return num == len(ids)
 
     @internal
     @access("anonymous")
@@ -1777,7 +1801,8 @@ class CoreBackend(AbstractBackend):
         """Resolve ids into roles.
 
         Returns an empty role set for inactive users."""
-        if ids == (rs.user.persona_id,):
+        if set(ids) == {rs.user.persona_id}:
+            assert rs.user.persona_id is not None
             return {rs.user.persona_id: rs.user.roles}
         bits = PERSONA_STATUS_FIELDS + ("id",)
         data = self.sql_select(rs, "core.personas", bits, ids)
@@ -1817,22 +1842,22 @@ class CoreBackend(AbstractBackend):
         """Check whether a genesis attachment is still referenced in a case."""
         attachment_hash = affirm("str", attachment_hash)
         query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment = %s"
-        return bool(self.query_one(rs, query, (attachment_hash,))['count'])
+        return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
     @access("anonymous")
     def verify_existence(self, rs: RequestState, email: str) -> bool:
         """Check wether a certain email belongs to any persona."""
         email = affirm("email", email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
-        data = self.query_one(rs, query, (email,))
+        num1 = unwrap(self.query_one(rs, query, (email,))) or 0
         query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
                      "WHERE username = %s AND case_status = ANY(%s)")
         # This should be all stati which are not final.
         stati = (const.GenesisStati.unconfirmed,
                  const.GenesisStati.to_review,
                  const.GenesisStati.approved)  # approved is a temporary state.
-        data2 = self.query_one(rs, query, (email, stati))
-        return bool(data['num'] + data2['num'])
+        num2 = unwrap(self.query_one(rs, query, (email, stati))) or 0
+        return bool(num1 + num2)
 
     RESET_COOKIE_PAYLOAD = "X"
 
@@ -1851,14 +1876,27 @@ class CoreBackend(AbstractBackend):
                     raise PrivilegeError(n_("Preventing reset of admin."))
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
+            if password_hash is None:
+                # A personas password hash cannot be empty.
+                raise ValueError(n_("Persona does not exist."))
             # This defines a specific account/password combination as purpose
             cookie = encode_parameter(
                 salt, str(persona_id), password_hash,
                 self.RESET_COOKIE_PAYLOAD, persona_id=None, timeout=timeout)
             return cookie
 
+    # # This should work but Literal seems to be broken.
+    # # https://github.com/python/mypy/issues/7399
+    # if TYPE_CHECKING:
+    #     from typing_extensions import Literal
+    #     ret_type = Union[Tuple[Literal[False], str],
+    #                      Tuple[Literal[True], None]]
+    # else:
+    #     ret_type = Tuple[bool, Optional[str]]
+    ret_type = Tuple[bool, Optional[str]]
+
     def _verify_reset_cookie(self, rs: RequestState, persona_id: int, salt: str,
-                             cookie: str) -> Tuple[bool, Optional[str]]:
+                             cookie: str) -> ret_type:
         """Check a provided cookie for correctness.
 
         :returns: The bool signals success, the str is an error message or
@@ -1867,6 +1905,9 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
+            if password_hash is None:
+                # A personas password hash cannot be empty.
+                raise ValueError(n_("Persona does not exist."))
             timeout, msg = decode_parameter(
                 salt, str(persona_id), password_hash, cookie, persona_id=None)
             if msg is None:
@@ -1911,10 +1952,10 @@ class CoreBackend(AbstractBackend):
             success, msg = self.verify_reset_cookie(
                 rs, persona_id, reset_cookie)
             if not success:
-                return False, msg
+                return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        if not validate.is_password_strength(new_password):
+        if not validate.is_password_strength(new_password):  # type: ignore
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
@@ -1996,6 +2037,8 @@ class CoreBackend(AbstractBackend):
                 rs.conn = self.connpool['cdb_persona']
             persona = self.sql_select_one(
                 rs, "core.personas", columns_of_interest, persona_id)
+            if persona is None:
+                raise ValueError(n_("Persona does not exist."))
         finally:
             # deescalate
             if orig_conn:
@@ -2015,7 +2058,7 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate.check_password_strength(
+        password, errs = validate.check_password_strength(  # type: ignore
             password, argname, admin=admin, inputs=inputs)
 
         return password, errs
@@ -2118,10 +2161,10 @@ class CoreBackend(AbstractBackend):
         case = self.genesis_get_case(rs, case_id)
         if (case["case_status"] == const.GenesisStati.unconfirmed and
                 now() < case["ctime"] + self.conf["PARAMETER_TIMEOUT"]):
-            blockers["unconfirmed"] = case_id
+            blockers["unconfirmed"] = [case_id]
         if case["case_status"] in {const.GenesisStati.to_review,
                                    const.GenesisStati.approved}:
-            blockers["case_status"] = case["case_status"]
+            blockers["case_status"] = [case["case_status"]]
 
         return blockers
 
@@ -2240,17 +2283,19 @@ class CoreBackend(AbstractBackend):
         elif not all({"{}_admin".format(realm), "core_admin"} & rs.user.roles
                      for realm in realms):
             raise PrivilegeError(n_("Not privileged."))
-        query = glue("SELECT id, ctime, username, given_names, family_name,",
-                     "case_status FROM core.genesis_cases")
-        connector = " WHERE"
-        params = []
+        query = ("SELECT id, ctime, username, given_names, family_name,"
+                 " case_status FROM core.genesis_cases")
+        conditions = []
+        params: List[Any] = []
         if realms:
-            query = glue(query, connector, "realm = ANY(%s)")
+            conditions.append("realm = ANY(%s)")
             params.append(realms)
-            connector = "AND"
         if stati:
-            query = glue(query, connector, "case_status = ANY(%s)")
+            conditions.append("case_status = ANY(%s)")
             params.append(stati)
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
@@ -2283,6 +2328,8 @@ class CoreBackend(AbstractBackend):
             current = self.sql_select_one(
                 rs, "core.genesis_cases", ("case_status", "username", "realm"),
                 data['id'])
+            if current is None:
+                raise ValueError(n_("Genesis case does not exist."))
             if not ({"core_admin", "{}_admin".format(current['realm'])}
                     & rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
@@ -2348,8 +2395,8 @@ class CoreBackend(AbstractBackend):
         :returns: A dict of possibly matching account data.
         """
         persona = affirm("persona", persona)
-        scores = collections.defaultdict(lambda: 0)
-        queries = (
+        scores: Dict[int, int] = collections.defaultdict(lambda: 0)
+        queries: List[Tuple[int, str, Tuple[Any, ...]]] = [
             (10, "given_names = %s OR display_name = %s",
              (persona['given_names'], persona['given_names'])),
             (10, "family_name = %s OR birth_name = %s",
@@ -2361,18 +2408,19 @@ class CoreBackend(AbstractBackend):
             (5, "postal_code = %s", (persona['postal_code'],)),
             (20, "given_names = %s AND family_name = %s",
              (persona['family_name'], persona['given_names'],)),
-            (21, "username = %s", (persona['username'],)),)
+            (21, "username = %s", (persona['username'],)),
+        ]
         # Omit queries where some parameters are None
         queries = tuple(e for e in queries if all(x is not None for x in e[2]))
         for score, condition, params in queries:
-            query = "SELECT id FROM core.personas WHERE {}".format(condition)
+            query = f"SELECT id FROM core.personas WHERE {condition}"
             result = self.query_all(rs, query, params)
             for e in result:
                 scores[unwrap(e)] += score
         cutoff = 21
         max_entries = 7
         persona_ids = tuple(k for k, v in scores.items() if v > cutoff)
-        persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k))
+        persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k, 0))
         persona_ids = persona_ids[:max_entries]
         return self.get_total_personas(rs, persona_ids)
 
@@ -2384,7 +2432,7 @@ class CoreBackend(AbstractBackend):
         like who is responsible for donation certificates.
         """
         query = "SELECT info FROM core.meta_info LIMIT 1"
-        return unwrap(self.query_one(rs, query, tuple()))
+        return cast(CdEDBObject, unwrap(self.query_one(rs, query, tuple())))
 
     @access("core_admin")
     def set_meta_info(self, rs: RequestState,
@@ -2409,11 +2457,7 @@ class CoreBackend(AbstractBackend):
         """
         ret = self.sql_select_one(rs, "core.cron_store", ("store",),
                                   name, entity_key="moniker")
-        if ret:
-            ret = unwrap(ret)
-        else:
-            ret = {}
-        return ret
+        return unwrap(ret) or {}
 
     @access("core_admin")
     def set_cron_store(self, rs: RequestState, name: str,
