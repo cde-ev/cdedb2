@@ -26,8 +26,9 @@ class TestCdEBackend(BackendTest):
 
     @as_users("berta")
     def test_quota(self, user):
-        for _ in range(21):
-            self.core.get_cde_users(self.key, (1, 2, 6))
+        self.assertEqual(0, self.core.quota(self.key, []))
+        for i in range(1, 22):
+            self.assertEqual(i * 2, self.core.quota(self.key, (1, 2, 6)))
         with self.assertRaises(QuotaException):
             self.core.get_cde_users(self.key, (1, 2, 6))
 

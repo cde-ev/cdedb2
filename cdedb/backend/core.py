@@ -1549,31 +1549,29 @@ class CoreBackend(AbstractBackend):
         return ret
     get_event_user = singularize(get_event_users)
 
+    @internal
+    @access("persona")
+    def quota(self, rs: RequestState, ids: Collection[int] = None) -> int:
+        """Log quota restricted accesses. Return new total."""
+        ids = affirm_set("id", ids or set())
+        query = ("INSERT INTO core.quota (queries, persona_id, qdate)"
+                 " VALUES (%s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
+                 " UPDATE SET queries = core.quota.queries + EXCLUDED.queries"
+                 " RETURNING core.quota.queries")
+        count = len(ids - {rs.user.persona_id})
+        params = (count, rs.user.persona_id, now().date())
+        return unwrap(self.query_one(rs, query, params)) or 0
+
     @access("cde")
     def get_cde_users(self, rs: RequestState,
                       ids: Collection[int]) -> CdEDBObjectMap:
         """Get an cde view on some data sets."""
         ids = affirm_set("id", ids)
         with Atomizer(rs):
-            query = glue("SELECT queries FROM core.quota WHERE persona_id = %s",
-                         "AND qdate = %s")
-            today = now().date()
-            num = self.query_one(rs, query, (rs.user.persona_id, today))
-            query = glue("UPDATE core.quota SET queries = %s",
-                         "WHERE persona_id = %s AND qdate = %s")
-            if num is None:
-                query = glue("INSERT INTO core.quota",
-                             "(queries, persona_id, qdate) VALUES (%s, %s, %s)")
-                num = 0
-            else:
-                num = unwrap(num)
-            new = tuple(i == rs.user.persona_id for i in ids).count(False)
-            if (num + new > self.conf["QUOTA_VIEWS_PER_DAY"]
+            quota = self.quota(rs, ids)
+            if (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
                     and not {"cde_admin", "core_admin"} & rs.user.roles):
                 raise QuotaException(n_("Too many queries."))
-            if new:
-                self.query_exec(rs, query,
-                                (num + new, rs.user.persona_id, today))
             ret = self.retrieve_personas(rs, ids, columns=PERSONA_CDE_FIELDS)
             if any(not e['is_cde_realm'] for e in ret.values()):
                 raise RuntimeError(n_("Not a CdE user."))
