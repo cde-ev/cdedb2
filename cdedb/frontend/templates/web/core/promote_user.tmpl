@@ -81,8 +81,8 @@
                                               label=gettext("Gender")) }}
                 {% endif %}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
-                    {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
-                    {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone")) }}
+                    {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
+                    {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
                     {{ util.form_input_text(name="address", label=gettext("Street, Nr.")) }}
                     {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
                     {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}

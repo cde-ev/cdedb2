@@ -72,8 +72,8 @@
                     </div>
                     <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_username", label=gettext("E-Mail"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_telephone,mobile",
-                                                label=gettext("Phone"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_telephone,mobile", label=gettext("Phone"), type="tel",
+                                                aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_address,address_supplement,address2,address_supplement2",
                                                 label=gettext("Address"), aclass="input-sm") }}
                         {{ util.form_input_from_to('postal_lower', 'postal_upper', label=gettext("ZIP"),
