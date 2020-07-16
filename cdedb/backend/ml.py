@@ -5,7 +5,7 @@ event and assembly realm in the form of specific mailing lists.
 """
 from datetime import datetime
 from typing import (Callable, Collection, Dict, List, Optional, Set,
-                    Tuple, overload, Any)
+                    Tuple, overload, Any, TYPE_CHECKING)
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -211,8 +211,8 @@ class MlBackend(AbstractBackend):
         :type: bool
         """
         is_subscribed = bool(self.get_subscription(
-            rs, rs.user.persona_id, ml["id"],
-            const.SubscriptionStates.subscribing_states()))
+            rs, rs.user.persona_id, mailinglist_id=ml["id"],
+            states=const.SubscriptionStates.subscribing_states()))
         return (is_subscribed or self.get_ml_type(rs, ml["id"]).may_view(rs)
                 or ml["id"] in rs.user.moderator)
 
@@ -898,7 +898,8 @@ class MlBackend(AbstractBackend):
 
             # 2: Check if current state allows transition
             old_state = self.get_subscription(
-                rs, persona_id, mailinglist_id, set(const.SubscriptionStates))
+                rs, persona_id, mailinglist_id=mailinglist_id,
+                states=set(const.SubscriptionStates))
             error_matrix = sa.error_matrix()
             if error_matrix[action][old_state]:
                 raise error_matrix[action][old_state]
@@ -1125,9 +1126,15 @@ class MlBackend(AbstractBackend):
             for e in data})
 
         return ret
-    get_subscription: Callable[
-        ['MlBackend', RequestState, Optional[int], int, SubStates],
-        Optional[const.SubscriptionStates]]
+    if TYPE_CHECKING:
+        from typing_extensions import Protocol
+
+        class GetSubscription(Protocol):
+            def __call__(self, rs: RequestState,
+                         persona_id: Optional[int], *, mailinglist_id: int,
+                         states: SubStates = None
+                         ) -> Optional[const.SubscriptionStates]: ...
+        get_subscription: GetSubscription
     get_subscription = singularize(
         get_user_subscriptions, "mailinglist_ids", "mailinglist_id")
 
@@ -1272,7 +1279,7 @@ class MlBackend(AbstractBackend):
         # validation is done inside
         sub_states = const.SubscriptionStates.subscribing_states()
         data = self.get_subscription(
-            rs, persona_id, mailinglist_id, sub_states)
+            rs, persona_id, mailinglist_id=mailinglist_id, states=sub_states)
         return bool(data)
 
     @access("ml")
@@ -1424,9 +1431,9 @@ class MlBackend(AbstractBackend):
             # access violation. It would be quite tedious to fix this so
             # it's better to allow a small hack.
             query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
-            tmp = self.query_all(rs, query, (mailinglist['moderators'],))
-            moderators: List[str] = list(
-                filter(None, (e['username'] for e in tmp)))
+            moderators = self.query_all(rs, query, (mailinglist['moderators'],))
+            moderators_addresses: List[str] = list(
+                filter(None, (e['username'] for e in moderators)))
             # TODO fix this.
             subscribers = self.get_subscription_addresses(
                 rs, mailinglist_id, explicits_only=True)
@@ -1442,7 +1449,7 @@ class MlBackend(AbstractBackend):
                 # "footer" will be set in the frontend
                 # FIXME "prefix" currently not supported
                 "size_max": mailinglist['maxsize'],
-                "moderators": moderators,
+                "moderators": moderators_addresses,
                 "subscribers": subscriber_addresses,
                 "whitelist": mailinglist['whitelist'],
             }
@@ -1504,9 +1511,9 @@ class MlBackend(AbstractBackend):
             # access violation. It would be quite tedious to fix this so
             # it's better to allow a small hack.
             query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
-            tmp = self.query_all(rs, query, (mailinglist['moderators'],))
-            moderators: List[str] = list(
-                filter(None, (e['username'] for e in tmp)))
+            moderators = self.query_all(rs, query, (mailinglist['moderators'],))
+            moderators_addresses: List[str] = list(
+                filter(None, (e['username'] for e in moderators)))
             # TODO fix this.
             subscribers = self.get_subscription_addresses(
                 rs, mailinglist_id, explicits_only=True)
@@ -1524,8 +1531,8 @@ class MlBackend(AbstractBackend):
             return {
                 'listname': mailinglist['subject_prefix'],
                 'address': mailinglist['address'],
-                'moderators': moderators,
-                'subscribers': subscribers,
+                'moderators': moderators_addresses,
+                'subscribers': subscribers_addresses,
                 'whitelist': whitelist,
                 'sender': envelope,
                 'list-unsubscribe': u"https://db.cde-ev.de/",
