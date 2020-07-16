@@ -48,8 +48,8 @@
         {{ util.form_input_static(label=gettext("E-Mail"), value=username,
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}
         {% if "telephone" in shown_fields or "mobile" in shown_fields %}
-            {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone")) }}
+            {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if "weblink" in shown_fields %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
