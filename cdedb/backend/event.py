@@ -8,6 +8,7 @@ import collections
 import copy
 import decimal
 import datetime
+from pathlib import Path
 
 from typing import (
     Dict, Set, Collection, Callable, Tuple, Optional, List, Sequence, Any,
@@ -44,7 +45,7 @@ class EventBackend(AbstractBackend):
 
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
-        self.minor_form_dir: PathLike
+        self.minor_form_dir: Path
         self.minor_form_dir = self.conf['STORAGE_DIR'] / 'minor_form'
 
     @classmethod

@@ -29,6 +29,7 @@ do it.
 import copy
 import hmac
 import datetime
+from pathlib import Path
 from typing import (
     Set, Dict, Tuple, Union, Callable, Collection, Optional
 )
@@ -41,8 +42,8 @@ from cdedb.common import (
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
     PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-    get_hash, mixed_existence_sorter, PathLike,
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers
+    get_hash, mixed_existence_sorter, CdEDBObject, CdEDBObjectMap,
+    DefaultReturnCode, DeletionBlockers
 )
 from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators, Query
@@ -56,9 +57,9 @@ class AssemblyBackend(AbstractBackend):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.attachment_base_path: PathLike = (
+        self.attachment_base_path: Path = (
                 self.conf['STORAGE_DIR'] / "assembly_attachment")
-        self.ballot_result_base_path: PathLike = (
+        self.ballot_result_base_path: Path = (
                 self.conf['STORAGE_DIR'] / 'ballot_result')
 
     @classmethod

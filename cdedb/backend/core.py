@@ -10,7 +10,7 @@ import copy
 import datetime
 import decimal
 from passlib.hash import sha512_crypt
-import pathlib
+from pathlib import Path
 
 from typing import (
     Optional, Collection, Dict, Tuple, Set, List, Union, Any, TYPE_CHECKING,
@@ -59,8 +59,7 @@ class CoreBackend(AbstractBackend):
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, secrets["RESET_SALT"], cookie))
-        self.foto_dir: Union[pathlib.Path, PathLike]
-        self.foto_dir = self.conf['STORAGE_DIR'] / 'foto'
+        self.foto_dir: Path = self.conf['STORAGE_DIR'] / 'foto'
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

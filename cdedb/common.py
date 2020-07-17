@@ -87,7 +87,8 @@ AdminView = str
 
 CdEDBLog = Tuple[int, Tuple[CdEDBObject, ...]]
 
-PathLike = pathlib.Path
+PathLike = Union[pathlib.Path, str]
+Path = pathlib.Path
 
 T = TypeVar("T")
 
