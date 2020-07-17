@@ -548,6 +548,11 @@ class TestMlFrontend(FrontendTest):
                        const.MailinglistTypes.event_orga}
         general_types = {t for t in const.MailinglistTypes
                             if t not in (assembly_types.union(event_types))}
+        event_id = 1
+        event_title = self.sample_data['event.events'][event_id]['title']
+        assembly_id = 1
+        assembly_title = self.sample_data[
+            'assembly.assemblies'][assembly_id]['title']
 
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Alle Mailinglisten'},
@@ -561,9 +566,12 @@ class TestMlFrontend(FrontendTest):
         for ml_type in const.MailinglistTypes:
             with self.subTest(ml_type=ml_type):
                 f['ml_type'] = ml_type.value
-                f['event_id'] = 1
-                f['registration_stati'] = [1, 2]
-                f['assembly_id'] = 1
+                f['event_id'] = event_id
+                f['registration_stati'] = [
+                    const.RegistrationPartStati.participant.value,
+                    const.RegistrationPartStati.waitlist.value,
+                ]
+                f['assembly_id'] = assembly_id
                 # no ml type should allow event *and* assembly fields to be set
                 self.submit(f, check_notification=False)
                 self.assertIn("alert alert-danger", self.response.text)
@@ -586,22 +594,22 @@ class TestMlFrontend(FrontendTest):
                     self.submit(f)  # only works if all event-associated ml
                     # types can also not be associated with an event, which may
                     # change in future
-                    self.traverse({'description': "Übersicht", 'index': 1})
+                    self.traverse({'description': r"\sÜbersicht"})
                     self.assertNonPresence("Mailingliste zur Veranstaltung")
-                    f['event_id'] = 1
+                    f['event_id'] = event_id
                     self.submit(f)
-                    self.traverse({'description': "Übersicht", 'index': 1})
-                    self.assertPresence("Mailingliste zur Veranstaltung "
-                                        "Große Testakademie 2222")
+                    self.traverse({'description': r"\sÜbersicht"})
+                    self.assertPresence(
+                        f"Mailingliste zur Veranstaltung {event_title}")
                 elif ml_type in assembly_types:
                     self.submit(f, check_notification=False)
                     self.assertValidationError('assembly_id', "Ungültige "
                                                 "Eingabe für eine Ganzzahl.")
-                    f['assembly_id'] = 1
+                    f['assembly_id'] = assembly_id
                     self.submit(f)
-                    self.traverse({'description': "Übersicht", 'index': 1})
-                    self.assertPresence("Mailingliste zur Versammlung "
-                                        "Internationaler Kongress")
+                    self.traverse({'description': r"\sÜbersicht"})
+                    self.assertPresence(
+                        f"Mailingliste zur Versammlung {assembly_title}")
 
     @as_users("nina")
     def test_change_mailinglist_registration_stati(self, user):
