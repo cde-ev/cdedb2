@@ -18,7 +18,7 @@ import psycopg2.extensions
 from typing import (
     Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
     Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict,
-    TYPE_CHECKING,
+    TYPE_CHECKING, ClassVar
 )
 
 import cdedb.validation as validate
@@ -133,7 +133,7 @@ def access(*roles: Role) -> Callable[[F], F]:
                 )
             return function(self, rs, *args, **kwargs)
 
-        setattr(wrapper, "access", True)
+        wrapper.access = True  # type: ignore
         return cast(F, wrapper)
 
     return decorator
@@ -159,7 +159,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     which is sufficient for some cases).
     """
     #: abstract str to be specified by children
-    realm: str
+    realm: ClassVar[str]
 
     def __init__(self, configpath: PathLike = None,
                  is_core: bool = False) -> None:
@@ -184,17 +184,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
         # Everybody needs access to the core backend
-        if TYPE_CHECKING:
-            from cdedb.backend.core import CoreBackend
-            self.core = cast(CoreBackend, self)
-        else:
-            if is_core:
-                self.core = self
-            else:
-                # Import here since we otherwise have a cyclic import.
-                # I don't see how we can get out of this ...
+        if is_core:
+            if TYPE_CHECKING:
                 from cdedb.backend.core import CoreBackend
-                self.core = make_proxy(CoreBackend(configpath), internal=True)
+                self.core = cast(CoreBackend, self)
+            else:
+                self.core: self
+        else:
+            # Import here since we otherwise have a cyclic import.
+            # I don't see how we can get out of this ...
+            from cdedb.backend.core import CoreBackend  # type: ignore
+            self.core = make_proxy(CoreBackend(configpath), internal=True)
 
     def affirm_realm(self, rs: RequestState, ids: Collection[int],
                      realms: Set[Realm] = None) -> None:

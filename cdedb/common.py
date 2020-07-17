@@ -131,13 +131,13 @@ class RequestState:
                  user: User, request: Optional[werkzeug.Request],
                  response: Optional[werkzeug.Response],
                  notifications: Collection[Notification],
-                 mapadapter: Optional[werkzeug.routing.MapAdapter],
+                 mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
                  values: Optional[werkzeug.MultiDict], lang: str,
                  gettext: Callable, ngettext: Callable,
                  coders: Optional[Mapping[str, Callable]],
-                 begin: Optional[datetime.datetime],
+                 begin: datetime.datetime,
                  default_gettext: Optional[Callable] = None,
                  default_ngettext: Optional[Callable] = None):
         """
@@ -499,17 +499,6 @@ class EntitySorter:
     Sortable = Union[str, int, datetime.datetime]
     Sortkey = Union[Sequence[Sortable], Sortable]
 
-    # TODO decide whether we sort by first or last name
-    @classmethod
-    def persona(cls, entry: CdEDBObject) -> Sortkey:
-        """Create a sorting key associated to a persona dataset.
-
-        This way we have a standardized sorting order for entries.
-
-        :param entry: A dataset of a persona from the cde or event realm.
-        """
-        return cls.family_name_first(entry)
-
     @staticmethod
     def given_names(persona: CdEDBObject) -> Sortkey:
         return persona['given_names'].lower()
@@ -525,6 +514,9 @@ class EntitySorter:
     @staticmethod
     def family_name_first(persona: CdEDBObject) -> Sortkey:
         return (persona['family_name'].lower(), persona['given_names'].lower())
+
+    # TODO decide whether we sort by first or last name
+    persona = family_name_first
 
     @staticmethod
     def email(persona: CdEDBObject) -> Sortkey:
@@ -1324,7 +1316,7 @@ def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
     :rtype: str or None
     """
     if s is None:
-        raise ValueError()
+        raise ValueError(f"Cannot apply diacritic patterns to {s!r}.")
     # if fragile special chars are present do nothing
     special_chars = r'\*+?{}()[]|'  # .^$ are also special but do not interfere
     if any(char in s for char in special_chars):

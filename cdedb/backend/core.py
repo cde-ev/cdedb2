@@ -13,8 +13,7 @@ from passlib.hash import sha512_crypt
 from pathlib import Path
 
 from typing import (
-    Optional, Collection, Dict, Tuple, Set, List, Union, Any, TYPE_CHECKING,
-    cast
+    Optional, Collection, Dict, Tuple, Set, List, Any, cast
 )
 
 from cdedb.backend.common import AbstractBackend

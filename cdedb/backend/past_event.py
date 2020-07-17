@@ -134,7 +134,8 @@ class PastEventBackend(AbstractBackend):
         data = self.sql_select(rs, "past_event.institutions",
                                INSTITUTION_FIELDS, ids)
         return {e['id']: e for e in data}
-    get_institution: Callable[[RequestState, int], CdEDBObject]
+    get_institution: Callable[['PastEventBackend', RequestState, int],
+                              CdEDBObject]
     get_institution = singularize(get_institutions)
 
     @access("cde_admin", "event_admin")

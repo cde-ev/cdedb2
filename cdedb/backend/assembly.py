@@ -254,19 +254,17 @@ class AssemblyBackend(AbstractBackend):
         ballot_ids = affirm_set("id", ballot_ids or set())
         attachment_ids = affirm_set("id", attachment_ids or set())
         ret = set()
-        data = None
         if attachment_ids:
-            data = self._get_attachment_infos(rs, attachment_ids)
-            for e in data.values():
+            attachment_data = self._get_attachment_infos(rs, attachment_ids)
+            for e in attachment_data.values():
                 if e["assembly_id"]:
                     ret.add(e["assembly_id"])
                 if e["ballot_id"]:
                     ballot_ids.add(e["ballot_id"])
-        data = None
         if ballot_ids:
-            data = self.sql_select(
+            ballot_data = self.sql_select(
                 rs, "assembly.ballots", ("assembly_id",), ballot_ids)
-            for e in data:
+            for e in ballot_data:
                 ret.add(e["assembly_id"])
         return ret
 
@@ -896,7 +894,7 @@ class AssemblyBackend(AbstractBackend):
         return update['extended']
 
     def process_signup(self, rs: RequestState, assembly_id: int,
-                       persona_id: Optional[int]) -> Union[str, None]:
+                       persona_id: int) -> Union[str, None]:
         """Helper to perform the actual signup
 
         This has to take care to keep the voter register consistent.
@@ -905,8 +903,6 @@ class AssemblyBackend(AbstractBackend):
           already attend.
         """
         with Atomizer(rs):
-            if persona_id is None:
-                persona_id = rs.user.persona_id
             if self.check_attendance(rs, assembly_id=assembly_id,
                                      persona_id=persona_id):
                 # already signed up
@@ -968,7 +964,7 @@ class AssemblyBackend(AbstractBackend):
           already attend.
         """
         assembly_id = affirm("id", assembly_id)
-
+        assert rs.user.persona_id is not None
         return self.process_signup(rs, assembly_id, rs.user.persona_id)
 
     @access("assembly")
@@ -1208,7 +1204,7 @@ class AssemblyBackend(AbstractBackend):
             data = json_serialize(result)
             with open(path, 'w') as f:
                 f.write(data)
-            ret = data.encode("utf-8")
+            ret = data.encode()
         return ret
 
     @access("assembly_admin")
@@ -1688,11 +1684,10 @@ class AssemblyBackend(AbstractBackend):
         version = affirm("id_or_None", version) or self.get_current_version(
             rs, attachment_id, False)
         path = self.attachment_base_path / f"{attachment_id}_v{version}"
-        content = None
         if path.exists():
             with open(path, "rb") as f:
-                content = f.read()
-        return content
+                return f.read()
+        return None
 
     @access("assembly")
     def list_attachments(self, rs: RequestState, *, assembly_id: int = None,

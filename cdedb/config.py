@@ -92,10 +92,10 @@ def generate_event_registration_default_queries(event, spec):
             tuple(),
             (("reg.id", True),)),
         n_("02_query_event_registration_orgas"): Query(
-          "qview_registration", spec,
+            "qview_registration", spec,
             ("persona.given_names", "persona.family_name"),
             (("persona.id", QueryOperators.oneof, event['orgas']),),
-             default_sort),
+            default_sort),
         n_("10_query_event_registration_not_paid"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name"),
@@ -592,6 +592,7 @@ class Config(BasicConfig):
             primaryconf = {}
 
         try:
+            # noinspection PyUnresolvedReferences
             import cdedb.localconfig as secondaryconf_mod
             secondaryconf = {
                 key: getattr(secondaryconf_mod, key)
@@ -632,6 +633,7 @@ class SecretsConfig(collections.abc.Mapping):
             primaryconf = {}
 
         try:
+            # noinspection PyUnresolvedReferences
             import cdedb.localconfig as secondaryconf_mod
             secondaryconf = {
                 key: getattr(secondaryconf_mod, key)

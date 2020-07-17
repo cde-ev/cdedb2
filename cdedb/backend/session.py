@@ -20,7 +20,7 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.common import (glue, make_root_logger, now, PERSONA_STATUS_FIELDS,
                           User, extract_roles, droid_roles, PathLike)
 from cdedb.config import Config, SecretsConfig
-from cdedb.validation import is_printable_ascii  # type: ignore
+import cdedb.validation as validate
 
 
 class SessionBackend:
@@ -68,8 +68,8 @@ class SessionBackend:
         """
         persona_id = None
         data = None
-        if (is_printable_ascii(sessionkey) and is_printable_ascii(ip)
-                and sessionkey):
+        if (validate.is_printable_ascii(sessionkey)
+                and validate.is_printable_ascii(ip) and sessionkey):
             query = glue("SELECT persona_id, ip, is_active, atime, ctime",
                          "FROM core.sessions WHERE sessionkey = %s")
             with self.connpool["cdb_anonymous"] as conn:

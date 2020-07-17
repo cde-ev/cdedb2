@@ -3117,7 +3117,8 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
-    get_lodgement_group: Callable[[RequestState, int], CdEDBObject]
+    get_lodgement_group: Callable[['EventBackend', RequestState, int],
+                                  CdEDBObject]
     get_lodgement_group = singularize(get_lodgement_groups)
 
     @access("event")
