@@ -538,7 +538,79 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
         self.assertNonPresence("Munkelwand")
-        
+
+    @as_users("nina")
+    def test_change_ml_type(self, user):
+        # TODO: check auto subscription for opt-out lists
+        assembly_types = {const.MailinglistTypes.assembly_associated}
+        # MailinglistTypes.assembly_opt_in is not bound to an assembly
+        event_types = {const.MailinglistTypes.event_associated,
+                       const.MailinglistTypes.event_orga}
+        general_types = {t for t in const.MailinglistTypes
+                            if t not in (assembly_types.union(event_types))}
+        event_id = 1
+        event_title = self.sample_data['event.events'][event_id]['title']
+        assembly_id = 1
+        assembly_title = self.sample_data[
+            'assembly.assemblies'][assembly_id]['title']
+
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Alle Mailinglisten'},
+                      {'description': 'Mitgestaltungsforum'},
+                      {'description': 'Konfiguration'}, )
+        self.assertTitle("Mitgestaltungsforum – Konfiguration")
+        self.traverse({'description': 'Typ ändern'})
+        self.assertTitle("Mitgestaltungsforum – Typ ändern")
+        f = self.response.forms['changemltypeform']
+
+        for ml_type in const.MailinglistTypes:
+            with self.subTest(ml_type=ml_type):
+                f['ml_type'] = ml_type.value
+                f['event_id'] = event_id
+                f['registration_stati'] = [
+                    const.RegistrationPartStati.participant.value,
+                    const.RegistrationPartStati.waitlist.value,
+                ]
+                f['assembly_id'] = assembly_id
+                # no ml type should allow event *and* assembly fields to be set
+                self.submit(f, check_notification=False)
+                self.assertIn("alert alert-danger", self.response.text)
+                if ml_type not in event_types:
+                    self.assertValidationError('event_id',
+                                               "Muss „None“ sein.")
+                    self.assertPresence("Muss eine leere Liste sein.")
+                else:
+                    self.assertNonPresence("Muss eine leere Liste sein.")
+                if ml_type not in assembly_types:
+                    self.assertValidationError('assembly_id',
+                                               "Muss „None“ sein.")
+
+                f['event_id'] = ''
+                f['registration_stati'] = []
+                f['assembly_id'] = ''
+                if ml_type in general_types:
+                    self.submit(f)
+                elif ml_type in event_types:
+                    self.submit(f)  # only works if all event-associated ml
+                    # types can also not be associated with an event, which may
+                    # change in future
+                    self.traverse({'description': r"\sÜbersicht"})
+                    self.assertNonPresence("Mailingliste zur Veranstaltung")
+                    f['event_id'] = event_id
+                    self.submit(f)
+                    self.traverse({'description': r"\sÜbersicht"})
+                    self.assertPresence(
+                        f"Mailingliste zur Veranstaltung {event_title}")
+                elif ml_type in assembly_types:
+                    self.submit(f, check_notification=False)
+                    self.assertValidationError('assembly_id', "Ungültige "
+                                                "Eingabe für eine Ganzzahl.")
+                    f['assembly_id'] = assembly_id
+                    self.submit(f)
+                    self.traverse({'description': r"\sÜbersicht"})
+                    self.assertPresence(
+                        f"Mailingliste zur Versammlung {assembly_title}")
+
     @as_users("nina")
     def test_change_mailinglist_registration_stati(self, user):
         self.get("/ml/mailinglist/9/change")
