@@ -726,12 +726,12 @@ class FrontendTest(unittest.TestCase):
 
     def traverse(self, *links: MutableMapping[str, Any], verbose: bool = False
                  ) -> None:
-        """Follow a sequence of links, descriped by their kwargs.
+        """Follow a sequence of links, described by their kwargs.
 
         A link should usually contain some of the following descriptors:
 
             * `description`:
-                * The visible test inside the link. Uses RegEx matching.
+                * The (visible) content inside the link. Uses RegEx matching.
             * `href`:
                 * The target of the link. Uses RegEx matching.
             * `linkid`:
