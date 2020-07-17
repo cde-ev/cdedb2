@@ -621,6 +621,22 @@ class TestCdEFrontend(FrontendTest):
             self.assertNotIn("revokeform", self.response.forms)
             self.assertNotIn("receiptform3", self.response.forms)
 
+    def test_membership_lastschrift_revoke(self):
+        self.login(USER_DICT["vera"])
+        self.admin_view_profile('berta')
+        self.assertPresence("Einzugsermächtigung", div="balance")
+        self.assertNonPresence("Neue Einzugsermächtigung", div="balance")
+        self.traverse({'description': 'Status ändern'})
+        f = self.response.forms['modifymembershipform']
+        self.submit(f)
+        self.assertPresence("Lastschriftmandat widerrufen.",
+                            div="notifications")
+        self.assertNonPresence("Einzugsermächtigung", div="balance")
+        self.logout()
+        self.login(USER_DICT["farin"])
+        self.get('/cde/user/2/lastschrift')
+        self.assertPresence("Keine aktive Einzugsermächtigung")
+
     @as_users("farin")
     def test_lastschrift_subject_limit(self, user):
         self.admin_view_profile('anton')
