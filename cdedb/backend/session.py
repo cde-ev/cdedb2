@@ -58,7 +58,7 @@ class SessionBackend:
             secrets, self.conf["DB_PORT"],
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
 
-    def lookupsession(self, sessionkey: str, ip: str) -> Optional[User]:
+    def lookupsession(self, sessionkey: Optional[str], ip: str) -> User:
         """Raison d'etre.
 
         Resolve a session key (originally stored in a cookie) into the
