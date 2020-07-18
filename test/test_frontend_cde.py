@@ -255,11 +255,12 @@ class TestCdEFrontend(FrontendTest):
         f['qval_fulltext'] = "1"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertPresence("4 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Anton", div='result')  # ... ID
+        self.assertPresence("3 Mitglieder gefunden", div='result-count')
         self.assertPresence("Akira", div='result')  # ... Address
         self.assertPresence("Ferdinand", div='result')  # ... Address
         self.assertPresence("Inga", div='result')  # ... Address
+        # fulltext search must not match on DB-Id
+        self.assertNonPresence("Anton", div='result')  # ... ID
 
         # by zip: upper
         self.traverse({'description': 'CdE-Mitglied suchen'})
