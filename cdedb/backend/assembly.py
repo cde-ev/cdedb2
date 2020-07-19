@@ -969,7 +969,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def vote(self, rs: RequestState, ballot_id: int, vote: str,
-             secret: str) -> DefaultReturnCode:
+             secret: Optional[str]) -> DefaultReturnCode:
         """Submit a vote.
 
         This does not accept a persona_id on purpose.
@@ -1004,6 +1004,7 @@ class AssemblyBackend(AbstractBackend):
                              "WHERE assembly_id = %s and persona_id = %s")
                 secret = unwrap(self.query_one(
                     rs, query, (ballot['assembly_id'], rs.user.persona_id)))
+            assert secret is not None
             if not has_voted:
                 salt = secure_random_ascii()
                 entry = {
@@ -1563,6 +1564,11 @@ class AssemblyBackend(AbstractBackend):
                     rs, query.format(" AND ".join(constraints)), params)
                 ret.update({e["attachment_id"]: e["version"] for e in data})
             return ret
+    # from typing_extensions import Protocol
+    # class GetCurrentVersion(Protocol):
+    #     def __call__(self, rs: RequestState, attachment_id: int,
+    #                  include_deleted: bool = False) -> int: ...
+    # get_current_version: GetCurrentVersion
     get_current_version: Callable[
         ['AssemblyBackend', RequestState, int, bool], int]
     get_current_version = singularize(
