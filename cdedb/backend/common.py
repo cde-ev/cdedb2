@@ -184,12 +184,11 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
         # Everybody needs access to the core backend
+        if TYPE_CHECKING:
+            from cdedb.backend.core import CoreBackend
+        self.core: 'CoreBackend'
         if is_core:
-            if TYPE_CHECKING:
-                from cdedb.backend.core import CoreBackend
-                self.core = cast(CoreBackend, self)
-            else:
-                self.core: self
+            self.core = cast('CoreBackend', self)
         else:
             # Import here since we otherwise have a cyclic import.
             # I don't see how we can get out of this ...
