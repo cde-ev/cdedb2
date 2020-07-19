@@ -10,7 +10,7 @@ import datetime
 import decimal
 
 from typing import (
-    Collection, Dict, Tuple, List, Any
+    Collection, Dict, Tuple, List, Any, Optional
 )
 
 from cdedb.backend.common import (
@@ -99,7 +99,7 @@ class CdEBackend(AbstractBackend):
     @access("member", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
                          persona_ids: Collection[int] = None,
-                         active: bool = True) -> Dict[int, int]:
+                         active: Optional[bool] = True) -> Dict[int, int]:
         """List all direct debit permits.
 
         :returns: Mapping of lastschrift_ids to their respecive persona_ids.

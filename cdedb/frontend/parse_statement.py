@@ -11,7 +11,7 @@ from typing import (
 
 from cdedb.common import (
     diacritic_patterns, Accounts, TransactionType, now, n_, CdEDBObject, Error,
-    RequestState, CdEDBObjectMap
+    CdEDBObjectMap
 )
 from cdedb.frontend.common import cdedbid_filter
 import cdedb.validation as validate
@@ -153,11 +153,11 @@ def dates_from_filename(filename: str) -> Tuple[datetime.date,
             raise ValueError()
         start = datetime.datetime.strptime(start_str, "%Y%m%d").date()
         end = datetime.datetime.strptime(end_str, "%Y%m%d").date()
-        timestamp = datetime.datetime.strptime(timestamp[:-4], "%Y%m%d%H%M%S")
+        time = datetime.datetime.strptime(timestamp[:-4], "%Y%m%d%H%M%S")
     except ValueError:
         return now().date(), None, now()
     else:
-        return start, end, timestamp
+        return start, end, time
 
 
 def get_event_name_pattern(event: CdEDBObject) -> str:
@@ -324,7 +324,8 @@ class Transaction:
         # We need the following fields, but we actually set them later.
         self.errors = data.get("errors", [])
         self.warnings = data.get("warnings", [])
-        self.type = data.get("transaction_type")
+        self.type: TransactionType
+        self.type = data.get("transaction_type")  # type: ignore
         self.event_id = data.get("event_id")
         if data.get("cdedbid"):
             self.persona_id = data["cdedbid"]
@@ -363,7 +364,6 @@ class Transaction:
         t_id = raw["id"] + 1
         data["t_id"] = t_id
         errors = []
-        warnings = []
 
         try:
             data["account"] = Accounts(int(raw["myAccNr"]))
@@ -449,7 +449,7 @@ class Transaction:
         data["posting"] = str(raw["posting"]).split(" ", 1)[0]
 
         data["errors"] = errors
-        data["warnings"] = warnings
+        data["warnings"] = []
 
         return Transaction(data)
 
@@ -459,7 +459,7 @@ class Transaction:
 
         Check the reference parts in order of relevancy.
         """
-        ret = {}
+        ret: Dict[int, ConfidenceLevel] = {}
         patterns = [STATEMENT_DB_ID_EXACT, STATEMENT_DB_ID_CLOSE]
         orig_confidence = confidence
         for pattern in patterns:
@@ -597,6 +597,7 @@ class Transaction:
         Member = collections.namedtuple("Member", ("persona_id", "confidence"))
 
         result = self._find_cdedbids()
+        p: Error
         if result:
             if len(result) > 1:
                 p = ("reference",
@@ -672,7 +673,7 @@ class Transaction:
                     best_confidence = member.confidence
                     best_match = member
 
-            if best_confidence > ConfidenceLevel.Null:
+            if best_match and best_confidence > ConfidenceLevel.Null:
                 self.persona_id = best_match.persona_id
                 self.persona_id_confidence = best_confidence
 
@@ -714,7 +715,7 @@ class Transaction:
                     best_confidence = event.confidence
                     best_match = event
 
-            if best_confidence > ConfidenceLevel.Null:
+            if best_match and best_confidence > ConfidenceLevel.Null:
                 self.event_id = best_match.event_id
                 self.event_id_confidence = best_confidence
 
@@ -761,6 +762,7 @@ class Transaction:
                     ("cdedbid", ValueError(n_(
                         "Needs member match."))))
 
+        p: Error
         if self.type == TransactionType.MembershipFee:
             if self.persona_id:
                 try:
