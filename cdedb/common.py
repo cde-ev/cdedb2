@@ -747,10 +747,6 @@ def _schulze_winners(d: Mapping[Tuple[str, str], int],
     We determine the strongest path from each vertex to each other
     vertex. This gives a transitive relation, which enables us thus to
     determine winners as maximal elements.
-
-    :type d: {(str, str): int}
-    :type candidates: [str]
-    :rtype: [str]
     """
     # First determine the strongst paths
     p = {(x, y): d[(x, y)] for x in candidates for y in candidates}

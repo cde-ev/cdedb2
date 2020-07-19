@@ -10,8 +10,11 @@ import argparse
 import json
 import pathlib
 
+from typing import Mapping, Tuple, Collection, List, Dict, Union, Container
 
-def _schulze_winners(d, candidates):
+
+def _schulze_winners(d: Mapping(Tuple[str, str], int),
+                     candidates: Collection[str]) -> List[str]:
     """This is the abstract part of the Schulze method doing the actual work.
 
     The candidates are the vertices of a graph and the metric (in form
@@ -21,10 +24,6 @@ def _schulze_winners(d, candidates):
     We determine the strongest path from each vertex to each other
     vertex. This gives a transitive relation, which enables us thus to
     determine winners as maximal elements.
-
-    :type d: {(str, str): int}
-    :type candidates: [str]
-    :rtype: [str]
     """
     # First determine the strongst paths
     p = {(x, y): d[(x, y)] for x in candidates for y in candidates}
@@ -44,7 +43,8 @@ def _schulze_winners(d, candidates):
     return winners
 
 
-def schulze_evaluate(votes, candidates):
+def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
+                     ) -> Tuple[str, List[Dict[str, Union[int, List[str]]]]]:
     """Use the Schulze method to cummulate preference list into one list.
 
     This is used by the assembly realm to tally votes -- however this is
@@ -62,25 +62,19 @@ def schulze_evaluate(votes, candidates):
 
     For a nice set of examples see the test suite.
 
-    :type votes: [str]
-    :type candidates: [str]
     :param candidates: We require that the candidates be explicitly
       passed. This allows for more flexibility (like returning a useful
       result for zero votes).
-    :rtype: (str, [{}])
     :returns: The first Element is the aggregated result,
-    the second is an more extended list, containing every level (descending) as
-    dict with some extended information.
+        the second is an more extended list, containing every level
+        (descending) as dict with some extended information.
     """
     split_votes = tuple(
-        tuple(level.split('=') for level in vote.split('>')) for vote in votes)
+        tuple(lvl.split('=') for lvl in vote.split('>')) for vote in votes)
 
-    def _subindex(alist, element):
+    def _subindex(alist: Collection[Container[str]], element: str) -> int:
         """The element is in the list at which position in the big list.
 
-        :type alist: [[str]]
-        :type element: str
-        :rtype: int
         :returns: ``ret`` such that ``element in alist[ret]``
         """
         for index, sublist in enumerate(alist):
@@ -98,7 +92,7 @@ def schulze_evaluate(votes, candidates):
 
     # Second we calculate a numeric link strength abstracting the problem
     # into the realm of graphs with one vertex per candidate
-    def _strength(support, opposition, totalvotes):
+    def _strength(support: int, opposition: int, totalvotes: int) -> int:
         """One thing not specified by the Schulze method is how to asses the
         strength of a link and indeed there are several possibilities. We
         use the strategy called 'winning votes' as advised by the paper of
@@ -115,11 +109,6 @@ def schulze_evaluate(votes, candidates):
         test suite give the same result for both of them. Moreover if
         the votes contain no ties both strategies (and several more) are
         totally equivalent.
-
-        :type support: int
-        :type opposition: int
-        :type totalvotes: int
-        :rtype: int
         """
         # the margin strategy would be given by the following line
         # return support - opposition
