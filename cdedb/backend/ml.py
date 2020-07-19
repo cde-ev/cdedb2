@@ -1070,6 +1070,12 @@ class MlBackend(AbstractBackend):
 
         return ret
 
+    # from typing_extensions import Protocol
+    # class GetSubScriptionState(Protocol):
+    #     def __call__(self, rs: RequestState, persona_id: int,
+    #                  states: SubStates = None
+    #                  ) -> Dict[int, const.SubscriptionStates]: ...
+    # get_subscription_states: GetSubScriptionState
     get_subscription_states: Callable[
         ['MlBackend', RequestState, int, Optional[SubStates]],
         Dict[int, const.SubscriptionStates]]
