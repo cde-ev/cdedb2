@@ -3,6 +3,7 @@
 import copy
 import datetime
 import decimal
+from pathlib import Path
 
 import cdedb.database.constants as const
 from test.common import (
@@ -712,9 +713,11 @@ class TestCoreBackend(BackendTest):
             'country': "Arkadien",
             'attachment': attachment_hash,
         }
-        self.assertFalse(self.core.genesis_attachment_usage(self.key, attachment_hash))
+        self.assertFalse(self.core.genesis_attachment_usage(
+            self.key, attachment_hash))
         case_id = self.core.genesis_request(None, data)
-        self.assertTrue(self.core.genesis_attachment_usage(self.key, attachment_hash))
+        self.assertTrue(self.core.genesis_attachment_usage(
+            self.key, attachment_hash))
         self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(None, case_id))
         self.assertEqual(1, len(self.core.genesis_list_cases(
@@ -781,7 +784,22 @@ class TestCoreBackend(BackendTest):
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
         self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
-        self.assertFalse(self.core.genesis_attachment_usage(self.key, attachment_hash))
+        self.assertFalse(self.core.genesis_attachment_usage(
+            self.key, attachment_hash))
+
+    def test_genesis_attachments(self):
+        pdffile = Path("/tmp/cdedb-store/testfiles/form.pdf")
+        with open(pdffile, 'rb') as f:
+            pdfdata = f.read()
+        pdfhash = get_hash(pdfdata)
+        self.assertEqual(
+            pdfhash, self.core.genesis_set_attachment(self.key, pdfdata))
+        with self.assertRaises(PrivilegeError):
+            self.core.genesis_attachment_usage(self.key, pdfhash)
+        self.login(USER_DICT["anton"])
+        self.assertEqual(
+            0, self.core.genesis_attachment_usage(self.key, pdfhash))
+        self.assertEqual(1, self.core.genesis_forget_attachments(self.key))
 
     def test_genesis_verify_multiple(self):
         self.assertEqual((0, "core"), self.core.genesis_verify(None, 123))

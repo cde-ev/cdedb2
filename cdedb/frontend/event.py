@@ -24,7 +24,9 @@ import magic
 import psycopg2.extensions
 import werkzeug.exceptions
 from werkzeug import Response
-from typing import Sequence, Dict, Any, Collection, Mapping, List
+from typing import (
+    Sequence, Dict, Any, Collection, Mapping, List, Tuple, Callable
+)
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
@@ -42,6 +44,7 @@ from cdedb.common import (
     CourseFilterPositions, diacritic_patterns, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
     LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
+    CdEDBObject, Error
 )
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -197,20 +200,9 @@ class EventFrontend(AbstractUserFrontend):
             result = self.eventproxy.submit_general_query(rs, query)
             params['result'] = result
             if download:
-                fields = []
-                for csvfield in query.fields_of_interest:
-                    fields.extend(csvfield.split(','))
-                if download == "csv":
-                    csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_csv_file(
-                        rs, data=csv_data, inline=False,
-                        filename="user_search_result.csv")
-                elif download == "json":
-                    json_data = query_result_to_json(result, fields,
-                                                     substitutions=choices)
-                    return self.send_file(
-                        rs, data=json_data, inline=False,
-                        filename="user_search_result.json")
+                return self.send_query_download(
+                    rs, result, fields=query.fields_of_interest, kind=download,
+                    filename="user_search_result")
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
@@ -3518,8 +3510,9 @@ class EventFrontend(AbstractUserFrontend):
     def process_questionnaire_input(rs: RequestState, num: int,
                                     reg_fields: Mapping[int, Mapping[str, Any]],
                                     kind: const.QuestionnaireUsages,
-                                    other_used_fields: Collection) -> \
-            Dict[const.QuestionnaireUsages, List[Mapping[str, Any]]]:
+                                    other_used_fields: Collection
+                                    ) -> Dict[const.QuestionnaireUsages,
+                                              List[CdEDBObject]]:
         """This handles input to configure questionnaires.
 
         Since this covers a variable number of rows, we cannot do this
@@ -3592,10 +3585,11 @@ class EventFrontend(AbstractUserFrontend):
             return (lambda d: d[key] not in other_used_fields,
                     (key, ValueError(msg)))
 
-        constraints = tuple(filter(
+        constraints: List[Tuple[Callable[[CdEDBObject], bool], Error]]
+        constraints = list(filter(
             None, (duplicate_constraint(idx1, idx2)
                    for idx1 in indices for idx2 in indices)))
-        constraints += tuple(itertools.chain.from_iterable(
+        constraints += list(itertools.chain.from_iterable(
             (valid_field_constraint(idx),
              fee_modifier_kind_constraint(idx),
              readonly_kind_constraint(idx),
@@ -3680,8 +3674,8 @@ class EventFrontend(AbstractUserFrontend):
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         new_questionnaire = {
-            kind: tuple(self._sanitize_questionnaire_row(questionnaire[i])
-                        for i in order)}
+            kind: list(self._sanitize_questionnaire_row(questionnaire[i])
+                       for i in order)}
         code = self.eventproxy.set_questionnaire(
             rs, event_id, new_questionnaire)
         self.notify_return_code(rs, code)

@@ -123,7 +123,8 @@ class EventBackend(AbstractBackend):
         for anid in ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
-    orga_info: Callable[[RequestState, int], Set[int]] = singularize(orga_infos)
+    orga_info: Callable[['EventBackend', RequestState, int], Set[int]]
+    orga_info = singularize(orga_infos)
 
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: int = None,
