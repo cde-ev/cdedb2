@@ -128,8 +128,7 @@ class RequestState:
     """
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str],
-                 user: User, request: Optional[werkzeug.Request],
-                 response: Optional[werkzeug.Response],
+                 user: User, request: werkzeug.Request,
                  notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
@@ -163,7 +162,6 @@ class RequestState:
         self.apitoken = apitoken
         self.user = user
         self.request = request
-        self.response = response
         self.notifications = list(notifications)
         self.urls = mapadapter
         self.requestargs = requestargs or {}
@@ -1792,7 +1790,7 @@ GENESIS_CASE_FIELDS = (
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
 # realms genesis requrests are allowed
-REALM_SPECIFIC_GENESIS_FIELDS = {
+REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
     "ml": tuple(),
     "event": ("gender", "birthday", "telephone", "mobile",
               "address_supplement", "address", "postal_code", "location",

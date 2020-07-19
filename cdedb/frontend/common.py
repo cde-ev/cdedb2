@@ -51,7 +51,7 @@ import werkzeug.wrappers
 from typing import (
     Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
     Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    MutableMapping, Sequence, cast
+    ClassVar, MutableMapping, Sequence, cast, AbstractSet,
 )
 
 from cdedb.common import (
@@ -102,10 +102,10 @@ class BaseApp(metaclass=abc.ABCMeta):
     """Additional base class under :py:class:`AbstractFrontend` which will be
     inherited by :py:class:`cdedb.frontend.application.Application`.
     """
+    realm: ClassVar[str]
 
     def __init__(self, configpath: PathLike = None, *args: Any,
                  **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
         # initialize logging
@@ -205,13 +205,11 @@ def sanitize_None(data: Optional[T]) -> Union[str, T]:
 
 
 @overload
-def safe_filter(val: None) -> None:
-    pass
+def safe_filter(val: None) -> None: ...
 
 
 @overload
-def safe_filter(val: str) -> jinja2.Markup:
-    pass
+def safe_filter(val: str) -> jinja2.Markup: ...
 
 
 def safe_filter(val):
@@ -276,13 +274,11 @@ def datetime_filter(val: Optional[datetime.datetime],
 
 
 @overload
-def money_filter(val: None) -> None:
-    pass
+def money_filter(val: None) -> None: ...
 
 
 @overload
-def money_filter(val: decimal.Decimal, currency: str, land: str) -> str:
-    pass
+def money_filter(val: decimal.Decimal, currency: str, land: str) -> str: ...
 
 
 def money_filter(val, currency="EUR", lang="de"):
@@ -297,13 +293,11 @@ def money_filter(val, currency="EUR", lang="de"):
 
 
 @overload
-def decimal_filter(val: None, lang: str) -> None:
-    pass
+def decimal_filter(val: None, lang: str) -> None: ...
 
 
 @overload
-def decimal_filter(val: float, lang: str) -> str:
-    pass
+def decimal_filter(val: float, lang: str) -> str: ...
 
 
 def decimal_filter(val, lang):
@@ -315,13 +309,11 @@ def decimal_filter(val, lang):
 
 
 @overload
-def cdedbid_filter(val: None) -> None:
-    pass
+def cdedbid_filter(val: None) -> None: ...
 
 
 @overload
-def cdedbid_filter(val: int) -> str:
-    pass
+def cdedbid_filter(val: int) -> str: ...
 
 
 def cdedbid_filter(val):
@@ -336,13 +328,11 @@ def cdedbid_filter(val):
 
 
 @overload
-def iban_filter(val: None) -> None:
-    pass
+def iban_filter(val: None) -> None: ...
 
 
 @overload
-def iban_filter(val: str) -> str:
-    pass
+def iban_filter(val: str) -> str: ...
 
 
 def iban_filter(val):
@@ -355,15 +345,11 @@ def iban_filter(val):
 
 
 @overload
-def escape_filter(val: None) -> None:
-    pass
+def escape_filter(val: None) -> None: ...
 
 
 @overload
-def escape_filter(val: Any) -> jinja2.Markup:
-    # For an input of None the typechecker incorrectly thinks this will return
-    # Optional[jinja2.Markup], because Any includes None.
-    pass
+def escape_filter(val: str) -> jinja2.Markup: ...
 
 
 def escape_filter(val):
@@ -392,15 +378,11 @@ LATEX_ESCAPE_REGEX = (
 
 
 @overload
-def tex_escape_filter(val: None) -> None:
-    pass
+def tex_escape_filter(val: None) -> None: ...
 
 
 @overload
-def tex_escape_filter(val: Any) -> str:
-    # For an input of None the typechecker incorrectly thinks this will return
-    # Optional[str], because Any includes None.
-    pass
+def tex_escape_filter(val: str) -> str: ...
 
 
 def tex_escape_filter(val):
@@ -515,15 +497,15 @@ def querytoparams_filter(val: query_mod.Query) -> CdEDBObject:
     This could probably be done in jinja, but this would be pretty
     painful.
     """
-    params = {}
+    params: CdEDBObject = {}
     for field in val.fields_of_interest:
         params['qsel_{}'.format(field)] = True
     for field, op, value in val.constraints:
         params['qop_{}'.format(field)] = op.value
         if (isinstance(value, collections.Iterable)
                 and not isinstance(value, str)):
-            # TODO: Get separator from central place (also used in validation._
-            # query_input)
+            # TODO: Get separator from central place
+            #  (also used in validation._query_input)
             params['qval_{}'.format(field)] = ','.join(str(x) for x in value)
         else:
             params['qval_{}'.format(field)] = value
@@ -767,8 +749,9 @@ def enum_entries_filter(enum: EnumMeta, processing: Callable[[Any], str] = None,
         pre = lambda x: x
     else:
         pre = str
-    return xsorted((entry.value, prefix + processing(pre(entry)))
-                   for entry in enum)
+    to_sort = ((entry.value, prefix + processing(pre(entry)))  # type: ignore
+               for entry in enum)
+    return xsorted(to_sort)
 
 
 def dict_entries_filter(items: List[Tuple[Any, Mapping[T, S]]],
@@ -857,7 +840,6 @@ JINJA_FILTERS = {
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
-    realm = None
 
     def __init__(self, configpath: PathLike = None, *args: Any,
                  **kwargs: Any) -> None:
@@ -865,8 +847,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
                 str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
-            extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
-                        'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
+            extensions=['jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
+                        'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'],
             finalize=sanitize_None, autoescape=True,
             auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.filters.update(JINJA_FILTERS)
@@ -908,7 +890,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             trim_blocks=True,
             lstrip_blocks=True,
         )
-        self.jinja_env.policies['ext.i18n.trimmed'] = True
+        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         # Always provide all backends -- they are cheap
         self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
         self.cdeproxy = make_proxy(CdEBackend(configpath))
@@ -1000,19 +982,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                                   method_name: str) -> Callable:
             """Provide a checker from the backend(proxy) for the templates.
 
-            This takes a Frontend object and refers the check to the
-            given backend if that backend has a method of the given
-            `method_name`. If no such method exists, the checker
-            will always return False.
+            This wraps a call to the given backend method, to not require
+            access to the backend or the RequestState.
             """
-            try:
-                checker = getattr(backend, method_name)
-                if callable(checker):
-                    return lambda *args, **kwargs: checker(rs, *args, **kwargs)
-            except AttributeError:
-                return lambda *args, **kwargs: False
+            checker = getattr(backend, method_name)
+            if callable(checker):
+                return lambda *args, **kwargs: checker(rs, *args, **kwargs)
+            else:
+                raise AttributeError(n_("Given method is not callable."))
 
-        errorsdict = {}
+        errorsdict: Dict[Optional[str], List[Exception]] = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
         # here come the always accessible things promised above
@@ -1061,6 +1040,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         file. All parameters (except for encoding) are as in the wrapped
         method.
         """
+        if path is not None:
+            path = pathlib.Path(path)
         return AbstractFrontend.send_file(
             rs, mimetype=mimetype, filename=filename, inline=inline, path=path,
             afile=afile, data=data, encoding='utf-8-sig')
@@ -1088,21 +1069,26 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             raise ValueError(n_("No input specified."))
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))
-        if path and not pathlib.Path(path).is_file():
-            raise werkzeug.exceptions.NotFound()
+
+        data_buffer = io.BytesIO()
         if path:
-            # TODO Can we use a with context here or maybe close explicitly?
-            afile = open(str(path), 'rb')
-        elif data is not None:
-            afile = io.BytesIO()
+            path = pathlib.Path(path)
+            if not path.is_file():
+                raise werkzeug.exceptions.NotFound()
+            with open(path, 'rb') as f:
+                data_buffer.write(f.read())
+        elif afile:
+            data_buffer.write(afile.read())
+        elif data:
             if isinstance(data, str):
-                afile.write(data.encode(encoding))
+                data_buffer.write(data.encode(encoding))
             elif isinstance(data, bytes):
-                afile.write(data)
+                data_buffer.write(data)
             else:
                 raise ValueError(n_("Invalid input type."))
-            afile.seek(0)
-        f = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
+        data_buffer.seek(0)
+
+        wrapped_file = werkzeug.wsgi.wrap_file(rs.request.environ, data_buffer)
         extra_args = {}
         if mimetype is not None:
             extra_args['mimetype'] = mimetype
@@ -1112,16 +1098,46 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             disposition += '; filename="{}"'.format(filename)
         headers.append(('Content-Disposition', disposition))
         headers.append(('X-Generation-Time', str(now() - rs.begin)))
-        return Response(f, direct_passthrough=True, headers=headers,
+        return Response(wrapped_file, direct_passthrough=True, headers=headers,
                         **extra_args)
 
     @staticmethod
     def send_json(rs: RequestState, data: Any) -> Response:
         """Slim helper to create json responses."""
-        rs.response = Response(json_serialize(data),
+        response = Response(json_serialize(data),
                                mimetype='application/json')
-        rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
-        return rs.response
+        response.headers.add('X-Generation-Time', str(now() - rs.begin))
+        return response
+
+    def send_query_download(self, rs: RequestState,
+                            result: Collection[CdEDBObject], fields: List[str],
+                            kind: str, filename: str,
+                            substitutions: Mapping[str, Mapping] = None) -> Response:
+        """Helper to send download of query result.
+
+        :param fields: List of fields the output should have. Commaseparated
+            fields will be split up.
+        :param kind: Can be either `'csv'` or `'json'`.
+        :param filename: The extension will be added automatically depending on
+            the kind specified.
+        """
+        if not fields:
+            raise ValueError(n_("Cannot download query result without fields"
+                                " of interest."))
+        fields = sum((csvfield.split(',') for csvfield in fields), start=[])
+        filename += f".{kind}"
+        if kind == "csv":
+            csv_data = csv_output(result, fields, substitutions=substitutions)
+            return self.send_csv_file(
+                rs, data=csv_data, inline=False, filename=filename)
+        elif kind == "json":
+            json_data = query_result_to_json(
+                result, fields, substitutions=substitutions)
+            return self.send_file(
+                rs, data=json_data, inline=False, filename=filename)
+        else:
+            raise ValueError(
+                n_("Unknown download kind {kind}."), {"kind": kind})
 
     def render(self, rs: RequestState, templatename: str,
                params: CdEDBObject = None) -> Response:
@@ -1152,8 +1168,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['csp_nonce'] = csp_nonce
 
         html = self.fill_template(rs, "web", templatename, params)
-        rs.response = Response(html, mimetype='text/html')
-        rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
+        response = Response(html, mimetype='text/html')
+        response.headers.add('X-Generation-Time', str(now() - rs.begin))
 
         # Add CSP header to disallow scripts, styles, images and objects from
         # other domains. This is part of XSS mitigation
@@ -1162,16 +1178,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "script-src 'unsafe-inline' 'self' https: 'nonce-{}';",
             "style-src 'self' 'unsafe-inline';",
             "img-src *")
-        rs.response.headers.add('Content-Security-Policy',
+        response.headers.add('Content-Security-Policy',
                                 csp_header_template.format(csp_nonce))
-        return rs.response
+        return response
 
-    Attachment = Mapping[str, Union[str, bytes]]
+    # TODO use new typing feature to accurately define the following:
+    # from typing import TypedDict
+    # Attachment = TypedDict(
+    #     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
+    #                    'file': IO}, total=False)
+    Attachment = Dict[str, str]
 
     def do_mail(self, rs: RequestState, templatename: str,
-                headers: MutableMapping[str, str], params: CdEDBObject = None,
-                attachments: Collection[Attachment] = None
-                ) -> Optional[str]:
+                headers: MutableMapping[str, Union[str, Collection[str]]],
+                params: CdEDBObject = None,
+                attachments: Collection[Attachment] = None) -> Optional[str]:
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
 
@@ -1201,9 +1222,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                       {'path': ret})
         return ret
 
-    def _create_mail(self, text: str, headers: MutableMapping[str, str],
-                     attachments: Collection[Attachment],
-                     ) -> email.message.Message:
+    def _create_mail(self, text: str,
+                     headers: MutableMapping[str, Union[str, Collection[str]]],
+                     attachments: Optional[Collection[Attachment]],
+                     ) -> Union[email.message.Message,
+                                email.mime.multipart.MIMEMultipart]:
         """Helper for actual email instantiation from a raw message."""
         defaults = {"From": self.conf["DEFAULT_SENDER"],
                     "Prefix": self.conf["DEFAULT_PREFIX"],
@@ -1223,7 +1246,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # we want quoted-printable, but without encoding all the spaces
         # however at the end of lines the standard requires spaces to be
         # encoded hence we have to be a bit careful (encoding is a pain!)
-        payload = msg.get_payload()
+        payload: str = msg.get_payload()  # type: ignore
+        # TODO do we really only get strings as a payload here?
+        # Otherwise re.sub might not like it.
         payload = re.sub('=20(.)', r' \1', payload)
         # do this twice for adjacent encoded spaces
         payload = re.sub('=20(.)', r' \1', payload)
@@ -1234,7 +1259,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             for attachment in attachments:
                 container.attach(self._create_attachment(attachment))
             # put the container in place as message to send
-            msg = container
+            msg = container  # type: ignore
         for header in ("To", "Cc", "Bcc"):
             nonempty = {x for x in headers[header] if x}
             if nonempty != set(headers[header]):
@@ -1242,8 +1267,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if headers[header]:
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            msg[header] = headers[header]
-        msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
+            msg[header] = headers[header]  # type: ignore
+        subject = headers["Prefix"] + " " + headers['Subject']  # type: ignore
+        headers["Subject"] = subject
         msg["Message-ID"] = email.utils.make_msgid(
             domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
@@ -1257,14 +1283,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         mimetype = attachment.get('mimetype') or 'application/octet-stream'
         maintype, subtype = mimetype.split('/', 1)
+        if not attachment.get('file') and not attachment.get('path'):
+            raise ValueError(n_("No input provided."))
         if attachment.get('file'):
-            afile = attachment['file']
+            # noinspection PyUnresolvedReferences
+            data = attachment['file'].read()  # type: ignore
         else:
-            # TODO use a with context?
             if maintype == "text":
-                afile = open(attachment['path'])
+                with open(attachment['path'], 'r') as ft:
+                    data = ft.read()
             else:
-                afile = open(str(attachment['path']), 'rb')
+                with open(attachment['path'], 'rb') as fb:
+                    data = fb.read()
         # Only support common types
         factories = {
             'application': email.mime.application.MIMEApplication,
@@ -1272,9 +1302,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'image': email.mime.image.MIMEImage,
             'text': email.mime.text.MIMEText,
         }
-        ret = factories[maintype](afile.read(), _subtype=subtype)
-        if not attachment.get('file'):
-            afile.close()
+        ret = factories[maintype](data, _subtype=subtype)
         if attachment.get('filename'):
             ret.add_header('Content-Disposition', 'attachment',
                            filename=attachment['filename'])
@@ -1345,9 +1373,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def safe_compile(self, rs: RequestState, target_file: str,
-                     cwd: AnyStr, runs: int, errormsg: Optional[str]
-                     ) -> pathlib.Path:
+    def safe_compile(self, rs: RequestState, target_file: str, cwd: PathLike,
+                     runs: int, errormsg: Optional[str]) -> pathlib.Path:
         """Helper to compile latex documents in a safe way.
 
         This catches exepctions during compilation and displays a more helpful
@@ -1494,7 +1521,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 pdf_file = "{}.pdf".format(tex_file_name)
             path = self.safe_compile(
-                rs, tex_file_name, cwd=str(work_dir), runs=runs,
+                rs, tex_file_name, cwd=work_dir, runs=runs,
                 errormsg=errormsg)
             if path.exists():
                 return self.send_file(
@@ -1522,8 +1549,8 @@ class Worker(threading.Thread):
         # noinspection PyProtectedMember
         rrs = RequestState(
             sessionkey=rs.sessionkey, apitoken=rs.apitoken, user=rs.user,
-            request=rs.request, response=None, notifications=[],
-            mapadapter=rs.urls, requestargs=rs.requestargs, errors=[],
+            request=rs.request, notifications=[], mapadapter=rs.urls,
+            requestargs=rs.requestargs, errors=[],
             values=copy.deepcopy(rs.values), lang=rs.lang, gettext=rs.gettext,
             ngettext=rs.ngettext, coders=rs._coders, begin=rs.begin)
         # noinspection PyProtectedMember
@@ -1557,7 +1584,7 @@ class Worker(threading.Thread):
                     logger.debug(f"Task {name} aborted.")
                     raise
 
-        super().__init__(target=runner, daemon=False, *args, **kwargs)
+        super().__init__(target=runner, daemon=False, args=args, kwargs=kwargs)
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1571,7 +1598,8 @@ def reconnoitre_ambience(obj: AbstractFrontend,
     """
     Scout = collections.namedtuple('Scout', ('getter', 'param_name',
                                              'object_name', 'dependencies'))
-    t = tuple()
+    # Shorthand for an empty tuple.
+    t = tuple()  # type: ignore
 
     def do_assert(x):
         if not x:
@@ -1666,7 +1694,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
 F = TypeVar('F', bound=Callable)
 
 
-def access(*roles: Role, modi: Collection[str] = None,
+def access(*roles: Role, modi: AbstractSet[str] = None,
            check_anti_csrf: bool = None) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
@@ -1677,7 +1705,8 @@ def access(*roles: Role, modi: Collection[str] = None,
         on this endpoint. If not specified, it will be enabled, if "POST" is in
         the allowed methods.
     """
-    modi = modi or {"GET", "HEAD"}
+    if modi is None:
+        modi = {"GET", "HEAD"}
     access_list = set(roles)
 
     def decorator(fun: F) -> F:
@@ -1691,7 +1720,6 @@ def access(*roles: Role, modi: Collection[str] = None,
                 expects_persona = any('droid' not in role
                                       for role in access_list)
                 if rs.user.roles == {"anonymous"} and expects_persona:
-                    # noinspection PyProtectedMember
                     params = {
                         'wants': rs._coders['encode_parameter'](
                             "core/index", "wants", rs.request.url,
@@ -1709,28 +1737,29 @@ def access(*roles: Role, modi: Collection[str] = None,
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
 
-        new_fun.access_list = access_list
-        new_fun.modi = modi
-        new_fun.check_anti_csrf =\
-            (check_anti_csrf
-             if check_anti_csrf is not None
-             else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
+        assert modi is not None
+        new_fun.access_list = access_list  # type: ignore
+        new_fun.modi = modi  # type: ignore
+        new_fun.check_anti_csrf = (  # type: ignore
+            check_anti_csrf if check_anti_csrf is not None
+            else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
         return cast(F, new_fun)
 
     return decorator
 
 
+# TODO: Do this properly with Protocol
 class PeriodicMethod:
     def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
         pass
 
 
 class PeriodicJob(PeriodicMethod):
-    cron: CdEDBObject = None
+    cron: CdEDBObject
 
 
 def periodic(name: str, period: int = 1
-             ) -> Callable[[PeriodicMethod], PeriodicJob]:
+             ) -> Callable[[F], F]:
     """This decorator marks a function of a frontend for periodic execution.
 
     This just adds a flag and all of the actual work is done by the
@@ -1740,8 +1769,8 @@ def periodic(name: str, period: int = 1
     :param period: the interval in which to execute this job (e.g. period ==
       2 means every second invocation of the CronFrontend)
     """
-    def decorator(fun: PeriodicMethod) -> PeriodicJob:
-        fun.cron = {
+    def decorator(fun: F) -> F:
+        fun.cron = {  # type: ignore
             'name': name,
             'period': period,
         }
@@ -1908,7 +1937,7 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
         else:
             spec.append(arg)
 
-    def wrap(fun: Callable) -> Callable:
+    def wrap(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
@@ -1932,7 +1961,7 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
 def request_extractor(
         rs: RequestState, args: Iterable[Tuple[str, str]],
         constraints: Collection[Tuple[
-            Callable[[Mapping[str, Any]], bool], Error]] = None) -> CdEDBObject:
+            Callable[[CdEDBObject], bool], Error]] = None) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -1979,8 +2008,9 @@ def request_dict_extractor(rs: RequestState,
     def fun(_, rs: RequestState, data: CdEDBObject) -> CdEDBObject:
         return data
 
-    # This looks wrong. but is correct.
-    return fun(None, rs)
+    # This looks wrong. but is correct, as the `REQUESTdatadict` decorator
+    # constructs the data parameter `fun` expects.
+    return fun(None, rs)  # type: ignore
 
 
 # noinspection PyPep8Naming
@@ -2081,7 +2111,7 @@ def mailinglist_guard(argname: str = "mailinglist_id",
 
 
 def check_validation(rs: RequestState, assertion: str, value: T,
-                     name: str = None, **kwargs: Any) -> Optional[T]:
+                     name: str = None, **kwargs: Any) -> T:
     """Helper to perform parameter sanitization.
 
     :param assertion: name of validation routine to call
@@ -2104,9 +2134,9 @@ def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
     be the main thing to use, however it is even more preferable to use
     :py:meth:`BaseApp.redirect`.
     """
-    rs.response = construct_redirect(rs.request, url)
-    rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
-    return rs.response
+    response = construct_redirect(rs.request, url)
+    response.headers.add('X-Generation-Time', str(now() - rs.begin))
+    return response
 
 
 def construct_redirect(request: werkzeug.Request,
@@ -2212,7 +2242,7 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
         for anid in existing if anid not in deletes
         for key, value in spec.items())
     data = request_extractor(rs, params)
-    ret = {
+    ret: Dict[int, Optional[CdEDBObject]] = {
         anid: {key: data[f"{key}_{anid}"] for key in spec}
         for anid in existing if anid not in deletes
     }
@@ -2220,7 +2250,7 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
         if anid in deletes:
             ret[anid] = None
         else:
-            ret[anid]['id'] = anid
+            ret[anid]['id'] = anid  # type: ignore
     marker = 1
     while marker < 2 ** 10:
         will_create = unwrap(
@@ -2231,7 +2261,7 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
             data = request_extractor(rs, params)
             ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
             if additional:
-                ret[-marker].update(additional)
+                ret[-marker].update(additional)  # type: ignore
         else:
             break
         marker += 1
@@ -2248,7 +2278,7 @@ class CustomCSVDialect(csv.Dialect):
     escapechar = None
 
 
-def csv_output(data: Collection[CdEDBObject], fields: Iterable[str],
+def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
                substitutions: Mapping[str, Mapping] = None) -> str:
     """Generate a csv representation of the passed data.
@@ -2263,7 +2293,7 @@ def csv_output(data: Collection[CdEDBObject], fields: Iterable[str],
     substitutions = substitutions or {}
     outfile = io.StringIO()
     writer = csv.DictWriter(
-        outfile, fields, dialect=CustomCSVDialect)
+        outfile, fields, dialect=CustomCSVDialect())
     if writeheader:
         writer.writeheader()
     for original in data:
@@ -2300,7 +2330,8 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
     return json_serialize(json_data)
 
 
-def calculate_db_logparams(offset: int, length: int) -> Tuple[int, int]:
+def calculate_db_logparams(offset: Optional[int], length: int
+                           ) -> Tuple[Optional[int], int]:
     """Modify the offset and length values used in the frontend to
     allow for guaranteed valid sql queries.
     """
@@ -2308,14 +2339,15 @@ def calculate_db_logparams(offset: int, length: int) -> Tuple[int, int]:
     _length = length
     if _offset and _offset < 0:
         # Avoid non-positive lengths
-        if -offset < length:
+        if -_offset < length:
             _length = _length + _offset
         _offset = 0
 
     return _offset, _length
 
 
-def calculate_loglinks(rs: RequestState, total: int, offset: int, length: int
+def calculate_loglinks(rs: RequestState, total: int,
+                       offset: Optional[int], length: int
                        ) -> Dict[str, Union[werkzeug.MultiDict,
                                             List[werkzeug.MultiDict]]]:
     """Calculate the target parameters for the links in the log pagination bar.
@@ -2327,31 +2359,37 @@ def calculate_loglinks(rs: RequestState, total: int, offset: int, length: int
     # The true offset does represent the acutal count of log entries before
     # the first shown entry. This is done magically, if no offset has been
     # given.
-    if offset != 0 and not offset:
+    if offset is None:
         trueoffset = length * ((total - 1) // length)
     else:
         trueoffset = offset
+
+    # Create values sets for the necessary links.
+    new_md = lambda: werkzeug.MultiDict(rs.values)
     loglinks = {
-        "first": werkzeug.MultiDict(rs.values),
-        "previous": werkzeug.MultiDict(rs.values),
-        "pre-current": [werkzeug.MultiDict(rs.values) for x in range(3)
-                        if trueoffset - x * length > 0],
-        "current": werkzeug.MultiDict(rs.values),
-        "post-current": [werkzeug.MultiDict(rs.values) for x in range(3)
-                         if trueoffset + (x + 1) * length < total],
-        "next": werkzeug.MultiDict(rs.values),
-        "last": werkzeug.MultiDict(rs.values),
+        "first": new_md(),
+        "previous": new_md(),
+        "current": new_md(),
+        "next": new_md(),
+        "last": new_md(),
     }
+    pre = [new_md() for x in range(3) if trueoffset - x * length > 0]
+    post = [new_md() for x in range(3) if trueoffset + x * length < total]
+
+    # Fix the offset for each set of values.
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
-    for x, pre in enumerate(loglinks["pre-current"]):
-        loglinks["pre-current"][x]["offset"] = (
-                trueoffset - (len(loglinks["pre-current"]) - x) * length
+    for x, _ in enumerate(pre):
+        pre[x]["offset"] = (
+                trueoffset - (len(pre) - x) * length
         )
     loglinks["previous"]["offset"] = trueoffset - length
-    for x, post in enumerate(loglinks["post-current"]):
-        loglinks["post-current"][x]["offset"] = trueoffset + (x + 1) * length
+    for x, _ in enumerate(post):
+        post[x]["offset"] = trueoffset + (x + 1) * length
     loglinks["next"]["offset"] = trueoffset + length
     loglinks["current"]["offset"] = trueoffset
 
-    return loglinks
+    # piece everything together
+    ret: Dict[str, Union[werkzeug.MultiDict, List[werkzeug.MultiDict]]]
+    ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
+    return ret

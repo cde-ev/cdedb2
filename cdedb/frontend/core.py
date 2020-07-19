@@ -226,27 +226,27 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
         if wants:
-            basic_redirect(rs, wants)
+            response = basic_redirect(rs, wants)
         elif "member" in rs.user.roles and "searchable" not in rs.user.roles:
             data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             if not data['decided_search']:
-                self.redirect(rs, "cde/consent_decision_form")
+                response = self.redirect(rs, "cde/consent_decision_form")
             else:
-                self.redirect(rs, "core/index")
+                response = self.redirect(rs, "core/index")
         else:
-            self.redirect(rs, "core/index")
-        rs.response.set_cookie("sessionkey", sessionkey, httponly=True,
-                               secure=True, samesite="Lax")
-        return rs.response
+            response = self.redirect(rs, "core/index")
+        response.set_cookie("sessionkey", sessionkey,  # type: ignore
+                               httponly=True, secure=True, samesite="Lax")
+        return response
 
     # We don't check anti CSRF tokens here, since logging does not harm anyone.
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
         """Invalidate session."""
         self.coreproxy.logout(rs)
-        self.redirect(rs, "core/index")
-        rs.response.delete_cookie("sessionkey")
-        return rs.response
+        response = self.redirect(rs, "core/index")
+        response.delete_cookie("sessionkey")
+        return response
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))
@@ -259,17 +259,17 @@ class CoreFrontend(AbstractFrontend):
         """
         rs.ignore_validation_errors()  # missing values are ok
         if wants:
-            basic_redirect(rs, wants)
+            response = basic_redirect(rs, wants)
         else:
-            self.redirect(rs, "core/index")
+            response = self.redirect(rs, "core/index")
 
         if locale in self.conf["I18N_LANGUAGES"]:
-            rs.response.set_cookie(
+            response.set_cookie(
                 "locale", locale,
                 expires=now() + datetime.timedelta(days=10 * 365))
         else:
             rs.notify("error", n_("Unsupported locale"))
-        return rs.response
+        return response
 
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata(("view_specifier", "printable_ascii"),
@@ -288,13 +288,13 @@ class CoreFrontend(AbstractFrontend):
         :param wants: URL to redirect to (typically URL of the previous page)
         """
         if wants:
-            basic_redirect(rs, wants)
+            response = basic_redirect(rs, wants)
         else:
-            self.redirect(rs, "core/index")
+            response = self.redirect(rs, "core/index")
 
         # Exit early on validation errors
         if rs.has_validation_errors():
-            return rs.response
+            return response
 
         enabled_views = set(rs.request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, "")
                             .split(','))
@@ -304,15 +304,16 @@ class CoreFrontend(AbstractFrontend):
             enabled_views.update(changed_views)
         else:
             enabled_views -= changed_views
-        rs.response.set_cookie(
+        response.set_cookie(
             ADMIN_VIEWS_COOKIE_NAME,
             ",".join(enabled_views & ALL_ADMIN_VIEWS),
             expires=now() + datetime.timedelta(days=10 * 365))
-        return rs.response
+        return response
 
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:
         """Convenience entry point for own data."""
+        assert rs.user.persona_id is not None
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("persona")
