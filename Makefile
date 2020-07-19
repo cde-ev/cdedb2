@@ -22,6 +22,7 @@ help:
 
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
+MYPYBIN ?= mypy
 
 doc:
 	bin/create_email_template_list.sh .
@@ -275,3 +276,11 @@ test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json \
 	sql-test sql-test-shallow lint check single-check .coverage coverage \
 	dump-html validate-html
 
+mypy-backend:
+	${MYPYBIN} cdedb/backend/
+
+mypy-frontend:
+	${MYPYBIN} cdedb/frontend/
+
+mypy:
+	${MYPYBIN} cdedb/
