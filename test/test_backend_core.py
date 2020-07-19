@@ -178,7 +178,7 @@ class TestCoreBackend(BackendTest):
         self.assertTrue(self.core.verify_ids(self.key, {1, 2, 5, 100}))
         self.assertFalse(self.core.verify_ids(self.key, {123456}))
         # Hades is archived.
-        self.assertFalse(self.core.verify_ids(self.key, {8}))
+        self.assertTrue(self.core.verify_ids(self.key, {8}, is_archived=True))
         self.assertFalse(self.core.verify_ids(self.key, {8}, is_archived=False))
         self.assertTrue(self.core.verify_ids(self.key, {8}, is_archived=None))
         self.assertTrue(self.core.verify_ids(self.key, {1, 8}, is_archived=None))

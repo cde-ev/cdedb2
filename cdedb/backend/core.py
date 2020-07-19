@@ -1761,7 +1761,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def verify_ids(self, rs: RequestState, ids: Collection[int],
-                   is_archived: bool = False) -> bool:
+                   is_archived: bool = None) -> bool:
         """Check that persona ids do exist.
 
         :param is_archived: If given, check the given archival status.
