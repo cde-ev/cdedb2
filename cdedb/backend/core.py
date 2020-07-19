@@ -1573,7 +1573,19 @@ class CoreBackend(AbstractBackend):
     @internal
     @access("persona")
     def quota(self, rs: RequestState, ids: Collection[int] = None) -> int:
-        """Log quota restricted accesses. Return new total."""
+        """Log quota restricted accesses. Return new total.
+
+        This takes a list of (persona) ids the user wants to access and logs
+        the number of profiles accessed on a given day this way.
+        The users own account is excempt from this logging.
+
+        We either insert the new accesses into the quota table or add them if
+        an entry already exists, as entries are unique across persona_id and
+        date.
+
+        :returns: The number of profiles (other than his own) the user has
+            accessed today including the ones given with this call, if any.
+        """
         ids = affirm_set("id", ids or set())
         query = ("INSERT INTO core.quota (queries, persona_id, qdate)"
                  " VALUES (%s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
