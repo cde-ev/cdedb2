@@ -43,15 +43,15 @@
 {% macro href(ref, label, readonly=False, icon=None, aclass='', active=False, title='', rel='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {{ dict(
-    class=" ".join(filter(None, [
+    class=" ".join([
         aclass,
-        "active" if active,
-        ("disabled" if 'btn' in aclass else "link-disabled") if readonly,
-    ])),
+        "active" if active else "",
+        ("disabled" if 'btn' in aclass else "link-disabled") if readonly else "",
+    ]),
     title=title,
     **{ "aria-current": "page" if active }
 )|xmlattr }}{# We use the `active` attribute for navigation only #}>
-{%- if icon %}{{ make_icon(icon) }}&nbsp;{% endif %}{{ label }}
+{{ make_icon(icon) if icon }} {{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
@@ -67,11 +67,11 @@
               Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
 {% macro make_icon(icon, fixed_width=True, aclass="", title=None, arialabel=None) -%}
     <span{{ dict(
-        class=" ".join(filter(None, [
+        class=" ".join([
             aclass,
             "fas fa-{}".format(icon) if " " not in icon else icon,
-            "fa-fw" if fixed_width,
-        ])),
+            "fa-fw" if fixed_width else "",
+        ]),
         title=title,
         **{ "aria-hidden": "true" }
     )|xmlattr }}></span>
@@ -184,12 +184,12 @@
 {% macro breadcrumb_link(ref, label, icon=None, active=False, readonly=False) %}
     {%- if active or readonly -%} {#- TODO use actual bootstrap readonly anchor -#}
         <li{% if active %} class="active" aria-current="location"{% endif %}>
-            {{ make_icon(icon) }}
+            {{ make_icon(icon) if icon }}
             {{ label -}}
         </li>
     {%- else -%}
         <li><a href="{{ ref }}">
-            {{ make_icon(icon) }}
+            {{ make_icon(icon) if icon }}
             {{ label -}}
         </a></li>
     {%- endif -%}
