@@ -139,7 +139,7 @@ class CoreBackend(AbstractBackend):
           fulltext search
         """
         attributes = (
-            "id", "title", "username", "display_name", "given_names",
+            "title", "username", "display_name", "given_names",
             "family_name", "birth_name", "name_supplement", "birthday",
             "telephone", "mobile", "address_supplement", "address",
             "postal_code", "location", "country", "address_supplement2",
