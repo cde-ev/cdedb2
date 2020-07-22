@@ -1124,7 +1124,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not fields:
             raise ValueError(n_("Cannot download query result without fields"
                                 " of interest."))
-        fields = sum((csvfield.split(',') for csvfield in fields), start=[])
+        fields = sum((csvfield.split(',') for csvfield in fields), [])
         filename += f".{kind}"
         if kind == "csv":
             csv_data = csv_output(result, fields, substitutions=substitutions)
