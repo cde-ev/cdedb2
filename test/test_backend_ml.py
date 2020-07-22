@@ -207,6 +207,15 @@ class TestMlBackend(BackendTest):
             'title': 'Proletarier aller Länder',
         }
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['moderators'] |= {100000}
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['moderators'] -= {100000}
+        # Hades is archived.
+        new_data['moderators'] |= {8}
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['moderators'] -= {8}
         new_data['local_part'] += "x"
         new_data['registration_stati'] = [const.RegistrationPartStati.guest]
         with self.assertRaises(ValueError):

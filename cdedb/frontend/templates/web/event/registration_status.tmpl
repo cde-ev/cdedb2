@@ -26,6 +26,11 @@
             {% endtrans %}
         </div>
     {% endif %}
+    {% if ambience['event']['registration_text'] %}
+        {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
+            {{ ambience['event']['registration_text']|md }}
+        {% endcall %}
+    {% endif %}
     {% if not registration['payment'] and fee %}
     {% if ambience['event']['iban'] %}
         <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>

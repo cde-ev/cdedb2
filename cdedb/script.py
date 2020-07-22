@@ -23,10 +23,11 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
 from cdedb.common import make_proxy
-from cdedb.database.connection import IrradiatedConnection
+from cdedb.database.connection import IrradiatedConnection, Atomizer
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+
 
 class User:
     def __init__(self, persona_id):
@@ -43,13 +44,13 @@ class User:
         self.family_name = None
 
 
+
 class RequestState:
     def __init__(self, persona_id, conn):
         self.ambience = None
         self.sessionkey = None
         self.user = User(persona_id)
         self.request = None
-        self.response = None
         self.notifications = None
         self.urls = None
         self.requestargs = None
@@ -68,6 +69,7 @@ class RequestState:
         self._errors = None
         self.validation_appraised = True
         self.csrf_alert = False
+
 
 def setup(persona_id, dbuser, dbpassword, check_system_user=True, dbname='cdb'):
     """This sets up the database.
@@ -100,6 +102,7 @@ def setup(persona_id, dbuser, dbpassword, check_system_user=True, dbname='cdb'):
 
     return rs
 
+
 def make_backend(realm, proxy=True):
     """Instantiate backend objects and wrap them in proxy shims.
 
@@ -108,17 +111,17 @@ def make_backend(realm, proxy=True):
     :returns: a new backend
     """
     if realm == "core":
-        backend = CoreBackend("/etc/cdedb-application-config.py")
+        backend = CoreBackend()
     elif realm == "cde":
-        backend = CdEBackend("/etc/cdedb-application-config.py")
+        backend = CdEBackend()
     elif realm == "past_event":
-        backend = PastEventBackend("/etc/cdedb-application-config.py")
+        backend = PastEventBackend()
     elif realm == "ml":
-        backend = MlBackend("/etc/cdedb-application-config.py")
+        backend = MlBackend()
     elif realm == "assembly":
-        backend = AssemblyBackend("/etc/cdedb-application-config.py")
+        backend = AssemblyBackend()
     elif realm == "event":
-        backend = EventBackend("/etc/cdedb-application-config.py")
+        backend = EventBackend()
     else:
         raise ValueError("Unrecognized realm")
     if proxy:

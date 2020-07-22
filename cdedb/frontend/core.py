@@ -593,11 +593,11 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
         anid, errs = validate.check_cdedbid(phrase, "phrase")
         if not errs:
-            if self.coreproxy.verify_ids(rs, (anid,)):
+            if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
                 return self.redirect_show_user(rs, anid)
         anid, errs = validate.check_id(phrase, "phrase")
         if not errs:
-            if self.coreproxy.verify_ids(rs, (anid,)):
+            if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
                 return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         search = [("username,family_name,given_names,display_name",
@@ -1394,37 +1394,40 @@ class CoreFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.modify_membership_form(rs, persona_id)
-        code = self.coreproxy.change_membership(rs, persona_id, is_member)
-        self.notify_return_code(rs, code)
+        # We really don't want to go halfway here.
+        with Atomizer(rs):
+            code = self.coreproxy.change_membership(rs, persona_id, is_member)
+            self.notify_return_code(rs, code)
 
-        if not is_member:
-            lastschrift_ids = self.cdeproxy.list_lastschrift(
-                rs, persona_ids=(persona_id,), active=None)
-            lastschrifts = self.cdeproxy.get_lastschrifts(
-                rs, lastschrift_ids.keys())
-            active_permits = []
-            for lastschrift in lastschrifts.values():
-                if not lastschrift['revoked_at']:
-                    active_permits.append(lastschrift['id'])
-            if active_permits:
-                transaction_ids = self.cdeproxy.list_lastschrift_transactions(
-                    rs, lastschrift_ids=active_permits,
-                    stati=(const.LastschriftTransactionStati.issued,))
-                if transaction_ids:
-                    subject = ("Einzugsermächtigung zu ausstehender "
-                               "Lastschrift widerrufen.")
-                    self.do_mail(rs, "pending_lastschrift_revoked",
-                                 {'To': (self.conf["MANAGEMENT_ADDRESS"],),
-                                  'Subject': subject},
-                                 {'persona_id': persona_id})
-                for active_permit in active_permits:
-                    data = {
-                        'id': active_permit,
-                        'revoked_at': now(),
-                    }
-                    code = self.cdeproxy.set_lastschrift(rs, data)
-                    self.notify_return_code(rs, code,
-                                            success=n_("Permit revoked."))
+            if not is_member:
+                lastschrift_ids = self.cdeproxy.list_lastschrift(
+                    rs, persona_ids=(persona_id,), active=None)
+                lastschrifts = self.cdeproxy.get_lastschrifts(
+                    rs, lastschrift_ids.keys())
+                active_permits = []
+                for lastschrift in lastschrifts.values():
+                    if not lastschrift['revoked_at']:
+                        active_permits.append(lastschrift['id'])
+                if active_permits:
+                    transaction_ids = (
+                        self.cdeproxy.list_lastschrift_transactions(
+                            rs, lastschrift_ids=active_permits,
+                            stati=(const.LastschriftTransactionStati.issued,)))
+                    if transaction_ids:
+                        subject = ("Einzugsermächtigung zu ausstehender "
+                                   "Lastschrift widerrufen.")
+                        self.do_mail(rs, "pending_lastschrift_revoked",
+                                     {'To': (self.conf["MANAGEMENT_ADDRESS"],),
+                                      'Subject': subject},
+                                     {'persona_id': persona_id})
+                    for active_permit in active_permits:
+                        data = {
+                            'id': active_permit,
+                            'revoked_at': now(),
+                        }
+                        code = self.cdeproxy.set_lastschrift(rs, data)
+                        self.notify_return_code(rs, code,
+                                                success=n_("Permit revoked."))
 
         return self.redirect_show_user(rs, persona_id)
 

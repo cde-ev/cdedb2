@@ -479,6 +479,12 @@ class MlBackend(AbstractBackend):
             new = moderator_ids - existing
             deleted = existing - moderator_ids
             if new:
+                if not self.core.verify_ids(rs, new, is_archived=False):
+                    raise ValueError(n_(
+                        "Some of these users do not exist or are archived."))
+                if not self.core.verify_personas(rs, new, {"ml"}):
+                    raise ValueError(n_(
+                        "Some of these users are not ml-users."))
                 for anid in new:
                     new_mod = {
                         'persona_id': anid,

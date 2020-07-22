@@ -59,8 +59,8 @@
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         {{ util.form_input_static(label="E-Mail", value=values['username']) }}
         {% if ("telephone" in shown_fields or "mobile" in shown_fields) and 'event' in admin_bits %}
-            {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone")) }}
+            {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if "weblink" in shown_fields and 'cde' in admin_bits %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}

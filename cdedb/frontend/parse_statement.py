@@ -133,7 +133,7 @@ STATEMENT_DB_ID_REMOVE = (
 )
 
 # Minimum amount for us to consider a transaction an Event fee.
-AMOUNT_MIN_EVENT_FEE = 20
+AMOUNT_MIN_EVENT_FEE = 40
 
 
 BackendGetter = Callable[[RequestState, int], CdEDBObject]

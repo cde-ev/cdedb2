@@ -21,6 +21,11 @@
 {% block content %}
     {% if "event" in user.roles %}
         <div id="description">{{ ambience['event']['description']|md }}</div>
+    {% else %}
+        <div class="alert alert-info" role="alert" id="instructors-not-visible">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}More detailed information about the event is visible to logged in event users.{% endtrans %}
+        </div>
     {% endif %}
 
     <dl class="dl-horizontal">
