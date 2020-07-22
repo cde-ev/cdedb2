@@ -358,6 +358,17 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Inga Iota", div="moderator_list")
         self.assertNonPresence("Anton Armin A. Administrator", div="moderator_list")
         f = self.response.forms['addmoderatorform']
+        # Check that you cannot add non-existing or archived moderators.
+        errormsg = "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
+        f['moderator_ids'] = "DB-100000-4"
+        self.submit(f, check_notification=False)
+        self.assertPresence(errormsg, div="addmoderatorform")
+        # Hades is archived.
+        f['moderator_ids'] = "DB-8-6"
+        self.submit(f, check_notification=False)
+        self.assertPresence(errormsg, div="addmoderatorform")
+
+        # Now for real.
         f['moderator_ids'] = "DB-9-4, DB-1-9"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
@@ -492,14 +503,23 @@ class TestMlFrontend(FrontendTest):
         f['maxsize'] = 512
         f['is_active'].checked = True
         f['notes'] = "Noch mehr Gemunkel."
-        f['moderator_ids'] = "DB-3-5, DB-7-8"
         f['domain'] = 1
+        # Check that you cannot add non-existing or archived moderators.
+        errormsg = "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
+        f['moderator_ids'] = "DB-100000-4"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("moderator_ids", errormsg)
+        # Hades is archived.
+        f['moderator_ids'] = "DB-8-6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("moderator_ids", errormsg)
+        # Now for real.
+        f['moderator_ids'] = "DB-3-5, DB-7-8"
 
         # Check that no lists with the same address can be made
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Uneindeutige Mailadresse")
+        self.assertValidationError("local_part", "Uneindeutige Mailadresse")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
