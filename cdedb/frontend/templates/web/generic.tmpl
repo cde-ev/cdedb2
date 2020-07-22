@@ -31,8 +31,8 @@
         <h4 class="heading-underline">{{ gettext("Contact Information") }}</h4>
         {{ util.form_input_text(name="username", label=gettext("E-Mail")) }}
         {% if realm in ("cde", "event") %}
-            {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone")) }}
+            {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if realm == "cde" %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}

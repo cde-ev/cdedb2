@@ -188,7 +188,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             from cdedb.backend.core import CoreBackend
         self.core: 'CoreBackend'
         if is_core:
-            self.core = cast('CoreBackend', self)
+            # self.core = cast('CoreBackend', self)
+            self.core = make_proxy(self, internal=True)  # type: ignore
         else:
             # Import here since we otherwise have a cyclic import.
             # I don't see how we can get out of this ...

@@ -32,9 +32,9 @@
             {% else %}
                 {% with (icon, caption) = {
                         'ml': ('envelope', gettext("Mailinglists")),
-                        'event': ('blackboard', gettext("Events")),
+                        'event': ('chalkboard-teacher', gettext("Events")),
                         'cde': ('education', gettext("Members")),
-                        'bullhorn': ('education', gettext("Assemblies"))
+                        'assembly': ('bullhorn', gettext("Assemblies"))
                     }.get(values['realm']) %}
                     {{ util.form_input_static(label=gettext("Realm"), small=True, icon=icon, value=caption) }}
                 {% endwith %}
@@ -54,9 +54,9 @@
                                       label=gettext("Gender"), small=True, aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD",
                                     type="date", small=True, aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="telephone", label=gettext("Phone"), small=True,
+            {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), small=True,
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="address", label=gettext("Street, Nr."), small=True,
                                     aclass="genesis-realm-specific") }}

@@ -255,11 +255,12 @@ class TestCdEFrontend(FrontendTest):
         f['qval_fulltext'] = "1"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertPresence("4 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Anton", div='result')  # ... ID
+        self.assertPresence("3 Mitglieder gefunden", div='result-count')
         self.assertPresence("Akira", div='result')  # ... Address
         self.assertPresence("Ferdinand", div='result')  # ... Address
         self.assertPresence("Inga", div='result')  # ... Address
+        # fulltext search must not match on DB-Id
+        self.assertNonPresence("Anton", div='result')  # ... ID
 
         # by zip: upper
         self.traverse({'description': 'CdE-Mitglied suchen'})
@@ -620,6 +621,22 @@ class TestCdEFrontend(FrontendTest):
         else:
             self.assertNotIn("revokeform", self.response.forms)
             self.assertNotIn("receiptform3", self.response.forms)
+
+    def test_membership_lastschrift_revoke(self):
+        self.login(USER_DICT["vera"])
+        self.admin_view_profile('berta')
+        self.assertPresence("Einzugsermächtigung", div="balance")
+        self.assertNonPresence("Neue Einzugsermächtigung", div="balance")
+        self.traverse({'description': 'Status ändern'})
+        f = self.response.forms['modifymembershipform']
+        self.submit(f)
+        self.assertPresence("Lastschriftmandat widerrufen.",
+                            div="notifications")
+        self.assertNonPresence("Einzugsermächtigung", div="balance")
+        self.logout()
+        self.login(USER_DICT["farin"])
+        self.get('/cde/user/2/lastschrift')
+        self.assertPresence("Keine aktive Einzugsermächtigung")
 
     @as_users("farin")
     def test_lastschrift_subject_limit(self, user):

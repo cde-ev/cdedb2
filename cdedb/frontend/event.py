@@ -5281,7 +5281,8 @@ class EventFrontend(AbstractUserFrontend):
                 rs, query, event_id=event_id)
         else:
             rs.values['is_search'] = is_search = False
-        return self._send_query_result(rs, download, scope, query, params)
+        return self._send_query_result(rs, download, "registration_result",
+                                       scope, query, params)
 
     @staticmethod
     def make_course_query_spec(event):
@@ -5440,7 +5441,8 @@ class EventFrontend(AbstractUserFrontend):
                 rs, query, event_id=event_id)
         else:
             rs.values['is_search'] = is_search = False
-        return self._send_query_result(rs, download, scope, query, params)
+        return self._send_query_result(rs, download, "course_result", scope,
+                                       query, params)
 
     @staticmethod
     def make_lodgement_query_spec(event):
@@ -5595,9 +5597,10 @@ class EventFrontend(AbstractUserFrontend):
                 rs, query, event_id=event_id)
         else:
             rs.values['id_search'] = is_search = False
-        return self._send_query_result(rs, download, scope, query, params)
+        return self._send_query_result(rs, download, "lodgement_result", scope,
+                                       query, params)
 
-    def _send_query_result(self, rs, download, scope, query, params):
+    def _send_query_result(self, rs, download, filename, scope, query, params):
         if download:
             fields = []
             for csvfield in query.fields_of_interest:
@@ -5608,13 +5611,13 @@ class EventFrontend(AbstractUserFrontend):
                                       substitutions=params['choices'])
                 return self.send_csv_file(
                     rs, data=csv_data, inline=False,
-                    filename="{}_course_result.csv".format(shortname))
+                    filename=f"{shortname}_{filename}.csv")
             elif download == "json":
                 json_data = query_result_to_json(
                     params['result'], fields, substitutions=params['choices'])
                 return self.send_file(
                     rs, data=json_data, inline=False,
-                    filename="{}_course_result.json".format(shortname))
+                    filename=f"{shortname}_{filename}.json")
         else:
             if scope == "qview_registration":
                 page = "registration_query"

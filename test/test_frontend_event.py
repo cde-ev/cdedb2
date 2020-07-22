@@ -37,11 +37,12 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("aka@example.cde", div="orga-address")
         self.assertPresence("Erste Hälfte", div="timeframe-parts")
         self.assertNonPresence("Everybody come!")
+        self.assertPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar")
 
         self.traverse({'description': 'Kursliste'})
         self.assertPresence("α. Planetenretten für Anfänger", div='list-courses')
         self.assertPresence("Wir werden die Bäume drücken.", div='list-courses')
-        msg = ("Die Kursleiter sind nur für eingeloggte Veranstaltungs Nutzer "
+        msg = ("Die Kursleiter sind nur für eingeloggte Veranstaltungs-Nutzer "
                "sichtbar.")
         self.assertPresence(msg, div="instructors-not-visible")
         self.assertNonPresence("Bernd Lucke")
@@ -247,6 +248,7 @@ class TestEventFrontend(FrontendTest):
                             "Zweite Hälfte: 11.11.2222 – 30.11.2222",
                             div='timeframe-parts')
         self.assertPresence("Everybody come!", div='description')
+        self.assertNonPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar")
         self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
                             div='timeframe-registration')
         self.assertPresence("aka@example.cde", div='orga-address')
@@ -2812,7 +2814,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
         self.submit(f)
-        self.assertTitle("Fragebogen umordnen (Zusätzlicher Fragebogen) (Große Testakademie 2222)")
+        self.assertTitle("Fragebogen umordnen (Große Testakademie 2222)")
         self.traverse({'description': 'Fragebogen konfigurieren'})
         f = self.response.forms['configurequestionnaireform']
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
