@@ -12,12 +12,9 @@ import decimal
 from passlib.hash import sha512_crypt
 import pathlib
 from os import PathLike
-from typing import (
-    Union, Optional
-)
 
 from typing import (
-    Optional, Collection, Dict, Tuple, Set, List
+    Optional, Collection, Dict, Tuple, Set, List, Union, Any
 )
 
 from cdedb.backend.common import AbstractBackend
@@ -139,7 +136,7 @@ class CoreBackend(AbstractBackend):
           fulltext search
         """
         attributes = (
-            "id", "title", "username", "display_name", "given_names",
+            "title", "username", "display_name", "given_names",
             "family_name", "birth_name", "name_supplement", "birthday",
             "telephone", "mobile", "address_supplement", "address",
             "postal_code", "location", "country", "address_supplement2",
@@ -1773,13 +1770,26 @@ class CoreBackend(AbstractBackend):
         return self.query_exec(rs, query, (rs.sessionkey,))
 
     @access("persona")
-    def verify_ids(self, rs: RequestState, ids: Collection[int]) -> bool:
-        """Check that persona ids do exist."""
+    def verify_ids(self, rs: RequestState, ids: Collection[int],
+                   is_archived: bool = None) -> bool:
+        """Check that persona ids do exist.
+
+        :param is_archived: If given, check the given archival status.
+        """
         ids = affirm_set("id", ids)
+        is_archived = affirm("bool_or_None", is_archived)
         if ids == {rs.user.persona_id}:
             return True
-        query = "SELECT COUNT(*) AS num FROM core.personas WHERE id = ANY(%s)"
-        data = self.query_one(rs, query, (ids,))
+        query = "SELECT COUNT(*) AS num FROM core.personas"
+        constraints: List[str] = ["id = ANY(%s)"]
+        params: List[Any] = [ids]
+        if is_archived is not None:
+            constraints.append("is_archived = %s")
+            params.append(is_archived)
+
+        if constraints:
+            query += " WHERE " + " AND ".join(constraints)
+        data = self.query_one(rs, query, params)
         return data['num'] == len(ids)
 
     @internal

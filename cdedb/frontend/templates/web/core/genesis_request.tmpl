@@ -61,9 +61,9 @@
                                       label=gettext("Gender"), small=True, aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD",
                                     type="date", small=True, aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="telephone", label=gettext("Phone"), small=True,
+            {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), small=True,
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="address", label=gettext("Street, Nr."), small=True,
                                     aclass="genesis-realm-specific", info=gettext("Example: Dream Alley 1")) }}

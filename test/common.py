@@ -3,10 +3,10 @@
 import collections.abc
 import datetime
 import email.parser
+import email.message
 import email.policy
 import functools
 import gettext
-import inspect
 import os
 import pathlib
 import re
@@ -23,10 +23,14 @@ import time
 import copy
 import decimal
 
-from typing import TypeVar, cast, Dict, List, Collection
+from typing import (
+    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr,
+    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection,
+)
 
 import pytz
 import webtest
+import webtest.utils
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -38,7 +42,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, PrivilegeError, RequestState, n_,
-    roles_to_db_role, unwrap, PathLike, CdEDBObject, CdEDBObjectMap,
+    roles_to_db_role, unwrap, PathLike, CdEDBObject, CdEDBObjectMap, now,
 )
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -57,14 +61,14 @@ class NearlyNow(datetime.datetime):
     we use this to avoid nasty work arounds.
     """
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, datetime.datetime):
             delta = self - other
-            return (delta < datetime.timedelta(minutes=10)
-                    and delta > datetime.timedelta(minutes=-10))
+            return (datetime.timedelta(minutes=10) > delta
+                    > datetime.timedelta(minutes=-10))
         return False
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         return not self.__eq__(other)
 
 
@@ -80,7 +84,7 @@ def create_mock_image(file_type: str = "png") -> bytes:
     return afile.read()
 
 
-def nearly_now():
+def nearly_now() -> NearlyNow:
     """Create a NearlyNow."""
     now = datetime.datetime.now(pytz.utc)
     return NearlyNow(
@@ -88,12 +92,14 @@ def nearly_now():
         minute=now.minute, second=now.second, tzinfo=pytz.utc)
 
 
-def json_keys_to_int(obj):
+T = TypeVar("T")
+
+
+@no_type_check
+def json_keys_to_int(obj: T) -> T:
     """Convert dict keys to integers if possible.
 
     This is a restriction of the JSON format allowing only string keys.
-    :type obj: object
-    :rtype obj: object
     """
     if isinstance(obj, collections.abc.Mapping):
         ret = {}
@@ -121,7 +127,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/test/ancillary_files/"
         sample_data: Dict[str, List[CdEDBObject]] = json.load(f)
     ret: Dict[str, CdEDBObjectMap] = {}
     for table, table_data in sample_data.items():
-        data = {}
+        data: CdEDBObjectMap = {}
         _id = 1
         for e in table_data:
             _id = e.get('id', _id)
@@ -144,7 +150,8 @@ def make_backend_shim(backend: B, internal=False) -> B:
     We need to use a function so we can cast the return value.
     We also need to use an inner class so we can provide __getattr__.
 
-    This is similar to the normal make_proxy but encorporates a different wrapper
+    This is similar to the normal make_proxy but encorporates a different
+    wrapper.
     """
 
     sessionproxy = SessionBackend(backend.conf._configpath)
@@ -153,38 +160,49 @@ def make_backend_shim(backend: B, internal=False) -> B:
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
         secrets, backend.conf["DB_PORT"])
     translator = gettext.translation(
-        'cdedb', languages=('de',),
+        'cdedb', languages=['de'],
         localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
 
-    def setup_requeststate(key):
+    def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
+                           ) -> RequestState:
+        """
+        Turn a provided sessionkey or apitoken into a RequestState object.
+
+        This is used to wrap backend calls from the test suite, so we do not
+        have to handle the RequestState in the tests.
+        """
         sessionkey = None
         apitoken = None
 
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        user = sessionproxy.lookuptoken(key, "127.0.0.0")
+        user = sessionproxy.lookuptoken(key, ip)
         if user.roles == {'anonymous'}:
-            user = sessionproxy.lookupsession(key, "127.0.0.0")
+            user = sessionproxy.lookupsession(key, ip)
             sessionkey = key
         else:
             apitoken = key
 
-        rs = RequestState(
+        rs = RequestState(  # type: ignore
             sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
             response=None, notifications=[], mapadapter=None, requestargs=None,
-            errors=[], values={}, lang="de", gettext=translator.gettext,
-            ngettext=translator.ngettext, coders=None, begin=None)
+            errors=[], values=None, lang="de", gettext=translator.gettext,
+            ngettext=translator.ngettext, coders=None, begin=now())
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
-            rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
+            rs.user.orga = backend.orga_info(  # type: ignore
+                rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
-            rs.user.moderator = backend.moderator_info(
+            rs.user.moderator = backend.moderator_info(  # type: ignore
                 rs, rs.user.persona_id)
         return rs
 
-    class Proxy():
+    class Proxy:
+        """
+        Wrap calls to the backend in a access check and provide a RequestState.
+        """
         def __getattr__(self, name):
             attr = getattr(backend, name)
             if any([
@@ -206,7 +224,11 @@ def make_backend_shim(backend: B, internal=False) -> B:
 
 
 class MyTextTestResult(unittest.TextTestResult):
-    """Subclasing the TestResult object to fix the CLI reporting."""
+    """Subclass the TextTestResult object to fix the CLI reporting.
+
+    We keep track of the errors, failures and skips occurring in SubTests,
+    and print a summary at the end of the TestCase itself.
+    """
 
     def __init__(self, *args, **kwargs):
         super(MyTextTestResult, self).__init__(*args, **kwargs)
@@ -234,18 +256,18 @@ class MyTextTestResult(unittest.TextTestResult):
         # Print a comprehensive list of failures and errors in subTests.
         output = []
         if self._subTestErrors:
-            l = len(self._subTestErrors)
+            length = len(self._subTestErrors)
             if self.showAll:
-                s = "ERROR" + ("({})".format(l) if l > 1 else "")
+                s = "ERROR" + (f"({length})" if length > 1 else "")
             else:
-                s = "E" * l
+                s = "E" * length
             output.append(s)
         if self._subTestFailures:
-            l = len(self._subTestFailures)
+            length = len(self._subTestFailures)
             if self.showAll:
-                s = "FAIL" + ("({})".format(l) if l > 1 else "")
+                s = "FAIL" + (f"({length})" if length > 1 else "")
             else:
-                s = "F" * l
+                s = "F" * length
             output.append(s)
         if self._subTestSkips:
             if self.showAll:
@@ -302,55 +324,44 @@ class CdEDBTest(unittest.TestCase):
         return ret
 
 
-class BackendUsingTest(CdEDBTest):
-    used_backends = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.maxDiff = None
-
+class BackendTest(CdEDBTest):
+    """
+    Base class for a TestCase that uses some backends. Needs to be subclassed.
+    """
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        classes = {
-            "core": CoreBackend,
-            "session": SessionBackend,
-            "cde": CdEBackend,
-            "event": EventBackend,
-            "pastevent": PastEventBackend,
-            "ml": MlBackend,
-            "assembly": AssemblyBackend,
-        }
-        for backend in cls.used_backends:
-            if backend == "session":
-                setattr(cls, backend,
-                        cls.initialize_raw_backend(classes[backend]))
-            else:
-                setattr(cls, backend, cls.initialize_backend(classes[backend]))
-
-    @staticmethod
-    def initialize_raw_backend(backendcls):
-        return backendcls()
-
-    @staticmethod
-    def initialize_backend(backendcls):
-        return make_backend_shim(
-            BackendUsingTest.initialize_raw_backend(backendcls), internal=True)
-
-
-class BackendTest(BackendUsingTest):
-    used_backends = ("core",)
+        cls.session = cls.initialize_raw_backend(SessionBackend)
+        cls.core = cls.initialize_backend(CoreBackend)
+        cls.cde = cls.initialize_backend(CdEBackend)
+        cls.event = cls.initialize_backend(EventBackend)
+        cls.pastevent = cls.initialize_backend(PastEventBackend)
+        cls.ml = cls.initialize_backend(MlBackend)
+        cls.assembly = cls.initialize_backend(AssemblyBackend)
 
     def setUp(self):
+        """Reset login state."""
         super().setUp()
         self.key = None
 
     def login(self, user, ip="127.0.0.0"):
-        self.key = self.core.login(None, user['username'], user['password'],
-                                   ip)
+        # noinspection PyTypeChecker
+        self.key = self.core.login(None, user['username'], user['password'], ip)
         return self.key
 
+    @staticmethod
+    def initialize_raw_backend(backendcls: Type[SessionBackend]
+                               ) -> SessionBackend:
+        return backendcls()
 
+    @classmethod
+    def initialize_backend(cls, backendcls: Type[B]) -> B:
+        return make_backend_shim(backendcls(), internal=True)
+
+
+# A reference of the most important attributes for all users. This is used for
+# logging in and the `as_user` decorator.
+# Make sure not to alter this during testing.
 USER_DICT = {
     "anton": {
         'id': 1,
@@ -562,8 +573,12 @@ USER_DICT = {
 }
 
 
-def as_users(*users):
-    def wrapper(fun):
+F = TypeVar("F", bound=Callable)
+
+
+def as_users(*users: str) -> Callable[[F], F]:
+    """Decorate a test to run it as the specified user(s)."""
+    def wrapper(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(self, *args, **kwargs):
             for i, user in enumerate(users):
@@ -577,42 +592,55 @@ def as_users(*users):
                         kwargs['user'] = USER_DICT[user]
                         self.login(USER_DICT[user])
                     fun(self, *args, **kwargs)
-        return new_fun
+        return cast(F, new_fun)
     return wrapper
 
 
-def prepsql(sql):
-    def decorator(fun):
+def prepsql(sql: AnyStr) -> Callable[[F], F]:
+    """Decorate a test to run some arbitrary SQL-code beforehand."""
+    def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(*args, **kwargs):
             execsql(sql)
             return fun(*args, **kwargs)
-        return new_fun
+        return cast(F, new_fun)
     return decorator
 
 
-def execsql(sql):
+def execsql(sql: AnyStr) -> None:
+    """Execute arbitrary SQL-code on the test database."""
     path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
     chmod = ("chmod", "0644")
     psql = ("sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb_test", "-f")
     null = subprocess.DEVNULL
-    with open(path, "w") as f:
+    mode = "w"
+    if isinstance(sql, bytes):
+        mode = "wb"
+    with open(path, mode) as f:
         f.write(sql)
     subprocess.check_call(chmod + (str(path),), stdout=null)
     subprocess.check_call(psql + (str(path),), stdout=null)
 
 
 class FrontendTest(CdEDBTest):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.maxDiff = None
+    """
+    Base class for frontend tests.
+
+    The `setUpClass` provides a new application. The language of the
+    application can be overridden via the `lang` class attribute.
+
+    All webpages encountered during testing can be saved to a temporary
+    directory by specifying `SCRAP_ENCOUNTERED_PAGES` as environment variable.
+    """
+    lang = "de"
+    app: webtest.TestApp
+    response: webtest.TestResponse
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         app = Application()
-        lang = "de"
-        cls.gettext = app.translations[lang].gettext
+        cls.gettext = app.translations[cls.lang].gettext
         cls.app = webtest.TestApp(app, extra_environ={
             'REMOTE_ADDR': "127.0.0.0",
             'SERVER_PROTOCOL': "HTTP/1.1",
@@ -635,10 +663,12 @@ class FrontendTest(CdEDBTest):
                 file.chmod(0o0644)  # 0644/-rw-r--r--
 
     def setUp(self):
+        """Reset web application."""
         super().setUp()
         self.app.reset()
+        # Make sure all available admin views are enabled.
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
-        self.response = None  # type: webtest.TestResponse
+        self.response: None  # type: ignore
 
     def basic_validate(self, verbose=False):
         if self.response.content_type == "text/html":
@@ -652,9 +682,10 @@ class FrontendTest(CdEDBTest):
         if self.do_scrap and self.response.status_int // 100 == 2:
             # path without host but with query string - capped at 64 chars
             url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
-            with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url, delete=False) as f:
+            with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url,
+                                             delete=False) as f:
                 # create a temporary file in scrap_path with url as a suffix
-                # persisting after process completion and dump the response to it
+                # persisting after process completion and dump the response.
                 f.write(self.response.body)
 
     def log_generation_time(self, response=None):
@@ -668,23 +699,41 @@ class FrontendTest(CdEDBTest):
                     response.request.query_string)
                 f.write(output)
 
-    def get(self, *args, verbose=False, **kwargs):
-        self.response: webtest.TestResponse = self.app.get(*args, **kwargs)
+    def get(self, url: str, *args, verbose=False, **kwargs) -> None:
+        """Navigate directly to a given URL using GET."""
+        self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
+        # TODO: Is there a reason to not follow() here?
         self.basic_validate(verbose=verbose)
 
-    def follow(self, **kwargs):
+    def follow(self, **kwargs) -> None:
+        """Follow a redirect if one occurrs."""
         oldresponse = self.response
         self.response = self.response.maybe_follow(**kwargs)
         if self.response != oldresponse:
             self.log_generation_time(oldresponse)
 
-    def post(self, *args, verbose=False, **kwargs):
-        self.response = self.app.post(*args, **kwargs)
+    def post(self, url: str, *args, verbose=False, **kwargs) -> None:
+        """Directly send a POST-request.
+
+        Note that most of our POST-handlers require a CSRF-token."""
+        self.response = self.app.post(url, *args, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form, button="submitform", check_notification=True,
-               verbose=False, value=None):
+    def submit(self, form: webtest.Form, button: str = "submitform",
+               check_notification: bool = True, verbose: bool = False,
+               value: bool = None) -> None:
+        """Submit a form.
+
+        If the form has multiple submit buttons, they can be differentiated
+        using the `button` and `value` parameters.
+
+        :param check_notification: If True and this is a POST-request, check
+            that the submission produces a notification indicating success.
+        :param verbose: If True, offer additional debug output.
+        :param button: The name of the button to use.
+        :param value: The value of the button to use.
+        """
         method = form.method
         self.response = form.submit(button, value=value)
         self.follow()
@@ -699,7 +748,23 @@ class FrontendTest(CdEDBTest):
                 raise AssertionError(
                     "Post request did not produce success notification.")
 
-    def traverse(self, *links, verbose=False):
+    def traverse(self, *links: MutableMapping[str, Any], verbose: bool = False
+                 ) -> None:
+        """Follow a sequence of links, described by their kwargs.
+
+        A link should usually contain some of the following descriptors:
+
+            * `description`:
+                * The (visible) content inside the link. Uses RegEx matching.
+            * `href`:
+                * The target of the link. Uses RegEx matching.
+            * `linkid`:
+                * The `id` attribute of the link. Uses RegEx matching.
+            * 'index':
+                * Example: `index=2` uses the third matching link.
+
+        :param verbose: If True, display additional debug information.
+        """
         for link in links:
             if 'index' not in link:
                 link['index'] = 0
@@ -711,18 +776,35 @@ class FrontendTest(CdEDBTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user, verbose=False):
+    def login(self, user: CdEDBObject, verbose: bool = False) -> None:
+        """Log in as the given user.
+
+        :param verbose: If True display additional debug information.
+        """
         self.get("/", verbose=verbose)
         f = self.response.forms['loginform']
         f['username'] = user['username']
         f['password'] = user['password']
         self.submit(f, check_notification=False, verbose=verbose)
 
-    def logout(self, verbose=False):
+    def logout(self, verbose: bool = False) -> None:
+        """Log out. Raises a KeyError if not currently logged in.
+
+        :param verbose: If True display additional debug information.
+        """
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False, verbose=verbose)
 
-    def admin_view_profile(self, user, check=True, verbose=False):
+    def admin_view_profile(self, user: str, check: bool = True,
+                           verbose: bool = False) -> None:
+        """Shortcut to use the admin quicksearch to navigate to a user profile.
+
+        This fails if the logged in user is not a `core_admin` or has the
+        `core_user` admin view disabled.
+
+        :param check: If True check that the Profile was reached.
+        :param verbose: If True display additional debug information.
+        """
         u = USER_DICT[user]
         self.traverse({'href': '^/$'}, verbose=verbose)
         f = self.response.forms['adminshowuserform']
@@ -732,7 +814,17 @@ class FrontendTest(CdEDBTest):
             self.assertTitle("{} {}".format(u['given_names'],
                                             u['family_name']))
 
-    def realm_admin_view_profile(self, user, realm, verbose=False):
+    def realm_admin_view_profile(self, user: str, realm: str,
+                                 check: bool = True, verbose: bool = False
+                                 ) -> None:
+        """Shortcut to a user profile using realm-based usersearch.
+
+        This fails if the logged in user is not an admin of the given realm
+        or has that admin view disabled.
+
+        :param check: If True check that the Profile was reached.
+        :param verbose: If True display additional debug information.
+        """
         u = USER_DICT[user]
         self.traverse({'href': '/{}/$'.format(realm)},
                       {'href': '/{}/search/user'.format(realm)},
@@ -744,8 +836,14 @@ class FrontendTest(CdEDBTest):
         f['qval_' + id_field] = u["id"]
         self.submit(f, verbose=verbose)
         self.traverse({'description': 'Profil'}, verbose=verbose)
+        if check:
+            self.assertTitle("{} {}".format(u['given_names'],
+                                            u['family_name']))
 
-    def fetch_mail(self):
+    def fetch_mail(self) -> List:
+        """
+        Get the content of mails that were sent, using the E-Mail-notification.
+        """
         elements = self.response.lxml.xpath(
             "//div[@class='alert alert-info']/span/text()")
 
@@ -765,21 +863,27 @@ class FrontendTest(CdEDBTest):
         return ret
 
     @staticmethod
-    def fetch_link(msg, num=1):
+    def fetch_link(msg, num: int = 1) -> Optional[str]:
         ret = None
         for line in msg.get_body().get_content().splitlines():
             if line.startswith('[{}] '.format(num)):
                 ret = line.split(maxsplit=1)[-1]
         return ret
 
-    def assertTitle(self, title):
+    def assertTitle(self, title: str) -> None:
+        """
+        Assert that the tilte of the current page equals the given string.
+
+        The actual title has a prefix, which is checked automatically.
+        """
         components = tuple(x.strip() for x in self.response.lxml.xpath(
             '/html/head/title/text()'))
         self.assertEqual("CdEDB –", components[0][:7])
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
         self.assertEqual(title.strip(), normalized)
 
-    def get_content(self, div="content"):
+    def get_content(self, div: str = "content") -> str:
+        """Retrieve the content of the (first) element with the given id."""
         if self.response.content_type == "text/plain":
             return self.response.text
         tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
@@ -788,18 +892,27 @@ class FrontendTest(CdEDBTest):
         content = tmp[0]
         return content.text_content()
 
-    def assertCheckbox(self, status, id):
-        tmp = self.response.html.find_all(id=id)
+    def assertCheckbox(self, status: bool, anid: str) -> None:
+        """Assert that the checkbox with the given id is checked (or not)."""
+        tmp = self.response.html.find_all(id=anid)
         if not tmp:
             raise AssertionError("Id not found.", id)
         if len(tmp) != 1:
-            raise AssertionError("More or less then one hit.", id)
+            raise AssertionError("More or less then one hit.", anid)
         checkbox = tmp[0]
         if "data-checked" not in checkbox.attrs:
-            raise ValueError("Id doesnt belong to a checkbox", id)
+            raise ValueError("Id doesnt belong to a checkbox", anid)
         self.assertEqual(str(status), checkbox['data-checked'])
 
-    def assertPresence(self, s, div="content", regex=False, exact=False):
+    def assertPresence(self, s: str, div: str = "content", regex: bool = False,
+                       exact: bool = False) -> None:
+        """Assert that a string is present in the element with the given id.
+
+        The checked content is whitespace-normalized before comparison.
+
+        :param regex: If True, do a RegEx match of the given string.
+        :param exact: If True, require an exact match.
+        """
         target = self.get_content(div)
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
@@ -809,24 +922,32 @@ class FrontendTest(CdEDBTest):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s, div="content", check_div=True):
+    def assertNonPresence(self, s: str, div: str = "content",
+                          check_div: bool = True) -> None:
+        """Assert that a string is not present in the element with the given id.
+
+        :param check_div: If True, this assertion fails if the div is not found.
+        """
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
             try:
-                content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
-                self.assertNotIn(s.strip(), content.text_content())
+                content = self.response.lxml.xpath(f"//*[@id='{div}']")[0]
             except IndexError as e:
                 if check_div:
-                    raise
+                    raise AssertionError(
+                        f"Specified div {div!r} not found.") from None
                 else:
                     pass
+            else:
+                self.assertNotIn(s.strip(), content.text_content())
 
-    def assertLogin(self, name):
+    def assertLogin(self, name: str) -> None:
+        """Assert that a user is logged in by checking their display name."""
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
 
-    def assertValidationError(self, fieldname, message=""):
+    def assertValidationError(self, fieldname: str, message: str = "") -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
         and a specific error message to be shown near the field.
@@ -839,23 +960,22 @@ class FrontendTest(CdEDBTest):
         node = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
         if len(node) != 1:
-            raise AssertionError("input with name \"{}\" not found"
+            raise AssertionError("Input with name \"{}\" not found"
                                  .format(fieldname))
         # From https://devhints.io/xpath#class-check
         container = node[0].xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
             "' has-error ')]")
+        f = fieldname
         if not container:
             raise AssertionError(
-                "input with name \"{}\" is not contained in an .has-error box"
-                .format(fieldname))
-        self.assertIn(message, container[0].text_content(),
-                      "Expected error message not found near input with name "
-                      "\"{}\""
-                      .format(fieldname))
+                f"Input with name {f!r} is not contained in an .has-error box")
+        msg = f"Expected error message not found near input with name {f!r}."
+        self.assertIn(message, container[0].text_content(), msg)
 
-    def assertNoLink(self, href_pattern=None, tag='a', href_attr='href',
-                     content=None, verbose=False):
+    def assertNoLink(self, href_pattern: str = None, tag: str = 'a',
+                     href_attr: str = 'href', content: str = None,
+                     verbose: bool = False) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
         criteria include:
 
@@ -1078,7 +1198,6 @@ class CronBackendShim:
 class CronTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.maxDiff = None
         self.stores = []
 
     @classmethod

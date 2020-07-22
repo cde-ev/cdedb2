@@ -14,7 +14,7 @@ from werkzeug import Response
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
     check_validation as check, mailinglist_guard, query_result_to_json,
-    cdedbid_filter as cdedbid, request_extractor, keydictsort_filter,
+    cdedbid_filter as cdedbid, keydictsort_filter,
     calculate_db_logparams, calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
@@ -24,7 +24,9 @@ from cdedb.common import (
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
-from cdedb.ml_type_aux import MailinglistGroup, TYPE_MAP, get_type
+from cdedb.ml_type_aux import (
+    MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type)
+
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -221,8 +223,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "attachment_policy", "ml_type", "subject_prefix",
-        "maxsize", "is_active", "notes", "event_id", "registration_stati",
-        "assembly_id")
+        "maxsize", "is_active", "notes", *ADDITIONAL_TYPE_FIELDS)
     @REQUESTdata(("ml_type", "enum_mailinglisttypes"),
                  ("moderator_ids", "cdedbid_csv_list"))
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
@@ -232,6 +233,16 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["moderators"] = moderator_ids
         data['ml_type'] = ml_type
         data = check(rs, "mailinglist", data, creation=True)
+        if not self.coreproxy.verify_ids(rs, moderator_ids, is_archived=False):
+            rs.append_validation_error(
+                ("moderator_ids", ValueError(n_(
+                    "Some of these users do not exist or are archived."))))
+        if not self.coreproxy.verify_personas(rs, moderator_ids, {"ml"}):
+            rs.append_validation_error(
+                ("moderator_ids", ValueError(n_(
+                    "Some of these users are not ml-users."))))
+        if rs.has_validation_errors():
+            return self.create_mailinglist_form(rs, ml_type=ml_type)
         # Check if mailinglist address is unique
         try:
             self.mlproxy.validate_address(rs, data)
@@ -374,19 +385,17 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdata(("registration_stati", "[enum_registrationpartstati]"))
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
-        "is_active", "event_id", "assembly_id")
+        "is_active", *ADDITIONAL_TYPE_FIELDS)
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
-                           registration_stati: Collection[
-                               const.RegistrationPartStati],
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
-        data['registration_stati'] = registration_stati
         data = check(rs, "mailinglist", data)
+        if rs.has_validation_errors():
+            return self.change_mailinglist_form(rs, mailinglist_id)
         if data['ml_type'] != rs.ambience['mailinglist']['ml_type']:
             rs.append_validation_error(
                 ("ml_type", ValueError(n_(
@@ -404,6 +413,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
+    @mailinglist_guard(allow_moderators=False)
     def change_ml_type_form(self, rs: RequestState,
                             mailinglist_id: int) -> Response:
         """Render form."""
@@ -419,23 +429,19 @@ class MlBaseFrontend(AbstractUserFrontend):
         })
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("ml_type", "enum_mailinglisttypes"))
+    @mailinglist_guard(allow_moderators=False)
+    @REQUESTdatadict("ml_type", *ADDITIONAL_TYPE_FIELDS)
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes) -> Response:
-        if rs.has_validation_errors():
-            return self.change_ml_type_form(rs, mailinglist_id)
+                       data: CdEDBObject) -> Response:
         ml = rs.ambience['mailinglist']
-        new_type = get_type(ml_type)
-
-        data = {
-            'id': mailinglist_id,
-            'ml_type': ml_type,
-        }
+        data['id'] = mailinglist_id
+        new_type = get_type(data['ml_type'])
         if ml['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
-        params = new_type.mandatory_validation_fields + \
-                 new_type.optional_validation_fields
-        data.update(request_extractor(rs, params))
+        data = check(rs, 'mailinglist', data)
+        if rs.has_validation_errors():
+            return self.change_ml_type_form(rs, mailinglist_id)
+
         code = self.mlproxy.set_mailinglist(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/change_mailinglist")
@@ -606,6 +612,17 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.management(rs, mailinglist_id)
 
         moderator_ids = set(moderator_ids)
+        if not self.coreproxy.verify_ids(rs, moderator_ids, is_archived=False):
+            rs.append_validation_error(
+                ("moderator_ids", ValueError(n_(
+                    "Some of these users do not exist or are archived."))))
+        if not self.coreproxy.verify_personas(rs, moderator_ids, {"ml"}):
+            rs.append_validation_error(
+                ("moderator_ids", ValueError(n_(
+                    "Some of these users are not ml-users."))))
+        if rs.has_validation_errors():
+            return self.management(rs, mailinglist_id)
+
         moderator_ids |= set(rs.ambience['mailinglist']['moderators'])
         code = self.mlproxy.set_moderators(rs, mailinglist_id, moderator_ids)
         self.notify_return_code(rs, code)
@@ -617,6 +634,10 @@ class MlBaseFrontend(AbstractUserFrontend):
     def remove_moderator(self, rs: RequestState, mailinglist_id: int,
                          moderator_id: int) -> Response:
         """Demote persona from moderator status."""
+        moderator_ids = set(rs.ambience['mailinglist']['moderators'])
+        if moderator_id is not None and moderator_id not in moderator_ids:
+            rs.append_validation_error(
+                ("moderator_id", ValueError(n_("User is no moderator."))))
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         if (moderator_id == rs.user.persona_id
@@ -626,7 +647,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                       n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
 
-        moderator_ids = set(rs.ambience['mailinglist']['moderators'])
         moderator_ids -= {moderator_id}
         code = self.mlproxy.set_moderators(rs, mailinglist_id, moderator_ids)
         self.notify_return_code(rs, code)

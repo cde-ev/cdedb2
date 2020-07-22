@@ -525,3 +525,6 @@ TYPE_MAP = {
     MailinglistTypes.semi_public: SemiPublicMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }
+
+ADDITIONAL_TYPE_FIELDS = set.union(*(ml_type.get_additional_fields()
+                                     for ml_type in TYPE_MAP.values()))
