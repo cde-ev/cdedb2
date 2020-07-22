@@ -1660,6 +1660,7 @@ class CoreBackend(AbstractBackend):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         # Check if admin has rights to create the user in its realms
         if not any(admin <= rs.user.roles

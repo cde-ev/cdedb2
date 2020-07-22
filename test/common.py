@@ -20,8 +20,10 @@ import json
 import io
 import PIL.Image
 import time
+import copy
+import decimal
 
-from typing import TypeVar, cast, Dict, List
+from typing import TypeVar, cast, Dict, List, Collection
 
 import pytz
 import webtest
@@ -265,7 +267,42 @@ class MyTextTestResult(unittest.TextTestResult):
         self._subTestSkips.append(reason)
 
 
-class BackendUsingTest(unittest.TestCase):
+class CdEDBTest(unittest.TestCase):
+    """Provide some basic useful test functionalities."""
+    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
+
+    @classmethod
+    def setUpClass(cls):
+        # Keep a clean copy of sample data that should not be messed with.
+        cls._clean_sample_data = read_sample_data()
+
+    def setUp(self):
+        subprocess.check_call(("make", "sample-data-test-shallow"),
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
+        # Provide a fresh copy of clean sample data.
+        self.sample_data = copy.deepcopy(self._clean_sample_data)
+
+    def get_sample_data(self, table: str, ids: Collection[int],
+                        keys: Collection[str]) -> CdEDBObjectMap:
+        ret = {}
+        for anid in ids:
+            if keys:
+                r = {}
+                for k in keys:
+                    r[k] = copy.deepcopy(self.sample_data[table][anid][k])
+                    if table == 'core.personas':
+                        if k == 'balance':
+                            r[k] = decimal.Decimal(r[k])
+                        if k == 'birthday':
+                            r[k] = datetime.date.fromisoformat(r[k])
+                ret[anid] = r
+            else:
+                ret[anid] = copy.deepcopy(self.sample_data[table][anid])
+        return ret
+
+
+class BackendUsingTest(CdEDBTest):
     used_backends = None
 
     def __init__(self, *args, **kwargs):
@@ -274,6 +311,7 @@ class BackendUsingTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         classes = {
             "core": CoreBackend,
             "session": SessionBackend,
@@ -289,13 +327,6 @@ class BackendUsingTest(unittest.TestCase):
                         cls.initialize_raw_backend(classes[backend]))
             else:
                 setattr(cls, backend, cls.initialize_backend(classes[backend]))
-
-        cls.sample_data = read_sample_data()
-
-    def setUp(self):
-        subprocess.check_call(("make", "sample-data-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
 
     @staticmethod
     def initialize_raw_backend(backendcls):
@@ -571,13 +602,14 @@ def execsql(sql):
     subprocess.check_call(psql + (str(path),), stdout=null)
 
 
-class FrontendTest(unittest.TestCase):
+class FrontendTest(CdEDBTest):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.maxDiff = None
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         app = Application()
         lang = "de"
         cls.gettext = app.translations[lang].gettext
@@ -593,8 +625,6 @@ class FrontendTest(unittest.TestCase):
             cls.scrap_path = tempfile.mkdtemp()
             print(cls.scrap_path, file=sys.stderr)
 
-        cls.sample_data = read_sample_data()
-
     @classmethod
     def tearDownClass(cls):
         if cls.do_scrap:
@@ -605,9 +635,7 @@ class FrontendTest(unittest.TestCase):
                 file.chmod(0o0644)  # 0644/-rw-r--r--
 
     def setUp(self):
-        subprocess.check_call(("make", "sample-data-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
+        super().setUp()
         self.app.reset()
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
         self.response = None  # type: webtest.TestResponse

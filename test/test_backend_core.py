@@ -247,6 +247,7 @@ class TestCoreBackend(BackendTest):
                 'is_member': False,
                 'is_ml_admin': False,
                 'is_ml_realm': False,
+                'is_cdelokal_admin': False,
                 'is_searchable': False,
                 'location': None,
                 'location2': None,
@@ -839,6 +840,7 @@ class TestCoreBackend(BackendTest):
             'is_member': True,
             'is_ml_admin': False,
             'is_ml_realm': True,
+            'is_cdelokal_admin': False,
             'is_searchable': True,
             'username': 'berta@example.cde'}
         self.assertEqual(expectation, self.core.get_persona(self.key, 2))
