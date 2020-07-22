@@ -1238,6 +1238,7 @@ class CoreBackend(AbstractBackend):
                 'is_event_realm': False,
                 'is_ml_realm': False,
                 'is_assembly_realm': False,
+                'is_cdelokal_admin': False,
                 # 'is_member' already adjusted
                 'is_searchable': False,
                 # 'is_archived' will be done later

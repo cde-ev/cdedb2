@@ -204,6 +204,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
         expectation = {
@@ -319,6 +320,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
 
@@ -354,6 +356,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
 
@@ -376,6 +379,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
 
@@ -412,6 +416,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
 
@@ -606,6 +611,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -678,6 +684,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -750,6 +757,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': True,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
