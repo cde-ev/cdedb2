@@ -283,7 +283,7 @@
             <label{{ dict(
                 id=labelid,
                 for=anid,
-                class=(("col-sm-2" if small else "col-sm-4") if horizontal) + " control-label",
+                class=(("col-sm-2" if small else "col-sm-4") if horizontal else "") + " control-label",
             )|xmlattr }}>{{ label }}</label>
         {%- endif %}
         {%- if horizontal %}
