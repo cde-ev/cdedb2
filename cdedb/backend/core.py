@@ -1444,7 +1444,12 @@ class CoreBackend(AbstractBackend):
                 change_note="Benutzer gelöscht.",
                 allow_specials=("admins", "username", "purge"))
             #
-            # 2. Clear changelog
+            # 2. Remove past event data.
+            #
+            self.sql_delete(
+                rs, "past_event.participants", (persona_id,), "persona_id")
+            #
+            # 3. Clear changelog
             #
             query = glue(
                 "SELECT id FROM core.changelog WHERE persona_id = %s",
@@ -1455,7 +1460,7 @@ class CoreBackend(AbstractBackend):
                 "WHERE persona_id = %s AND NOT id = %s")
             ret *= self.query_exec(rs, query, (persona_id, newest['id']))
             #
-            # 3. Finish
+            # 4. Finish
             #
             return ret
 
