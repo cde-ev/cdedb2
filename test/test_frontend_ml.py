@@ -360,16 +360,16 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addmoderatorform']
         # Check that you cannot add non-existing or archived moderators.
         errormsg = "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
-        f['moderator_ids'] = "DB-100000-4"
+        f['moderators'] = "DB-100000-4"
         self.submit(f, check_notification=False)
         self.assertPresence(errormsg, div="addmoderatorform")
         # Hades is archived.
-        f['moderator_ids'] = "DB-8-6"
+        f['moderators'] = "DB-8-6"
         self.submit(f, check_notification=False)
         self.assertPresence(errormsg, div="addmoderatorform")
 
         # Now for real.
-        f['moderator_ids'] = "DB-9-4, DB-1-9"
+        f['moderators'] = "DB-9-4, DB-1-9"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
         self.assertPresence("Inga Iota", div="moderator_list")
@@ -504,18 +504,23 @@ class TestMlFrontend(FrontendTest):
         f['is_active'].checked = True
         f['notes'] = "Noch mehr Gemunkel."
         f['domain'] = 1
+        f['local_part'] = 'munkelwand'
+        # Check that there must be some moderators
+        errormsg = "Darf nicht leer sein."
+        f['moderators'] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError("moderators", errormsg)
         # Check that you cannot add non-existing or archived moderators.
-        errormsg = "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
-        f['moderator_ids'] = "DB-100000-4"
+        errormsg = "Einige dieser Nutzer exisitieren nicht oder sind archiviert"
+        f['moderators'] = "DB-100000-4"
         self.submit(f, check_notification=False)
-        self.assertValidationError("moderator_ids", errormsg)
+        self.assertValidationError("moderators", errormsg)
         # Hades is archived.
-        f['moderator_ids'] = "DB-8-6"
+        f['moderators'] = "DB-8-6"
         self.submit(f, check_notification=False)
-        self.assertValidationError("moderator_ids", errormsg)
+        self.assertValidationError("moderators", errormsg)
         # Now for real.
-        f['moderator_ids'] = "DB-3-5, DB-7-8"
-
+        f['moderators'] = "DB-3-5, DB-7-8"
         # Check that no lists with the same address can be made
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
@@ -724,7 +729,7 @@ class TestMlFrontend(FrontendTest):
                     'local_part': 'testaka',
                     'domain': const.MailinglistDomain.aka.value,
                     'event_id': "1",
-                    'moderator_ids': user['DB-ID'],
+                    'moderators': user['DB-ID'],
                 }
                 self._create_mailinglist(mdata)
                 self.traverse({'href': '/event/'},

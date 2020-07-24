@@ -1784,8 +1784,9 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("anonymous")
-    def get_roles_multi(self, rs: RequestState,
-                        ids: Collection[int]) -> Dict[int, Set[Role]]:
+    def get_roles_multi(self, rs: RequestState, ids: Collection[int],
+                        introspection_only: bool = False
+                        ) -> Dict[int, Set[Role]]:
         """Resolve ids into roles.
 
         Returns an empty role set for inactive users."""
@@ -1793,23 +1794,24 @@ class CoreBackend(AbstractBackend):
             return {rs.user.persona_id: rs.user.roles}
         bits = PERSONA_STATUS_FIELDS + ("id",)
         data = self.sql_select(rs, "core.personas", bits, ids)
-        return {d['id']: extract_roles(d) for d in data}
+        return {d['id']: extract_roles(d, introspection_only) for d in data}
     get_roles_single = singularize(get_roles_multi)
 
     @access("persona")
-    def get_realms_multi(self, rs: RequestState,
-                         ids: Collection[int]) -> Dict[int, Set[Realm]]:
+    def get_realms_multi(self, rs: RequestState, ids: Collection[int],
+                         introspection_only: bool = False
+                         ) -> Dict[int, Set[Realm]]:
         """Resolve persona ids into realms (only for active users)."""
         ids = affirm_set("id", ids)
-        roles = self.get_roles_multi(rs, ids)
+        roles = self.get_roles_multi(rs, ids, introspection_only)
         all_realms = {"cde", "event", "assembly", "ml"}
         return {key: value & all_realms for key, value in roles.items()}
     get_realms_single = singularize(get_realms_multi)
 
     @access("persona")
     def verify_personas(self, rs: RequestState, ids: Collection[int],
-                        required_roles: Collection[Role] = None
-                        ) -> Tuple[int, ...]:
+                        required_roles: Collection[Role] = None,
+                        introspection_only: bool = True) -> Tuple[int, ...]:
         """Check wether certain ids map to actual (active) personas.
 
         :param required_roles: If given check that all personas have
@@ -1819,7 +1821,7 @@ class CoreBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         required_roles = required_roles or tuple()
         required_roles = affirm_set("str", required_roles)
-        roles = self.get_roles_multi(rs, ids)
+        roles = self.get_roles_multi(rs, ids, introspection_only)
         return tuple(key for key, value in roles.items()
                      if value >= required_roles)
 
