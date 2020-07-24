@@ -689,7 +689,9 @@ class CoreBackend(AbstractBackend):
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles
                      or "finance" not in allow_specials)):
-            if not (data["balance"] is None and "archive" in allow_specials):
+            # Allow setting balance to 0 or None during archival.
+            if not ((data["balance"] is None or data["balance"] == 0)
+                    and "archive" in allow_specials):
                 raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
             raise PrivilegeError(n_("Modification of email address prevented."))
@@ -1223,10 +1225,12 @@ class CoreBackend(AbstractBackend):
                 'is_event_admin': False,
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
-                'is_cde_realm': False,
-                'is_event_realm': False,
-                'is_ml_realm': False,
-                'is_assembly_realm': False,
+                # Do no touch the realms, to preserve integrity and
+                # allow reactivation.
+                # 'is_cde_realm'
+                # 'is_event_realm'
+                # 'is_ml_realm'
+                # 'is_assembly_realm'
                 # 'is_member' already adjusted
                 'is_searchable': False,
                 # 'is_archived' will be done later
@@ -1235,7 +1239,7 @@ class CoreBackend(AbstractBackend):
                 # 'family_name' kept for later recognition
                 'title': None,
                 'name_supplement': None,
-                'gender': None,
+                # 'gender' kept for later recognition
                 # 'birthday' kept for later recognition
                 'telephone': None,
                 'mobile': None,
@@ -1256,7 +1260,7 @@ class CoreBackend(AbstractBackend):
                 'timeline': None,
                 'interests': None,
                 'free_form': None,
-                'balance': None,
+                'balance': 0 if persona['balance'] is not None else None,
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,
@@ -1322,7 +1326,25 @@ class CoreBackend(AbstractBackend):
                             "persona_id")
             self.sql_delete(rs, "ml.subscription_addresses", (persona_id,),
                             "persona_id")
+            # Make sure the users moderatored mls will still have moderators.
+            # Retrieve moderated mailinglists.
+            query = ("SELECT ARRAY_AGG(mailinglist_id) FROM ml.moderators"
+                     " WHERE persona_id = %s GROUP BY persona_id")
+            moderated_mailinglists = set(unwrap(self.query_one(
+                rs, query, (persona_id,))))
             self.sql_delete(rs, "ml.moderators", (persona_id,), "persona_id")
+            if moderated_mailinglists:
+                # Retrieve the mailinglists, that _still_ have moderators.
+                query = ("SELECT ARRAY_AGG(DISTINCT mailinglist_id) as ml_ids"
+                         " FROM ml.moderators WHERE mailinglist_id = ANY(%s)")
+                ml_ids = set(unwrap(self.query_one(
+                    rs, query, (moderated_mailinglists,))) or [])
+                # Check the difference.
+                unmodearated_mailinglists = moderated_mailinglists - ml_ids
+                if unmodearated_mailinglists:
+                    raise ArchiveError(
+                        n_("Sole moderator of a mailinglist {ml_ids}."),
+                        {'ml_ids': unmodearated_mailinglists})
             #
             # 9. Clear logs
             #

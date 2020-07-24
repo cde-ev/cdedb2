@@ -10,7 +10,7 @@ from test.common import (
 )
 from cdedb.common import (
     PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now, merge_dicts,
-    PERSONA_CDE_FIELDS, get_hash)
+    PERSONA_CDE_FIELDS, get_hash, ArchiveError)
 from cdedb.validation import (_PERSONA_CDE_CREATION, _PERSONA_EVENT_CREATION)
 
 PERSONA_TEMPLATE = {
@@ -887,16 +887,26 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_archive(self, user):
-        data = self.core.get_total_persona(self.key, 3)
+        persona_id = 3
+        data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
-        ret = self.core.archive_persona(self.key, 3, "Archived for testing.")
+        self.assertEqual(True, data['is_cde_realm'])
+        ret = self.core.archive_persona(
+            self.key, persona_id, "Archived for testing.")
         self.assertLess(0, ret)
-        data = self.core.get_total_persona(self.key, 3)
+        self.assertEqual(True, data['is_cde_realm'])
+        data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(True, data['is_archived'])
-        ret = self.core.dearchive_persona(self.key, 3)
+        ret = self.core.dearchive_persona(self.key, persona_id)
         self.assertLess(0, ret)
-        data = self.core.get_total_persona(self.key, 3)
+        data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
+
+        # Check that sole moderators cannot be archived.
+        self.ml.set_moderators(self.key, 1, {persona_id})
+        with self.assertRaises(ArchiveError) as cm:
+            self.core.archive_persona(self.key, persona_id, "Testing")
+        self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])
 
     @as_users("vera")
     def test_archive_activate_bug(self, user):
