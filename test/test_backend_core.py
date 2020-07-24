@@ -908,6 +908,9 @@ class TestCoreBackend(BackendTest):
             self.core.archive_persona(self.key, persona_id, "Testing")
         self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])
 
+        # Test archival of user that is no modearator.
+        self.core.archive_persona(self.key, 6, "Testing")
+
     @as_users("vera")
     def test_archive_activate_bug(self, user):
         self.core.archive_persona(self.key, 4, "Archived for testing.")

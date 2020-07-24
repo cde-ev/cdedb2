@@ -1331,7 +1331,7 @@ class CoreBackend(AbstractBackend):
             query = ("SELECT ARRAY_AGG(mailinglist_id) FROM ml.moderators"
                      " WHERE persona_id = %s GROUP BY persona_id")
             moderated_mailinglists = set(unwrap(self.query_one(
-                rs, query, (persona_id,))))
+                rs, query, (persona_id,))) or [])
             self.sql_delete(rs, "ml.moderators", (persona_id,), "persona_id")
             if moderated_mailinglists:
                 # Retrieve the mailinglists, that _still_ have moderators.
