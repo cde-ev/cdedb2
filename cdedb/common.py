@@ -1679,6 +1679,8 @@ DB_ROLE_MAPPING: OrderedDictType[Role, str] = collections.OrderedDict((
     ("anonymous", "cdb_anonymous"),
 ))
 
+ALL_ROLES: Set[Role] = set(DB_ROLE_MAPPING.keys()) - {"droid"}
+
 
 def roles_to_db_role(roles: Set[Role]) -> str:
     """Convert a set of application level roles into a database level role."""
