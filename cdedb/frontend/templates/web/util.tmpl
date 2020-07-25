@@ -51,7 +51,7 @@
     title=title,
     **{ "aria-current": "page" if active }
 )|xmlattr }}{# We use the `active` attribute for navigation only #}>
-{{ make_icon(icon) if icon }} {{ label }}
+{{- make_icon(icon) + "&nbsp;"|safe if icon }}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
@@ -75,7 +75,7 @@
         title=title,
         **{ "aria-hidden": "true" }
     )|xmlattr }}></span>
-    {%- if arialabel %}<span class="sr-only">{{ arialabel }}</span>{% endif %}
+    {%- if arialabel or title %}<span class="sr-only">{{ arialabel or title }}</span>{% endif %}
 {%- endmacro%}
 
 
@@ -223,10 +223,12 @@
 {%- endmacro %}
 
 {% macro output_info(info, link=None) %}
-    <p class="help-block no-color">
-	    {{ make_icon('info-circle') }} {{ info }}
-        {{ link if link}}
-	</p>
+    {%- if info %}
+        <p class="help-block no-color">
+            {{ make_icon('info-circle') }} {{ info }}
+            {{ link if link}}
+        </p>
+    {%- endif %}
 {%- endmacro %}
 
 {% macro output_errors(name, displayerrors=True, wrapper=False, differentiate_warnings=True) %}
@@ -325,7 +327,7 @@
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-    maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', infolink='', addon='',
+    maxlength=none, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', infolink='', addon='',
     differentiate_warnings=True) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink, addon=addon,
@@ -373,7 +375,7 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-        aclass='', small=False, maxlength=0, rows=3, horizontal=True, attributes='', infolink='', differentiate_warnings=True) %}
+        aclass='', small=False, maxlength=none, rows=3, horizontal=True, attributes='', infolink='', differentiate_warnings=True) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
