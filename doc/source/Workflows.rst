@@ -74,6 +74,8 @@ configuration and doing the actual work.
 Setting up a script
 ^^^^^^^^^^^^^^^^^^^
 
+.. highlight:: python
+
 The first thing that should be done when setting up a script is ensuring that
 the `cdedb` modules are accessible: ::
 
