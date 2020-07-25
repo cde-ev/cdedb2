@@ -785,7 +785,8 @@ class CdEFrontend(AbstractUserFrontend):
         data = data or {}
         merge_dicts(rs.values, data)
         event_list = self.eventproxy.list_db_events(rs)
-        event_entries = xsorted(event_list.items(), key=lambda x: x[1])
+        event_entries = xsorted(
+            event_list.items(), key=EntitySorter.event, reverse=True)
         params = {
             'params': params or None,
             'data': data,
