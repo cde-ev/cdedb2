@@ -401,6 +401,7 @@ class FinanceLogCodes(enum.IntEnum):
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
+    lastschrift_deleted = 23  #:
     lastschrift_transaction_issue = 30  #:
     lastschrift_transaction_success = 31  #:
     lastschrift_transaction_failure = 32  #:

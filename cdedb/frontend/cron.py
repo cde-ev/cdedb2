@@ -60,7 +60,7 @@ class CronFrontend(BaseApp):
             "anonymous", "persona", "cde", "event", "ml", "assembly",
             "member", "searchable",
             "cde_admin", "event_admin", "ml_admin", "assembly_admin",
-            "core_admin",
+            "core_admin", "finance_admin",
             "meta_admin",
         }
         user = User(roles=roles, persona_id=None)

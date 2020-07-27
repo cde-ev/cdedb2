@@ -388,6 +388,14 @@ class TestCdEBackend(BackendTest):
         })
         self.assertEqual({new_id: newdata},
                          self.cde.get_lastschrifts(self.key, (new_id,)))
+        self.assertEqual(
+            ["revoked_at", "transactions"],
+            list(self.cde.delete_lastschrift_blockers(self.key, 2)))
+        self.assertEqual(
+            ["transactions"],
+            list(self.cde.delete_lastschrift_blockers(self.key, 1)))
+        self.assertLess(
+            0, self.cde.delete_lastschrift(self.key, 1, ["transactions"]))
 
     @as_users("farin")
     def test_lastschrift_multiple_active(self, user):

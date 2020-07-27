@@ -429,7 +429,7 @@ CREATE TABLE cde.lastschrift (
 );
 CREATE INDEX idx_lastschrift_persona_id ON cde.lastschrift(persona_id);
 GRANT SELECT ON cde.lastschrift TO cdb_member;
-GRANT UPDATE, INSERT ON cde.lastschrift TO cdb_admin;
+GRANT UPDATE, INSERT, DELETE ON cde.lastschrift TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_id_seq TO cdb_admin;
 
 CREATE TABLE cde.lastschrift_transactions
@@ -447,7 +447,7 @@ CREATE TABLE cde.lastschrift_transactions
 );
 CREATE INDEX idx_cde_lastschrift_transactions_lastschrift_id ON cde.lastschrift_transactions(lastschrift_id);
 GRANT SELECT ON cde.lastschrift_transactions TO cdb_member;
-GRANT UPDATE, INSERT ON cde.lastschrift_transactions TO cdb_admin;
+GRANT UPDATE, INSERT, DELETE ON cde.lastschrift_transactions TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_transactions_id_seq TO cdb_admin;
 
 CREATE TABLE cde.finance_log (

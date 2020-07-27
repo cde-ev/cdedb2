@@ -20,7 +20,7 @@ from cdedb.common import (
     n_, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
     LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS,
     implying_realms, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, CdEDBLog,
-    RequestState,
+    RequestState, DeletionBlockers,
 )
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
@@ -170,6 +170,80 @@ class CdEBackend(AbstractBackend):
             self.core.finance_log(rs, const.FinanceLogCodes.grant_lastschrift,
                                   data['persona_id'], None, None)
         return new_id
+
+    @access("finance_admin")
+    def delete_lastschrift_blockers(self, rs: RequestState, lastschrift_id: int
+                                    ) -> DeletionBlockers:
+        """Determine what keeps a lastschrift from being revoked.
+
+        Possible blockers:
+
+        * 'revoked_at': Deletion is only possible 14 months after revoking.
+        * 'transactions': Transactions that were issued for this lastschrift.
+        """
+        lastschrift_id = affirm("id", lastschrift_id)
+        blockers = {}
+
+        with Atomizer(rs):
+            lastschrift = self.get_lastschrift(rs, lastschrift_id)
+            if not lastschrift["revoked_at"] or now() < (
+                    lastschrift["revoked_at"] + datetime.timedelta(days=14*30)):
+                blockers["revoked_at"] = [lastschrift_id]
+
+            transactions = self.list_lastschrift_transactions(
+                rs, lastschrift_ids=(lastschrift_id,))
+            if transactions:
+                blockers["transactions"] = list(transactions.keys())
+
+        return blockers
+
+    @access("finance_admin")
+    def delete_lastschrift(self, rs: RequestState, lastschrift_id: int,
+                           cascade: Collection[str] = None
+                           ) -> DefaultReturnCode:
+        """Remove data about an old lastschrift.
+
+        Only possible after the lastschrift has been revoked for at least 14
+        months.
+        """
+        lastschrift_id = affirm("id", lastschrift_id)
+        cascade = affirm_set("str", cascade or [])
+
+        ret = 1
+        with Atomizer(rs):
+            lastschrift = self.get_lastschrift(rs, lastschrift_id)
+            blockers = self.delete_lastschrift_blockers(rs, lastschrift_id)
+            cascade &= blockers.keys()
+            if blockers.keys() - cascade:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {
+                        "type": "lastschrift",
+                        "block": blockers.keys() - cascade,
+                    })
+            if cascade:
+                if "revoked_at" in blockers:
+                    raise ValueError(n_("Unable to cascade %(blocker)s."),
+                                     {"blocker": "revoked_at"})
+                if "transactions" in blockers:
+                    ret *= self.sql_delete(rs, "cde.lastschrift_transactions",
+                                           blockers["transactions"])
+
+                blockers = self.delete_lastschrift_blockers(rs, lastschrift_id)
+
+            if not blockers:
+                ret *= self.sql_delete_one(
+                    rs, "cde.lastschrift", lastschrift_id)
+                # TODO we cannot currently log actions by the cron job.
+                # self.core.finance_log(
+                #     rs, const.FinanceLogCodes.lastschrift_deleted,
+                #     persona_id=lastschrift["persona_id"], delta=None,
+                #     new_balance=None)
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "lastschrift", "block": blockers.keys()})
+        return ret
 
     @access("member", "cde_admin")
     def list_lastschrift_transactions(
