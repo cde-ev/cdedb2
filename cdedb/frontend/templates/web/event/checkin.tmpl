@@ -22,8 +22,7 @@
 {% block content %}
     {% call util.bootstrap_panel(gettext("Search Name"), icon='search', aclass='panel-primary panel-condensed softhide',
                                  anid='searchpanel') %}
-        <input type="text" id="selector" class="form-control" value=""
-               aria-label="{% trans %}Name to Search{% endtrans %}" />
+        <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}" />
     {% endcall %}
 
     <div class="list-group list-group-hover">
