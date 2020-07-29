@@ -1028,7 +1028,7 @@ CREATE TABLE assembly.log (
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
         -- see cdedb.database.constants.AssembyLogCodes
         code                    integer NOT NULL,
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer REFERENCES core.personas(id),
         assembly_id             integer REFERENCES assembly.assemblies(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
