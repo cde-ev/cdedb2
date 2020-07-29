@@ -689,7 +689,9 @@ class CoreBackend(AbstractBackend):
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles
                      or "finance" not in allow_specials)):
-            if not (data["balance"] is None and "archive" in allow_specials):
+            # Allow setting balance to 0 or None during archival.
+            if not ((data["balance"] is None or data["balance"] == 0)
+                    and "archive" in allow_specials):
                 raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
             raise PrivilegeError(n_("Modification of email address prevented."))
@@ -1231,11 +1233,13 @@ class CoreBackend(AbstractBackend):
                 'is_event_admin': False,
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
-                'is_cde_realm': False,
-                'is_event_realm': False,
-                'is_ml_realm': False,
-                'is_assembly_realm': False,
                 'is_cdelokal_admin': False,
+                # Do no touch the realms, to preserve integrity and
+                # allow reactivation.
+                # 'is_cde_realm'
+                # 'is_event_realm'
+                # 'is_ml_realm'
+                # 'is_assembly_realm'
                 # 'is_member' already adjusted
                 'is_searchable': False,
                 # 'is_archived' will be done later
@@ -1244,7 +1248,7 @@ class CoreBackend(AbstractBackend):
                 # 'family_name' kept for later recognition
                 'title': None,
                 'name_supplement': None,
-                'gender': None,
+                # 'gender' kept for later recognition
                 # 'birthday' kept for later recognition
                 'telephone': None,
                 'mobile': None,
@@ -1265,7 +1269,7 @@ class CoreBackend(AbstractBackend):
                 'timeline': None,
                 'interests': None,
                 'free_form': None,
-                'balance': None,
+                'balance': 0 if persona['balance'] is not None else None,
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,
@@ -1331,7 +1335,25 @@ class CoreBackend(AbstractBackend):
                             "persona_id")
             self.sql_delete(rs, "ml.subscription_addresses", (persona_id,),
                             "persona_id")
+            # Make sure the users moderatored mls will still have moderators.
+            # Retrieve moderated mailinglists.
+            query = ("SELECT ARRAY_AGG(mailinglist_id) FROM ml.moderators"
+                     " WHERE persona_id = %s GROUP BY persona_id")
+            moderated_mailinglists = set(unwrap(self.query_one(
+                rs, query, (persona_id,))) or [])
             self.sql_delete(rs, "ml.moderators", (persona_id,), "persona_id")
+            if moderated_mailinglists:
+                # Retrieve the mailinglists, that _still_ have moderators.
+                query = ("SELECT ARRAY_AGG(DISTINCT mailinglist_id) as ml_ids"
+                         " FROM ml.moderators WHERE mailinglist_id = ANY(%s)")
+                ml_ids = set(unwrap(self.query_one(
+                    rs, query, (moderated_mailinglists,))) or [])
+                # Check the difference.
+                unmodearated_mailinglists = moderated_mailinglists - ml_ids
+                if unmodearated_mailinglists:
+                    raise ArchiveError(
+                        n_("Sole moderator of a mailinglist {ml_ids}."),
+                        {'ml_ids': unmodearated_mailinglists})
             #
             # 9. Clear logs
             #
@@ -1431,7 +1453,12 @@ class CoreBackend(AbstractBackend):
                 change_note="Benutzer gelöscht.",
                 allow_specials=("admins", "username", "purge"))
             #
-            # 2. Clear changelog
+            # 2. Remove past event data.
+            #
+            self.sql_delete(
+                rs, "past_event.participants", (persona_id,), "persona_id")
+            #
+            # 3. Clear changelog
             #
             query = glue(
                 "SELECT id FROM core.changelog WHERE persona_id = %s",
@@ -1442,7 +1469,7 @@ class CoreBackend(AbstractBackend):
                 "WHERE persona_id = %s AND NOT id = %s")
             ret *= self.query_exec(rs, query, (persona_id, newest['id']))
             #
-            # 3. Finish
+            # 4. Finish
             #
             return ret
 
@@ -1794,8 +1821,9 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("anonymous")
-    def get_roles_multi(self, rs: RequestState,
-                        ids: Collection[int]) -> Dict[int, Set[Role]]:
+    def get_roles_multi(self, rs: RequestState, ids: Collection[int],
+                        introspection_only: bool = False
+                        ) -> Dict[int, Set[Role]]:
         """Resolve ids into roles.
 
         Returns an empty role set for inactive users."""
@@ -1803,23 +1831,24 @@ class CoreBackend(AbstractBackend):
             return {rs.user.persona_id: rs.user.roles}
         bits = PERSONA_STATUS_FIELDS + ("id",)
         data = self.sql_select(rs, "core.personas", bits, ids)
-        return {d['id']: extract_roles(d) for d in data}
+        return {d['id']: extract_roles(d, introspection_only) for d in data}
     get_roles_single = singularize(get_roles_multi)
 
     @access("persona")
-    def get_realms_multi(self, rs: RequestState,
-                         ids: Collection[int]) -> Dict[int, Set[Realm]]:
+    def get_realms_multi(self, rs: RequestState, ids: Collection[int],
+                         introspection_only: bool = False
+                         ) -> Dict[int, Set[Realm]]:
         """Resolve persona ids into realms (only for active users)."""
         ids = affirm_set("id", ids)
-        roles = self.get_roles_multi(rs, ids)
+        roles = self.get_roles_multi(rs, ids, introspection_only)
         all_realms = {"cde", "event", "assembly", "ml"}
         return {key: value & all_realms for key, value in roles.items()}
     get_realms_single = singularize(get_realms_multi)
 
     @access("persona")
     def verify_personas(self, rs: RequestState, ids: Collection[int],
-                        required_roles: Collection[Role] = None
-                        ) -> Tuple[int, ...]:
+                        required_roles: Collection[Role] = None,
+                        introspection_only: bool = True) -> Tuple[int, ...]:
         """Check wether certain ids map to actual (active) personas.
 
         :param required_roles: If given check that all personas have
@@ -1829,7 +1858,7 @@ class CoreBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         required_roles = required_roles or tuple()
         required_roles = affirm_set("str", required_roles)
-        roles = self.get_roles_multi(rs, ids)
+        roles = self.get_roles_multi(rs, ids, introspection_only)
         return tuple(key for key, value in roles.items()
                      if value >= required_roles)
 

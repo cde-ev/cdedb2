@@ -3768,6 +3768,8 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)
+    if val and "moderators" in val and len(val["moderators"]) == 0:
+        errs.append(("moderators", ValueError(n_("Must not be empty."))))
     if errs:
         return val, errs
     for key, validator_str in iterable_fields:

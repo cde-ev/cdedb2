@@ -3341,6 +3341,48 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['queryform']
         self.submit(f)
 
+    @as_users("anton")
+    # @prepsql("UPDATE event.events SET registration_start = now() WHERE id = 2")
+    def test_archived_participant(self, user):
+        self.get("/event/event/2/registration/add")
+        f = self.response.forms["addregistrationform"]
+        f["persona.persona_id"] = USER_DICT["charly"]["DB-ID"]
+        f["part4.status"] = const.RegistrationPartStati.participant.value
+        f["reg.list_consent"].checked = True
+        self.submit(f)
+        self.traverse({"description": "Veranstaltungsteile"})
+        f = self.response.forms["partsummaryform"]
+        f["part_begin_4"] = now().date() - datetime.timedelta(days=1)
+        f["part_end_4"] = now().date() - datetime.timedelta(days=1)
+        self.submit(f)
+        self.traverse({"description": r"\sÜbersicht"})
+        f = self.response.forms["archiveeventform"]
+        f["ack_archive"].checked = True
+        self.submit(f, verbose=True)
+        self.assertTitle("CdE-Party 2050")
+        self.assertPresence("Charly")
+        self.get("/event/event/2/registration/list")
+        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.assertPresence("Charly")
+        self.admin_view_profile("charly")
+        f = self.response.forms["archivepersonaform"]
+        f["note"] = "For testing."
+        f["ack_delete"].checked = True
+        self.submit(f)
+        self.assertPresence("CdE-Party 2050")
+        self.get("/event/event/2/registration/list")
+        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.assertPresence("Charly")
+        self.admin_view_profile("charly")
+        f = self.response.forms["purgepersonaform"]
+        f["ack_delete"].checked = True
+        self.submit(f)
+        self.assertNonPresence("CdE-Party 2050")
+        self.get("/event/event/2/registration/list")
+        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.assertNonPresence("Charly")
+        self.assertPresence("N. N.")
+
     def test_log(self):
         # First: generate data
         self.test_register()

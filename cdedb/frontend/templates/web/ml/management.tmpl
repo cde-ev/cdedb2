@@ -46,7 +46,7 @@
                 {{ util.anti_csrf_token('ml/add_moderators') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="moderator_ids", anid="input-add-moderator",
+                    {{ util.input_text(name="moderators", anid="input-add-moderator",
                                        placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                        arialabel=gettext("IDs of the new moderators")) }}
                     <script nonce="{{ csp_nonce }}">
@@ -60,7 +60,7 @@
                         {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
-                {{ util.output_errors('moderator_ids', wrapper=True) }}
+                {{ util.output_errors('moderators', wrapper=True) }}
             </form>
 
             <ul id="moderator_list">

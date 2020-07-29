@@ -1097,7 +1097,7 @@
             "postal_code": "88484",
             "given_names": "Garcia G.",
             "is_ml_admin": false,
-            "is_cdelokal_admin": true,
+            "is_cdelokal_admin": false,
             "id": 7,
             "is_cde_realm": true,
             "title": null
@@ -1165,7 +1165,7 @@
             "postal_code": "10999",
             "given_names": "Inga",
             "is_ml_admin": false,
-            "is_cdelokal_admin": false,
+            "is_cdelokal_admin": true,
             "id": 9,
             "is_cde_realm": true,
             "title": null
@@ -1228,7 +1228,7 @@
             "is_meta_admin": true,
             "is_ml_admin": true,
             "is_ml_realm": true,
-            "is_cdelokal_admin": false,
+            "is_cdelokal_admin": true,
             "is_searchable": true,
             "location": "Tokyo",
             "mobile": null,

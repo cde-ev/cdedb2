@@ -556,3 +556,11 @@ class TestValidation(unittest.TestCase):
                     if outv is not None:
                         outv['realm'] = "event"
             self.do_validator_test(assertion, spec, {'_ignore_warnings': True})
+
+    def test_encoding(self):
+        # Make sure decoding utf-8 as if it were utf-8-sig works.
+        msg = "abc"
+        self.assertEqual(msg, msg.encode('utf-8').decode('utf-8'))
+        self.assertEqual(msg, msg.encode('utf-8').decode('utf-8-sig'))
+        self.assertEqual("\ufeff" + msg, msg.encode('utf-8-sig').decode('utf-8'))
+        self.assertEqual(msg, msg.encode('utf-8-sig').decode('utf-8-sig'))

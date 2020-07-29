@@ -452,7 +452,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def set_moderators(self, rs: RequestState, mailinglist_id: int,
-                       moderator_ids: Collection[int]) -> DefaultReturnCode:
+                       moderators: Collection[int]) -> DefaultReturnCode:
         """Set moderators of a mailinglist.
 
         A complete set must be passed, which will superseed the current set.
@@ -461,23 +461,31 @@ class MlBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
-        :type moderator_ids: {int}
+        :type moderators: {int}
         :rtype: int
         :returns: default return code
         """
         mailinglist_id = affirm("id", mailinglist_id)
-        moderator_ids = affirm_set("id", moderator_ids)
-
-        if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
+        moderators = affirm_set("id", moderators)
+        if not moderators:
+            raise ValueError(n_("Cannot remove all moderators."))
 
         ret = 1
         with Atomizer(rs):
+            if not self.core.verify_ids(rs, moderators, is_archived=False):
+                raise ValueError(n_(
+                    "Some of these users do not exist or are archived."))
+            verified = set(self.core.verify_personas(rs, moderators, {"ml"}))
+            if not verified == moderators:
+                raise ValueError(n_("Some of these users are not ml-users."))
+
+            if not self.may_manage(rs, mailinglist_id):
+                raise PrivilegeError("Not privileged.")
             current = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
 
             existing = current['moderators']
-            new = moderator_ids - existing
-            deleted = existing - moderator_ids
+            new = moderators - existing
+            deleted = existing - moderators
             if new:
                 if not self.core.verify_ids(rs, new, is_archived=False):
                     raise ValueError(n_(

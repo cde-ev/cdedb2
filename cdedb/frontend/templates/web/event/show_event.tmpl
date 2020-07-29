@@ -135,7 +135,7 @@
                     <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET" id="quickregistrationform">
                         <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
                         <div class="input-group">
-                            <input type="text" name="phrase" class="form-control" id="input-showregistration-id"
+                            <input type="search" name="phrase" class="form-control" id="input-showregistration-id"
                                    aria-label="{% trans %}ID, name or email{% endtrans %}"/>
                             <span class="input-group-btn">
                                 {{ util.input_submit("", icon='search', title=gettext("Search")) }}

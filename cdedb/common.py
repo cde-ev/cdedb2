@@ -904,6 +904,8 @@ def unwrap(single_element_list):
     in that it uses the values instead of the keys. To unwrap the keys pass
     `data.keys()` instead.
     """
+    if single_element_list is None:
+        return None
     if (not isinstance(single_element_list, collections.abc.Iterable)
             or (isinstance(single_element_list, collections.abc.Sized)
                 and len(single_element_list) != 1)):
