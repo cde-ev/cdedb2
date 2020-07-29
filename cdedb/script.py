@@ -193,7 +193,9 @@ class Script(Atomizer):
             msg = "Aborting Dry Run!"
         else:
             msg = "Error encountered, rolling back!"
-        print(f"\n{'=' * 80}\n")
+        print()
+        print("=" * 80)
+        print()
         print(formatmsg(msg))
         print()
         ret = super().__exit__(exc_type, exc_val, exc_tb)
