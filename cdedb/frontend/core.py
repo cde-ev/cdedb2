@@ -1051,6 +1051,8 @@ class CoreFrontend(AbstractFrontend):
         display_realms = REALM_INHERITANCE.keys() & rs.user.roles
         if "cde" in display_realms:
             display_realms.add("finance")
+        if "ml" in display_realms:
+            display_realms.add("cdelokal")
         for realm in display_realms:
             admins[realm] = self.coreproxy.list_admins(rs, realm)
 

@@ -109,6 +109,19 @@
                 <li>{{ util.persona_anchor(personas[admin]) }}</li>
             {% endfor %}
         </ul>
+
+        <h3>{% trans %}CdElokal-Admins{% endtrans %}</h3>
+        <div class="p">
+            {% trans %}
+                CdElokal-Admins may manage and create CdElokal mailinglists.
+                They do not automatically have access to any user management, like creating and managing accounts.
+            {% endtrans %}
+        </div>
+        <ul id="cdelokal">
+            {% for admin in admins["cdelokal"] %}
+                <li>{{ util.persona_anchor(personas[admin]) }}</li>
+            {% endfor %}
+        </ul>
     {% endif %}
 
     {% if "assembly" in user.roles %}

@@ -1047,7 +1047,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({"href": "ml/mailinglist/3/log"})
         self.assertTitle("Witz des Tages: Log [0–0 von 0]")
 
-    @as_users("garcia")
+    @as_users("inga")
     def test_cdelokal_admin(self, user):
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Hogwarts"})
