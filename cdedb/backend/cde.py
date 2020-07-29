@@ -234,11 +234,10 @@ class CdEBackend(AbstractBackend):
             if not blockers:
                 ret *= self.sql_delete_one(
                     rs, "cde.lastschrift", lastschrift_id)
-                # TODO we cannot currently log actions by the cron job.
-                # self.core.finance_log(
-                #     rs, const.FinanceLogCodes.lastschrift_deleted,
-                #     persona_id=lastschrift["persona_id"], delta=None,
-                #     new_balance=None)
+                self.core.finance_log(
+                    rs, const.FinanceLogCodes.lastschrift_deleted,
+                    persona_id=lastschrift["persona_id"], delta=None,
+                    new_balance=None)
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
