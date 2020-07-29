@@ -93,6 +93,8 @@ After that should come the rest of the required imports. ::
     import cdedb.database.constants as const
     from cdedb.common import SubscriptionError, SubscriptionInfo
 
+    ml = make_backend("ml")
+
 Configuring a script
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -101,7 +103,6 @@ actually running the script against the production environment. ::
 
     rs = setup(persona_id=-1, dbuser="cdb_admin",
         dbpassword="9876543210abcdefghijklmnopqrst")
-    ml = make_backend("core")
     DRY_RUN = True
     SHOW_ERROR_DETAILS = True
 

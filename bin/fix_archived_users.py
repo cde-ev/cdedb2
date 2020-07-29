@@ -7,13 +7,13 @@ sys.path.insert(0, "/cdedb2/")
 from cdedb.script import make_backend, setup, Script
 import cdedb.database.constants as const
 
+core = make_backend("core", proxy=False)
+
 # config
 
 rs = setup(persona_id=-1, dbuser="cdb_admin",
            dbpassword="9876543210abcdefghijklmnopqrst")()
 DRY_RUN = True
-
-core = make_backend("core", proxy=False)
 
 # work
 
