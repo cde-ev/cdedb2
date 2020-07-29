@@ -1326,6 +1326,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anton Armin A. Administrator", div="event")
         self.assertPresence("Ferdinand F. Findus", div="event")
         self.assertPresence("Bertålotta Beispiel", div="event")
+        self.assertPresence("Nina Neubauer", div="ml")
+        self.assertPresence("Inga Iota", div="cdelokal")
         self.assertPresence("Anton Armin A. Administrator", div="assembly")
         self.assertPresence("Ferdinand F. Findus", div="assembly")
         self.assertPresence("Bertålotta Beispiel", div="assembly")
