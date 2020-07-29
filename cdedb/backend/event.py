@@ -863,7 +863,7 @@ class EventBackend(AbstractBackend):
                 LEFT OUTER JOIN (
                     {rp_total}
                 ) AS rp_total ON l.id = rp_total.lodgement_id""".format(
-                    event_id=event_id, part_id=p_id,
+                    event_id=event_id,
                     rp_regular=inhabitants_counter(
                         p_id, "AND is_camping_mat = False"),
                     rp_camping_mat=inhabitants_counter(

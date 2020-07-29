@@ -48,7 +48,7 @@ class CoreBackend(AbstractBackend):
     realm = "core"
 
     def __init__(self, configpath: PathLike = None) -> None:
-        super().__init__(configpath, is_core=True)
+        super().__init__(configpath)
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
