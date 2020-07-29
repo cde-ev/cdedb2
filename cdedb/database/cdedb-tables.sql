@@ -455,7 +455,7 @@ CREATE TABLE cde.finance_log (
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
         -- see cdedb.database.constants.CdeFinanceLogCodes
         code                    integer NOT NULL,
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer REFERENCES core.personas(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
         delta                   numeric(7,2),
@@ -477,7 +477,7 @@ CREATE TABLE cde.log (
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
         -- see cdedb.database.constants.CdeLogCodes
         code                    integer NOT NULL,
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer REFERENCES core.personas(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
         additional_info         varchar
@@ -559,7 +559,7 @@ CREATE TABLE past_event.log (
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
         -- see cdedb.database.constants.PastEventLogCodes
         code                    integer NOT NULL,
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer REFERENCES core.personas(id),
         pevent_id               integer REFERENCES past_event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
@@ -859,7 +859,7 @@ CREATE TABLE event.log (
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
         -- see cdedb.database.constants.EventLogCodes
         code                    integer NOT NULL,
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer REFERENCES core.personas(id),
         event_id                integer REFERENCES event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
@@ -1024,7 +1024,7 @@ CREATE TABLE assembly.log (
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
         -- see cdedb.database.constants.AssembyLogCodes
         code                    integer NOT NULL,
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer REFERENCES core.personas(id),
         assembly_id             integer REFERENCES assembly.assemblies(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
