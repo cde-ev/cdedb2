@@ -12,6 +12,7 @@ with the production environment.
 import getpass
 import gettext
 import time
+import tempfile
 import pathlib
 
 import psycopg2
@@ -103,7 +104,7 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     return rs
 
 
-def make_backend(realm: str, proxy: bool = True, configpath: PathLike = None,
+def make_backend(realm: str, proxy: bool = True, *, configpath: PathLike = None,
                  **config: Any):
     """Instantiate backend objects and wrap them in proxy shims.
 
@@ -111,16 +112,24 @@ def make_backend(realm: str, proxy: bool = True, configpath: PathLike = None,
     :param proxy: If True, wrap the backend in a proxy, otherwise return
         the raw backend, which gives access to the low-level SQL methods.
     """
-    tmp_config = False
-    if configpath is None:
-        if config:
-            configpath = pathlib.Path("/tmp/tmp_config.py")
-            with open(configpath, "w") as f:
-                for k, v in config.items():
-                    f.write(f"{k} = {v}\n")
-            tmp_config = True
+    if config and configpath:
+        raise ValueError("Mustn't specify both config and configpath.")
+    elif config:
+        with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
+            for k, v in config.items():
+                f.write(f"{k} = {v}\n")
+            f.seek(0)
+            filename = f.name
+            backend = _make_backend(realm, f.name)
     else:
-        configpath = pathlib.Path(configpath)
+        backend = _make_backend(realm, configpath)
+    if proxy:
+        return make_proxy(backend)
+    else:
+        return backend
+
+
+def _make_backend(realm: str, configpath: PathLike = None):
     if realm == "core":
         backend = CoreBackend(configpath)
     elif realm == "cde":
@@ -135,13 +144,7 @@ def make_backend(realm: str, proxy: bool = True, configpath: PathLike = None,
         backend = EventBackend(configpath)
     else:
         raise ValueError("Unrecognized realm")
-    if tmp_config:
-        if configpath.is_file():
-            configpath.unlink()
-    if proxy:
-        return make_proxy(backend)
-    else:
-        return backend
+    return backend
 
 
 class DryRunError(Exception):
@@ -189,7 +192,7 @@ class Script(Atomizer):
         elif exc_type == DryRunError:
             msg = "Aborting Dry Run!"
         else:
-            msg = "Error encounterd, rolling back."
+            msg = "Error encountered, rolling back!"
         print(f"\n{'=' * 80}\n")
         print(formatmsg(msg))
         print()

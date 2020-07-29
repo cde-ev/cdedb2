@@ -311,6 +311,10 @@ def make_proxy(backend: B, internal=False) -> B:
 
             return wrapit(attr)
 
+        @staticmethod
+        def __get_backend_class__() -> B:
+            return backend.__class__
+
     return cast(B, Proxy())
 
 
