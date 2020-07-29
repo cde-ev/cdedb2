@@ -1710,9 +1710,13 @@ def roles_to_db_role(roles: Set[Role]) -> str:
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 
 ALL_ADMIN_VIEWS: Set[AdminView] = {
-    "meta_admin", "core_user", "core", "cde_user", "past_event", "finance",
-    "event_user", "event_mgmt", "event_orga", "ml_user", "ml_mgmt",
-    "ml_moderator", "assembly_user", "assembly_mgmt", "assembly_contents",
+    "meta_admin",
+    "core_user", "core",
+    "cde_user", "past_event",
+    "finance",
+    "event_user", "event_mgmt", "event_orga",
+    "ml_user", "ml_mgmt", "ml_moderator",
+    "assembly_user", "assembly_mgmt", "assembly_wahlleitung",
     "genesis"}
 
 
@@ -1735,7 +1739,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "cdelokal_admin" in roles:
         result |= {"ml_mgmt", "ml_moderator"}
     if "assembly_admin" in roles:
-        result |= {"assembly_user", "assembly_mgmt", "assembly_contents",
+        result |= {"assembly_user", "assembly_mgmt", "assembly_wahlleitung",
                    "ml_mgmt", "ml_moderator"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
