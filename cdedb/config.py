@@ -606,7 +606,7 @@ class Config(BasicConfig):
         )
 
         for key in _BASIC_DEFAULTS.keys() & set(dir(primaryconf)):
-            _LOGGER.info(f"Ignored basic config entry {key} in {configpath}.")
+            _LOGGER.debug(f"Ignored basic config entry {key} in {configpath}.")
 
 
 class SecretsConfig(collections.abc.Mapping):

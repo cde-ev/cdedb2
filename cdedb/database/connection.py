@@ -105,7 +105,7 @@ def connection_pool_factory(dbname, roles, secrets, port,
         def __setitem__(self, key, val):
             raise NotImplementedError(n_("Not available for instant pool"))
 
-    _LOGGER.info("Initialised instant connection pool for roles {}".format(
+    _LOGGER.debug("Initialised instant connection pool for roles {}".format(
         roles))
     return InstantConnectionPool(roles)
 

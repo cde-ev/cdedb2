@@ -175,7 +175,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
-        self.logger.info("Instantiated {} with configpath {}.".format(
+        self.logger.debug("Instantiated {} with configpath {}.".format(
             self, configpath))
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
