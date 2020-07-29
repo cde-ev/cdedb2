@@ -206,7 +206,6 @@
                 }
             },
             "persona": {
-                "is_cdelokal_admin": true,
                 "is_member": true,
                 "id": 1,
                 "username": "anton@example.cde",
@@ -287,7 +286,6 @@
                 }
             },
             "persona": {
-                "is_cdelokal_admin": false,
                 "is_member": false,
                 "id": 5,
                 "username": "emilia@example.cde",
@@ -367,7 +365,6 @@
                 }
             },
             "persona": {
-                "is_cdelokal_admin": true,
                 "is_member": true,
                 "id": 7,
                 "username": "garcia@example.cde",
@@ -449,7 +446,6 @@
                 }
             },
             "persona": {
-                "is_cdelokal_admin": false,
                 "is_member": true,
                 "id": 9,
                 "username": "inga@example.cde",
@@ -529,7 +525,6 @@
                 }
             },
             "persona": {
-                "is_cdelokal_admin": false,
                 "is_member": true,
                 "id": 100,
                 "username": "akira@example.cde",
@@ -599,7 +594,6 @@
                 }
             },
             "persona": {
-                "is_cdelokal_admin": false,
                 "is_member": true,
                 "id": 2,
                 "username": "berta@example.cde",
