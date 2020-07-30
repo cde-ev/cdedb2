@@ -315,6 +315,18 @@ class TestCron(CronTest):
         self.assertEqual(['privilege_change_remind'],
                          [mail.template for mail in self.mails])
 
+    def test_tally_ballots(self):
+        ballot_ids = set()
+        for assembly_id in self.assembly.list_assemblies():
+            ballot_ids |= self.assembly.list_ballots(assembly_id).keys()
+        ballots = self.assembly.get_ballots(ballot_ids)
+        self.assertTrue(all(not b['is_tallied'] for b in ballots.values()))
+        self.execute("check_tally_ballot")
+        ballots = self.assembly.get_ballots(ballot_ids)
+        self.assertEqual(6, sum(1 for b in ballots.values() if b['is_tallied']))
+        self.assertEqual(['ballot_tallied'] * 6,
+                         [mail.template for mail in self.mails])
+
     @unittest.mock.patch("mailmanclient.Client")
     def test_mailman_sync(self, client_class):
         #
