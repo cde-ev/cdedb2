@@ -9,6 +9,7 @@ from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.frontend.common import CustomCSVDialect
 
 from cdedb.query import QueryOperators
+import cdedb.ml_type_aux as ml_type
 
 
 class TestMlFrontend(FrontendTest):
@@ -1050,6 +1051,48 @@ class TestMlFrontend(FrontendTest):
 
         self.traverse({"href": "ml/mailinglist/3/log"})
         self.assertTitle("Witz des Tages: Log [0–0 von 0]")
+
+    @as_users("inga")
+    def test_cdelokal_admin(self, user):
+        self.traverse({"description": "Mailinglisten"},
+                      {"description": "Hogwarts"})
+        admin_note = self.sample_data['ml.mailinglists'][65]['notes']
+        self.assertPresence(admin_note, "adminnotes")
+        self.traverse({"description": "Verwaltung"})
+        f = self.response.forms['addmoderatorform']
+        f['moderators'] = user['DB-ID']
+        self.submit(f)
+        self.assertPresence(user['given_names'], "moderator_list")
+        f = self.response.forms[f"removemoderatorform{user['id']}"]
+        self.submit(f)
+        self.assertNonPresence(user['given_names'], "moderator_list")
+        self.traverse({"description": "Konfiguration"})
+        f = self.response.forms['changelistform']
+        new_notes = "Free Butterbeer for everyone!"
+        f['notes'] = new_notes
+        self.submit(f)
+        self.assertPresence(new_notes, "adminnotes")
+        self.traverse({"description": "Mailinglisten"},
+                      {"description": "Mailingliste anlegen"})
+        f = self.response.forms['selectmltypeform']
+        f['ml_type'] = const.MailinglistTypes.cdelokal.value
+        self.assertEqual(len(f['ml_type'].options), 1)
+        self.submit(f)
+        f = self.response.forms['createlistform']
+        f['title'] = "Little Whinging"
+        f['notes'] = "Only one wizard lives here, but he insisted on a" \
+                     " Lokalgruppen-Mailinglist."
+        f['description'] = "If anyone else lives here, please come by, " \
+                           "I am lonely."
+        f['local_part'] = "littlewhinging"
+        f['domain'] = const.MailinglistDomain.cdelokal.value
+        self.assertEqual(len(f['domain'].options),
+                         len(ml_type.CdeLokalMailinglist.domains))
+        moderator = USER_DICT["berta"]
+        f['moderators'] = moderator["DB-ID"]
+        self.submit(f)
+        self.assertTitle("Little Whinging")
+        self.assertPresence(moderator['given_names'], "moderator_list")
 
     def test_log(self):
         ## First: generate data

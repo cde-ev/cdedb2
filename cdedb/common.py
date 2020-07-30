@@ -1475,6 +1475,9 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
+        if "ml" in ret:
+            if session.get("is_cdelokal_admin"):
+                ret.add("cdelokal_admin")
     if "cde_admin" in ret:
         if session.get("is_finance_admin"):
             ret.add("finance_admin")
@@ -1669,6 +1672,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("ml_admin", "cdb_admin"),
     ("assembly_admin", "cdb_admin"),
     ("event_admin", "cdb_admin"),
+    ("cdelokal_admin", "cdb_admin"),
 
     ("searchable", "cdb_member"),
     ("member", "cdb_member"),
@@ -1719,6 +1723,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
                    "ml_moderator"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_moderator"}
+    if "cdelokal_admin" in roles:
+        result |= {"ml_mgmt", "ml_moderator"}
     if "assembly_admin" in roles:
         result |= {"assembly_user", "assembly_mgmt", "assembly_contents",
                    "ml_mgmt", "ml_moderator"}
@@ -1748,7 +1754,7 @@ PERSONA_STATUS_FIELDS = (
     "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
     "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
     "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_member", "is_searchable", "is_archived")
+    "is_cdelokal_admin", "is_member", "is_searchable", "is_archived")
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
@@ -1892,7 +1898,7 @@ PRIVILEGE_CHANGE_FIELDS = (
     "id", "ctime", "ftime", "persona_id", "submitted_by", "status",
     "is_meta_admin", "is_core_admin", "is_cde_admin",
     "is_finance_admin", "is_event_admin", "is_ml_admin",
-    "is_assembly_admin", "notes", "reviewer")
+    "is_assembly_admin", "is_cdelokal_admin", "notes", "reviewer")
 
 #: Fields for institutions of events
 INSTITUTION_FIELDS = ("id", "title", "moniker")

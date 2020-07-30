@@ -49,7 +49,7 @@ möglich):
     * Admin-Privilegien,
     * Admin-Notizen
     * E-Mail
-* Veranstatlungsbezogen
+* Veranstaltungsbezogen
     * Geburtsdatum,
     * Geschlecht,
     * E-Mail
@@ -182,8 +182,16 @@ auf den Profilen anderer Benutzer sehen darf.
       * Orgas: "Veranstaltungsbezogen"
       * Moderatoren: Das Feld "E-Mail"
 
-    Veranstaltungs bzw Mailinglisten Admins gelten dabei als Orga bzw Moderator
-    von jeder Veranstatlung bzw Mailingliste.
+    Veranstaltungs-Admins haben vollen Zugriff auf alle Veranstaltungen, als
+    wären sie Orgas. Mailinglisten-Admins haben vollen Zugriff auf alle
+    Mailinglisten, als wären sie Moderatoren.
+
+    Darüber hinaus haben einige Admins vollen Zugriff auf alle ihnen
+    zugeordneten Mailinglisten. Für Veranstaltungs-, bzw. Versammlungs-Admins
+    sind dies alle Veranstaltungs-, bzw. Versammlungs-Mailinglisten.
+    Für CdE-Admins sind dies allgemeine Mitglieder-Mailinglisten wie cde-info
+    sowie alle Teamlisten. CdE-Lokal-Admins haben Zugriff auf alle
+    CdE-Lokal-Mailinglisten.
 
 * relative Admins
     Jeder Benutzer darf von seinem relativen Admin(s) eingesehen werden. Diese

@@ -12731,6 +12731,15 @@ msgstr ""
 "bearbeiten. Außerdem können sie reine Mailinglistennutzer anlegen und "
 "verwalten, sowie entsprechende Accountanfragen bearbeiten."
 
+msgid ""
+"CdElokal-Admins may manage and create CdElokal mailinglists. They do not "
+"automatically have access to any user management, like creating and "
+"managing accounts."
+msgstr ""
+"CdElokal-Admins können CdElokal-Mailinglisten anlegen und bearbeiten. "
+"Sie haben selbst keinen Zugang zur Nutzerverwaltung, wie das Anlegen und "
+"Bearbeiten von Accounts."
+
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:115
 msgid "Assembly-Admins"
 msgstr "Versammlungs-Admins"

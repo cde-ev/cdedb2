@@ -1051,6 +1051,8 @@ class CoreFrontend(AbstractFrontend):
         display_realms = REALM_INHERITANCE.keys() & rs.user.roles
         if "cde" in display_realms:
             display_realms.add("finance")
+        if "ml" in display_realms:
+            display_realms.add("cdelokal")
         for realm in display_realms:
             admins[realm] = self.coreproxy.list_admins(rs, realm)
 
@@ -1077,12 +1079,14 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         stati = (const.PrivilegeChangeStati.pending,)
-        case_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
-        if case_ids:
+        privilege_change_ids = self.coreproxy.list_privilege_changes(
+            rs, persona_id, stati)
+        if privilege_change_ids:
             rs.notify("error", n_("Resolve pending privilege change first."))
-            case_id = unwrap(case_ids.keys())
+            privilege_change_id = unwrap(privilege_change_ids.keys())
             return self.redirect(
-                rs, "core/show_privilege_change", {"case_id": case_id})
+                rs, "core/show_privilege_change",
+                {"privilege_change_id": privilege_change_id})
 
         merge_dicts(rs.values, rs.ambience['persona'])
         return self.render(rs, "change_privileges")
@@ -1092,12 +1096,14 @@ class CoreFrontend(AbstractFrontend):
         ("is_meta_admin", "bool"), ("is_core_admin", "bool"),
         ("is_cde_admin", "bool"), ("is_finance_admin", "bool"),
         ("is_event_admin", "bool"), ("is_ml_admin", "bool"),
-        ("is_assembly_admin", "bool"), ("notes", "str"))
+        ("is_assembly_admin", "bool"), ("is_cdelokal_admin", "bool"),
+        ("notes", "str"))
     def change_privileges(self, rs: RequestState, persona_id: int,
                           is_meta_admin: bool, is_core_admin: bool,
                           is_cde_admin: bool, is_finance_admin: bool,
                           is_event_admin: bool, is_ml_admin: bool,
-                          is_assembly_admin: bool, notes: str) -> Response:
+                          is_assembly_admin: bool, is_cdelokal_admin: bool,
+                          notes: str) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
@@ -1117,9 +1123,10 @@ class CoreFrontend(AbstractFrontend):
             "notes": notes,
         }
 
+        # TODO: define these somewhere central?
         admin_keys = {"is_meta_admin", "is_core_admin", "is_cde_admin",
                       "is_finance_admin", "is_event_admin", "is_ml_admin",
-                      "is_assembly_admin"}
+                      "is_assembly_admin", "is_cdelokal_admin"}
 
         for key in admin_keys:
             if locals()[key] != persona[key]:
@@ -1131,11 +1138,12 @@ class CoreFrontend(AbstractFrontend):
         errors = []
 
         if (any(k in data for k in
-                ["is_meta_admin", "is_core_admin", "is_cde_admin"])
+                ["is_meta_admin", "is_core_admin", "is_cde_admin",
+                 "is_cdelokal_admin"])
                 and not rs.ambience['persona']['is_cde_realm']):
             errors.append(n_(
-                "Cannot grant meta, core or CdE admin privileges to non CdE "
-                "users."))
+                "Cannot grant meta, core, CdE or CdElokal admin privileges"
+                " to non CdE users."))
 
         if data.get('is_finance_admin'):
             if (data.get('is_cde_admin') is False
@@ -1144,10 +1152,11 @@ class CoreFrontend(AbstractFrontend):
                 errors.append(n_(
                     "Cannot grant finance admin privileges to non CdE admins."))
 
-        if "is_ml_admin" in data and not rs.ambience['persona']['is_ml_realm']:
+        if (any(k in data for k in ["is_ml_admin", "is_cdelokal_admin"])
+                and not rs.ambience['persona']['is_ml_realm']):
             errors.append(n_(
-                "Cannot grant mailinglist admin privileges to non mailinglist "
-                "users."))
+                "Cannot grant mailinglist or CdElokal admin privileges"
+                " to non mailinglist users."))
 
         if ("is_event_admin" in data and
                 not rs.ambience['persona']['is_event_realm']):
