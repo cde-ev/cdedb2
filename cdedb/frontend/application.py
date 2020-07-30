@@ -385,8 +385,4 @@ def check_anti_csrf(rs: RequestState, component: str, action: str
             return False, n_("Anti CSRF token is forged.")
     if val != ANTI_CSRF_TOKEN_PAYLOAD:
         return False, n_("Anti CSRF token is invalid.")
-    # do not trigger validation checking if no errors exist
-    if rs.retrieve_validation_errors():
-        # this is just defense in depth; this should not be necessary
-        rs.extend_validation_errors(errs)
     return True, None
