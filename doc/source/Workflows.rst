@@ -64,9 +64,8 @@ following steps to deploy a new revision.
 Scripts
 -------
 
-.. automodule:: cdedb.script
-   :members:
-
+For doing modifications to the live instance and it's data we provide a
+collection of functionality in :ref:`autodoc-script-module`.
 
 A production script should have 3 sections for setup (imports, etc.),
 configuration and doing the actual work.
@@ -86,7 +85,8 @@ the `cdedb` modules are accessible: ::
     import sys
     sys.path.insert(0, "/cdedb2")
 
-After that should come the rest of the required imports. ::
+After that should come the rest of the required imports and other
+prerequisites like setting up backends using ``make_backend``. ::
 
     from pprint import pprint
     from cdedb.script import setup, make_backend, Script
@@ -106,17 +106,17 @@ actually running the script against the production environment. ::
     DRY_RUN = True
     SHOW_ERROR_DETAILS = True
 
-The `persona_id`, `dbuser` and `dbpassword` arguments will have to be adjusted
-later. You should also provide a flag for running the script in dry run mode,
-i.e. without actually commiting any changes made.
+The ``persona_id``, ``dbuser`` and ``dbpassword`` arguments will have to be
+adjusted later. You should also provide a flag for running the script in dry
+run mode, i.e. without actually commiting any changes made.
 
-If you might need to simulate the `RequestStates` for different users, you
-should leave the return value of `setup` as it is. If not you might want to
-call it just once. ::
+``setup`` returns a ``RequestState`` factory, which you can call with a
+persona id, to get a fake ``RequestState`` for that user. If called without
+an argument this will default to the ``persona_id`` passed to ``setup``.
+If you do not need different ``RequestState``s, you might want to call this
+once to avoid mistakes down the line. ::
 
     rs = rs()
-
-This will default to the `persona_id` provided to `setup`.
 
 Doing the actual work
 ^^^^^^^^^^^^^^^^^^^^^
