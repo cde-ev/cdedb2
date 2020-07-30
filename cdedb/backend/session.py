@@ -58,7 +58,7 @@ class SessionBackend:
             secrets, self.conf["DB_PORT"],
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
 
-    def lookupsession(self, sessionkey: str, ip: str) -> Optional[User]:
+    def lookupsession(self, sessionkey: Optional[str], ip: str) -> User:
         """Raison d'etre.
 
         Resolve a session key (originally stored in a cookie) into the
@@ -141,7 +141,7 @@ class SessionBackend:
                           'display_name', 'family_name')}
         return User(roles=extract_roles(data), **vals)
 
-    def lookuptoken(self, apitoken: str, ip: str) -> User:
+    def lookuptoken(self, apitoken: Optional[str], ip: str) -> User:
         """Raison d'etre deux.
 
         Resolve an API token (originally submitted via header) into the

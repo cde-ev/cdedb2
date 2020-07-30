@@ -10,7 +10,7 @@ import datetime
 import decimal
 
 from typing import (
-    Collection, Dict, Tuple
+    Collection, Dict, Tuple, List, Any
 )
 
 from cdedb.backend.common import (
@@ -197,7 +197,7 @@ class CdEBackend(AbstractBackend):
                            allow_None=True)
         periods = affirm_set("id", periods, allow_None=True)
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
-        params = []
+        params: List[Any] = []
         constraints = []
         if lastschrift_ids:
             constraints.append("lastschrift_id = ANY(%s)")
@@ -325,11 +325,11 @@ class CdEBackend(AbstractBackend):
             new_balance = None
             if status == const.LastschriftTransactionStati.success:
                 code = const.FinanceLogCodes.lastschrift_transaction_success
-                current = self.core.get_cde_user(rs, persona_id)
+                user = self.core.get_cde_user(rs, persona_id)
                 periods_per_year = self.conf["PERIODS_PER_YEAR"]
                 fee = periods_per_year * self.conf["MEMBERSHIP_FEE"]
                 delta = min(tally, fee)
-                new_balance = current['balance'] + delta
+                new_balance = user['balance'] + delta
                 ret *= self.core.change_persona_balance(
                     rs, persona_id, new_balance,
                     const.FinanceLogCodes.lastschrift_transaction_success,
@@ -350,7 +350,7 @@ class CdEBackend(AbstractBackend):
             else:
                 raise RuntimeError(n_("Impossible."))
             self.core.finance_log(rs, code, persona_id, delta, new_balance,
-                                  additional_info=update['tally'])
+                                  additional_info=str(update['tally']))
             return ret
 
     @access("finance_admin")
@@ -470,8 +470,8 @@ class CdEBackend(AbstractBackend):
             data = self.query_one(
                 rs, query, (self.conf["MEMBERSHIP_FEE"],))
             ret = {
-                'low_balance_members': data['count'],
-                'low_balance_total': data['total'],
+                'low_balance_members': data['count'] if data else 0,
+                'low_balance_total': data['total'] if data else 0,
             }
             query = "SELECT COUNT(*) FROM core.personas WHERE is_member = True"
             ret['total_members'] = unwrap(self.query_one(rs, query, tuple()))
@@ -496,14 +496,20 @@ class CdEBackend(AbstractBackend):
     def current_period(self, rs: RequestState) -> int:
         """Check for the current semester."""
         query = "SELECT MAX(id) FROM cde.org_period"
-        return unwrap(self.query_one(rs, query, tuple()))
+        ret = unwrap(self.query_one(rs, query, tuple()))
+        if not ret:
+            raise ValueError(n_("No period exists."))
+        return ret
 
     @access("cde")
     def get_period(self, rs: RequestState, period_id: int) -> CdEDBObject:
         """Get data for a semester."""
         period_id = affirm("id", period_id)
-        return self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS,
-                                   period_id)
+        ret = self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS,
+                                  period_id)
+        if not ret:
+            raise ValueError(n_("This period does not exist."))
+        return ret
 
     @access("finance_admin")
     def set_period(self, rs: RequestState,
@@ -635,14 +641,20 @@ class CdEBackend(AbstractBackend):
     def current_expuls(self, rs: RequestState) -> int:
         """Check for the current expuls number."""
         query = "SELECT MAX(id) FROM cde.expuls_period"
-        return unwrap(self.query_one(rs, query, tuple()))
+        ret = unwrap(self.query_one(rs, query, tuple()))
+        if not ret:
+            raise ValueError(n_("No exPuls exists."))
+        return ret
 
     @access("cde")
     def get_expuls(self, rs: RequestState, expuls_id: int) -> CdEDBObject:
         """Get data for the an expuls."""
         expuls_id = affirm("id", expuls_id)
-        return self.sql_select_one(rs, "cde.expuls_period",
-                                   EXPULS_PERIOD_FIELDS, expuls_id)
+        ret = self.sql_select_one(rs, "cde.expuls_period",
+                                  EXPULS_PERIOD_FIELDS, expuls_id)
+        if not ret:
+            raise ValueError(n_("This exPuls does not exist."))
+        return ret
 
     @access("finance_admin")
     def set_expuls(self, rs: RequestState,

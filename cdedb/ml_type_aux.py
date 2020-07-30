@@ -1,7 +1,7 @@
 import enum
 from collections import OrderedDict
 from typing import (
-    Type, Union, Set, Tuple, OrderedDict as OrderedDictType, Dict, Collection
+    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, Sequence
 )
 
 from cdedb.common import (
@@ -14,6 +14,7 @@ from cdedb.database.constants import (
 
 
 MIPol = Union[MailinglistInteractionPolicy, None]
+MIPolMap = Dict[int, MIPol]
 
 
 class BackendContainer:
@@ -51,18 +52,18 @@ class AllMembersImplicitMeta:
 
 class AssemblyAssociatedMeta:
     """Metaclass for all assembly associated mailinglists."""
-    mandatory_validation_fields = (
+    mandatory_validation_fields = [
         ("assembly_id", "id"),
-    )
+    ]
 
 
 class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields = (
+    mandatory_validation_fields = [
         ("event_id", "id_or_None"),
         ("registration_stati", "[enum_registrationpartstati]"),
-    )
+    ]
 
     @classmethod
     def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
@@ -75,8 +76,7 @@ class TeamMeta:
     """Metaclass for all team lists."""
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
-    domains = (MailinglistDomain.lists,
-               MailinglistDomain.dokuforge)
+    domains = [MailinglistDomain.lists, MailinglistDomain.dokuforge]
 
 
 class GeneralMailinglist:
@@ -103,13 +103,13 @@ class GeneralMailinglist:
 
     sortkey: MailinglistGroup = MailinglistGroup.other
 
-    domains: Tuple[MailinglistDomain] = (MailinglistDomain.lists,)
+    domains: List[MailinglistDomain] = [MailinglistDomain.lists]
 
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: Tuple[Tuple[str, str]] = tuple()
-    optional_validation_fields: Tuple[Tuple[str, str]] = tuple()
+    mandatory_validation_fields: List[Tuple[str, str]] = list()
+    optional_validation_fields: List[Tuple[str, str]] = list()
 
     @classmethod
     def get_additional_fields(cls) -> Set[str]:
@@ -159,7 +159,8 @@ class GeneralMailinglist:
         """
         return bool((cls.relevant_admins | {"ml_admin"}) & rs.user.roles)
 
-    role_map: OrderedDictType[str, MailinglistInteractionPolicy]
+    if TYPE_CHECKING:
+        role_map: OrderedDict[str, MailinglistInteractionPolicy]
     role_map = OrderedDict()
 
     @classmethod
@@ -173,7 +174,7 @@ class GeneralMailinglist:
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int]
-                                 ) -> Dict[int, MIPol]:
+                                 ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
@@ -195,7 +196,7 @@ class GeneralMailinglist:
 
         # TODO check for access to the ml? Needs ml_backend.
         personas = bc.core.get_personas(rs, persona_ids)
-        ret = {}
+        ret: MIPolMap = {}
         for persona_id, persona in personas.items():
             roles = extract_roles(persona, introspection_only=True)
             for role, pol in cls.role_map.items():
@@ -243,7 +244,7 @@ class EventMailinglist(GeneralMailinglist):
     """Base class for Event-Mailinglists."""
 
     sortkey = MailinglistGroup.event
-    domains = (MailinglistDomain.aka,)
+    domains = [MailinglistDomain.aka]
     viewer_roles = {"event"}
     relevant_admins = {"event_admin"}
 
@@ -307,7 +308,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
-                                 ) -> Dict[int, MIPol]:
+                                 ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this basically means opt-in for all
@@ -320,7 +321,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             return {anid: MailinglistInteractionPolicy.invitation_only
                     for anid in persona_ids}
 
-        ret = {}
+        ret: MIPolMap = {}
         for persona_id in persona_ids:
             # TODO this broken for moderators who are no orgas
             if bc.event.check_registration_status(
@@ -377,7 +378,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
-                                 ) -> Dict[int, MIPol]:
+                                 ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this means opt-out for orgas only.
@@ -389,7 +390,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
             return {anid: MailinglistInteractionPolicy.invitation_only
                     for anid in persona_ids}
 
-        ret = {}
+        ret: MIPolMap = {}
         event = bc.event.get_event(rs, mailinglist["event_id"])
         for persona_id in persona_ids:
             if persona_id in event["orgas"]:
@@ -421,15 +422,15 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
-                                 ) -> Dict[int, MIPol]:
+                                 ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
-        For the `AssemblyAssociatedMailinglist` this means opt-out for attendees
-        of the associated assembly.
+        For the `AssemblyAssociatedMailinglist` this means opt-out for
+        attendees of the associated assembly.
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
 
-        ret = {}
+        ret: MIPolMap = {}
         for persona_id in persona_ids:
             # TODO this is broken for non-assembly users
             attending = bc.assembly.check_attendance(
@@ -451,7 +452,7 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
         # TODO this is broken for moderators without assembly realm
-        # TODO this is broken for non-members who does not attend to this assembly
+        # TODO this is broken for non-members who do not attend this assembly
         return bc.assembly.list_attendees(rs, mailinglist["assembly_id"])
 
 
@@ -488,8 +489,7 @@ class SemiPublicMailinglist(GeneralMailinglist):
 
 class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
-    domains = (MailinglistDomain.cdelokal,
-               MailinglistDomain.cdemuenchen)
+    domains = [MailinglistDomain.cdelokal, MailinglistDomain.cdemuenchen]
 
 
 MLTypeLike = Union[const.MailinglistTypes, Type[GeneralMailinglist]]

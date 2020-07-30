@@ -8,7 +8,6 @@ import datetime
 import decimal
 import enum
 import functools
-import hashlib
 import hmac
 import itertools
 import json
@@ -19,12 +18,12 @@ import re
 import string
 import sys
 import hashlib
-from os import PathLike as OSPathLike
+
 from typing import (
     Any, TypeVar, Mapping, Optional, Dict, List, overload, Sequence, Tuple,
-    Callable, Set, Iterable, Union, Generator, Type,
-    OrderedDict as OrderedDictType, Collection, MutableMapping, Container,
-    TYPE_CHECKING, cast, KeysView, AbstractSet, MutableSequence
+    Callable, Set, Iterable, Union, Generator, Type, Collection,
+    MutableMapping, Container, TYPE_CHECKING, cast, KeysView, AbstractSet,
+    MutableSequence
 )
 
 import psycopg2.extras
@@ -40,6 +39,8 @@ import icu
 # noinspection PyUnresolvedReferences
 from cdedb.ml_subscription_aux import (
     SubscriptionError, SubscriptionInfo, SubscriptionActions)
+
+from cdedb.database.connection import IrradiatedConnection
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,10 +87,8 @@ AdminView = str
 
 CdEDBLog = Tuple[int, Tuple[CdEDBObject, ...]]
 
-# TODO remove this
-# This is a workaround for the fact that PyCharm does not recognize
-# pathlib.Path as implementing the os.PathLike interface.
-PathLike = Union[pathlib.Path, OSPathLike]
+PathLike = Union[pathlib.Path, str]
+Path = pathlib.Path
 
 T = TypeVar("T")
 
@@ -132,13 +131,13 @@ class RequestState:
                  user: User, request: Optional[werkzeug.Request],
                  response: Optional[werkzeug.Response],
                  notifications: Collection[Notification],
-                 mapadapter: Optional[werkzeug.routing.MapAdapter],
+                 mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
                  values: Optional[werkzeug.MultiDict], lang: str,
                  gettext: Callable, ngettext: Callable,
                  coders: Optional[Mapping[str, Callable]],
-                 begin: Optional[datetime.datetime],
+                 begin: datetime.datetime,
                  default_gettext: Optional[Callable] = None,
                  default_ngettext: Optional[Callable] = None):
         """
@@ -159,7 +158,7 @@ class RequestState:
         :param default_ngettext: default translation function used to ensure
             stability across different locales
         """
-        self.ambience = {}
+        self.ambience: Dict[str, CdEDBObject] = {}
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user
@@ -180,10 +179,12 @@ class RequestState:
         self._coders = coders or {}
         self.begin = begin
         # Visible version of the database connection
-        self.conn = None
+        # noinspection PyTypeChecker
+        self.conn: IrradiatedConnection = None  # type: ignore
         # Private version of the database connection, only visible in the
         # backends (mediated by the make_proxy)
-        self._conn = None
+        # noinspection PyTypeChecker
+        self._conn: IrradiatedConnection = None  # type: ignore
         # Toggle to disable logging
         self.is_quiet = False
         # Is true, if the application detected an invalid (or no) CSRF token
@@ -191,7 +192,7 @@ class RequestState:
         # Used for validation enforcement, set to False if a validator
         # is executed and then to True with the corresponding methods
         # of this class
-        self.validation_appraised = None
+        self.validation_appraised: Optional[bool] = None
 
     def notify(self, ntype: NotificationType, message: str,
                params: CdEDBObject = None) -> None:
@@ -295,7 +296,7 @@ def make_proxy(backend: B, internal=False) -> B:
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
-                    rs.conn = None
+                    rs.conn = None  # type: ignore
         return cast(F, wrapper)
 
     class Proxy:
@@ -498,24 +499,24 @@ class EntitySorter:
     Sortable = Union[str, int, datetime.datetime]
     Sortkey = Union[Sequence[Sortable], Sortable]
 
-    # TODO decide whether we sort by first or last name
-    @staticmethod
-    def persona(entry: CdEDBObject) -> Sortkey:
-        """Create a sorting key associated to a persona dataset.
-
-        This way we have a standardized sorting order for entries.
-
-        :param entry: A dataset of a persona from the cde or event realm.
-        """
-        return (entry['family_name'] + " " + entry['given_names']).lower()
-
     @staticmethod
     def given_names(persona: CdEDBObject) -> Sortkey:
-        return persona['given_names']
+        return persona['given_names'].lower()
 
     @staticmethod
     def family_name(persona: CdEDBObject) -> Sortkey:
-        return persona['family_name']
+        return persona['family_name'].lower()
+
+    @staticmethod
+    def given_names_first(persona: CdEDBObject) -> Sortkey:
+        return (persona['given_names'].lower(), persona['family_name'].lower())
+
+    @staticmethod
+    def family_name_first(persona: CdEDBObject) -> Sortkey:
+        return (persona['family_name'].lower(), persona['given_names'].lower())
+
+    # TODO decide whether we sort by first or last name
+    persona = family_name_first
 
     @staticmethod
     def email(persona: CdEDBObject) -> Sortkey:
@@ -746,10 +747,6 @@ def _schulze_winners(d: Mapping[Tuple[str, str], int],
     We determine the strongest path from each vertex to each other
     vertex. This gives a transitive relation, which enables us thus to
     determine winners as maximal elements.
-
-    :type d: {(str, str): int}
-    :type candidates: [str]
-    :rtype: [str]
     """
     # First determine the strongst paths
     p = {(x, y): d[(x, y)] for x in candidates for y in candidates}
@@ -770,7 +767,7 @@ def _schulze_winners(d: Mapping[Tuple[str, str], int],
 
 
 def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
-                     ) -> Tuple[str, List[Dict[str, Union[int, str]]]]:
+                     ) -> Tuple[str, List[Dict[str, Union[int, List[str]]]]]:
     """Use the Schulze method to cummulate preference list into one list.
 
     This is used by the assembly realm to tally votes -- however this is
@@ -796,7 +793,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
         (descending) as dict with some extended information.
     """
     split_votes = tuple(
-        tuple(level.split('=') for level in vote.split('>')) for vote in votes)
+        tuple(lvl.split('=') for lvl in vote.split('>')) for vote in votes)
 
     def _subindex(alist: Collection[Container[str]], element: str) -> int:
         """The element is in the list at which position in the big list.
@@ -849,7 +846,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
          for x in candidates for y in candidates}
     # Third we execute the Schulze method by iteratively determining
     # winners
-    result = []
+    result: List[List[str]] = []
     while True:
         done = {x for level in result for x in level}
         # avoid sets to preserve ordering
@@ -864,7 +861,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     condensed = ">".join("=".join(level) for level in result)
     detailed = []
     for lead, follow in zip(result, result[1:]):
-        level = {
+        level: Dict[str, Union[List[str], int]] = {
             'winner': lead,
             'loser': follow,
             'pro_votes': counts[(lead[0], follow[0])],
@@ -881,13 +878,15 @@ ASSEMBLY_BAR_MONIKER = "_bar_"
 
 @overload
 def unwrap(single_element_list: Union[AbstractSet[T], MutableSequence[T],
-                                      Tuple[T, ...]]) -> T:
-    pass
+                                      Tuple[T, ...]]) -> T: ...
 
 
 @overload
-def unwrap(single_element_list: Mapping[Any, T]) -> T:
-    pass
+def unwrap(single_element_list: Mapping[Any, T]) -> T: ...
+
+
+@overload
+def unwrap(single_element_list: None) -> None: ...
 
 
 def unwrap(single_element_list):
@@ -1295,7 +1294,7 @@ def asciificator(s: str) -> str:
 MaybeStr = TypeVar("MaybeStr", str, Type[None])
 
 
-def diacritic_patterns(s: MaybeStr, two_way_replace: bool = False) -> MaybeStr:
+def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
     """Replace letters with a pattern matching expressions.
 
     Thus ommitting diacritics in the query input is possible.
@@ -1313,7 +1312,7 @@ def diacritic_patterns(s: MaybeStr, two_way_replace: bool = False) -> MaybeStr:
     :rtype: str or None
     """
     if s is None:
-        return s
+        raise ValueError(f"Cannot apply diacritic patterns to {s!r}.")
     # if fragile special chars are present do nothing
     special_chars = r'\*+?{}()[]|'  # .^$ are also special but do not interfere
     if any(char in s for char in special_chars):
@@ -1562,7 +1561,7 @@ def implying_realms(realm: Realm) -> Set[Realm]:
 
 
 def privilege_tier(roles: Set[Role], conjunctive: bool = False
-                   ) -> Tuple[Set[Role], ...]:
+                   ) -> List[Set[Role]]:
     """Required admin privilege relative to a persona (signified by its roles)
 
     Basically this answers the question: If a user has access to the passed
@@ -1590,11 +1589,11 @@ def privilege_tier(roles: Set[Role], conjunctive: bool = False
             REALM_INHERITANCE.get(k, set()) for k in relevant))
         relevant -= implied_roles
     if conjunctive:
-        ret = ({realm + "_admin" for realm in relevant},
-               {"core_admin"})
+        ret = [{realm + "_admin" for realm in relevant},
+               {"core_admin"}]
     else:
-        ret = tuple({realm + "_admin"} for realm in relevant)
-        ret += ({"core_admin"},)
+        ret = list({realm + "_admin"} for realm in relevant)
+        ret += [{"core_admin"}]
     return ret
 
 
@@ -1658,7 +1657,12 @@ ANTI_CSRF_TOKEN_PAYLOAD = "_anti_csrf_check"
 #:
 #: This is an ordered dict, so that we can select the highest privilege
 #: level.
-DB_ROLE_MAPPING: OrderedDictType[Role, str] = collections.OrderedDict((
+if TYPE_CHECKING:
+    role_map_type = collections.OrderedDict[Role, str]
+else:
+    role_map_type = collections.OrderedDict
+
+DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
     ("cde_admin", "cdb_admin"),
@@ -1685,6 +1689,9 @@ def roles_to_db_role(roles: Set[Role]) -> str:
     for role in DB_ROLE_MAPPING:
         if role in roles:
             return DB_ROLE_MAPPING[role]
+    else:
+        # TODO default to "cdb_anonymous"?
+        raise RuntimeError(n_("Could not determine any db role."))
 
 
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
@@ -1698,7 +1705,7 @@ ALL_ADMIN_VIEWS: Set[AdminView] = {
 
 def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     """ Get the set of available admin views for a user with given roles."""
-    result = set()
+    result: Set[Role] = set()
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
@@ -1829,7 +1836,7 @@ GENESIS_REALM_OVERRIDE = {
 }
 
 # This defines which fields are available for which realm. They are cumulative.
-PERSONA_FIELDS_BY_REALM = {
+PERSONA_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
     'persona': {
         "display_name", "family_name", "given_names", "title",
         "name_supplement", "notes"
@@ -1850,7 +1857,7 @@ PERSONA_FIELDS_BY_REALM = {
 
 # Some of the above fields cannot be edited by the users themselves.
 # These are defined here.
-RESTRICTED_FIELDS_BY_REALM = {
+RESTRICTED_FIELDS_BY_REALM: Dict[Role, Set[str]] = {
     'persona': {
         "notes",
     },
@@ -1871,7 +1878,7 @@ def get_persona_fields_by_realm(roles: Set[Role], restricted: bool = True
 
     :param restricted: If True, only return fields the user may change
         themselves, i.e. remove the restricted fields."""
-    ret = set()
+    ret: Set[str] = set()
     for role, fields in PERSONA_FIELDS_BY_REALM.items():
         if role in roles:
             ret |= fields

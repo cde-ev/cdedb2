@@ -16,12 +16,15 @@ import psycopg2.extensions
 
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 
-from cdedb.common import n_
-
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, None)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, None)
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def n_(x: str) -> str:
+    """Alias for extracting gettext translatables."""
+    return x
 
 
 def _create_connection(dbname, dbuser, password, port,

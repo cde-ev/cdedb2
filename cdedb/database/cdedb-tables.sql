@@ -245,7 +245,7 @@ CREATE TABLE core.quota (
         qdate                   date NOT NULL DEFAULT current_date,
         queries                 integer NOT NULL DEFAULT 0
 );
-CREATE INDEX idx_quota_persona_id_qdate ON core.quota(qdate, persona_id);
+CREATE UNIQUE INDEX idx_quota_persona_id_qdate ON core.quota(qdate, persona_id);
 GRANT SELECT, INSERT ON core.quota TO cdb_member;
 GRANT SELECT, UPDATE ON core.quota_id_seq TO cdb_member;
 GRANT UPDATE (queries) ON core.quota TO cdb_member;
