@@ -43,7 +43,7 @@ class TestScript(unittest.TestCase):
         core = make_backend("core", proxy=False)
         self.assertTrue(isinstance(core, CoreBackend))
         coreproxy = make_backend("core", proxy=True)
-        self.assertEqual(coreproxy.__get_backend_class__(), CoreBackend)
+        self.assertEqual(coreproxy._get_backend_class(), CoreBackend)
         self.assertEqual(
             make_backend("core", proxy=False, LOCKDOWN=42).conf["LOCKDOWN"], 42)
         with tempfile.NamedTemporaryFile("w", suffix=".py") as f:

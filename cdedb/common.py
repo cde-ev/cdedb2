@@ -312,7 +312,7 @@ def make_proxy(backend: B, internal=False) -> B:
             return wrapit(attr)
 
         @staticmethod
-        def __get_backend_class__() -> B:
+        def _get_backend_class() -> B:
             return backend.__class__
 
     return cast(B, Proxy())
@@ -1683,6 +1683,9 @@ DB_ROLE_MAPPING: OrderedDictType[Role, str] = collections.OrderedDict((
     ("anonymous", "cdb_anonymous"),
 ))
 
+
+# All roles available to non-driod users. Can be used to create dummy users
+# with all roles, like for `cdedb.script` or `cdedb.frontend.cron`.
 ALL_ROLES: Set[Role] = set(DB_ROLE_MAPPING.keys()) - {"droid"}
 
 
