@@ -32,13 +32,15 @@ with Script(rs, dry_run=DRY_RUN):
     for persona in personas.values():
         if all(not persona[realm] for realm in REALM_BITS):
             print(f"Fixing realms, gender, balance and paper_expuls for"
-                  f" User {persona['id']}.")
+                  f" User {persona['given_names']} {persona['family_name']}"
+                  f" ({persona['id']}).")
             update = dict(base_update)
             update['id'] = persona['id']
             update['gender'] = const.Genders.not_specified
             update['balance'] = 0
             update['paper_expuls'] = True
-            update['notes'] = persona['notes'] + note_appendix
+            notes = persona['notes'] if persona['notes'] else ""
+            update['notes'] = notes + note_appendix
             core.sql_update(rs, "core.personas", update)
             count += 1
 
