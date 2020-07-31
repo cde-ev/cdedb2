@@ -13,12 +13,12 @@ CDEDB_TEST = os.environ.get('CDEDB_TEST', '').lower() in ('true', 't')
 # BasicConfig
 
 LOG_LEVEL = logging.DEBUG
-SYSLOG_LOG_LEVEL = logging.INFO
-CONSOLE_LOG_LEVEL = logging.INFO
+SYSLOG_LEVEL = logging.INFO
+CONSOLE_LOG_LEVEL = logging.WARNING
 GLOBAL_LOG = pathlib.Path("/log/cdedb.log")
 
 if CDEDB_TEST:
-    SYSLOG_LOG_LEVEL = None  # type: ignore
+    SYSLOG_LEVEL = None  # type: ignore
     CONSOLE_LOG_LEVEL = None  # type: ignore
     GLOBAL_LOG = pathlib.Path("/tmp/test-cdedb.log")
 

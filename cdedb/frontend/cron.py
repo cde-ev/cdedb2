@@ -18,7 +18,7 @@ from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
-from cdedb.common import n_, glue, now, RequestState, User, PathLike
+from cdedb.common import n_, glue, now, RequestState, User, PathLike, ALL_ROLES
 from cdedb.frontend.common import BaseApp, AbstractFrontend, PeriodicJob
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -56,13 +56,7 @@ class CronFrontend(BaseApp):
         self.ml = MlFrontend(configpath)
 
     def make_request_state(self) -> RequestState:
-        roles = {
-            "anonymous", "persona", "cde", "event", "ml", "assembly",
-            "member", "searchable",
-            "cde_admin", "event_admin", "ml_admin", "assembly_admin",
-            "core_admin",
-            "meta_admin",
-        }
+        roles = ALL_ROLES
         user = User(roles=roles, persona_id=None)
         lang = "en"
         coders = {
