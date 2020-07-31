@@ -1118,7 +1118,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_query_download(self, rs: RequestState,
                             result: Collection[CdEDBObject], fields: List[str],
                             kind: str, filename: str,
-                            substitutions: Mapping[str, Mapping] = None) -> Response:
+                            substitutions: Mapping[str, Mapping] = None
+                            ) -> Response:
         """Helper to send download of query result.
 
         :param fields: List of fields the output should have. Commaseparated
@@ -1252,9 +1253,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # we want quoted-printable, but without encoding all the spaces
         # however at the end of lines the standard requires spaces to be
         # encoded hence we have to be a bit careful (encoding is a pain!)
+        # 'quoted-printable' ensures we only get str here:
         payload: str = msg.get_payload()  # type: ignore
-        # TODO do we really only get strings as a payload here?
-        # Otherwise re.sub might not like it.
         payload = re.sub('=20(.)', r' \1', payload)
         # do this twice for adjacent encoded spaces
         payload = re.sub('=20(.)', r' \1', payload)
@@ -1604,8 +1604,6 @@ def reconnoitre_ambience(obj: AbstractFrontend,
     """
     Scout = collections.namedtuple('Scout', ('getter', 'param_name',
                                              'object_name', 'dependencies'))
-    # Shorthand for an empty tuple.
-    t = tuple()  # type: ignore
 
     def do_assert(x):
         if not x:
@@ -1622,23 +1620,23 @@ def reconnoitre_ambience(obj: AbstractFrontend,
 
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
-              'persona', t),
+              'persona', ()),
         Scout(lambda anid: obj.coreproxy.get_privilege_change(rs, anid),
-              'privilege_change_id', 'privilege_change', t),
+              'privilege_change_id', 'privilege_change', ()),
         Scout(lambda anid: obj.coreproxy.genesis_get_case(rs, anid),
-              'genesis_case_id', 'genesis_case', t),
+              'genesis_case_id', 'genesis_case', ()),
         Scout(lambda anid: obj.cdeproxy.get_lastschrift(rs, anid),
-              'lastschrift_id', 'lastschrift', t),
+              'lastschrift_id', 'lastschrift', ()),
         Scout(lambda anid: obj.cdeproxy.get_lastschrift_transaction(rs, anid),
               'transaction_id', 'transaction',
               ((lambda a: do_assert(a['transaction']['lastschrift_id']
                                     == a['lastschrift']['id'])),)),
         Scout(lambda anid: obj.pasteventproxy.get_institution(rs, anid),
-              'institution_id', 'institution', t),
+              'institution_id', 'institution', ()),
         Scout(lambda anid: obj.eventproxy.get_event(rs, anid),
-              'event_id', 'event', t),
+              'event_id', 'event', ()),
         Scout(lambda anid: obj.pasteventproxy.get_past_event(rs, anid),
-              'pevent_id', 'pevent', t),
+              'pevent_id', 'pevent', ()),
         Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
               ((lambda a: do_assert(a['course']['event_id']
@@ -1668,7 +1666,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment', (attachment_check,)),
         Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
-              'assembly_id', 'assembly', t),
+              'assembly_id', 'assembly', ()),
         Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
               'ballot_id', 'ballot',
               ((lambda a: do_assert(a['ballot']['assembly_id']
@@ -1677,7 +1675,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               ((lambda a: do_assert(rs.requestargs['candidate_id']
                                     in a['ballot']['candidates'])),)),
         Scout(lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
-              'mailinglist_id', 'mailinglist', t),
+              'mailinglist_id', 'mailinglist', ()),
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience = {}
