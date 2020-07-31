@@ -118,7 +118,7 @@ def make_backend(realm: str, proxy: bool = True, *, configpath: PathLike = None,
         with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
             for k, v in config.items():
                 f.write(f"{k} = {v}\n")
-            f.seek(0)
+            f.flush()
             filename = f.name
             backend = _make_backend(realm, f.name)
     else:
