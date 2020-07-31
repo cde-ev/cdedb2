@@ -1686,7 +1686,7 @@ DB_ROLE_MAPPING: OrderedDictType[Role, str] = collections.OrderedDict((
 
 # All roles available to non-driod users. Can be used to create dummy users
 # with all roles, like for `cdedb.script` or `cdedb.frontend.cron`.
-ALL_ROLES: Set[Role] = set(DB_ROLE_MAPPING.keys()) - {"droid"}
+ALL_ROLES: Set[Role] = set(DB_ROLE_MAPPING) - {"droid"}
 
 
 def roles_to_db_role(roles: Set[Role]) -> str:
