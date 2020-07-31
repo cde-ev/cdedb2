@@ -51,7 +51,7 @@ import werkzeug.wrappers
 from typing import (
     Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
     Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    ClassVar, MutableMapping, Sequence, cast, AbstractSet,
+    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO,
 )
 
 from cdedb.common import (
@@ -1032,7 +1032,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
                       filename: str = None, inline: bool = True, *,
                       path: Union[str, pathlib.Path] = None,
-                      afile: io.BytesIO = None,
+                      afile: IO[AnyStr] = None,
                       data: AnyStr = None) -> Response:
         """Wrapper around :py:meth:`send_file` for CSV files.
 
@@ -1049,7 +1049,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def send_file(rs: RequestState, mimetype: str = None, filename: str = None,
                   inline: bool = True, *, path: PathLike = None,
-                  afile: io.BytesIO = None, data: AnyStr = None,
+                  afile: IO[AnyStr] = None, data: AnyStr = None,
                   encoding: str = 'utf-8') -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
@@ -1078,7 +1078,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             with open(path, 'rb') as f:
                 data_buffer.write(f.read())
         elif afile:
-            data_buffer.write(afile.read())
+            content = afile.read()
+            if isinstance(content, str):
+                data_buffer.write(content.encode(encoding))
+            elif isinstance(content, bytes):
+                data_buffer.write(content)
+            else:
+                raise ValueError(n_("Invalid datatype read from file."))
         elif data:
             if isinstance(data, str):
                 data_buffer.write(data.encode(encoding))
