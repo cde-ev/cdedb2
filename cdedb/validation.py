@@ -1088,6 +1088,7 @@ _PERSONA_COMMON_FIELDS = lambda: {
     'is_event_admin': _bool,
     'is_ml_admin': _bool,
     'is_assembly_admin': _bool,
+    'is_cdelokal_admin': _bool,
     'is_cde_realm': _bool,
     'is_event_realm': _bool,
     'is_ml_realm': _bool,
@@ -1178,6 +1179,7 @@ def _persona(val, argname=None, *, creation=False, transition=False,
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         roles = extract_roles(temp)
         optional_fields = {}
@@ -1579,6 +1581,7 @@ _PRIVILEGE_CHANGE_OPTIONAL_FIELDS = lambda: {
     'is_event_admin': _bool_or_None,
     'is_ml_admin': _bool_or_None,
     'is_assembly_admin': _bool_or_None,
+    'is_cdelokal_admin': _bool_or_None,
 }
 
 
@@ -3765,6 +3768,8 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)
+    if val and "moderators" in val and len(val["moderators"]) == 0:
+        errs.append(("moderators", ValueError(n_("Must not be empty."))))
     if errs:
         return val, errs
     for key, validator_str in iterable_fields:

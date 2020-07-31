@@ -11,7 +11,7 @@ from test.common import (
 )
 from cdedb.common import (
     PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now, merge_dicts,
-    PERSONA_CDE_FIELDS, get_hash)
+    PERSONA_CDE_FIELDS, get_hash, ArchiveError)
 from cdedb.validation import (_PERSONA_CDE_CREATION, _PERSONA_EVENT_CREATION)
 
 PERSONA_TEMPLATE = {
@@ -215,6 +215,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
         expectation = {
@@ -257,6 +258,7 @@ class TestCoreBackend(BackendTest):
                 'is_member': False,
                 'is_ml_admin': False,
                 'is_ml_realm': False,
+                'is_cdelokal_admin': False,
                 'is_searchable': False,
                 'location': None,
                 'location2': None,
@@ -330,6 +332,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
 
@@ -365,6 +368,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
 
@@ -387,6 +391,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
 
@@ -423,6 +428,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
 
@@ -617,6 +623,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -689,6 +696,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -763,6 +771,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': True,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -859,6 +868,7 @@ class TestCoreBackend(BackendTest):
             'is_member': True,
             'is_ml_admin': False,
             'is_ml_realm': True,
+            'is_cdelokal_admin': False,
             'is_searchable': True,
             'username': 'berta@example.cde'}
         self.assertEqual(expectation, self.core.get_persona(self.key, 2))
@@ -905,16 +915,29 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_archive(self, user):
-        data = self.core.get_total_persona(self.key, 3)
+        persona_id = 3
+        data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
-        ret = self.core.archive_persona(self.key, 3, "Archived for testing.")
+        self.assertEqual(True, data['is_cde_realm'])
+        ret = self.core.archive_persona(
+            self.key, persona_id, "Archived for testing.")
         self.assertLess(0, ret)
-        data = self.core.get_total_persona(self.key, 3)
+        self.assertEqual(True, data['is_cde_realm'])
+        data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(True, data['is_archived'])
-        ret = self.core.dearchive_persona(self.key, 3)
+        ret = self.core.dearchive_persona(self.key, persona_id)
         self.assertLess(0, ret)
-        data = self.core.get_total_persona(self.key, 3)
+        data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
+
+        # Check that sole moderators cannot be archived.
+        self.ml.set_moderators(self.key, 1, {persona_id})
+        with self.assertRaises(ArchiveError) as cm:
+            self.core.archive_persona(self.key, persona_id, "Testing")
+        self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])
+
+        # Test archival of user that is no modearator.
+        self.core.archive_persona(self.key, 6, "Testing")
 
     @as_users("vera")
     def test_archive_activate_bug(self, user):

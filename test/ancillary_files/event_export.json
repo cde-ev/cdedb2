@@ -377,6 +377,7 @@
         }
     },
     "EVENT_SCHEMA_VERSION": [13, 1],
+    "CDEDB_EXPORT_EVENT_VERSION": 13,
     "event.registration_parts": {
         "2": {
             "is_camping_mat": false,
@@ -1096,6 +1097,7 @@
             "postal_code": "88484",
             "given_names": "Garcia G.",
             "is_ml_admin": false,
+            "is_cdelokal_admin": false,
             "id": 7,
             "is_cde_realm": true,
             "title": null
@@ -1129,6 +1131,7 @@
             "postal_code": "03205",
             "given_names": "Anton Armin A.",
             "is_ml_admin": true,
+            "is_cdelokal_admin": true,
             "id": 1,
             "is_cde_realm": true,
             "title": null
@@ -1162,6 +1165,7 @@
             "postal_code": "10999",
             "given_names": "Inga",
             "is_ml_admin": false,
+            "is_cdelokal_admin": true,
             "id": 9,
             "is_cde_realm": true,
             "title": null
@@ -1195,6 +1199,7 @@
             "postal_code": "56767",
             "given_names": "Emilia E.",
             "is_ml_admin": false,
+            "is_cdelokal_admin": false,
             "id": 5,
             "is_cde_realm": false,
             "title": null
@@ -1223,6 +1228,7 @@
             "is_meta_admin": true,
             "is_ml_admin": true,
             "is_ml_realm": true,
+            "is_cdelokal_admin": true,
             "is_searchable": true,
             "location": "Tokyo",
             "mobile": null,
@@ -1256,6 +1262,7 @@
             "is_meta_admin": false,
             "is_ml_admin": false,
             "is_ml_realm": true,
+            "is_cdelokal_admin": false,
             "is_searchable": true,
             "location": "Utopia",
             "mobile": "0163/123456789",

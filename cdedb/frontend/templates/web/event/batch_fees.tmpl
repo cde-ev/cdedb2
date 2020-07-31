@@ -24,8 +24,10 @@
         {{ util.input_hidden(name="checksum") }}
         {{ util.form_input_checkbox(name="force", horizontal=False, label=gettext("Ignore Warnings")) }}
         {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Notifications")) }}
-        {{ util.form_input_checkbox(name="full_payment", horizontal=False, label=gettext("Set payment date for full payments only."), defaultvalue="True") }}
-        {{ util.form_input_file(name="fee_data_file", horizontal=False, label=gettext("Transfers"), accept="text/*") }}
+        {{ util.form_input_checkbox(name="full_payment", horizontal=False,
+                label=gettext("Set payment date for full payments only."), defaultvalue="True") }}
+        {{ util.form_input_file(name="fee_data_file", horizontal=False, label=gettext("Transfers"),
+                accept="text/csv,.csv") }}
         {{ util.form_input_textarea(name="fee_data", horizontal=False, rows="10",
                                     anid="input-data") }}
 

@@ -69,7 +69,7 @@
 
         <h4 class="heading-underline">{% trans %}Moderators{% endtrans %}</h4>
 
-        {{ util.form_input_text(name="moderator_ids", label=gettext("Moderators"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
+        {{ util.form_input_text(name="moderators", label=gettext("Moderators"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-moderators") }}
         <script nonce="{{ csp_nonce }}">
             $('#input-moderators').cdedbSearchPerson(

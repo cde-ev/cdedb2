@@ -790,6 +790,7 @@ class TestCoreFrontend(FrontendTest):
         new_privileges = {
             'is_event_admin': True,
             'is_assembly_admin': True,
+            'is_cdelokal_admin': True,
         }
         old_privileges = {
             'is_meta_admin': False,
@@ -799,6 +800,7 @@ class TestCoreFrontend(FrontendTest):
             'is_event_admin': False,
             'is_assembly_admin': False,
             'is_ml_admin': False,
+            'is_cdelokal_admin': False
         }
         new_password = "ihsokdmfsod"
         self._approve_privilege_change(
@@ -1324,6 +1326,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anton Armin A. Administrator", div="event")
         self.assertPresence("Ferdinand F. Findus", div="event")
         self.assertPresence("Bertålotta Beispiel", div="event")
+        self.assertPresence("Nina Neubauer", div="ml")
+        self.assertPresence("Inga Iota", div="cdelokal")
         self.assertPresence("Anton Armin A. Administrator", div="assembly")
         self.assertPresence("Ferdinand F. Findus", div="assembly")
         self.assertPresence("Bertålotta Beispiel", div="assembly")

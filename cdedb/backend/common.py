@@ -35,7 +35,6 @@ from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])
-G = TypeVar('G', bound=Callable[..., Any])
 T = TypeVar('T')
 S = TypeVar('S')
 
@@ -76,9 +75,9 @@ def singularize(function: Callable,
     return singularized
 
 
-def batchify(function: Callable,
+def batchify(function: Callable[..., T],
              array_param_name: str = "data",
-             singular_param_name: str = "data") -> Callable[..., List]:
+             singular_param_name: str = "data") -> Callable[..., List[T]]:
     """This takes a function and returns a batchified version.
 
     The function has to accept an a singular parameter.
@@ -161,12 +160,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     #: abstract str to be specified by children
     realm: ClassVar[str]
 
-    def __init__(self, configpath: PathLike = None,
-                 is_core: bool = False) -> None:
-        """
-        :param is_core: If not, we add instantiate a core backend for usage
-          by this backend.
-        """
+    def __init__(self, configpath: PathLike = None) -> None:
         self.conf = Config(configpath)
         # initialize logging
         make_root_logger(
@@ -184,16 +178,14 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
         # Everybody needs access to the core backend
-        if TYPE_CHECKING:
-            from cdedb.backend.core import CoreBackend
-        self.core: 'CoreBackend'
-        if is_core:
+        # Import here since we otherwise have a cyclic import.
+        # I don't see how we can get out of this ...
+        from cdedb.backend.core import CoreBackend
+        self.core: CoreBackend
+        if isinstance(self, CoreBackend):
             # self.core = cast('CoreBackend', self)
-            self.core = make_proxy(self, internal=True)  # type: ignore
+            self.core = make_proxy(self, internal=True)
         else:
-            # Import here since we otherwise have a cyclic import.
-            # I don't see how we can get out of this ...
-            from cdedb.backend.core import CoreBackend  # type: ignore
             self.core = make_proxy(CoreBackend(configpath), internal=True)
 
     def affirm_realm(self, rs: RequestState, ids: Collection[int],
@@ -657,7 +649,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         time_stop = affirm_validation("datetime_or_None", time_stop)
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        additional_columns = additional_columns or tuple()
+        additional_columns: Collection[str] = additional_columns or tuple()
 
         # First, define the common WHERE filter clauses
         conditions = []
