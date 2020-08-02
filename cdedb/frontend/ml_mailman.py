@@ -122,7 +122,7 @@ class MailmanMixin(MlBaseFrontend):
                                mm_list: MailingList) -> None:
         subscribing_states = const.SubscriptionStates.subscribing_states()
         persona_ids = set(self.mlproxy.get_subscription_states(
-            rs, db_list['id'], subscribing_states))
+            rs, db_list['id'], states=subscribing_states))
         db_addresses = self.mlproxy.get_subscription_addresses(
             rs, db_list['id'], persona_ids)
         personas = self.coreproxy.get_personas(rs, persona_ids)

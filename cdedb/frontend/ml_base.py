@@ -504,12 +504,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Render form."""
         sub_states = const.SubscriptionStates.subscribing_states()
         subscribers = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, sub_states)
+            rs, mailinglist_id, states=sub_states)
         explicits = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
         explicits = {k: v for (k, v) in explicits.items() if v is not None}
         requests = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, (const.SubscriptionStates.pending,))
+            rs, mailinglist_id, states=(const.SubscriptionStates.pending,))
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -535,10 +535,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Render form."""
         subscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
-            (const.SubscriptionStates.subscription_override,))
+            states=(const.SubscriptionStates.subscription_override,))
         unsubscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
-            (const.SubscriptionStates.unsubscription_override,))
+            states=(const.SubscriptionStates.unsubscription_override,))
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscription_overrides.keys())
                        | set(unsubscription_overrides.keys()))
@@ -561,7 +561,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                                          mailinglist_id: int) -> Response:
         """Create CSV file with all subscribers and their subscription state"""
         personas_state = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, None)
+            rs, mailinglist_id)
         if not personas_state:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "ml/management")
@@ -937,8 +937,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         ml_ids = self.mlproxy.list_mailinglists(rs)
         current = now().timestamp()
         for ml_id in ml_ids:
-            states = {const.SubscriptionStates.pending}
-            requests = self.mlproxy.get_subscription_states(rs, ml_id, states)
+            requests = self.mlproxy.get_subscription_states(
+                rs, ml_id, states=(const.SubscriptionStates.pending,))
             requests = list(requests)  # convert from dict which breaks JSON
 
             ml_store = store.get(str(ml_id))

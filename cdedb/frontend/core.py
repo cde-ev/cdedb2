@@ -137,7 +137,7 @@ class CoreFrontend(AbstractFrontend):
                 sub_request = const.SubscriptionStates.pending
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
-                        rs, mailinglist_id, (sub_request,))
+                        rs, mailinglist_id, states=(sub_request,))
                     mailinglist['requests'] = len(requests)
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
@@ -425,7 +425,7 @@ class CoreFrontend(AbstractFrontend):
                               if s != const.SubscriptionStates.unsubscribed]
             if is_admin or is_moderator:
                 subscriptions = self.mlproxy.get_subscription_states(
-                    rs, ml_id, relevant_stati)
+                    rs, ml_id, states=relevant_stati)
                 is_subscriber = persona_id in subscriptions
                 if (is_moderator or is_viewing_admin) and is_subscriber:
                     access_levels.add("ml")
