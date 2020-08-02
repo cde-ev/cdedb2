@@ -1020,7 +1020,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                         'Subject': subject,
                         'Reply-To': reply_to
                     },
-                    attachments=[attachment_result],
+                    attachments=(attachment_result,),
                     params={'sha': my_hash, 'title': ballot['title']})
                 update = True
         return update
