@@ -763,7 +763,7 @@ def affirm_array_validation(assertion, values, allow_None=False, **kwargs: Any):
         if allow_None:
             return None
         else:
-            raise ValueError(n_(f"{values!r} is not iterable."))
+            raise ValueError(n_("Is not iterable."))
     checker: Callable[..., T] = getattr(
         validate, "assert_{}".format(assertion))
     return tuple(checker(value, **kwargs) for value in values)
@@ -794,7 +794,7 @@ def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
         if allow_None:
             return None
         else:
-            raise ValueError(n_(f"{values!r} is not iterable."))
+            raise ValueError(n_("Is not iterable."))
     checker: Callable[..., T] = getattr(
         validate, "assert_{}".format(assertion))
     return {checker(value, **kwargs) for value in values}
