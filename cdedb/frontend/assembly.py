@@ -563,7 +563,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         history = self.assemblyproxy.get_attachment_history(
             rs, attachment_id)
         version = version or self.assemblyproxy.get_current_version(
-            rs, attachment_id, False)
+            rs, attachment_id, include_deleted=False)
         content = self.assemblyproxy.get_attachment_content(
             rs, attachment_id, version)
         if not content:
