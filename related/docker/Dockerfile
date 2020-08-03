@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 # or fonts-lmodern instead of cm-super
 RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
     && echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
+    \
     && apt-get update \
     && apt-get install --yes --no-install-recommends \
     make \
@@ -72,6 +73,10 @@ RUN mkdir /var/lib/cdedb/ \
 
 WORKDIR /cdedb2
 
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY . ./.git ./
 
 RUN a2enmod ssl wsgi headers \
@@ -89,8 +94,9 @@ RUN a2enmod ssl wsgi headers \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd
 
-RUN apt-get update \
-    && apt-get install --yes --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
+EXPOSE 443
 
-# missing gettext files
+# RUN make doc # slows down build
+RUN make i18n-compile
+
+# USER cdedb

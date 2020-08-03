@@ -1,0 +1,34 @@
+version: "3"
+
+services:
+  cdb:
+    image: postgres:12.3
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/postgres-init.sh
+      - ../../cdedb/database:/opt/schema
+      # needs manual make invocation for now
+      - ./sample_data.sql:/opt/mock/sample_data.sql
+    environment:
+      POSTGRES_PASSWORD: passwd
+  app:
+    image: cdedb
+    build:
+      context: ../..
+      dockerfile: ./related/docker/Dockerfile
+    command: apachectl -D FOREGROUND
+    volumes:
+      - files:/var/lib/cdedb # attachments etc
+    ports:
+      - 8443:443
+    depends_on:
+      - cdb
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  database:
+  files:
