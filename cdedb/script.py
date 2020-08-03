@@ -91,11 +91,27 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     """
     if check_system_user and getpass.getuser() != "www-data":
         raise RuntimeError("Must be run as user www-data.")
-    cstring = "dbname={} user={} password={} port=5432 host=localhost".format(
-        dbname, dbuser, dbpassword)
-    cdb = psycopg2.connect(cstring,
-                           connection_factory=IrradiatedConnection,
-                           cursor_factory=psycopg2.extras.RealDictCursor)
+
+    try:
+        cdb = psycopg2.connect(
+            dbname=dbname,
+            user=dbuser,
+            password=dbpassword,
+            port=5432,
+            host="localhost",
+            connection_factory=IrradiatedConnection,
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    except psycopg2.OperationalError: # Docker uses 5432/tcp instead of sockets
+        cdb = psycopg2.connect(
+            dbname=dbname,
+            user=dbuser,
+            password=dbpassword,
+            port=5432,
+            host="cdb",
+            connection_factory=IrradiatedConnection,
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
     cdb.set_client_encoding("UTF8")
 
     def rs(pid: int = persona_id) -> RequestState:
