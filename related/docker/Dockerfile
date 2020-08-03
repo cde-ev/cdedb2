@@ -1,8 +1,6 @@
-FROM debian:buster-20200607
-# mabe use apache image
+FROM httpd:2.4
 
-RUN apt-get update && apt-get install --yes --no-install-recommends \
-    openssl \
+RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
     && mkdir /etc/ssl/apache2 \
     && openssl req \
     -x509 \
@@ -15,7 +13,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && apt-get purge --yes --autoremove openssl \
     && rm -rf /var/lib/apt/lists/*
 
-# or fonts-lmodern instead of cm-super
+# maybe fonts-lmodern instead of cm-super
+# missing pylint3, mypy etc
+# git is needed to get version hash
 RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
     && echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
     \
@@ -23,10 +23,10 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     && apt-get install --yes --no-install-recommends \
     make \
     gettext \
-    apache2 \
     libapache2-mod-wsgi-py3 \
     slapd \
     ldap-utils \
+    git \
     \
     texlive \
     texlive-latex-extra \
@@ -55,7 +55,6 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     python3-markdown \
     python3-mailmanclient \
     python3-requests \
-    pylint3 \
     \
     && rm -rf /var/lib/apt/lists/*
 
@@ -73,19 +72,21 @@ RUN mkdir /var/lib/cdedb/ \
 
 WORKDIR /cdedb2
 
-RUN apt-get update \
-    && apt-get install --yes --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY . ./.git ./
 
-RUN a2enmod ssl wsgi headers \
-    && a2dissite 000-default \
-    && echo "" > /etc/apache2/ports.conf \
-    && cp ./related/auto-build/files/stage3/cdedb-site.conf /etc/apache2/sites-available \
+RUN sed --in-place \
+    -e 's/^#\(LoadModule .*mod_ssl.so\)/\1/' \
+    -e 's/^#\(LoadModule .*mod_socache_shmcb.so\)/\1/' \
+    -e 's/^User .*/User www-data/' \
+    -e 's/^Group .*/Group www-data/' \
+    /usr/local/apache2/conf/httpd.conf \
+    && echo "Include /etc/apache2/mods-available/wsgi.load" >> /usr/local/apache2/conf/httpd.conf \
+    && echo "Include /etc/apache2/mods-available/wsgi.conf" >> /usr/local/apache2/conf/httpd.conf \
+    && mkdir -p /var/www/html /var/log/apache2 /var/run/apache2 \
+    && cat ./related/auto-build/files/stage3/cdedb-site.conf \
+    >> /usr/local/apache2/conf/httpd.conf \
     && cp ./related/auto-build/files/stage3/index.html /var/www/html/ \
     && chown www-data:www-data /var/www/html/index.html \
-    && a2ensite cdedb-site \
     \
     && cp ./related/auto-build/files/stage3/localconfig.py ./cdedb/ \
     && chown cdedb:cdedb ./cdedb/localconfig.py \
@@ -96,7 +97,6 @@ RUN a2enmod ssl wsgi headers \
 
 EXPOSE 443
 
-# RUN make doc # slows down build
-RUN make i18n-compile
+RUN make doc && make i18n-compile
 
 # USER cdedb

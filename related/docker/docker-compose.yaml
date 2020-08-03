@@ -12,11 +12,10 @@ services:
     environment:
       POSTGRES_PASSWORD: passwd
   app:
-    image: cdedb
+    image: cdedb:apache
     build:
       context: ../..
       dockerfile: ./related/docker/Dockerfile
-    command: apachectl -D FOREGROUND
     volumes:
       - files:/var/lib/cdedb # attachments etc
     ports:
