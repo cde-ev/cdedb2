@@ -84,6 +84,42 @@ class CdEFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
+    def _calculate_ejection_deadline(self, persona_data: CdEDBObject,
+                                     period_data: CdEDBObject) -> datetime.date:
+        """Helper to calculate when a membership will end."""
+        if not self.conf["PERIODS_PER_YEAR"] == 2:
+            if self.conf["CDEDB_DEV"] or self.conf["CDEDB_TEST"]:
+                self.logger.error(
+                    f"{self.conf['PERIODS_PER_YEAR']} periods per year not"
+                    f" supported.")
+                return now().date()
+        periods_left = persona_data['balance'] // self.conf["MEMBERSHIP_FEE"]
+        if persona_data['trial_member']:
+            periods_left += 1
+        if period_data['balance_done']:
+            periods_left += 1
+        deadline = period_data.get("semester_start", now()).date()
+        deadline = deadline.replace(day=1)
+        # There are 3 semesters within any year with different deadlines.
+        if deadline.month in range(5, 11):
+            # We are in the summer semester.
+            if periods_left % 2:
+                deadline = deadline.replace(year=deadline.year + 1, month=2)
+            else:
+                deadline = deadline.replace(month=8)
+        else:
+            # We are in a winter semester.
+            if deadline.month in range(1, 5):
+                # We are in the first semester of the year.
+                deadline = deadline.replace(month=2)
+            else:
+                # We are in the last semester of the year.
+                deadline = deadline.replace(year=deadline.year + 1, month=2)
+            if periods_left % 2:
+                deadline = deadline.replace(month=8)
+        return deadline.replace(
+            year=deadline.year + periods_left // 2)
+
     @access("cde")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
@@ -95,26 +131,9 @@ class CdEFrontend(AbstractUserFrontend):
         if "member" in rs.user.roles:
             user_lastschrift = self.cdeproxy.list_lastschrift(
                 rs, persona_ids=(rs.user.persona_id,), active=True)
-            periods_left = data['balance'] // self.conf["MEMBERSHIP_FEE"]
-            if data['trial_member']:
-                periods_left += 1
-            period = self.cdeproxy.get_period(rs,
-                                              self.cdeproxy.current_period(rs))
-            # dont take payment for actual period into account while calculating
-            # remaining periods
-            if not period['balance_done']:
-                periods_left -= 1
-            # Initialize deadline
-            deadline = now().date().replace(day=1)
-            month = 8 if deadline.month in range(2, 8) else 2
-            deadline = deadline.replace(month=month)
-            # Add remaining periods
-            deadline = deadline.replace(year=deadline.year + periods_left // 2)
-            if periods_left % 2:
-                if deadline.month in range(2, 8):
-                    deadline = deadline.replace(month=8)
-                else:
-                    deadline = deadline.replace(year=deadline.year + 1, month=2)
+            period = self.cdeproxy.get_period(
+                rs, self.cdeproxy.current_period(rs))
+            deadline = self._calculate_ejection_deadline(data, period)
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0), 'data': data,
             'meta_info': meta_info, 'deadline': deadline,
