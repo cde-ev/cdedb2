@@ -85,7 +85,7 @@ class CdEFrontend(AbstractUserFrontend):
         return super().is_admin(rs)
 
     def _calculate_ejection_deadline(self, persona_data: CdEDBObject,
-                                     period_data: CdEDBObject) -> datetime.date:
+                                     period: CdEDBObject) -> datetime.date:
         """Helper to calculate when a membership will end."""
         if not self.conf["PERIODS_PER_YEAR"] == 2:
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_TEST"]:
@@ -96,10 +96,9 @@ class CdEFrontend(AbstractUserFrontend):
         periods_left = persona_data['balance'] // self.conf["MEMBERSHIP_FEE"]
         if persona_data['trial_member']:
             periods_left += 1
-        if period_data['balance_done']:
+        if period['balance_done']:
             periods_left += 1
-        deadline = period_data.get("semester_start", now()).date()
-        deadline = deadline.replace(day=1)
+        deadline = period.get("semester_start", now()).date().replace(day=1)
         # There are 3 semesters within any year with different deadlines.
         if deadline.month in range(5, 11):
             # We are in the summer semester.
@@ -2606,7 +2605,8 @@ class CdEFrontend(AbstractUserFrontend):
     def view_misc(self, rs: RequestState) -> Response:
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
-        cde_misc = meta_data.get("cde_misc") or rs.gettext("*Nothing here yet.*")
+        cde_misc = (meta_data.get("cde_misc")
+                    or rs.gettext("*Nothing here yet.*"))
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @access("cde_admin")
