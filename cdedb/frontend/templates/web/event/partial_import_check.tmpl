@@ -135,6 +135,25 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info',
                                                  icon='user', anid='box-changed-registrations') %}
+                        <div class="form-group details-toggle hidden">
+                            <button type="button" class="btn btn-default" value="expand">
+                                {{ util.make_icon('chevron-down') }} Expand all
+                            </button>
+                            <button type="button" class="btn btn-default" value="collapse">
+                                {{ util.make_icon('minus') }} Collapse all
+                            </button>
+                        </div>
+                        <script nonce="{{ csp_nonce }}">
+                            let registrationsBox = document.getElementById('box-changed-registrations')
+                            registrationsBox.querySelectorAll('.details-toggle button').forEach(button =>
+                                button.addEventListener('click', () =>
+                                    registrationsBox.querySelectorAll('.details-list details').forEach(detail =>
+                                        detail.open = button.value == "expand"
+                                    )
+                                )
+                            )
+                            registrationsBox.querySelector('.details-toggle').classList.remove('hidden')
+                        </script>
                         <ul class="slim details-list">
                             {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
                                 <li>
@@ -207,6 +226,25 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='book',
                                                  anid='box-changed-courses') %}
+                        <div class="form-group details-toggle hidden">
+                            <button type="button" class="btn btn-default" value="expand">
+                                {{ util.make_icon('chevron-down') }} Expand all
+                            </button>
+                            <button type="button" class="btn btn-default" value="collapse">
+                                {{ util.make_icon('minus') }} Collapse all
+                            </button>
+                        </div>
+                        <script nonce="{{ csp_nonce }}">
+                            let coursesBox = document.getElementById('box-changed-courses')
+                            coursesBox.querySelectorAll('.details-toggle button').forEach(button =>
+                                button.addEventListener('click', () =>
+                                    coursesBox.querySelectorAll('.details-list details').forEach(detail =>
+                                        detail.open = button.value == "expand"
+                                    )
+                                )
+                            )
+                            coursesBox.querySelector('.details-toggle').classList.remove('hidden')
+                        </script>
                         <ul class="slim details-list">
                             {% for course_id, course_diff in summary['changed_courses'].items() %}
                                 <li>
@@ -280,6 +318,25 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='home',
                                                  anid='box-changed-lodgements') %}
+                        <div class="form-group details-toggle hidden">
+                            <button type="button" class="btn btn-default" value="expand">
+                                {{ util.make_icon('chevron-down') }} Expand all
+                            </button>
+                            <button type="button" class="btn btn-default" value="collapse">
+                                {{ util.make_icon('minus') }} Collapse all
+                            </button>
+                        </div>
+                        <script nonce="{{ csp_nonce }}">
+                            let lodgementsBox = document.getElementById('box-changed-lodgements')
+                            lodgementsBox.querySelectorAll('.details-toggle button').forEach(button =>
+                                button.addEventListener('click', () =>
+                                    lodgementsBox.querySelectorAll('.details-list details').forEach(detail =>
+                                        detail.open = button.value == "expand"
+                                    )
+                                )
+                            )
+                            lodgementsBox.querySelector('.details-toggle').classList.remove('hidden')
+                        </script>
                         <ul class="slim details-list">
                             {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
                                 <li>
@@ -289,7 +346,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                             {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
                                         </summary>
                                         {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
-                                   </details>
+                                    </details>
                                 </li>
                             {% endfor %}
                         </ul>
