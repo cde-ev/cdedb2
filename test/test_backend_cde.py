@@ -97,7 +97,7 @@ class TestCdEBackend(BackendTest):
             constraints=[
                 ("given_names,display_name", QueryOperators.regex, '[ae]'),
                 ("country,country2", QueryOperators.empty, None)],
-            order=(("family_name", True),),)
+            order=(("family_name,birth_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual(
             {2, 6, 9, 12, 15, 100}, {e['id'] for e in result})

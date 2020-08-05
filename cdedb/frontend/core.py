@@ -2458,6 +2458,7 @@ class CoreFrontend(AbstractFrontend):
             return self.send_json(rs, err)
 
         spec = {
+            "id": "id",
             "username": "str",
             "is_event_realm": "bool",
         }
