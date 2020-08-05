@@ -100,16 +100,19 @@ class CdEFrontend(AbstractUserFrontend):
             periods_left += 1
         if period['balance_done']:
             periods_left += 1
-        deadline = period.get("semester_start", now()).date().replace(day=1)
-        # There are 3 semesters within any year with different deadlines.
+        deadline = (period.get("semester_start") or now()).date().replace(day=1)
+        # With our buffer zones around the expected semester start dates there
+        # are 3 possible semesters within a year with different deadlines.
         if deadline.month in range(5, 11):
-            # We are in the summer semester.
+            # Start was two months before or 4 months after expected start for
+            # summer semester, so we assume that we are in the summer semester.
             if periods_left % 2:
                 deadline = deadline.replace(year=deadline.year + 1, month=2)
             else:
                 deadline = deadline.replace(month=8)
         else:
-            # We are in a winter semester.
+            # Start was two months before or 4 months after expected start for
+            # winter semester, so we assume that we are in a winter semester.
             if deadline.month in range(1, 5):
                 # We are in the first semester of the year.
                 deadline = deadline.replace(month=2)
