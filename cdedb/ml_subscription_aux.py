@@ -43,8 +43,14 @@ class SubscriptionError(RuntimeError):
             self.msg = args[0]
         else:
             self.msg = ""
+
+        # Kind if only a single notification is shown
         self.kind = kind
-    pass
+
+        # Kind if multiple notifications are shown
+        self.multikind = kind
+        if self.multikind == "error":
+            self.multikind = "warning"
 
 
 class SubscriptionInfo(SubscriptionError):
@@ -166,7 +172,7 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.add_subscription_override: {
                 ss.subscribed: None,
                 ss.unsubscribed: None,
-                ss.subscription_override: None,
+                ss.subscription_override: info(n_("User is already force-subscribed.")),
                 ss.unsubscription_override: None,
                 ss.pending: error(n_("User has pending subscription request.")),
             },
@@ -181,7 +187,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscribed: None,
                 ss.unsubscribed: None,
                 ss.subscription_override: None,
-                ss.unsubscription_override: None,
+                ss.unsubscription_override: info(n_("User has already been blocked.")),
                 ss.pending: error(n_("User has pending subscription request.")),
             },
             SubscriptionActions.remove_unsubscription_override: {

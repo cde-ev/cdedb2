@@ -53,7 +53,7 @@
                         $('#input-add-moderator').cdedbSearchPerson(
                             '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
-                            false, true, "{{ gettext("ID, name, email") }}"
+                            false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                         );
                     </script>
                     <div class="input-group-btn">
@@ -148,26 +148,26 @@
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
             {% endtrans %}
         </p>
-    <form action="{{ cdedblink('ml/add_subscriber') }}" method="POST"
+    <form action="{{ cdedblink('ml/add_subscribers') }}" method="POST"
           id="addsubscriberform" class="p">
-        {{ util.anti_csrf_token('ml/add_subscriber') }}
+        {{ util.anti_csrf_token('ml/add_subscribers') }}
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-            {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber",
+            {{ util.input_text(name="subscriber_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…", anid="input-add-subscriber",
                                arialabel=gettext("ID of the new Subscriber")) }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-add-subscriber').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                         (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
                         (enums['SubscriptionActions'].add_subscriber.value|string|e) }}', {{ subscribers|list|json|s }},
-                    false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
+                    false, true, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
                 );
             </script>
             <div class="input-group-btn">
                 {{ util.input_submit(value=gettext("Add Subscriber"), aclass="btn btn-success") }}
             </div>
         </div>
-        {{ util.output_errors('subscriber_id', wrapper=True) }}
+        {{ util.output_errors('subscriber_ids', wrapper=True) }}
     </form>
 
     <div class="row">

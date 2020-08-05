@@ -688,13 +688,54 @@ class MlBaseFrontend(AbstractUserFrontend):
     def _subscription_action_handler(self, rs: RequestState,
                                      action: SubscriptionActions,
                                      **kwargs: Any) -> None:
-        """Un-inlined code from all subscription action initiating endpoints."""
+        """Un-inlined code from all single subscription action initiating endpoints."""
         try:
             code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
         except SubscriptionError as se:
             rs.notify(se.kind, se.msg)
         else:
             self.notify_return_code(rs, code)
+
+    def _subscription_multi_action_handler(self, rs: RequestState,
+                                           field: str,
+                                           action: SubscriptionActions,
+                                           mailinglist_id: int,
+                                           persona_ids: Collection[int]) -> bool:
+        """Un-inlined code from all multi subscription action initiating endpoints.
+
+        Falls back to _subscription_action_handler if only a single action is done.
+        :returns: if action has failed prematruely"""
+        if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=False):
+            rs.append_validation_error(
+                (field, ValueError(n_(
+                    "Some of these users do not exist or are archived."))))
+            rs.ignore_validation_errors()
+            self.notify_return_code(rs, 0)
+            return False
+
+        # Use different error pattern if only one action is done
+        if len(persona_ids) == 1:
+            self._subscription_action_handler(rs, action,
+                mailinglist_id=mailinglist_id, persona_id=persona_ids[0])
+            return False
+
+        # Iterate over all
+        code = 0
+        infos_only = True
+        for persona_id in persona_ids:
+            try:
+                code += self.mlproxy.do_subscription_action(rs, action,
+                    mailinglist_id=mailinglist_id, persona_id=persona_id)
+                infos_only = False
+            except SubscriptionError as se:
+                rs.notify(se.multikind, se.msg)
+                if se.multikind != 'info':
+                    infos_only = False
+        if infos_only:
+            self.notify_return_code(rs, -1, pending="Action had no effect.")
+        else:
+            self.notify_return_code(rs, code)
+        return True
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("persona_id", "id"))
@@ -736,17 +777,20 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "cdedbid"))
+    @REQUESTdata(("subscriber_ids", "cdedbid_csv_list"))
     @mailinglist_guard()
-    def add_subscriber(self, rs: RequestState, mailinglist_id: int,
-                       subscriber_id: int) -> Response:
+    def add_subscribers(self, rs: RequestState, mailinglist_id: int,
+                        subscriber_ids: Collection[int]) -> Response:
         """Administratively subscribe somebody."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
-        self._subscription_action_handler(
-            rs, SubscriptionActions.add_subscriber,
-            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
-        return self.redirect(rs, "ml/management")
+        valid = self._subscription_multi_action_handler(
+            rs, 'subscriber_ids', SubscriptionActions.add_subscriber,
+            mailinglist_id=mailinglist_id, persona_ids=subscriber_ids)
+        if valid:
+            return self.redirect(rs, "ml/management")
+        else:
+            return self.management(rs, mailinglist_id)
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("subscriber_id", "id"))
@@ -762,17 +806,20 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("modsubscriber_id", "cdedbid"))
+    @REQUESTdata(("modsubscriber_ids", "cdedbid_csv_list"))
     @mailinglist_guard()
-    def add_subscription_override(self, rs: RequestState, mailinglist_id: int,
-                                  modsubscriber_id: int) -> Response:
+    def add_subscription_overrides(self, rs: RequestState, mailinglist_id: int,
+                                   modsubscriber_ids: Collection[int]) -> Response:
         """Administratively subscribe somebody with moderator override."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
-        self._subscription_action_handler(
-            rs, SubscriptionActions.add_subscription_override,
-            mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
-        return self.redirect(rs, "ml/show_subscription_details")
+        valid = self._subscription_multi_action_handler(
+            rs, 'modsubscriber_ids', SubscriptionActions.add_subscription_override,
+            mailinglist_id=mailinglist_id, persona_ids=modsubscriber_ids)
+        if valid:
+            return self.redirect(rs, "ml/show_subscription_details")
+        else:
+            return self.show_subscription_details(rs, mailinglist_id)
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modsubscriber_id", "id"))
@@ -784,22 +831,25 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.remove_subscription_override,
+            rs, 'modunsubscriber_ids', SubscriptionActions.remove_subscription_override,
             mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("modunsubscriber_id", "cdedbid"))
+    @REQUESTdata(("modunsubscriber_ids", "cdedbid_csv_list"))
     @mailinglist_guard()
-    def add_unsubscription_override(self, rs: RequestState, mailinglist_id: int,
-                                    modunsubscriber_id: int) -> Response:
+    def add_unsubscription_overrides(self, rs: RequestState, mailinglist_id: int,
+                                     modunsubscriber_ids: Collection[int]) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
-        self._subscription_action_handler(
+        valid = self._subscription_multi_action_handler(
             rs, SubscriptionActions.add_unsubscription_override,
-            mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
-        return self.redirect(rs, "ml/show_subscription_details")
+            mailinglist_id=mailinglist_id, persona_ids=modunsubscriber_ids)
+        if valid:
+            return self.redirect(rs, "ml/show_subscription_details")
+        else:
+            return self.show_subscription_details(rs, mailinglist_id)
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modunsubscriber_id", "id"))
