@@ -20,7 +20,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
-    RequestState, CdEDBObject, PathLike)
+    RequestState, CdEDBObject, PathLike, unwrap)
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
@@ -704,7 +704,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Un-inlined code from all multi subscription action initiating endpoints.
 
         Falls back to _subscription_action_handler if only a single action is done.
-        :returns: if action has failed prematruely"""
+
+        :returns: whether actions have actually been tried"""
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=False):
             rs.append_validation_error(
                 (field, ValueError(n_(
@@ -716,11 +717,13 @@ class MlBaseFrontend(AbstractUserFrontend):
         # Use different error pattern if only one action is done
         if len(persona_ids) == 1:
             self._subscription_action_handler(rs, action,
-                mailinglist_id=mailinglist_id, persona_id=persona_ids[0])
-            return False
+                mailinglist_id=mailinglist_id, persona_id=unwrap(persona_ids))
+            return True
 
-        # Iterate over all
+        # Iterate over all subscriber_ids
         code = 0
+        # This tracks whether every single action failed with
+        # an error of kind "info".
         infos_only = True
         for persona_id in persona_ids:
             try:
