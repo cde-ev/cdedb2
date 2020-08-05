@@ -180,20 +180,34 @@ class CdEBackend(AbstractBackend):
 
         * 'revoked_at': Deletion is only possible 14 months after revoking.
         * 'transactions': Transactions that were issued for this lastschrift.
+        * 'active_transactions': Cannot delete a lastschrift that still has
+            open transactions.
         """
         lastschrift_id = affirm("id", lastschrift_id)
         blockers = {}
 
         with Atomizer(rs):
             lastschrift = self.get_lastschrift(rs, lastschrift_id)
+            # SEPA mandates need to be kept for at least 14 months after the
+            # last transaction. We want to be on the safe side, so we keep them
+            # for at least 14 months after revokation, which should always be
+            # after the last transaction.
+            # See also: ("Wie sind SEPA-Mandate aufzubewahren?")
+            # https://www.bundesbank.de/action/de/613964/bbksearch \
+            # ?pageNumString=1#anchor-640260
             if not lastschrift["revoked_at"] or now() < (
                     lastschrift["revoked_at"] + datetime.timedelta(days=14*30)):
                 blockers["revoked_at"] = [lastschrift_id]
 
-            transactions = self.list_lastschrift_transactions(
+            transaction_ids = self.list_lastschrift_transactions(
                 rs, lastschrift_ids=(lastschrift_id,))
-            if transactions:
-                blockers["transactions"] = list(transactions.keys())
+            if transaction_ids:
+                blockers["transactions"] = list(transaction_ids.keys())
+                active_transactions = self.list_lastschrift_transactions(
+                    rs, lastschrift_ids=(lastschrift_id,),
+                    stati=(const.LastschriftTransactionStati.issued,))
+                if active_transactions:
+                    blockers["active_transactions"] = list(active_transactions)
 
         return blockers
 
@@ -222,9 +236,11 @@ class CdEBackend(AbstractBackend):
                         "block": blockers.keys() - cascade,
                     })
             if cascade:
+                msg = n_("Unable to cascade %(blocker)s.")
                 if "revoked_at" in blockers:
-                    raise ValueError(n_("Unable to cascade %(blocker)s."),
-                                     {"blocker": "revoked_at"})
+                    raise ValueError(msg, {"blocker": "revoked_at"})
+                if "active_transactions" in blockers:
+                    raise ValueError(msg, {"blocker": "active_transactions"})
                 if "transactions" in blockers:
                     ret *= self.sql_delete(rs, "cde.lastschrift_transactions",
                                            blockers["transactions"])

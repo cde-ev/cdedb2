@@ -391,6 +391,25 @@ class TestCdEBackend(BackendTest):
         self.assertEqual(
             ["revoked_at", "transactions"],
             list(self.cde.delete_lastschrift_blockers(self.key, 2)))
+
+        transaction_data = {
+            "lastschrift_id": new_id,
+            "period_id": self.cde.current_period(self.key),
+        }
+        transaction_id = self.cde.issue_lastschrift_transaction(
+            self.key, transaction_data, check_unique=True)
+        self.assertEqual(
+            ["revoked_at", "transactions", "active_transactions"],
+            list(self.cde.delete_lastschrift_blockers(self.key, new_id)))
+        with self.assertRaises(ValueError):
+            self.cde.delete_lastschrift(
+                self.key, new_id, ["transactions", "active_transactions"])
+        self.cde.finalize_lastschrift_transaction(
+            self.key, transaction_id, const.LastschriftTransactionStati.success)
+        self.assertEqual(
+            ["revoked_at", "transactions"],
+            list(self.cde.delete_lastschrift_blockers(self.key, new_id)))
+
         self.assertEqual(
             ["transactions"],
             list(self.cde.delete_lastschrift_blockers(self.key, 1)))

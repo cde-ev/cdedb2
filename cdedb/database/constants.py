@@ -343,15 +343,12 @@ class LastschriftTransactionStati(enum.IntEnum):
     cancelled = 12  #:
     rollback = 20  #:
 
-    def is_finalized(self):
-        """Whether the transaction was already tallied.
-
-        :rtype: bool
-        """
-        return self in (LastschriftTransactionStati.success,
+    def is_finalized(self) -> bool:
+        """Whether the transaction was already tallied."""
+        return self in {LastschriftTransactionStati.success,
                         LastschriftTransactionStati.failure,
                         LastschriftTransactionStati.cancelled,
-                        LastschriftTransactionStati.rollback)
+                        LastschriftTransactionStati.rollback}
 
 
 @enum.unique
