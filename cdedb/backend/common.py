@@ -145,7 +145,7 @@ def internal(function: F) -> F:
     internal mode.
     """
 
-    setattr(function, "internal", True)
+    function.internal = True  # type: ignore
     return function
 
 
