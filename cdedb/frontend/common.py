@@ -1147,7 +1147,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 n_("Unknown download kind {kind}."), {"kind": kind})
 
     def render(self, rs: RequestState, templatename: str,
-               params: CdEDBObject = None) -> Response:
+               params: CdEDBObject = None) -> werkzeug.Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
         """
@@ -1962,10 +1962,12 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
     return wrap
 
 
+RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
+
+
 def request_extractor(
         rs: RequestState, args: Iterable[Tuple[str, str]],
-        constraints: Collection[Tuple[
-            Callable[[CdEDBObject], bool], Error]] = None) -> CdEDBObject:
+        constraints: Collection[RequestConstraint] = None) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
