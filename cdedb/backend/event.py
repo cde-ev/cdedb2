@@ -30,7 +30,7 @@ from cdedb.common import (
     mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
     xsorted, RequestState, extract_roles, CdEDBObject, CdEDBObjectMap, CdEDBLog,
     DefaultReturnCode, DeletionBlockers, InfiniteEnum, get_hash, PathLike,
-    EVENT_SCHEMA_VERSION
+    EVENT_SCHEMA_VERSION, CdEDBOptionalMap
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators, Query
@@ -1094,8 +1094,7 @@ class EventBackend(AbstractBackend):
         return ret
 
     def _set_tracks(self, rs: RequestState, event_id: int, part_id: int,
-                    data: Dict[int, Optional[CdEDBObject]]
-                    ) -> DefaultReturnCode:
+                    data: CdEDBOptionalMap) -> DefaultReturnCode:
         """Helper for handling of course tracks.
 
         This is basically uninlined code from ``set_event()``.
@@ -4048,11 +4047,10 @@ class EventBackend(AbstractBackend):
             # We handle these in the specific order of mixed_existence_sorter
             mes = mixed_existence_sorter
             IDMap = Dict[int, int]
-            DiffMap = Dict[int, Optional[CdEDBObject]]
 
-            gmap: IDMap= {}
-            gdelta: DiffMap = {}
-            gprevious: DiffMap = {}
+            gmap: IDMap = {}
+            gdelta: CdEDBOptionalMap = {}
+            gprevious: CdEDBOptionalMap = {}
             for group_id in mes(data.get('lodgement_groups', {}).keys()):
                 new_group = data['lodgement_groups'][group_id]
                 current = all_current_data['lodgement_groups'].get(group_id)
@@ -4088,8 +4086,8 @@ class EventBackend(AbstractBackend):
                 total_previous['lodgement_groups'] = gprevious
 
             lmap: IDMap = {}
-            ldelta: DiffMap = {}
-            lprevious: DiffMap = {}
+            ldelta: CdEDBOptionalMap = {}
+            lprevious: CdEDBOptionalMap = {}
             for lodgement_id in mes(data.get('lodgements', {}).keys()):
                 new_lodgement = data['lodgements'][lodgement_id]
                 current = all_current_data['lodgements'].get(lodgement_id)
@@ -4132,8 +4130,8 @@ class EventBackend(AbstractBackend):
                 total_previous['lodgements'] = lprevious
 
             cmap: IDMap = {}
-            cdelta: DiffMap = {}
-            cprevious: DiffMap = {}
+            cdelta: CdEDBOptionalMap = {}
+            cprevious: CdEDBOptionalMap = {}
             check_seg = lambda track_id, delta, original: (
                  (track_id in delta and delta[track_id] is not None)
                  or (track_id not in delta and track_id in original))
@@ -4192,8 +4190,8 @@ class EventBackend(AbstractBackend):
                 total_previous['courses'] = cprevious
 
             rmap: IDMap = {}
-            rdelta: DiffMap = {}
-            rprevious: DiffMap = {}
+            rdelta: CdEDBOptionalMap = {}
+            rprevious: CdEDBOptionalMap = {}
 
             dup = {
                 old_reg['persona_id']: old_reg['id']

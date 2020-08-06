@@ -55,6 +55,11 @@ CdEDBObject = Dict[str, Any]
 
 CdEDBObjectMap = Dict[int, CdEDBObject]
 
+# Same as above, but we also allow negative ints (for creation, not reflected
+# in the type] and None (for deletion). Used in `_set_tracks` and partial
+# import diff.
+CdEDBOptionalMap = Dict[int, Optional[CdEDBObject]]
+
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
 # special case like a change pending review.
