@@ -93,11 +93,12 @@ Es gibt folgende Arten von Benutzern:
     Haben das Recht entzogen bekommen, sich in die Datenbank einzuloggen.
     Ansonsten verhalten sie sich äquivalent zu Benutzern.
 * Archivierte Benutzer:
-    Haben keine Rechte mehr in der Datenbank. Beim Archivieren eines Accounts
-    werden weitestgehend alle Daten dieses Benutzers gelöscht.
-    Erhalten bleiben Name, Geburstdatum und Verg. Veranstaltungen (soweit
-    vorhanden). Sie können sich nicht mehr einloggen *und* können nicht
-    mehr von anderen Benutzern (ausgenommen Core Admins) aufgerufen werden.
+    Haben keine Rechte mehr in der Datenbank. Beim Archivieren eines
+    Accounts werden weitestgehend alle Daten dieses Benutzers gelöscht.
+    Erhalten bleiben Name, Geschlicht, Geburstdatum, Verg. Veranstaltungen
+    (soweit vorhanden) sowie Accounttyp. Sie können sich nicht mehr
+    einloggen *und* können nicht mehr von anderen Benutzern (ausgenommen
+    Core Admins) aufgerufen werden.
 
 Zudem müssen wir im Datenschutz Kontext folgende Kriterien an Benutzer
 unterscheiden:

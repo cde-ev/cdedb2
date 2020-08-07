@@ -1184,8 +1184,10 @@ class CoreBackend(AbstractBackend):
         later on to allow readmission:
 
         * name,
+        * gender,
         * date of birth,
-        * past events.
+        * past events,
+        * type of account (i.e. the realm bits).
 
         Additionally not all data is purged, since we have separate
         life cycles for different realms. This affects the following.
