@@ -3051,7 +3051,8 @@ class EventBackend(AbstractBackend):
                 ret[reg_id] = self._calculate_single_fee(
                     rs, reg, event=event, is_member=is_member)
         return ret
-    calculate_fee: Callable[[RequestState, int], decimal.Decimal]
+    calculate_fee: Callable[['EventBackend', RequestState, int],
+                            decimal.Decimal]
     calculate_fee = singularize(calculate_fees)
 
     @access("event")
