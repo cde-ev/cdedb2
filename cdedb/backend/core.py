@@ -1463,6 +1463,7 @@ class CoreBackend(AbstractBackend):
                 'family_name': "N.",
                 'birthday': None,
                 'birth_name': None,
+                'gender': None,
             }
             ret = self.set_persona(
                 rs, update, generation=None, may_wait=False,
