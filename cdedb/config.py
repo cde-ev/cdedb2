@@ -536,13 +536,15 @@ class BasicConfig(collections.abc.Mapping):
     by this should be as small as possible.
     """
 
+    # noinspection PyUnresolvedReferences
     def __init__(self):
         try:
-            import cdedb.localconfig as config
+            import cdedb.localconfig as _config
             config = {
-                key: getattr(config, key)
-                for key in _BASIC_DEFAULTS.keys() & dir(config)
+                key: getattr(_config, key)
+                for key in _BASIC_DEFAULTS.keys() & set(dir(_config))
             }
+            del _config
         except ImportError:
             config = {}
 
@@ -583,6 +585,7 @@ class Config(BasicConfig):
                 "primaryconf", str(configpath)
             )
             primaryconf = importlib.util.module_from_spec(spec)
+            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
@@ -624,6 +627,7 @@ class SecretsConfig(collections.abc.Mapping):
                 "primaryconf", str(configpath)
             )
             primaryconf = importlib.util.module_from_spec(spec)
+            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
