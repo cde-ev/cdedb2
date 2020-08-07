@@ -588,7 +588,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             output.append(pair)
 
         csv_data = csv_output(
-            sorted(output, key=lambda entry: EntitySorter.persona(entry)),
+            sorted(output, key=lambda e: EntitySorter.persona(
+                personas[int(e["db_id"][3:-2])])),
             columns)
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
