@@ -78,7 +78,7 @@ CREATE TABLE core.personas (
         name_supplement         varchar DEFAULT NULL,
         -- see cdedb.database.constants.Genders
         gender                  integer,
-        CHECK((NOT is_cde_realm AND NOT is_event_realm) OR gender IS NOT NULL),
+        CHECK((NOT is_cde_realm AND NOT is_event_realm) OR is_archived OR gender IS NOT NULL),
         -- may be NULL in historical cases; we try to minimize these occurences
         birthday                date,
         telephone               varchar,
