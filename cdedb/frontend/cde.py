@@ -787,8 +787,8 @@ class CdEFrontend(AbstractUserFrontend):
         event_ids = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
-            events.items(), key=lambda e: EntitySorter.event(e[1]),
-            reverse=True)
+            [(event['id'] , event['title']) for event in events.values()],
+            key=lambda e: EntitySorter.event(events[e[0]]), reverse=True)
         params = {
             'params': params or None,
             'data': data,
