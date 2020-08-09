@@ -7256,7 +7256,7 @@ msgstr "Aktive Versammlungen"
 
 #: cdedb/frontend/templates/web/assembly/index.tmpl:22
 msgid "(already attending)"
-msgstr "(bereits Angemeldet)"
+msgstr "(bereits angemeldet)"
 
 #: cdedb/frontend/templates/web/assembly/index.tmpl:26
 #, python-format

@@ -141,7 +141,7 @@ besitzt (das maximale Element der Bereiche):
     Bereich, dürfen Veranstaltungs oder Versammlungsadmin bzw beide diesen
     Benutzer einsehen.
 * CdE:
-    Besitz ein Benutzer den CdE Bereich, ist automatisch nur der CdE-Admin
+    Besitzt ein Benutzer den CdE Bereich, ist automatisch nur der CdE-Admin
     relativer Admin.
 
 Alle User mit Admin Rechten sind unter ``Core/Administratorenübersicht``
@@ -246,7 +246,7 @@ Verlinkung
 Die Profilseiten sind jeweils mit einem zufälligen Link versehen. Dies
 bedeutet, dass der Link nicht geraten werden kann, selbst wenn der
 Betrachter die interne ID eines Profils kennt, sondern von der DB
-herausgegeben werden muss. Insbesondere ist es also nicht möglich einfach
+herausgegeben werden muss. Insbesondere ist es also nicht möglich, einfach
 alle Links ohne Hilfe der DB zu generieren.
 
 Die DB stellt an einigen Stellen diese Links im Rahmen ihrer ganz normalen
