@@ -75,14 +75,20 @@
                         + util.href(cdedblink('ml/change_ml_type'), gettext("Change Type"),
                                     aclass="btn btn-warning btn-xs", icon="pen"))) }}
             {% endif %}
-            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;"|s, entries=event_entries,
-                    readonly=readonly,
-                    info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
-            {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=readonly,
-                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;"|s, readonly=readonly,
-                    entries=assembly_entries,
-                    info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
+            {% if 'event_id' in additional_fields %}
+                {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;"|s,
+                        entries=event_entries, readonly=readonly, info=gettext("The participants of this event will be "
+                            "subscribers of this mailinglist. (Opt-Out)")) }}
+            {% endif %}
+            {% if 'registration_stati' in additional_fields %}
+                {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
+                        readonly=readonly, entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
+            {% endif %}
+            {% if 'assembly_id' in additional_fields %}
+                {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;"|s,
+                    readonly=readonly, entries=assembly_entries, info=gettext("The participants of this assembly will "
+                        "be subscribers of this mailinglist. (Opt-Out)")) }}
+            {% endif %}
 
         <h4 class="heading-underline">{% trans %}Mails{% endtrans %}</h4>
             {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix"), readonly=readonly,

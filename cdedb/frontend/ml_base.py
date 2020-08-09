@@ -209,14 +209,20 @@ class MlBaseFrontend(AbstractUserFrontend):
                     ("ml_type", ValueError(n_(
                         "May not create mailinglist of this type."))))
             available_domains = atype.domains
-            event_ids = self.eventproxy.list_db_events(rs)
-            events = self.eventproxy.get_events(rs, event_ids)
-            assemblies = self.assemblyproxy.list_assemblies(rs)
+            additional_fields = atype.get_additional_fields()
+            if "event_id" in additional_fields:
+                event_ids = self.eventproxy.list_db_events(rs)
+                events = self.eventproxy.get_events(rs, event_ids)
+            else:
+                events = []
+            assemblies = self.assemblyproxy.list_assemblies(rs) \
+                if "assembly_id" in additional_fields else []
             return self.render(rs, "create_mailinglist", {
                 'events': events,
                 'assemblies': assemblies,
                 'ml_type': ml_type,
                 'available_domains': available_domains,
+                'additional_fields': additional_fields,
             })
 
     @access("ml", modi={"POST"})
@@ -362,16 +368,23 @@ class MlBaseFrontend(AbstractUserFrontend):
     def change_mailinglist_form(self, rs: RequestState,
                                 mailinglist_id: int) -> Response:
         """Render form."""
-        event_ids = self.eventproxy.list_db_events(rs)
-        events = self.eventproxy.get_events(rs, event_ids)
-        sorted_events = keydictsort_filter(events, EntitySorter.event)
-        event_entries = [(k, v['title']) for k, v in sorted_events]
-        assemblies = self.assemblyproxy.list_assemblies(rs)
-        sorted_assemblies = keydictsort_filter(
-            assemblies, EntitySorter.assembly)
-        assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
         atype = TYPE_MAP[rs.ambience['mailinglist']['ml_type']]
         available_domains = atype.domains
+        additional_fields = atype.get_additional_fields()
+        if "event_id" in additional_fields:
+            event_ids = self.eventproxy.list_db_events(rs)
+            events = self.eventproxy.get_events(rs, event_ids)
+            sorted_events = keydictsort_filter(events, EntitySorter.event)
+            event_entries = [(k, v['title']) for k, v in sorted_events]
+        else:
+            event_entries = []
+        if "assembly_id" in additional_fields:
+            assemblies = self.assemblyproxy.list_assemblies(rs)
+            sorted_assemblies = keydictsort_filter(
+                assemblies, EntitySorter.assembly)
+            assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
+        else:
+            assembly_entries = []
         merge_dicts(rs.values, rs.ambience['mailinglist'])
         if not self.mlproxy.is_relevant_admin(
                 rs, mailinglist=rs.ambience['mailinglist']):
@@ -381,6 +394,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
             'available_domains': available_domains,
+            'additional_fields': additional_fields,
         })
 
     @access("ml", modi={"POST"})
