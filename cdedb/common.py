@@ -2008,7 +2008,8 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
 ORG_PERIOD_FIELDS = (
     "id", "billing_state", "billing_done", "billing_count",
     "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
-    "balance_state", "balance_done", "balance_trialmembers", "balance_total")
+    "balance_state", "balance_done", "balance_trialmembers", "balance_total",
+    "semester_done")
 
 #: Fielsd of an expuls
 EXPULS_PERIOD_FIELDS = (

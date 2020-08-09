@@ -3086,7 +3086,8 @@
             "balance_state": null,
             "balance_done": "2000-01-13T10:11:11.111111+00:00",
             "balance_trialmembers": 0,
-            "balance_total": "0.00"
+            "balance_total": "0.00",
+            "semester_done": "2000-01-14T10:11:11.111111+00:00"
         },
         {
             "id": 42,
@@ -3099,7 +3100,8 @@
             "balance_state": null,
             "balance_done": "---now---",
             "balance_trialmembers": 0,
-            "balance_total": "0.00"
+            "balance_total": "0.00",
+            "semester_done": "---now---"
         },
         {
             "id": 43,
@@ -3112,7 +3114,8 @@
             "balance_state": null,
             "balance_done": null,
             "balance_trialmembers": 0,
-            "balance_total": "0.00"
+            "balance_total": "0.00",
+            "semester_done": null
         }
     ],
     "cde.expuls_period": [
