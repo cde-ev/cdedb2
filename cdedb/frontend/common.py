@@ -53,6 +53,7 @@ from typing import (
     Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
     ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO,
 )
+from typing_extensions import Protocol
 
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
@@ -1752,18 +1753,18 @@ def access(*roles: Role, modi: AbstractSet[str] = None,
     return decorator
 
 
-# TODO: Do this properly with Protocol
-class PeriodicMethod:
+PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
+
+
+class PeriodicJob(Protocol):
+    cron: CdEDBObject
+
     def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
         pass
 
 
-class PeriodicJob(PeriodicMethod):
-    cron: CdEDBObject
-
-
 def periodic(name: str, period: int = 1
-             ) -> Callable[[F], F]:
+             ) -> Callable[[PeriodicMethod], PeriodicJob]:
     """This decorator marks a function of a frontend for periodic execution.
 
     This just adds a flag and all of the actual work is done by the
@@ -1773,8 +1774,9 @@ def periodic(name: str, period: int = 1
     :param period: the interval in which to execute this job (e.g. period ==
       2 means every second invocation of the CronFrontend)
     """
-    def decorator(fun: F) -> F:
-        fun.cron = {  # type: ignore
+    def decorator(fun: PeriodicMethod) -> PeriodicJob:
+        fun = cast(PeriodicJob, fun)
+        fun.cron = {
             'name': name,
             'period': period,
         }

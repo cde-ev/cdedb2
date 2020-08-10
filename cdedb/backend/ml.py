@@ -6,6 +6,7 @@ event and assembly realm in the form of specific mailing lists.
 from datetime import datetime
 from typing import (Callable, Collection, Dict, List, Optional, Set,
                     Tuple, overload, Any, TYPE_CHECKING)
+from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -1084,14 +1085,11 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    if TYPE_CHECKING:
-        from typing_extensions import Protocol
-
-        class GetSubScriptionState(Protocol):
-            def __call__(self, rs: RequestState, persona_id: int,
-                         states: SubStates = None
-                         ) -> Dict[int, const.SubscriptionStates]: ...
-        get_subscription_states: GetSubScriptionState
+    class GetSubScriptionState(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int,
+                     states: SubStates = None
+                     ) -> Dict[int, const.SubscriptionStates]: ...
+    get_subscription_states: GetSubScriptionState
     get_subscription_states = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
@@ -1145,15 +1143,13 @@ class MlBackend(AbstractBackend):
             for e in data})
 
         return ret
-    if TYPE_CHECKING:
-        from typing_extensions import Protocol
 
-        class GetSubscription(Protocol):
-            def __call__(self, rs: RequestState,
-                         persona_id: Optional[int], *, mailinglist_id: int,
-                         states: SubStates = None
-                         ) -> Optional[const.SubscriptionStates]: ...
-        get_subscription: GetSubscription
+    class GetSubscription(Protocol):
+        def __call__(self, rs: RequestState,
+                     persona_id: Optional[int], *, mailinglist_id: int,
+                     states: SubStates = None
+                     ) -> Optional[const.SubscriptionStates]: ...
+    get_subscription: GetSubscription
     get_subscription = singularize(
         get_user_subscriptions, "mailinglist_ids", "mailinglist_id")
 

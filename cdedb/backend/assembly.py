@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import (
     Set, Dict, Tuple, Union, Callable, Collection, Optional, TYPE_CHECKING
 )
+from typing_extensions import Protocol
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, affirm_set_validation as affirm_set,
@@ -1565,13 +1566,11 @@ class AssemblyBackend(AbstractBackend):
                     rs, query.format(" AND ".join(constraints)), params)
                 ret.update({e["attachment_id"]: e["version"] for e in data})
             return ret
-    if TYPE_CHECKING:
-        from typing_extensions import Protocol
 
-        class GetCurrentVersion(Protocol):
-            def __call__(self, rs: RequestState, attachment_id: int,
-                         include_deleted: bool = False) -> int: ...
-        get_current_version: GetCurrentVersion
+    class GetCurrentVersion(Protocol):
+        def __call__(self, rs: RequestState, attachment_id: int,
+                     include_deleted: bool = False) -> int: ...
+    get_current_version: GetCurrentVersion
     get_current_version = singularize(
         get_current_versions, "attachment_ids", "attachment_id")
 
