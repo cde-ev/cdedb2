@@ -14,7 +14,7 @@ CDEDB_TEST = os.environ.get('CDEDB_TEST', '').lower() in ('true', 't')
 
 LOG_LEVEL = logging.DEBUG
 SYSLOG_LEVEL = logging.INFO
-CONSOLE_LOG_LEVEL = logging.WARNING
+CONSOLE_LOG_LEVEL = logging.INFO
 GLOBAL_LOG = pathlib.Path("/log/cdedb.log")
 
 if CDEDB_TEST:
