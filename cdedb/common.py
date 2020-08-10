@@ -1712,11 +1712,12 @@ ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 ALL_ADMIN_VIEWS: Set[AdminView] = {
     "meta_admin",
     "core_user", "core",
-    "cde_user", "past_event",
+    "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
     "finance",
-    "event_user", "event_mgmt", "event_orga",
-    "ml_user", "ml_mgmt", "ml_moderator",
-    "assembly_user", "assembly_mgmt", "assembly_wahlleitung",
+    "event_user", "event_mgmt", "event_orga", "ml_mgmt_event", "ml_mod_event",
+    "ml_user", "ml_mgmt", "ml_mod",
+    "ml_mgmt_cdelokal", "ml_mod_cdelokal",
+    "assembly_user", "assembly_mgmt", "assembly_wahlleitung", "ml_mgmt_assembly", "ml_mod_assembly",
     "genesis"}
 
 
@@ -1728,19 +1729,19 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "core_admin" in roles:
         result |= {"core_user", "core"}
     if "cde_admin" in roles:
-        result |= {"cde_user", "past_event", "ml_mgmt", "ml_moderator"}
+        result |= {"cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:
         result |= {"finance"}
     if "event_admin" in roles:
-        result |= {"event_user", "event_mgmt", "event_orga", "ml_mgmt",
-                   "ml_moderator"}
+        result |= {"event_user", "event_mgmt", "event_orga", "ml_mgmt_event",
+                   "ml_mod_event"}
     if "ml_admin" in roles:
-        result |= {"ml_user", "ml_mgmt", "ml_moderator"}
+        result |= {"ml_user", "ml_mgmt", "ml_mod"}
     if "cdelokal_admin" in roles:
-        result |= {"ml_mgmt", "ml_moderator"}
+        result |= {"ml_mgmt_cdelokal", "ml_mod_cdelokal"}
     if "assembly_admin" in roles:
         result |= {"assembly_user", "assembly_mgmt", "assembly_wahlleitung",
-                   "ml_mgmt", "ml_moderator"}
+                   "ml_mgmt_assembly", "ml_mod_assembly"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):

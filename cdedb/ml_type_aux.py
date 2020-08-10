@@ -5,7 +5,7 @@ from typing import (
 )
 
 from cdedb.common import (
-    extract_roles, n_, unwrap, CdEDBObject, RequestState
+    extract_roles, n_, unwrap, CdEDBObject, RequestState, User
 )
 from cdedb.query import Query, QueryOperators
 import cdedb.database.constants as const
@@ -162,6 +162,33 @@ class GeneralMailinglist:
     if TYPE_CHECKING:
         role_map: OrderedDict[str, MailinglistInteractionPolicy]
     role_map = OrderedDict()
+
+    @classmethod
+    def moderator_admin_views(cls):
+        return {"ml_mod_" + admin.replace("_admin", "")
+                for admin in cls.relevant_admins} | {"ml_mod"}
+
+    @classmethod
+    def management_admin_views(cls):
+        return {"ml_mgmt_" + admin.replace("_admin", "")
+                for admin in cls.relevant_admins} | {"ml_mgmt"}
+
+    @classmethod
+    def has_moderator_view(cls, user: User):
+        # TODO use existent class method - problem: different signature
+        is_relevant_admin = bool(
+            (cls.relevant_admins | {"ml_admin"}) & user.roles)
+        #1 + cls.moderator_admin_views() & user.admin_views + ""
+        return is_relevant_admin and bool(cls.moderator_admin_views()
+                                          & user.admin_views)
+
+    @classmethod
+    def has_management_view(cls, user: User):
+        # TODO use existent class method - problem: different signature
+        is_relevant_admin = bool(
+            (cls.relevant_admins | {"ml_admin"}) & user.roles)
+        return is_relevant_admin and bool(cls.management_admin_views()
+                                          & user.admin_views)
 
     @classmethod
     def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,
