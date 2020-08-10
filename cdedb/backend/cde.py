@@ -178,7 +178,7 @@ class CdEBackend(AbstractBackend):
 
         Possible blockers:
 
-        * 'revoked_at': Deletion is only possible 14 months after revoking.
+        * 'revoked_at': Deletion is only possible 18 months after revoking.
         * 'transactions': Transactions that were issued for this lastschrift.
         * 'active_transactions': Cannot delete a lastschrift that still has
             open transactions.
@@ -195,8 +195,9 @@ class CdEBackend(AbstractBackend):
             # See also: ("Wie sind SEPA-Mandate aufzubewahren?")
             # https://www.bundesbank.de/action/de/613964/bbksearch \
             # ?pageNumString=1#anchor-640260
+            # We instead require 18 months to have passed just to be safe.
             if not lastschrift["revoked_at"] or now() < (
-                    lastschrift["revoked_at"] + datetime.timedelta(days=14*30)):
+                    lastschrift["revoked_at"] + datetime.timedelta(days=18*30)):
                 blockers["revoked_at"] = [lastschrift_id]
 
             transaction_ids = self.list_lastschrift_transactions(
@@ -217,7 +218,7 @@ class CdEBackend(AbstractBackend):
                            ) -> DefaultReturnCode:
         """Remove data about an old lastschrift.
 
-        Only possible after the lastschrift has been revoked for at least 14
+        Only possible after the lastschrift has been revoked for at least 18
         months.
         """
         lastschrift_id = affirm("id", lastschrift_id)
