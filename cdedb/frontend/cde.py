@@ -84,6 +84,46 @@ class CdEFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
+    def _calculate_ejection_deadline(self, persona_data: CdEDBObject,
+                                     period: CdEDBObject) -> datetime.date:
+        """Helper to calculate when a membership will end."""
+        if not self.conf["PERIODS_PER_YEAR"] == 2:
+            msg = (f"{self.conf['PERIODS_PER_YEAR']} periods per year not"
+                   f" supported.")
+            if self.conf["CDEDB_DEV"] or self.conf["CDEDB_TEST"]:
+                raise RuntimeError(msg)
+            else:
+                self.logger.error(msg)
+                return now().date()
+        periods_left = persona_data['balance'] // self.conf["MEMBERSHIP_FEE"]
+        if persona_data['trial_member']:
+            periods_left += 1
+        if period['balance_done']:
+            periods_left += 1
+        deadline = (period.get("semester_start") or now()).date().replace(day=1)
+        # With our buffer zones around the expected semester start dates there
+        # are 3 possible semesters within a year with different deadlines.
+        if deadline.month in range(5, 11):
+            # Start was two months before or 4 months after expected start for
+            # summer semester, so we assume that we are in the summer semester.
+            if periods_left % 2:
+                deadline = deadline.replace(year=deadline.year + 1, month=2)
+            else:
+                deadline = deadline.replace(month=8)
+        else:
+            # Start was two months before or 4 months after expected start for
+            # winter semester, so we assume that we are in a winter semester.
+            if deadline.month in range(1, 5):
+                # We are in the first semester of the year.
+                deadline = deadline.replace(month=2)
+            else:
+                # We are in the last semester of the year.
+                deadline = deadline.replace(year=deadline.year + 1, month=2)
+            if periods_left % 2:
+                deadline = deadline.replace(month=8)
+        return deadline.replace(
+            year=deadline.year + periods_left // 2)
+
     @access("cde")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
@@ -96,26 +136,9 @@ class CdEFrontend(AbstractUserFrontend):
             assert rs.user.persona_id is not None
             has_lastschrift = bool(self.cdeproxy.list_lastschrift(
                 rs, persona_ids=(rs.user.persona_id,), active=True))
-            periods_left = data['balance'] // self.conf["MEMBERSHIP_FEE"]
-            if data['trial_member']:
-                periods_left += 1
-            period = self.cdeproxy.get_period(rs,
-                                              self.cdeproxy.current_period(rs))
-            # dont take payment for actual period into account while calculating
-            # remaining periods
-            if not period['balance_done']:
-                periods_left -= 1
-            # Initialize deadline
-            deadline = now().date().replace(day=1)
-            month = 8 if deadline.month in range(2, 8) else 2
-            deadline = deadline.replace(month=month)
-            # Add remaining periods
-            deadline = deadline.replace(year=deadline.year + periods_left // 2)
-            if periods_left % 2:
-                if deadline.month in range(2, 8):
-                    deadline = deadline.replace(month=8)
-                else:
-                    deadline = deadline.replace(year=deadline.year + 1, month=2)
+            period = self.cdeproxy.get_period(
+                rs, self.cdeproxy.current_period(rs))
+            deadline = self._calculate_ejection_deadline(data, period)
         return self.render(rs, "index", {
             'has_lastschrift': has_lastschrift, 'data': data,
             'meta_info': meta_info, 'deadline': deadline,
@@ -781,8 +804,8 @@ class CdEFrontend(AbstractUserFrontend):
         event_ids = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
-            events.items(), key=lambda e: EntitySorter.event(e[1]),
-            reverse=True)
+            [(event['id'] , event['title']) for event in events.values()],
+            key=lambda e: EntitySorter.event(events[e[0]]), reverse=True)
         params = {
             'params': params or None,
             'data': data,
@@ -2584,7 +2607,8 @@ class CdEFrontend(AbstractUserFrontend):
     def view_misc(self, rs: RequestState) -> Response:
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
-        cde_misc = meta_data.get("cde_misc") or rs.gettext("*Nothing here yet.*")
+        cde_misc = (meta_data.get("cde_misc")
+                    or rs.gettext("*Nothing here yet.*"))
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @access("cde_admin")

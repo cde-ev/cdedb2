@@ -5,6 +5,8 @@ import itertools
 import json
 import re
 import unittest
+import datetime
+import decimal
 from test.common import USER_DICT, FrontendTest, as_users
 
 import cdedb.database.constants as const
@@ -16,6 +18,81 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta")
     def test_index(self, user):
         self.traverse({'description': 'Mitglieder'})
+
+    def test_ejection_date(self):
+        def _calculate_ejection_deadline(persona_data, period):
+            """Clone of `CdEFrontend._calculate_ejection_deadline`."""
+            periods_left = persona_data['balance'] // decimal.Decimal("2.50")
+            if persona_data['trial_member']:
+                periods_left += 1
+            if period['balance_done']:
+                periods_left += 1
+            deadline = period["semester_start"].date().replace(day=1)
+            # There are 3 semesters within any year with different deadlines.
+            if deadline.month in range(5, 11):
+                # We are in the summer semester.
+                if periods_left % 2:
+                    deadline = deadline.replace(year=deadline.year + 1, month=2)
+                else:
+                    deadline = deadline.replace(month=8)
+            else:
+                # We are in a winter semester.
+                if deadline.month in range(1, 5):
+                    # We are in the first semester of the year.
+                    deadline = deadline.replace(month=2)
+                else:
+                    # We are in the last semester of the year.
+                    deadline = deadline.replace(year=deadline.year + 1, month=2)
+                if periods_left % 2:
+                    deadline = deadline.replace(month=8)
+            return deadline.replace(
+                year=deadline.year + periods_left // 2)
+        persona_data = {
+            "balance": 0,
+            "trial_member": False,
+        }
+        period_data = {
+            "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
+            "balance_done": False,
+        }
+        self.assertEqual(datetime.date.fromisoformat("2020-02-01"),
+                         _calculate_ejection_deadline(
+                             persona_data, period_data))
+        period_data = {
+            "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
+            "balance_done": True,
+        }
+        self.assertEqual(datetime.date.fromisoformat("2020-08-01"),
+                         _calculate_ejection_deadline(
+                             persona_data, period_data))
+        period_data = {
+            "semester_start": datetime.datetime.fromisoformat("2020-07-01"),
+            "balance_done": False,
+        }
+        self.assertEqual(datetime.date.fromisoformat("2020-08-01"),
+                         _calculate_ejection_deadline(
+                             persona_data, period_data))
+        period_data = {
+            "semester_start": datetime.datetime.fromisoformat("2020-07-01"),
+            "balance_done": True,
+        }
+        self.assertEqual(datetime.date.fromisoformat("2021-02-01"),
+                         _calculate_ejection_deadline(
+                             persona_data, period_data))
+        period_data = {
+            "semester_start": datetime.datetime.fromisoformat("2020-12-01"),
+            "balance_done": False,
+        }
+        self.assertEqual(datetime.date.fromisoformat("2021-02-01"),
+                         _calculate_ejection_deadline(
+                             persona_data, period_data))
+        period_data = {
+            "semester_start": datetime.datetime.fromisoformat("2020-12-01"),
+            "balance_done": True,
+        }
+        self.assertEqual(datetime.date.fromisoformat("2021-08-01"),
+                         _calculate_ejection_deadline(
+                             persona_data, period_data))
 
     @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner")
     def test_sidebar(self, user):

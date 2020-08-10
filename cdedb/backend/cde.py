@@ -509,6 +509,8 @@ class CdEBackend(AbstractBackend):
                                   period_id)
         if not ret:
             raise ValueError(n_("This period does not exist."))
+        ret["semester_start"] = unwrap(self.sql_select_one(
+            rs, "cde.org_period", ("semester_done",), period_id - 1))
         return ret
 
     @access("finance_admin")

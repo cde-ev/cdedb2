@@ -315,6 +315,10 @@ def make_proxy(backend: B, internal=False) -> B:
 
             return wrapit(attr)
 
+        @staticmethod
+        def _get_backend_class() -> B:
+            return backend.__class__
+
     return cast(B, Proxy())
 
 
@@ -1697,6 +1701,11 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
 ))
 
 
+# All roles available to non-driod users. Can be used to create dummy users
+# with all roles, like for `cdedb.script` or `cdedb.frontend.cron`.
+ALL_ROLES: Set[Role] = set(DB_ROLE_MAPPING) - {"droid"}
+
+
 def roles_to_db_role(roles: Set[Role]) -> str:
     """Convert a set of application level roles into a database level role."""
     for role in DB_ROLE_MAPPING:
@@ -2008,7 +2017,8 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
 ORG_PERIOD_FIELDS = (
     "id", "billing_state", "billing_done", "billing_count",
     "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
-    "balance_state", "balance_done", "balance_trialmembers", "balance_total")
+    "balance_state", "balance_done", "balance_trialmembers", "balance_total",
+    "semester_done")
 
 #: Fielsd of an expuls
 EXPULS_PERIOD_FIELDS = (

@@ -93,11 +93,12 @@ Es gibt folgende Arten von Benutzern:
     Haben das Recht entzogen bekommen, sich in die Datenbank einzuloggen.
     Ansonsten verhalten sie sich äquivalent zu Benutzern.
 * Archivierte Benutzer:
-    Haben keine Rechte mehr in der Datenbank. Beim Archivieren eines Accounts
-    werden weitestgehend alle Daten dieses Benutzers gelöscht.
-    Erhalten bleiben Name, Geburstdatum und Verg. Veranstaltungen (soweit
-    vorhanden). Sie können sich nicht mehr einloggen *und* können nicht
-    mehr von anderen Benutzern (ausgenommen Core Admins) aufgerufen werden.
+    Haben keine Rechte mehr in der Datenbank. Beim Archivieren eines
+    Accounts werden weitestgehend alle Daten dieses Benutzers gelöscht.
+    Erhalten bleiben Name, Geschlicht, Geburstdatum, Verg. Veranstaltungen
+    (soweit vorhanden) sowie Accounttyp. Sie können sich nicht mehr
+    einloggen *und* können nicht mehr von anderen Benutzern (ausgenommen
+    Core Admins) aufgerufen werden.
 
 Zudem müssen wir im Datenschutz Kontext folgende Kriterien an Benutzer
 unterscheiden:
@@ -140,7 +141,7 @@ besitzt (das maximale Element der Bereiche):
     Bereich, dürfen Veranstaltungs oder Versammlungsadmin bzw beide diesen
     Benutzer einsehen.
 * CdE:
-    Besitz ein Benutzer den CdE Bereich, ist automatisch nur der CdE-Admin
+    Besitzt ein Benutzer den CdE Bereich, ist automatisch nur der CdE-Admin
     relativer Admin.
 
 Alle User mit Admin Rechten sind unter ``Core/Administratorenübersicht``
@@ -245,7 +246,7 @@ Verlinkung
 Die Profilseiten sind jeweils mit einem zufälligen Link versehen. Dies
 bedeutet, dass der Link nicht geraten werden kann, selbst wenn der
 Betrachter die interne ID eines Profils kennt, sondern von der DB
-herausgegeben werden muss. Insbesondere ist es also nicht möglich einfach
+herausgegeben werden muss. Insbesondere ist es also nicht möglich, einfach
 alle Links ohne Hilfe der DB zu generieren.
 
 Die DB stellt an einigen Stellen diese Links im Rahmen ihrer ganz normalen
