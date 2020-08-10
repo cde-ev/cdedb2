@@ -3,15 +3,13 @@
 {# Classical voting: Presentation of candidates #}
 {% macro show_classical_candidates() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
-    <div class="row">
-        <ul class="col-md-8" id="classical-candidates">
-            {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
-                <li class="hide-hover-container clearfix-after">
-                    {{ candidate['description'] }}
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
+    <ul id="classical-candidates">
+        {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
+            <li>
+                {{ candidate['description'] }}
+            </li>
+        {% endfor %}
+    </ul>
 {%- endmacro %}
 
 {# Classical voting: Voting form #}
@@ -62,20 +60,18 @@
 {# Preferential voting: Presentation of candidates #}
 {% macro show_preferential_candidates() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
-    <div class="row" id="preferential-candidates">
-        <ul class="col-md-8">
-            {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
-                <li class="hide-hover-container clearfix-after">
-                    {{ candidate['description'] }}
-                    {% if attends %}
-                        <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
-                            {{ candidate['moniker'] }}
-                        </span>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
+    <ul id="preferential-candidates">
+        {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
+            <li>
+                {{ candidate['description'] }}
+                {% if attends %}
+                    <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
+                        {{ candidate['moniker'] }}
+                    </span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
 {%- endmacro %}
 
 {% macro show_manual_for_text_preferential_voting() -%}
