@@ -413,25 +413,24 @@ class CoreFrontend(AbstractFrontend):
         # This excludes users with relation "unsubscribed", because they are not
         # directly shown on the management sites.
         if ml_id:
-            is_admin = "ml_admin" in rs.user.roles
-            is_viewing_admin = (is_admin and
-                                "ml_moderator" in rs.user.admin_views)
+            # determinate if the user is relevant admin of this mailinglist
+            ml_type = self.mlproxy.get_ml_type(rs, ml_id)
+            is_admin = ml_type.is_relevant_admin(rs)
             is_moderator = ml_id in self.mlproxy.moderator_info(
                 rs, rs.user.persona_id)
+            # Admins who are also moderators can not disable this admin view
+            if is_admin and not is_moderator:
+                access_mode.add("moderator")
             relevant_stati = [s for s in const.SubscriptionStates
                               if s != const.SubscriptionStates.unsubscribed]
-            if is_admin or is_moderator:
+            if is_moderator or ml_type.has_moderator_view(rs.user):
                 subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)
-                is_subscriber = persona_id in subscriptions
-                if (is_moderator or is_viewing_admin) and is_subscriber:
+                if persona_id in subscriptions:
                     access_levels.add("ml")
                     # the moderator access level currently does nothing, but we
                     # add it anyway to be less confusing
                     access_levels.add("moderator")
-                # Admins who are also moderators can not disable this admin view
-                if is_admin and not is_moderator and is_subscriber:
-                    access_mode.add("moderator")
 
         # Retrieve data
         #
