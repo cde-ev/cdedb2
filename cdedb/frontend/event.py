@@ -594,6 +594,7 @@ class EventFrontend(AbstractUserFrontend):
             'part_begin': "date",
             'part_end': "date",
             'fee': "decimal",
+            'waitlist_field': "id_or_None",
         }
         params = tuple(("{}_{}".format(key, part_id), value)
                        for part_id in parts if part_id not in deletes
@@ -680,6 +681,7 @@ class EventFrontend(AbstractUserFrontend):
             num = "track_num_choices_{}_{}".format(part_id, track_id)
             msg = n_("Must be less or equal than total Course Choices.")
             return (lambda d: d[min] <= d[num], (min, ValueError(msg)))
+
         constraints = tuple(
             constraint_maker(part_id, track_id)
             for part_id, part in parts.items()
@@ -930,6 +932,9 @@ class EventFrontend(AbstractUserFrontend):
         for mod in rs.ambience['event']['fee_modifiers'].values():
             referenced.add(mod['field_id'])
             fee_modifiers.add(mod['field_id'])
+        for part_id, part in rs.ambience['event']['parts'].items():
+            if part['waitlist_field']:
+                referenced.add(part['waitlist_field'])
         return self.render(rs, "field_summary", {
             'referenced': referenced, 'fee_modifiers': fee_modifiers})
 

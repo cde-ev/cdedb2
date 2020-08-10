@@ -1335,6 +1335,8 @@ class EventBackend(AbstractBackend):
                               wishes.
         * course_room_fields: An event that uses this field for course room
                               assignment.
+        * waitlist_field:     An event_part tha uses this field for waitlist
+                              management.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -1374,6 +1376,13 @@ class EventBackend(AbstractBackend):
         if course_room_fields:
             blockers["course_room_fields"] = [
                 e["id"] for e in course_room_fields]
+
+        waitlist_fields = self.sql_select(
+            rs, "event.event_parts", ("id",), (field_id,),
+            entity_key="waitlist_field")
+        if waitlist_fields:
+            blockers["waitlist_fields"] = [
+                e["id"] for e in waitlist_fields]
 
         return blockers
 
@@ -1432,6 +1441,13 @@ class EventBackend(AbstractBackend):
                         'course_room_field': None,
                     }
                     ret += self.sql_update(rs, "event.events", deletor)
+            if "waitlist_fields" in cascade:
+                for anid in blockers["waitlist_fields"]:
+                    deletor = {
+                        'id': anid,
+                        'waitlist_field': None,
+                    }
+                    ret += self.sql_update(rs, "event.event_parts", deletor)
             blockers = self._delete_event_field_blockers(rs, field_id)
 
         if not blockers:
@@ -1517,7 +1533,7 @@ class EventBackend(AbstractBackend):
         * If the key 'orgas' is present you have to pass the complete set
           of orga IDs, which will superseed the current list of orgas.
         * If the keys 'parts', 'fee_modifiers' or 'fields' are present,
-          the associated dict mapping the part, fee_mdoifier or field ids to
+          the associated dict mapping the part, fee_modifier or field ids to
           the respective data sets can contain an arbitrary number of entities,
           absent entities are not modified.
 
@@ -1647,6 +1663,19 @@ class EventBackend(AbstractBackend):
                     new_part = copy.deepcopy(parts[x])
                     new_part['event_id'] = data['id']
                     tracks = new_part.pop('tracks', {})
+                    if new_part.get('waitlist_field'):
+                        correct_datatype = const.FieldDatatypes.int
+                        correct_assoc = const.FieldAssociations.registration
+                        waitlist_data = self.sql_select_one(
+                            rs, "event.field_definitions",
+                            ("id", "event_id", "kind", "association"),
+                            new_part['waitlist_field'])
+                        if (waitlist_data['event_id'] != data['id']
+                                or waitlist_data['kind'] != correct_datatype
+                                or waitlist_data[
+                                    'association'] != correct_assoc):
+                            raise ValueError(n_("Unfit field for %(field)s"),
+                                             {'field': 'waitlist_field'})
                     new_id = self.sql_insert(rs, "event.event_parts", new_part)
                     ret *= new_id
                     ret *= self._set_tracks(rs, data['id'], new_id, tracks)
@@ -1660,6 +1689,19 @@ class EventBackend(AbstractBackend):
                     update = copy.deepcopy(parts[x])
                     update['id'] = x
                     tracks = update.pop('tracks', {})
+                    if update.get('waitlist_field'):
+                        correct_datatype = const.FieldDatatypes.int
+                        correct_assoc = const.FieldAssociations.registration
+                        waitlist_data = self.sql_select_one(
+                            rs, "event.field_definitions",
+                            ("id", "event_id", "kind", "association"),
+                            update['waitlist_field'])
+                        if (waitlist_data['event_id'] != data['id']
+                                or waitlist_data['kind'] != correct_datatype
+                                or waitlist_data[
+                                    'association'] != correct_assoc):
+                            raise ValueError(n_("Unfit field for %(field)s"),
+                                             {'field': 'waitlist_field'})
                     ret *= self.sql_update(rs, "event.event_parts", update)
                     ret *= self._set_tracks(rs, data['id'], x, tracks)
                     self.event_log(
