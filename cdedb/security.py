@@ -9,9 +9,9 @@ import string
 from secrets import choice, token_hex
 
 
-def secure_token_hex(*args, **kwargs) -> str:
+def secure_token_hex(nbytes: int = None) -> str:
     """Wrapper around secrets.token_hex."""
-    return token_hex(*args, **kwargs)
+    return token_hex(nbytes)
 
 
 def secure_random_ascii(length: int = 12, chars: str = None) -> str:

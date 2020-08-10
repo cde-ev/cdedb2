@@ -43,7 +43,7 @@ from cdedb.common import (
     PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
     get_hash, mixed_existence_sorter, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, DeletionBlockers
+    DefaultReturnCode, DeletionBlockers, CdEDBLog,
 )
 from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators, Query
@@ -63,7 +63,7 @@ class AssemblyBackend(AbstractBackend):
                 self.conf['STORAGE_DIR'] / 'ballot_result')
 
     @classmethod
-    def is_admin(cls, rs: RequestState):
+    def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
     @internal
@@ -201,11 +201,11 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly_admin")
     def retrieve_log(self, rs: RequestState,
                      codes: Collection[const.AssemblyLogCodes] = None,
-                     assembly_id: int = None, offset=None,
+                     assembly_id: int = None, offset: int = None,
                      length: int = None, persona_id: int = None,
                      submitted_by: int = None, additional_info: str = None,
                      time_start: datetime.datetime = None,
-                     time_stop: datetime.datetime = None):
+                     time_stop: datetime.datetime = None) -> CdEDBLog:
         """Get recorded activity.
 
         See
@@ -1583,7 +1583,7 @@ class AssemblyBackend(AbstractBackend):
         This is not allowed if the associated ballot has begun voting or if
         the (indirectly) associated assembly has concluded.
         """
-        data: dict = affirm("assembly_attachment_version", data, creation=True)
+        data = affirm("assembly_attachment_version", data, creation=True)
         content = affirm("bytes", content)
         attachment_id = data['attachment_id']
         with Atomizer(rs):
@@ -1615,7 +1615,7 @@ class AssemblyBackend(AbstractBackend):
         This is not allowed if the associated ballot has begun voting or if
         the (indirectly) associated assembly has concluded.
         """
-        data: dict = affirm("assembly_attachment_version", data)
+        data = affirm("assembly_attachment_version", data)
         attachment_id = data.pop('attachment_id')
         version = data.pop('version')
         with Atomizer(rs):

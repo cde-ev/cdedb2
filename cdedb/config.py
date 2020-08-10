@@ -526,7 +526,9 @@ _SECRECTS_DEFAULTS = {
 }
 
 
-class BasicConfig(collections.abc.Mapping):
+# mypy think we are inheritng from a generic type, but Mapping[str, Any]
+# would not work here.
+class BasicConfig(collections.abc.Mapping):  # type: ignore
     """Global configuration for elementary options.
 
     This is the global configuration which is the same for all
@@ -612,7 +614,9 @@ class Config(BasicConfig):
             _LOGGER.info(f"Ignored basic config entry {key} in {configpath}.")
 
 
-class SecretsConfig(collections.abc.Mapping):
+# mypy think we are inheritng from a generic type, but Mapping[str, Any]
+# would not work here.
+class SecretsConfig(collections.abc.Mapping):  # type: ignore
     """Container for secrets (i.e. passwords).
 
     This works like :py:class:`Config`, but is used for secrets. Thus

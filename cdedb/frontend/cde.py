@@ -1369,7 +1369,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
     def lastschrift_change(self, rs: RequestState, lastschrift_id: int,
-                           data: CdEDBObject):
+                           data: CdEDBObject) -> Response:
         """Modify one permit."""
         data['id'] = lastschrift_id
         data = check(rs, "lastschrift", data)
@@ -1652,7 +1652,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
     def lastschrift_skip(self, rs: RequestState, lastschrift_id: int,
-                         persona_id: Optional[int]):
+                         persona_id: Optional[int]) -> Response:
         """Do not do a direct debit transaction for this year.
 
         If persona_id is given return to the persona-specific

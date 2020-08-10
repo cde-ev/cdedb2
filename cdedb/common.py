@@ -139,11 +139,12 @@ class RequestState:
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
                  values: Optional[werkzeug.MultiDict], lang: str,
-                 gettext: Callable, ngettext: Callable,
-                 coders: Optional[Mapping[str, Callable]],
+                 gettext: Callable[[str], str],
+                 ngettext: Callable[[str, str, int], str],
+                 coders: Optional[Mapping[str, Callable]],  # type: ignore
                  begin: datetime.datetime,
-                 default_gettext: Optional[Callable] = None,
-                 default_ngettext: Optional[Callable] = None):
+                 default_gettext: Callable[[str], str] = None,
+                 default_ngettext: Callable[[str, str, int], str] = None):
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
@@ -278,7 +279,7 @@ B = TypeVar("B", bound=AbstractBackend)
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def make_proxy(backend: B, internal=False) -> B:
+def make_proxy(backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -316,7 +317,7 @@ def make_proxy(backend: B, internal=False) -> B:
             return wrapit(attr)
 
         @staticmethod
-        def _get_backend_class() -> B:
+        def _get_backend_class() -> Type[B]:
             return backend.__class__
 
     return cast(B, Proxy())
@@ -367,8 +368,11 @@ def glue(*args: str) -> str:
     return " ".join(args)
 
 
-def merge_dicts(targetdict: Union[MutableMapping, werkzeug.MultiDict],
-                *dicts: Mapping) -> None:
+S = TypeVar("S")
+
+
+def merge_dicts(targetdict: Union[MutableMapping[T, S], werkzeug.MultiDict],
+                *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
     This is basically the :py:meth:`dict.update` method, but existing
@@ -533,7 +537,7 @@ class EntitySorter:
 
     @staticmethod
     def email(persona: CdEDBObject) -> Sortable:
-        return persona['username']
+        return (str(persona['username']),)
 
     @staticmethod
     def address(persona: CdEDBObject) -> Sortable:

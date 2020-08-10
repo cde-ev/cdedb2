@@ -39,10 +39,10 @@ T = TypeVar('T')
 S = TypeVar('S')
 
 
-def singularize(function: Callable,
+def singularize(function: Callable[..., Any],
                 array_param_name: str = "ids",
                 singular_param_name: str = "anid",
-                passthrough: bool = False) -> Callable:
+                passthrough: bool = False) -> Callable[..., Any]:
     """This takes a function and returns a singularized version.
 
     The function has to accept an array as a parameter and return a dict
@@ -59,7 +59,8 @@ def singularize(function: Callable,
     """
 
     @functools.wraps(function)
-    def singularized(self, rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+    def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
+                     **kwargs: Any) -> Any:
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
             kwargs[array_param_name] = (param,)
@@ -92,7 +93,8 @@ def batchify(function: Callable[..., T],
     """
 
     @functools.wraps(function)
-    def batchified(self, rs: RequestState, *args: Any, **kwargs: Any) -> List:
+    def batchified(self: AbstractBackend, rs: RequestState, *args: Any,
+                   **kwargs: Any) -> List[T]:
         ret = []
         with Atomizer(rs):
             if array_param_name in kwargs:
@@ -124,7 +126,8 @@ def access(*roles: Role) -> Callable[[F], F]:
     def decorator(function: F) -> F:
 
         @functools.wraps(function)
-        def wrapper(self, rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+        def wrapper(self: AbstractBackend, rs: RequestState, *args: Any,
+                    **kwargs: Any) -> Any:
             if rs.user.roles.isdisjoint(roles):
                 raise PrivilegeError(
                     n_("%(user_roles)s is disjoint from %(roles)s"),
@@ -289,7 +292,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             raise RuntimeError(n_("No contamination!"))
 
     def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
-                         params: Sequence) -> None:
+                         params: Sequence[Any]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
@@ -306,14 +309,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
 
-    def query_exec(self, rs: RequestState, query: str, params: Sequence) -> int:
+    def query_exec(self, rs: RequestState, query: str, params: Sequence[Any]
+                   ) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    def query_one(self, rs: RequestState, query: str, params: Sequence
+    def query_one(self, rs: RequestState, query: str, params: Sequence[Any]
                   ) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -324,7 +328,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.execute_db_query(cur, query, params)
                 return self._sanitize_db_output(cur.fetchone())  # type: ignore
 
-    def query_all(self, rs: RequestState, query: str, params: Sequence
+    def query_all(self, rs: RequestState, query: str, params: Sequence[Any]
                   ) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -374,9 +378,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES {value_list}"
         return self.query_exec(rs, query, params)
 
-    # KeysView should be a subclass of Collection, but PyCharm disagrees :/
     def sql_select(self, rs: RequestState, table: str, columns: Sequence[str],
-                   entities: Union[Collection, KeysView], entity_key: str = "id"
+                   entities: Collection[Any], entity_key: str = "id"
                    ) -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
@@ -443,8 +446,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         params += (data[entity_key],)
         return self.query_exec(rs, query, params)
 
-    def sql_delete(self, rs: RequestState, table: str, entities: Collection,
-                   entity_key: str = "id") -> int:
+    def sql_delete(self, rs: RequestState, table: str,
+                   entities: Collection[Any], entity_key: str = "id") -> int:
         """Generic SQL deletion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -455,7 +458,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_exec(rs, query, (entities,))
 
     def sql_delete_one(self, rs: RequestState, table: str, entity: Any,
-                       entity_key: str = "id"):
+                       entity_key: str = "id") -> int:
         """Generic SQL deletion query for a single row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -599,7 +602,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     def generic_retrieve_log(self, rs: RequestState, code_validator: str,
                              entity_name: str, table: str,
                              codes: Collection[int] = None,
-                             entity_ids: Collection = None,
+                             entity_ids: Collection[Any] = None,
                              offset: int = None, length: int = None,
                              additional_columns: Collection[str] = None,
                              persona_id: int = None, submitted_by: int = None,
@@ -753,7 +756,7 @@ def affirm_array_validation(assertion: str, values: Iterable[T],
 
 
 # noinspection PyPep8Naming
-def affirm_array_validation(assertion, values, allow_None=False, **kwargs: Any):
+def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
     :param allow_None: Since we don't have the luxury of an automatic
@@ -808,7 +811,7 @@ def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
     """
     spec: Dict[str, FieldDatatypes]
     spec = {v['field_name']: v['kind'] for v in fields.values()}
-    casters = {
+    casters: Dict[FieldDatatypes, Callable[[Any], Any]] = {
         FieldDatatypes.int: lambda x: x,
         FieldDatatypes.str: lambda x: x,
         FieldDatatypes.float: lambda x: x,

@@ -140,7 +140,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                  length: Optional[int], persona_id: Optional[int],
                  submitted_by: Optional[int], additional_info: Optional[str],
                  time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]):
+                 time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -1025,7 +1025,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 update = True
         return update
 
-    def get_online_result(self, rs, ballot: Dict[str, Any]
+    def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
                           ) -> Union[Dict[str, Any], None]:
         """Helper to get the result information of a tallied ballot."""
         result = None
