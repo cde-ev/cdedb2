@@ -29,7 +29,7 @@
                     {% set link = util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
                                             events[ml['event_id']]['title'], icon='chalkboard-teacher') %}
                 {%- else -%}
-                    {% set link = "%s %s"|s|format(util.make_icon('bullhorn'), events[ml['event_id']]['title']) %}
+                    {% set link = "%s %s"|s|format(util.make_icon('chalkboard-teacher'), events[ml['event_id']]['title']) %}
                 {%- endif -%}
                 {% trans link=link -%}
                     ; linked with {{ link }}
