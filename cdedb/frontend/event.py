@@ -384,9 +384,30 @@ class EventFrontend(AbstractUserFrontend):
         institution_ids = self.pasteventproxy.list_institutions(rs).keys()
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['event'])
-        return self.render(rs, "change_event",
-                           {'institutions': institutions,
-                            'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
+
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
+        lodge_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.registration
+            and field['kind'] == const.FieldDatatypes.str
+        ]
+        camping_mat_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.registration
+            and field['kind'] == const.FieldDatatypes.bool
+        ]
+        course_room_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.course
+            and field['kind'] == const.FieldDatatypes.str
+        ]
+        return self.render(rs, "change_event", {
+            'institutions': institutions,
+            'accounts': self.conf["EVENT_BANK_ACCOUNTS"],
+            'lodge_fields': lodge_fields,
+            'camping_mat_fields': camping_mat_fields,
+            'course_room_fields': course_room_fields})
 
     @access("event", modi={"POST"})
     @REQUESTdatadict(
@@ -543,9 +564,10 @@ class EventFrontend(AbstractUserFrontend):
         for track_id in referenced_tracks:
             referenced_parts.add(tracks[track_id]['part_id'])
 
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
         fee_modifier_fields = [
-            (field['id'], field['field_name'])
-            for field in rs.ambience['event']['fields'].values()
+            (field['id'], field['field_name']) for field in sorted_fields
             if field['association'] == const.FieldAssociations.registration
             and field['kind'] == const.FieldDatatypes.bool
         ]
@@ -557,9 +579,15 @@ class EventFrontend(AbstractUserFrontend):
             }
             for part_id in rs.ambience['event']['parts']
         }
+        waitlist_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.registration
+            and field['kind'] == const.FieldDatatypes.int
+        ]
         return self.render(rs, "part_summary", {
             'fee_modifier_fields': fee_modifier_fields,
             'fee_modifiers_by_part': fee_modifiers_by_part,
+            'waitlist_fields': waitlist_fields,
             'referenced_parts': referenced_parts,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,

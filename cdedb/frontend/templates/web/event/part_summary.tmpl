@@ -156,13 +156,7 @@
                                             attributes=('data-basename="fee_"'|s if newrow else ''),
                                             aclass='drow-input form-control', anid="input-text-fee_{}".format(part_id),
                                             addon='€') }}
-                    {#- jinja does not support list comprehension ... #}
-                    {%- set myentries = [] %}
-                    {%- for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
-                            if field['kind'] == enums['FieldDatatypes'].int and field['association'] == enums['FieldAssociations'].registration %}
-                        {%- do myentries.append((field_id, field['field_name'])) %}
-                    {%- endfor %}
-                    {{ util.form_input_select(name="waitlist_field_{}".format(part_id), label=gettext("Field for Waitlist"), entries=myentries,
+                    {{ util.form_input_select(name="waitlist_field_{}".format(part_id), label=gettext("Field for Waitlist"), entries=waitlist_fields,
                                   nulloption="&nbsp;"|s, info=gettext("Field to store the waitlist ranking of this part. Fieldtype: Integer")) }}
                 </div>
             </div>

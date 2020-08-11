@@ -1335,7 +1335,7 @@ class EventBackend(AbstractBackend):
                               wishes.
         * course_room_fields: An event that uses this field for course room
                               assignment.
-        * waitlist_field:     An event_part tha uses this field for waitlist
+        * waitlist_fields:    An event_part that uses this field for waitlist
                               management.
 
         :return: List of blockers, separated by type. The values of the dict
