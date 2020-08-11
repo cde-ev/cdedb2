@@ -173,6 +173,23 @@ def generate_event_registration_default_queries(event, spec):
             default_sort),
     }
 
+    def get_waitlist_order(part) -> str:
+        if part['waitlist_field']:
+            field = event['fields'][part['waitlist_field']]
+            return f"reg_fields.xfield_{field['field_name']}"
+        return "ctime.creation_time"
+
+    queries.update({
+        n_("15_query_event_registration_waitlist_%s") % part_id:
+            Query(
+                "qview_registration", spec,
+                ("persona.given_names", "persona.family_name"),
+                ((f"part{part_id}.status", QueryOperators.equal,
+                  const.RegistrationPartStati.waitlist.value),),
+                ((get_waitlist_order(part), True),))
+        for part_id, part in event['parts'].items()
+    })
+
     return queries
 
 
