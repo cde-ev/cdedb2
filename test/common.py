@@ -345,6 +345,8 @@ class BackendTest(CdEDBTest):
         self.key = None
 
     def login(self, user, ip="127.0.0.0"):
+        if isinstance(user, str):
+            user = USER_DICT[user]
         # noinspection PyTypeChecker
         self.key = self.core.login(None, user['username'], user['password'], ip)
         return self.key

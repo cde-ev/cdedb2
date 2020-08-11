@@ -1676,6 +1676,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("ml_admin", "cdb_admin"),
     ("assembly_admin", "cdb_admin"),
     ("event_admin", "cdb_admin"),
+    ("finance_admin", "cdb_admin"),
     ("cdelokal_admin", "cdb_admin"),
 
     ("searchable", "cdb_member"),

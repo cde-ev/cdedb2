@@ -912,13 +912,51 @@ class TestCoreBackend(BackendTest):
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
 
+        # Test correct handling of lastschrift during archival.
+        self.login("anton")
+        ls_data = {
+            "amount": decimal.Decimal("25.00"),
+            "persona_id": persona_id,
+            "iban": "DE12500105170648489890",
+            "account_owner": "Der Opa",
+            "account_address": "Nebenan",
+            "notes": "Ganz wichtige Notizen",
+            "granted_at": datetime.datetime.fromisoformat("2000-01-01"),
+            "revoked_at": datetime.datetime.fromisoformat("2000-01-01"),
+        }
+        old_ls_id = self.cde.create_lastschrift(self.key, ls_data)
+        del ls_data["revoked_at"]
+        ls_id = self.cde.create_lastschrift(self.key, ls_data)
+        self.login("vera")
+        with self.assertRaises(ArchiveError) as cm:
+            self.core.archive_persona(self.key, persona_id, "Testing")
+        self.assertEqual("Active lastschrift exists.", cm.exception.args[0])
+        update = {
+            'id': ls_id,
+            'revoked_at': now(),
+        }
+        self.cde.set_lastschrift(self.key, update)
+        self.core.archive_persona(self.key, persona_id, "Testing")
+        ls = self.cde.get_lastschrift(self.key, ls_id)
+        ls_data.update(update)
+        ls_data["submitted_by"] = 1
+        ls["granted_at"] = ls_data["granted_at"]
+        self.assertEqual(ls, ls_data)
+        old_ls = self.cde.get_lastschrift(self.key, old_ls_id)
+        self.assertEqual(old_ls["iban"], "")
+        self.assertEqual(old_ls["account_owner"], "")
+        self.assertEqual(old_ls["account_address"], "")
+        self.assertEqual(old_ls["amount"], 0)
+        self.assertEqual(old_ls["notes"], ls_data["notes"])
+        self.core.dearchive_persona(self.key, persona_id)
+
         # Check that sole moderators cannot be archived.
         self.ml.set_moderators(self.key, 1, {persona_id})
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
         self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])
 
-        # Test archival of user that is no modearator.
+        # Test archival of user that is no moderator.
         self.core.archive_persona(self.key, 6, "Testing")
 
     @as_users("vera")

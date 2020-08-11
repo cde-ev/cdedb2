@@ -343,15 +343,12 @@ class LastschriftTransactionStati(enum.IntEnum):
     cancelled = 12  #:
     rollback = 20  #:
 
-    def is_finalized(self):
-        """Whether the transaction was already tallied.
-
-        :rtype: bool
-        """
-        return self in (LastschriftTransactionStati.success,
+    def is_finalized(self) -> bool:
+        """Whether the transaction was already tallied."""
+        return self in {LastschriftTransactionStati.success,
                         LastschriftTransactionStati.failure,
                         LastschriftTransactionStati.cancelled,
-                        LastschriftTransactionStati.rollback)
+                        LastschriftTransactionStati.rollback}
 
 
 @enum.unique
@@ -401,6 +398,7 @@ class FinanceLogCodes(enum.IntEnum):
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
+    lastschrift_deleted = 23  #:
     lastschrift_transaction_issue = 30  #:
     lastschrift_transaction_success = 31  #:
     lastschrift_transaction_failure = 32  #:

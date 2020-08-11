@@ -43,7 +43,7 @@ from cdedb.frontend.common import (
     make_postal_address, make_membership_fee_reference, query_result_to_json,
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
     calculate_db_logparams, calculate_loglinks, process_dynamic_input,
-    Response
+    Response, periodic,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
@@ -1879,6 +1879,33 @@ class CdEFrontend(AbstractUserFrontend):
             return pdf
         else:
             return self.redirect(rs, "cde/lastschrift_subscription_form_fill")
+
+    @periodic("forget_old_lastschrifts", period=7*24*4)
+    def forget_old_lastschrifts(self, rs: RequestState, store: CdEDBObject
+                                ) -> CdEDBObject:
+        """Forget revoked and old lastschrifts."""
+        lastschrift_ids = self.cdeproxy.list_lastschrift(
+            rs, persona_ids=None, active=False)
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
+
+        count = 0
+        deleted = []
+        for ls_id, ls in lastschrifts.items():
+            if "revoked_at" not in self.cdeproxy.delete_lastschrift_blockers(
+                    rs, ls_id):
+                try:
+                    code = self.cdeproxy.delete_lastschrift(
+                        rs, ls_id, {"transactions"})
+                except ValueError as e:
+                    self.logger.error(
+                        f"Deletion of lastschrift {ls_id} failed. {e}")
+                else:
+                    count += 1
+                    deleted.append(ls_id)
+        if count:
+            self.logger.info(f"Deleted {count} old lastschrifts.")
+            store.setdefault('deleted', []).extend(deleted)
+        return store
 
     @access("anonymous")
     def i25p_index(self, rs: RequestState) -> Response:
