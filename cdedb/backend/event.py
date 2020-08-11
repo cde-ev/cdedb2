@@ -1560,6 +1560,18 @@ class EventBackend(AbstractBackend):
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['id'])
+
+        datatype = const.FieldDatatypes
+        assoc = const.FieldAssociations
+        field_spec: Dict[
+            str, Tuple[Set[datatype], Set[assoc]]] = {
+            'lodge': ({datatype.str}, {assoc.registration}),
+            'camping_mat': ({datatype.bool}, {assoc.registration}),
+            'course_room': ({datatype.str}, {assoc.course}),
+            'waitlist': ({datatype.int}, {assoc.registration}),
+            'fee_modifier': ({datatype.bool}, {assoc.registration}),
+        }
+
         ret = 1
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
@@ -1573,45 +1585,41 @@ class EventBackend(AbstractBackend):
                         rs, "event.field_definitions",
                         ("id", "event_id", "kind", "association"),
                         indirect_fields)
-                    correct_assoc = const.FieldAssociations.registration
-                    correct_datatype = const.FieldDatatypes.str
+                    legal_datatype, legal_assoc = field_spec['lodge']
                     if edata.get('lodge_field'):
                         lodge_data = unwrap(
                             [x for x in indirect_data
                              if x['id'] == edata['lodge_field']])
                         if (lodge_data['event_id'] != data['id']
-                                or lodge_data['kind'] != correct_datatype
-                                or lodge_data['association'] != correct_assoc):
+                                or lodge_data['kind'] not in legal_datatype
+                                or lodge_data['association'] not in legal_assoc):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'lodge_field'})
-                    correct_datatype = const.FieldDatatypes.bool
+                    legal_datatype, legal_assoc = field_spec['camping_mat']
                     if edata.get('camping_mat_field'):
                         camping_mat_data = unwrap(
                             [x for x in indirect_data
                              if x['id'] == edata['camping_mat_field']])
                         if (camping_mat_data['event_id'] != data['id']
-                                or camping_mat_data['kind'] != correct_datatype
-                                or camping_mat_data[
-                                    'association'] != correct_assoc):
+                                or camping_mat_data['kind'] not in legal_datatype
+                                or camping_mat_data['association'] not in legal_assoc):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'camping_mat_field'})
-                    correct_assoc = const.FieldAssociations.course
                     # TODO make this include lodgement datatype per Issue #71
-                    correct_datatypes = {const.FieldDatatypes.str}
+                    legal_datatype, legal_assoc = field_spec['course_room']
                     if edata.get('course_room_field'):
                         course_room_data = unwrap(
                             [x for x in indirect_data
                              if x['id'] == edata['course_room_field']])
                         if (course_room_data['event_id'] != data['id']
-                                or course_room_data[
-                                    'kind'] not in correct_datatypes
-                                or course_room_data[
-                                    'association'] != correct_assoc):
+                                or course_room_data['kind'] not in legal_datatype
+                                or course_room_data['association'] not in legal_assoc):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'course_room_field'})
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])
+
             if 'orgas' in data:
                 if not self.is_admin(rs):
                     raise PrivilegeError(n_("Not privileged."))
@@ -1641,6 +1649,7 @@ class EventBackend(AbstractBackend):
                     for anid in mixed_existence_sorter(deleted):
                         self.event_log(rs, const.EventLogCodes.orga_removed,
                                        data['id'], persona_id=anid)
+
             if 'parts' in data:
                 parts = data['parts']
                 has_registrations = self.has_registrations(rs, data['id'])
@@ -1664,16 +1673,14 @@ class EventBackend(AbstractBackend):
                     new_part['event_id'] = data['id']
                     tracks = new_part.pop('tracks', {})
                     if new_part.get('waitlist_field'):
-                        correct_datatype = const.FieldDatatypes.int
-                        correct_assoc = const.FieldAssociations.registration
+                        legal_datatype, legal_assoc = field_spec['waitlist']
                         waitlist_data = self.sql_select_one(
                             rs, "event.field_definitions",
                             ("id", "event_id", "kind", "association"),
                             new_part['waitlist_field'])
                         if (waitlist_data['event_id'] != data['id']
-                                or waitlist_data['kind'] != correct_datatype
-                                or waitlist_data[
-                                    'association'] != correct_assoc):
+                                or waitlist_data['kind'] not in legal_datatype
+                                or waitlist_data['association'] not in legal_assoc):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'waitlist_field'})
                     new_id = self.sql_insert(rs, "event.event_parts", new_part)
@@ -1690,16 +1697,14 @@ class EventBackend(AbstractBackend):
                     update['id'] = x
                     tracks = update.pop('tracks', {})
                     if update.get('waitlist_field'):
-                        correct_datatype = const.FieldDatatypes.int
-                        correct_assoc = const.FieldAssociations.registration
+                        legal_datatype, legal_assoc = field_spec['waitlist']
                         waitlist_data = self.sql_select_one(
                             rs, "event.field_definitions",
                             ("id", "event_id", "kind", "association"),
                             update['waitlist_field'])
                         if (waitlist_data['event_id'] != data['id']
-                                or waitlist_data['kind'] != correct_datatype
-                                or waitlist_data[
-                                    'association'] != correct_assoc):
+                                or waitlist_data['kind'] not in legal_datatype
+                                or waitlist_data['association'] not in legal_assoc):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'waitlist_field'})
                     ret *= self.sql_update(rs, "event.event_parts", update)
@@ -1715,6 +1720,7 @@ class EventBackend(AbstractBackend):
                         cascade = ("fee_modifiers", "course_tracks",
                                    "registration_parts")
                         self._delete_event_part(rs, part_id=x, cascade=cascade)
+
             if 'fields' in data:
                 fields = data['fields']
                 current = self.sql_select(
@@ -1781,17 +1787,17 @@ class EventBackend(AbstractBackend):
                         continue
                     if 'field_id' in fee_modifier:
                         field = event_fields.get(fee_modifier['field_id'])
+                        legal_datatype, legal_assoc = field_spec['fee_modifier']
                         if not field:
                             raise ValueError(n_(
                                 "Fee Modifier linked to unknown field."))
-                        if not field['association'] == \
-                               const.FieldAssociations.registration:
+                        if field['kind'] not in legal_datatype:
+                            raise ValueError(n_(
+                                "Fee Modifier linked to non-bool field."))
+                        if field['association'] not in legal_assoc:
                             raise ValueError(n_(
                                 "Fee Modifier linked to non-registration "
                                 "field."))
-                        if not field['kind'] == const.FieldDatatypes.bool:
-                            raise ValueError(n_(
-                                "Fee Modifier linked to non-bool field."))
                 # Do the actual work.
                 part_ids = {e['id'] for e in self.sql_select(
                     rs, "event.event_parts", ("id",), (data['id'],),
