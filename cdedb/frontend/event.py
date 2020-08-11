@@ -604,10 +604,29 @@ class EventFrontend(AbstractUserFrontend):
             begin = f"part_begin_{part_id}"
             end = f"part_end_{part_id}"
             msg = n_("Must be later than part begin.")
-            return (lambda d: d[begin] <= d[end], (end, ValueError(msg)))
+            ret = [(lambda d: d[begin] <= d[end], (end, ValueError(msg)))]
 
-        constraints = [constraint_maker(part_id)
-                       for part_id in parts if part_id not in deletes]
+            key = f"waitlist_field_{part_id}"
+            fields = rs.ambience['event']['fields']
+            # take care to validate only if waitlist_field is given and not None
+            ret.append(
+                (lambda d: fields[d[key]]['association'] ==
+                           const.FieldAssociations.registration if d[
+                    key] else True,
+                 (key, ValueError(n_(
+                     "Waitlist linked to non-registration field.")))))
+            ret.append(
+                (lambda d: fields[d[key]][
+                               'kind'] == const.FieldDatatypes.int if d[
+                    key] else True,
+                 (key, ValueError(n_(
+                     "Waitlist linked to non-bool field."))))
+            )
+            return ret
+
+        constraints = tuple(itertools.chain.from_iterable(
+            constraint_maker(part_id)
+            for part_id in parts if part_id not in deletes))
         data = request_extractor(rs, params, constraints)
         ret = {
             part_id: {key: data["{}_{}".format(key, part_id)] for key in spec}
@@ -646,7 +665,7 @@ class EventFrontend(AbstractUserFrontend):
                     raise ValueError(n_("Registrations exist, no creation."))
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
-                constraints = [constraint_maker(-marker)]
+                constraints = constraint_maker(-marker)
                 data = request_extractor(rs, params, constraints)
                 ret[-marker] = {key: data["{}_-{}".format(key, marker)]
                                 for key in spec}
