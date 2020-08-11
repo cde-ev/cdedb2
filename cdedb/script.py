@@ -104,8 +104,9 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     return rs
 
 
-def make_backend(realm: str, proxy: bool = True, *, configpath: PathLike = None,
-                 **config: Any):
+# No return type annotation on purpose, because it confuses IDE autocompletion.
+def make_backend(realm: str, proxy: bool = True, *,  # type: ignore
+                 configpath: PathLike = None, **config: Any):
     """Instantiate backend objects and wrap them in proxy shims.
 
     :param realm: selects backend to return
