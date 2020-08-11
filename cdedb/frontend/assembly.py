@@ -1091,10 +1091,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     @periodic("check_tally_ballot", period=1)
     def check_tally_ballot(self, rs: RequestState, store: CdEDBObject
                            ) -> CdEDBObject:
-        """Check whether any ballots need to be tallied."""
+        """Check whether any ballots need to be tallied or extended."""
         tally_count = 0
         extension_count = 0
-        assembly_ids = self.assemblyproxy.list_assemblies(rs)
+        assembly_ids = self.assemblyproxy.list_assemblies(rs, is_active=True)
         assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
         for assembly_id, assembly in assemblies.items():
             rs.ambience['assembly'] = assembly
