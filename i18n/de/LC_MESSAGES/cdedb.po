@@ -7030,7 +7030,7 @@ msgid "Assembly Administration"
 msgstr "Versammlungs-Administration"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:72
-msgid "Wahlleitungs Controls"
+msgid "Presider Controls"
 msgstr "Wahlleitung-Schaltflächen"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:74
