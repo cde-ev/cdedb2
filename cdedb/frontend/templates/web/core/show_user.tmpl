@@ -1,7 +1,6 @@
 {% if data['id'] == user.persona_id %}{% set sidenav_active='core_mydata'%}{% endif %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/ml/generic.tmpl" as generic_ml with context %}
 
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
@@ -28,7 +27,7 @@
     {{ views.append((gettext("Core Administration"), ["core"], None)) }}
     {{ views.append((gettext("Finance Administration"), ["finance"], None)) }}
     {% if "moderator" in access_mode %}
-        {{ views.append((gettext("Moderator Controls"), generic_ml.ALL_MOD_VIEWS, None)) }}
+        {{ views.append((gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS, None)) }}
     {% endif %}
     {% if "orga" in access_mode %}
         {{ views.append((gettext("Orga Controls"), ["event_orga"], None)) }}

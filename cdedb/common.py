@@ -1709,6 +1709,7 @@ def roles_to_db_role(roles: Set[Role]) -> str:
 
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 
+#: every admin view with one admin role per row (except of genesis)
 ALL_ADMIN_VIEWS: Set[AdminView] = {
     "meta_admin",
     "core_user", "core",
@@ -1719,6 +1720,14 @@ ALL_ADMIN_VIEWS: Set[AdminView] = {
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
     "assembly_user", "assembly_mgmt", "assembly_wahlleitung", "ml_mgmt_assembly", "ml_mod_assembly",
     "genesis"}
+
+ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
+    "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
+    "ml_mod_assembly"}
+
+ALL_MGMT_ADMIN_VIEWS: Set[AdminView] = {
+    "ml_mgmt", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
+    "ml_mgmt_assembly"}
 
 
 def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
