@@ -4,7 +4,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
-    	Partial Import Validation ({{ title }})
+        Partial Import Validation ({{ title }})
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
@@ -137,10 +137,10 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                                  icon='user', anid='box-changed-registrations') %}
                         <div class="form-group details-toggle hidden">
                             <button type="button" class="btn btn-default" value="expand">
-                                {{ util.make_icon('chevron-down') }} Expand all
+                                {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
                             </button>
                             <button type="button" class="btn btn-default" value="collapse">
-                                {{ util.make_icon('minus') }} Collapse all
+                                {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
                             </button>
                         </div>
                         <script nonce="{{ csp_nonce }}">
@@ -228,10 +228,10 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                                  anid='box-changed-courses') %}
                         <div class="form-group details-toggle hidden">
                             <button type="button" class="btn btn-default" value="expand">
-                                {{ util.make_icon('chevron-down') }} Expand all
+                                {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
                             </button>
                             <button type="button" class="btn btn-default" value="collapse">
-                                {{ util.make_icon('minus') }} Collapse all
+                                {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
                             </button>
                         </div>
                         <script nonce="{{ csp_nonce }}">
@@ -320,10 +320,10 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                                  anid='box-changed-lodgements') %}
                         <div class="form-group details-toggle hidden">
                             <button type="button" class="btn btn-default" value="expand">
-                                {{ util.make_icon('chevron-down') }} Expand all
+                                {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
                             </button>
                             <button type="button" class="btn btn-default" value="collapse">
-                                {{ util.make_icon('minus') }} Collapse all
+                                {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
                             </button>
                         </div>
                         <script nonce="{{ csp_nonce }}">
