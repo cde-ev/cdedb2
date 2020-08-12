@@ -155,6 +155,8 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (13, 2): Hinzufügen einer Feldreferenz pro Part, in dem ein Datenfeld
+  zum Verwalten einer Warteliste hinterlegt werden kann.
 * Version (13, 1): Umstellung von CDEDB_EXPORT_EVENT_VERSION auf
   EVENT_SCHEMA_VERSION.
 * Version 12: Umbenennen von ``reserve`` zu ``camping_mat``. Infolge dessen
