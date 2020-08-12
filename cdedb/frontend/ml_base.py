@@ -204,7 +204,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 })
         else:
             atype = TYPE_MAP[ml_type]
-            if not atype.is_relevant_admin(rs):
+            if not atype.is_relevant_admin(rs.user):
                 rs.append_validation_error(
                     ("ml_type", ValueError(n_(
                         "May not create mailinglist of this type."))))

@@ -142,7 +142,7 @@ class GeneralMailinglist:
     relevant_admins: Set[str] = set()
 
     @classmethod
-    def is_relevant_admin(cls, rs: RequestState):
+    def is_relevant_admin(cls, user: User):
         """Determine if the user is allowed to administrate a mailinglist.
 
         Instead of overriding this, you should set the `relevant_admins`
@@ -154,10 +154,9 @@ class GeneralMailinglist:
           a user to administrate a mailinglist. The semantics are similar to
           `@access`.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: bool
         """
-        return bool((cls.relevant_admins | {"ml_admin"}) & rs.user.roles)
+        return bool((cls.relevant_admins | {"ml_admin"}) & user.roles)
 
     if TYPE_CHECKING:
         role_map: OrderedDict[str, MailinglistInteractionPolicy]
@@ -175,20 +174,13 @@ class GeneralMailinglist:
 
     @classmethod
     def has_moderator_view(cls, user: User):
-        # TODO use existent class method - problem: different signature
-        is_relevant_admin = bool(
-            (cls.relevant_admins | {"ml_admin"}) & user.roles)
-        #1 + cls.moderator_admin_views() & user.admin_views + ""
-        return is_relevant_admin and bool(cls.moderator_admin_views()
-                                          & user.admin_views)
+        return (cls.is_relevant_admin(user)
+                and bool(cls.moderator_admin_views() & user.admin_views))
 
     @classmethod
     def has_management_view(cls, user: User):
-        # TODO use existent class method - problem: different signature
-        is_relevant_admin = bool(
-            (cls.relevant_admins | {"ml_admin"}) & user.roles)
-        return is_relevant_admin and bool(cls.management_admin_views()
-                                          & user.admin_views)
+        return (cls.is_relevant_admin(user)
+                and bool(cls.management_admin_views() & user.admin_views))
 
     @classmethod
     def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,

@@ -415,7 +415,7 @@ class CoreFrontend(AbstractFrontend):
         if ml_id:
             # determinate if the user is relevant admin of this mailinglist
             ml_type = self.mlproxy.get_ml_type(rs, ml_id)
-            is_admin = ml_type.is_relevant_admin(rs)
+            is_admin = ml_type.is_relevant_admin(rs.user)
             is_moderator = ml_id in self.mlproxy.moderator_info(
                 rs, rs.user.persona_id)
             # Admins who are also moderators can not disable this admin view
