@@ -42,6 +42,7 @@ from cdedb.common import (
     CourseFilterPositions, diacritic_patterns, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
     LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
+    EVENT_FIELD_SPEC
 )
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -566,10 +567,11 @@ class EventFrontend(AbstractUserFrontend):
 
         sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
                                 key=EntitySorter.event_field)
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
         fee_modifier_fields = [
             (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] == const.FieldAssociations.registration
-            and field['kind'] == const.FieldDatatypes.bool
+            if field['association'] in legal_assocs
+            and field['kind'] in legal_datatypes
         ]
         fee_modifiers_by_part = {
             part_id: {
@@ -579,10 +581,11 @@ class EventFrontend(AbstractUserFrontend):
             }
             for part_id in rs.ambience['event']['parts']
         }
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
         waitlist_fields = [
             (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] == const.FieldAssociations.registration
-            and field['kind'] == const.FieldDatatypes.int
+            if field['association'] in legal_assocs
+            and field['kind'] in legal_datatypes
         ]
         return self.render(rs, "part_summary", {
             'fee_modifier_fields': fee_modifier_fields,
@@ -636,20 +639,13 @@ class EventFrontend(AbstractUserFrontend):
 
             key = f"waitlist_field_{part_id}"
             fields = rs.ambience['event']['fields']
-            # take care to validate only if waitlist_field is given and not None
-            ret.append(
-                (lambda d: fields[d[key]]['association'] ==
-                           const.FieldAssociations.registration if d[
-                    key] else True,
-                 (key, ValueError(n_(
-                     "Waitlist linked to non-registration field.")))))
-            ret.append(
-                (lambda d: fields[d[key]][
-                               'kind'] == const.FieldDatatypes.int if d[
-                    key] else True,
-                 (key, ValueError(n_(
-                     "Waitlist linked to non-bool field."))))
-            )
+            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+            ret.append((
+                lambda d: d[key] is None or
+                          fields[d[key]]['association'] in legal_assocs
+                          and fields[d[key]]['kind'] in legal_datatypes,
+                (key, ValueError(n_(
+                    "Waitlist linked to non-fitting field.")))))
             return ret
 
         constraints = tuple(itertools.chain.from_iterable(
@@ -828,23 +824,21 @@ class EventFrontend(AbstractUserFrontend):
             if mod['id'] not in fee_modifier_deletes))
 
         def constraint_maker(part_id, fee_modifier_id):
-            key = "fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id)
+            key = f"fee_modifier_field_id_{part_id}_{fee_modifier_id}"
             fields = rs.ambience['event']['fields']
-            ret = [
-                (lambda d: fields[d[key]]['association'] ==
-                           const.FieldAssociations.registration,
-                 (key, ValueError(n_(
-                     "Fee Modifier linked to non-registration field.")))),
-                (lambda d: fields[d[key]]['kind'] == const.FieldDatatypes.bool,
-                 (key, ValueError(n_(
-                     "Fee Modifier linked to non-bool field."))))
-                ]
+            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
+            ret = (
+                lambda d: fields[d[key]]['association'] in legal_assocs
+                             and fields[d[key]]['kind'] in legal_datatypes,
+                (key, ValueError(n_(
+                    "Fee Modifier linked to non-fitting field.")))
+            )
             return ret
 
-        constraints = tuple(itertools.chain.from_iterable(
+        constraints = [
             constraint_maker(mod['part_id'], mod['id'])
             for mod in fee_modifiers.values()
-            if mod['id'] not in fee_modifier_deletes))
+            if mod['id'] not in fee_modifier_deletes]
 
         data = request_extractor(rs, params, constraints)
         rs.values['fee_modifier_create_last_index'] = {}

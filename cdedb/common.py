@@ -33,6 +33,8 @@ import werkzeug.routing
 
 import icu
 
+import cdedb.database.constants as const
+
 # The following imports are only for re-export. They are not used
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
@@ -2024,6 +2026,16 @@ LASTSCHRIFT_FIELDS = (
 LASTSCHRIFT_TRANSACTION_FIELDS = (
     "id", "submitted_by", "lastschrift_id", "period_id", "status", "amount",
     "issued_at", "processed_at", "tally")
+
+#: Datatype and Association of special purpose event fields
+EVENT_FIELD_SPEC: Dict[
+    str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
+    'lodge': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
+    'camping_mat': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
+    'fee_modifier': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+}
 
 EPSILON = 10 ** (-6)  #:
 
