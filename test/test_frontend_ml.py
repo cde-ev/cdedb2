@@ -1094,6 +1094,31 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Little Whinging")
         self.assertPresence(moderator['given_names'], "moderator_list")
 
+    @as_users("anton")
+    def test_1342(self, user):
+        self.get("/ml/mailinglist/60/change")
+        f = self.response.forms['changelistform']
+        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
+        sample_data_stati = set(str(x) for x in self.get_sample_data(
+            "ml.mailinglists", (60,), ("registration_stati",))[60]["registration_stati"])
+        self.assertEqual(sample_data_stati | {None}, tmp)
+        stati = [const.RegistrationPartStati.waitlist.value,
+                 const.RegistrationPartStati.guest.value]
+        f['registration_stati'] = stati
+        self.submit(f)
+        self.traverse({"description": "Konfiguration"})
+        f = self.response.forms['changelistform']
+        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
+        self.assertEqual({str(x) for x in stati} | {None}, tmp)
+
+        stati = [const.RegistrationPartStati.not_applied.value]
+        f['registration_stati'] = stati
+        self.submit(f)
+        self.traverse({"description": "Konfiguration"})
+        f = self.response.forms['changelistform']
+        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
+        self.assertEqual({str(x) for x in stati} | {None}, tmp)
+
     def test_log(self):
         ## First: generate data
         self.test_mailinglist_management()
