@@ -120,7 +120,7 @@ class BaseApp(metaclass=abc.ABCMeta):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
-        self.logger.info("Instantiated {} with configpath {}.".format(
+        self.logger.debug("Instantiated {} with configpath {}.".format(
             self, configpath))
         self.decode_parameter = (
             lambda target, name, param, persona_id: decode_parameter(

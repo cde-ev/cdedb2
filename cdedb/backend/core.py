@@ -1862,12 +1862,11 @@ class CoreBackend(AbstractBackend):
     @access("anonymous")
     def get_roles_multi(self, rs: RequestState, ids: Collection[int],
                         introspection_only: bool = False
-                        ) -> Dict[int, Set[Role]]:
+                        ) -> Dict[Optional[int], Set[Role]]:
         """Resolve ids into roles.
 
         Returns an empty role set for inactive users."""
         if set(ids) == {rs.user.persona_id}:
-            assert rs.user.persona_id is not None
             return {rs.user.persona_id: rs.user.roles}
         bits = PERSONA_STATUS_FIELDS + ("id",)
         data = self.sql_select(rs, "core.personas", bits, ids)

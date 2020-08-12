@@ -329,7 +329,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
     """
     logger = logging.getLogger(name)
     if logger.handlers:
-        logger.info("Logger {} already initialized.".format(name))
+        logger.debug("Logger {} already initialized.".format(name))
         return logger
     logger.propagate = False
     logger.setLevel(log_level)
@@ -349,7 +349,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.info("Configured logger {}.".format(name))
+    logger.debug("Configured logger {}.".format(name))
     return logger
 
 

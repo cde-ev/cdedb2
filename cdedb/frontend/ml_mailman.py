@@ -197,6 +197,10 @@ class MailmanMixin(MlBaseFrontend):
 
         This has an @periodic decorator in the frontend.
         """
+        if (self.conf["CDEDB_TEST"] or self.conf["CDEDB_DEV"]
+                or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]):
+            self.logger.debug("Skipping mailman sync in test/dev/offline mode.")
+            return store
         mailman = self.mailman_connect()
         # noinspection PyBroadException
         try:

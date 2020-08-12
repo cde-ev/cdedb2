@@ -18,12 +18,14 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
     check_validation as check, request_extractor, query_result_to_json,
     calculate_db_logparams, calculate_loglinks, process_dynamic_input,
+    periodic
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter,
-    schulze_evaluate, xsorted, RequestState, get_hash
+    schulze_evaluate, xsorted, RequestState, get_hash, CdEDBObject,
+    DefaultReturnCode,
 )
 import cdedb.database.constants as const
 
@@ -982,28 +984,30 @@ class AssemblyFrontend(AbstractUserFrontend):
         })
 
     def _update_ballot_state(self, rs: RequestState,
-                             ballot: Dict[str, Any]) -> bool:
+                             ballot: Dict[str, Any]) -> DefaultReturnCode:
         """Helper to automatically update a ballots state.
 
         State updates are necessary for extending and tallying a ballot.
         If this function performs a state update, the calling function should
         redirect to the calling page.
+
+        :returns: 1 if the ballot was tallied, -1 if it was extended,
+            0 otherwise.
         """
 
         timestamp = now()
-        update = False
 
         # check for extension
         if ballot['extended'] is None and timestamp > ballot['vote_end']:
             self.assemblyproxy.check_voting_priod_extension(rs, ballot['id'])
-            update = True
+            return -1
 
         finished = (
                 timestamp > ballot['vote_end']
                 and (not ballot['extended']
                      or timestamp > ballot['vote_extension_end']))
         # check whether we need to initiate tallying
-        if finished and not ballot['is_tallied'] and not update:
+        if finished and not ballot['is_tallied']:
             result = self.assemblyproxy.tally_ballot(rs, ballot['id'])
             if result:
                 afile = io.BytesIO(result)
@@ -1026,8 +1030,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                     },
                     attachments=(attachment_result,),
                     params={'sha': my_hash, 'title': ballot['title']})
-                update = True
-        return update
+                return 1
+        return 0
 
     def get_online_result(self, rs, ballot: Dict[str, Any]
                           ) -> Union[Dict[str, Any], None]:
@@ -1083,6 +1087,33 @@ class AssemblyFrontend(AbstractUserFrontend):
             result['abstentions'] = abstentions
 
         return result
+
+    @periodic("check_tally_ballot", period=1)
+    def check_tally_ballot(self, rs: RequestState, store: CdEDBObject
+                           ) -> CdEDBObject:
+        """Check whether any ballots need to be tallied or extended."""
+        tally_count = 0
+        extension_count = 0
+        assembly_ids = self.assemblyproxy.list_assemblies(rs, is_active=True)
+        assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
+        for assembly_id, assembly in assemblies.items():
+            rs.ambience['assembly'] = assembly
+            ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+            ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+            for ballot_id, ballot in ballots.items():
+                code = self._update_ballot_state(rs, ballot)
+                if code < 0:
+                    extension_count += 1
+                    ballot = self.assemblyproxy.get_ballot(rs, ballot_id)
+                    code = self._update_ballot_state(rs, ballot)
+                    if code > 0:
+                        tally_count += 1
+                elif code > 0:
+                    tally_count += 1
+        if extension_count or tally_count:
+            self.logger.info(f"Extended {extension_count} and tallied"
+                             f" {tally_count} ballots via cron job.")
+        return store
 
     @access("assembly")
     def summary_ballots(self, rs: RequestState, assembly_id: int) -> Response:
