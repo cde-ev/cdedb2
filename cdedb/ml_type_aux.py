@@ -112,12 +112,17 @@ class GeneralMailinglist:
     optional_validation_fields: List[Tuple[str, str]] = list()
 
     @classmethod
-    def get_additional_fields(cls) -> Set[str]:
+    def get_additional_fields(cls, simple_spec: bool = False) -> Set[str]:
         ret = set()
-        for field, validator_str in cls.mandatory_validation_fields:
-            ret.add(field)
-        for field, validator_str in cls.optional_validation_fields:
-            ret.add(field)
+        for field, argtype in (cls.mandatory_validation_fields
+                               + cls.optional_validation_fields):
+            if simple_spec:
+                if argtype.startswith('[') and argtype.endswith(']'):
+                    ret.add((field, "[str]"))
+                else:
+                    ret.add((field, "str"))
+            else:
+                ret.add((field, argtype))
         return ret
 
     viewer_roles: Set[str] = {"ml"}
@@ -526,5 +531,7 @@ TYPE_MAP = {
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }
 
-ADDITIONAL_TYPE_FIELDS = set.union(*(ml_type.get_additional_fields()
-                                     for ml_type in TYPE_MAP.values()))
+ADDITIONAL_TYPE_FIELDS = set.union(
+    *(atype.get_additional_fields(simple_spec=True)
+      for atype in TYPE_MAP.values()))
+print(ADDITIONAL_TYPE_FIELDS)
