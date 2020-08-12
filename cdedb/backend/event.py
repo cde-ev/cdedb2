@@ -3990,6 +3990,9 @@ class EventBackend(AbstractBackend):
             for part in export_event['parts'].values():
                 del part['id']
                 del part['event_id']
+                for f in ('waitlist_field',):
+                    if part[f]:
+                        part[f] = event['fields'][part[f]]['field_name']
                 for track in part['tracks'].values():
                     del track['id']
                     del track['part_id']
