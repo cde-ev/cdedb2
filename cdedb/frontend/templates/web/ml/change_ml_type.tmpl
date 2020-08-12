@@ -46,13 +46,13 @@
                 $('.non-js-hint').hide()
             </script>
             {{ util.form_input_select(name="event_id", entries=events|dictsort|dict_entries('id', 'title'),
-                                      nulloption="&nbsp;"|s, label=gettext("Event"), sort=True,
+                                      nulloption=nbsp, label=gettext("Event"), sort=True,
                                       info=gettext("The participants of this event will be subscribers of this "
                                                    "mailinglist. (Opt-Out)")) }}
             {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=readonly,
                     entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="assembly_id", entries=assemblies|dictsort|dict_entries('id', 'title'),
-                                      nulloption="&nbsp;"|s, label=gettext("Assembly"), sort=True,
+                                      nulloption=nbsp, label=gettext("Assembly"), sort=True,
                                       info=gettext("The participants of this assembly will be subscribers of this "
                                                    "mailinglist. (Opt-Out)")) }}
             {{ util.form_input_submit(cancellink=cdedblink("ml/change_mailinglist")) }}

@@ -59,11 +59,11 @@
         {{ util.input_hidden("ml_type", value=ml_type.value) }}
         {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"),
                 entries=enums['MailinglistTypes']|enum_entries(processing=gettext), readonly=True) }}
-        {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;"|s, entries=events|dictsort|dict_entries('id', 'title'),
+        {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption=nbsp, entries=events|dictsort|dict_entries('id', 'title'),
                 info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)"), sort=True) }}
         {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
                 entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;"|s,
+        {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption=nbsp,
                 entries=assemblies|dictsort|dict_entries('id', 'title'),
                 info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)"), sort=True) }}
 

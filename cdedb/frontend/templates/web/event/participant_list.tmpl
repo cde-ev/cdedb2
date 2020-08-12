@@ -26,7 +26,7 @@
     {% for track_id in parts[part_id]['tracks'] -%}
         {% with course_id = registration['tracks'][track_id]['course_id'] %}
             {% if course_id %}
-                {{ courses[course_id]['nr'] }}.&nbsp;{{ courses[course_id]['shortname'] }}
+                {{ courses[course_id]['nr']+ "." + nbsp + courses[course_id]['shortname'] }}
                 {% if registration['tracks'][track_id]['course_instructor'] == course_id %}
                     {{ "(KL)" }}
                 {% endif %}

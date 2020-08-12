@@ -75,12 +75,12 @@
                         + util.href(cdedblink('ml/change_ml_type'), gettext("Change Type"),
                                     aclass="btn btn-warning btn-xs", icon="pen"))) }}
             {% endif %}
-            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;"|s, entries=event_entries,
+            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption=nbsp, entries=event_entries,
                     readonly=readonly,
                     info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
             {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=readonly,
                     entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;"|s, readonly=readonly,
+            {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption=nbsp, readonly=readonly,
                     entries=assembly_entries,
                     info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
 

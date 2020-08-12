@@ -556,7 +556,7 @@
         {%- set name = "fields.{}".format(fields['field_name']) %}
     {%- endif %}
     {%- if fields['entries'] %}
-        {{- input_select(name=name, entries=fields['entries'], nulloption="&nbsp;"|s,
+        {{- input_select(name=name, entries=fields['entries'], nulloption=nbsp,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=True) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
