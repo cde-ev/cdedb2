@@ -80,6 +80,9 @@ msgstr "Noch nicht bezahlt"
 msgid "12_query_event_registration_paid"
 msgstr "Bezahlt"
 
+msgid "Placement"
+msgstr "Platz"
+
 #: cdedb/config.py:110
 msgid "14_query_event_registration_participants"
 msgstr "Alle Teilnehmer"

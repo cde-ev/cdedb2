@@ -3285,10 +3285,13 @@ class EventFrontend(AbstractUserFrontend):
             (part_id, registration['parts'][part_id]) for part_id in part_order)
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, (const.QuestionnaireUsages.registration,)))
+        waitlist_position = self.eventproxy.get_waitlist_position(
+            rs, event_id, persona_id=rs.user.persona_id)
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'reference': reference,
+            'waitlist_position': waitlist_position,
         })
 
     @access("event")
@@ -3748,10 +3751,12 @@ class EventFrontend(AbstractUserFrontend):
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_event_fee_reference(persona, rs.ambience['event'])
         fee = self.eventproxy.calculate_fee(rs, registration_id)
+        waitlist_position = self.eventproxy.get_waitlist_position(
+            rs, event_id, persona_id=persona['id'])
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
-            'reference': reference,
+            'reference': reference, 'waitlist_position': waitlist_position
         })
 
     @access("event")
