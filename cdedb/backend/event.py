@@ -1691,6 +1691,8 @@ class EventBackend(AbstractBackend):
                             rs, "event.field_definitions",
                             ("id", "event_id", "kind", "association"),
                             update['waitlist_field'])
+                        if not waitlist_data:
+                            raise ValueError(n_("Unknown field."))
                         if (waitlist_data['event_id'] != data['id']
                                 or waitlist_data['kind'] not in legal_datatypes
                                 or waitlist_data['association'] not in legal_assocs):
@@ -2382,6 +2384,7 @@ class EventBackend(AbstractBackend):
         event are returned and he himself must have the status 'participant'.
 
         :param persona_id: If passed restrict to registrations by this persona.
+        :returns: Mapping of registration ids to persona_ids.
         """
         event_id = affirm("id", event_id)
         persona_id = affirm("id_or_None", persona_id)
@@ -2466,6 +2469,81 @@ class EventBackend(AbstractBackend):
             event_ids, entity_key="event_id")
         ret = {(e["event_id"], e["persona_id"]): e["id"] for e in data}
 
+        return ret
+
+    @internal
+    @access("event")
+    def _get_waitlist(self, rs: RequestState, event_id: int,
+                      part_ids: Collection[int] = None
+                      ) -> Dict[int, Optional[List[int]]]:
+        """Compute the waitlist in order for the given parts.
+
+        :returns: Part id maping to None, if no waitlist ordering is defined
+            or a list of registration ids otherwise.
+        """
+        event_id = affirm("id", event_id)
+        part_ids = affirm_set("id", part_ids, allow_None=True)
+        with Atomizer(rs):
+            event = self.get_event(rs, event_id)
+            if part_ids is None:
+                part_ids = event['parts'].keys()
+            elif not part_ids <= event['parts'].keys():
+                raise ValueError(n_("Unknown part for the given event."))
+            reg_ids = self.list_registrations(rs, event_id)
+            regs = self.get_registrations(rs, reg_ids)
+            ret = {}
+            waitlist = const.RegistrationPartStati.waitlist
+            for part_id in part_ids:
+                part = event['parts'][part_id]
+                if not part['waitlist_field']:
+                    ret[part_id] = None
+                    continue
+                field = event['fields'][part['waitlist_field']]
+                ret[part_id] = xsorted(
+                    (reg_id for reg_id in regs.keys()
+                     if regs[reg_id]['parts'][part_id]['status'] == waitlist),
+                    key=lambda r_id: (
+                        regs[r_id]['fields'].get(field['field_name'], 0), r_id))
+            return ret
+
+    @access("event")
+    def get_waitlist(self, rs: RequestState, event_id: int,
+                     part_ids: Collection[int] = None
+                     ) -> Dict[int, Optional[List[int]]]:
+        """Public wrapper around _get_waitlist. Adds privilege check."""
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError(n_("Must be orga to access full waitlist."))
+        return self._get_waitlist(rs, event_id, part_ids)
+
+    @access("event")
+    def get_waitlist_position(self, rs: RequestState, event_id: int,
+                              part_ids: Collection[int] = None,
+                              persona_id: int = None
+                              ) -> Dict[int, Optional[int]]:
+        """Compute the waitlist position of a user for the given parts.
+
+        :returns: Mapping of part id to position on waitlist or None if user is
+            not on the waitlist in that part.
+        """
+        full_waitlist = self._get_waitlist(rs, event_id, part_ids)
+        if persona_id is None:
+            persona_id = rs.user.persona_id
+        if persona_id != rs.user.persona_id:
+            if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+                raise PrivilegeError(
+                    n_("Must be orga to access full waitlist."))
+        reg_ids = self.list_registrations(rs, event_id, persona_id)
+        if not reg_ids:
+            raise ValueError(n_("Not registered for this event."))
+        reg_id = unwrap(reg_ids.keys())
+        ret = {}
+        for part_id, waitlist in full_waitlist.items():
+            try:
+                if waitlist is None:
+                    raise ValueError
+                ret[part_id] = waitlist.index(reg_id)
+            except ValueError:
+                ret[part_id] = None
         return ret
 
     @access("event")

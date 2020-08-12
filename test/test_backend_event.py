@@ -2729,6 +2729,52 @@ class TestEventBackend(BackendTest):
         self.assertEqual(self.event.calculate_fee(self.key, reg_id),
                          decimal.Decimal("553.49"))
 
+    @as_users("garcia")
+    def test_waitlist(self, user):
+        edata = {
+            'id': 1,
+            'fields': {
+                -1: {
+                    'field_name': "waitlist",
+                    'association': const.FieldAssociations.registration,
+                    'kind': const.FieldDatatypes.int,
+                    'entries': None,
+                },
+            },
+        }
+        self.event.set_event(self.key, edata)
+        edata = {
+            'id': 1,
+            'parts': {
+                1: {
+                    'waitlist_field': 1001,
+                },
+
+                2: {
+                    'waitlist_field': 1001,
+                },
+
+                3: {
+                    'waitlist_field': 1001,
+                },
+            }
+        }
+        self.event.set_event(self.key, edata)
+        self.assertEqual({1: [2], 2: [], 3: []},
+                         self.event.get_waitlist(self.key, event_id=1))
+        self.assertEqual({1: None, 2: None, 3: None},
+                         self.event.get_waitlist_position(self.key, event_id=1))
+        self.assertEqual({1: 0, 2: None, 3: None},
+                         self.event.get_waitlist_position(
+                             self.key, event_id=1, persona_id=5))
+        self.login(USER_DICT["emilia"])
+        self.assertEqual({1: 0, 2: None, 3: None},
+                         self.event.get_waitlist_position(
+                             self.key, event_id=1))
+        with self.assertRaises(PrivilegeError) as cm:
+            self.event.get_waitlist_position(
+                self.key, event_id=1, persona_id=1)
+
     @as_users("annika")
     def test_log(self, user):
         # first check the already existing log
