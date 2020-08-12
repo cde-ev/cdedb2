@@ -615,7 +615,7 @@ CREATE TABLE event.events (
         courses_in_participant_list boolean NOT NULL DEFAULT False,
         is_archived                 boolean NOT NULL DEFAULT False,
         is_cancelled                boolean NOT NULL DEFAULT False,
-        -- JSON field for lodgement preference functionality
+        -- reference to special purpose custom data fields
         lodge_field                 integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         camping_mat_field           integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         course_room_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
@@ -636,7 +636,7 @@ CREATE TABLE event.event_parts (
         part_end                date NOT NULL,
         -- fees are cummulative
         fee                     numeric(8,2) NOT NULL,
-        -- JSON field for waitlist management
+        -- reference to custom data field for waitlist management
         waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
 );
 CREATE INDEX idx_event_parts_event_id ON event.event_parts(event_id);
