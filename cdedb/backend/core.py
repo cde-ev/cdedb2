@@ -1773,59 +1773,60 @@ class CoreBackend(AbstractBackend):
         password = affirm("str", password)
         ip = affirm("printable_ascii", ip)
         # note the lower-casing for email addresses
-        query = ("SELECT id, password_hash, is_meta_admin, is_core_admin"
-                 " FROM core.personas"
+        query = ("SELECT id, is_meta_admin, is_core_admin FROM core.personas"
                  " WHERE username = lower(%s) AND is_active = True")
         data = self.query_one(rs, query, (username,))
-        verified = bool(data) and self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
-        if not verified and data:
-            verified = self.verify_password(password, data["password_hash"])
-        if not verified:
+        if not data or (
+                not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
+                and not self.verify_persona_password(rs, password, data["id"])):
             # log message to be picked up by fail2ban
             self.logger.warning("CdEDB login failure from {} for {}".format(
                 ip, username))
             return None
+        if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
+                                          or data['is_core_admin']):
+            # Short circuit in case of lockdown
+            return None
+        sessionkey = secure_token_hex()
+
+        with Atomizer(rs):
+            # Invalidate expired sessions, but keep other around.
+            timestamp = now()
+            ctime_cutoff = timestamp - self.conf["SESSION_LIFESPAN"]
+            atime_cutoff = timestamp - self.conf["SESSION_TIMEOUT"]
+            query = ("UPDATE core.sessions SET is_active = False"
+                     " WHERE persona_id = %s AND is_active = True"
+                     " AND (ctime < %s OR atime < %s) ")
+            self.query_exec(rs, query, (data["id"], ctime_cutoff, atime_cutoff))
+            query = ("INSERT INTO core.sessions (persona_id, ip, sessionkey)"
+                     " VALUES (%s, %s, %s)")
+            self.query_exec(rs, query, (data["id"], ip, sessionkey))
+
+        # Escalate db privilege role in case of successful login.
+        # This will not be deescalated.
+        if rs.conn.is_contaminated:
+            raise RuntimeError(n_("Atomized – impossible to escalate."))
+
+        # TODO: What do we need this distinction for?
+        is_cde = unwrap(self.sql_select_one(rs, "core.personas",
+                                            ("is_cde_realm",), data["id"]))
+        if is_cde:
+            rs.conn = self.connpool['cdb_member']
         else:
-            assert data is not None
-            if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
-                                              or data['is_core_admin']):
-                # Short circuit in case of lockdown
-                return None
-            sessionkey = secure_token_hex()
+            rs.conn = self.connpool['cdb_persona']
+        rs._conn = rs.conn  # Necessary to keep the mechanics happy
 
-            with Atomizer(rs):
-                query = glue(
-                    "UPDATE core.sessions SET is_active = False",
-                    "WHERE persona_id = %s AND is_active = True")
-                self.query_exec(rs, query, (data["id"],))
-                query = glue(
-                    "INSERT INTO core.sessions (persona_id, ip, sessionkey)",
-                    "VALUES (%s, %s, %s)")
-                self.query_exec(rs, query, (data["id"], ip, sessionkey))
+        # Get more information about user (for immediate use in frontend)
+        data = self.sql_select_one(rs, "core.personas",
+                                   PERSONA_CORE_FIELDS, data["id"])
+        if data is None:
+            raise RuntimeError("Impossible.")
+        vals = {k: data[k] for k in (
+            'username', 'given_names', 'display_name', 'family_name')}
+        vals['persona_id'] = data['id']
+        rs.user = User(roles=extract_roles(data), **vals)
 
-            # Escalate db privilege role in case of successful login.
-            # This will not be deescalated.
-            if rs.conn.is_contaminated:
-                raise RuntimeError(n_("Atomized – impossible to escalate."))
-
-            is_cde = unwrap(self.sql_select_one(rs, "core.personas",
-                                                ("is_cde_realm",), data["id"]))
-            if is_cde:
-                rs.conn = self.connpool['cdb_member']
-            else:
-                rs.conn = self.connpool['cdb_persona']
-            rs._conn = rs.conn  # Necessary to keep the mechanics happy
-
-            # Get more information about user (for immediate use in frontend)
-            data = self.sql_select_one(rs, "core.personas",
-                                       PERSONA_CORE_FIELDS, data["id"])
-            assert data is not None
-            vals = {k: data[k] for k in (
-                'username', 'given_names', 'display_name', 'family_name')}
-            vals['persona_id'] = data['id']
-            rs.user = User(roles=extract_roles(data), **vals)
-
-            return sessionkey
+        return sessionkey
 
     @access("persona")
     def logout(self, rs: RequestState) -> DefaultReturnCode:

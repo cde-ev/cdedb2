@@ -2,6 +2,7 @@
 from cdedb.common import User
 from test.common import BackendTest, USER_DICT
 
+
 class TestSessionBackend(BackendTest):
     used_backends = ("core", "session")
 
@@ -23,3 +24,15 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(None, user.persona_id)
         user = self.session.lookupsession(key, "1.2.3.4")
         self.assertEqual(None, user.persona_id)
+
+    def test_multiple_sessions(self):
+        key1 = self.login(USER_DICT["anton"], ip="1.2.3.4")
+        key2 = self.login(USER_DICT["anton"], ip="1.2.3.4")
+        user1 = self.session.lookupsession(key1, "1.2.3.4")
+        self.assertIsInstance(user1, User)
+        self.assertTrue(user1.persona_id)
+        user2 = self.session.lookupsession(key2, "1.2.3.4")
+        self.assertIsInstance(user2, User)
+        self.assertTrue(user2.persona_id)
+        self.assertNotEqual(user1, user2)
+        self.assertEqual(user1.__dict__, user2.__dict__)
