@@ -1213,11 +1213,12 @@ class CronTest(unittest.TestCase):
         cls.event = CronBackendShim(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = CronBackendShim(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = CronBackendShim(cls.cron, cls.cron.core.mlproxy)
-        cls._all_periodics = set()
-        for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
-                         cls.cron.assembly, cls.cron.ml):
-            cls._all_periodics.update(
-                job.cron['name'] for job in cls.cron.find_periodics(frontend))
+        cls._all_periodics = {
+            job.cron['name']
+            for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
+                             cls.cron.assembly, cls.cron.ml)
+            for job in cls.cron.find_periodics(frontend)
+        }
         cls._run_periodics = set()
 
     @classmethod
