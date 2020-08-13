@@ -24,7 +24,7 @@ import copy
 import decimal
 
 from typing import (
-    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr,
+    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set,
     MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection,
 )
 
@@ -1198,6 +1198,9 @@ class CronBackendShim:
 
 
 class CronTest(unittest.TestCase):
+    _all_periodics: Set[str]
+    _run_periodics: Set[str]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stores = []
@@ -1210,6 +1213,19 @@ class CronTest(unittest.TestCase):
         cls.event = CronBackendShim(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = CronBackendShim(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = CronBackendShim(cls.cron, cls.cron.core.mlproxy)
+        cls._all_periodics = set()
+        for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
+                         cls.cron.assembly, cls.cron.ml):
+            cls._all_periodics.update(
+                job.cron['name'] for job in cls.cron.find_periodics(frontend))
+        cls._run_periodics = set()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if (any(job not in cls._run_periodics for job in cls._all_periodics)
+                and not os.environ.get('CDEDB_TEST_SINGULAR')):
+            raise AssertionError(f"The following cron-periodics never ran:"
+                                 f" {cls._all_periodics - cls._run_periodics}")
 
     def setUp(self):
         subprocess.check_call(("make", "sql-test-shallow"),
@@ -1246,6 +1262,7 @@ class CronTest(unittest.TestCase):
         if not args:
             raise ValueError("Must specify jobs to run.")
         self.cron.execute(args)
+        self._run_periodics.update(args)
         if check_stores:
             expectation = set(args) | {"_base"}
             self.assertEqual(expectation, set(s.cron for s in self.stores))

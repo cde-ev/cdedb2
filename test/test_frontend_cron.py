@@ -345,9 +345,14 @@ class TestCron(CronTest):
         self.assertEqual(['ballot_tallied'] * 2,
                          [mail.template for mail in self.mails])
 
+    def test_write_subscription_states(self):
+        # We just want to test that no exception is raised.
+        self.execute('write_subscription_states')
+
     @unittest.mock.patch("mailmanclient.Client")
     def test_mailman_sync(self, client_class):
-        self.skipTest("Mailman not currently implemented.")
+        self._run_periodics.add('mailman_sync')
+        self.skipTest("Mailman currently not implemented.")
         #
         # Prepare
         #
