@@ -321,6 +321,8 @@ class TestCron(CronTest):
 
     @unittest.mock.patch("mailmanclient.Client")
     def test_mailman_sync(self, client_class):
+        self._run_periodics.add('mailman_sync')
+        self.skipTest("Mailman currently not implemented.")
         #
         # Prepare
         #
