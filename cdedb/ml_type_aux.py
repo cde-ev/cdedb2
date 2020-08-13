@@ -112,7 +112,8 @@ class GeneralMailinglist:
     optional_validation_fields: List[Tuple[str, str]] = list()
 
     @classmethod
-    def get_additional_fields(cls, simple_spec: bool = False) -> Set[str]:
+    def get_additional_fields(cls, simple_spec: bool = False
+                              ) -> Set[Tuple[str, str]]:
         ret = set()
         for field, argtype in (cls.mandatory_validation_fields
                                + cls.optional_validation_fields):
@@ -534,4 +535,3 @@ TYPE_MAP = {
 ADDITIONAL_TYPE_FIELDS = set.union(
     *(atype.get_additional_fields(simple_spec=True)
       for atype in TYPE_MAP.values()))
-print(ADDITIONAL_TYPE_FIELDS)
