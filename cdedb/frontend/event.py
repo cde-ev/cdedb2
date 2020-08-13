@@ -2568,66 +2568,42 @@ class EventFrontend(AbstractUserFrontend):
     def download_csv_courses(self, rs, event_id):
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
-        if not course_ids:
+        courses = self.eventproxy.get_courses(rs, course_ids)
+
+        spec = self.make_course_query_spec(rs.ambience['event'])
+        choices, _ = self.make_course_query_aux(
+            rs, rs.ambience['event'], courses, fixed_gettext=True)
+        fields_of_interest = list(spec.keys())
+        query = Query('qview_event_course', spec, fields_of_interest, [], [])
+        result = self.eventproxy.submit_general_query(rs, query, event_id)
+        if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
-        courses = self.eventproxy.get_courses(rs, course_ids)
-        columns = ['id', 'nr', 'shortname', 'title', 'instructors', 'max_size',
-                   'min_size', 'notes', 'description']
-        columns.extend('fields.' + field['field_name']
-                       for field in rs.ambience['event']['fields'].values()
-                       if field['association'] ==
-                       const.FieldAssociations.course)
-        for part in xsorted(rs.ambience['event']['parts'].values(),
-                           key=EntitySorter.event_part):
-            columns.extend('track{}'.format(track_id)
-                           for track_id in part['tracks'])
-
-        for course in courses.values():
-            for track_id in rs.ambience['event']['tracks']:
-                status = 'active' if track_id in course['active_segments'] \
-                    else ('cancelled' if track_id in course['segments'] else '')
-                course['track{}'.format(track_id)] = status
-            course.update({
-                'fields.{}'.format(field['field_name']):
-                    course['fields'].get(field['field_name'], '')
-                for field in rs.ambience['event']['fields'].values()
-                if field['association'] == const.FieldAssociations.course})
-        csv_data = csv_output(xsorted(courses.values(), key=EntitySorter.course),
-                              columns)
-        return self.send_csv_file(
-            rs, data=csv_data, inline=False, filename="{}_courses.csv".format(
-                rs.ambience['event']['shortname']))
+        return self.send_query_download(
+            rs, result, fields_of_interest, "csv", substitutions=choices,
+            filename=f"{rs.ambience['event']['shortname']}_courses")
 
     @access("event")
     @event_guard()
     def download_csv_lodgements(self, rs, event_id):
         """Create CSV file with all courses"""
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        if not lodgement_ids:
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+
+        spec = self.make_lodgement_query_spec(rs.ambience['event'])
+        choices, _ = self.make_lodgement_query_aux(
+            rs, rs.ambience['event'], lodgements, groups, fixed_gettext=True)
+        fields_of_interest = list(spec.keys())
+        query = Query('qview_event_lodgement', spec, fields_of_interest, [], [])
+        result = self.eventproxy.submit_general_query(rs, query, event_id)
+        if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
-
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        columns = ['id', 'moniker', 'regular_capacity', 'camping_mat_capacity',
-                   'notes']
-        columns.extend('fields.' + field['field_name']
-                       for field in rs.ambience['event']['fields'].values()
-                       if field['association'] ==
-                       const.FieldAssociations.lodgement)
-
-        for lodgement in lodgements.values():
-            lodgement.update({
-                'fields.{}'.format(field['field_name']):
-                    lodgement['fields'].get(field['field_name'], '')
-                for field in rs.ambience['event']['fields'].values()
-                if field['association'] == const.FieldAssociations.lodgement})
-        csv_data = csv_output(xsorted(lodgements.values(), key=EntitySorter.lodgement),
-                              columns)
-        return self.send_csv_file(
-            rs, data=csv_data, inline=False,
-            filename="{}_lodgements.csv".format(
-                rs.ambience['event']['shortname']))
+        return self.send_query_download(
+            rs, result, fields_of_interest, "csv", substitutions=choices,
+            filename=f"{rs.ambience['event']['shortname']}_lodgements")
 
     @access("event")
     @event_guard()
@@ -2638,33 +2614,20 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        all_tracks = {
-            track_id: track
-            for part in rs.ambience['event']['parts'].values()
-            for track_id, track in part['tracks'].items()
-        }
 
         spec = self.make_registration_query_spec(rs.ambience['event'])
         fields_of_interest = list(spec.keys())
+        choices, _ = self.make_registration_query_aux(
+            rs, rs.ambience['event'], courses, lodgements, fixed_gettext=True)
         query = Query('qview_registration', spec, fields_of_interest, [], [])
         result = self.eventproxy.submit_general_query(
             rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
-
-        fields = []
-        for csvfield in query.fields_of_interest:
-            fields.extend(csvfield.split(','))
-
-        choices, _ = self.make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements, fixed_gettext=True)
-        csv_data = csv_output(result, fields, substitutions=choices)
-
-        return self.send_csv_file(
-            rs, data=csv_data, inline=False,
-            filename="{}_registrations.csv".format(
-                rs.ambience['event']['shortname']))
+        return self.send_query_download(
+            rs, result, fields_of_interest, "csv", substitutions=choices,
+            filename=f"{rs.ambience['event']['shortname']}_registrations")
 
     @access("event", modi={"GET"})
     @REQUESTdata(("agree_unlocked_download", "bool_or_None"))
