@@ -341,8 +341,8 @@ class TestCron(CronTest):
         self.assertTrue(all(not b['is_tallied'] for b in ballots.values()))
         self.execute("check_tally_ballot")
         ballots = self.assembly.get_ballots(ballot_ids)
-        self.assertEqual(6, sum(1 for b in ballots.values() if b['is_tallied']))
-        self.assertEqual(['ballot_tallied'] * 6,
+        self.assertEqual(2, sum(1 for b in ballots.values() if b['is_tallied']))
+        self.assertEqual(['ballot_tallied'] * 2,
                          [mail.template for mail in self.mails])
 
     @unittest.mock.patch("mailmanclient.Client")
