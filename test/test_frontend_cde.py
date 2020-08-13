@@ -871,7 +871,11 @@ class TestCdEFrontend(FrontendTest):
                             div='active-permit', exact=True)
         self.traverse({'description': 'Anlegen'})
         self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
+        self.traverse({'description': "Einzugsermächtigungen"},
+                      {'description': "Neue Einzugsermächtigung"})
         f = self.response.forms['createlastschriftform']
+        self.assertTitle("Neue Einzugsermächtigung")
+        f['persona_id'] = "DB-3-5"
         f['amount'] = "123.45"
         f['iban'] = "DE26370205000008068900"
         f['notes'] = "grosze Siebte: Take on me"

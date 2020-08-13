@@ -1386,12 +1386,13 @@ class CdEFrontend(AbstractUserFrontend):
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     @access("finance_admin")
-    def lastschrift_create_form(self, rs: RequestState, persona_id: int
+    def lastschrift_create_form(self, rs: RequestState, persona_id: int = None
                                 ) -> Response:
         """Render form."""
         return self.render(rs, "lastschrift_create")
 
     @access("finance_admin", modi={"POST"})
+    @REQUESTdata(('persona_id', 'cdedbid'))
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
     def lastschrift_create(self, rs: RequestState, persona_id: int,
@@ -1408,7 +1409,8 @@ class CdEFrontend(AbstractUserFrontend):
                 'persona_id': persona_id})
         new_id = self.cdeproxy.create_lastschrift(rs, data)
         self.notify_return_code(rs, new_id)
-        return self.redirect(rs, "cde/lastschrift_show")
+        return self.redirect(
+            rs, "cde/lastschrift_show", {'persona_id': persona_id})
 
     @access("finance_admin", modi={"POST"})
     def lastschrift_revoke(self, rs: RequestState, lastschrift_id: int
