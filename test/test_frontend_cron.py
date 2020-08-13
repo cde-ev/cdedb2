@@ -315,6 +315,10 @@ class TestCron(CronTest):
         self.assertEqual(['privilege_change_remind'],
                          [mail.template for mail in self.mails])
 
+    def test_write_subscription_states(self):
+        # We just want to test that no exception is raised.
+        self.execute('write_subscription_states')
+
     @unittest.mock.patch("mailmanclient.Client")
     def test_mailman_sync(self, client_class):
         #
