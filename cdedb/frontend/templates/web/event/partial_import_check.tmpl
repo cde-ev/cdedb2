@@ -136,14 +136,16 @@ diff of the item and shows a table with all changed attributes, old and new valu
                     {% call util.bootstrap_panel(gettext("Changed registrations"),
                                                  aclass='panel panel-info details-panel',
                                                  icon='user', anid='box-changed-registrations') %}
-                        <div class="form-group details-toggles hidden">
-                            <button type="button" class="btn btn-default" value="expand">
-                                {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
-                            </button>
-                            <button type="button" class="btn btn-default" value="collapse">
-                                {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
-                            </button>
-                        </div>
+                        {% if summary['changed_registrations']|length > 3 %}
+                            <div class="form-group details-toggles hidden">
+                                <button type="button" class="btn btn-default" value="expand">
+                                    {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
+                                </button>
+                                <button type="button" class="btn btn-default" value="collapse">
+                                    {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
+                                </button>
+                            </div>
+                        {% endif %}
                         <ul class="slim details-list">
                             {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
                                 <li>
@@ -217,14 +219,16 @@ diff of the item and shows a table with all changed attributes, old and new valu
                     {% call util.bootstrap_panel(gettext("Changed courses"),
                                                  aclass='panel panel-info details-panel',
                                                  icon='book', anid='box-changed-courses') %}
-                        <div class="form-group details-toggles hidden">
-                            <button type="button" class="btn btn-default" value="expand">
-                                {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
-                            </button>
-                            <button type="button" class="btn btn-default" value="collapse">
-                                {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
-                            </button>
-                        </div>
+                        {% if summary['changed_courses']|length > 3 %}
+                            <div class="form-group details-toggles hidden">
+                                <button type="button" class="btn btn-default" value="expand">
+                                    {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
+                                </button>
+                                <button type="button" class="btn btn-default" value="collapse">
+                                    {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
+                                </button>
+                            </div>
+                        {% endif %}
                         <ul class="slim details-list">
                             {% for course_id, course_diff in summary['changed_courses'].items() %}
                                 <li>
@@ -299,14 +303,16 @@ diff of the item and shows a table with all changed attributes, old and new valu
                     {% call util.bootstrap_panel(gettext("Changed lodgements"),
                                                  aclass='panel panel-info details-panel',
                                                  icon='home', anid='box-changed-lodgements') %}
-                        <div class="form-group details-toggles hidden">
-                            <button type="button" class="btn btn-default" value="expand">
-                                {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
-                            </button>
-                            <button type="button" class="btn btn-default" value="collapse">
-                                {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
-                            </button>
-                        </div>
+                        {% if summary['changed_lodgements']|length > 3 %}
+                            <div class="form-group details-toggles hidden">
+                                <button type="button" class="btn btn-default" value="expand">
+                                    {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
+                                </button>
+                                <button type="button" class="btn btn-default" value="collapse">
+                                    {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
+                                </button>
+                            </div>
+                        {% endif %}
                         <ul class="slim details-list">
                             {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
                                 <li>
@@ -438,8 +444,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                     )
                 )
             }
-            detailsPanel.querySelector('.details-toggles').classList.remove('hidden')
         }
-
+        document.querySelectorAll('.details-toggles.hidden').forEach(element => element.classList.remove('hidden'))
     </script>
 {% endblock %}
