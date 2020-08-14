@@ -252,5 +252,5 @@
 			}
 		}
 	},
-        "EVENT_SCHEMA_VERSION": [13, 1]
+        "EVENT_SCHEMA_VERSION": [13, 2]
 }

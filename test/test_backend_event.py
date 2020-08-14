@@ -70,6 +70,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56"),
+                    'waitlist_field': None,
                 },
                 -2: {
                     'tracks': {
@@ -84,6 +85,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'fee': decimal.Decimal("0.00"),
+                    'waitlist_field': None,
                 },
             },
             'fields': {
@@ -196,12 +198,14 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'fee': decimal.Decimal("123.40"),
+            'waitlist_field': None,
         }
         changed_part = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
+            'waitlist_field': None,
             'tracks': {
                 1002: {'title': "Second lecture v2",
                        'shortname': "Second v2",
@@ -1887,6 +1891,7 @@ class TestEventBackend(BackendTest):
         new_data['event.event_parts'][4000] = {
             'event_id': 1,
             'fee': decimal.Decimal('666.66'),
+            'waitlist_field': None,
             'id': 4000,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2097,6 +2102,7 @@ class TestEventBackend(BackendTest):
         stored_data['event.event_parts'][1001] = {
             'event_id': 1,
             'fee': decimal.Decimal('666.66'),
+            'waitlist_field': None,
             'id': 1001,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2684,6 +2690,9 @@ class TestEventBackend(BackendTest):
         data = {
             'id': event_id,
             'fields': {
+                5: {
+                    'kind': const.FieldDatatypes.bool,
+                   },
                 -1: {
                     'association': const.FieldAssociations.registration,
                     'field_name': 'solidarity',
@@ -2764,11 +2773,11 @@ class TestEventBackend(BackendTest):
                          self.event.get_waitlist(self.key, event_id=1))
         self.assertEqual({1: None, 2: None, 3: None},
                          self.event.get_waitlist_position(self.key, event_id=1))
-        self.assertEqual({1: 0, 2: None, 3: None},
+        self.assertEqual({1: 1, 2: None, 3: None},
                          self.event.get_waitlist_position(
                              self.key, event_id=1, persona_id=5))
         self.login(USER_DICT["emilia"])
-        self.assertEqual({1: 0, 2: None, 3: None},
+        self.assertEqual({1: 1, 2: None, 3: None},
                          self.event.get_waitlist_position(
                              self.key, event_id=1))
         with self.assertRaises(PrivilegeError) as cm:
@@ -2844,6 +2853,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56"),
+                    'waitlist_field': None,
                 },
                 -2: {
                     'tracks': {
@@ -2857,6 +2867,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'fee': decimal.Decimal("0.00"),
+                    'waitlist_field': None,
                 },
             },
             'fields': {
@@ -2914,6 +2925,7 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'fee': decimal.Decimal("123.40"),
+            'waitlist_field': None,
         }
         changed_part = {
             'title': "Second coming",
