@@ -827,18 +827,17 @@ class EventFrontend(AbstractUserFrontend):
             key = f"fee_modifier_field_id_{part_id}_{fee_modifier_id}"
             fields = rs.ambience['event']['fields']
             legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
-            ret = (
+            msg = n_("Fee Modifier linked to non-fitting field.")
+            return [(
                 lambda d: fields[d[key]]['association'] in legal_assocs
                              and fields[d[key]]['kind'] in legal_datatypes,
-                (key, ValueError(n_(
-                    "Fee Modifier linked to non-fitting field.")))
-            )
-            return ret
+                (key, ValueError(msg))
+            )]
 
-        constraints = [
+        constraints = tuple(itertools.chain.from_iterable(
             constraint_maker(mod['part_id'], mod['id'])
             for mod in fee_modifiers.values()
-            if mod['id'] not in fee_modifier_deletes]
+            if mod['id'] not in fee_modifier_deletes))
 
         data = request_extractor(rs, params, constraints)
         rs.values['fee_modifier_create_last_index'] = {}
