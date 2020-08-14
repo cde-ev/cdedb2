@@ -227,8 +227,8 @@ class Application(BaseApp):
                             ntype, nmessage, nparams = (
                                 self.decode_notification(rs, note))
                             if ntype:
-                                if nmessage is None or nparams is None:
-                                    raise RuntimeError("Impossible.")
+                                assert nmessage is not None
+                                assert nparams is not None
                                 rs.notify(ntype, nmessage, nparams)
                             else:
                                 self.logger.info(
@@ -249,8 +249,7 @@ class Application(BaseApp):
                 if handler.check_anti_csrf and 'droid' not in user.roles:
                     okay, error = check_anti_csrf(rs, component, action)
                     if not okay:
-                        if error is None:
-                            raise RuntimeError("Impossible.")
+                        assert error is not None
                         rs.csrf_alert = True
                         rs.extend_validation_errors(
                             ((ANTI_CSRF_TOKEN_NAME, ValueError(error)),))
@@ -263,13 +262,11 @@ class Application(BaseApp):
                 # Insert orga and moderator status context
                 orga: Set[int] = set()
                 if "event" in user.roles:
-                    if user.persona_id is None:
-                        raise RuntimeError("Impossible.")
+                    assert user.persona_id is not None
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
                 moderator: Set[int] = set()
                 if "ml" in user.roles:
-                    if user.persona_id is None:
-                        raise RuntimeError("Impossible.")
+                    assert user.persona_id is not None
                     moderator = self.mlproxy.moderator_info(rs, user.persona_id)
                 user.orga = orga
                 user.moderator = moderator

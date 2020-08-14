@@ -1017,8 +1017,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'values': rs.values,
         }
         # check that default values are not overridden
-        if set(data) & set(params):
-            raise RuntimeError("Template defaults overridden.")
+        assert (not set(data) & set(params))
         merge_dicts(data, params)
         if modus == "tex":
             jinja_env = self.jinja_env_tex
@@ -1743,8 +1742,7 @@ def access(*roles: Role, modi: AbstractSet[str] = None,
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
 
-        if modi is None:
-            raise RuntimeError("Impossible.")
+        assert modi is not None
         new_fun.access_list = access_list  # type: ignore
         new_fun.modi = modi  # type: ignore
         new_fun.check_anti_csrf = (  # type: ignore

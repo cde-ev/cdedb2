@@ -309,8 +309,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def show_mailinglist(self, rs: RequestState,
                          mailinglist_id: int) -> Response:
         """Details of a list."""
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
+        assert rs.user.persona_id is not None
         ml = rs.ambience['mailinglist']
         state = self.mlproxy.get_subscription(
             rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
@@ -860,8 +859,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         If this address has not been used before, we verify it.
         """
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
+        assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         if not self._check_address_change_requirements(rs, mailinglist_id,
@@ -898,8 +896,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         This is not a POST since the link is shared via email.
         """
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
+        assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         if not self._check_address_change_requirements(rs, mailinglist_id,
@@ -917,9 +914,10 @@ class MlBaseFrontend(AbstractUserFrontend):
                                            setting: bool) -> bool:
         """Check if all conditions required to change a subscription adress
         are fulfilled.
+
+        :rtype: bool
         """
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
+        assert rs.user.persona_id is not None
         is_subscribed = self.mlproxy.is_subscribed(
             rs, rs.user.persona_id, mailinglist_id)
         if not is_subscribed:

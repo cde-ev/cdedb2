@@ -314,8 +314,7 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:
         """Convenience entry point for own data."""
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
+        assert rs.user.persona_id is not None
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("persona")
@@ -344,8 +343,7 @@ class CoreFrontend(AbstractFrontend):
         frontend function and not an incoming request. This allows to access
         this endpoint without a redirect to preserve validation results.
         """
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
+        assert rs.user.persona_id is not None
         if (persona_id != confirm_id or rs.has_validation_errors()) \
                 and not internal:
             return self.index(rs)
@@ -831,8 +829,7 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     def change_user_form(self, rs: RequestState) -> Response:
         """Render form."""
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
+        assert rs.user.persona_id is not None
         generation = self.coreproxy.changelog_get_generation(
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
@@ -854,8 +851,7 @@ class CoreFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int,
                     ignore_warnings: bool = False) -> Response:
         """Change own data set."""
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
+        assert rs.user.persona_id is not None
         attributes = get_persona_fields_by_realm(rs.user.roles, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
@@ -905,7 +901,8 @@ class CoreFrontend(AbstractFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
+        if not rs.has_validation_errors() and is_search:
+            assert query is not None
             query.scope = "qview_core_user"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -1540,8 +1537,7 @@ class CoreFrontend(AbstractFrontend):
     def change_password(self, rs: RequestState, old_password: str,
                         new_password: str, new_password2: str) -> Response:
         """Update your own password."""
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
+        assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.change_password_form(rs)
 
@@ -1778,10 +1774,9 @@ class CoreFrontend(AbstractFrontend):
     def do_username_change(self, rs: RequestState, new_username: str,
                            password: str) -> Response:
         """Now we can do the actual change."""
-        if rs.user.persona_id is None:
-            raise RuntimeError("Impossible.")
         if rs.has_validation_errors():
             return self.change_username_form(rs)
+        assert rs.user.persona_id is not None
         code, message = self.coreproxy.change_username(
             rs, rs.user.persona_id, new_username, password)
         self.notify_return_code(rs, code, success=n_("Email address changed."),

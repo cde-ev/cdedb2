@@ -93,8 +93,7 @@ class CdEFrontend(AbstractUserFrontend):
         reference = make_membership_fee_reference(data)
         has_lastschrift = False
         if "member" in rs.user.roles:
-            if rs.user.persona_id is None:
-                raise RuntimeError("Impossible.")
+            assert rs.user.persona_id is not None
             has_lastschrift = bool(self.cdeproxy.list_lastschrift(
                 rs, persona_ids=(rs.user.persona_id,), active=True))
             periods_left = data['balance'] // self.conf["MEMBERSHIP_FEE"]
@@ -560,8 +559,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             raise RuntimeError(n_("Impossible."))
         if datum['pevent_id']:
-            if persona_id is None:
-                raise RuntimeError("Impossible.")
+            assert persona_id is not None
             # TODO preserve instructor/orga information
             self.pasteventproxy.add_participant(
                 rs, datum['pevent_id'], datum['pcourse_id'],
