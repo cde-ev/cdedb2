@@ -2489,21 +2489,28 @@ class EventBackend(AbstractBackend):
                 part_ids = event['parts'].keys()
             elif not part_ids <= event['parts'].keys():
                 raise ValueError(n_("Unknown part for the given event."))
-            reg_ids = self.list_registrations(rs, event_id)
-            regs = self.get_registrations(rs, reg_ids)
             ret = {}
             waitlist = const.RegistrationPartStati.waitlist
+            query = ("SELECT id, fields FROM event.registrations"
+                     " WHERE event_id = %s")
+            fields_by_id = {
+                reg['id']: cast_fields(reg['fields'], event['fields'])
+                for reg in self.query_all(rs, query, (event_id,))}
             for part_id in part_ids:
                 part = event['parts'][part_id]
                 if not part['waitlist_field']:
                     ret[part_id] = None
                     continue
                 field = event['fields'][part['waitlist_field']]
+                query = ("SELECT reg.id, rparts.status"
+                         " FROM event.registrations AS reg"
+                         " LEFT OUTER JOIN event.registration_parts AS rparts"
+                         " ON reg.id = rparts.registration_id"
+                         " WHERE rparts.part_id = %s AND rparts.status = %s")
+                data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
-                    (reg_id for reg_id in regs.keys()
-                     if regs[reg_id]['parts'][part_id]['status'] == waitlist),
-                    key=lambda r_id: (
-                        regs[r_id]['fields'].get(field['field_name'], 0), r_id))
+                    (reg['id'] for reg in data), key=lambda r_id:
+                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))
             return ret
 
     @access("event")

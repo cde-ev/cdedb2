@@ -2769,15 +2769,38 @@ class TestEventBackend(BackendTest):
             }
         }
         self.event.set_event(self.key, edata)
-        self.assertEqual({1: [2], 2: [], 3: []},
+        regs = [
+            {
+                'id': anid,
+                'parts': {
+                    1: {
+                        'status': const.RegistrationPartStati.waitlist,
+                    },
+                    2: {
+                        'status': const.RegistrationPartStati.waitlist
+                    } if anid in {2, 3} else {},
+                    3: {
+                        'status': const.RegistrationPartStati.waitlist
+                    } if anid in {2, 3} else {},
+                },
+                'fields': {
+                    'waitlist': i,
+                },
+            }
+            for i, anid in enumerate((5, 4, 3, 2, 1))
+        ]
+        for rdata in regs:
+            self.event.set_registration(self.key, rdata)
+        self.assertEqual({1: [5, 4, 3, 2, 1], 2: [3, 2], 3: [3, 2]},
                          self.event.get_waitlist(self.key, event_id=1))
-        self.assertEqual({1: None, 2: None, 3: None},
+        self.assertEqual({1: 3, 2: 1, 3: 1},
                          self.event.get_waitlist_position(self.key, event_id=1))
-        self.assertEqual({1: 1, 2: None, 3: None},
+        self.assertEqual({1: 4, 2: 2, 3: 2},
                          self.event.get_waitlist_position(
                              self.key, event_id=1, persona_id=5))
         self.login(USER_DICT["emilia"])
-        self.assertEqual({1: 1, 2: None, 3: None},
+        self.event._get_waitlist(self.key, event_id=1)
+        self.assertEqual({1: 4, 2: 2, 3: 2},
                          self.event.get_waitlist_position(
                              self.key, event_id=1))
         with self.assertRaises(PrivilegeError) as cm:
