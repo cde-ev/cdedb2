@@ -1017,7 +1017,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'values': rs.values,
         }
         # check that default values are not overridden
-        assert (not set(data) & set(params))
+        if set(data) & set(params):
+            raise ValueError(
+                n_("Default values cannot be overridden: %(keys)s"),
+                {'keys': set(data) & set(params)})
         merge_dicts(data, params)
         if modus == "tex":
             jinja_env = self.jinja_env_tex

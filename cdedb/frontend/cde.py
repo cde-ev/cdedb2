@@ -558,8 +558,7 @@ class CdEFrontend(AbstractUserFrontend):
                     change_note="Import aktualisierter Daten.")
         else:
             raise RuntimeError(n_("Impossible."))
-        if datum['pevent_id']:
-            assert persona_id is not None
+        if datum['pevent_id'] and persona_id:
             # TODO preserve instructor/orga information
             self.pasteventproxy.add_participant(
                 rs, datum['pevent_id'], datum['pcourse_id'],

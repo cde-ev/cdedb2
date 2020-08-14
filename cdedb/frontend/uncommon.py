@@ -59,9 +59,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                 rs.extend_validation_errors(
                     (("username",
                       ValueError("User with this E-Mail exists already.")),))
-        if rs.has_validation_errors():
+        if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
-        assert data is not None
         new_id = self.coreproxy.create_persona(
             rs, data, ignore_warnings=ignore_warnings)
         if new_id:

@@ -112,8 +112,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search:
-            assert query is not None
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = "qview_persona"
             result = self.assemblyproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -494,8 +493,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                     and (v['extended'] is False
                          or v['vote_extension_end'] <= ref))}
 
-        assert (len(ballots) == len(future) + len(current) +
-                len(extended) + len(done))
+        if not (len(future) + len(current) + len(extended) + len(done)
+                == len(ballots)):
+            raise RuntimeError(n_("Grouping ballots by status failed."))
 
         return done, extended, current, future
 
