@@ -510,16 +510,16 @@ class Transaction:
             self.type_confidence = confidence
             return
 
-        # Special case for incoming (or outgoing) donations.
-        if re.search(REFERENCE_DONATION, self.reference):
-            self.type = TransactionType.Donation
-            self.type_confidence = ConfidenceLevel.Full
-            return
-
         # Handle all outgoing payments.
         if self.amount < 0:
             # Check outgoing active payments.
             if re.search(POSTING_REFUND, self.posting):
+
+                # Special case for incoming (or outgoing) donations.
+                if re.search(REFERENCE_DONATION, self.reference):
+                    self.type = TransactionType.Donation
+                    self.type_confidence = ConfidenceLevel.Full
+                    return
 
                 # Check for refund of participant fee:
                 if re.search(REFERENCE_REFUND_EVENT_FEE, self.reference):
@@ -558,6 +558,12 @@ class Transaction:
             if re.search(POSTING_DIRECT_DEBIT, self.posting):
                 self.type = TransactionType.I25p
                 self.type_confidence = confidence
+
+            # Special case for incoming (or outgoing) donations.
+            elif re.search(REFERENCE_DONATION, self.reference):
+                self.type = TransactionType.Donation
+                self.type_confidence = ConfidenceLevel.Full
+                return
 
             # Look for Membership fees.
             elif re.search(REFERENCE_MEMBERSHIP, self.reference):
