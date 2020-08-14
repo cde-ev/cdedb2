@@ -247,9 +247,8 @@ class Application(BaseApp):
 
                 # Check anti CSRF token (if required by the endpoint)
                 if handler.check_anti_csrf and 'droid' not in user.roles:
-                    okay, error = check_anti_csrf(rs, component, action)
-                    if not okay:
-                        assert error is not None
+                    error = check_anti_csrf(rs, component, action)
+                    if error is not None:
                         rs.csrf_alert = True
                         rs.extend_validation_errors(
                             ((ANTI_CSRF_TOKEN_NAME, ValueError(error)),))
@@ -356,9 +355,8 @@ class Application(BaseApp):
         return 'de'
 
 
-# TODO replace the return type with `Literal` annotations.
 def check_anti_csrf(rs: RequestState, component: str, action: str
-                    ) -> Tuple[bool, Optional[str]]:
+                    ) -> Optional[str]:
     """
     A helper function to check the anti CSRF token
 
@@ -373,21 +371,20 @@ def check_anti_csrf(rs: RequestState, component: str, action: str
 
     :param action: The name of the endpoint, checked by 'decode_parameter'
     :param component: The name of the realm, checked by 'decode_parameter'
-    :return: The status of the CSRF token (True if okay, False if not) and the
-         error pertaining to it)
+    :return: None if everything is ok, or an error message otherwise.
     """
     val = rs.request.values.get(ANTI_CSRF_TOKEN_NAME, "").strip()
     if not val:
-        return False, n_("Anti CSRF token is required for this form.")
+        return n_("Anti CSRF token is required for this form.")
     # noinspection PyProtectedMember
     timeout, val = rs._coders['decode_parameter'](
         "{}/{}".format(component, action), ANTI_CSRF_TOKEN_NAME, val,
         rs.user.persona_id)
     if not val:
         if timeout:
-            return False, n_("Anti CSRF token expired. Please try again.")
+            return n_("Anti CSRF token expired. Please try again.")
         else:
-            return False, n_("Anti CSRF token is forged.")
+            return n_("Anti CSRF token is forged.")
     if val != ANTI_CSRF_TOKEN_PAYLOAD:
-        return False, n_("Anti CSRF token is invalid.")
-    return True, None
+        return n_("Anti CSRF token is invalid.")
+    return None
