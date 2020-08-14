@@ -180,7 +180,7 @@ def generate_event_registration_default_queries(event, spec):
         return "ctime.creation_time"
 
     queries.update({
-        n_("15_query_event_registration_waitlist_%s") % part_id:
+        n_("15_query_event_registration_waitlist_%s") % part['shortname']:
             Query(
                 "qview_registration", spec,
                 ("persona.given_names", "persona.family_name"),
