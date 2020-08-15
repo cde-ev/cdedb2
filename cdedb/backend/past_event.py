@@ -72,7 +72,8 @@ class PastEventBackend(AbstractBackend):
         for anid in ids:
             ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}
         return ret
-    participation_info: Callable[[RequestState, int], CdEDBObjectMap]
+    participation_info: Callable[
+        ['PastEventBackend', RequestState, int], CdEDBObjectMap]
     participation_info = singularize(participation_infos)
 
     def past_event_log(self, rs: RequestState, code: const.PastEventLogCodes,

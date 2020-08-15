@@ -186,8 +186,8 @@ def make_backend_shim(backend: B, internal=False) -> B:
 
         rs = RequestState(  # type: ignore
             sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
-            response=None, notifications=[], mapadapter=None, requestargs=None,
-            errors=[], values=None, lang="de", gettext=translator.gettext,
+            notifications=[], mapadapter=None, requestargs=None, errors=[],
+            values=None, lang="de", gettext=translator.gettext,
             ngettext=translator.ngettext, coders=None, begin=now())
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn

@@ -47,6 +47,10 @@ Here is a list of best practices to follow, so the code stays nice.
 * The test-suite should visit all functionality at least once.
 * If a change requires manual intervention on the server note this in the
   commit message on a line starting with ``Deploy:``.
+* Use type checking with mypy where feasible.
+* Only use asserts for static type checking purposes (i.e. making mypy aware
+  of invariants we already know to be true). Note that asserts may be
+  disabled at runtime.
 
 .. _sample-data:
 

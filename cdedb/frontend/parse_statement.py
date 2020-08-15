@@ -11,7 +11,7 @@ from typing import (
 
 from cdedb.common import (
     diacritic_patterns, Accounts, TransactionType, now, n_, CdEDBObject, Error,
-    RequestState, CdEDBObjectMap
+    CdEDBObjectMap
 )
 from cdedb.frontend.common import cdedbid_filter
 import cdedb.validation as validate
@@ -136,7 +136,7 @@ STATEMENT_DB_ID_REMOVE = (
 AMOUNT_MIN_EVENT_FEE = 40
 
 
-BackendGetter = Callable[[RequestState, int], CdEDBObject]
+BackendGetter = Callable[[int], CdEDBObject]
 
 
 def dates_from_filename(filename: str) -> Tuple[datetime.date,
@@ -148,16 +148,16 @@ def dates_from_filename(filename: str) -> Tuple[datetime.date,
     Example filename from BSF: "20200223_bis_20200229_20200229160818.csv"
     """
     try:
-        start, sep, end, timestamp = filename.split("_", 3)
+        start_str, sep, end_str, timestamp = filename.split("_", 3)
         if sep != "bis" or timestamp[-4:] != ".csv":
             raise ValueError()
-        start = datetime.datetime.strptime(start, "%Y%m%d").date()
-        end = datetime.datetime.strptime(end, "%Y%m%d").date()
-        timestamp = datetime.datetime.strptime(timestamp[:-4], "%Y%m%d%H%M%S")
+        start = datetime.datetime.strptime(start_str, "%Y%m%d").date()
+        end = datetime.datetime.strptime(end_str, "%Y%m%d").date()
+        time = datetime.datetime.strptime(timestamp[:-4], "%Y%m%d%H%M%S")
     except ValueError:
         return now().date(), None, now()
     else:
-        return start, end, timestamp
+        return start, end, time
 
 
 def get_event_name_pattern(event: CdEDBObject) -> str:
@@ -324,7 +324,8 @@ class Transaction:
         # We need the following fields, but we actually set them later.
         self.errors = data.get("errors", [])
         self.warnings = data.get("warnings", [])
-        self.type = data.get("transaction_type")
+        self.type: TransactionType
+        self.type = data.get("transaction_type")  # type: ignore
         self.event_id = data.get("event_id")
         if data.get("cdedbid"):
             self.persona_id = data["cdedbid"]
@@ -363,7 +364,6 @@ class Transaction:
         t_id = raw["id"] + 1
         data["t_id"] = t_id
         errors = []
-        warnings = []
 
         try:
             data["account"] = Accounts(int(raw["myAccNr"]))
@@ -449,7 +449,7 @@ class Transaction:
         data["posting"] = str(raw["posting"]).split(" ", 1)[0]
 
         data["errors"] = errors
-        data["warnings"] = warnings
+        data["warnings"] = []
 
         return Transaction(data)
 
@@ -459,7 +459,7 @@ class Transaction:
 
         Check the reference parts in order of relevancy.
         """
-        ret = {}
+        ret: Dict[int, ConfidenceLevel] = {}
         patterns = [STATEMENT_DB_ID_EXACT, STATEMENT_DB_ID_CLOSE]
         orig_confidence = confidence
         for pattern in patterns:
@@ -484,7 +484,7 @@ class Transaction:
 
         return ret
 
-    def analyze(self, rs: RequestState, events: CdEDBObjectMap,
+    def analyze(self, events: CdEDBObjectMap,
                 get_persona: BackendGetter) -> None:
         """
         Try to guess the TransactionType.
@@ -501,7 +501,7 @@ class Transaction:
         # Try to find and match an event.
         self._match_event(events)
         # Try to find and match cdedbids.
-        self._match_members(rs, get_persona)
+        self._match_members(get_persona)
 
         # Sanity check whether we know the Account.
         if self.account == Accounts.Unknown:
@@ -585,8 +585,7 @@ class Transaction:
         else:
             raise RuntimeError("Impossible!")
 
-    def _match_members(self, rs: RequestState, get_persona: BackendGetter
-                       ) -> None:
+    def _match_members(self, get_persona: BackendGetter) -> None:
         """
         Assign all matching members to self.member_matches.
         
@@ -598,6 +597,7 @@ class Transaction:
         Member = collections.namedtuple("Member", ("persona_id", "confidence"))
 
         result = self._find_cdedbids()
+        p: Error
         if result:
             if len(result) > 1:
                 p = ("reference",
@@ -609,7 +609,7 @@ class Transaction:
             for p_id, confidence in result.items():
 
                 try:
-                    persona = get_persona(rs, p_id)
+                    persona = get_persona(p_id)
                 except KeyError as e:
                     if p_id in e.args:
                         p = ("persona_id",
@@ -673,7 +673,7 @@ class Transaction:
                     best_confidence = member.confidence
                     best_match = member
 
-            if best_confidence > ConfidenceLevel.Null:
+            if best_match and best_confidence > ConfidenceLevel.Null:
                 self.persona_id = best_match.persona_id
                 self.persona_id_confidence = best_confidence
 
@@ -715,11 +715,11 @@ class Transaction:
                     best_confidence = event.confidence
                     best_match = event
 
-            if best_confidence > ConfidenceLevel.Null:
+            if best_match and best_confidence > ConfidenceLevel.Null:
                 self.event_id = best_match.event_id
                 self.event_id_confidence = best_confidence
 
-    def inspect(self, rs: RequestState, get_persona: BackendGetter) -> None:
+    def inspect(self, get_persona: BackendGetter) -> None:
         """Inspect transaction for problems."""
         cl = ConfidenceLevel
 
@@ -762,10 +762,11 @@ class Transaction:
                     ("cdedbid", ValueError(n_(
                         "Needs member match."))))
 
+        p: Error
         if self.type == TransactionType.MembershipFee:
             if self.persona_id:
                 try:
-                    persona = get_persona(rs, self.persona_id)
+                    persona = get_persona(self.persona_id)
                 except KeyError as e:
                     if self.persona_id in e.args:
                         p = ("persona_id",
@@ -808,8 +809,8 @@ class Transaction:
         """German way of writing the amount with simplified decimal places."""
         return simplify_amount(self.amount)
 
-    def to_dict(self, rs: RequestState, get_persona: BackendGetter,
-                get_event: BackendGetter) -> CdEDBObject:
+    def to_dict(self, get_persona: BackendGetter, get_event: BackendGetter
+                ) -> CdEDBObject:
         """
         Convert the transaction to a dict to be displayed in the validation
         form or to be written to a csv file.
@@ -854,13 +855,13 @@ class Transaction:
             "category_old": self.type.old(),
         }
         if self.persona_id:
-            persona = get_persona(rs, self.persona_id)
+            persona = get_persona(self.persona_id)
             ret.update({
                 "given_names": persona["given_names"],
                 "family_name": persona["family_name"],
             })
         if self.event_id:
-            event = get_event(rs, self.event_id)
+            event = get_event(self.event_id)
             ret.update({
                 "event_name": event["shortname"],
                 "category": event["shortname"] + "-" + str(self.type),

@@ -31,8 +31,9 @@ import hmac
 import datetime
 from pathlib import Path
 from typing import (
-    Set, Dict, Tuple, Union, Callable, Collection, Optional
+    Set, Dict, Tuple, Union, Callable, Collection, Optional, TYPE_CHECKING
 )
+from typing_extensions import Protocol
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, affirm_set_validation as affirm_set,
@@ -969,7 +970,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def vote(self, rs: RequestState, ballot_id: int, vote: str,
-             secret: str) -> DefaultReturnCode:
+             secret: Optional[str]) -> DefaultReturnCode:
         """Submit a vote.
 
         This does not accept a persona_id on purpose.
@@ -1004,6 +1005,8 @@ class AssemblyBackend(AbstractBackend):
                              "WHERE assembly_id = %s and persona_id = %s")
                 secret = unwrap(self.query_one(
                     rs, query, (ballot['assembly_id'], rs.user.persona_id)))
+                if secret is None:
+                    raise ValueError(n_("Could not determine secret."))
             if not has_voted:
                 salt = secure_random_ascii()
                 entry = {
@@ -1563,8 +1566,11 @@ class AssemblyBackend(AbstractBackend):
                     rs, query.format(" AND ".join(constraints)), params)
                 ret.update({e["attachment_id"]: e["version"] for e in data})
             return ret
-    get_current_version: Callable[
-        ['AssemblyBackend', RequestState, int, bool], int]
+
+    class GetCurrentVersion(Protocol):
+        def __call__(self, rs: RequestState, attachment_id: int,
+                     include_deleted: bool = False) -> int: ...
+    get_current_version: GetCurrentVersion
     get_current_version = singularize(
         get_current_versions, "attachment_ids", "attachment_id")
 
@@ -1585,7 +1591,7 @@ class AssemblyBackend(AbstractBackend):
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
             version = self.get_current_version(
-                rs, attachment_id, True) + 1
+                rs, attachment_id, include_deleted=True) + 1
             data['version'] = version
             data['file_hash'] = get_hash(content)
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
@@ -1682,7 +1688,7 @@ class AssemblyBackend(AbstractBackend):
         if not self.check_attachment_access(rs, (attachment_id,)):
             raise PrivilegeError(n_("Not privileged."))
         version = affirm("id_or_None", version) or self.get_current_version(
-            rs, attachment_id, False)
+            rs, attachment_id, include_deleted=False)
         path = self.attachment_base_path / f"{attachment_id}_v{version}"
         if path.exists():
             with open(path, "rb") as f:

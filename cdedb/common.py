@@ -55,6 +55,11 @@ CdEDBObject = Dict[str, Any]
 
 CdEDBObjectMap = Dict[int, CdEDBObject]
 
+# Same as above, but we also allow negative ints (for creation, not reflected
+# in the type] and None (for deletion). Used in `_set_tracks` and partial
+# import diff.
+CdEDBOptionalMap = Dict[int, Optional[CdEDBObject]]
+
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
 # special case like a change pending review.
@@ -128,8 +133,7 @@ class RequestState:
     """
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str],
-                 user: User, request: Optional[werkzeug.Request],
-                 response: Optional[werkzeug.Response],
+                 user: User, request: werkzeug.Request,
                  notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
@@ -163,7 +167,6 @@ class RequestState:
         self.apitoken = apitoken
         self.user = user
         self.request = request
-        self.response = response
         self.notifications = list(notifications)
         self.urls = mapadapter
         self.requestargs = requestargs or {}
@@ -493,6 +496,10 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
                   reverse=reverse)
 
 
+Sortable = Tuple[Union[str, int, datetime.datetime], ...]
+Sortkey = Callable[[CdEDBObject], Sortable]
+
+
 # noinspection PyRedundantParentheses
 class EntitySorter:
     """Provide a singular point for common sortkeys.
@@ -500,114 +507,116 @@ class EntitySorter:
     This class does not need to be instantiated. It's method can be passed to
     `sorted` or `keydictsort_filter`.
     """
-    Sortable = Union[str, int, datetime.datetime]
-    Sortkey = Union[Sequence[Sortable], Sortable]
 
     @staticmethod
-    def given_names(persona: CdEDBObject) -> Sortkey:
-        return persona['given_names'].lower()
+    def given_names(persona: CdEDBObject) -> Sortable:
+        return (persona['given_names'].lower(),)
 
     @staticmethod
-    def family_name(persona: CdEDBObject) -> Sortkey:
-        return persona['family_name'].lower()
+    def family_name(persona: CdEDBObject) -> Sortable:
+        return (persona['family_name'].lower(),)
 
     @staticmethod
-    def given_names_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['given_names'].lower(), persona['family_name'].lower())
+    def given_names_first(persona: CdEDBObject) -> Sortable:
+        return (persona['given_names'].lower(),
+                persona['family_name'].lower(),
+                persona['id'])
 
     @staticmethod
-    def family_name_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['family_name'].lower(), persona['given_names'].lower())
+    def family_name_first(persona: CdEDBObject) -> Sortable:
+        return (persona['family_name'].lower(),
+                persona['given_names'].lower(),
+                persona['id'])
 
     # TODO decide whether we sort by first or last name
     persona = family_name_first
 
     @staticmethod
-    def email(persona: CdEDBObject) -> Sortkey:
+    def email(persona: CdEDBObject) -> Sortable:
         return persona['username']
 
     @staticmethod
-    def address(persona: CdEDBObject) -> Sortkey:
+    def address(persona: CdEDBObject) -> Sortable:
         postal_code = persona.get('postal_code', "") or ""
         location = persona.get('location', "") or ""
         address = persona.get('address', "") or ""
         return (postal_code, location, address)
 
     @staticmethod
-    def event(event: CdEDBObject) -> Sortkey:
+    def event(event: CdEDBObject) -> Sortable:
         return (event['begin'], event['end'], event['title'], event['id'])
 
     @staticmethod
-    def course(course: CdEDBObject) -> Sortkey:
+    def course(course: CdEDBObject) -> Sortable:
         return (course['nr'], course['shortname'], course['id'])
 
     @staticmethod
-    def lodgement(lodgement: CdEDBObject) -> Sortkey:
+    def lodgement(lodgement: CdEDBObject) -> Sortable:
         return (lodgement['moniker'], lodgement['id'])
 
     @staticmethod
-    def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
+    def lodgement_group(lodgement_group: CdEDBObject) -> Sortable:
         return (lodgement_group['moniker'], lodgement_group['id'])
 
     @staticmethod
-    def event_part(event_part: CdEDBObject) -> Sortkey:
+    def event_part(event_part: CdEDBObject) -> Sortable:
         return (event_part['part_begin'], event_part['part_end'],
                 event_part['shortname'], event_part['id'])
 
     @staticmethod
-    def course_track(course_track: CdEDBObject) -> Sortkey:
+    def course_track(course_track: CdEDBObject) -> Sortable:
         return (course_track['sortkey'], course_track['id'])
 
     @staticmethod
-    def event_field(event_field: CdEDBObject) -> Sortkey:
+    def event_field(event_field: CdEDBObject) -> Sortable:
         return (event_field['field_name'], event_field['id'])
 
     @staticmethod
-    def candidates(candidates: CdEDBObject) -> Sortkey:
+    def candidates(candidates: CdEDBObject) -> Sortable:
         return (candidates['moniker'], candidates['id'])
 
     @staticmethod
-    def assembly(assembly: CdEDBObject) -> Sortkey:
+    def assembly(assembly: CdEDBObject) -> Sortable:
         return (assembly['signup_end'], assembly['id'])
 
     @staticmethod
-    def ballot(ballot: CdEDBObject) -> Sortkey:
+    def ballot(ballot: CdEDBObject) -> Sortable:
         return (ballot['title'], ballot['id'])
 
     @staticmethod
-    def attachment(attachment: CdEDBObject) -> Sortkey:
+    def attachment(attachment: CdEDBObject) -> Sortable:
         return (attachment['title'], attachment['id'])
 
     @staticmethod
-    def attachment_version(version: CdEDBObject) -> Sortkey:
+    def attachment_version(version: CdEDBObject) -> Sortable:
         return (version['attachment_id'], version['version'])
 
     @staticmethod
-    def past_event(past_event: CdEDBObject) -> Sortkey:
+    def past_event(past_event: CdEDBObject) -> Sortable:
         return (past_event['tempus'], past_event['id'])
 
     @staticmethod
-    def past_course(past_course: CdEDBObject) -> Sortkey:
+    def past_course(past_course: CdEDBObject) -> Sortable:
         return (past_course['nr'], past_course['title'], past_course['id'])
 
     @staticmethod
-    def institution(institution: CdEDBObject) -> Sortkey:
+    def institution(institution: CdEDBObject) -> Sortable:
         return (institution['moniker'], institution['id'])
 
     @staticmethod
-    def transaction(transaction: CdEDBObject) -> Sortkey:
+    def transaction(transaction: CdEDBObject) -> Sortable:
         return (transaction['issued_at'], transaction['id'])
 
     @staticmethod
-    def genesis_case(genesis_case: CdEDBObject) -> Sortkey:
+    def genesis_case(genesis_case: CdEDBObject) -> Sortable:
         return (genesis_case['ctime'], genesis_case['id'])
 
     @staticmethod
-    def changelog(changelog_entry: CdEDBObject) -> Sortkey:
+    def changelog(changelog_entry: CdEDBObject) -> Sortable:
         return (changelog_entry['ctime'], changelog_entry['id'])
 
     @staticmethod
-    def mailinglist(mailinglist: CdEDBObject) -> Sortkey:
+    def mailinglist(mailinglist: CdEDBObject) -> Sortable:
         return (mailinglist['title'], mailinglist['id'])
 
 
@@ -1808,7 +1817,7 @@ GENESIS_CASE_FIELDS = (
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
 # realms genesis requrests are allowed
-REALM_SPECIFIC_GENESIS_FIELDS = {
+REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
     "ml": tuple(),
     "event": ("gender", "birthday", "telephone", "mobile",
               "address_supplement", "address", "postal_code", "location",

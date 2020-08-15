@@ -6,6 +6,7 @@ event and assembly realm in the form of specific mailing lists.
 from datetime import datetime
 from typing import (Callable, Collection, Dict, List, Optional, Set,
                     Tuple, overload, Any, TYPE_CHECKING)
+from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -1084,9 +1085,11 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    get_subscription_states: Callable[
-        ['MlBackend', RequestState, int, Optional[SubStates]],
-        Dict[int, const.SubscriptionStates]]
+    class GetSubScriptionState(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int,
+                     states: SubStates = None
+                     ) -> Dict[int, const.SubscriptionStates]: ...
+    get_subscription_states: GetSubScriptionState
     get_subscription_states = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
@@ -1140,15 +1143,13 @@ class MlBackend(AbstractBackend):
             for e in data})
 
         return ret
-    if TYPE_CHECKING:
-        from typing_extensions import Protocol
 
-        class GetSubscription(Protocol):
-            def __call__(self, rs: RequestState,
-                         persona_id: Optional[int], *, mailinglist_id: int,
-                         states: SubStates = None
-                         ) -> Optional[const.SubscriptionStates]: ...
-        get_subscription: GetSubscription
+    class GetSubscription(Protocol):
+        def __call__(self, rs: RequestState,
+                     persona_id: Optional[int], *, mailinglist_id: int,
+                     states: SubStates = None
+                     ) -> Optional[const.SubscriptionStates]: ...
+    get_subscription: GetSubscription
     get_subscription = singularize(
         get_user_subscriptions, "mailinglist_ids", "mailinglist_id")
 
@@ -1190,7 +1191,7 @@ class MlBackend(AbstractBackend):
 
             subscribers = self.get_subscription_states(
                 rs, mailinglist_id,
-                const.SubscriptionStates.subscribing_states())
+                states=const.SubscriptionStates.subscribing_states())
             if persona_ids is None:
                 # Default to all subscribers.
                 persona_ids = set(subscribers)
@@ -1329,7 +1330,7 @@ class MlBackend(AbstractBackend):
                 return ret
 
             old_subscribers = self.get_subscription_states(
-                rs, mailinglist_id, old_subscriber_states)
+                rs, mailinglist_id, states=old_subscriber_states)
             # This is dependant on mailinglist type
 
             new_implicits = atype.get_implicit_subscribers(
@@ -1368,7 +1369,7 @@ class MlBackend(AbstractBackend):
             # This is the case if they are not already old subscribers and
             # they don't have a protected subscription.
             protected = self.get_subscription_states(
-                rs, mailinglist_id, protected_states)
+                rs, mailinglist_id, states=protected_states)
             write = set(new_implicits) - set(old_subscribers) - set(protected)
 
             # Set implicit subscriptions.

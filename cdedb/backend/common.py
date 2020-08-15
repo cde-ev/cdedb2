@@ -18,7 +18,7 @@ import psycopg2.extensions
 from typing import (
     Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
     Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict,
-    TYPE_CHECKING, ClassVar
+    ClassVar
 )
 
 import cdedb.validation as validate
@@ -145,7 +145,7 @@ def internal(function: F) -> F:
     internal mode.
     """
 
-    setattr(function, "internal", True)
+    function.internal = True  # type: ignore
     return function
 
 
