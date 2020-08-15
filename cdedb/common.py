@@ -47,6 +47,8 @@ _LOGGER = logging.getLogger(__name__)
 # Global unified collator to be used when sorting.
 # The locale provided here must exist as collation in SQL for this to
 # work properly.
+# 'de_DE.UTF-8@colNumeric=yes' is an equivalent choice for LOCAL, but is less
+# compatible to use as a collation name in postgresql.
 LOCALE = 'de-u-kn-true'
 COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 

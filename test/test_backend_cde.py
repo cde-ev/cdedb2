@@ -133,6 +133,18 @@ class TestCdEBackend(BackendTest):
         self.assertEqual({2}, {e['id'] for e in result})
 
     @as_users("vera")
+    def test_user_search_collation(self, user):
+        query = Query(
+            scope="qview_cde_user",
+            spec=dict(QUERY_SPECS["qview_cde_user"]),
+            fields_of_interest=("personas.id", "family_name",
+                                "address", "location"),
+            constraints=[("location", QueryOperators.match, 'Musterstadt')],
+            order=(("address", True),),)
+        result = self.cde.submit_general_query(self.key, query)
+        self.assertEqual([1, 27], [e['id'] for e in result])
+
+    @as_users("vera")
     def test_demotion(self, user):
         self.assertLess(0, self.core.change_membership(self.key, 2, False))
 
