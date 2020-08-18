@@ -51,32 +51,65 @@ import logging
 import re
 import string
 import sys
+from math import isclose
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    get_type_hints,
+)
 
 import magic
 import PIL.Image
 import pytz
 import werkzeug.datastructures
 import zxcvbn
+from typing_extensions import Protocol, TypedDict
 
-from typing import (
-    Any, Union, Tuple, List, Optional
-)
-
-from cdedb.common import (
-    n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
-    ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
-    REALM_SPECIFIC_GENESIS_FIELDS, EVENT_SCHEMA_VERSION,
-    ValidationWarning, Error)
-from cdedb.database.constants import FieldDatatypes, FieldAssociations
-from cdedb.validationdata import (
-    IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,
-    ITU_CODES)
-from cdedb.query import (
-    Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
-    NO_VALUE_OPERATORS)
-from cdedb.config import BasicConfig
-from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 import cdedb.ml_type_aux as ml_type
+from cdedb.common import (
+    ASSEMBLY_BAR_MONIKER,
+    EPSILON,
+    EVENT_SCHEMA_VERSION,
+    INFINITE_ENUM_MAGIC_NUMBER,
+    REALM_SPECIFIC_GENESIS_FIELDS,
+    Error,
+    InfiniteEnum,
+    ValidationWarning,
+    asciificator,
+    compute_checkdigit,
+    extract_roles,
+    n_,
+    now,
+)
+from cdedb.config import BasicConfig
+from cdedb.database.constants import FieldAssociations, FieldDatatypes
+from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
+from cdedb.query import (
+    MULTI_VALUE_OPERATORS,
+    NO_VALUE_OPERATORS,
+    VALID_QUERY_OPERATORS,
+    Query,
+    QueryOperators,
+)
+from cdedb.validationdata import (
+    FREQUENCY_LISTS,
+    GERMAN_PHONE_CODES,
+    GERMAN_POSTAL_CODES,
+    IBAN_LENGTHS,
+    ITU_CODES,
+)
+from cdedb.validationtypes import *
 
 _BASICCONF = BasicConfig()
 
@@ -86,44 +119,162 @@ zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
 _LOGGER = logging.getLogger(__name__)
 
+T = TypeVar('T')
+ValidationOutput = Tuple[Optional[T], List[Tuple[Optional[str], Exception]]]
+F = Callable[..., ValidationOutput[T]]
+
 _ALL = []
 
-def _addvalidator(fun):
-    """Mark a function for processing into validators.
 
-    :type fun: callable
-    """
+class ValidationError(ValueError):
+    def __init__(self, argname, msg):
+        super().__init__(msg)
+        self.argname = argname
+
+
+class ValidationErrorSummary(ValueError):
+    def __init__(self, *errors: ValidationError):
+        super().__init__(*errors)
+
+    def extend(self, *errors: ValidationError):
+        self.args = self.args + errors
+
+
+class ValidatorStorage(Dict[Type, Callable]):
+    __setitem__: Callable[["ValidatorStorage", Type[T], F[T]], None]
+    __getitem__: Callable[["ValidatorStorage", Type[T]], F[T]]
+
+    def __missing__(self, type_: Type[T]) -> F[T]:
+        raise NotImplementedError()
+        # Replace with get_origin/get_args
+        # from either typing_inspect or typing (py3.8)
+        if hasattr(type_, "__origin__") and hasattr(type_, "__args__"):
+            # check for Union with NoneType created by e.g. Optional[]
+            if type_.__origin__ is Union and type(None) in type_.__args__:
+
+                def allow_None(fun):
+                    @functools.wraps(fun)
+                    def new_fun(val, *args, **kwargs):
+                        if val is None:
+                            return None, []
+                        else:
+                            try:
+                                retval, errs = fun(val, *args, **kwargs)
+                            except:  # we need to catch everything
+                                if kwargs.get('_convert', True) and not val:
+                                    return None, []
+                                else:
+                                    raise
+                            if errs and kwargs.get('_convert', True) and not val:
+                                return None, []
+                            return retval, errs
+
+                    return new_fun
+        else:
+            raise KeyError()
+
+
+_ALL_TYPED = ValidatorStorage()
+
+
+def _addvalidator(fun: F):
+    """Mark a function for processing into validators."""
     _ALL.append(fun)
     return fun
 
 
-def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
-                               *, allow_superfluous=False, _convert=True,
-                               _ignore_warnings=False):
+def _add_typed_validator(
+    type_: Type[T]
+) -> Callable[[F[T]], F[T]]:
+    """Mark a typed function for processing into validators."""
+
+    def add_typed_validator(fun: F[T]) -> F[T]:
+        if type_ in _ALL_TYPED:
+            raise RuntimeError(f"Type {type_:r} already registered")
+        _ALL_TYPED[type_] = fun
+
+        return fun
+
+    return add_typed_validator
+
+
+TD = TypeVar("TD", bound=TypedDict)
+
+
+def _examine_typeddict_fields(
+    adict: Dict, template: Type[TD], *,
+    allow_superfluous: bool = False, **kwargs
+) -> ValidationOutput[TD]:
     """Check more complex dictionaries.
 
-    :type adict: dict
     :param adict: a :py:class:`dict` to check
-    :type mandatory_fields: {str: callable}
     :param mandatory_fields: The mandatory keys to be checked for in
       :py:obj:`adict`, the callable is a validator to check the corresponding
       value in :py:obj:`adict` for conformance. A missing key is an error in
       itself.
-    :type optional_fields: {str: callable}
     :param optional_fields: Like :py:obj:`mandatory_fields`, but facultative.
-    :type allow_superfluous: bool
     :param allow_superfluous: If ``False`` keys which are neither in
       :py:obj:`mandatory_fields` nor in :py:obj:`optional_fields` are errors.
-    :type _convert: bool
     :param _convert: If ``True`` do type conversions.
-    :type _ignore_warnings: bool
+    :param _ignore_warnings: If ``True`` skip Errors
+        of type ``ValidationWarning``.
+    """
+    type_hints = get_type_hints(template)
+
+    errs = []
+    retval = {}
+    for key, value in adict.items():
+        if key in template.__required_keys__:
+            v, e = _ALL_TYPED[type_hints[key]](value, argname=key, **kwargs)
+            if e:
+                errs.extend(e)
+            else:
+                retval[key] = v
+        elif key in template.__optional_keys__:
+            v, e = _ALL_TYPED[type_hints[key]](value, argname=key, **kwargs)
+            if e:
+                errs.extend(e)
+            else:
+                retval[key] = v
+        elif not allow_superfluous:
+            errs.append((key, KeyError(n_("Superfluous key found."))))
+
+    missing_required = template.__required_keys__.difference(retval)
+    if missing_required and template.__total__:
+        for key in missing_required:
+            errs.append((key, KeyError(n_("Mandatory key missing."))))
+        return None, errs
+
+    retval = cast(TD, retval)
+    return retval, errs
+
+
+def _examine_dictionary_fields(
+    adict: Dict,
+    mandatory_fields: Dict[str, Callable],
+    optional_fields: Dict[str, Callable] = None,
+    *,
+    allow_superfluous: bool = False,
+    _convert: bool = True,
+    _ignore_warnings: bool = False
+) -> ValidationOutput[Dict]:
+    """Check more complex dictionaries.
+
+    :param adict: a :py:class:`dict` to check
+    :param mandatory_fields: The mandatory keys to be checked for in
+      :py:obj:`adict`, the callable is a validator to check the corresponding
+      value in :py:obj:`adict` for conformance. A missing key is an error in
+      itself.
+    :param optional_fields: Like :py:obj:`mandatory_fields`, but facultative.
+    :param allow_superfluous: If ``False`` keys which are neither in
+      :py:obj:`mandatory_fields` nor in :py:obj:`optional_fields` are errors.
+    :param _convert: If ``True`` do type conversions.
     :param _ignore_warnings: If ``True`` skip Errors
         of type ``ValidationWarning``.
     """
     optional_fields = optional_fields or {}
     errs = []
     retval = {}
-    mandatory_fields_found = []
     for key, value in adict.items():
         if key in mandatory_fields:
             v, e = mandatory_fields[key](value, argname=key, _convert=_convert,
@@ -131,7 +282,6 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
             if e:
                 errs.extend(e)
             else:
-                mandatory_fields_found.append(key)
                 retval[key] = v
         elif key in optional_fields:
             v, e = optional_fields[key](value, argname=key, _convert=_convert,
@@ -142,15 +292,21 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
                 retval[key] = v
         elif not allow_superfluous:
             errs.append((key, KeyError(n_("Superfluous key found."))))
-    if len(mandatory_fields) != len(mandatory_fields_found):
-        missing = set(mandatory_fields) - set(mandatory_fields_found)
-        for key in missing:
+
+    missing_mandatory = set(mandatory_fields).difference(retval)
+    if missing_mandatory:
+        for key in missing_mandatory:
             errs.append((key, KeyError(n_("Mandatory key missing."))))
-        retval = None
+        return None, errs
+
     return retval, errs
 
 
-def _augment_dict_validator(validator, augmentation, strict=True):
+def _augment_dict_validator(
+    validator: Callable,
+    augmentation: Dict[str, Callable],
+    strict: bool = True
+) -> Callable:
     """Beef up a dict validator.
 
     This is for the case where you have two similar specs for a data set
@@ -159,21 +315,21 @@ def _augment_dict_validator(validator, augmentation, strict=True):
 
     This can also be used as a decorator.
 
-    :type validator: callable
-    :type augmentation: {str: callable}
-    :param augmentation: Syntax is the same as for
-      :py:meth:`_examine_dictionary_fields`.
-    :type strict: bool
-    :param strict: If True the additional arguments are mandatory otherwise they
-      are optional.
-    :rtype: callable
+    :param augmentation: Syntax is the same as for :py:meth:`_examine_dictionary_fields`.
+    :param strict: If True the additional arguments are mandatory otherwise they are optional.
     """
 
     @functools.wraps(validator)
-    def new_validator(val, argname=None, *, _convert=True,
-                      _ignore_warnings=False):
+    def new_validator(
+        val: Any,
+        argname: str = None,
+        *,
+        _convert: bool = True,
+        _ignore_warnings: bool = False
+    ):
         mandatory_fields = augmentation if strict else {}
         optional_fields = {} if strict else augmentation
+
         ret, errs = _examine_dictionary_fields(
             val, mandatory_fields, optional_fields, allow_superfluous=True,
             _convert=_convert, _ignore_warnings=_ignore_warnings)
@@ -193,18 +349,13 @@ def _augment_dict_validator(validator, augmentation, strict=True):
     return new_validator
 
 
-def escaped_split(s, delim, escape='\\'):
+def escaped_split(s: str, delim: str, escape: str = '\\') -> List[str]:
     """Helper function for anvanced list splitting.
 
     Split the list at every delimiter, except if it is escaped (and
     allow the escape char to be escaped itself).
 
     Basend on http://stackoverflow.com/a/18092547
-
-    :type s: str
-    :type delim: char
-    :type escape: char
-    :rtype: [str]
     """
     ret = []
     current = ''
@@ -223,56 +374,48 @@ def escaped_split(s, delim, escape='\\'):
     ret.append(current)
     return ret
 
+    # return list(s.replace(escape, "") for s in re.split(f"(?<!{re.escape(escape)}){delim}", s))
+
 
 #
 # Below is the real stuff
 #
 
+# TODO @_add_typed_validator(None)
 @_addvalidator
-def _None(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _None(
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+) -> ValidationOutput[None]:
     """Force a None.
 
     This is mostly for ensuring proper population of dicts.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (object or None, [(str or None, exception)])
     """
     if _convert:
         if isinstance(val, str) and not val:
             val = None
-    if val is None:
-        return val, []
-    return None, [(argname, ValueError(n_("Must be None.")))]
+    if val is not None:
+        return None, [(argname, ValueError(n_("Must be None.")))]
+    return None, []
 
 
+# TODO @_add_typed_validator(Any)
 @_addvalidator
-def _any(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _any(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Any]:
     """Dummy to allow arbitrary things.
 
     This is mostly for deferring checks to a later point if they require
     more logic than should be encoded in a validator.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (object or None, [(str or None, exception)])
     """
     return val, []
 
 
+@_add_typed_validator(int)
 @_addvalidator
-def _int(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (int or None, [(str or None, exception)])
-    """
+def _int(
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+) -> ValidationOutput[int]:
     if _convert:
         if isinstance(val, str) or isinstance(val, bool):
             try:
@@ -281,7 +424,7 @@ def _int(val, argname=None, *, _convert=True, _ignore_warnings=False):
                 return None, [(argname,
                                ValueError(n_("Invalid input for integer.")))]
         elif isinstance(val, float):
-            if abs(val - int(val)) > EPSILON:
+            if not isclose(val, int(val), abs_tol=EPSILON):
                 return None, [(argname, ValueError(n_("Precision loss.")))]
             val = int(val)
     if not isinstance(val, int) or isinstance(val, bool):
@@ -289,81 +432,62 @@ def _int(val, argname=None, *, _convert=True, _ignore_warnings=False):
     return val, []
 
 
+@_add_typed_validator(NonNegativeInt)
 @_addvalidator
-def _non_negative_int(val, argname=None, *, _convert=True,
-                      _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (int or None, [(str or None, exception)])
-    """
-    val, err = _int(val, argname, _convert=_convert,
-                    _ignore_warnings=_ignore_warnings)
+def _non_negative_int(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[NonNegativeInt]:
+    val, err = _int(val, argname, **kwargs)
     if not err and val < 0:
         val = None
         err.append((argname, ValueError(n_("Must not be negative."))))
-    return val, err
+    return NonNegativeInt(val), err
 
 
+@_add_typed_validator(PositiveInt)
 @_addvalidator
-def _positive_int(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (int or None, [(str or None, exception)])
-    """
-    val, errs = _int(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
-    if not errs:
-        if val <= 0:
-            val = None
-            errs.append((argname, ValueError(n_("Must be positive."))))
-    return val, errs
+def _positive_int(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[PositiveInt]:
+    val, errs = _int(val, argname, **kwargs)
+    if not errs and val <= 0:
+        val = None
+        errs.append((argname, ValueError(n_("Must be positive."))))
+    return PositiveInt(val), errs
 
 
+@_add_typed_validator(ID)
 @_addvalidator
-def _id(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _id(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[ID]:
     """A numeric ID as in a database key.
 
     This is just a wrapper around `_positive_int`, to differentiate this
     semantically.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (int or None, [(str or None, exception)])
     """
-    return _positive_int(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
+
+    return _positive_int(val, argname, **kwargs)
 
 
+@_add_typed_validator(PartialImportID)
 @_addvalidator
-def _partial_import_id(val, argname=None, *, _convert=True,
-                       _ignore_warnings=False):
+def _partial_import_id(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[PartialImportID]:
     """A numeric id or a negative int as a placeholder."""
-    val, errs = _int(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
-    if not errs:
-        if val == 0:
-            val = None
-            errs.append((argname, ValueError(n_("Must not be zero."))))
-    return val, errs
+    val, errs = _int(val, argname, **kwargs)
+    if not errs and val == 0:
+        val = None
+        errs.append((argname, ValueError(n_("Must not be zero."))))
+    return PartialImportID(val), errs
 
 
+@_add_typed_validator(float)
 @_addvalidator
-def _float(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (float or None, [(str or None, exception)])
-    """
+def _float(
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+) -> ValidationOutput[float]:
     if _convert:
         try:
             val = float(val)
@@ -376,15 +500,11 @@ def _float(val, argname=None, *, _convert=True, _ignore_warnings=False):
     return val, []
 
 
+@_add_typed_validator(decimal.Decimal)
 @_addvalidator
-def _decimal(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (decimal.Decimal or None, [(str or None, exception)])
-    """
+def _decimal(
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+) -> ValidationOutput[decimal.Decimal]:
     if _convert and isinstance(val, str):
         try:
             val = decimal.Decimal(val)
@@ -396,55 +516,39 @@ def _decimal(val, argname=None, *, _convert=True, _ignore_warnings=False):
     return val, []
 
 
+@_add_typed_validator(NonNegativeDecimal)
 @_addvalidator
-def _non_negative_decimal(val, argname=None, *, _convert=True,
-                          _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (decimal.Decimal or None, [(str or None, exception)])
-    """
-    val, err = _decimal(val, argname, _convert=_convert,
-                        _ignore_warnings=_ignore_warnings)
+def _non_negative_decimal(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[NonNegativeDecimal]:
+    val, err = _decimal(val, argname, **kwargs)
     if not err and val < 0:
         val = None
         err.append((argname, ValueError(n_("Transfer saldo is negative."))))
-    return val, err
+    return NonNegativeDecimal(val), err
 
 
+@_add_typed_validator(PositiveDecimal)
 @_addvalidator
-def _positive_decimal(val, argname=None, *, _convert=True,
-                      _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (decimal.Decimal or None, [(str or None, exception)])
-    """
-    val, err = _decimal(val, argname, _convert=_convert,
-                        _ignore_warnings=_ignore_warnings)
+def _positive_decimal(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[PositiveDecimal]:
+    val, err = _decimal(val, argname, **kwargs)
     if not err and val <= 0:
         val = None
         err.append((argname, ValueError(n_("Transfer saldo is negative."))))
-    return val, err
+    return PositiveDecimal(val), err
 
 
+@_add_typed_validator(StringType)
 @_addvalidator
-def _str_type(val, argname=None, *, zap='', sieve='', _convert=True,
-              _ignore_warnings=False):
+def _str_type(
+    val: Any, argname: str = None, *,
+    zap: str = '', sieve: str = '', _convert: bool = True, **kwargs
+) -> ValidationOutput[StringType]:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type zap: str
     :param zap: delete all characters in this from the result
-    :type sieve: str
     :param sieve: allow only the characters in this into the result
-    :rtype: (str or None, [(str or None, exception)])
     """
     if _convert and val is not None:
         try:
@@ -459,34 +563,27 @@ def _str_type(val, argname=None, *, zap='', sieve='', _convert=True,
     if sieve:
         val = ''.join(c for c in val if c in sieve)
     val = val.replace("\r\n", "\n").replace("\r", "\n")
-    return val, []
+    return StringType(val), []
 
 
+@_add_typed_validator(str)
 @_addvalidator
-def _str(val, argname=None, *, zap='', sieve='', _convert=True,
-         _ignore_warnings=False):
-    """ Like :py:class:`_str_type` (parameters see there), but mustn't be
-    empty (whitespace doesn't count).
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type zap: str
-    :type sieve: str
-    :rtype: (str or None, [(str or None, exception)])
+def _str(val: Any, argname: str = None, **kwargs) -> ValidationOutput[str]:
+    """ Like :py:class:`_str_type` (parameters see there),
+    but mustn't be empty (whitespace doesn't count).
     """
-    val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert,
-                          _ignore_warnings=_ignore_warnings)
+    val, errs = _str_type(val, argname, **kwargs)
     if val is not None and not val:
         errs.append((argname, ValueError(n_("Mustn’t be empty."))))
     return val, errs
 
 
+@_add_typed_validator(bytes)
 @_addvalidator
-def _bytes(val: Any, argname: str = None, *, _convert: bool = True,
-           _ignore_warnings: bool = False, encoding: str = None
-           ) -> Tuple[Optional[bytes], List[Error]]:
+def _bytes(
+    val: Any, argname: str = None, *,
+    _convert: bool = True, encoding: str = None, **kwargs
+) -> ValidationOutput[bytes]:
     if _convert:
         if isinstance(val, str):
             if not encoding:
@@ -505,65 +602,53 @@ def _bytes(val: Any, argname: str = None, *, _convert: bool = True,
     return val, []
 
 
+@_add_typed_validator(Mapping)
 @_addvalidator
-def _mapping(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _mapping(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Mapping]:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
     :param _convert: is ignored since no useful default conversion is available
-    :rtype: (dict or None, [(str or None, exception)])
     """
-    if not isinstance(val, collections.abc.Mapping):
+    if not isinstance(val, Mapping):
         return None, [(argname, TypeError(n_("Must be a mapping.")))]
     return val, []
 
 
+@_add_typed_validator(Iterable)
 @_addvalidator
-def _iterable(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _iterable(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Iterable]:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
     :param _convert: is ignored since no useful default conversion is available
-    :rtype: ([object] or None, [(str or None, exception)])
     """
-    if not isinstance(val, collections.abc.Iterable):
+    if not isinstance(val, Iterable):
         return None, [(argname, TypeError(n_("Must be an iterable.")))]
     return val, []
 
 
+@_add_typed_validator(Sequence)
 @_addvalidator
-def _sequence(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: ([object] or None, [(str or None, exception)])
-    """
+def _sequence(
+    val: Any, argname: str = None, *, _convert=True, **kwargs
+) -> ValidationOutput[Sequence]:
     if _convert:
         try:
             val = tuple(val)
         except (ValueError, TypeError):
             return None, [(argname,
                            ValueError(n_("Invalid input for sequence.")))]
-    if not isinstance(val, collections.abc.Sequence):
+    if not isinstance(val, Sequence):
         return None, [(argname, TypeError(n_("Must be a sequence.")))]
     return val, []
 
 
+@_add_typed_validator(bool)
 @_addvalidator
-def _bool(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (bool or None, [(str or None, exception)])
-    """
+def _bool(
+    val: Any, argname: str = None, *, _convert=True, **kwargs
+) -> ValidationOutput[bool]:
     if _convert and val is not None:
         if val in ("True", "true", "yes", "y"):
             return True, []
@@ -579,72 +664,53 @@ def _bool(val, argname=None, *, _convert=True, _ignore_warnings=False):
     return val, []
 
 
+@_add_typed_validator(EmptyDict)
 @_addvalidator
-def _empty_dict(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (dict or None, [(str or None, exception)])
-    """
+def _empty_dict(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[EmptyDict]:
     if val != {}:
         return None, [(argname, ValueError(n_("Must be an empty dict.")))]
-    return val, []
+    return EmptyDict(val), []
 
 
+@_add_typed_validator(EmptyList)
 @_addvalidator
-def _empty_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (list or None, [(str or None, expection)])
-    """
+def _empty_list(
+    val: Any, argname: str = None, *, _convert=True, **kwargs
+) -> ValidationOutput[EmptyList]:
     if _convert:
-        val, errs = _iterable(val, argname, _convert=_convert,
-                              _ignore_warnings=_ignore_warnings)
+        val, errs = _iterable(val, argname, _convert=_convert, **kwargs)
         if errs:
             return None, errs
         val = list(val)
     if val != []:
         return None, [(argname, ValueError(n_("Must be an empty list.")))]
-    return val, []
+    return EmptyList(val), []
 
 
+@_add_typed_validator(Realm)
 @_addvalidator
-def _realm(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """A realm in the sense of the DB.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
-    """
-    val, errs = _str(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
+def _realm(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Realm]:
+    """A realm in the sense of the DB."""
+    val, errs = _str(val, argname, **kwargs)
     if val not in ("session", "core", "cde", "event", "ml", "assembly"):
         val = None
         errs.append((argname, ValueError(n_("Not a valid realm."))))
-    return val, errs
+    return Realm(val), errs
 
 
 _CDEDBID = re.compile('^DB-([0-9]*)-([0-9X])$')
 
 
+@_add_typed_validator(CdedbID)
 @_addvalidator
-def _cdedbid(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (int or None, [(str or None, exception)])
-    """
-    val, errs = _str(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
+def _cdedbid(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[CdedbID]:
+    val, errs = _str(val, argname, **kwargs)
     if errs:
         return val, errs
     mo = _CDEDBID.search(val.strip())
@@ -652,137 +718,106 @@ def _cdedbid(val, argname=None, *, _convert=True, _ignore_warnings=False):
         return None, [(argname, ValueError(n_("Wrong formatting.")))]
     value = mo.group(1)
     checkdigit = mo.group(2)
-    value, errs = _id(value, argname, _convert=True,
-                      _ignore_warnings=_ignore_warnings)
+    value, errs = _id(value, argname, **kwargs)
     if not errs and compute_checkdigit(value) != checkdigit:
         errs.append((argname, ValueError(n_("Checksum failure."))))
-    return value, errs
+    return CdedbID(value), errs
 
 
 _PRINTABLE_ASCII = re.compile('^[ -~]*$')
 
 
+@_add_typed_validator(PrintableASCIIType)
 @_addvalidator
-def _printable_ascii_type(val, argname=None, *, _convert=True,
-                          _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
-    """
-    val, errs = _str_type(val, argname, _convert=_convert,
-                          _ignore_warnings=_ignore_warnings)
+def _printable_ascii_type(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[PrintableASCIIType]:
+    val, errs = _str_type(val, argname, **kwargs)
     if not errs and not _PRINTABLE_ASCII.search(val):
         errs.append((argname, ValueError(n_("Must be printable ASCII."))))
-    return val, errs
+    return PrintableASCIIType(val), errs
 
 
+@_add_typed_validator(PrintableASCII)
 @_addvalidator
-def _printable_ascii(val, argname=None, *, _convert=True,
-                     _ignore_warnings=False):
-    """Like :py:func:`_printable_ascii_type` (parameters see there), but
-    mustn't be empty (whitespace doesn't count).
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
+def _printable_ascii(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[PrintableASCII]:
+    """Like :py:func:`_printable_ascii_type` (parameters see there),
+    but mustn't be empty (whitespace doesn't count).
     """
-    val, errs = _printable_ascii_type(val, argname, _convert=_convert,
-                                      _ignore_warnings=_ignore_warnings)
+    val, errs = _printable_ascii_type(val, argname, **kwargs)
     if val is not None and not val.strip():
         errs.append((argname, ValueError(n_("Mustn’t be empty."))))
-    return val, errs
+    return PrintableASCII(val), errs
 
 
 _ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+$')
 
 
+@_add_typed_validator(Alphanumeric)
 @_addvalidator
-def _alphanumeric(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
-    """
-    val, errs = _printable_ascii(val, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
+def _alphanumeric(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Alphanumeric]:
+    val, errs = _printable_ascii(val, argname, **kwargs)
     if errs:
         return val, errs
     if not _ALPHANUMERIC_REGEX.search(val):
         errs.append((argname, ValueError(n_("Must be alphanumeric."))))
-    return val, errs
+    return Alphanumeric(val), errs
 
 
 _CSV_ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$')
 
 
+@_add_typed_validator(CSVAlphanumeric)
 @_addvalidator
-def _csv_alphanumeric(val, argname=None, *, _convert=True,
-                      _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
-    """
-    val, errs = _printable_ascii(val, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
+def _csv_alphanumeric(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[CSVAlphanumeric]:
+    val, errs = _printable_ascii(val, argname, **kwargs)
     if errs:
         return val, errs
     if not _CSV_ALPHANUMERIC_REGEX.search(val):
         errs.append((argname,
                      ValueError(n_("Must be comma separated alphanumeric."))))
-    return val, errs
+    return CSVAlphanumeric(val), errs
 
 
 _IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+$')
 
 
+@_add_typed_validator(Identifier)
 @_addvalidator
-def _identifier(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _identifier(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Identifier]:
     """Identifiers encompass everything from file names to short names for
     events.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
+    val, errs = _printable_ascii(val, argname, **kwargs)
     if errs:
         return val, errs
     if not _IDENTIFIER_REGEX.search(val):
         errs.append((argname, ValueError(n_(
             "Must be an identifier "
             "(only letters, numbers, underscore, dot and hyphen)."))))
-    return val, errs
+    return Identifier(val), errs
 
 
 _RESTRICTIVE_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_]+$')
 
 
+@_add_typed_validator(RestrictiveIdentifier)
 @_addvalidator
-def _restrictive_identifier(val, argname=None, *, _convert=True,
-                            _ignore_warnings=False):
+def _restrictive_identifier(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[RestrictiveIdentifier]:
     """Restrictive identifiers are for situations, where normal identifiers
     are too lax.
 
     One example are sql column names.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
     """
     val, errs = _printable_ascii(val, argname, _convert=_convert,
                                  _ignore_warnings=_ignore_warnings)
@@ -792,22 +827,16 @@ def _restrictive_identifier(val, argname=None, *, _convert=True,
         errs.append((argname, ValueError(n_(
             "Must be a restrictive identifier "
             "(only letters, numbers and underscore)."))))
-    return val, errs
+    return RestrictiveIdentifier(val), errs
 
 
 _CSV_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$')
 
 
+@_add_typed_validator(CSVIdentifier)
 @_addvalidator
-def _csv_identifier(val, argname=None, *, _convert=True,
-                    _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
-    """
+def _csv_identifier(
+        val: Any, argname: str = None, **kwargs):
     val, errs = _printable_ascii(val, argname, _convert=_convert,
                                  _ignore_warnings=_ignore_warnings)
     if errs:
@@ -815,43 +844,37 @@ def _csv_identifier(val, argname=None, *, _convert=True,
     if not _CSV_IDENTIFIER_REGEX.search(val):
         errs.append((argname,
                      ValueError(n_("Must be comma separated identifiers."))))
-    return val, errs
+    return CSVIdentifier(val), errs
 
 
-def _list_of(val, validator, argname=None, *, _convert=True,
-             _ignore_warnings=False, _allow_empty=True):
-    """
-    Apply another validator to all entries of of a list.
+# TODO manual handling inside decorator or storage dict
+def _list_of(
+    val: Any, validator: Callable[..., ValidationOutput[T]],
+    argname: str = None, *,
+    _convert: bool = True, _allow_empty: bool = True, **kwargs
+) -> ValidationOutput[List[T]]:
+    """Apply another validator to all entries of of a list.
 
     With `_convert` being True, the input may be a comma-separated string.
-
-    :type val: Any
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (list or None, [(str or None, exception)]
     """
     if _convert:
         if isinstance(val, str):
             # TODO use default separator from config here?
             # Skip emtpy entries which can be produced by JavaScript.
             val = [v for v in val.split(",") if v]
-        val, errs = _iterable(val, argname, _convert=_convert,
-                              _ignore_warnings=_ignore_warnings)
+        val, errs = _iterable(val, argname, _convert=_convert, **kwargs)
         if errs:
             return None, errs
         val = list(val)
     else:
-        val, errs = _sequence(val, argname, _convert=_convert,
-                              _ignore_warnings=_ignore_warnings)
+        val, errs = _sequence(val, argname, _convert=_convert, **kwargs)
         if errs:
             return None, errs
         val = list(val)
-    vals = []
+    vals: List[T] = []
     errs = []
     for v in val:
-        v, e = validator(v, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
+        v, e = validator(v, argname, _convert=_convert, **kwargs)
         vals.append(v)
         errs.extend(e)
     if not _allow_empty:
@@ -860,39 +883,31 @@ def _list_of(val, validator, argname=None, *, _convert=True,
     return vals, errs
 
 
+@_add_typed_validator(IntCSVList)
 @_addvalidator
-def _int_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: ([int] or None, [(str or None, exception)])
-    """
-    return _list_of(val, _int, argname, _convert=_convert,
-                    _ignore_warnings=_ignore_warnings)
+def _int_csv_list(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[IntCSVList]:
+    return _list_of(val, _int, argname, **kwargs)
 
 
+@_add_typed_validator(CdedbIDList)
 @_addvalidator
-def _cdedbid_csv_list(val, argname=None, *, _convert=True,
-                      _ignore_warnings=False):
+def _cdedbid_csv_list(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[CdedbIDList]:
+    """This deals with strings containing multiple cdedbids,
+    like when they are returned from cdedbSearchPerson.
     """
-    This deals with strings containing multiple cdedbids, like when they are
-    returned from cdedbSearchPerson.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: ([int] or None, [(str or None, exception)])
-    """
-    return _list_of(val, _cdedbid, argname, _convert=_convert,
-                    _ignore_warnings=False)
+    return _list_of(val, _cdedbid, argname, **kwargs)
 
 
+@_add_typed_validator(PasswordStrength)
 @_addvalidator
-def _password_strength(val, argname=None, *, _convert=True, admin=False,
-                       inputs=None, _ignore_warnings=False):
+def _password_strength(
+    val: Any, argname: str = None, *,
+    admin: bool = False, inputs: List[str] = None, **kwargs
+) -> ValidationOutput[PasswordStrength]:
     """Implement a password policy.
 
     This has the strictly competing goals of security and usability.
@@ -901,16 +916,9 @@ def _password_strength(val, argname=None, *, _convert=True, admin=False,
     as it is the most popular solution to measure the actual entropy of a
     password and does not force character rules to the user that are not
     really improving password strength.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
     """
     inputs = inputs or []
-    val, errors = _str(val, argname=argname, _convert=_convert,
-                       _ignore_warnings=_ignore_warnings)
+    val, errors = _str(val, argname=argname, **kwargs)
     if val:
         results = zxcvbn.zxcvbn(val, list(filter(None, inputs)))
         # if user is admin in any realm, require a score of 4. After
@@ -929,51 +937,43 @@ def _password_strength(val, argname=None, *, _convert=True, admin=False,
             errors.append((argname, ValueError(n_("Password too weak for "
                                                   "admin account."))))
 
-    return val, errors
+    return PasswordStrength(val), errors
 
 
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
 
 
+@_add_typed_validator(Email)
 @_addvalidator
-def _email(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _email(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Email]:
     """We accept only a subset of valid email addresses since implementing the
     full standard is horrendous. Also we normalize emails to lower case.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
+    val, errs = _printable_ascii(val, argname, **kwargs)
     if errs:
         return None, errs
     # normalize email addresses to lower case
     val = val.strip().lower()
     if not _EMAIL_REGEX.search(val):
-        errs.append((argname, ValueError(n_("Must be a valid email address."))))
-    return val, errs
+        errs.append((argname, ValueError(
+            n_("Must be a valid email address."))))
+    return Email(val), errs
 
 
 _EMAIL_LOCAL_PART_REGEX = re.compile(r'^[a-z0-9._+-]+$')
 
 
+@_add_typed_validator(EmailLocalPart)
 @_addvalidator
-def _email_local_part(val, argname=None, *, _convert=True,
-                      _ignore_warnings=False):
+def _email_local_part(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationError[EmailLocalPart]:
     """We accept only a subset of valid email addresses.
     Here we only care about the local part.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
+    val, errs = _printable_ascii(val, argname, **kwargs)
     if errs:
         return None, errs
     # normalize to lower case
@@ -981,7 +981,7 @@ def _email_local_part(val, argname=None, *, _convert=True,
     if not _EMAIL_LOCAL_PART_REGEX.match(val):
         errs.append(
             (argname, ValueError(n_("Must be a valid email local part."))))
-    return val, errs
+    return EmailLocalPart(val), errs
 
 
 _PERSONA_TYPE_FIELDS = {
@@ -993,7 +993,9 @@ _PERSONA_TYPE_FIELDS = {
     'is_searchable': _bool,
     'is_active': _bool,
 }
-_PERSONA_BASE_CREATION = lambda: {
+
+
+def _PERSONA_BASE_CREATION(): return {
     'username': _email,
     'notes': _str_or_None,
     'is_cde_realm': _bool,
@@ -1035,7 +1037,9 @@ _PERSONA_BASE_CREATION = lambda: {
     'foto': _None,
     'paper_expuls': _None,
 }
-_PERSONA_CDE_CREATION = lambda: {
+
+
+def _PERSONA_CDE_CREATION(): return {
     'title': _str_or_None,
     'name_supplement': _str_or_None,
     'gender': _enum_genders,
@@ -1065,7 +1069,9 @@ _PERSONA_CDE_CREATION = lambda: {
     # 'foto': _str_or_None, # No foto -- this is another special
     'paper_expuls': _bool,
 }
-_PERSONA_EVENT_CREATION = lambda: {
+
+
+def _PERSONA_EVENT_CREATION(): return {
     'title': _str_or_None,
     'name_supplement': _str_or_None,
     'gender': _enum_genders,
@@ -1078,7 +1084,9 @@ _PERSONA_EVENT_CREATION = lambda: {
     'location': _str_or_None,
     'country': _str_or_None,
 }
-_PERSONA_COMMON_FIELDS = lambda: {
+
+
+def _PERSONA_COMMON_FIELDS(): return {
     'username': _email,
     'notes': _str_or_None,
     'is_meta_admin': _bool,
@@ -1222,13 +1230,10 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     return val, errs
 
 
-def parse_date(val):
+def parse_date(val: str) -> datetime.date:
     """Make a string into a date.
 
     We only support a limited set of formats to avoid any surprises
-
-    :type val: str
-    :rtype: datetime.date
     """
     formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
                ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
@@ -1246,65 +1251,54 @@ def parse_date(val):
     raise ValueError(n_("Invalid date string."))
 
 
+@_add_typed_validator(datetime.date)
 @_addvalidator
-def _date(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (datetime.date or None, [(str or None, exception)])
-    """
+def _date(
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+) -> ValidationOutput[datetime.date]:
     if _convert and isinstance(val, str) and len(val.strip()) >= 6:
         try:
             val = parse_date(val)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError):  # TODO TypeError should not occur
             return None, [(argname, ValueError(n_("Invalid input for date.")))]
     if not isinstance(val, datetime.date):
         return None, [(argname, TypeError(n_("Must be a datetime.date.")))]
-    if isinstance(val, datetime.datetime):
+    if isinstance(val, datetime.datetime):  # TODO why not just use the subclass
         # necessary, since isinstance(datetime.datetime.now(),
         # datetime.date) == True
         val = val.date()
     return val, []
 
 
+@_add_typed_validator(Birthday)
 @_addvalidator
-def _birthday(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-        :type val: object
-        :type argname: str or None
-        :type _convert: bool
-        :type _ignore_warnings: bool
-        :rtype: (datetime.date or None, [(str or None, exception)])
-    """
-    val, errs = _date(val, argname=argname, _convert=_convert,
-                      _ignore_warnings=_ignore_warnings)
+def _birthday(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Birthday]:
+    val, errs = _date(val, argname=argname, **kwargs)
     if errs:
         return val, errs
     if now().date() < val:
         return None, [(argname, ValueError(
             n_("A birthday must be in the past.")))]
-    return val, []
+    return Birthday(val), []
 
 
-def parse_datetime(val, default_date=None):
+def parse_datetime(
+    val: str, default_date: datetime.date = None
+) -> datetime.date:
     """Make a string into a datetime.
 
     We only support a limited set of formats to avoid any surprises
-
-    :type val: str
-    :type default_date: datetime.date or None
-    :rtype: datetime.datetime
     """
     date_formats = ("%Y-%m-%d", "%Y%m%d", "%d.%m.%Y", "%m/%d/%Y", "%d.%m.%y")
     connectors = ("T", " ")
     time_formats = (
         "%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
     formats = itertools.chain(
-        ("{}{}{}".format(d, c, t)
-         for d in date_formats for c in connectors for t in time_formats),
-        ("{} {}".format(t, d) for t in time_formats for d in date_formats))
+        map("".join, itertools.product(date_formats, connectors, time_formats)),
+        map(" ".join, itertools.product(time_formats, date_formats))
+    )
     ret = None
     for fmt in formats:
         try:
@@ -1315,6 +1309,7 @@ def parse_datetime(val, default_date=None):
     if ret is None and default_date:
         for fmt in time_formats:
             try:
+                # TODO if we get to here this should be unparseable?
                 ret = datetime.datetime.strptime(val, fmt)
                 ret = ret.replace(
                     year=default_date.year, month=default_date.month,
@@ -1323,30 +1318,28 @@ def parse_datetime(val, default_date=None):
             except ValueError:
                 pass
     if ret is None:
+        # TODO is isoformat not included above?
         ret = datetime.datetime.fromisoformat(val)
     if ret.tzinfo is None:
         ret = _BASICCONF["DEFAULT_TIMEZONE"].localize(ret)
     return ret.astimezone(pytz.utc)
 
 
+@_add_typed_validator(datetime.datetime)
 @_addvalidator
-def _datetime(val, argname=None, *, _convert=True, default_date=None,
-              _ignore_warnings=False):
+def _datetime(
+    val: Any, argname: str = None, *,
+    _convert: bool = True, default_date: datetime.date = None, **kwargs
+) -> ValidationOutput[datetime.datetime]:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type default_date: datetime.date or None
     :param default_date: If the user-supplied value specifies only a time, this
       parameter allows to fill in the necessary date information to fill
       the gap.
-    :rtype: (datetime.datetime or None, [(str or None, exception)])
     """
     if _convert and isinstance(val, str) and len(val.strip()) >= 5:
         try:
             val = parse_datetime(val, default_date)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError):  # TODO should never be TypeError
             return None, [(argname,
                            ValueError(n_("Invalid input for datetime.")))]
     if not isinstance(val, datetime.datetime):
@@ -1354,37 +1347,26 @@ def _datetime(val, argname=None, *, _convert=True, default_date=None,
     return val, []
 
 
+@_add_typed_validator(SingleDigitInt)
 @_addvalidator
-def _single_digit_int(val, argname=None, *, _convert=True,
-                      _ignore_warnings=False):
-    """Like _int, but between +9 and -9.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (int or None, [(str or None, exception)])
-    """
-    val, errs = _int(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
+def _single_digit_int(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[SingleDigitInt]:
+    """Like _int, but between +9 and -9."""
+    val, errs = _int(val, argname, **kwargs)
     if errs:
         return val, errs
     if val > 9 or val < -9:
         return None, [(argname, ValueError(n_("More than one digit.")))]
-    return val, []
+    return SingleDigitInt(val), []
 
 
+@_add_typed_validator(Phone)
 @_addvalidator
-def _phone(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
-    """
-    val, errs = _printable_ascii(val, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
+def _phone(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Phone]:
+    val, errs = _printable_ascii(val, argname, **kwargs)
     if errs:
         return val, errs
     orig = val.strip()
@@ -1450,48 +1432,49 @@ def _phone(val, argname=None, *, _convert=True, _ignore_warnings=False):
             retval += " ({}) {}".format(national, local)
         except ValueError:
             retval += " " + val
-    return retval, errs
+    return Phone(retval), errs
 
 
+@_add_typed_validator(GermanPostalCode)
 @_addvalidator
-def _german_postal_code(val, argname=None, *, aux=None, _convert=True,
-                        _ignore_warnings=False):
+def _german_postal_code(
+    val: Any, argname: str = None, *,
+    aux: str = None, _ignore_warnings: bool = False, **kwargs
+) -> ValidationOutput[GermanPostalCode]:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type aux: str or None
     :param aux: Additional information. In this case the country belonging
         to the postal code.
-    :type _ignore_warnings: bool
     :param _ignore_warnings: If True, ignore invalid german postcodes.
-    :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
+    val, errs = _printable_ascii(
+        val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     if errs:
         return val, errs
     val = val.strip()
+    # TODO change aux
     if aux is None or aux == "" or aux == "Deutschland":
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
             errs.append(
                 (argname, ValidationWarning(n_("Invalid german postal code."))))
-    return val, errs
+    return GermanPostalCode(val), errs
 
 
-_GENESIS_CASE_COMMON_FIELDS = lambda: {
+def _GENESIS_CASE_COMMON_FIELDS(): return {
     'username': _email,
     'given_names': _str,
     'family_name': _str,
     'realm': _str,
     'notes': _str,
 }
-_GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
+
+
+def _GENESIS_CASE_OPTIONAL_FIELDS(): return {
     'case_status': _enum_genesisstati,
     'reviewer': _id,
 }
-_GENESIS_CASE_ADDITIONAL_FIELDS = lambda: {
+
+
+def _GENESIS_CASE_ADDITIONAL_FIELDS(): return {
     'gender': _enum_genders,
     'birthday': _birthday,
     'telephone': _phone_or_None,
@@ -1566,14 +1549,15 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-_PRIVILEGE_CHANGE_COMMON_FIELDS = lambda: {
+def _PRIVILEGE_CHANGE_COMMON_FIELDS(): return {
     'persona_id': _id,
     'submitted_by': _id,
     'status': _enum_privilegechangestati,
     'notes': _str,
 }
 
-_PRIVILEGE_CHANGE_OPTIONAL_FIELDS = lambda: {
+
+def _PRIVILEGE_CHANGE_OPTIONAL_FIELDS(): return {
     'is_meta_admin': _bool_or_None,
     'is_core_admin': _bool_or_None,
     'is_cde_admin': _bool_or_None,
@@ -1610,52 +1594,31 @@ def _privilege_change(val, argname=None, *, _convert=True,
     return val, errs
 
 
+@_add_typed_validator(InputFile)
 @_addvalidator
-def _bytes(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (bytes or None, [(str or None, exception)])
-    """
-    if not isinstance(val, bytes):
-        return None, [(argname, TypeError(n_("Not a bytes object.")))]
-    return val, []
-
-
-@_addvalidator
-def _input_file(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (bytes or None, [(str or None, exception)])
-    """
+def _input_file(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[InputFile]:
     if not isinstance(val, werkzeug.datastructures.FileStorage):
         return None, [(argname, TypeError(n_("Not a FileStorage.")))]
     blob = val.read()
     if not blob:
         return None, [(argname, ValueError(n_("Empty FileStorage.")))]
-    return blob, []
+    return InputFile(blob), []
 
 
+# TODO check encoding or maybe use union of literals
+@_add_typed_validator(CSVFile)
 @_addvalidator
-def _csvfile(val, argname=None, *, encoding="utf-8-sig", _convert=True,
-             _ignore_warnings=False):
+def _csvfile(
+    val: Any, argname: str = None, *,
+    encoding: str = "utf-8-sig", **kwargs
+) -> ValidationOutput[CSVFile]:
     """
     We default to 'utf-8-sig', since it behaves exactly like 'utf-8' if the
     file is 'utf-8' but it gets rid of the BOM if the file is 'utf-8-sig'.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)]
     """
-    val, errs = _input_file(val, argname, _convert=_convert,
-                            _ignore_warnings=_ignore_warnings)
+    val, errs = _input_file(val, argname, **kwargs)
     if errs:
         return val, errs
     mime = magic.from_buffer(val, mime=True)
@@ -1663,15 +1626,16 @@ def _csvfile(val, argname=None, *, encoding="utf-8-sig", _convert=True,
         errs.append((argname, ValueError(n_("Only text/csv allowed."))))
     if errs:
         return None, errs
-    val, errs = _str(val.decode(encoding).strip(), argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
-    return val, errs
+    val, errs = _str(val.decode(encoding).strip(), argname, **kwargs)
+    return CSVFile(val), errs
 
 
+@_add_typed_validator(ProfilePicture)
 @_addvalidator
-def _profilepic(val: Any, argname: str = None, *, _convert: bool = True,
-                _ignore_warnings: bool = False, file_storage: bool = True
-                ) -> Tuple[Optional[bytes], List[Error]]:
+def _profilepic(
+    val: Any, argname: str = None, *,
+    file_storage: bool = True, **kwargs
+) -> ValidationOutput[ProfilePicture]:
     """
     Validate a file for usage as a profile picture.
 
@@ -1681,11 +1645,9 @@ def _profilepic(val: Any, argname: str = None, *, _convert: bool = True,
         `werkzeug.FileStorage`, otherwise expect a `bytes` object.
     """
     if file_storage:
-        val, errs = _input_file(val, argname, _convert=_convert,
-                                _ignore_warnings=_ignore_warnings)
+        val, errs = _input_file(val, argname, **kwargs)
     else:
-        val, errs = _bytes(val, argname, _convert=_convert,
-                           _ignore_warnings=_ignore_warnings)
+        val, errs = _bytes(val, argname, **kwargs)
     if errs:
         return val, errs
     if len(val) < 2 ** 10:
@@ -1703,13 +1665,15 @@ def _profilepic(val: Any, argname: str = None, *, _convert: bool = True,
         errs.append((argname, ValueError(n_("Not square enough."))))
     if width * height < 5000:
         errs.append((argname, ValueError(n_("Resolution too small."))))
-    return val, errs
+    return ProfilePicture(val), errs
 
 
+@_add_typed_validator(PDFFile)
 @_addvalidator
-def _pdffile(val: Any, argname: str = None, *, _convert: bool = True,
-             _ignore_warnings: bool = False, file_storage: bool = True
-             ) -> Tuple[Optional[bytes], List[Error]]:
+def _pdffile(
+    val: Any, argname: str = None, *,
+    file_storage: bool = True, **kwargs
+) -> ValidationOutput[PDFFile]:
     """Validate a file as a pdf.
 
     Limit the maximum file size.
@@ -1718,11 +1682,9 @@ def _pdffile(val: Any, argname: str = None, *, _convert: bool = True,
         `werkzeug.FileStorage`, otherwise expect a `bytes` object.
     """
     if file_storage:
-        val, errs = _input_file(val, argname, _convert=_convert,
-                                _ignore_warnings=_ignore_warnings)
+        val, errs = _input_file(val, argname, **kwargs)
     else:
-        val, errs = _bytes(val, argname, _convert=_convert,
-                           _ignore_warnings=_ignore_warnings)
+        val, errs = _bytes(val, argname, **kwargs)
     if errs:
         return val, errs
     if len(val) > 2 ** 23:  # Disallow files bigger than 8 MB.
@@ -1730,24 +1692,27 @@ def _pdffile(val: Any, argname: str = None, *, _convert: bool = True,
     mime = magic.from_buffer(val, mime=True)
     if mime != "application/pdf":
         errs.append((argname, ValueError(n_("Only pdf allowed."))))
-    return val, errs
+    return PDFFile(val), errs
 
 
+@_add_typed_validator(Tuple[int, int])
 @_addvalidator
-def _pair_of_int(val: Any, argname: str = None, *, _convert: bool = True,
-                 _ignore_warnings: bool = False,
-                 ) -> Tuple[Optional[Tuple[int, int]], List[Error]]:
+def _pair_of_int(
+    val: Any, argname: str = "pair", **kwargs
+) -> ValidationOutput[Tuple[int, int]]:
     """Validate a pair of integers."""
-    argname = argname or "pair"
-    val, errs = _list_of(val, _int, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
+
+    val, errs = _list_of(val, _int, argname, **kwargs)
     if errs:
         return val, errs
-    if len(val) != 2:
+    try:
+        a, b = val
+    except ValueError:
         errs.append((argname,
                      ValueError(n_("Must contain exactly two elements."))))
         return None, errs
-    return tuple(val), errs
+
+    return (a, b), errs
 
 
 @_addvalidator
@@ -1806,14 +1771,16 @@ def _expuls(val, argname=None, *, _convert=True, _ignore_warnings=False):
         _ignore_warnings=_ignore_warnings)
 
 
-_LASTSCHRIFT_COMMON_FIELDS = lambda: {
+def _LASTSCHRIFT_COMMON_FIELDS(): return {
     'amount': _positive_decimal,
     'iban': _iban,
     'account_owner': _str_or_None,
     'account_address': _str_or_None,
     'notes': _str_or_None,
 }
-_LASTSCHRIFT_OPTIONAL_FIELDS = lambda: {
+
+
+def _LASTSCHRIFT_OPTIONAL_FIELDS(): return {
     'granted_at': _datetime,
     'revoked_at': _datetime_or_None,
 }
@@ -1852,18 +1819,12 @@ def _lastschrift(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
+@_add_typed_validator(IBAN)
 @_addvalidator
-def _iban(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
-    """
-    argname = argname or "iban"
-    val, errs = _str(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
+def _iban(
+    val: Any, argname: str = "iban", **kwargs
+) -> ValidationOutput[IBAN]:
+    val, errs = _str(val, argname, **kwargs)
     if errs:
         return val, errs
     val = val.upper().replace(' ', '')
@@ -1890,17 +1851,18 @@ def _iban(val, argname=None, *, _convert=True, _ignore_warnings=False):
             errs.append((argname, ValueError(
                 n_("Invalid length %(len)s for Country Code %(code)s. "
                    "Expexted length %(exp)s."),
-                {"len": len(val), "code": val[:2], "exp": IBAN_LENGTHS[val[:2]]}
+                {"len": len(val), "code": val[:2],
+                 "exp": IBAN_LENGTHS[val[:2]]}
             )))
         temp = val[4:] + val[:4]
         temp = ''.join(c if c in string.digits else str(ord(c) - 55)
                        for c in temp)
         if int(temp) % 97 != 1:
             errs.append((argname, ValueError(n_("Invalid checksum."))))
-    return val, errs
+    return IBAN(val), errs
 
 
-_LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
+def _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS(): return {
     'amount': _positive_decimal,
     'status': _enum_lastschrifttransactionstati,
     'issued_at': _datetime,
@@ -2082,19 +2044,14 @@ def _sepa_meta(val, argname=None, *, _convert=True, _ignore_warnings=False):
     return val, errs
 
 
+@_add_typed_validator(SafeStr)
 @_addvalidator
-def _safe_str(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """This allows alpha-numeric, whitespace and known good others.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (dict or None, [(str or None, exception)])
-    """
+def _safe_str(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[SafeStr]:
+    """This allows alpha-numeric, whitespace and known good others."""
     ALLOWED = ".,-+()/"
-    val, errs = _str(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
+    val, errs = _str(val, argname, **kwargs)
     if errs:
         return val, errs
     for char in val:
@@ -2130,26 +2087,21 @@ def _meta_info(val, keys, argname=None, *, _convert=True,
     return val, errs
 
 
-_INSTITUTION_COMMON_FIELDS = lambda: {
+def _INSTITUTION_COMMON_FIELDS(): return {
     'title': _str,
     'moniker': _str,
 }
 
 
 @_addvalidator
-def _institution(val, argname=None, *, creation=False, _convert=True,
-                 _ignore_warnings=False):
+def _institution(val: Any, argname: str = "institution", *,
+                 creation: bool = False, _convert: bool = True,
+                 _ignore_warnings: bool = False):
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "institution"
     val, errs = _mapping(val, argname, _convert=_convert,
                          _ignore_warnings=_ignore_warnings)
     if errs:
@@ -2165,14 +2117,16 @@ def _institution(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
 
 
-_PAST_EVENT_COMMON_FIELDS = lambda: {
+def _PAST_EVENT_COMMON_FIELDS(): return {
     'title': _str,
     'shortname': _str,
     'institution': _id,
     'tempus': _date,
     'description': _str_or_None,
 }
-_PAST_EVENT_OPTIONAL_FIELDS = lambda: {
+
+
+def _PAST_EVENT_OPTIONAL_FIELDS(): return {
     'notes': _str_or_None
 }
 
@@ -2207,13 +2161,15 @@ def _past_event(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
 
 
-_EVENT_COMMON_FIELDS = lambda: {
+def _EVENT_COMMON_FIELDS(): return {
     'title': _str,
     'institution': _id,
     'description': _str_or_None,
     'shortname': _identifier,
 }
-_EVENT_OPTIONAL_FIELDS = lambda: {
+
+
+def _EVENT_OPTIONAL_FIELDS(): return {
     'offline_lock': _bool,
     'is_visible': _bool,
     'is_course_list_visible': _bool,
@@ -2471,7 +2427,7 @@ def _event_track(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-_EVENT_FIELD_COMMON_FIELDS = lambda extra_suffix: {
+def _EVENT_FIELD_COMMON_FIELDS(extra_suffix): return {
     'kind{}'.format(extra_suffix): _enum_fielddatatypes,
     'association{}'.format(extra_suffix): _enum_fieldassociations,
     'entries{}'.format(extra_suffix): _any,
@@ -2560,12 +2516,13 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-_EVENT_FEE_MODIFIER_COMMON_FIELDS = lambda extra_suffix: {
+def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix): return {
     "modifier_name{}".format(extra_suffix): _restrictive_identifier,
     "amount{}".format(extra_suffix): _decimal,
     "part_id{}".format(extra_suffix): _id,
     "field_id{}".format(extra_suffix): _id,
 }
+
 
 @_addvalidator
 def _event_fee_modifier(val, argname=None, *, creation=False,
@@ -2587,7 +2544,7 @@ def _event_fee_modifier(val, argname=None, *, creation=False,
     return val, errs
 
 
-_PAST_COURSE_COMMON_FIELDS = lambda: {
+def _PAST_COURSE_COMMON_FIELDS(): return {
     'nr': _str,
     'title': _str,
     'description': _str_or_None,
@@ -2624,7 +2581,7 @@ def _past_course(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
 
 
-_COURSE_COMMON_FIELDS = lambda: {
+def _COURSE_COMMON_FIELDS(): return {
     'title': _str,
     'description': _str_or_None,
     'nr': _str,
@@ -2634,6 +2591,8 @@ _COURSE_COMMON_FIELDS = lambda: {
     'min_size': _non_negative_int_or_None,
     'notes': _str_or_None,
 }
+
+
 _COURSE_OPTIONAL_FIELDS = {
     'segments': _iterable,
     'active_segments': _iterable,
@@ -2701,14 +2660,16 @@ def _course(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-_REGISTRATION_COMMON_FIELDS = lambda: {
+def _REGISTRATION_COMMON_FIELDS(): return {
     'mixed_lodging': _bool,
     'list_consent': _bool,
     'notes': _str_or_None,
     'parts': _mapping,
     'tracks': _mapping,
 }
-_REGISTRATION_OPTIONAL_FIELDS = lambda: {
+
+
+def _REGISTRATION_OPTIONAL_FIELDS(): return {
     'parental_agreement': _bool,
     'real_persona_id': _id_or_None,
     'orga_notes': _str_or_None,
@@ -2909,7 +2870,7 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
     return val, errs
 
 
-_LODGEMENT_GROUP_FIELDS = lambda: {
+def _LODGEMENT_GROUP_FIELDS(): return {
     'moniker': _str,
 }
 
@@ -2944,13 +2905,15 @@ def _lodgement_group(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
 
 
-_LODGEMENT_COMMON_FIELDS = lambda: {
+def _LODGEMENT_COMMON_FIELDS(): return {
     'moniker': _str,
     'regular_capacity': _non_negative_int,
     'camping_mat_capacity': _non_negative_int,
     'notes': _str_or_None,
     'group_id': _id_or_None,
 }
+
+
 _LODGEMENT_OPTIONAL_FIELDS = {
     'fields': _mapping,
 }
@@ -2988,6 +2951,7 @@ def _lodgement(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
 
 
+# TODO is kind optional?
 @_addvalidator
 def _by_field_datatype(val, argname=None, *, kind=None, _convert=True,
                        _ignore_warnings=False):
@@ -3005,10 +2969,8 @@ def _by_field_datatype(val, argname=None, *, kind=None, _convert=True,
                           _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    if kind == FieldDatatypes.date:
-        val = val.strftime('%Y-%m-%d')
-    elif kind == FieldDatatypes.datetime:
-        val = val.strftime('%Y-%m-%dT%H:%M:%S')
+    if kind == FieldDatatypes.date or kind == FieldDatatypes.datetime:
+        val = val.isoformat()
     else:
         val = str(val)
     return val, errs
@@ -3104,30 +3066,27 @@ def _questionnaire(val, field_definitions, fee_modifiers, argname=None, *,
     return ret, errs
 
 
+@_add_typed_validator(JSON)
 @_addvalidator
-def _json(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _json(
+    val: Any, argname: str = "json", *, _convert: bool = True, **kwargs
+) -> ValidationOutput[JSON]:
     """Deserialize a JSON payload.
 
     This is a bit different from many other validatiors in that it is not
     idempotent.
 
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
 
     """
-    argname = argname or "json"
     if not _convert:
         raise RuntimeError("This is a conversion by definition.")
     if isinstance(val, bytes):
         try:
-            val = val.decode("utf-8")
+            val = val.decode("utf-8")  # TODO remove encoding argument
         except UnicodeDecodeError:
             return None, [(argname, ValueError(n_("Invalid UTF-8 sequence.")))]
-    val, errs = _str(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
+    val, errs = _str(val, argname, _convert=_convert, **kwargs)
     if errs:
         return val, errs
     if not val:
@@ -3138,7 +3097,7 @@ def _json(val, argname=None, *, _convert=True, _ignore_warnings=False):
         msg = n_("Invalid JSON syntax (line %(line)s, col %(col)s).")
         return None, [(argname, ValueError(msg, {'line': e.lineno,
                                                  'col': e.colno}))]
-    return data, []
+    return JSON(data), []
 
 
 @_addvalidator
@@ -3396,7 +3355,7 @@ def _serialized_partial_event(val, argname=None, *, _convert=True,
     return val, errs
 
 
-_PARTIAL_COURSE_COMMON_FIELDS = lambda: {
+def _PARTIAL_COURSE_COMMON_FIELDS(): return {
     'title': _str,
     'description': _str_or_None,
     'nr': _str_or_None,
@@ -3406,6 +3365,8 @@ _PARTIAL_COURSE_COMMON_FIELDS = lambda: {
     'min_size': _int_or_None,
     'notes': _str_or_None,
 }
+
+
 _PARTIAL_COURSE_OPTIONAL_FIELDS = {
     'segments': _mapping,
     'fields': _mapping,
@@ -3459,7 +3420,7 @@ def _partial_course(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-_PARTIAL_LODGEMENT_GROUP_FIELDS = lambda: {
+def _PARTIAL_LODGEMENT_GROUP_FIELDS(): return {
     'moniker': _str,
 }
 
@@ -3493,13 +3454,15 @@ def _partial_lodgement_group(val, argname=None, *, creation=False,
         _ignore_warnings=_ignore_warnings)
 
 
-_PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
+def _PARTIAL_LODGEMENT_COMMON_FIELDS(): return {
     'moniker': _str,
     'regular_capacity': _non_negative_int,
     'camping_mat_capacity': _non_negative_int,
     'notes': _str_or_None,
     'group_id': _partial_import_id_or_None,
 }
+
+
 _PARTIAL_LODGEMENT_OPTIONAL_FIELDS = {
     'fields': _mapping,
 }
@@ -3536,14 +3499,16 @@ def _partial_lodgement(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
 
 
-_PARTIAL_REGISTRATION_COMMON_FIELDS = lambda: {
+def _PARTIAL_REGISTRATION_COMMON_FIELDS(): return {
     'mixed_lodging': _bool,
     'list_consent': _bool,
     'notes': _str_or_None,
     'parts': _mapping,
     'tracks': _mapping,
 }
-_PARTIAL_REGISTRATION_OPTIONAL_FIELDS = lambda: {
+
+
+def _PARTIAL_REGISTRATION_OPTIONAL_FIELDS(): return {
     'parental_agreement': _bool_or_None,
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
@@ -3693,7 +3658,7 @@ def _partial_registration_track(val, argname=None, *, _convert=True,
     return val, errs
 
 
-_MAILINGLIST_COMMON_FIELDS = lambda: {
+def _MAILINGLIST_COMMON_FIELDS(): return {
     'title': _str,
     'local_part': _email_local_part,
     'domain': _enum_mailinglistdomain,
@@ -3706,11 +3671,15 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'is_active': _bool,
     'notes': _str_or_None,
 }
-_MAILINGLIST_OPTIONAL_FIELDS = lambda: {
+
+
+def _MAILINGLIST_OPTIONAL_FIELDS(): return {
     'assembly_id': _None,
     'event_id': _None,
     'registration_stati': _empty_list,
 }
+
+
 _MAILINGLIST_READONLY_FIELDS = {
     'address',
     'domain_str',
@@ -3736,8 +3705,8 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
                          _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    mandatory_validation_fields = [('moderators', '[id]'),]
-    optional_validation_fields = [('whitelist', '[email]'),]
+    mandatory_validation_fields = [('moderators', '[id]'), ]
+    optional_validation_fields = [('whitelist', '[email]'), ]
     if "ml_type" in val:
         atype = ml_type.get_type(val["ml_type"])
         mandatory_validation_fields.extend(atype.mandatory_validation_fields)
@@ -3801,9 +3770,11 @@ _SUBSCRIPTION_ID_FIELDS = {
     'persona_id': _id,
 }
 
-_SUBSCRIPTION_STATE_FIELDS = lambda: {
+
+def _SUBSCRIPTION_STATE_FIELDS(): return {
     'subscription_state': _enum_subscriptionstates,
 }
+
 
 _SUBSCRIPTION_ADDRESS_FIELDS = {
     'address': _email,
@@ -3866,13 +3837,15 @@ def _subscription_request_resolution(val, argname=None, *, _convert=True,
         _ignore_warnings=_ignore_warnings)
 
 
-_ASSEMBLY_COMMON_FIELDS = lambda: {
+def _ASSEMBLY_COMMON_FIELDS(): return {
     'title': _str,
     'description': _str_or_None,
     'signup_end': _datetime,
     'notes': _str_or_None,
 }
-_ASSEMBLY_OPTIONAL_FIELDS = lambda: {
+
+
+def _ASSEMBLY_OPTIONAL_FIELDS(): return {
     'is_active': _bool,
     'mail_address': _str_or_None,
 }
@@ -3908,14 +3881,16 @@ def _assembly(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
 
 
-_BALLOT_COMMON_FIELDS = lambda: {
+def _BALLOT_COMMON_FIELDS(): return {
     'title': _str,
     'description': _str_or_None,
     'vote_begin': _datetime,
     'vote_end': _datetime,
     'notes': _str_or_None
 }
-_BALLOT_OPTIONAL_FIELDS = lambda: {
+
+
+def _BALLOT_OPTIONAL_FIELDS(): return {
     'extended': _bool_or_None,
     'vote_extension_end': _datetime_or_None,
     'quorum': _int,
@@ -4049,12 +4024,13 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-_ASSEMBLY_ATTACHMENT_FIELDS = lambda: {
+def _ASSEMBLY_ATTACHMENT_FIELDS(): return {
     'assembly_id': _id_or_None,
     'ballot_id': _id_or_None,
 }
 
-_ASSEMBLY_ATTACHMENT_VERSION_FIELDS = lambda: {
+
+def _ASSEMBLY_ATTACHMENT_VERSION_FIELDS(): return {
     'title': _str,
     'authors': _str_or_None,
     'filename': _str,
@@ -4126,25 +4102,20 @@ def _assembly_attachment_version(val, argname=None, *, creation=False,
     return val, errs
 
 
+@_add_typed_validator(Vote)
 @_addvalidator
-def _vote(val, argname=None, ballot=None, *, _convert=True,
-          _ignore_warnings=False):
+def _vote(
+    val: Any, argname: str = "vote", ballot: Mapping[str, Any] = None, **kwargs
+) -> ValidationOutput[Vote]:
     """Validate a single voters intent.
 
     This is mostly made complicated by the fact that we offer to emulate
     ordinary voting instead of full preference voting.
 
-    :type val: object
-    :type argname: str or None
-    :type ballot: {str: object}
     :param ballot: Ballot the vote was cast for.
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
     """
     argname = argname or "vote"
-    val, errs = _str(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
+    val, errs = _str(val, argname, **kwargs)
     if errs:
         return val, errs
     entries = tuple(y for x in val.split('>') for y in x.split('='))
@@ -4171,20 +4142,15 @@ def _vote(val, argname=None, ballot=None, *, _convert=True,
             errs.append((argname, ValueError(n_("Misplaced bar."))))
         if errs:
             return None, errs
-    return val, errs
+    return Vote(val), errs
 
 
+@_add_typed_validator(Regex)
 @_addvalidator
-def _regex(val, argname=None, *, _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
-    """
-    val, errs = _str(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
+def _regex(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[Regex]:
+    val, errs = _str(val, argname, **kwargs)
     if errs:
         return val, errs
     try:
@@ -4193,11 +4159,14 @@ def _regex(val, argname=None, *, _convert=True, _ignore_warnings=False):
         err = ValueError(n_("Invalid  regular expression (position %(pos)s)."),
                          {'pos': exc.pos})
         return None, [(argname, err)]
-    return val, errs
+    return Regex(val), errs
 
 
+@_add_typed_validator(NonRegex)
 @_addvalidator
-def _non_regex(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _non_regex(
+    val: Any, argname: str = None, **kwargs
+) -> ValidationOutput[NonRegex]:
     """
     :type val: object
     :type argname: str or None
@@ -4205,8 +4174,7 @@ def _non_regex(val, argname=None, *, _convert=True, _ignore_warnings=False):
     :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _str(val, argname, _convert=_convert,
-                     _ignore_warnings=_ignore_warnings)
+    val, errs = _str(val, argname, **kwargs)
     if errs:
         return val, errs
     forbidden_chars = r'\*+?{}()[]|'
@@ -4214,7 +4182,7 @@ def _non_regex(val, argname=None, *, _convert=True, _ignore_warnings=False):
              r" (which are \*+?{}()[]| while .^$ are allowed).")
     if any(char in val for char in forbidden_chars):
         return None, [(argname, ValueError(msg))]
-    return val, errs
+    return NonRegex(val), errs
 
 
 @_addvalidator
@@ -4685,3 +4653,39 @@ def _create_validators(funs):
 
 
 _create_validators(_ALL)
+
+
+def typed_assert_valid(
+    type_: Type[T], value: Any, *args: Any, **kwargs: Any
+) -> T:
+
+    val, errs = _ALL_TYPED[type_](value, *args, **kwargs)
+    if errs:
+        argname, error = errs[0]
+        error.args = ("{} ({})".format(
+            error.args[0], argname),) + error.args[1:]
+        raise error
+    return val
+
+
+def typed_is_valid(
+    type_: Type[T], value: Any, *args: Any, **kwargs: Any
+) -> bool:
+
+    kwargs['_convert'] = False
+    _, errs = _ALL_TYPED[type_](value, *args, **kwargs)
+    return not errs
+
+
+def typed_check_valid(
+    type_: Type[T], value: Any, *args: Any, **kwargs: Any
+) -> ValidationOutput[T]:
+
+    val, errs = _ALL_TYPED[type_](value, *args, **kwargs)
+    if errs:
+        _LOGGER.debug(
+            f"{errs} for '{_ALL_TYPED[type_].__name__}'"
+            f" with input {args}, {kwargs}."
+        )
+        return None, errs
+    return val, errs
