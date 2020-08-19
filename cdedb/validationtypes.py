@@ -1,9 +1,9 @@
 import datetime
 import decimal
-from typing import Any, List, NewType, Optional
+from typing import Any, Iterable, List, Mapping, NewType, Optional
 
 # needs typing_extensions.TypedDict until 3.9 due to runtime inspection
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Literal  # , TypedDict
 
 NonNegativeInt = NewType("NonNegativeInt", int)
 PositiveInt = NewType("PositiveInt", int)

@@ -74,7 +74,7 @@ import PIL.Image
 import pytz
 import werkzeug.datastructures
 import zxcvbn
-from typing_extensions import Protocol, TypedDict
+from typing_extensions import Protocol  # , TypedDict
 
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
@@ -198,7 +198,7 @@ def _add_typed_validator(
     return add_typed_validator
 
 
-TD = TypeVar("TD", bound=TypedDict)
+TD = TypeVar("TD")  # bound=Type[TypedDict]
 
 
 def _examine_typeddict_fields(
@@ -969,7 +969,7 @@ _EMAIL_LOCAL_PART_REGEX = re.compile(r'^[a-z0-9._+-]+$')
 @_addvalidator
 def _email_local_part(
     val: Any, argname: str = None, **kwargs
-) -> ValidationError[EmailLocalPart]:
+) -> ValidationOutput[EmailLocalPart]:
     """We accept only a subset of valid email addresses.
     Here we only care about the local part.
     """
