@@ -43,6 +43,7 @@ import collections.abc
 import copy
 import datetime
 import decimal
+import distutils.util
 import functools
 import io
 import itertools
@@ -120,24 +121,40 @@ zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 _LOGGER = logging.getLogger(__name__)
 
 T = TypeVar('T')
-ValidationOutput = Tuple[Optional[T], List[Tuple[Optional[str], Exception]]]
+ValidationOutput = Tuple[Optional[T], "ValidationSummary"]
 F = Callable[..., ValidationOutput[T]]
+# TODO add primitive and complex validator type
 
 _ALL = []
 
 
 class ValidationError(ValueError):
-    def __init__(self, argname, msg):
+    def __init__(
+        self, argname, msg, substitutions: Dict[str, Union[str, int]] = None
+    ):
         super().__init__(msg)
         self.argname = argname
+        self.substitutions = substitutions
 
 
-class ValidationErrorSummary(ValueError):
+# TODO maybe add values_progress attribute or similar
+class ValidationSummary(ValueError, Sequence[ValidationError]):
+    args: Tuple[ValidationError, ...]
+
     def __init__(self, *errors: ValidationError):
         super().__init__(*errors)
 
-    def extend(self, *errors: ValidationError):
-        self.args = self.args + errors
+    def __len__(self):
+        return len(self.args)
+
+    def __getitem__(self, index):
+        return self.args[index]
+
+    def extend(self, errors: Iterable[ValidationError]):
+        self.args = self.args + tuple(errors)
+
+    def append(self, error: ValidationError):
+        self.args = self.args + (error,)
 
 
 class ValidatorStorage(Dict[Type, Callable]):
@@ -177,15 +194,13 @@ class ValidatorStorage(Dict[Type, Callable]):
 _ALL_TYPED = ValidatorStorage()
 
 
-def _addvalidator(fun: F):
+def _addvalidator(fun):
     """Mark a function for processing into validators."""
     _ALL.append(fun)
     return fun
 
 
-def _add_typed_validator(
-    type_: Type[T]
-) -> Callable[[F[T]], F[T]]:
+def _add_typed_validator(type_: Type[T]) -> Callable[[F[T]], F[T]]:
     """Mark a typed function for processing into validators."""
 
     def add_typed_validator(fun: F[T]) -> F[T]:
@@ -198,13 +213,13 @@ def _add_typed_validator(
     return add_typed_validator
 
 
-TD = TypeVar("TD")  # bound=Type[TypedDict]
+TD = TypeVar("TD", bound=Dict[str, Any])  # bound=Type[TypedDict]
 
 
 def _examine_typeddict_fields(
     adict: Dict, template: Type[TD], *,
     allow_superfluous: bool = False, **kwargs
-) -> ValidationOutput[TD]:
+) -> Tuple[TD, ValidationSummary]:
     """Check more complex dictionaries.
 
     :param adict: a :py:class:`dict` to check
@@ -221,29 +236,31 @@ def _examine_typeddict_fields(
     """
     type_hints = get_type_hints(template)
 
-    errs = []
+    errs = ValidationSummary()
     retval = {}
     for key, value in adict.items():
         if key in template.__required_keys__:
-            v, e = _ALL_TYPED[type_hints[key]](value, argname=key, **kwargs)
-            if e:
-                errs.extend(e)
-            else:
+            try:
+                v = _ALL_TYPED[type_hints[key]](value, argname=key, **kwargs)
                 retval[key] = v
+            except ValidationSummary as e:
+                errs.extend(e)
         elif key in template.__optional_keys__:
-            v, e = _ALL_TYPED[type_hints[key]](value, argname=key, **kwargs)
-            if e:
-                errs.extend(e)
-            else:
+            try:
+                v = _ALL_TYPED[type_hints[key]](value, argname=key, **kwargs)
                 retval[key] = v
+            except ValidationSummary as e:
+                errs.extend(e)
         elif not allow_superfluous:
-            errs.append((key, KeyError(n_("Superfluous key found."))))
+            errs.append(ValidationError(
+                key, KeyError(n_("Superfluous key found."))))
 
     missing_required = template.__required_keys__.difference(retval)
     if missing_required and template.__total__:
         for key in missing_required:
-            errs.append((key, KeyError(n_("Mandatory key missing."))))
-        return None, errs
+            errs.append(ValidationError(
+                key, KeyError(n_("Mandatory key missing."))))
+        raise errs
 
     retval = cast(TD, retval)
     return retval, errs
@@ -257,7 +274,7 @@ def _examine_dictionary_fields(
     allow_superfluous: bool = False,
     _convert: bool = True,
     _ignore_warnings: bool = False
-) -> ValidationOutput[Dict]:
+) -> Tuple[Dict[str, Any], ValidationSummary]:
     """Check more complex dictionaries.
 
     :param adict: a :py:class:`dict` to check
@@ -273,31 +290,33 @@ def _examine_dictionary_fields(
         of type ``ValidationWarning``.
     """
     optional_fields = optional_fields or {}
-    errs = []
-    retval = {}
+    errs = ValidationSummary()
+    retval: Dict[str, Any] = {}
     for key, value in adict.items():
         if key in mandatory_fields:
-            v, e = mandatory_fields[key](value, argname=key, _convert=_convert,
-                                         _ignore_warnings=_ignore_warnings)
-            if e:
-                errs.extend(e)
-            else:
+            try:
+                v = mandatory_fields[key](value, argname=key, _convert=_convert,
+                                          _ignore_warnings=_ignore_warnings)
                 retval[key] = v
+            except ValidationSummary as e:
+                errs.extend(e)
         elif key in optional_fields:
-            v, e = optional_fields[key](value, argname=key, _convert=_convert,
-                                        _ignore_warnings=_ignore_warnings)
-            if e:
-                errs.extend(e)
-            else:
+            try:
+                v = optional_fields[key](value, argname=key, _convert=_convert,
+                                         _ignore_warnings=_ignore_warnings)
                 retval[key] = v
+            except ValidationSummary as e:
+                errs.extend(e)
         elif not allow_superfluous:
-            errs.append((key, KeyError(n_("Superfluous key found."))))
+            errs.append(ValidationError(
+                key, KeyError(n_("Superfluous key found."))))
 
     missing_mandatory = set(mandatory_fields).difference(retval)
     if missing_mandatory:
         for key in missing_mandatory:
-            errs.append((key, KeyError(n_("Mandatory key missing."))))
-        return None, errs
+            errs.append(ValidationError(
+                key, KeyError(n_("Mandatory key missing."))))
+        raise errs
 
     return retval, errs
 
@@ -321,29 +340,34 @@ def _augment_dict_validator(
 
     @functools.wraps(validator)
     def new_validator(
-        val: Any,
-        argname: str = None,
-        *,
-        _convert: bool = True,
-        _ignore_warnings: bool = False
-    ):
+        val: Any, argname: str = None, **kwargs
+    ) -> Tuple[Dict[str, Any], ValidationSummary]:
         mandatory_fields = augmentation if strict else {}
         optional_fields = {} if strict else augmentation
 
-        ret, errs = _examine_dictionary_fields(
-            val, mandatory_fields, optional_fields, allow_superfluous=True,
-            _convert=_convert, _ignore_warnings=_ignore_warnings)
+        errs = ValidationSummary()
+        ret: Dict[str, Any] = {}
+        try:
+            ret, errs = _examine_dictionary_fields(
+                val, mandatory_fields, optional_fields, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+
         tmp = copy.deepcopy(val)
         for field in augmentation:
             if field in tmp:
                 del tmp[field]
-        v, e = validator(tmp, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
+
+        v = None
+        try:
+            v = validator(tmp, argname, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+
         if ret is not None and v is not None:
             ret.update(v)
         if errs:
-            ret = None
+            raise errs
         return ret, errs
 
     return new_validator
@@ -381,11 +405,11 @@ def escaped_split(s: str, delim: str, escape: str = '\\') -> List[str]:
 # Below is the real stuff
 #
 
-# TODO @_add_typed_validator(None)
+# # TODO @_add_typed_validator(None)
 @_addvalidator
 def _None(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs
-) -> ValidationOutput[None]:
+) -> None:
     """Force a None.
 
     This is mostly for ensuring proper population of dicts.
@@ -394,158 +418,150 @@ def _None(
         if isinstance(val, str) and not val:
             val = None
     if val is not None:
-        return None, [(argname, ValueError(n_("Must be None.")))]
-    return None, []
+        raise ValidationError(argname, n_("Must be None."))
+    return None
 
 
-# TODO @_add_typed_validator(Any)
+# # TODO @_add_typed_validator(Any)
 @_addvalidator
 def _any(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[Any]:
+) -> Any:
     """Dummy to allow arbitrary things.
 
     This is mostly for deferring checks to a later point if they require
     more logic than should be encoded in a validator.
     """
-    return val, []
+    return val
 
 
-@_add_typed_validator(int)
+# @_add_typed_validator(int)
 @_addvalidator
 def _int(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs
-) -> ValidationOutput[int]:
+) -> int:
     if _convert:
         if isinstance(val, str) or isinstance(val, bool):
             try:
                 val = int(val)
             except ValueError:
-                return None, [(argname,
-                               ValueError(n_("Invalid input for integer.")))]
+                raise ValidationError(argname, n_(
+                    "Invalid input for integer."))
         elif isinstance(val, float):
             if not isclose(val, int(val), abs_tol=EPSILON):
-                return None, [(argname, ValueError(n_("Precision loss.")))]
+                raise ValidationError(argname, n_("Precision loss."))
             val = int(val)
-    if not isinstance(val, int) or isinstance(val, bool):
-        return None, [(argname, TypeError(n_("Must be an integer.")))]
-    return val, []
+    if not isinstance(val, int):
+        raise ValidationError(argname, n_("Must be an integer."))
+    return val
 
 
-@_add_typed_validator(NonNegativeInt)
+# @_add_typed_validator(NonNegativeInt)
 @_addvalidator
 def _non_negative_int(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[NonNegativeInt]:
-    val, err = _int(val, argname, **kwargs)
-    if not err and val < 0:
-        val = None
-        err.append((argname, ValueError(n_("Must not be negative."))))
-    return NonNegativeInt(val), err
+) -> NonNegativeInt:
+    val = _int(val, argname, **kwargs)
+    if val < 0:
+        raise ValidationError(argname, n_("Must not be negative."))
+    return NonNegativeInt(val)
 
 
-@_add_typed_validator(PositiveInt)
+# @_add_typed_validator(PositiveInt)
 @_addvalidator
 def _positive_int(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[PositiveInt]:
-    val, errs = _int(val, argname, **kwargs)
-    if not errs and val <= 0:
-        val = None
-        errs.append((argname, ValueError(n_("Must be positive."))))
-    return PositiveInt(val), errs
+) -> PositiveInt:
+    val = _int(val, argname, **kwargs)
+    if val <= 0:
+        raise ValidationError(argname, n_("Must be positive."))
+    return PositiveInt(val)
 
 
-@_add_typed_validator(ID)
+# @_add_typed_validator(ID)
 @_addvalidator
 def _id(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[ID]:
+) -> ID:
     """A numeric ID as in a database key.
 
     This is just a wrapper around `_positive_int`, to differentiate this
     semantically.
     """
+    return ID(_positive_int(val, argname, **kwargs))
 
-    return _positive_int(val, argname, **kwargs)
 
-
-@_add_typed_validator(PartialImportID)
+# @_add_typed_validator(PartialImportID)
 @_addvalidator
 def _partial_import_id(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[PartialImportID]:
+) -> PartialImportID:
     """A numeric id or a negative int as a placeholder."""
-    val, errs = _int(val, argname, **kwargs)
-    if not errs and val == 0:
-        val = None
-        errs.append((argname, ValueError(n_("Must not be zero."))))
-    return PartialImportID(val), errs
+    val = _int(val, argname, **kwargs)
+    if val == 0:
+        raise ValidationError(argname, n_("Must not be zero."))
+    return PartialImportID(val)
 
 
-@_add_typed_validator(float)
+# @_add_typed_validator(float)
 @_addvalidator
 def _float(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs
-) -> ValidationOutput[float]:
+) -> float:
     if _convert:
         try:
             val = float(val)
         except (ValueError, TypeError):
-            return None, [(argname,
-                           ValueError(n_("Invalid input for float.")))]
+            raise ValidationError(argname, n_("Invalid input for float."))
     if not isinstance(val, float):
-        return None, [(argname,
-                       TypeError(n_("Must be a floating point number.")))]
-    return val, []
+        raise ValidationError(argname, n_("Must be a floating point number."))
+    return val
 
 
-@_add_typed_validator(decimal.Decimal)
+# @_add_typed_validator(decimal.Decimal)
 @_addvalidator
 def _decimal(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs
-) -> ValidationOutput[decimal.Decimal]:
+) -> decimal.Decimal:
     if _convert and isinstance(val, str):
         try:
             val = decimal.Decimal(val)
         except (ValueError, TypeError, decimal.InvalidOperation):
-            return None, [(
-                argname, ValueError(n_("Invalid input for decimal number.")))]
+            raise ValidationError(argname, n_(
+                "Invalid input for decimal number."))
     if not isinstance(val, decimal.Decimal):
-        return None, [(argname, TypeError(n_("Must be a decimal.Decimal.")))]
-    return val, []
+        raise ValidationError(argname, n_("Must be a decimal.Decimal."))
+    return val
 
 
-@_add_typed_validator(NonNegativeDecimal)
+# @_add_typed_validator(NonNegativeDecimal)
 @_addvalidator
 def _non_negative_decimal(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[NonNegativeDecimal]:
-    val, err = _decimal(val, argname, **kwargs)
-    if not err and val < 0:
-        val = None
-        err.append((argname, ValueError(n_("Transfer saldo is negative."))))
-    return NonNegativeDecimal(val), err
+) -> NonNegativeDecimal:
+    val = _decimal(val, argname, **kwargs)
+    if val < 0:
+        raise ValidationError(argname, n_("Transfer saldo is negative."))
+    return NonNegativeDecimal(val)
 
 
-@_add_typed_validator(PositiveDecimal)
+# @_add_typed_validator(PositiveDecimal)
 @_addvalidator
 def _positive_decimal(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[PositiveDecimal]:
-    val, err = _decimal(val, argname, **kwargs)
-    if not err and val <= 0:
-        val = None
-        err.append((argname, ValueError(n_("Transfer saldo is negative."))))
-    return PositiveDecimal(val), err
+) -> PositiveDecimal:
+    val = _decimal(val, argname, **kwargs)
+    if val <= 0:
+        raise ValidationError(argname, n_("Transfer saldo is negative."))
+    return PositiveDecimal(val)
 
 
-@_add_typed_validator(StringType)
+# @_add_typed_validator(StringType)
 @_addvalidator
 def _str_type(
     val: Any, argname: str = None, *,
     zap: str = '', sieve: str = '', _convert: bool = True, **kwargs
-) -> ValidationOutput[StringType]:
+) -> StringType:
     """
     :param zap: delete all characters in this from the result
     :param sieve: allow only the characters in this into the result
@@ -554,302 +570,259 @@ def _str_type(
         try:
             val = str(val)
         except (ValueError, TypeError):
-            return None, [(argname,
-                           ValueError(n_("Invalid input for string.")))]
+            raise ValidationError(argname, n_("Invalid input for string."))
     if not isinstance(val, str):
-        return None, [(argname, TypeError(n_("Must be a string.")))]
+        raise ValidationError(argname, n_("Must be a string."))
     if zap:
-        val = val.translate(str.maketrans("", "", zap))
+        val = ''.join(c for c in val if c not in zap)
     if sieve:
         val = ''.join(c for c in val if c in sieve)
     val = val.replace("\r\n", "\n").replace("\r", "\n")
-    return StringType(val), []
+    return StringType(val)
 
 
-@_add_typed_validator(str)
+# @_add_typed_validator(str)
 @_addvalidator
-def _str(val: Any, argname: str = None, **kwargs) -> ValidationOutput[str]:
+def _str(val: Any, argname: str = None, **kwargs) -> str:
     """ Like :py:class:`_str_type` (parameters see there),
     but mustn't be empty (whitespace doesn't count).
     """
-    val, errs = _str_type(val, argname, **kwargs)
-    if val is not None and not val:
-        errs.append((argname, ValueError(n_("Mustn’t be empty."))))
-    return val, errs
+    val = _str_type(val, argname, **kwargs)
+    if not val:
+        raise ValidationError(argname, n_("Mustn’t be empty."))
+    return val
 
 
-@_add_typed_validator(bytes)
+# @_add_typed_validator(bytes)
 @_addvalidator
 def _bytes(
     val: Any, argname: str = None, *,
     _convert: bool = True, encoding: str = None, **kwargs
-) -> ValidationOutput[bytes]:
+) -> bytes:
     if _convert:
         if isinstance(val, str):
             if not encoding:
                 raise RuntimeError(
                     "Not encoding specified to convert str to bytes.")
-            val = bytes(val, encoding=encoding)
+            val = val.encode(encoding=encoding)
         else:
             try:
                 val = bytes(val)
             except ValueError:
-                return None, [(argname,
-                               ValueError(n_("Cannot convert {val} to bytes."),
-                                          {'val': val}))]
+                raise ValidationError(argname, n_("Cannot convert {val} to bytes."),
+                                      {'val': val})
     if not isinstance(val, bytes):
-        return None, [(argname, ValueError(n_("Must be a bytes object.")))]
-    return val, []
+        raise ValidationError(argname, n_("Must be a bytes object."))
+    return val
 
 
-@_add_typed_validator(Mapping)
+# @_add_typed_validator(Mapping)
 @_addvalidator
 def _mapping(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[Mapping]:
+) -> Mapping:
     """
     :param _convert: is ignored since no useful default conversion is available
     """
     if not isinstance(val, Mapping):
-        return None, [(argname, TypeError(n_("Must be a mapping.")))]
-    return val, []
+        raise ValidationError(argname, n_("Must be a mapping."))
+    return val
 
 
-@_add_typed_validator(Iterable)
+# @_add_typed_validator(Iterable)
 @_addvalidator
 def _iterable(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[Iterable]:
+) -> Iterable:
     """
     :param _convert: is ignored since no useful default conversion is available
     """
     if not isinstance(val, Iterable):
-        return None, [(argname, TypeError(n_("Must be an iterable.")))]
-    return val, []
+        raise ValidationError(argname, n_("Must be an iterable."))
+    return val
 
 
-@_add_typed_validator(Sequence)
+# @_add_typed_validator(Sequence)
 @_addvalidator
 def _sequence(
     val: Any, argname: str = None, *, _convert=True, **kwargs
-) -> ValidationOutput[Sequence]:
+) -> Sequence:
     if _convert:
         try:
             val = tuple(val)
         except (ValueError, TypeError):
-            return None, [(argname,
-                           ValueError(n_("Invalid input for sequence.")))]
+            raise ValidationError(argname, n_("Invalid input for sequence."))
     if not isinstance(val, Sequence):
-        return None, [(argname, TypeError(n_("Must be a sequence.")))]
-    return val, []
+        raise ValidationError(argname, n_("Must be a sequence."))
+    return val
 
 
-@_add_typed_validator(bool)
+# @_add_typed_validator(bool)
 @_addvalidator
 def _bool(
     val: Any, argname: str = None, *, _convert=True, **kwargs
-) -> ValidationOutput[bool]:
+) -> bool:
     if _convert and val is not None:
-        if val in ("True", "true", "yes", "y"):
-            return True, []
-        elif val in ("False", "false", "no", "n"):
-            return False, []
         try:
-            val = bool(val)
-        except (ValueError, TypeError):
-            return None, [(argname,
-                           ValueError(n_("Invalid input for boolean.")))]
+            return distutils.util.strtobool(val)
+        except (AttributeError, ValueError):
+            try:
+                return bool(val)
+            except (ValueError, TypeError):
+                raise ValidationError(argname, n_(
+                    "Invalid input for boolean."))
     if not isinstance(val, bool):
-        return None, [(argname, TypeError(n_("Must be a boolean.")))]
-    return val, []
+        raise ValidationError(argname, n_("Must be a boolean."))
+    return val
 
 
-@_add_typed_validator(EmptyDict)
+# @_add_typed_validator(EmptyDict)
 @_addvalidator
 def _empty_dict(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[EmptyDict]:
-    if val != {}:
-        return None, [(argname, ValueError(n_("Must be an empty dict.")))]
-    return EmptyDict(val), []
+) -> EmptyDict:
+    if not (isinstance(val, dict) and val):  # supports subtypes
+        raise ValidationError(argname, n_("Must be an empty dict."))
+    return EmptyDict(val)
 
 
-@_add_typed_validator(EmptyList)
+# @_add_typed_validator(EmptyList)
 @_addvalidator
 def _empty_list(
     val: Any, argname: str = None, *, _convert=True, **kwargs
-) -> ValidationOutput[EmptyList]:
+) -> EmptyList:
     if _convert:
-        val, errs = _iterable(val, argname, _convert=_convert, **kwargs)
-        if errs:
-            return None, errs
+        val = _iterable(val, argname, _convert=_convert, **kwargs)
         val = list(val)
-    if val != []:
-        return None, [(argname, ValueError(n_("Must be an empty list.")))]
-    return EmptyList(val), []
+    if not (isinstance(val, list) and list):  # supports subtypes
+        raise ValidationError(argname, n_("Must be an empty list."))
+    return EmptyList(val)
 
 
-@_add_typed_validator(Realm)
+# @_add_typed_validator(Realm)
 @_addvalidator
 def _realm(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[Realm]:
+) -> Realm:
     """A realm in the sense of the DB."""
-    val, errs = _str(val, argname, **kwargs)
+    val = _str(val, argname, **kwargs)
     if val not in ("session", "core", "cde", "event", "ml", "assembly"):
-        val = None
-        errs.append((argname, ValueError(n_("Not a valid realm."))))
-    return Realm(val), errs
+        raise ValidationError(argname, n_("Not a valid realm."))
+    return Realm(val)
 
 
-_CDEDBID = re.compile('^DB-([0-9]*)-([0-9X])$')
-
-
-@_add_typed_validator(CdedbID)
+# @_add_typed_validator(CdedbID)
 @_addvalidator
 def _cdedbid(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[CdedbID]:
-    val, errs = _str(val, argname, **kwargs)
-    if errs:
-        return val, errs
-    mo = _CDEDBID.search(val.strip())
-    if mo is None:
-        return None, [(argname, ValueError(n_("Wrong formatting.")))]
-    value = mo.group(1)
-    checkdigit = mo.group(2)
-    value, errs = _id(value, argname, **kwargs)
-    if not errs and compute_checkdigit(value) != checkdigit:
-        errs.append((argname, ValueError(n_("Checksum failure."))))
-    return CdedbID(value), errs
+) -> CdedbID:
+    val = _str(val, argname, **kwargs).strip()  # TODO is strip necessary here?
+    match = re.search('^DB-(?P<value>[0-9]*)-(?P<checkdigit>[0-9X])$', val)
+    if match is None:
+        raise ValidationError(argname, n_("Wrong formatting."))
+
+    value = _id(match["value"], argname, **kwargs)
+    if compute_checkdigit(value) != match["checkdigit"]:
+        raise ValidationError(argname, n_("Checksum failure."))
+    return CdedbID(value)
 
 
-_PRINTABLE_ASCII = re.compile('^[ -~]*$')
-
-
-@_add_typed_validator(PrintableASCIIType)
+# @_add_typed_validator(PrintableASCIIType)
 @_addvalidator
 def _printable_ascii_type(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[PrintableASCIIType]:
-    val, errs = _str_type(val, argname, **kwargs)
-    if not errs and not _PRINTABLE_ASCII.search(val):
-        errs.append((argname, ValueError(n_("Must be printable ASCII."))))
-    return PrintableASCIIType(val), errs
+) -> PrintableASCIIType:
+    val = _str_type(val, argname, **kwargs)
+    if re.search(r'^[ -~]*$', val) is None:
+        raise ValidationError(argname, n_("Must be printable ASCII."))
+    return PrintableASCIIType(val)
 
 
-@_add_typed_validator(PrintableASCII)
+# @_add_typed_validator(PrintableASCII)
 @_addvalidator
 def _printable_ascii(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[PrintableASCII]:
+) -> PrintableASCII:
     """Like :py:func:`_printable_ascii_type` (parameters see there),
     but mustn't be empty (whitespace doesn't count).
     """
-    val, errs = _printable_ascii_type(val, argname, **kwargs)
-    if val is not None and not val.strip():
-        errs.append((argname, ValueError(n_("Mustn’t be empty."))))
-    return PrintableASCII(val), errs
+    val = _printable_ascii_type(val, argname, **kwargs)
+    if not val:  # TODO leave strip here?
+        raise ValidationError(argname, n_("Mustn’t be empty."))
+    return PrintableASCII(val)
 
 
-_ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+$')
-
-
-@_add_typed_validator(Alphanumeric)
+# @_add_typed_validator(Alphanumeric)
 @_addvalidator
 def _alphanumeric(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[Alphanumeric]:
-    val, errs = _printable_ascii(val, argname, **kwargs)
-    if errs:
-        return val, errs
-    if not _ALPHANUMERIC_REGEX.search(val):
-        errs.append((argname, ValueError(n_("Must be alphanumeric."))))
-    return Alphanumeric(val), errs
+) -> Alphanumeric:
+    val = _printable_ascii(val, argname, **kwargs)
+    if re.search(r'^[a-zA-Z0-9]+$', val) is None:
+        raise ValidationError(argname, n_("Must be alphanumeric."))
+    return Alphanumeric(val)
 
 
-_CSV_ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$')
-
-
-@_add_typed_validator(CSVAlphanumeric)
+# @_add_typed_validator(CSVAlphanumeric)
 @_addvalidator
 def _csv_alphanumeric(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[CSVAlphanumeric]:
-    val, errs = _printable_ascii(val, argname, **kwargs)
-    if errs:
-        return val, errs
-    if not _CSV_ALPHANUMERIC_REGEX.search(val):
-        errs.append((argname,
-                     ValueError(n_("Must be comma separated alphanumeric."))))
-    return CSVAlphanumeric(val), errs
+) -> CSVAlphanumeric:
+    val = _printable_ascii(val, argname, **kwargs)
+    if re.search(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$', val) is None:
+        raise ValidationError(argname, n_(
+            "Must be comma separated alphanumeric."))
+    return CSVAlphanumeric(val)
 
 
-_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+$')
-
-
-@_add_typed_validator(Identifier)
+# @_add_typed_validator(Identifier)
 @_addvalidator
 def _identifier(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[Identifier]:
+) -> Identifier:
     """Identifiers encompass everything from file names to short names for
     events.
     """
-    val, errs = _printable_ascii(val, argname, **kwargs)
-    if errs:
-        return val, errs
-    if not _IDENTIFIER_REGEX.search(val):
-        errs.append((argname, ValueError(n_(
-            "Must be an identifier "
-            "(only letters, numbers, underscore, dot and hyphen)."))))
-    return Identifier(val), errs
+    val = _printable_ascii(val, argname, **kwargs)
+    if re.search(r'^[a-zA-Z0-9_.-]+$', val) is None:
+        raise ValidationError(argname, n_("Must be an identifier"
+                                          " (only letters, numbers,"
+                                          " underscore, dot and hyphen)."))
+    return Identifier(val)
 
 
-_RESTRICTIVE_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_]+$')
-
-
-@_add_typed_validator(RestrictiveIdentifier)
+# @_add_typed_validator(RestrictiveIdentifier)
 @_addvalidator
 def _restrictive_identifier(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[RestrictiveIdentifier]:
+) -> RestrictiveIdentifier:
     """Restrictive identifiers are for situations, where normal identifiers
     are too lax.
 
     One example are sql column names.
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
-    if not _RESTRICTIVE_IDENTIFIER_REGEX.search(val):
-        errs.append((argname, ValueError(n_(
-            "Must be a restrictive identifier "
-            "(only letters, numbers and underscore)."))))
-    return RestrictiveIdentifier(val), errs
+    val = _printable_ascii(val, argname, **kwargs)
+    if re.search(r'^[a-zA-Z0-9_]+$', val) is None:
+        raise ValidationError(argname, n_("Must be a restrictive identifier"
+                                          " (only letters, numbers"
+                                          " and underscore)."))
+    return RestrictiveIdentifier(val)
 
 
-_CSV_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$')
-
-
-@_add_typed_validator(CSVIdentifier)
+# @_add_typed_validator(CSVIdentifier)
 @_addvalidator
 def _csv_identifier(
         val: Any, argname: str = None, **kwargs):
-    val, errs = _printable_ascii(val, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
-    if not _CSV_IDENTIFIER_REGEX.search(val):
-        errs.append((argname,
-                     ValueError(n_("Must be comma separated identifiers."))))
-    return CSVIdentifier(val), errs
+    val = _printable_ascii(val, argname, **kwargs)
+    if re.search(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$', val) is None:
+        raise ValidationError(argname, n_(
+            "Must be comma separated identifiers."))
+    return CSVIdentifier(val)
 
 
-# TODO manual handling inside decorator or storage dict
+# TODO manual handling of @_add_typed_validator inside decorator or storage dict
 def _list_of(
-    val: Any, validator: Callable[..., ValidationOutput[T]],
+    val: Any, validator: Callable[..., T],
     argname: str = None, *,
     _convert: bool = True, _allow_empty: bool = True, **kwargs
 ) -> ValidationOutput[List[T]]:
@@ -860,50 +833,50 @@ def _list_of(
     if _convert:
         if isinstance(val, str):
             # TODO use default separator from config here?
+            # TODO use escaped_split?
             # Skip emtpy entries which can be produced by JavaScript.
             val = [v for v in val.split(",") if v]
-        val, errs = _iterable(val, argname, _convert=_convert, **kwargs)
-        if errs:
-            return None, errs
-        val = list(val)
+        val = list(_iterable(val, argname, _convert=_convert, **kwargs))
     else:
-        val, errs = _sequence(val, argname, _convert=_convert, **kwargs)
-        if errs:
-            return None, errs
-        val = list(val)
+        val = list(_sequence(val, argname, _convert=_convert, **kwargs))
     vals: List[T] = []
-    errs = []
+    errs = ValidationSummary()
     for v in val:
-        v, e = validator(v, argname, _convert=_convert, **kwargs)
-        vals.append(v)
-        errs.extend(e)
+        try:
+            vals.append(validator(v, argname, _convert=_convert, **kwargs))
+        except ValidationError as e:
+            errs.append(e)
     if not _allow_empty:
         if not vals:
-            return None, [(argname, ValueError(n_("Must not be empty.")))]
+            raise ValidationError(argname, n_("Must not be empty."))
     return vals, errs
 
 
-@_add_typed_validator(IntCSVList)
+# @_add_typed_validator(IntCSVList)
 @_addvalidator
 def _int_csv_list(
     val: Any, argname: str = None, **kwargs
 ) -> ValidationOutput[IntCSVList]:
-    return _list_of(val, _int, argname, **kwargs)
+    values, errors = _list_of(val, _int, argname, **kwargs)
+    return IntCSVList(values), errors
 
 
-@_add_typed_validator(CdedbIDList)
-@_addvalidator
+# @_add_typed_validator(CdedbIDList)
+@ _addvalidator
 def _cdedbid_csv_list(
     val: Any, argname: str = None, **kwargs
+
+
 ) -> ValidationOutput[CdedbIDList]:
     """This deals with strings containing multiple cdedbids,
     like when they are returned from cdedbSearchPerson.
     """
-    return _list_of(val, _cdedbid, argname, **kwargs)
+    values, errors = _list_of(val, _cdedbid, argname, **kwargs)
+    return CdedbIDList(values), errors
 
 
-@_add_typed_validator(PasswordStrength)
-@_addvalidator
+# @_add_typed_validator(PasswordStrength)
+@ _addvalidator
 def _password_strength(
     val: Any, argname: str = None, *,
     admin: bool = False, inputs: List[str] = None, **kwargs
@@ -918,7 +891,8 @@ def _password_strength(
     really improving password strength.
     """
     inputs = inputs or []
-    val, errors = _str(val, argname=argname, **kwargs)
+    val = _str(val, argname=argname, **kwargs)
+    errors = ValidationSummary()
     if val:
         results = zxcvbn.zxcvbn(val, list(filter(None, inputs)))
         # if user is admin in any realm, require a score of 4. After
@@ -929,59 +903,47 @@ def _password_strength(
             feedback = [results['feedback']['warning']]
             feedback.extend(results['feedback']['suggestions'][0:2])
             for fb in filter(None, feedback):
-                errors.append((argname, ValueError(fb)))
+                errors.append(ValidationError(argname, ValueError(fb)))
                 if not errors:
-                    errors.append(
-                        (argname, ValueError(n_("Password too weak."))))
+                    errors.append(ValidationError(
+                        argname, n_("Password too weak.")))
         if admin and results['score'] < 4:
-            errors.append((argname, ValueError(n_("Password too weak for "
-                                                  "admin account."))))
+            errors.append(ValidationError(argname, n_("Password too weak for"
+                                                      " admin account.")))
 
     return PasswordStrength(val), errors
 
 
-_EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
-
-
-@_add_typed_validator(Email)
-@_addvalidator
+# @_add_typed_validator(Email)
+@ _addvalidator
 def _email(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[Email]:
+) -> Email:
     """We accept only a subset of valid email addresses since implementing the
     full standard is horrendous. Also we normalize emails to lower case.
     """
-    val, errs = _printable_ascii(val, argname, **kwargs)
-    if errs:
-        return None, errs
-    # normalize email addresses to lower case
+    val = _printable_ascii(val, argname, **kwargs)
+    # strip address and normalize to lower case
     val = val.strip().lower()
-    if not _EMAIL_REGEX.search(val):
-        errs.append((argname, ValueError(
-            n_("Must be a valid email address."))))
-    return Email(val), errs
+    if re.search(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$', val) is None:
+        raise ValidationError(argname, n_("Must be a valid email address."))
+    return Email(val)
 
 
-_EMAIL_LOCAL_PART_REGEX = re.compile(r'^[a-z0-9._+-]+$')
-
-
-@_add_typed_validator(EmailLocalPart)
-@_addvalidator
+# @_add_typed_validator(EmailLocalPart)
+@ _addvalidator
 def _email_local_part(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[EmailLocalPart]:
+) -> EmailLocalPart:
     """We accept only a subset of valid email addresses.
     Here we only care about the local part.
     """
-    val, errs = _printable_ascii(val, argname, **kwargs)
-    if errs:
-        return None, errs
-    # normalize to lower case
+    val = _printable_ascii(val, argname, **kwargs)
+    # strip address and normalize to lower case
     val = val.strip().lower()
-    if not _EMAIL_LOCAL_PART_REGEX.match(val):
-        errs.append(
-            (argname, ValueError(n_("Must be a valid email local part."))))
-    return EmailLocalPart(val), errs
+    if not re.match(r'^[a-z0-9._+-]+$', val):  # TODO inspect match vs search
+        raise ValidationError(argname, n_("Must be a valid email local part."))
+    return EmailLocalPart(val)
 
 
 _PERSONA_TYPE_FIELDS = {
@@ -1251,37 +1213,33 @@ def parse_date(val: str) -> datetime.date:
     raise ValueError(n_("Invalid date string."))
 
 
-@_add_typed_validator(datetime.date)
+# @_add_typed_validator(datetime.date)
 @_addvalidator
 def _date(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs
-) -> ValidationOutput[datetime.date]:
+) -> datetime.date:
     if _convert and isinstance(val, str) and len(val.strip()) >= 6:
         try:
             val = parse_date(val)
         except (ValueError, TypeError):  # TODO TypeError should not occur
-            return None, [(argname, ValueError(n_("Invalid input for date.")))]
-    if not isinstance(val, datetime.date):
-        return None, [(argname, TypeError(n_("Must be a datetime.date.")))]
-    if isinstance(val, datetime.datetime):  # TODO why not just use the subclass
+            raise ValidationError(argname, n_("Invalid input for date."))
+    if isinstance(val, datetime.datetime):
+        # TODO why not just use the subclass
         # necessary, since isinstance(datetime.datetime.now(),
         # datetime.date) == True
         val = val.date()
-    return val, []
+    if not isinstance(val, datetime.date):
+        raise ValidationError(argname, n_("Must be a datetime.date."))
+    return val
 
 
-@_add_typed_validator(Birthday)
+# @_add_typed_validator(Birthday)
 @_addvalidator
-def _birthday(
-    val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[Birthday]:
-    val, errs = _date(val, argname=argname, **kwargs)
-    if errs:
-        return val, errs
+def _birthday(val: Any, argname: str = None, **kwargs) -> Birthday:
+    val = _date(val, argname=argname, **kwargs)
     if now().date() < val:
-        return None, [(argname, ValueError(
-            n_("A birthday must be in the past.")))]
-    return Birthday(val), []
+        raise ValidationError(argname, n_("A birthday must be in the past."))
+    return Birthday(val)
 
 
 def parse_datetime(
@@ -1321,16 +1279,17 @@ def parse_datetime(
         # TODO is isoformat not included above?
         ret = datetime.datetime.fromisoformat(val)
     if ret.tzinfo is None:
-        ret = _BASICCONF["DEFAULT_TIMEZONE"].localize(ret)
+        timezone: pytz.BaseTzInfo = _BASICCONF["DEFAULT_TIMEZONE"]
+        ret = timezone.localize(ret)
     return ret.astimezone(pytz.utc)
 
 
-@_add_typed_validator(datetime.datetime)
+# @_add_typed_validator(datetime.datetime)
 @_addvalidator
 def _datetime(
     val: Any, argname: str = None, *,
     _convert: bool = True, default_date: datetime.date = None, **kwargs
-) -> ValidationOutput[datetime.datetime]:
+) -> datetime.datetime:
     """
     :param default_date: If the user-supplied value specifies only a time, this
       parameter allows to fill in the necessary date information to fill
@@ -1340,44 +1299,40 @@ def _datetime(
         try:
             val = parse_datetime(val, default_date)
         except (ValueError, TypeError):  # TODO should never be TypeError
-            return None, [(argname,
-                           ValueError(n_("Invalid input for datetime.")))]
+            raise ValidationError(argname, n_("Invalid input for datetime."))
     if not isinstance(val, datetime.datetime):
-        return None, [(argname, TypeError(n_("Must be a datetime.datetime.")))]
-    return val, []
+        raise ValidationError(argname, n_("Must be a datetime.datetime."))
+    return val
 
 
-@_add_typed_validator(SingleDigitInt)
+# @_add_typed_validator(SingleDigitInt)
 @_addvalidator
 def _single_digit_int(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[SingleDigitInt]:
+) -> SingleDigitInt:
     """Like _int, but between +9 and -9."""
-    val, errs = _int(val, argname, **kwargs)
-    if errs:
-        return val, errs
+    val = _int(val, argname, **kwargs)
     if val > 9 or val < -9:
-        return None, [(argname, ValueError(n_("More than one digit.")))]
-    return SingleDigitInt(val), []
+        raise ValidationError(argname, n_("More than one digit."))
+    return SingleDigitInt(val)
 
 
-@_add_typed_validator(Phone)
+# @_add_typed_validator(Phone)
 @_addvalidator
 def _phone(
     val: Any, argname: str = None, **kwargs
 ) -> ValidationOutput[Phone]:
-    val, errs = _printable_ascii(val, argname, **kwargs)
-    if errs:
-        return val, errs
+    val = _printable_ascii(val, argname, **kwargs)
     orig = val.strip()
     val = ''.join(c for c in val if c in '+1234567890')
+
     if len(val) < 7:
-        errs.append((argname, ValueError(n_("Too short."))))
-        return None, errs
+        raise ValidationError(argname, n_("Too short."))
 
     # This is pretty horrible, but seems to be the best way ...
     # It works thanks to the test-suite ;)
 
+    errs = ValidationSummary()
     retval = "+"
     # first the international part
     if val.startswith(("+", "00")):
@@ -1390,8 +1345,8 @@ def _phone(
                 val = val[len(code):]
                 break
         else:
-            errs.append(
-                (argname, ValueError(n_("Invalid international part."))))
+            errs.append(ValidationError(
+                argname, n_("Invalid international part.")))
         if retval == "+49" and not val.startswith("0"):
             val = "0" + val
     else:
@@ -1400,25 +1355,25 @@ def _phone(
     if retval == "+49":
         # german stuff here
         if not val.startswith("0"):
-            errs.append((argname, ValueError(n_("Invalid national part."))))
+            errs.append(ValidationError(argname, n_("Invalid national part.")))
         else:
             val = val[1:]
         for length in range(1, 7):
             if val[:length] in GERMAN_PHONE_CODES:
                 retval += " ({}) {}".format(val[:length], val[length:])
                 if length + 2 >= len(val):
-                    errs.append(
-                        (argname, ValueError(n_("Invalid local part."))))
+                    errs.append(ValidationError(
+                        argname, n_("Invalid local part.")))
                 break
         else:
-            errs.append((argname, ValueError(n_("Invalid national part."))))
+            errs.append(ValidationError(argname, n_("Invalid national part.")))
     else:
         index = 0
         try:
             index = orig.index(retval[1:]) + len(retval) - 1
         except ValueError:
-            errs.append(
-                (argname, ValueError(n_("Invalid international part."))))
+            errs.append(ValidationError(
+                argname, n_("Invalid international part.")))
         # this will terminate since we know that there are sufficient digits
         while not orig[index] in string.digits:
             index += 1
@@ -1435,28 +1390,25 @@ def _phone(
     return Phone(retval), errs
 
 
-@_add_typed_validator(GermanPostalCode)
+# @_add_typed_validator(GermanPostalCode)
 @_addvalidator
 def _german_postal_code(
     val: Any, argname: str = None, *,
     aux: str = None, _ignore_warnings: bool = False, **kwargs
-) -> ValidationOutput[GermanPostalCode]:
+) -> GermanPostalCode:
     """
     :param aux: Additional information. In this case the country belonging
         to the postal code.
     :param _ignore_warnings: If True, ignore invalid german postcodes.
     """
-    val, errs = _printable_ascii(
+    val = _printable_ascii(
         val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
-    if errs:
-        return val, errs
-    val = val.strip()
-    # TODO change aux
-    if aux is None or aux == "" or aux == "Deutschland":
+    val = val.strip()  # TODO remove strip?
+    # TODO change aux?
+    if not aux or aux == "Deutschland":
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
-            errs.append(
-                (argname, ValidationWarning(n_("Invalid german postal code."))))
-    return GermanPostalCode(val), errs
+            raise ValidationWarning(argname, n_("Invalid german postal code."))
+    return GermanPostalCode(val)
 
 
 def _GENESIS_CASE_COMMON_FIELDS(): return {
@@ -1594,43 +1546,39 @@ def _privilege_change(val, argname=None, *, _convert=True,
     return val, errs
 
 
-@_add_typed_validator(InputFile)
+# @_add_typed_validator(InputFile)
 @_addvalidator
 def _input_file(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[InputFile]:
+) -> InputFile:
     if not isinstance(val, werkzeug.datastructures.FileStorage):
-        return None, [(argname, TypeError(n_("Not a FileStorage.")))]
+        raise ValidationWarning(argname, n_("Not a FileStorage."))
     blob = val.read()
     if not blob:
-        return None, [(argname, ValueError(n_("Empty FileStorage.")))]
-    return InputFile(blob), []
+        raise ValidationWarning(argname, n_("Empty FileStorage."))
+    return InputFile(blob)
 
 
 # TODO check encoding or maybe use union of literals
-@_add_typed_validator(CSVFile)
+# @_add_typed_validator(CSVFile)
 @_addvalidator
 def _csvfile(
     val: Any, argname: str = None, *,
     encoding: str = "utf-8-sig", **kwargs
-) -> ValidationOutput[CSVFile]:
+) -> CSVFile:
     """
     We default to 'utf-8-sig', since it behaves exactly like 'utf-8' if the
     file is 'utf-8' but it gets rid of the BOM if the file is 'utf-8-sig'.
     """
-    val, errs = _input_file(val, argname, **kwargs)
-    if errs:
-        return val, errs
+    val = _input_file(val, argname, **kwargs)
     mime = magic.from_buffer(val, mime=True)
     if mime not in ("text/csv", "text/plain"):
-        errs.append((argname, ValueError(n_("Only text/csv allowed."))))
-    if errs:
-        return None, errs
-    val, errs = _str(val.decode(encoding).strip(), argname, **kwargs)
-    return CSVFile(val), errs
+        raise ValidationWarning(argname, n_("Only text/csv allowed."))
+    val = _str(val.decode(encoding).strip(), argname, **kwargs)
+    return CSVFile(val)
 
 
-@_add_typed_validator(ProfilePicture)
+# @_add_typed_validator(ProfilePicture)
 @_addvalidator
 def _profilepic(
     val: Any, argname: str = None, *,
@@ -1645,30 +1593,33 @@ def _profilepic(
         `werkzeug.FileStorage`, otherwise expect a `bytes` object.
     """
     if file_storage:
-        val, errs = _input_file(val, argname, **kwargs)
+        val = _input_file(val, argname, **kwargs)
     else:
-        val, errs = _bytes(val, argname, **kwargs)
-    if errs:
-        return val, errs
+        val = _bytes(val, argname, **kwargs)
+
+    errs = ValidationSummary()
     if len(val) < 2 ** 10:
-        errs.append((argname, ValueError(n_("Too small."))))
+        errs.append(ValidationError(argname, n_("Too small.")))
     if len(val) > 2 ** 17:
-        errs.append((argname, ValueError(n_("Too big."))))
+        errs.append(ValidationError(argname, n_("Too big.")))
+
     mime = magic.from_buffer(val, mime=True)
     if mime not in ("image/jpeg", "image/jpg", "image/png"):
-        errs.append((argname, ValueError(n_("Only jpg and png allowed."))))
+        errs.append(ValidationError(
+            argname, n_("Only jpg and png allowed.")))
     if errs:
         return None, errs
+
     image = PIL.Image.open(io.BytesIO(val))
     width, height = image.size
     if width / height < 0.9 or height / width < 0.9:
-        errs.append((argname, ValueError(n_("Not square enough."))))
+        errs.append(ValidationError(argname, n_("Not square enough.")))
     if width * height < 5000:
-        errs.append((argname, ValueError(n_("Resolution too small."))))
+        errs.append(ValidationError(argname, n_("Resolution too small.")))
     return ProfilePicture(val), errs
 
 
-@_add_typed_validator(PDFFile)
+# @_add_typed_validator(PDFFile)
 @_addvalidator
 def _pdffile(
     val: Any, argname: str = None, *,
@@ -1695,7 +1646,7 @@ def _pdffile(
     return PDFFile(val), errs
 
 
-@_add_typed_validator(Tuple[int, int])
+# @_add_typed_validator(Tuple[int, int])
 @_addvalidator
 def _pair_of_int(
     val: Any, argname: str = "pair", **kwargs
@@ -1703,16 +1654,15 @@ def _pair_of_int(
     """Validate a pair of integers."""
 
     val, errs = _list_of(val, _int, argname, **kwargs)
-    if errs:
-        return val, errs
+    if errs or val is None:
+        return None, errs
     try:
         a, b = val
     except ValueError:
-        errs.append((argname,
-                     ValueError(n_("Must contain exactly two elements."))))
-        return None, errs
+        raise ValidationWarning(
+            argname, n_("Must contain exactly two elements."))
 
-    return (a, b), errs
+    return (a, b), []
 
 
 @_addvalidator
@@ -1819,7 +1769,7 @@ def _lastschrift(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-@_add_typed_validator(IBAN)
+# @_add_typed_validator(IBAN)
 @_addvalidator
 def _iban(
     val: Any, argname: str = "iban", **kwargs
@@ -2044,7 +1994,7 @@ def _sepa_meta(val, argname=None, *, _convert=True, _ignore_warnings=False):
     return val, errs
 
 
-@_add_typed_validator(SafeStr)
+# @_add_typed_validator(SafeStr)
 @_addvalidator
 def _safe_str(
     val: Any, argname: str = None, **kwargs
@@ -2297,7 +2247,7 @@ def _event(val, argname=None, *, creation=False, _convert=True,
                 creation = (anid < 0)
                 fee_modifier, ee = _event_fee_modifier_or_None(
                     fee_modifier, 'fee_modifiers',
-                    creation=creation,_convert=_convert)
+                    creation=creation, _convert=_convert)
                 if ee:
                     errs.extend(ee)
                 else:
@@ -3066,11 +3016,11 @@ def _questionnaire(val, field_definitions, fee_modifiers, argname=None, *,
     return ret, errs
 
 
-@_add_typed_validator(JSON)
+# @_add_typed_validator(JSON)
 @_addvalidator
 def _json(
     val: Any, argname: str = "json", *, _convert: bool = True, **kwargs
-) -> ValidationOutput[JSON]:
+) -> JSON:
     """Deserialize a JSON payload.
 
     This is a bit different from many other validatiors in that it is not
@@ -3085,19 +3035,14 @@ def _json(
         try:
             val = val.decode("utf-8")  # TODO remove encoding argument
         except UnicodeDecodeError:
-            return None, [(argname, ValueError(n_("Invalid UTF-8 sequence.")))]
-    val, errs = _str(val, argname, _convert=_convert, **kwargs)
-    if errs:
-        return val, errs
-    if not val:
-        return None, [(argname, ValueError(n_("Must not be empty.")))]
+            raise ValidationError(argname, n_("Invalid UTF-8 sequence."))
+    val = _str(val, argname, _convert=_convert, **kwargs)
     try:
         data = json.loads(val)
     except json.decoder.JSONDecodeError as e:
         msg = n_("Invalid JSON syntax (line %(line)s, col %(col)s).")
-        return None, [(argname, ValueError(msg, {'line': e.lineno,
-                                                 'col': e.colno}))]
-    return JSON(data), []
+        raise ValidationError(argname, msg, {'line': e.lineno, 'col': e.colno})
+    return JSON(data)
 
 
 @_addvalidator
@@ -4102,7 +4047,7 @@ def _assembly_attachment_version(val, argname=None, *, creation=False,
     return val, errs
 
 
-@_add_typed_validator(Vote)
+# @_add_typed_validator(Vote)
 @_addvalidator
 def _vote(
     val: Any, argname: str = "vote", ballot: Mapping[str, Any] = None, **kwargs
@@ -4114,7 +4059,7 @@ def _vote(
 
     :param ballot: Ballot the vote was cast for.
     """
-    argname = argname or "vote"
+    assert ballot is not None  # TODO needed because of default for argname
     val, errs = _str(val, argname, **kwargs)
     if errs:
         return val, errs
@@ -4145,44 +4090,34 @@ def _vote(
     return Vote(val), errs
 
 
-@_add_typed_validator(Regex)
+# @_add_typed_validator(Regex)
 @_addvalidator
 def _regex(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[Regex]:
-    val, errs = _str(val, argname, **kwargs)
-    if errs:
-        return val, errs
+) -> Regex:
+    val = _str(val, argname, **kwargs)
     try:
         re.compile(val)
     except re.error as exc:
-        err = ValueError(n_("Invalid  regular expression (position %(pos)s)."),
-                         {'pos': exc.pos})
-        return None, [(argname, err)]
-    return Regex(val), errs
+        raise ValidationError(
+            argname,
+            n_("Invalid  regular expression (position %(pos)s)."),
+            {'pos': exc.pos})  # type: ignore # TODO make PR in typeshed
+    return Regex(val)
 
 
-@_add_typed_validator(NonRegex)
+# @_add_typed_validator(NonRegex)
 @_addvalidator
 def _non_regex(
     val: Any, argname: str = None, **kwargs
-) -> ValidationOutput[NonRegex]:
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (str or None, [(str or None, exception)])
-    """
-    val, errs = _str(val, argname, **kwargs)
-    if errs:
-        return val, errs
+) -> NonRegex:
+    val = _str(val, argname, **kwargs)
     forbidden_chars = r'\*+?{}()[]|'
     msg = n_(r"Must not contain any forbidden characters"
              r" (which are \*+?{}()[]| while .^$ are allowed).")
     if any(char in val for char in forbidden_chars):
-        return None, [(argname, ValueError(msg))]
-    return NonRegex(val), errs
+        raise ValidationError(argname, msg)
+    return NonRegex(val)
 
 
 @_addvalidator
@@ -4665,6 +4600,7 @@ def typed_assert_valid(
         error.args = ("{} ({})".format(
             error.args[0], argname),) + error.args[1:]
         raise error
+    assert isinstance(val, type_)
     return val
 
 
@@ -4688,4 +4624,4 @@ def typed_check_valid(
             f" with input {args}, {kwargs}."
         )
         return None, errs
-    return val, errs
+    return val, ValidationSummary()
