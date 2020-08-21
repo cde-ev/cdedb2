@@ -4,14 +4,10 @@ Welcome to CdEDB's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    Introduction
    Architecture
-   Frontend
-   Backend
-   Database
-   Auxiliary
    Workflows
    Specification
    Email_Templates
