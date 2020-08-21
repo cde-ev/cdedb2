@@ -6,19 +6,13 @@ Contents:
 .. toctree::
    :maxdepth: 1
 
-   Introduction
+   Development
    Architecture
-   Workflows
-   Specification
-   Email_Templates
-   Paraphernalia
-   Migration
    Handbuch
+   Archive
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
-

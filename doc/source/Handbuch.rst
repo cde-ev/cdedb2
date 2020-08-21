@@ -9,11 +9,11 @@ Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
 über Anregungen an cdedb ät lists.cde-ev.de.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
 
    Handbuch_Orga_Allgemeines
    Handbuch_Orga_Spezielles
    Handbuch_partieller_Import
    Handbuch_Markdown
    Handbuch_elektronisches_Wahlverfahren
-   Privacy
+   Handbuch_Email_Templates

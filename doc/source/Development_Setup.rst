@@ -7,7 +7,7 @@ machine.
 
 .. note:: This is somewhat complicated and it is advised to use the virtual
     machine in most cases. Instructions for obtaining and using the image can be
-    found at :doc:`Introduction_VM`.
+    found at :doc:`Development_VM`.
 
 Below may be some Gentoo-specific bits, for
 Debian-specific stuff look at the setup scripts in ``related/auto-build``.

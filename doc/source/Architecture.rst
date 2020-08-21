@@ -2,17 +2,12 @@ Architecture
 ============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    Architecture_Design
    Architecture_Realms
    Architecture_Privileges
    Architecture_Events
    Architecture_Mailinglists
-   Course_Query
-   Registration_Query
-   Lodgement_Query
-   API_droids
-
-
-
+   Architecture_API_droids
+   Architecture_Privacy
