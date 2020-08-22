@@ -1884,7 +1884,7 @@ class CoreBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         roles = self.get_roles_multi(rs, ids, introspection_only)
         all_realms = {"cde", "event", "assembly", "ml"}
-        return {key: value & all_realms for key, value in roles.items()}
+        return {key: value & all_realms for key, value in roles.items() if key}
     get_realms_single = singularize(get_realms_multi)
 
     @access("persona")
@@ -1902,7 +1902,7 @@ class CoreBackend(AbstractBackend):
         required_roles = affirm_set("str", required_roles)
         roles = self.get_roles_multi(rs, ids, introspection_only)
         return tuple(key for key, value in roles.items()
-                     if value >= required_roles)
+                     if value >= required_roles and key)
 
     @access("anonymous")
     def genesis_set_attachment(self, rs: RequestState, attachment: bytes
