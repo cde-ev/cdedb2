@@ -26,13 +26,42 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(None, user.persona_id)
 
     def test_multiple_sessions(self):
-        key1 = self.login(USER_DICT["anton"], ip="1.2.3.4")
-        key2 = self.login(USER_DICT["anton"], ip="1.2.3.4")
-        user1 = self.session.lookupsession(key1, "1.2.3.4")
+        # Use the default value from `setup_requeststate` here.
+        ip1 = ip2 = "127.0.0.0"
+        ip3 = "4.3.2.1"
+        key1 = self.login(USER_DICT["anton"], ip=ip1)
+        key2 = self.login(USER_DICT["anton"], ip=ip2)
+        key3 = self.login(USER_DICT["anton"], ip=ip3)
+        user1 = self.session.lookupsession(key1, ip1)
         self.assertIsInstance(user1, User)
         self.assertTrue(user1.persona_id)
-        user2 = self.session.lookupsession(key2, "1.2.3.4")
+        user2 = self.session.lookupsession(key2, ip2)
         self.assertIsInstance(user2, User)
         self.assertTrue(user2.persona_id)
+        user3 = self.session.lookupsession(key3, ip3)
+        self.assertIsInstance(user3, User)
+        self.assertTrue(user3.persona_id)
         self.assertNotEqual(user1, user2)
+        self.assertNotEqual(user1, user3)
+        self.assertNotEqual(user2, user3)
         self.assertEqual(user1.__dict__, user2.__dict__)
+        self.assertEqual(user1.__dict__, user3.__dict__)
+        self.assertEqual(user2.__dict__, user3.__dict__)
+
+        self.core.logout(key1)
+        self.assertEqual(
+            {"anonymous"},
+            self.session.lookupsession(key1, ip1).roles)
+        self.assertEqual(
+            user2.__dict__,
+            self.session.lookupsession(key2, ip2).__dict__)
+        self.assertEqual(
+            user3.__dict__,
+            self.session.lookupsession(key3, ip3).__dict__)
+        self.core.logout(key2, all_sessions=True)
+        self.assertEqual(
+            {"anonymous"},
+            self.session.lookupsession(key2, ip2).roles)
+        self.assertEqual(
+            {"anonymous"},
+            self.session.lookupsession(key3, ip3).roles)

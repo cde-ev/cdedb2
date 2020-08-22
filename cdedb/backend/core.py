@@ -1829,12 +1829,18 @@ class CoreBackend(AbstractBackend):
         return sessionkey
 
     @access("persona")
-    def logout(self, rs: RequestState) -> DefaultReturnCode:
+    def logout(self, rs: RequestState, all_sessions: bool = False
+               ) -> DefaultReturnCode:
         """Invalidate the current session."""
-        query = glue(
-            "UPDATE core.sessions SET is_active = False, atime = now()",
-            "WHERE sessionkey = %s AND is_active = True")
-        return self.query_exec(rs, query, (rs.sessionkey,))
+        query = "UPDATE core.sessions SET is_active = False, atime = now()"
+        constraints = ["is_active = True"]
+        params: List[Any] = []
+        if not all_sessions:
+            constraints.append("sessionkey = %s")
+            params.append(rs.sessionkey)
+        if constraints:
+            query += " WHERE " + " AND ".join(constraints)
+        return self.query_exec(rs, query, params)
 
     @access("persona")
     def verify_ids(self, rs: RequestState, ids: Collection[int],
