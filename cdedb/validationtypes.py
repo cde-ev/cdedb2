@@ -10,6 +10,7 @@ PositiveInt = NewType("PositiveInt", int)
 ID = NewType("ID", int)
 PartialImportID = NewType("PartialImportID", int)
 SingleDigitInt = NewType("SingleDigitInt", int)
+CdedbID = NewType("CdedbID", int)
 
 NonNegativeDecimal = NewType("NonNegativeDecimal", decimal.Decimal)
 PositiveDecimal = NewType("PositiveDecimal", decimal.Decimal)
@@ -18,7 +19,6 @@ EmptyDict = NewType("EmptyDict", dict)
 EmptyList = NewType("EmptyList", list)
 
 Realm = NewType("Realm", str)
-CdedbID = NewType("CdedbID", str)
 StringType = NewType("StringType", str)
 PrintableASCIIType = NewType("PrintableASCIIType", str)
 PrintableASCII = NewType("PrintableASCII", str)  # TODO make these subtypes?
