@@ -1845,7 +1845,7 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 
-def staticurl(path: str, version: str = None) -> str:
+def staticurl(path: str, version: str = "") -> str:
     """Construct an HTTP URL to a static resource (to be found in the static
     directory). We encapsulate this here so moving the directory around
     causes no pain.
@@ -1854,15 +1854,17 @@ def staticurl(path: str, version: str = None) -> str:
         parameter. This can be used to force Browsers to flush their caches on
         code updates.
     """
-    return str(pathlib.Path("/static", path)) \
-        + ('?v=' + version if version else '')
+    ret = str(pathlib.PurePosixPath("/static", path))
+    if version:
+        ret += '?v=' + version
+    return ret
 
 
-def docurl(topic: str, anchor: str = None) -> str:
+def docurl(topic: str, anchor: str = "") -> str:
     """Construct an HTTP URL to a doc page."""
-    ret = str(pathlib.Path("/doc", topic + ".html"))
+    ret = str(pathlib.PurePosixPath("/doc", topic + ".html"))
     if anchor:
-        ret = ret + "#" + anchor
+        ret += "#" + anchor
     return ret
 
 
