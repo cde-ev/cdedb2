@@ -242,11 +242,21 @@ class CoreFrontend(AbstractFrontend):
     # We don't check anti CSRF tokens here, since logging does not harm anyone.
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
-        """Invalidate session."""
-        self.coreproxy.logout(rs)
-        self.redirect(rs, "core/index")
-        rs.response.delete_cookie("sessionkey")
-        return rs.response
+        """Invalidate the current session."""
+        self.coreproxy.logout(rs, all_sessions=False)
+        response = self.redirect(rs, "core/index")
+        response.delete_cookie("sessionkey")
+        return response
+
+    # Check for anti CSRF here, since this affects multiple sessions.
+    @access("persona", modi={"POST"})
+    def logout_all(self, rs: RequestState) -> Response:
+        """Invalidate all sessions for the current user."""
+        ret = self.coreproxy.logout(rs, all_sessions=True)
+        rs.notify("succes", n_("{count} sessions terminated."), {'count': ret})
+        response = self.redirect(rs, "core/index")
+        response.delete_cookie("sessionkey")
+        return response
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))

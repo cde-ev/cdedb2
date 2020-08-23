@@ -13782,6 +13782,9 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
 
+msgid "Logout Everywhere"
+msgstr "Auf allen Geräten ausloggen"
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 
