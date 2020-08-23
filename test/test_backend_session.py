@@ -27,41 +27,35 @@ class TestSessionBackend(BackendTest):
 
     def test_multiple_sessions(self):
         # Use the default value from `setup_requeststate` here.
-        ip1 = ip2 = "127.0.0.0"
-        ip3 = "4.3.2.1"
-        key1 = self.login(USER_DICT["anton"], ip=ip1)
-        key2 = self.login(USER_DICT["anton"], ip=ip2)
-        key3 = self.login(USER_DICT["anton"], ip=ip3)
-        user1 = self.session.lookupsession(key1, ip1)
-        self.assertIsInstance(user1, User)
-        self.assertTrue(user1.persona_id)
-        user2 = self.session.lookupsession(key2, ip2)
-        self.assertIsInstance(user2, User)
-        self.assertTrue(user2.persona_id)
-        user3 = self.session.lookupsession(key3, ip3)
-        self.assertIsInstance(user3, User)
-        self.assertTrue(user3.persona_id)
-        self.assertNotEqual(user1, user2)
-        self.assertNotEqual(user1, user3)
-        self.assertNotEqual(user2, user3)
-        self.assertEqual(user1.__dict__, user2.__dict__)
-        self.assertEqual(user1.__dict__, user3.__dict__)
-        self.assertEqual(user2.__dict__, user3.__dict__)
+        ips = ["127.0.0.0", "4.3.2.1", "127.0.0.0"]
+        keys = []
+        users = []
+        for ip in ips:
+            keys.append(self.login(USER_DICT["anton"], ip=ip))
+            users.append(self.session.lookupsession(keys[-1], ip))
+            self.assertIsInstance(users[-1], User)
+            self.assertTrue(users[-1].persona_id)
+        for i, user in enumerate(users[:-1]):
+            self.assertNotEqual({"anonymous"}, user.roles)
+            self.assertNotEqual(user, users[i+1])
+            self.assertEqual(user.__dict__, users[i+1].__dict__)
 
-        self.core.logout(key1)
+        # Terminate a single session.
+        self.core.logout(keys[0])
+        # Check termination.
         self.assertEqual(
             {"anonymous"},
-            self.session.lookupsession(key1, ip1).roles)
-        self.assertEqual(
-            user2.__dict__,
-            self.session.lookupsession(key2, ip2).__dict__)
-        self.assertEqual(
-            user3.__dict__,
-            self.session.lookupsession(key3, ip3).__dict__)
-        self.core.logout(key2, all_sessions=True)
-        self.assertEqual(
-            {"anonymous"},
-            self.session.lookupsession(key2, ip2).roles)
-        self.assertEqual(
-            {"anonymous"},
-            self.session.lookupsession(key3, ip3).roles)
+            self.session.lookupsession(keys[0], ips[0]).roles)
+        # Check that other sessions are untouched.
+        for i in (1, 2):
+            self.assertEqual(
+                users[i].__dict__,
+                self.session.lookupsession(keys[i], ips[i]).__dict__)
+
+        # Terminate all sessions.
+        self.core.logout(keys[2], all_sessions=True)
+        # Check that all sessions have been terminated.
+        for i in (0, 1, 2):
+            self.assertEqual(
+                {"anonymous"},
+                self.session.lookupsession(keys[i], ips[i]).roles)
