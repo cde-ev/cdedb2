@@ -316,6 +316,12 @@ class CdEDBTest(unittest.TestCase):
 
         :returns: The result of the above "query" mapping id to entry.
         """
+        def parse_datetime(s: str) -> datetime.datetime:
+            # Magic placeholder that is replaced with the current time.
+            if s == "---now---":
+                return nearly_now()
+            return datetime.datetime.fromisoformat(s)
+
         ret = {}
         for anid in ids:
             if keys:
@@ -327,6 +333,9 @@ class CdEDBTest(unittest.TestCase):
                             r[k] = decimal.Decimal(r[k])
                         if k == 'birthday':
                             r[k] = datetime.date.fromisoformat(r[k])
+                    elif table == 'core.changelog':
+                        if k == 'ctime':
+                            r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
                 ret[anid] = copy.deepcopy(self.sample_data[table][anid])
