@@ -814,9 +814,10 @@ class CdEBackend(AbstractBackend):
     @access("member", "cde_admin")
     def get_member_stats(self, rs: RequestState) -> CdEDBObject:
         """Retrieve some generic statistics about members."""
+        data = self.query_one(rs, "SELECT * FROM cde.member_stats", ())
         ret: CdEDBObject = {
-            'simple_stats': self.query_one(
-                rs, "SELECT * FROM cde.member_stats", ())
+            'simple_stats': OrderedDict((k, data[k]) for k in (
+                n_("num_members"), n_("num_searchable"), n_("num_ex_members")))
         }
         for view in (n_("members_by_country"), n_("members_by_plz"),
                      n_("members_by_city"), n_("members_by_birthday"),
