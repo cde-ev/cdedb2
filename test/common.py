@@ -307,6 +307,15 @@ class CdEDBTest(unittest.TestCase):
 
     def get_sample_data(self, table: str, ids: Collection[int],
                         keys: Collection[str]) -> CdEDBObjectMap:
+        """This mocks a select request against the sample data.
+
+        "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
+
+        For some fields of some tables we perform a type conversion. These
+        should be added as necessary to ease comparison against backend results.
+
+        :returns: The result of the above "query" mapping id to entry.
+        """
         ret = {}
         for anid in ids:
             if keys:
