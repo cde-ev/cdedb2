@@ -1,0 +1,50 @@
+{% set sidenav_active='cde_member_stats' %}
+{% extends "web/cde/base.tmpl" %}
+{% block title %}
+    {% trans %}
+        Member Stats
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), gettext("Members")) }}
+{{ util.breadcrumb_link(cdedblink("cde/member_stats"), gettext("Member Stats"), active=True) }}
+{% endblock %}
+{% block content %}
+    <div id="cde-simple-stats">
+        <table class="table table-hover table-condensed">
+            {% for key, value in stats['simple_stats'].items() %}
+                <tr>
+                    <td>
+                        {{ gettext(key) }}
+                    </td>
+                    <td id="simple-stats-{{ key }}">
+                        {{ value }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <hr>
+    <div id="cde-complex-stats">
+        {% for view, view_stats in stats.items() if view != 'simple_stats' %}
+            <table class="table table-hover table-condensed" id="complex-stats-{{ view }}">
+                <thead>
+                    <tr>
+                        <td></td>
+                        <td>{{ gettext(view) }}</td>
+                    </tr>
+                </thead>
+                {% for datum, num in view_stats.items() %}
+                    <tr>
+                        <td>
+                            {{ datum }}
+                        </td>
+                        <td id="complex-stats-{{ view }}-{{ datum }}">
+                            {{ num }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -13112,6 +13112,30 @@ msgstr ""
 msgid "Mailinglists Log"
 msgstr ""
 
+msgid "members_by_country"
+msgstr "Members by Country"
+
+msgid "members_by_plz"
+msgstr "Members by Postal Code"
+
+msgid "members_by_city"
+msgstr "Members by location"
+
+msgid "members_by_birthday"
+msgstr "Members by Birthyear"
+
+msgid "members_by_first_event"
+msgstr "Members by First Event"
+
+msgid "num_members"
+msgstr "Members"
+
+msgid "num_searchable"
+msgstr "Searchable Members"
+
+msgid "num_ex_members"
+msgstr "Inactive Members"
+
 #~ msgid "CoreLogCodes.password_invalidated"
 #~ msgstr "Password deleted"
 

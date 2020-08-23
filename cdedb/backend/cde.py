@@ -8,6 +8,7 @@ members are also possible.
 
 import datetime
 import decimal
+from collections import OrderedDict
 
 from typing import (
     Collection, Dict, Tuple, List, Any, Optional
@@ -809,6 +810,21 @@ class CdEBackend(AbstractBackend):
                 self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck,
                              persona_id=None, additional_info=msg)
             return ret
+
+    @access("member", "cde_admin")
+    def get_member_stats(self, rs: RequestState) -> CdEDBObject:
+        """Retrieve some generic statistics about members."""
+        ret: CdEDBObject = {
+            'simple_stats': self.query_one(
+                rs, "SELECT * FROM cde.member_stats", ())
+        }
+        for view in (n_("members_by_country"), n_("members_by_plz"),
+                     n_("members_by_city"), n_("members_by_birthday"),
+                     n_("members_by_first_event")):
+            data = self.query_all(rs, f"SELECT * FROM cde.{view}", tuple())
+            # Preserve the ordering defined in the view.
+            ret[view] = OrderedDict((e['datum'], e['num']) for e in data)
+        return ret
 
     @access("searchable", "cde_admin")
     def submit_general_query(self, rs: RequestState,

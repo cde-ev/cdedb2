@@ -13782,6 +13782,30 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
 
+msgid "members_by_country"
+msgstr "Mitglieder nach Land"
+
+msgid "members_by_plz"
+msgstr "Mitglieder nach Postleitzahl"
+
+msgid "members_by_city"
+msgstr "Mitglieder nach Stadt"
+
+msgid "members_by_birthday"
+msgstr "Mitglieder nach Geburtsjahr"
+
+msgid "members_by_first_event"
+msgstr "Mitglieder nach erster Akademieteilnahme"
+
+msgid "num_members"
+msgstr "Mitglieder"
+
+msgid "num_searchable"
+msgstr "davon suchbar"
+
+msgid "num_ex_members"
+msgstr "Inaktive Mitglieder"
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 
