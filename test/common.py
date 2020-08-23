@@ -704,7 +704,7 @@ class FrontendTest(CdEDBTest):
     def get(self, url: str, *args, verbose=False, **kwargs) -> None:
         """Navigate directly to a given URL using GET."""
         self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
-        # TODO: Is there a reason to not follow() here?
+        self.follow()
         self.basic_validate(verbose=verbose)
 
     def follow(self, **kwargs) -> None:

@@ -36,6 +36,50 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence(user['display_name'])
         self.assertIn('loginform', self.response.forms)
 
+    def test_multiple_sessions(self):
+        user = USER_DICT["anton"]
+        session_cookie = 'sessionkey'
+        count = 3
+
+        # Set up multiple sessions.
+        keys = []
+        self.get("/")
+        f = self.response.forms['loginform']
+        f['username'] = user['username']
+        f['password'] = user['password']
+        for _ in range(count):
+            self.submit(f, check_notification=False)
+            keys.append(self.app.cookies[session_cookie])
+            # Check that we are correctly logged in.
+            self.get("/core/self/show")
+            self.assertTitle(f"{user['given_names']} {user['family_name']}")
+            self.assertNotIn('loginform', self.response.forms)
+        for i in range(count):
+            self.assertNotEqual(keys[i], keys[i+1 - count])
+
+        # Terminate the session for keys[-1].
+        self.logout()
+        self.get("/core/self/show")
+        self.assertTitle("CdE-Datenbank")
+        self.assertIn('loginform', self.response.forms)
+        # Check that other sessions are still active.
+        for key in keys[:-1]:
+            self.app.set_cookie(session_cookie, key)
+            self.get("/core/self/show")
+            self.assertTitle(f"{user['given_names']} {user['family_name']}")
+            self.assertNotIn('loginform', self.response.forms)
+
+        # Now terminate all sessions and check that they are all inactive.
+        self.get("/core/self/show")
+        f = self.response.forms['logoutallform']
+        self.submit(f)
+        # self.assertPresence(f"{count-1} Sitzung(en) beendet.", "notifications")
+        for i in range(count):
+            self.app.set_cookie(session_cookie, keys[i])
+            self.get("/core/self/show")
+            self.assertTitle("CdE-Datenbank")
+            self.assertIn('loginform', self.response.forms)
+
     @as_users("vera")
     def test_change_locale(self, user):
         # Test for german locale
