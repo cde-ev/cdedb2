@@ -216,7 +216,7 @@ def work(args):
                 datum['submitted_by'] = persona['id']
                 datum['generation'] = 1
                 datum['change_note'] = 'Create surrogate changelog.'
-                datum['change_status'] = 2  # MemberChangeStati.committed
+                datum['code'] = 2  # MemberChangeStati.committed
                 datum['persona_id'] = persona['id']
                 keys = tuple(key for key in datum)
                 query = ("INSERT INTO core.changelog ({keys})"

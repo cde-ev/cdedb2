@@ -31,7 +31,7 @@
             {% for entry in log %}
                 <tr>
                     <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
-                    <td>{{ gettext(enums['MemberChangeStati'](entry['change_status'])|string) }}</td>
+                    <td>{{ gettext(enums['MemberChangeStati'](entry['code'])|string) }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
                             {{ util.href(show_user_link(user, entry['submitted_by']),

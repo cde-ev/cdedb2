@@ -53,7 +53,7 @@ GRANT UPDATE ON assembly.attachments TO cdb_admin;"""
     for e in data:
         # Fourth try to find the original upload time from the log.
         ctime_query = ("SELECT ctime FROM assembly.log WHERE code = %s"
-                       " AND additional_info = %s ORDER BY ctime DESC LIMIT 1")
+                       " AND change_note = %s ORDER BY ctime DESC LIMIT 1")
         ctime = assembly.query_one(
             rs, ctime_query, (const.AssemblyLogCodes.attachment_added,
                               e['title']))

@@ -178,7 +178,7 @@ class AssemblyBackend(AbstractBackend):
     def assembly_log(self, rs: RequestState, code: const.AssemblyLogCodes,
                      assembly_id: Union[int, None],
                      persona_id: Union[int, None] = None,
-                     additional_info: str = None) -> DefaultReturnCode:
+                     change_note: str = None) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -187,16 +187,16 @@ class AssemblyBackend(AbstractBackend):
         :param code: One of
           :py:class:`cdedb.database.constants.AssemblyLogCodes`.
         :param persona_id: ID of affected user (like who was subscribed).
-        :param additional_info: Infos not conveyed by other columns.
+        :param change_note: Infos not conveyed by other columns.
         :returns: default return code
         """
         if rs.is_quiet:
             return 0
         # do not use sql_insert since it throws an error for selecting the id
         query = ("INSERT INTO assembly.log (code, assembly_id, submitted_by,"
-                 " persona_id, additional_info) VALUES (%s, %s, %s, %s, %s)")
+                 " persona_id, change_note) VALUES (%s, %s, %s, %s, %s)")
         params = (code, assembly_id, rs.user.persona_id, persona_id,
-                  additional_info)
+                  change_note)
         return self.query_exec(rs, query, params)
 
     @access("assembly_admin")
@@ -204,7 +204,7 @@ class AssemblyBackend(AbstractBackend):
                      codes: Collection[const.AssemblyLogCodes] = None,
                      assembly_id: int = None, offset=None,
                      length: int = None, persona_id: int = None,
-                     submitted_by: int = None, additional_info: str = None,
+                     submitted_by: int = None, change_note: str = None,
                      time_start: datetime.datetime = None,
                      time_stop: datetime.datetime = None):
         """Get recorded activity.
@@ -218,7 +218,7 @@ class AssemblyBackend(AbstractBackend):
             rs, "enum_assemblylogcodes", "assembly", "assembly.log", codes,
             entity_ids=assembly_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info, time_start=time_start,
+            change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
     @access("assembly_admin")
@@ -577,7 +577,7 @@ class AssemblyBackend(AbstractBackend):
                     rs, "assembly.assemblies", assembly_id)
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.assembly_deleted,
-                    assembly_id=None, additional_info=assembly["title"])
+                    assembly_id=None, change_note=assembly["title"])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -668,7 +668,7 @@ class AssemblyBackend(AbstractBackend):
                 ret *= self.sql_update(rs, "assembly.ballots", bdata)
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.ballot_changed,
-                    current['assembly_id'], additional_info=current['title'])
+                    current['assembly_id'], change_note=current['title'])
             if 'candidates' in data:
                 existing = set(current['candidates'].keys())
                 if not (existing >= {x for x in data['candidates'] if x > 0}):
@@ -687,7 +687,7 @@ class AssemblyBackend(AbstractBackend):
                     self.assembly_log(
                         rs, const.AssemblyLogCodes.candidate_added,
                         current['assembly_id'],
-                        additional_info=data['candidates'][x]['moniker'])
+                        change_note=data['candidates'][x]['moniker'])
                 # updated
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(data['candidates'][x])
@@ -696,7 +696,7 @@ class AssemblyBackend(AbstractBackend):
                     self.assembly_log(
                         rs, const.AssemblyLogCodes.candidate_updated,
                         current['assembly_id'],
-                        additional_info=current['candidates'][x]['moniker'])
+                        change_note=current['candidates'][x]['moniker'])
                 # deleted
                 if deleted:
                     ret *= self.sql_delete(rs, "assembly.candidates", deleted)
@@ -704,7 +704,7 @@ class AssemblyBackend(AbstractBackend):
                         self.assembly_log(
                             rs, const.AssemblyLogCodes.candidate_removed,
                             current['assembly_id'],
-                            additional_info=current['candidates'][x]['moniker'])
+                            change_note=current['candidates'][x]['moniker'])
         return ret
 
     @access("assembly_admin")
@@ -750,7 +750,7 @@ class AssemblyBackend(AbstractBackend):
             }
             self.set_ballot(rs, update)
         self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
-                          data['assembly_id'], additional_info=data['title'])
+                          data['assembly_id'], change_note=data['title'])
         return new_id
 
     @access("assembly_admin")
@@ -851,7 +851,7 @@ class AssemblyBackend(AbstractBackend):
                 ret *= self.sql_delete_one(rs, "assembly.ballots", ballot_id)
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.ballot_deleted,
-                    current['assembly_id'], additional_info=current['title'])
+                    current['assembly_id'], change_note=current['title'])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -891,7 +891,7 @@ class AssemblyBackend(AbstractBackend):
             if update['extended']:
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.ballot_extended,
-                    ballot['assembly_id'], additional_info=ballot['title'])
+                    ballot['assembly_id'], change_note=ballot['title'])
         return update['extended']
 
     def process_signup(self, rs: RequestState, assembly_id: int,
@@ -1174,7 +1174,7 @@ class AssemblyBackend(AbstractBackend):
             self.sql_update(rs, "assembly.ballots", update)
             self.assembly_log(
                 rs, const.AssemblyLogCodes.ballot_tallied,
-                ballot['assembly_id'], additional_info=ballot['title'])
+                ballot['assembly_id'], change_note=ballot['title'])
 
             # now generate the result file
             esc = json_serialize
@@ -1417,7 +1417,7 @@ class AssemblyBackend(AbstractBackend):
                 rs, ballot_id=data['ballot_id'])
             self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                               assembly_id=assembly_id,
-                              additional_info=version['title'])
+                              change_note=version['title'])
             return new_id
 
     @access("assembly_admin")
@@ -1460,7 +1460,7 @@ class AssemblyBackend(AbstractBackend):
             ret = self.sql_update(rs, "assembly.attachments", data)
             self.assembly_log(rs, const.AssemblyLogCodes.attachment_changed,
                               assembly_id=old_assembly_id,
-                              additional_info=data['id'])
+                              change_note=data['id'])
             return ret
 
     @access("assembly_admin")
@@ -1536,7 +1536,7 @@ class AssemblyBackend(AbstractBackend):
                     rs, "assembly.attachments", attachment_id)
                 self.assembly_log(rs, const.AssemblyLogCodes.attachment_removed,
                                   assembly_id,
-                                  additional_info=str(attachment_id))
+                                  change_note=str(attachment_id))
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -1603,7 +1603,7 @@ class AssemblyBackend(AbstractBackend):
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachement_version_added,
-                assembly_id, additional_info=f"Version {version}")
+                assembly_id, change_note=f"Version {version}")
         return ret
 
     @access("assembly_admin")
@@ -1677,7 +1677,7 @@ class AssemblyBackend(AbstractBackend):
                     rs, attachment_id=attachment_id)
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachement_version_removed,
-                    assembly_id, additional_info=f"Version {version}")
+                    assembly_id, change_note=f"Version {version}")
             return ret
 
     @access("assembly")

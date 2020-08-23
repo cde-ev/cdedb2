@@ -128,14 +128,14 @@ class EventBackend(AbstractBackend):
 
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: int = None,
-                  additional_info: str = None) -> DefaultReturnCode:
+                  change_note: str = None) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
         :param persona_id: ID of affected user
-        :param additional_info: Infos not conveyed by other columns.
+        :param change_note: Infos not conveyed by other columns.
         """
         if rs.is_quiet:
             return 0
@@ -144,7 +144,7 @@ class EventBackend(AbstractBackend):
             "event_id": event_id,
             "submitted_by": rs.user.persona_id,
             "persona_id": persona_id,
-            "additional_info": additional_info,
+            "change_note": change_note,
         }
         return self.sql_insert(rs, "event.log", data)
 
@@ -153,7 +153,7 @@ class EventBackend(AbstractBackend):
                      codes: Collection[const.EventLogCodes] = None,
                      event_id: int = None, offset: int = None,
                      length: int = None, persona_id: int = None,
-                     submitted_by: int = None, additional_info: str = None,
+                     submitted_by: int = None, change_note: str = None,
                      time_start: datetime.datetime = None,
                      time_stop: datetime.datetime = None) -> CdEDBLog:
         """Get recorded activity.
@@ -170,7 +170,7 @@ class EventBackend(AbstractBackend):
             rs, "enum_eventlogcodes", "event", "event.log", codes=codes,
             entity_ids=event_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info, time_start=time_start,
+            change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
     @access("anonymous")
@@ -1086,7 +1086,7 @@ class EventBackend(AbstractBackend):
                 rs, "event.course_tracks", track_id)
             self.event_log(rs, const.EventLogCodes.track_removed,
                            event_id=part["event_id"],
-                           additional_info=track["title"])
+                           change_note=track["title"])
         else:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),
@@ -1130,7 +1130,7 @@ class EventBackend(AbstractBackend):
             ret *= new_track_id
             self.event_log(
                 rs, const.EventLogCodes.track_added, event_id,
-                additional_info=track_data['title'])
+                change_note=track_data['title'])
             reg_ids = self.list_registrations(rs, event_id)
             for reg_id in reg_ids:
                 reg_track = {
@@ -1153,7 +1153,7 @@ class EventBackend(AbstractBackend):
                 ret *= self.sql_update(rs, "event.course_tracks", update)
                 self.event_log(
                     rs, const.EventLogCodes.track_updated, event_id,
-                    additional_info=track_data['title'])
+                    change_note=track_data['title'])
 
         # deleted
         if deleted:
@@ -1314,7 +1314,7 @@ class EventBackend(AbstractBackend):
             ret *= self.sql_delete_one(rs, "event.event_parts", part_id)
             self.event_log(rs, const.EventLogCodes.part_deleted,
                            event_id=part["event_id"],
-                           additional_info=part["title"])
+                           change_note=part["title"])
         else:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),
@@ -1443,7 +1443,7 @@ class EventBackend(AbstractBackend):
             self._delete_field_values(rs, current)
             self.event_log(
                 rs, const.EventLogCodes.field_removed, current["event_id"],
-                additional_info=current["field_name"])
+                change_note=current["field_name"])
         else:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),
@@ -1652,7 +1652,7 @@ class EventBackend(AbstractBackend):
                     ret *= self._set_tracks(rs, data['id'], new_id, tracks)
                     self.event_log(
                         rs, const.EventLogCodes.part_created, data['id'],
-                        additional_info=new_part['title'])
+                        change_note=new_part['title'])
                 current = self.sql_select(
                     rs, "event.event_parts", ("id", "title"), updated | deleted)
                 titles = {e['id']: e['title'] for e in current}
@@ -1664,7 +1664,7 @@ class EventBackend(AbstractBackend):
                     ret *= self._set_tracks(rs, data['id'], x, tracks)
                     self.event_log(
                         rs, const.EventLogCodes.part_changed, data['id'],
-                        additional_info=titles[x])
+                        change_note=titles[x])
                 if deleted:
                     for x in mixed_existence_sorter(deleted):
                         # Implicitly delete fee modifiers and course tracks.
@@ -1698,7 +1698,7 @@ class EventBackend(AbstractBackend):
                                            new_field)
                     self.event_log(
                         rs, const.EventLogCodes.field_added, data['id'],
-                        additional_info=fields[x]['field_name'])
+                        change_note=fields[x]['field_name'])
                 # updated
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(fields[x])
@@ -1719,7 +1719,7 @@ class EventBackend(AbstractBackend):
                                            update)
                     self.event_log(
                         rs, const.EventLogCodes.field_updated, data['id'],
-                        additional_info=field_data[x]['field_name'])
+                        change_note=field_data[x]['field_name'])
 
                 # deleted
                 if deleted:
@@ -1772,20 +1772,20 @@ class EventBackend(AbstractBackend):
                         rs, "event.fee_modifiers", fee_modifiers[x])
                     self.event_log(
                         rs, elc.fee_modifier_created, data['id'],
-                        additional_info=fee_modifiers[x]['modifier_name'])
+                        change_note=fee_modifiers[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
                     ret *= self.sql_update(
                         rs, "event.fee_modifiers", fee_modifiers[x])
                     self.event_log(
                         rs, elc.fee_modifier_changed, data['id'],
-                        additional_info=fee_modifier_data[x]['modifier_name'])
+                        change_note=fee_modifier_data[x]['modifier_name'])
                 if deleted:
                     ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
                     for x in mixed_existence_sorter(deleted):
                         modifier_name = fee_modifier_data[x]['modifier_name']
                         self.event_log(
                             rs, elc.fee_modifier_deleted,
-                            data['id'], additional_info=modifier_name)
+                            data['id'], change_note=modifier_name)
 
         return ret
 
@@ -1988,7 +1988,7 @@ class EventBackend(AbstractBackend):
                 ret *= self.sql_delete_one(
                     rs, "event.events", event_id)
                 self.event_log(rs, const.EventLogCodes.event_deleted,
-                               event_id=None, additional_info=event["title"])
+                               event_id=None, change_note=event["title"])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -2079,7 +2079,7 @@ class EventBackend(AbstractBackend):
             if changed:
                 self.event_log(
                     rs, const.EventLogCodes.course_changed, current['event_id'],
-                    additional_info=current['title'])
+                    change_note=current['title'])
             if 'segments' in data:
                 current_segments = self.sql_select(
                     rs, "event.course_segments", ("track_id",),
@@ -2115,7 +2115,7 @@ class EventBackend(AbstractBackend):
                 if new or deleted:
                     self.event_log(
                         rs, const.EventLogCodes.course_segments_changed,
-                        current['event_id'], additional_info=current['title'])
+                        current['event_id'], change_note=current['title'])
             if 'active_segments' in data:
                 current_segments = self.sql_select(
                     rs, "event.course_segments", ("track_id", "is_active"),
@@ -2142,7 +2142,7 @@ class EventBackend(AbstractBackend):
                 if activated or deactivated:
                     self.event_log(
                         rs, const.EventLogCodes.course_segment_activity_changed,
-                        current['event_id'], additional_info=current['title'])
+                        current['event_id'], change_note=current['title'])
         return ret
 
     @access("event")
@@ -2180,7 +2180,7 @@ class EventBackend(AbstractBackend):
                     pdata['active_segments'] = data['active_segments']
                 self.set_course(rs, pdata)
         self.event_log(rs, const.EventLogCodes.course_created,
-                       data['event_id'], additional_info=data['title'])
+                       data['event_id'], change_note=data['title'])
         return new_id
 
     @access("event")
@@ -2329,7 +2329,7 @@ class EventBackend(AbstractBackend):
                 ret *= self.sql_delete_one(rs, "event.courses", course_id)
                 self.event_log(rs, const.EventLogCodes.course_deleted,
                                course['event_id'],
-                               additional_info=course['title'])
+                               change_note=course['title'])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -3139,7 +3139,7 @@ class EventBackend(AbstractBackend):
             ret *= self.sql_update(rs, "event.lodgement_groups", data)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_group_changed, event_id,
-                additional_info=moniker)
+                change_note=moniker)
 
         return ret
 
@@ -3157,7 +3157,7 @@ class EventBackend(AbstractBackend):
             new_id = self.sql_insert(rs, "event.lodgement_groups", data)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_group_created,
-                data['event_id'], additional_info=data['moniker'])
+                data['event_id'], change_note=data['moniker'])
         return new_id
 
     @access("event")
@@ -3225,7 +3225,7 @@ class EventBackend(AbstractBackend):
                     rs, "event.lodgement_groups", group_id)
                 self.event_log(rs, const.EventLogCodes.lodgement_group_deleted,
                                event_id=group['event_id'],
-                               additional_info=group['moniker'])
+                               change_note=group['moniker'])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -3313,7 +3313,7 @@ class EventBackend(AbstractBackend):
                                                     fupdate)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_changed, event_id,
-                additional_info=moniker)
+                change_note=moniker)
             return ret
 
     @access("event")
@@ -3336,7 +3336,7 @@ class EventBackend(AbstractBackend):
             new_id = self.sql_insert(rs, "event.lodgements", data)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_created, data['event_id'],
-                additional_info=data['moniker'])
+                change_note=data['moniker'])
         return new_id
 
     @access("event")
@@ -3406,7 +3406,7 @@ class EventBackend(AbstractBackend):
             if not blockers:
                 ret *= self.sql_delete_one(rs, "event.lodgements", lodgement_id)
                 self.event_log(rs, const.EventLogCodes.lodgement_deleted,
-                               event_id, additional_info=lodgement["moniker"])
+                               event_id, change_note=lodgement["moniker"])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -3563,7 +3563,7 @@ class EventBackend(AbstractBackend):
                     'input_size', 'readonly', 'kind')),
                 ('event.log', "event_id", (
                     'id', 'ctime', 'code', 'submitted_by', 'event_id',
-                    'persona_id', 'additional_info')),
+                    'persona_id', 'change_note')),
             ]
             personas = set()
             for table, id_name, columns in tables:

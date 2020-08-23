@@ -39,7 +39,7 @@ class CdEBackend(AbstractBackend):
         return super().is_admin(rs)
 
     def cde_log(self, rs: RequestState, code: const.CdeLogCodes,
-                persona_id: int = None, additional_info: str = None
+                persona_id: int = None, change_note: str = None
                 ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -52,7 +52,7 @@ class CdEBackend(AbstractBackend):
             "code": code,
             "submitted_by": rs.user.persona_id,
             "persona_id": persona_id,
-            "additional_info": additional_info,
+            "change_note": change_note,
         }
         return self.sql_insert(rs, "cde.log", data)
 
@@ -61,7 +61,7 @@ class CdEBackend(AbstractBackend):
                          codes: Collection[const.CdeLogCodes] = None,
                          offset: int = None, length: int = None,
                          persona_id: int = None, submitted_by: int = None,
-                         additional_info: str = None,
+                         change_note: str = None,
                          time_start: datetime.datetime = None,
                          time_stop: datetime.datetime = None) -> CdEDBLog:
         """Get recorded activity.
@@ -72,7 +72,7 @@ class CdEBackend(AbstractBackend):
         return self.generic_retrieve_log(
             rs, "enum_cdelogcodes", "persona", "cde.log", codes=codes,
             offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
 
     @access("core_admin", "cde_admin")
@@ -80,7 +80,7 @@ class CdEBackend(AbstractBackend):
                              codes: Collection[const.FinanceLogCodes] = None,
                              offset: int = None, length: int = None,
                              persona_id: int = None, submitted_by: int = None,
-                             additional_info: str = None,
+                             change_note: str = None,
                              time_start: datetime.datetime = None,
                              time_stop: datetime.datetime = None) -> CdEDBLog:
         """Get financial activity.
@@ -93,7 +93,7 @@ class CdEBackend(AbstractBackend):
             rs, "enum_financelogcodes", "persona", "cde.finance_log",
             codes=codes, offset=offset, length=length, persona_id=persona_id,
             submitted_by=submitted_by, additional_columns=additional_columns,
-            additional_info=additional_info, time_start=time_start,
+            change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
     @access("member", "core_admin", "cde_admin")
@@ -359,7 +359,7 @@ class CdEBackend(AbstractBackend):
             self.core.finance_log(
                 rs, const.FinanceLogCodes.lastschrift_transaction_issue,
                 lastschrift['persona_id'], None, None,
-                additional_info=data['amount'])
+                change_note=data['amount'])
             return ret
     issue_lastschrift_transaction_batch = batchify(
         issue_lastschrift_transaction)
@@ -440,7 +440,7 @@ class CdEBackend(AbstractBackend):
             else:
                 raise RuntimeError(n_("Impossible."))
             self.core.finance_log(rs, code, persona_id, delta, new_balance,
-                                  additional_info=str(update['tally']))
+                                  change_note=str(update['tally']))
             return ret
 
     @access("finance_admin")
@@ -644,7 +644,7 @@ class CdEBackend(AbstractBackend):
             }
             ret *= self.sql_insert(rs, "cde.org_period", new_period)
             self.cde_log(rs, const.CdeLogCodes.semester_advance,
-                         persona_id=None, additional_info=str(ret))
+                         persona_id=None, change_note=str(ret))
             return ret
 
     @access("finance_admin")
@@ -667,11 +667,11 @@ class CdEBackend(AbstractBackend):
             if addresscheck:
                 self.cde_log(
                     rs, const.CdeLogCodes.semester_bill_with_addresscheck,
-                    persona_id=None, additional_info=msg)
+                    persona_id=None, change_note=msg)
             else:
                 self.cde_log(
                     rs, const.CdeLogCodes.semester_bill,
-                    persona_id=None, additional_info=msg)
+                    persona_id=None, change_note=msg)
             return ret
 
     @access("finance_admin")
@@ -695,7 +695,7 @@ class CdEBackend(AbstractBackend):
             msg += f" {period['ejection_balance']} € Guthaben eingezogen."
             self.cde_log(
                 rs, const.CdeLogCodes.semester_ejection, persona_id=None,
-                additional_info=msg)
+                change_note=msg)
             return ret
 
     @access("finance_admin")
@@ -719,7 +719,7 @@ class CdEBackend(AbstractBackend):
             msg = "{} Probemitgliedschaften beendet. {} € Guthaben abgebucht."
             self.cde_log(
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
-                additional_info=msg.format(period['balance_trialmembers'],
+                change_note=msg.format(period['balance_trialmembers'],
                                            period['balance_total']))
             return ret
 
@@ -781,7 +781,7 @@ class CdEBackend(AbstractBackend):
             }
             ret *= self.sql_insert(rs, "cde.expuls_period", new_expuls)
             self.cde_log(rs, const.CdeLogCodes.expuls_advance,
-                         persona_id=None, additional_info=str(ret))
+                         persona_id=None, change_note=str(ret))
             return ret
 
     @access("finance_admin")
@@ -804,10 +804,10 @@ class CdEBackend(AbstractBackend):
             msg = f"{expuls['addresscheck_count']} E-Mails versandt."
             if skip:
                 self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck_skipped,
-                             persona_id=None, additional_info=msg)
+                             persona_id=None, change_note=msg)
             else:
                 self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck,
-                             persona_id=None, additional_info=msg)
+                             persona_id=None, change_note=msg)
             return ret
 
     @access("searchable", "cde_admin")

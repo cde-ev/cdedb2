@@ -6079,13 +6079,13 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
     def view_log(self, rs, codes, event_id, offset, length, persona_id,
-                 submitted_by, additional_info, time_start, time_stop):
+                 submitted_by, change_note, time_start, time_stop):
         """View activities concerning events organized via DB."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -6097,7 +6097,7 @@ class EventFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.eventproxy.retrieve_log(
             rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -6118,13 +6118,13 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
     def view_event_log(self, rs, codes, event_id, offset, length, persona_id,
-                       submitted_by, additional_info, time_start, time_stop):
+                       submitted_by, change_note, time_start, time_stop):
         """View activities concerning one event organized via DB."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -6136,7 +6136,7 @@ class EventFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.eventproxy.retrieve_log(
             rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
