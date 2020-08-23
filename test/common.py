@@ -25,7 +25,7 @@ import decimal
 
 from typing import (
     TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set,
-    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection,
+    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection, Iterable,
 )
 
 import pytz
@@ -305,8 +305,8 @@ class CdEDBTest(unittest.TestCase):
         # Provide a fresh copy of clean sample data.
         self.sample_data = copy.deepcopy(self._clean_sample_data)
 
-    def get_sample_data(self, table: str, ids: Collection[int],
-                        keys: Collection[str]) -> CdEDBObjectMap:
+    def get_sample_data(self, table: str, ids: Iterable[int],
+                        keys: Iterable[str]) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
         "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
@@ -322,6 +322,8 @@ class CdEDBTest(unittest.TestCase):
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
 
+        # Turn Iterator into Collection and ensure consistent order.
+        keys = tuple(keys)
         ret = {}
         for anid in ids:
             if keys:
