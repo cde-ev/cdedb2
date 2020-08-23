@@ -102,6 +102,7 @@ html_theme_options = {
     'logo_only': True,
     'display_version': False,
     'prev_next_buttons_location': 'both',
+    'style_nav_header_background': '#ddeeff'
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
