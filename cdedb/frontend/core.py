@@ -252,8 +252,13 @@ class CoreFrontend(AbstractFrontend):
     @access("persona", modi={"POST"})
     def logout_all(self, rs: RequestState) -> Response:
         """Invalidate all sessions for the current user."""
+        if rs.has_validation_errors():
+            return self.index(rs)
         ret = self.coreproxy.logout(rs, all_sessions=True)
-        rs.notify("succes", n_("{count} sessions terminated."), {'count': ret})
+        rs.notify(
+            "success", n_("%(count)s session(s) terminated."), {'count': ret})
+        # Unset persona_id so the notification is encoded correctly.
+        rs.user.persona_id = None
         response = self.redirect(rs, "core/index")
         response.delete_cookie("sessionkey")
         return response

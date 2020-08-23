@@ -13783,7 +13783,10 @@ msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
 
 msgid "Logout Everywhere"
-msgstr "Auf allen Geräten ausloggen"
+msgstr "Von allen Geräten abmelden"
+
+msgid "%(count)s session(s) terminated."
+msgstr "%(count)s Sitzung(en) beendet."
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
