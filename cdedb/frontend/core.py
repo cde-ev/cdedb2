@@ -226,27 +226,27 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
         if wants:
-            basic_redirect(rs, wants)
+            ret = basic_redirect(rs, wants)
         elif "member" in rs.user.roles and "searchable" not in rs.user.roles:
             data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             if not data['decided_search']:
-                self.redirect(rs, "cde/consent_decision_form")
+                ret = self.redirect(rs, "cde/consent_decision_form")
             else:
-                self.redirect(rs, "core/index")
+                ret = self.redirect(rs, "core/index")
         else:
-            self.redirect(rs, "core/index")
-        rs.response.set_cookie("sessionkey", sessionkey, httponly=True,
-                               secure=True, samesite="Lax")
-        return rs.response
+            ret = self.redirect(rs, "core/index")
+        ret.set_cookie("sessionkey", sessionkey, httponly=True,
+                       secure=True, samesite="Lax")
+        return ret
 
     # We don't check anti CSRF tokens here, since logging does not harm anyone.
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
         """Invalidate the current session."""
         self.coreproxy.logout(rs, all_sessions=False)
-        response = self.redirect(rs, "core/index")
-        response.delete_cookie("sessionkey")
-        return response
+        ret = self.redirect(rs, "core/index")
+        ret.delete_cookie("sessionkey")
+        return ret
 
     # Check for anti CSRF here, since this affects multiple sessions.
     @access("persona", modi={"POST"})
@@ -254,14 +254,14 @@ class CoreFrontend(AbstractFrontend):
         """Invalidate all sessions for the current user."""
         if rs.has_validation_errors():
             return self.index(rs)
-        ret = self.coreproxy.logout(rs, all_sessions=True)
+        count = self.coreproxy.logout(rs, all_sessions=True)
         rs.notify(
-            "success", n_("%(count)s session(s) terminated."), {'count': ret})
+            "success", n_("%(count)s session(s) terminated."), {'count': count})
         # Unset persona_id so the notification is encoded correctly.
         rs.user.persona_id = None
-        response = self.redirect(rs, "core/index")
-        response.delete_cookie("sessionkey")
-        return response
+        ret = self.redirect(rs, "core/index")
+        ret.delete_cookie("sessionkey")
+        return ret
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))
@@ -274,17 +274,17 @@ class CoreFrontend(AbstractFrontend):
         """
         rs.ignore_validation_errors()  # missing values are ok
         if wants:
-            basic_redirect(rs, wants)
+            ret = basic_redirect(rs, wants)
         else:
-            self.redirect(rs, "core/index")
+            ret = self.redirect(rs, "core/index")
 
         if locale in self.conf["I18N_LANGUAGES"]:
-            rs.response.set_cookie(
+            ret.set_cookie(
                 "locale", locale,
                 expires=now() + datetime.timedelta(days=10 * 365))
         else:
             rs.notify("error", n_("Unsupported locale"))
-        return rs.response
+        return ret
 
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata(("view_specifier", "printable_ascii"),
@@ -303,13 +303,13 @@ class CoreFrontend(AbstractFrontend):
         :param wants: URL to redirect to (typically URL of the previous page)
         """
         if wants:
-            basic_redirect(rs, wants)
+            ret = basic_redirect(rs, wants)
         else:
-            self.redirect(rs, "core/index")
+            ret = self.redirect(rs, "core/index")
 
         # Exit early on validation errors
         if rs.has_validation_errors():
-            return rs.response
+            return ret
 
         enabled_views = set(rs.request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, "")
                             .split(','))
@@ -319,11 +319,11 @@ class CoreFrontend(AbstractFrontend):
             enabled_views.update(changed_views)
         else:
             enabled_views -= changed_views
-        rs.response.set_cookie(
+        ret.set_cookie(
             ADMIN_VIEWS_COOKIE_NAME,
             ",".join(enabled_views & ALL_ADMIN_VIEWS),
             expires=now() + datetime.timedelta(days=10 * 365))
-        return rs.response
+        return ret
 
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:

@@ -1118,10 +1118,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def send_json(rs: RequestState, data: Any) -> Response:
         """Slim helper to create json responses."""
-        rs.response = Response(json_serialize(data),
-                               mimetype='application/json')
-        rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
-        return rs.response
+        ret = Response(json_serialize(data), mimetype='application/json')
+        ret.headers.add('X-Generation-Time', str(now() - rs.begin))
+        return ret
 
     def render(self, rs: RequestState, templatename: str,
                params: CdEDBObject = None) -> Response:
@@ -1152,8 +1151,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['csp_nonce'] = csp_nonce
 
         html = self.fill_template(rs, "web", templatename, params)
-        rs.response = Response(html, mimetype='text/html')
-        rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
+        ret = Response(html, mimetype='text/html')
+        ret.headers.add('X-Generation-Time', str(now() - rs.begin))
 
         # Add CSP header to disallow scripts, styles, images and objects from
         # other domains. This is part of XSS mitigation
@@ -1162,9 +1161,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "script-src 'unsafe-inline' 'self' https: 'nonce-{}';",
             "style-src 'self' 'unsafe-inline';",
             "img-src *")
-        rs.response.headers.add('Content-Security-Policy',
+        ret.headers.add('Content-Security-Policy',
                                 csp_header_template.format(csp_nonce))
-        return rs.response
+        return ret
 
     Attachment = Mapping[str, Union[str, bytes]]
 
@@ -2104,9 +2103,9 @@ def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
     be the main thing to use, however it is even more preferable to use
     :py:meth:`BaseApp.redirect`.
     """
-    rs.response = construct_redirect(rs.request, url)
-    rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
-    return rs.response
+    ret = construct_redirect(rs.request, url)
+    ret.headers.add('X-Generation-Time', str(now() - rs.begin))
+    return ret
 
 
 def construct_redirect(request: werkzeug.Request,
