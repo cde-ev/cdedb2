@@ -40,7 +40,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon=None, aclass='', active=False, title='', rel='') -%}
+{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title='', rel='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {{ dict(
     class=" ".join([
@@ -51,7 +51,7 @@
     title=title,
     **{ "aria-current": "page" if active }
 )|xmlattr }}{# We use the `active` attribute for navigation only #}>
-{{- make_icon(icon) + "&nbsp;"|safe if icon }}{{ label }}
+{{- make_icon(icon) + nbsp if icon }}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
@@ -65,7 +65,7 @@
               This is also used as arialabel, if you don't provide one explicitly.
    arialabel  A screenreader-only text to append to the icon.
               Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
-{% macro make_icon(icon, fixed_width=True, aclass="", title=None, arialabel=None) -%}
+{% macro make_icon(icon, fixed_width=True, aclass="", title=none, arialabel=none) -%}
     <span{{ dict(
         class=" ".join([
             aclass,
@@ -83,7 +83,7 @@
  # Layout helpers #
  # ############## #}
 
-{% macro bootstrap_panel(title="", aclass="panel-default", icon=None, anid=None) %}
+{% macro bootstrap_panel(title="", aclass="panel-default", icon=none, anid=none) %}
     <div{{ dict(class="panel " + aclass, id=anid)|xmlattr }}>
         {%- if title or icon %}
             <div class="panel-heading">
@@ -107,7 +107,7 @@
               the title attribute for the True state. The title is also used as an screenreader-readable hidden text.
               If you don't provide `titles` and the icon is semantically important, please make sure to make the value
               accessible to screen readers by any other means. #}
-{% macro deko_checkbox(checked, anid=None, titles=[]) %}
+{% macro deko_checkbox(checked, anid=none, titles=[]) %}
     {% set title = titles[checked | int] %}
     <span{{ dict(
         class="fas fa-check-circle" if checked else "far fa-times-circle",
@@ -120,7 +120,7 @@
     {% if title %}<span class="sr-only">{{ title }}</span>{% endif %}
 {%- endmacro %}
 
-{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=None, ml_id=None) %}
+{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=none, ml_id=none) %}
     {%- if verbose -%}
         {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {} {} {}".format(
               persona['title'], persona['given_names'],
@@ -181,7 +181,7 @@
    name/title. In this case the icon should represent the type of the named object. For a complex example, take a look
    at the event/change_course template.
   #}
-{% macro breadcrumb_link(ref, label, icon=None, active=False, readonly=False) %}
+{% macro breadcrumb_link(ref, label, icon=none, active=False, readonly=False) %}
     {%- if active or readonly -%} {#- TODO use actual bootstrap readonly anchor -#}
         <li{% if active %} class="active" aria-current="location"{% endif %}>
             {{ make_icon(icon) if icon }}
@@ -197,7 +197,7 @@
 
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
-{% macro doclink(topic, anchor=None) %}
+{% macro doclink(topic, anchor=none) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
         {{ make_icon('question-circle') }}
         {% trans %}Help{% endtrans %}
@@ -222,11 +222,11 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro output_info(info, link=None) %}
+{% macro output_info(info, link) %}
     {%- if info %}
         <p class="help-block no-color">
             {{ make_icon('info-circle') }} {{ info }}
-            {{ link if link}}
+            {{ link }}
         </p>
     {%- endif %}
 {%- endmacro %}
@@ -453,8 +453,8 @@
 {%- endmacro %}
 
 
-{% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
-        nulloption=None, arialabel='', attributes="", sort=False) %}
+{% macro input_select(name, entries, readonly=False, defaultvalue=none, anid='', aclass='form-control',
+        nulloption=none, arialabel='', attributes="", sort=False) %}
     <select{{ dict(
         name=name,
         id=anid,
@@ -463,7 +463,7 @@
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
-            <option value=""{% if values.get(name, defaultvalue) == None %} selected{% endif %}>
+            <option value=""{% if values.get(name, defaultvalue) == none %} selected{% endif %}>
                 {{- nulloption -}}
             </option>
         {%- endif %}
@@ -477,8 +477,8 @@
     </select>
 {%- endmacro %}
 
-{% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
-        nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="", differentiate_warnings=True,
+{% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=none,
+        nulloption=none, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="", differentiate_warnings=True,
         sort=False) %}
     {%- set anid = anid or "input-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
@@ -493,9 +493,9 @@
 {%- endmacro %}
 
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True, aclass='',
-        infolink='', icon=None, differentiate_warnings=True) %}
+        infolink='', icon=none, differentiate_warnings=True) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
-    {%- call form_input_general(None, label, anid, small, info, False, horizontal, infolink=infolink,
+    {%- call form_input_general(none, label, anid, small, info, False, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         <div class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
             {{ make_icon(icon) if icon }}
@@ -567,7 +567,7 @@
 {% macro event_field_input(fields, name='', readonly=False, defaultvalue='', anid='') %}
     {%- set name = name or "fields.{}".format(fields['field_name']) %}
     {%- if fields['entries'] %}
-        {{- input_select(name=name, entries=fields['entries'], nulloption="&nbsp;"|s,
+        {{- input_select(name=name, entries=fields['entries'], nulloption=nbsp,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=True) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
@@ -599,7 +599,7 @@
     {%- set name = name or "fields.{}".format(fields['field_name']) %}
     {%- set label = label or fields['field_name'] %}
     {%- set anid = anid or "event-input-{}".format(name) %}
-    {%- call form_input_general(name, (None if fields['kind'] == enums['FieldDatatypes'].bool and not force_label else label), anid, False,
+    {%- call form_input_general(name, (none if fields['kind'] == enums['FieldDatatypes'].bool and not force_label else label), anid, False,
                                info, displayerrors, True, infolink=infolink) %}
         {{- event_field_input(fields, name, readonly, defaultvalue, anid) }}
     {%- endcall %}
@@ -650,7 +650,7 @@
    existing: a dict of already existing entries.
    locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
    sortkey:  to sort existing #}
-{% macro dynamic_row_table(name, columns, existing, locked=[], sortkey=None) %}
+{% macro dynamic_row_table(name, columns, existing, locked=[], sortkey=none) %}
     <table class="table table-condensed" id="drow-table">
         <thead>
             <tr>
@@ -841,7 +841,7 @@
      * `view_names` (2nd tuple entry) defines a list of admin_views to be toggled by this button together.
      * `relevant_views` (3rd tuple entry) defines a list of views, which are the subset of `view_names` that is relevant
        in the current page's context. The button is only displayed, if one of those views is available to the user.
-       For convenience, `relevant_views` may be set to None, in which case all `view_names` are considered relevant.
+       For convenience, `relevant_views` may be set to none, in which case all `view_names` are considered relevant.
        Example: A button in the Core realm may toggle all user admin views (`core_user`, `cde_user, `event_user`, ...),
        but should only be shown to core admins, i.e. users who have the `core_user` view available.
  #}
@@ -852,7 +852,7 @@
         <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" id="adminviewstoggleform">
             {% if original_request and original_request.url %}
                 {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
-                                                          original_request.url, user.persona_id, timeout=None)) }}
+                                                          original_request.url, user.persona_id, timeout=none)) }}
             {% endif %}
             <div class="list-group tear-down">{{ inner }}</div>
         </form>
