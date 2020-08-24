@@ -54,8 +54,7 @@ class TestCoreFrontend(FrontendTest):
             self.get("/core/self/show")
             self.assertTitle(f"{user['given_names']} {user['family_name']}")
             self.assertNotIn('loginform', self.response.forms)
-        for i in range(count):
-            self.assertNotEqual(keys[i], keys[i+1 - count])
+        self.assertEqual(len(set(keys)), len(keys))
 
         # Terminate the session for keys[-1].
         self.logout()
@@ -71,14 +70,22 @@ class TestCoreFrontend(FrontendTest):
 
         # Now terminate all sessions and check that they are all inactive.
         self.get("/core/self/show")
+        self.assertTitle(f"{user['given_names']} {user['family_name']}")
         f = self.response.forms['logoutallform']
-        self.submit(f)
-        # self.assertPresence(f"{count-1} Sitzung(en) beendet.", "notifications")
+        self.submit(f, check_notification=False, verbose=True)
+        # self.assertPresence(f"{count} Sitzung(en) beendet.", "notifications")
         for i in range(count):
             self.app.set_cookie(session_cookie, keys[i])
             self.get("/core/self/show")
             self.assertTitle("CdE-Datenbank")
             self.assertIn('loginform', self.response.forms)
+
+    @as_users("anton")
+    def test_logout_all(self, user):
+        self.get("/core/self/show")
+        f = self.response.forms['logoutallform']
+        self.submit(f)
+        self.assertPresence("1 Sitzung(en) beendet.", "notifications")
 
     @as_users("vera")
     def test_change_locale(self, user):
