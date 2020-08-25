@@ -13806,6 +13806,9 @@ msgstr "davon suchbar"
 msgid "num_ex_members"
 msgstr "Inaktive Mitglieder"
 
+msgid "Member Stats"
+msgstr "Mitglieder-Statistik"
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 

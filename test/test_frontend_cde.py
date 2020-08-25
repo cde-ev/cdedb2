@@ -99,7 +99,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'})
         everyone = ["Mitglieder", "Übersicht"]
         past_event = ["Verg. Veranstaltungen"]
-        member = ["Sonstiges"]
+        member = ["Sonstiges", "Mitglieder-Statistik"]
         not_searchable = ["Datenschutzerklärung"]
         searchable = ["CdE-Mitglied suchen"]
         cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
