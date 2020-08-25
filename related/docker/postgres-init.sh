@@ -14,5 +14,5 @@ psql --file=/opt/schema/cdedb-db.sql --variable=cdb_database_name=cdb_test
 
 psql --file=/opt/schema/cdedb-tables.sql --dbname=cdb --username=cdb
 psql --file=/opt/schema/cdedb-tables.sql --dbname=cdb_test --username=cdb
-psql --file=/opt/mock/sample_data.sql --dbname=cdb --username=cdb
-psql --file=/opt/mock/sample_data.sql --dbname=cdb_test --username=cdb
+# psql --file=/opt/mock/sample_data.sql --dbname=cdb --username=cdb
+# psql --file=/opt/mock/sample_data.sql --dbname=cdb_test --username=cdb

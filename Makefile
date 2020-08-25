@@ -69,7 +69,7 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-	sudo rm -rf "/var/lib/cdedb/"
+	sudo rm -rf "/var/lib/cdedb/*"
 	sudo mkdir -p "/var/lib/cdedb/foto/"
 	sudo mkdir -p "/var/lib/cdedb/minor_form/"
 	sudo mkdir -p "/var/lib/cdedb/event_logo/"

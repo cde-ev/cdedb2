@@ -2,22 +2,21 @@ version: "3"
 
 services:
   cdb:
-    image: postgres:12.3
+    image: cdepostgres
+    build:
+      context: ../..
+      dockerfile: ./related/docker/Dockerfile-postgres
     volumes:
       - database:/var/lib/postgresql/data
-      - ./postgres-init.sh:/docker-entrypoint-initdb.d/postgres-init.sh
-      - ../../cdedb/database:/opt/schema
-      # needs manual make invocation for now
-      - ./sample_data.sql:/opt/mock/sample_data.sql
     environment:
       POSTGRES_PASSWORD: passwd
   app:
     image: cdedb:apache
     build:
       context: ../..
-      dockerfile: ./related/docker/Dockerfile
+      dockerfile: ./related/docker/Dockerfile-cdedb
     volumes:
-      - files:/var/lib/cdedb # attachments etc
+      - files:/var/lib/cdedb # attachments etc?
     ports:
       - 8443:443
     depends_on:

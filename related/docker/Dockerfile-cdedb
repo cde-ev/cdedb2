@@ -19,21 +19,21 @@ RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
 RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
     && echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
     \
-    && apt-get update \
-    && apt-get install --yes --no-install-recommends \
+    && apt-get update && apt-get install --yes --no-install-recommends \
+    sudo \
     make \
     gettext \
     libapache2-mod-wsgi-py3 \
     slapd \
     ldap-utils \
-    git \
     \
     texlive \
     texlive-latex-extra \
     texlive-lang-german \
     texlive-luatex \
-    cm-super \
-    \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3 \
     python3-psycopg2 \
     python3-dateutil \
@@ -50,12 +50,12 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     python3-passlib \
     python3-bleach \
     python3-magic \
-    python3-guzzle-sphinx-theme \
+    python3-sphinx-rtd-theme \
     python3-zxcvbn \
     python3-markdown \
     python3-mailmanclient \
     python3-requests \
-    \
+    python3-typing-extensions \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /var/lib/cdedb/ \
@@ -72,7 +72,7 @@ RUN mkdir /var/lib/cdedb/ \
 
 WORKDIR /cdedb2
 
-COPY . ./.git ./
+COPY . ./
 
 RUN sed --in-place \
     -e 's/^#\(LoadModule .*mod_ssl.so\)/\1/' \
@@ -83,8 +83,7 @@ RUN sed --in-place \
     && echo "Include /etc/apache2/mods-available/wsgi.load" >> /usr/local/apache2/conf/httpd.conf \
     && echo "Include /etc/apache2/mods-available/wsgi.conf" >> /usr/local/apache2/conf/httpd.conf \
     && mkdir -p /var/www/html /var/log/apache2 /var/run/apache2 \
-    && cat ./related/auto-build/files/stage3/cdedb-site.conf \
-    >> /usr/local/apache2/conf/httpd.conf \
+    && cat ./related/auto-build/files/stage3/cdedb-site.conf >> /usr/local/apache2/conf/httpd.conf \
     && cp ./related/auto-build/files/stage3/index.html /var/www/html/ \
     && chown www-data:www-data /var/www/html/index.html \
     \
@@ -93,7 +92,11 @@ RUN sed --in-place \
     && chmod 644 ./cdedb/localconfig.py \
     && cp ./related/auto-build/files/stage3/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
-    && chmod 640 /etc/cdedb-mailman-htpasswd
+    && chmod 640 /etc/cdedb-mailman-htpasswd \
+    && sed --in-place \
+    -e '/_git_commit = subprocess.check_output/,+1d' \
+    -e 's/"GIT_COMMIT": _git_commit/"GIT_COMMIT": "abcd1234"/' \
+    cdedb/config.py
 
 EXPOSE 443
 
