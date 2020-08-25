@@ -115,14 +115,6 @@ def generate_event_registration_default_queries(gettext, event, spec):
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),),
             default_sort),
-        n_("16_query_event_registration_waitlist"): Query(
-            "qview_registration", spec,
-            all_part_stati_column.split(",") +
-            ["persona.given_names", "persona.family_name",
-             "ctime.creation_time", "reg.payment"],
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.waitlist.value),),
-            (("ctime.creation_time", True),)),
         n_("20_query_event_registration_non_members"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name"),
@@ -186,8 +178,17 @@ def generate_event_registration_default_queries(gettext, event, spec):
             ret += f" {part['shortname']}"
         return ret
 
-    if len(event['parts']) == 1:
-        del queries["16_query_event_registration_waitlist"]
+    if len(event['parts']) > 1:
+        queries.update({
+            n_("16_query_event_registration_waitlist"): Query(
+                "qview_registration", spec,
+                all_part_stati_column.split(",") +
+                ["persona.given_names", "persona.family_name",
+                 "ctime.creation_time", "reg.payment"],
+                ((all_part_stati_column, QueryOperators.equal,
+                  const.RegistrationPartStati.waitlist.value),),
+                (("ctime.creation_time", True),)),
+        })
 
     queries.update({
         n_("17_query_event_registration_waitlist") + f"_{i}_part{part['id']}":
