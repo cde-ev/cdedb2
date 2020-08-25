@@ -16,8 +16,9 @@ import importlib.util
 import logging
 import pathlib
 import subprocess
-
 import pytz
+
+from typing import Mapping, Any
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
 from cdedb.common import n_, deduct_years, now, PathLike
@@ -526,9 +527,7 @@ _SECRECTS_DEFAULTS = {
 }
 
 
-# mypy think we are inheritng from a generic type, but Mapping[str, Any]
-# would not work here.
-class BasicConfig(collections.abc.Mapping):  # type: ignore
+class BasicConfig(Mapping[str, Any]):
     """Global configuration for elementary options.
 
     This is the global configuration which is the same for all
@@ -541,18 +540,16 @@ class BasicConfig(collections.abc.Mapping):  # type: ignore
     # noinspection PyUnresolvedReferences
     def __init__(self):
         try:
-            import cdedb.localconfig as _config
+            import cdedb.localconfig as config_mod
             config = {
-                key: getattr(_config, key)
-                for key in _BASIC_DEFAULTS.keys() & set(dir(_config))
+                key: getattr(config_mod, key)
+                for key in _BASIC_DEFAULTS.keys() & set(dir(config_mod))
             }
-            del _config
         except ImportError:
             config = {}
 
         self._configchain = collections.ChainMap(
-            config,
-            _BASIC_DEFAULTS
+            config, _BASIC_DEFAULTS
         )
 
     def __getitem__(self, key):
@@ -614,9 +611,7 @@ class Config(BasicConfig):
             _LOGGER.info(f"Ignored basic config entry {key} in {configpath}.")
 
 
-# mypy think we are inheritng from a generic type, but Mapping[str, Any]
-# would not work here.
-class SecretsConfig(collections.abc.Mapping):  # type: ignore
+class SecretsConfig(Mapping[str, Any]):
     """Container for secrets (i.e. passwords).
 
     This works like :py:class:`Config`, but is used for secrets. Thus

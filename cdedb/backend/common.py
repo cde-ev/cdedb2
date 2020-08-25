@@ -20,6 +20,7 @@ from typing import (
     Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict,
     ClassVar
 )
+from typing_extensions import Literal
 
 import cdedb.validation as validate
 from cdedb.common import (
@@ -39,10 +40,21 @@ T = TypeVar('T')
 S = TypeVar('S')
 
 
-def singularize(function: Callable[..., Any],
-                array_param_name: str = "ids",
-                singular_param_name: str = "anid",
-                passthrough: bool = False) -> Callable[..., Any]:
+@overload
+def singularize(function: Callable[..., Mapping[Any, T]],
+                array_param_name: str = "",
+                singular_param_name: str = ""
+                ) -> Callable[..., T]: ...
+
+
+@overload
+def singularize(function: Callable[..., T], array_param_name: str = "",
+                singular_param_name: str = "",
+                passthrough: Literal[True] = True) -> Callable[..., T]: ...
+
+
+def singularize(function, array_param_name="ids",
+                singular_param_name="anid", passthrough=False):
     """This takes a function and returns a singularized version.
 
     The function has to accept an array as a parameter and return a dict
@@ -60,7 +72,7 @@ def singularize(function: Callable[..., Any],
 
     @functools.wraps(function)
     def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
-                     **kwargs: Any) -> Any:
+                     **kwargs: Any) -> Callable[..., T]:
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
             kwargs[array_param_name] = (param,)

@@ -500,8 +500,8 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
                   reverse=reverse)
 
 
-Sortable = Tuple[Union[str, int, datetime.datetime], ...]
-Sortkey = Callable[[CdEDBObject], Sortable]
+Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
+KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 
 # noinspection PyRedundantParentheses
@@ -513,21 +513,21 @@ class EntitySorter:
     """
 
     @staticmethod
-    def given_names(persona: CdEDBObject) -> Sortable:
+    def given_names(persona: CdEDBObject) -> Sortkey:
         return (persona['given_names'].lower(),)
 
     @staticmethod
-    def family_name(persona: CdEDBObject) -> Sortable:
+    def family_name(persona: CdEDBObject) -> Sortkey:
         return (persona['family_name'].lower(),)
 
     @staticmethod
-    def given_names_first(persona: CdEDBObject) -> Sortable:
+    def given_names_first(persona: CdEDBObject) -> Sortkey:
         return (persona['given_names'].lower(),
                 persona['family_name'].lower(),
                 persona['id'])
 
     @staticmethod
-    def family_name_first(persona: CdEDBObject) -> Sortable:
+    def family_name_first(persona: CdEDBObject) -> Sortkey:
         return (persona['family_name'].lower(),
                 persona['given_names'].lower(),
                 persona['id'])
@@ -536,91 +536,91 @@ class EntitySorter:
     persona = family_name_first
 
     @staticmethod
-    def email(persona: CdEDBObject) -> Sortable:
+    def email(persona: CdEDBObject) -> Sortkey:
         return (str(persona['username']),)
 
     @staticmethod
-    def address(persona: CdEDBObject) -> Sortable:
+    def address(persona: CdEDBObject) -> Sortkey:
         postal_code = persona.get('postal_code', "") or ""
         location = persona.get('location', "") or ""
         address = persona.get('address', "") or ""
         return (postal_code, location, address)
 
     @staticmethod
-    def event(event: CdEDBObject) -> Sortable:
+    def event(event: CdEDBObject) -> Sortkey:
         return (event['begin'], event['end'], event['title'], event['id'])
 
     @staticmethod
-    def course(course: CdEDBObject) -> Sortable:
+    def course(course: CdEDBObject) -> Sortkey:
         return (course['nr'], course['shortname'], course['id'])
 
     @staticmethod
-    def lodgement(lodgement: CdEDBObject) -> Sortable:
+    def lodgement(lodgement: CdEDBObject) -> Sortkey:
         return (lodgement['moniker'], lodgement['id'])
 
     @staticmethod
-    def lodgement_group(lodgement_group: CdEDBObject) -> Sortable:
+    def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
         return (lodgement_group['moniker'], lodgement_group['id'])
 
     @staticmethod
-    def event_part(event_part: CdEDBObject) -> Sortable:
+    def event_part(event_part: CdEDBObject) -> Sortkey:
         return (event_part['part_begin'], event_part['part_end'],
                 event_part['shortname'], event_part['id'])
 
     @staticmethod
-    def course_track(course_track: CdEDBObject) -> Sortable:
+    def course_track(course_track: CdEDBObject) -> Sortkey:
         return (course_track['sortkey'], course_track['id'])
 
     @staticmethod
-    def event_field(event_field: CdEDBObject) -> Sortable:
+    def event_field(event_field: CdEDBObject) -> Sortkey:
         return (event_field['field_name'], event_field['id'])
 
     @staticmethod
-    def candidates(candidates: CdEDBObject) -> Sortable:
+    def candidates(candidates: CdEDBObject) -> Sortkey:
         return (candidates['moniker'], candidates['id'])
 
     @staticmethod
-    def assembly(assembly: CdEDBObject) -> Sortable:
+    def assembly(assembly: CdEDBObject) -> Sortkey:
         return (assembly['signup_end'], assembly['id'])
 
     @staticmethod
-    def ballot(ballot: CdEDBObject) -> Sortable:
+    def ballot(ballot: CdEDBObject) -> Sortkey:
         return (ballot['title'], ballot['id'])
 
     @staticmethod
-    def attachment(attachment: CdEDBObject) -> Sortable:
+    def attachment(attachment: CdEDBObject) -> Sortkey:
         return (attachment['title'], attachment['id'])
 
     @staticmethod
-    def attachment_version(version: CdEDBObject) -> Sortable:
+    def attachment_version(version: CdEDBObject) -> Sortkey:
         return (version['attachment_id'], version['version'])
 
     @staticmethod
-    def past_event(past_event: CdEDBObject) -> Sortable:
+    def past_event(past_event: CdEDBObject) -> Sortkey:
         return (past_event['tempus'], past_event['id'])
 
     @staticmethod
-    def past_course(past_course: CdEDBObject) -> Sortable:
+    def past_course(past_course: CdEDBObject) -> Sortkey:
         return (past_course['nr'], past_course['title'], past_course['id'])
 
     @staticmethod
-    def institution(institution: CdEDBObject) -> Sortable:
+    def institution(institution: CdEDBObject) -> Sortkey:
         return (institution['moniker'], institution['id'])
 
     @staticmethod
-    def transaction(transaction: CdEDBObject) -> Sortable:
+    def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
 
     @staticmethod
-    def genesis_case(genesis_case: CdEDBObject) -> Sortable:
+    def genesis_case(genesis_case: CdEDBObject) -> Sortkey:
         return (genesis_case['ctime'], genesis_case['id'])
 
     @staticmethod
-    def changelog(changelog_entry: CdEDBObject) -> Sortable:
+    def changelog(changelog_entry: CdEDBObject) -> Sortkey:
         return (changelog_entry['ctime'], changelog_entry['id'])
 
     @staticmethod
-    def mailinglist(mailinglist: CdEDBObject) -> Sortable:
+    def mailinglist(mailinglist: CdEDBObject) -> Sortkey:
         return (mailinglist['title'], mailinglist['id'])
 
 

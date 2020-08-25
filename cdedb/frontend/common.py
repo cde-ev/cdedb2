@@ -1700,7 +1700,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
 F = TypeVar('F', bound=Callable[..., Any])
 
 
-def access(*roles: Role, modi: AbstractSet[str] = None,
+def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
            check_anti_csrf: bool = None) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
@@ -1711,8 +1711,6 @@ def access(*roles: Role, modi: AbstractSet[str] = None,
         on this endpoint. If not specified, it will be enabled, if "POST" is in
         the allowed methods.
     """
-    if modi is None:
-        modi = {"GET", "HEAD"}
     access_list = set(roles)
 
     def decorator(fun: F) -> F:
@@ -1743,7 +1741,6 @@ def access(*roles: Role, modi: AbstractSet[str] = None,
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
 
-        assert modi is not None
         new_fun.access_list = access_list  # type: ignore
         new_fun.modi = modi  # type: ignore
         new_fun.check_anti_csrf = (  # type: ignore

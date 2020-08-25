@@ -45,7 +45,7 @@ from cdedb.common import (
     CourseFilterPositions, diacritic_patterns, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
     LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, Sortkey, Sortable,
+    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
     InfiniteEnum, DefaultReturnCode
 )
 from cdedb.database.connection import Atomizer
@@ -335,10 +335,10 @@ class EventFrontend(AbstractUserFrontend):
 
         # FIXME: the result can have different lengths depending an amount of
         #  courses someone is assigned to.
-        def sort_rank(sortkey: str, anid: int) -> Sortable:
-            prim_sorter: Sortkey = all_sortkeys.get(
+        def sort_rank(sortkey: str, anid: int) -> Sortkey:
+            prim_sorter: KeyFunction = all_sortkeys.get(
                 sortkey, EntitySorter.persona)
-            sec_sorter: Sortkey = EntitySorter.persona
+            sec_sorter: KeyFunction = EntitySorter.persona
             if sortkey == "course":
                 if not len(part_ids) == 1:
                     raise werkzeug.exceptions.BadRequest(n_(
@@ -352,7 +352,7 @@ class EventFrontend(AbstractUserFrontend):
                     registered_tracks,
                     key=lambda track: all_tracks[track['track_id']]['sortkey'])
                 course_ids = [track['course_id'] for track in tracks]
-                prim_rank: Sortable = tuple()
+                prim_rank: Sortkey = tuple()
                 for course_id in course_ids:
                     if course_id:
                         prim_rank += prim_sorter(courses[course_id])
@@ -4482,10 +4482,10 @@ class EventFrontend(AbstractUserFrontend):
             for group_id, group in grouped_lodgements.items()}
 
         def sort_lodgement(lodgement_tuple: Tuple[int, CdEDBObject],
-                           group_id: int) -> Sortable:
+                           group_id: int) -> Sortkey:
             anid, lodgement = lodgement_tuple
             lodgement_group = grouped_lodgements[group_id]
-            primary_sort: Sortable
+            primary_sort: Sortkey
             if sortkey is None:
                 primary_sort = ()
             elif sortkey.is_used_sorting():
