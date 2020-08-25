@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import (
     Optional, Collection, Dict, Tuple, Set, List, Any, cast, overload
 )
+from typing_extensions import Literal
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
@@ -1614,15 +1615,24 @@ class CoreBackend(AbstractBackend):
     get_event_user = singularize(get_event_users)
 
     @overload
+    def quota(self, rs: RequestState, *, ids: Collection[int]) -> int: ...
+
+    @overload
     def quota(self, rs: RequestState, *, ids: Collection[int],
-              check: bool = False) -> int: ...
+              check: Literal[True]) -> bool: ...
+
+    @overload
+    def quota(self, rs: RequestState, *, num: int) -> int: ...
 
     @overload
     def quota(self, rs: RequestState, *, num: int,
-              check: bool = False) -> int: ...
+              check: Literal[True]) -> bool: ...
 
     @overload
-    def quota(self, rs: RequestState, *, check: bool = False) -> int: ...
+    def quota(self, rs: RequestState) -> int: ...
+
+    @overload
+    def quota(self, rs: RequestState, *, check: Literal[True]) -> bool: ...
 
     @internal
     @access("persona")
