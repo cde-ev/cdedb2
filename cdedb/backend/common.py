@@ -25,7 +25,7 @@ import cdedb.validation as validate
 from cdedb.common import (
     PrivilegeError, PsycoJson, diacritic_patterns, glue, make_proxy,
     make_root_logger, n_, unwrap, RequestState, Role, Realm, PathLike,
-    CdEDBObject, CdEDBObjectMap, CdEDBLog,
+    CdEDBObject, CdEDBObjectMap, CdEDBLog, LOCALE
 )
 from cdedb.query import Query
 from cdedb.config import Config
@@ -482,12 +482,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                            for field in query.fields_of_interest
                            for column in field.split(','))
         if query.order:
-            orders = ", ".join(entry.split(',')[0] for entry, _ in query.order)
-            select = glue(select, ',', orders)
+            # Collate compatible to COLLATOR in python
+            orders = []
+            for entry, _ in query.order:
+                if query.spec[entry] == 'str':
+                    orders.append(f'{entry.split(",")[0]} COLLATE "{LOCALE}"')
+                else:
+                    orders.append(entry.split(',')[0])
+            select += ", " + ", ".join(orders)
         select = glue(select, ',', QUERY_PRIMARIES[query.scope])
         view = view or QUERY_VIEWS[query.scope]
-        q = "SELECT {} {} FROM {}".format("DISTINCT" if distinct else "",
-                                          select, view)
+        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
         params: List[Any] = []
         constraints = []
         _ops = QueryOperators
@@ -590,10 +595,18 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if constraints:
             q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))
         if query.order:
-            q = glue(q, "ORDER BY",
-                     ", ".join("{} {}".format(entry.split(',')[0],
-                                              "ASC" if ascending else "DESC")
-                               for entry, ascending in query.order))
+            # Collate compatible to COLLATOR in python
+            orders = []
+            for entry, ascending in query.order:
+                if query.spec[entry] == 'str':
+                    orders.append(
+                        f'{entry.split(",")[0]} COLLATE "{LOCALE}" '
+                        f'{"ASC" if ascending else "DESC"}')
+                else:
+                    orders.append(
+                        f'{entry.split(",")[0]} '
+                        f'{"ASC" if ascending else "DESC"}')
+            q = glue(q, "ORDER BY", ", ".join(orders))
         return self.query_all(rs, q, params)
 
     def generic_retrieve_log(self, rs: RequestState, code_validator: str,

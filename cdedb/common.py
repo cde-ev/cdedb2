@@ -45,7 +45,12 @@ from cdedb.database.connection import IrradiatedConnection
 _LOGGER = logging.getLogger(__name__)
 
 # Global unified collator to be used when sorting.
-COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
+# The locale provided here must exist as collation in SQL for this to
+# work properly.
+# 'de_DE.UTF-8@colNumeric=yes' is an equivalent choice for LOCAL, but is less
+# compatible to use as a collation name in postgresql.
+LOCALE = 'de-u-kn-true'
+COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
