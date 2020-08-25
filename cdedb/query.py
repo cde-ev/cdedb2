@@ -97,7 +97,8 @@ class Query:
     everything.
     """
 
-    def __init__(self, scope, spec, fields_of_interest, constraints, order):
+    def __init__(self, scope, spec, fields_of_interest, constraints, order,
+                 name=None):
         """
         :type scope: str
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -120,6 +121,7 @@ class Query:
         self.fields_of_interest = fields_of_interest
         self.constraints = constraints
         self.order = order
+        self.name = name
 
     def __repr__(self):
         return glue(
