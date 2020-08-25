@@ -1038,7 +1038,7 @@ class CoreFrontend(AbstractFrontend):
             "core": self.coreproxy.list_admins(rs, "core"),
         }
 
-        display_realms = set(REALM_INHERITANCE) & rs.user.roles
+        display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
         if "cde" in display_realms:
             display_realms.add("finance")
         if "ml" in display_realms:

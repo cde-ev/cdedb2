@@ -415,7 +415,8 @@ class CustomEscapingJSONEncoder(CustomJSONEncoder):
         else:
             return u''.join(chunks)
 
-    def iterencode(self, o: Any, _one_shot: bool = False) -> Generator:
+    def iterencode(self, o: Any, _one_shot: bool = False
+                   ) -> Generator[str, None, None]:
         chunks = super().iterencode(o, _one_shot)
         for chunk in chunks:
             chunk = chunk.replace('/', '\\x2f')
@@ -481,7 +482,7 @@ def genus_filter(val, female, male, unknown=None):
 
 
 # noinspection PyPep8Naming
-def stringIn_filter(val: Any, alist: Collection) -> bool:
+def stringIn_filter(val: Any, alist: Collection[Any]) -> bool:
     """Custom jinja filter to test if a value is in a list, but requiring
     equality only on string representation.
 
@@ -672,8 +673,8 @@ def md_filter(val):
 
 
 @jinja2.environmentfilter
-def sort_filter(env, value: Iterable[T], reverse: bool = False,
-                attribute: Any = None) -> List[T]:
+def sort_filter(env: jinja2.Environment, value: Iterable[T],
+                reverse: bool = False, attribute: Any = None) -> List[T]:
     """Sort an iterable using `xsorted`, using correct collation.
 
     TODO: With Jinja 2.11, make_multi_attrgetter should be used
@@ -980,7 +981,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 for param, kind in all_errors)
 
         def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
-                                  method_name: str) -> Callable:
+                                  method_name: str) -> Callable[..., Any]:
             """Provide a checker from the backend(proxy) for the templates.
 
             This wraps a call to the given backend method, to not require
@@ -1122,7 +1123,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_query_download(self, rs: RequestState,
                             result: Collection[CdEDBObject], fields: List[str],
                             kind: str, filename: str,
-                            substitutions: Mapping[str, Mapping] = None
+                            substitutions: Mapping[
+                                str, Mapping[Any, Any]] = None
                             ) -> Response:
         """Helper to send download of query result.
 
@@ -1550,8 +1552,8 @@ class Worker(threading.Thread):
     concurrency is no concern.
     """
 
-    def __init__(self, conf: Config, task: Callable, rs: RequestState,
-                 *args: Any, **kwargs: Any) -> None:
+    def __init__(self, conf: Config, task: Callable[..., bool],
+                 rs: RequestState, *args: Any, **kwargs: Any) -> None:
         """
         :param task: Will be called with exactly one argument (the cloned
           request state) until it returns something falsy.
@@ -1699,10 +1701,10 @@ def reconnoitre_ambience(obj: AbstractFrontend,
     return ambience
 
 
-F = TypeVar('F', bound=Callable)
+F = TypeVar('F', bound=Callable[..., Any])
 
 
-def access(*roles: Role, modi: AbstractSet[str] = None,
+def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
            check_anti_csrf: bool = None) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
@@ -1713,8 +1715,6 @@ def access(*roles: Role, modi: AbstractSet[str] = None,
         on this endpoint. If not specified, it will be enabled, if "POST" is in
         the allowed methods.
     """
-    if modi is None:
-        modi = {"GET", "HEAD"}
     access_list = set(roles)
 
     def decorator(fun: F) -> F:
@@ -1745,7 +1745,6 @@ def access(*roles: Role, modi: AbstractSet[str] = None,
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
 
-        assert modi is not None
         new_fun.access_list = access_list  # type: ignore
         new_fun.modi = modi  # type: ignore
         new_fun.check_anti_csrf = (  # type: ignore
@@ -1997,7 +1996,7 @@ def request_extractor(
     :returns: dict containing the requested values
     """
     @REQUESTdata(*args)
-    def fun(_, rs: RequestState, **kwargs: Any) -> CdEDBObject:
+    def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
                 if not checker(kwargs):
@@ -2018,7 +2017,7 @@ def request_dict_extractor(rs: RequestState,
     """
 
     @REQUESTdatadict(*args)
-    def fun(_, rs: RequestState, data: CdEDBObject) -> CdEDBObject:
+    def fun(_: None, rs: RequestState, data: CdEDBObject) -> CdEDBObject:
         return data
 
     # This looks wrong. but is correct, as the `REQUESTdatadict` decorator
@@ -2293,7 +2292,7 @@ class CustomCSVDialect(csv.Dialect):
 
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
-               substitutions: Mapping[str, Mapping] = None) -> str:
+               substitutions: Mapping[str, Mapping[Any, Any]] = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.
@@ -2323,7 +2322,8 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
 
 
 def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
-                         substitutions: Mapping[str, Mapping] = None) -> str:
+                         substitutions: Mapping[
+                             str, Mapping[Any, Any]] = None) -> str:
     """Generate a json representation of the passed data.
 
     :param substitutions: Allow replacements of values with better

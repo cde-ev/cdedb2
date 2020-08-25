@@ -7,7 +7,7 @@ concluded events.
 import datetime
 
 from typing import (
-    Collection, Dict, Callable, Optional, Tuple, Union, List, Set
+    Collection, Dict, Callable, Optional, Tuple, Union, List, Set, Any
 )
 
 from cdedb.backend.common import (
@@ -611,7 +611,7 @@ class PastEventBackend(AbstractBackend):
         q1 = query + " AND nr = %s"
         q2 = query + " AND title ~* %s"
         q3 = query + " AND similarity(title, %s) > %s"
-        params: Tuple = (pevent_id, phrase)
+        params: Tuple[Any, ...] = (pevent_id, phrase)
         ret = self.query_all(rs, q1, params)
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or

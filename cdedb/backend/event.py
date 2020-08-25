@@ -1203,7 +1203,7 @@ class EventBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("This should not happen."))
 
-        casters: Dict[const.FieldDatatypes, Callable] = {
+        casters: Dict[const.FieldDatatypes, Callable[[Any], Any]] = {
             const.FieldDatatypes.int: int,
             const.FieldDatatypes.str: str,
             const.FieldDatatypes.float: float,
@@ -3051,7 +3051,8 @@ class EventBackend(AbstractBackend):
                 ret[reg_id] = self._calculate_single_fee(
                     rs, reg, event=event, is_member=is_member)
         return ret
-    calculate_fee: Callable[[RequestState, int], decimal.Decimal]
+    calculate_fee: Callable[['EventBackend', RequestState, int],
+                            decimal.Decimal]
     calculate_fee = singularize(calculate_fees)
 
     @access("event")
@@ -3631,23 +3632,14 @@ class EventBackend(AbstractBackend):
         were not previously present in the DB into which we import have
         to be kept track of -- this is done in ``translations``.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type table: str
-        :type data: {int: {str: object}}
         :param data: Data set to put in.
-        :type current: {int: {str: object}}
         :param current: Current state.
-        :type translations: {str: {int: int}}
         :param translations: IDs which got out of sync during offline usage.
-        :type entity: str
         :param entity: Name of IDs this table is referenced as. Any of the
           primary keys which are processed here, that got out of sync are
           added to the corresponding entry in ``translations``
-        :type extra_translations: {str: str}
         :param extra_translations: Additional references which do not use a
           standard name.
-        :rtype: int
-        :returns: standard return code
         """
         extra_translations = extra_translations or {}
         ret = 1
@@ -3946,8 +3938,8 @@ class EventBackend(AbstractBackend):
                 <= EVENT_SCHEMA_VERSION):
             raise ValueError(n_("Version mismatch – aborting."))
 
-        def dict_diff(old: Mapping, new: Mapping
-                      ) -> Tuple[Dict, Dict]:
+        def dict_diff(old: Mapping[Any, Any], new: Mapping[Any, Any]
+                      ) -> Tuple[Dict[Any, Any], Dict[Any, Any]]:
             delta = {}
             previous = {}
             # keys missing in the new dict are simply ignored
