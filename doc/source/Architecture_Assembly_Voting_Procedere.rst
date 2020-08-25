@@ -1,6 +1,8 @@
 Elektronisches Wahlverfahren
 ============================
 
+.. todo:: translate
+
 Hier wird das elektronische Wahlverfahren, dass für die Abstimmungen in der
 CdE-Datenbank verwendet wird erklärt.
 

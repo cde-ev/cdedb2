@@ -1,6 +1,8 @@
 Realms
 ======
 
+.. todo:: add some more explanation to why we separate in which way into realms
+
 The realms group functionality into semantic units. There are four major
 realms which have frontend, backend.
 

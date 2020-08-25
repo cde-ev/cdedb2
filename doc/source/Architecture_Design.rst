@@ -1,5 +1,5 @@
-Design
-======
+General Design
+==============
 
 This WSGI-application has three main parts: frontend (python), backend
 (python) and database (SQL). The communication between frontend and backend
