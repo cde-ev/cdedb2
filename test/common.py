@@ -707,18 +707,10 @@ class FrontendTest(CdEDBTest):
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def follow(self, verbose: bool = False, **kwargs) -> None:
+    def follow(self, **kwargs) -> None:
         """Follow a redirect if one occurrs."""
         oldresponse = self.response
-
-        remaining_redirects = 10
-        while 300 <= self.response.status_int < 400 and remaining_redirects:
-            self.response = self.response._follow(**kwargs)
-            remaining_redirects -= 1
-        if not remaining_redirects > 0:
-            if verbose:
-                print(self.response)
-
+        self.response = self.response.maybe_follow(**kwargs)
         if self.response != oldresponse:
             self.log_generation_time(oldresponse)
 
@@ -746,7 +738,7 @@ class FrontendTest(CdEDBTest):
         """
         method = form.method
         self.response = form.submit(button, value=value)
-        self.follow(verbose=verbose)
+        self.follow()
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
