@@ -1569,6 +1569,38 @@ etc;anything else""", f['entries_2'].value)
         f['fee_modifier_field_id_4_-1'] = 1002
         self.submit(f)
 
+    @as_users("garcia")
+    def test_waitlist(self, user):
+        self.traverse({'description': "Veranstaltungen"},
+                      {'description': "Große Testakademie 2222"})
+        self._create_event_field({
+            "field_name": "waitlist_position",
+            "kind": const.FieldDatatypes.int.value,
+            "association": const.FieldAssociations.registration.value,
+        })  # id 1001
+        self._create_event_field({
+            "field_name": "wrong1",
+            "kind": const.FieldDatatypes.str.value,
+            "association": const.FieldAssociations.registration.value,
+        })  # id 1002
+        self._create_event_field({
+            "field_name": "wrong2",
+            "kind": const.FieldDatatypes.int.value,
+            "association": const.FieldAssociations.course.value,
+        })  # id 1003
+        self.traverse({'description': "Veranstaltungsteile"})
+        f: webtest.Form = self.response.forms["partsummaryform"]
+        self.assertEqual(
+            [x[0] for x in f['waitlist_field_3'].options], ['', '1001'])
+        f['waitlist_field_3'].force_value(1002)
+        self.submit(f, check_notification=False)
+        self.assertPresence("Unpassendes Datenfeld für die Warteliste.")
+        f['waitlist_field_3'].force_value(1003)
+        self.submit(f, check_notification=False)
+        self.assertPresence("Unpassendes Datenfeld für die Warteliste.")
+        f['waitlist_field_3'] = '1001'
+        self.submit(f)
+
     def test_participant_list(self):
         # first, check non-visibility for all participants
         self.login(USER_DICT['emilia'])
