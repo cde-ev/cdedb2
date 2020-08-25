@@ -1163,6 +1163,7 @@ class EventFrontend(AbstractUserFrontend):
                 'part_begin': event_begin,
                 'part_end': event_end,
                 'fee': decimal.Decimal(0),
+                'waitlist_field': None,
                 'tracks': ({-1: new_track} if create_track else {}),
             }
         }

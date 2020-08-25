@@ -1537,10 +1537,10 @@ etc;anything else""", f['entries_2'].value)
         f['fee_modifier_modifier_name_4_-1'] = "is_child"
         f['fee_modifier_amount_4_-1'] = "-5"
         self.submit(f, check_notification=False)
-        self.assertPresence("Beitragsmodifikator mit Nicht-Ja/Nein-Feld verbunden", "feemodifierrow_4_-1")
+        self.assertPresence("Unpassendes Datenfeld für Beitragsmodifikator.", "feemodifierrow_4_-1")
         f['fee_modifier_field_id_4_-1'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertPresence("Beitragsmodifikator mit Nicht-Anmeldungsfeld verbunden", "feemodifierrow_4_-1")
+        self.assertPresence("Unpassendes Datenfeld für Beitragsmodifikator.", "feemodifierrow_4_-1")
         f['fee_modifier_field_id_4_-1'] = ''
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Eingabe für eine Ganzzahl", "feemodifierrow_4_-1")
@@ -2915,7 +2915,7 @@ etc;anything else""", f['entries_2'].value)
         data = saved.click(href='/event/event/1/export$').body
         data = data.replace(b"Gro\\u00dfe Testakademie 2222",
                             b"Mittelgro\\u00dfe Testakademie 2222")
-        data = data.replace(b'"CDEDB_EXPORT_EVENT_VERSION": 13,', b'')
+        data = data.replace(b'"CDEDB_EXPORT_EVENT_VERSION": 14,', b'')
         self.response = saved
         self.assertPresence(
             "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
