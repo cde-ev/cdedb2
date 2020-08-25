@@ -1600,6 +1600,15 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Unpassendes Datenfeld für die Warteliste.")
         f['waitlist_field_3'] = '1001'
         self.submit(f)
+        self.traverse({'description': 'Anmeldungen'},
+                      {'description': 'Warteliste 2.H.'})
+        f = self.response.forms['queryform']
+        self.assertEqual(f['qord_primary'].value,
+                         "reg_fields.xfield_waitlist_position")
+        self.assertEqual(f['qop_part3.status'].value,
+                         str(QueryOperators.equal.value))
+        self.assertEqual(f['qval_part3.status'].value,
+                         str(const.RegistrationPartStati.waitlist.value))
 
     def test_participant_list(self):
         # first, check non-visibility for all participants
