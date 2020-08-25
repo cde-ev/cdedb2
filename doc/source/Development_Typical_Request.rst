@@ -1,6 +1,8 @@
 What happens during a typical request?
 ======================================
 
+.. todo:: Where should we include this? Under principles?
+
 Here is a concrete example of how the CdEDB handles a typical
 request. Hopefully this helps the reader to understand which technologies
 are used and how they work together. We will gloss over some details to

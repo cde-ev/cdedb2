@@ -3,6 +3,9 @@
 Using the VM image
 ==================
 
+.. todo:: In Development und Orga Setup splitten und den unrelateten Development
+          Bezug verschieben.
+
 Here we describe how the VM image provided by the auto-build may be used for
 development and offline usage (i.e. at events).
 
@@ -76,13 +79,16 @@ Im Folgenden werden die Arbeitsschritte einmal für VirtualBox durchgegangen.
 Das Passwort für den Nutzer ``cdedb`` der VM ist ``akademie``.
 
 * Web: Im VirtualBox Manager, bearbeite die VM
+
     * Netzwerkadapter / Adapter1: Angeschlossen an ``NAT``
     * Erweitert / Port-Weiterleitung: Neue Regel::
 
         Protokoll:TCP, Host-ID:127.0.0.1, Host-Port:20443, Gast-Port:223
 
   Jetzt lässt sich die VM unter https://localhost:20443/ im Browser ansprechen.
+
 * ssh
+
     * VirtualBox Manager / Datei / Host-only Netzwerk-Manager / Erzeuge::
 
         NAME, IPv4:192.168.56.1/24, DHCP-Server:enable
@@ -92,6 +98,7 @@ Das Passwort für den Nutzer ``cdedb`` der VM ist ``akademie``.
         Angeschlossen an:Hostonly-Adapter, Name:NAME
 
     * Starte die VM, melde dich an
+
         * ``id a`` sollte einen Eintrag ``enp0s8`` oder ähnlich zeigen, der leer ist::
 
             sudo nano /etc/network/interfaces
@@ -107,7 +114,9 @@ Das Passwort für den Nutzer ``cdedb`` der VM ist ``akademie``.
 
     ssh.exe cdedb@192.168.56.10
 
-* mounten: Hierfür gibt es keine Windows eigene Lösung. So funktionierts trotzdem.
+* mounten: Dies ist nur für die aktive Entwicklung relevant, nicht für die Offline-VM.
+  Hierfür gibt es keine Windows eigene Lösung. So funktionierts trotzdem
+
     * Führe die Schritte unter ``ssh`` aus.
     * Installiere https://github.com/billziss-gh/sshfs-win -- mindestens
       ``SSHFS-Win 3.5 BETA``
@@ -218,6 +227,8 @@ pushed from ``cdedb2/`` to the server.
 
 Offline Usage
 -------------
+
+.. todo:: In den Bereich Handbuch/Orgas verschieben
 
 The following assumes that you successfully set up the VM (i.e. what is
 covered in the first four sections of this document until the development
