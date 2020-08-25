@@ -85,7 +85,7 @@ msgid "14_query_event_registration_participants"
 msgstr "All Participants"
 
 #: cdedb/config.py:117
-msgid "14_query_event_registration_waitlist"
+msgid "16_query_event_registration_waitlist"
 msgstr "Waitlist"
 
 #: cdedb/config.py:125
@@ -122,8 +122,8 @@ msgstr "Address Export Dokuteam"
 
 #: cdedb/config.py:183
 #, python-format
-msgid "15_query_event_registration_waitlist_%s"
-msgstr "Waitlist %s"
+msgid "17_query_event_registration_waitlist"
+msgstr "Waitlist"
 
 #: cdedb/config.py:408
 msgid "00_query_cde_user_all"

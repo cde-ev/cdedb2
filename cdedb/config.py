@@ -20,7 +20,7 @@ import subprocess
 import pytz
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import n_, deduct_years, now, PathLike
+from cdedb.common import n_, deduct_years, now, PathLike, EntitySorter, xsorted
 import cdedb.database.constants as const
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,13 +51,14 @@ _BASIC_DEFAULTS = {
 }
 
 
-def generate_event_registration_default_queries(event, spec):
+def generate_event_registration_default_queries(gettext, event, spec):
     """
     Generate default queries for registration_query.
 
     Some of these contain dynamic information about the event's Parts,
     Tracks, etc.
 
+    :param gettext: The translation function for the current locale.
     :param event: The Event for which to generate the queries
     :type event:
     :param spec: The Query Spec, dynamically generated for the event
@@ -114,7 +115,7 @@ def generate_event_registration_default_queries(event, spec):
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),),
             default_sort),
-        n_("14_query_event_registration_waitlist"): Query(
+        n_("16_query_event_registration_waitlist"): Query(
             "qview_registration", spec,
             all_part_stati_column.split(",") +
             ["persona.given_names", "persona.family_name",
@@ -179,15 +180,27 @@ def generate_event_registration_default_queries(event, spec):
             return f"reg_fields.xfield_{field['field_name']}"
         return "ctime.creation_time"
 
+    def waitlist_query_name(part) -> str:
+        ret = gettext("17_query_event_registration_waitlist")
+        if len(event['parts']) > 1:
+            ret += f" {part['shortname']}"
+        return ret
+
+    if len(event['parts']) == 1:
+        del queries["16_query_event_registration_waitlist"]
+
     queries.update({
-        n_("15_query_event_registration_waitlist_%s") % part['shortname']:
+        n_("17_query_event_registration_waitlist") + f"_{i}_part{part['id']}":
             Query(
                 "qview_registration", spec,
                 ("persona.given_names", "persona.family_name"),
-                ((f"part{part_id}.status", QueryOperators.equal,
+                ((f"part{part['id']}.status", QueryOperators.equal,
                   const.RegistrationPartStati.waitlist.value),),
-                ((get_waitlist_order(part), True),))
-        for part_id, part in event['parts'].items()
+                ((get_waitlist_order(part), True),),
+                name=waitlist_query_name(part)
+            )
+        for i, part in enumerate(xsorted(
+            event['parts'].values(), key=EntitySorter.event_part))
     })
 
     return queries
