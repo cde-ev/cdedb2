@@ -20,7 +20,7 @@ from cdedb.common import (
     n_, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
     LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS,
     implying_realms, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, CdEDBLog,
-    RequestState, DeletionBlockers,
+    RequestState, DeletionBlockers, QuotaException,
 )
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
@@ -818,6 +818,8 @@ class CdEBackend(AbstractBackend):
         """
         query = affirm("query", query)
         if query.scope == "qview_cde_member":
+            if self.core.quota(rs, num=1, check=True):
+                raise QuotaException(n_("Too many queries."))
             query.constraints.append(
                 ("is_cde_realm", QueryOperators.equal, True))
             query.constraints.append(

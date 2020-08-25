@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 from typing import (
-    Optional, Collection, Dict, Tuple, Set, List, Any, cast
+    Optional, Collection, Dict, Tuple, Set, List, Any, cast, overload
 )
 
 from cdedb.backend.common import AbstractBackend
@@ -1613,30 +1613,55 @@ class CoreBackend(AbstractBackend):
         return ret
     get_event_user = singularize(get_event_users)
 
+    @overload
+    def quota(self, rs: RequestState, *, ids: Collection[int],
+              check: bool = False) -> int: ...
+
+    @overload
+    def quota(self, rs: RequestState, *, num: int,
+              check: bool = False) -> int: ...
+
+    @overload
+    def quota(self, rs: RequestState, *, check: bool = False) -> int: ...
+
     @internal
     @access("persona")
-    def quota(self, rs: RequestState, ids: Collection[int] = None) -> int:
+    def quota(self, rs: RequestState, *, ids=None, num=None, check=False):
         """Log quota restricted accesses. Return new total.
 
-        This takes a list of (persona) ids the user wants to access and logs
-        the number of profiles accessed on a given day this way.
-        The users own account is excempt from this logging.
+        This can optionally take either a list of ids or simply a number of
+        restricted actions. Just return the total if no parameter was provided.
 
-        We either insert the new accesses into the quota table or add them if
-        an entry already exists, as entries are unique across persona_id and
-        date.
+        A restricted action can be either:
+            * Accessing the cde profile of another user.
+            * A member search.
 
-        :returns: The number of profiles (other than his own) the user has
-            accessed today including the ones given with this call, if any.
+        We either insert the number of restricted actions into the quota table
+        or add them if an entry already exists, as entries are unique across
+        persona_id and date.
+
+        :returns: If `check` is True, return whether the quota was exceeded.
+            Otherwise return the number of restricted actions the user has
+            performed today including the ones given with this call, if any.
         """
-        ids = affirm_set("id", ids or set())
+        if ids is not None and num is not None:
+            raise ValueError(n_("May not provide more than one input."))
+        if ids is not None:
+            ids = affirm_set("id", ids or set())
+            num = len(ids - {rs.user.persona_id})
+        else:
+            num = affirm("non_negative_int", num or 0)
         query = ("INSERT INTO core.quota (queries, persona_id, qdate)"
                  " VALUES (%s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
                  " UPDATE SET queries = core.quota.queries + EXCLUDED.queries"
                  " RETURNING core.quota.queries")
-        count = len(ids - {rs.user.persona_id})
-        params = (count, rs.user.persona_id, now().date())
-        return unwrap(self.query_one(rs, query, params)) or 0
+        params = (num, rs.user.persona_id, now().date())
+        quota = unwrap(self.query_one(rs, query, params)) or 0
+        if not check:
+            return quota
+        else:
+            return (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
+                    and not {"cde_admin", "core_admin"} & rs.user.roles)
 
     @access("cde")
     def get_cde_users(self, rs: RequestState,
@@ -1644,9 +1669,7 @@ class CoreBackend(AbstractBackend):
         """Get an cde view on some data sets."""
         ids = affirm_set("id", ids)
         with Atomizer(rs):
-            quota = self.quota(rs, ids)
-            if (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
-                    and not {"cde_admin", "core_admin"} & rs.user.roles):
+            if self.quota(rs, ids=ids, check=True):
                 raise QuotaException(n_("Too many queries."))
             ret = self.retrieve_personas(rs, ids, columns=PERSONA_CDE_FIELDS)
             if any(not e['is_cde_realm'] for e in ret.values()):

@@ -276,20 +276,31 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("berta")
     def test_quota(self, user):
-        count = 42
+        self.traverse({'description': 'Mitglieder'})
+        f = self.response.forms['membersearchform']
+        save = "/"
+
+        count = 21
         for search, title in itertools.cycle((
                 ("Anton Armin", "Anton Armin A. Administrator"),
                 ("Inga Iota", "Inga Iota"))):
             count -= 1
-            self.traverse({'description': 'Mitglieder'})
-            f = self.response.forms['membersearchform']
             f['qval_fulltext'] = search
             if count >= 0:
-                self.submit(f)
+                # Submitting the form will give a single result and redirect.
+                self.response = f.submit()
+                # Remember where this redirect leads.
+                save = self.response.location
+                self.follow()
+                self.basic_validate()
                 self.assertTitle(title)
             else:
-                self.response = f.submit()
-                self.follow(status=403)
+                # After some iterations, the query will fail due to quota limit.
+                self.response = f.submit(status=403)
+                self.assertPresence("Limit für Zugriffe")
+                self.assertPresence("automatisch zurückgesetzt")
+                # Check that the redirect from a previous search now also fails.
+                self.get(save, status=403)
                 self.assertPresence("Limit für Zugriffe")
                 self.assertPresence("automatisch zurückgesetzt")
                 break

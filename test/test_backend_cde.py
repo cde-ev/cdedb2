@@ -30,11 +30,19 @@ class TestCdEBackend(BackendTest):
 
     @as_users("berta")
     def test_quota(self, user):
-        self.assertEqual(0, self.core.quota(self.key, []))
+        self.assertEqual(0, self.core.quota(self.key))
         for i in range(1, 22):
-            self.assertEqual(i * 2, self.core.quota(self.key, (1, 2, 6)))
+            if i % 3 == 0:
+                self.assertEqual(i*2, self.core.quota(self.key, ids=(1, 2, 6)))
+            elif i % 3 == 1:
+                self.assertEqual(i*2, self.core.quota(self.key, num=2))
         with self.assertRaises(QuotaException):
             self.core.get_cde_users(self.key, (1, 2, 6))
+
+        query = Query(scope="qview_cde_member", spec={},
+                      fields_of_interest=["id"], constraints=[], order=[])
+        with self.assertRaises(QuotaException):
+            self.cde.submit_general_query(self.key, query)
 
     @as_users("berta")
     def test_displacement(self, user):
