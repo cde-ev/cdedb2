@@ -637,16 +637,17 @@ class FrontendTest(CdEDBTest):
     lang = "de"
     app: webtest.TestApp
     response: webtest.TestResponse
+    app_extra_environ = {
+        'REMOTE_ADDR': "127.0.0.0",
+        'SERVER_PROTOCOL': "HTTP/1.1",
+        'wsgi.url_scheme': 'https'}
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         app = Application()
         cls.gettext = app.translations[cls.lang].gettext
-        cls.app = webtest.TestApp(app, extra_environ={
-            'REMOTE_ADDR': "127.0.0.0",
-            'SERVER_PROTOCOL': "HTTP/1.1",
-            'wsgi.url_scheme': 'https'})
+        cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
         cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
@@ -1171,6 +1172,50 @@ class FrontendTest(CdEDBTest):
         else:
             if fail:
                 self.fail(f"Form {form} not found after {count} reloads.")
+
+
+class MultiAppFrontendTest(FrontendTest):
+    """Subclass for testing multiple frontend instances simultaniously."""
+    n: int = 2  # The number of instances that should be created.
+    current_app: int  # Which instance is currently active 0 <= x < n
+    apps: List[webtest.TestApp]
+    responses: List[webtest.TestResponse]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Create n new apps, overwrite cls.app with a reference."""
+        super().setUpClass()
+        cls.apps = [webtest.TestApp(Application(),
+                                    extra_environ=cls.app_extra_environ)
+                    for _ in range(cls.n)]
+        cls.app = cls.apps[0]
+        cls.current_app = 0
+
+    def setUp(self) -> None:
+        """Reset all apps and responses and the current app index."""
+        super().setUp()
+        for app in self.apps:
+            app.reset()
+            app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+        self.responses = [None for _ in range(self.n)]  # type: ignore
+        self.current_app = 0
+        self.app = self.apps[0]
+        self.response = None
+
+    def switch_app(self, i: int) -> None:
+        """Switch to a different index.
+
+        Sets the app and response with the specified index as active.
+        All methods of the super class only interact with the active app and
+        response.
+        """
+        if not 0 <= i <= self.n:
+            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")
+        self.app = self.apps[i]  # This is a reference so it works.
+        # This could be None, so overwrite explicitly.
+        self.responses[self.current_app] = self.response
+        self.response = self.responses[i]
+        self.current_app = i
 
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cdedb.common import User
-from test.common import BackendTest, USER_DICT
+from test.common import BackendTest, USER_DICT, MultiAppFrontendTest
 
 
 class TestSessionBackend(BackendTest):
@@ -26,7 +26,8 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(None, user.persona_id)
 
     def test_multiple_sessions(self):
-        # Use the default value from `setup_requeststate` here.
+        # Logging out only works with the ip "127.0.0.0", which is the
+        # default value from `setup_requeststate`.
         ips = ["127.0.0.0", "4.3.2.1", "127.0.0.0"]
         keys = []
         users = []
@@ -59,3 +60,53 @@ class TestSessionBackend(BackendTest):
             self.assertEqual(
                 {"anonymous"},
                 self.session.lookupsession(keys[i], ips[i]).roles)
+
+
+class TestMultiSessionFrontend(MultiAppFrontendTest):
+    n = 3  # Needs to be at least 3 for the following test to work correctly.
+
+    def test_logout_all(self):
+        self.assertGreaterEqual(self.n, 3, "This test will only work correctly"
+                                           " with 3 or more apps.")
+
+        user = USER_DICT["anton"]
+        session_cookie = "sessionkey"
+
+        # Set up multiple sessions.
+        keys = []
+        for i in range(self.n):
+            self.switch_app(i)
+            self.login(user)
+            keys.append(self.app.cookies[session_cookie])
+            # Check that we are correctly logged in.
+            self.get("/core/self/show")
+            self.assertTitle(f"{user['given_names']} {user['family_name']}")
+            self.assertNotIn('loginform', self.response.forms)
+        self.assertEqual(len(set(keys)), len(keys))
+
+        # Terminate session 0.
+        self.switch_app(0)
+        self.logout()
+        self.get("/core/self/show")
+        self.assertTitle("CdE-Datenbank")
+        self.assertIn('loginform', self.response.forms)
+        # Check that other sessions are still active.
+        for i in range(1, self.n):
+            self.switch_app(i)
+            with self.subTest(app_index=i):
+                self.get("/core/self/show")
+                self.assertTitle(f"{user['given_names']} {user['family_name']}")
+                self.assertNotIn('loginform', self.response.forms)
+
+        # Now terminate all sessions and check that they are all inactive.
+        self.switch_app(self.n - 1)
+        f = self.response.forms['logoutallform']
+        self.submit(f)
+        self.assertPresence(f"{self.n - 1} Sitzung(en) beendet.",
+                            div="notifications")
+        for i in range(self.n):
+            self.switch_app(i)
+            with self.subTest(app_index=i):
+                self.get("/core/self/show")
+                self.assertTitle("CdE-Datenbank")
+                self.assertIn('loginform', self.response.forms)
