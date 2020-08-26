@@ -110,3 +110,16 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
                 self.get("/core/self/show")
                 self.assertTitle("CdE-Datenbank")
                 self.assertIn('loginform', self.response.forms)
+
+    def test_basics(self):
+        self.login(USER_DICT["anton"])
+        self.switch_app(1)
+        self.login(USER_DICT["berta"])
+        self.switch_app(0)
+        self.assertLogin(USER_DICT["anton"]["display_name"])
+        self.switch_app(1)
+        self.assertLogin(USER_DICT["berta"]["display_name"])
+        self.logout()
+        self.assertIn('loginform', self.response.forms)
+        self.switch_app(0)
+        self.assertLogin(USER_DICT["anton"]["display_name"])
