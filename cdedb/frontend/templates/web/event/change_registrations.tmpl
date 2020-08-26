@@ -140,7 +140,7 @@
             {% call form_input_optional("part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
                                         anid="part{}_lodgement_id".format(part_id)) %}
                 {{ util.input_select(name="part{}.lodgement_id".format(part_id),
-                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="&nbsp;"|s,
+                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption=nbsp,
                                      anid="part{}_lodgement_id".format(part_id)) }}
             {% endcall %}
             {% call form_input_optional("part{}.is_camping_mat".format(part_id),
@@ -159,7 +159,7 @@
                                                   if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                             anid="track{}_course_id".format(track_id)) %}
                     {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
-                                         nulloption="&nbsp;"|s, anid="track{}_course_id".format(track_id)) }}
+                                         nulloption=nbsp, anid="track{}_course_id".format(track_id)) }}
                 {% endcall %}
             {% endfor %}
         {% endfor %}
@@ -188,7 +188,7 @@
                                               if ambience['event']['tracks']|length > 1  else gettext("Instructor of"),
                                         anid="input_track{}_course_instructor".format(track_id)) %}
                 {{ util.input_select(name="track{}.course_instructor".format(track_id),
-                                     entries=course_entries, nulloption="&nbsp;"|s,
+                                     entries=course_entries, nulloption=nbsp,
                                      anid="input_track{}_course_instructor".format(track_id)) }}
             {% endcall %}
         {% endfor %}

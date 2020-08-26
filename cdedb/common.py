@@ -45,7 +45,12 @@ from cdedb.database.connection import IrradiatedConnection
 _LOGGER = logging.getLogger(__name__)
 
 # Global unified collator to be used when sorting.
-COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
+# The locale provided here must exist as collation in SQL for this to
+# work properly.
+# 'de_DE.UTF-8@colNumeric=yes' is an equivalent choice for LOCAL, but is less
+# compatible to use as a collation name in postgresql.
+LOCALE = 'de-u-kn-true'
+COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
@@ -54,6 +59,11 @@ CdEDBObject = Dict[str, Any]
 # `get_events`, event["parts"], etc.
 
 CdEDBObjectMap = Dict[int, CdEDBObject]
+
+# Same as above, but we also allow negative ints (for creation, not reflected
+# in the type] and None (for deletion). Used in `_set_tracks` and partial
+# import diff.
+CdEDBOptionalMap = Dict[int, Optional[CdEDBObject]]
 
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
@@ -128,18 +138,18 @@ class RequestState:
     """
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str],
-                 user: User, request: Optional[werkzeug.Request],
-                 response: Optional[werkzeug.Response],
+                 user: User, request: werkzeug.Request,
                  notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
                  values: Optional[werkzeug.MultiDict], lang: str,
-                 gettext: Callable, ngettext: Callable,
-                 coders: Optional[Mapping[str, Callable]],
+                 gettext: Callable[[str], str],
+                 ngettext: Callable[[str, str, int], str],
+                 coders: Optional[Mapping[str, Callable]],  # type: ignore
                  begin: datetime.datetime,
-                 default_gettext: Optional[Callable] = None,
-                 default_ngettext: Optional[Callable] = None):
+                 default_gettext: Callable[[str], str] = None,
+                 default_ngettext: Callable[[str, str, int], str] = None):
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
@@ -163,7 +173,6 @@ class RequestState:
         self.apitoken = apitoken
         self.user = user
         self.request = request
-        self.response = response
         self.notifications = list(notifications)
         self.urls = mapadapter
         self.requestargs = requestargs or {}
@@ -275,7 +284,7 @@ B = TypeVar("B", bound=AbstractBackend)
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def make_proxy(backend: B, internal=False) -> B:
+def make_proxy(backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -313,7 +322,7 @@ def make_proxy(backend: B, internal=False) -> B:
             return wrapit(attr)
 
         @staticmethod
-        def _get_backend_class() -> B:
+        def _get_backend_class() -> Type[B]:
             return backend.__class__
 
     return cast(B, Proxy())
@@ -329,7 +338,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
     """
     logger = logging.getLogger(name)
     if logger.handlers:
-        logger.info("Logger {} already initialized.".format(name))
+        logger.debug("Logger {} already initialized.".format(name))
         return logger
     logger.propagate = False
     logger.setLevel(log_level)
@@ -349,7 +358,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.info("Configured logger {}.".format(name))
+    logger.debug("Configured logger {}.".format(name))
     return logger
 
 
@@ -364,8 +373,11 @@ def glue(*args: str) -> str:
     return " ".join(args)
 
 
-def merge_dicts(targetdict: Union[MutableMapping, werkzeug.MultiDict],
-                *dicts: Mapping) -> None:
+S = TypeVar("S")
+
+
+def merge_dicts(targetdict: Union[MutableMapping[T, S], werkzeug.MultiDict],
+                *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
     This is basically the :py:meth:`dict.update` method, but existing
@@ -493,6 +505,10 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
                   reverse=reverse)
 
 
+Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
+KeyFunction = Callable[[CdEDBObject], Sortkey]
+
+
 # noinspection PyRedundantParentheses
 class EntitySorter:
     """Provide a singular point for common sortkeys.
@@ -500,31 +516,33 @@ class EntitySorter:
     This class does not need to be instantiated. It's method can be passed to
     `sorted` or `keydictsort_filter`.
     """
-    Sortable = Union[str, int, datetime.datetime]
-    Sortkey = Union[Sequence[Sortable], Sortable]
 
     @staticmethod
     def given_names(persona: CdEDBObject) -> Sortkey:
-        return persona['given_names'].lower()
+        return (persona['given_names'].lower(),)
 
     @staticmethod
     def family_name(persona: CdEDBObject) -> Sortkey:
-        return persona['family_name'].lower()
+        return (persona['family_name'].lower(),)
 
     @staticmethod
     def given_names_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['given_names'].lower(), persona['family_name'].lower())
+        return (persona['given_names'].lower(),
+                persona['family_name'].lower(),
+                persona['id'])
 
     @staticmethod
     def family_name_first(persona: CdEDBObject) -> Sortkey:
-        return (persona['family_name'].lower(), persona['given_names'].lower())
+        return (persona['family_name'].lower(),
+                persona['given_names'].lower(),
+                persona['id'])
 
     # TODO decide whether we sort by first or last name
     persona = family_name_first
 
     @staticmethod
     def email(persona: CdEDBObject) -> Sortkey:
-        return persona['username']
+        return (str(persona['username']),)
 
     @staticmethod
     def address(persona: CdEDBObject) -> Sortkey:
@@ -1676,6 +1694,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("ml_admin", "cdb_admin"),
     ("assembly_admin", "cdb_admin"),
     ("event_admin", "cdb_admin"),
+    ("finance_admin", "cdb_admin"),
     ("cdelokal_admin", "cdb_admin"),
 
     ("searchable", "cdb_member"),
@@ -1821,7 +1840,7 @@ GENESIS_CASE_FIELDS = (
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
 # realms genesis requrests are allowed
-REALM_SPECIFIC_GENESIS_FIELDS = {
+REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
     "ml": tuple(),
     "event": ("gender", "birthday", "telephone", "mobile",
               "address_supplement", "address", "postal_code", "location",

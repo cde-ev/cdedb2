@@ -7,7 +7,7 @@ concluded events.
 import datetime
 
 from typing import (
-    Collection, Dict, Callable, Optional, Tuple, Union, List, Set
+    Collection, Dict, Callable, Optional, Tuple, Union, List, Set, Any
 )
 
 from cdedb.backend.common import (
@@ -72,7 +72,8 @@ class PastEventBackend(AbstractBackend):
         for anid in ids:
             ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}
         return ret
-    participation_info: Callable[[RequestState, int], CdEDBObjectMap]
+    participation_info: Callable[
+        ['PastEventBackend', RequestState, int], CdEDBObjectMap]
     participation_info = singularize(participation_infos)
 
     def past_event_log(self, rs: RequestState, code: const.PastEventLogCodes,
@@ -610,7 +611,7 @@ class PastEventBackend(AbstractBackend):
         q1 = query + " AND nr = %s"
         q2 = query + " AND title ~* %s"
         q3 = query + " AND similarity(title, %s) > %s"
-        params: Tuple = (pevent_id, phrase)
+        params: Tuple[Any, ...] = (pevent_id, phrase)
         ret = self.query_all(rs, q1, params)
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or

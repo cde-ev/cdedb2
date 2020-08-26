@@ -11,7 +11,7 @@ import inspect
 import pathlib
 import sys
 
-from typing import Collection, Generator
+from typing import Collection, Iterator, Callable, Dict, Any
 
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdEFrontend
@@ -40,7 +40,7 @@ class CronFrontend(BaseApp):
             secrets, self.conf["DB_PORT"])
         self.translations = {
             lang: gettext.translation(
-                'cdedb', languages=(lang,),
+                'cdedb', languages=[lang],
                 localedir=str(self.conf["REPOSITORY_PATH"] / 'i18n'))
             for lang in self.conf["I18N_LANGUAGES"]}
         if pathlib.Path("/PRODUCTIONVM").is_file():
@@ -59,7 +59,7 @@ class CronFrontend(BaseApp):
         roles = ALL_ROLES
         user = User(roles=roles, persona_id=None)
         lang = "en"
-        coders = {
+        coders: Dict[str, Callable[..., Any]] = {
             "encode_parameter": self.encode_parameter,
             "decode_parameter": self.decode_parameter,
             "encode_notification": self.encode_notification,
@@ -67,10 +67,11 @@ class CronFrontend(BaseApp):
         }
         urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/",
                                 url_scheme="https")
-        rs = RequestState(
+        # This is not a real request, so we can go without some of these.
+        rs = RequestState(  # type: ignore
             sessionkey=None, apitoken=None, user=user, request=None,
-            response=None, notifications=[], mapadapter=urls, requestargs={},
-            errors=[], values=None, lang=lang, coders=coders, begin=None,
+            notifications=[], mapadapter=urls, requestargs={}, errors=[],
+            values=None, lang=lang, coders=coders, begin=None,
             gettext=self.translations[lang].gettext,
             ngettext=self.translations[lang].ngettext)
         rs._conn = self.connpool['cdb_admin']
@@ -131,8 +132,7 @@ class CronFrontend(BaseApp):
         return True
 
     @staticmethod
-    def find_periodics(frontend: AbstractFrontend
-                       ) -> Generator[PeriodicJob, None, None]:
+    def find_periodics(frontend: AbstractFrontend) -> Iterator[PeriodicJob]:
         for name, func in inspect.getmembers(frontend, inspect.ismethod):
             if hasattr(func, "cron"):
                 yield func

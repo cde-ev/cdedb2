@@ -60,6 +60,8 @@ class CoreBackend(AbstractBackend):
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, secrets["RESET_SALT"], cookie))
         self.foto_dir: Path = self.conf['STORAGE_DIR'] / 'foto'
+        self.genesis_attachment_dir: Path = (
+                self.conf['STORAGE_DIR'] / 'genesis_attachment')
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -1306,13 +1308,13 @@ class CoreBackend(AbstractBackend):
                 "persona_id")
             if any(not ls['revoked_at'] for ls in lastschrift):
                 raise ArchiveError(n_("Active lastschrift exists."))
-            query = glue(
-                "UPDATE cde.lastschrift",
-                "SET (amount, iban, account_owner, account_address)",
-                "= (%s, %s, %s, %s)",
-                "WHERE persona_id = %s")
+            query = ("UPDATE cde.lastschrift"
+                     " SET (amount, iban, account_owner, account_address)"
+                     " = (%s, %s, %s, %s)"
+                     " WHERE persona_id = %s"
+                     " AND revoked_at < now() - interval '14 month'")
             if lastschrift:
-                self.query_exec(rs, query, (0, 0, "", "", persona_id))
+                self.query_exec(rs, query, (0, "", "", "", persona_id))
             #
             # 6. Handle event realm
             #
@@ -1495,7 +1497,8 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_username(self, rs: RequestState, persona_id: int,
-                        new_username: str, password: str) -> Tuple[bool, str]:
+                        new_username: str, password: Optional[str]
+                        ) -> Tuple[bool, str]:
         """Since usernames are used for login, this needs a bit of care.
 
         :returns: The bool signals whether the change was successful, the str
@@ -1862,12 +1865,11 @@ class CoreBackend(AbstractBackend):
     @access("anonymous")
     def get_roles_multi(self, rs: RequestState, ids: Collection[int],
                         introspection_only: bool = False
-                        ) -> Dict[int, Set[Role]]:
+                        ) -> Dict[Optional[int], Set[Role]]:
         """Resolve ids into roles.
 
         Returns an empty role set for inactive users."""
         if set(ids) == {rs.user.persona_id}:
-            assert rs.user.persona_id is not None
             return {rs.user.persona_id: rs.user.roles}
         bits = PERSONA_STATUS_FIELDS + ("id",)
         data = self.sql_select(rs, "core.personas", bits, ids)
@@ -1902,6 +1904,31 @@ class CoreBackend(AbstractBackend):
         return tuple(key for key, value in roles.items()
                      if value >= required_roles)
 
+    @access("anonymous")
+    def genesis_set_attachment(self, rs: RequestState, attachment: bytes
+                               ) -> str:
+        """Store a file for genesis usage. Returns the file hash."""
+        attachment = affirm("pdffile", attachment, file_storage=False)
+        myhash = get_hash(attachment)
+        path = self.genesis_attachment_dir / myhash
+        if not path.exists():
+            with open(path, 'wb') as f:
+                f.write(attachment)
+        return myhash
+
+    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+            "assembly_admin")
+    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
+                               ) -> Optional[bytes]:
+        """Retrieve a stored genesis attachment."""
+        attachment_hash = affirm("str", attachment_hash)
+        path = self.genesis_attachment_dir / attachment_hash
+        if path.is_file():
+            with open(path, 'rb') as f:
+                return f.read()
+        return None
+
+    @internal
     @access("core_admin")
     def genesis_attachment_usage(self, rs: RequestState,
                                  attachment_hash: str) -> bool:
@@ -1909,6 +1936,16 @@ class CoreBackend(AbstractBackend):
         attachment_hash = affirm("str", attachment_hash)
         query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment = %s"
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
+
+    @access("core_admin")
+    def genesis_forget_attachments(self, rs: RequestState) -> int:
+        """Delete genesis attachments that are no longer in use."""
+        ret = 0
+        for f in self.genesis_attachment_dir.iterdir():
+            if f.is_file() and not self.genesis_attachment_usage(rs, str(f)):
+                f.unlink()
+                ret += 1
+        return ret
 
     @access("anonymous")
     def verify_existence(self, rs: RequestState, email: str) -> bool:

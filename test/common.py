@@ -24,8 +24,8 @@ import copy
 import decimal
 
 from typing import (
-    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr,
-    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection,
+    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set,
+    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection, Iterable,
 )
 
 import pytz
@@ -186,8 +186,8 @@ def make_backend_shim(backend: B, internal=False) -> B:
 
         rs = RequestState(  # type: ignore
             sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
-            response=None, notifications=[], mapadapter=None, requestargs=None,
-            errors=[], values=None, lang="de", gettext=translator.gettext,
+            notifications=[], mapadapter=None, requestargs=None, errors=[],
+            values=None, lang="de", gettext=translator.gettext,
             ngettext=translator.ngettext, coders=None, begin=now())
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
@@ -305,8 +305,25 @@ class CdEDBTest(unittest.TestCase):
         # Provide a fresh copy of clean sample data.
         self.sample_data = copy.deepcopy(self._clean_sample_data)
 
-    def get_sample_data(self, table: str, ids: Collection[int],
-                        keys: Collection[str]) -> CdEDBObjectMap:
+    def get_sample_data(self, table: str, ids: Iterable[int],
+                        keys: Iterable[str]) -> CdEDBObjectMap:
+        """This mocks a select request against the sample data.
+
+        "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
+
+        For some fields of some tables we perform a type conversion. These
+        should be added as necessary to ease comparison against backend results.
+
+        :returns: The result of the above "query" mapping id to entry.
+        """
+        def parse_datetime(s: str) -> datetime.datetime:
+            # Magic placeholder that is replaced with the current time.
+            if s == "---now---":
+                return nearly_now()
+            return datetime.datetime.fromisoformat(s)
+
+        # Turn Iterator into Collection and ensure consistent order.
+        keys = tuple(keys)
         ret = {}
         for anid in ids:
             if keys:
@@ -318,6 +335,9 @@ class CdEDBTest(unittest.TestCase):
                             r[k] = decimal.Decimal(r[k])
                         if k == 'birthday':
                             r[k] = datetime.date.fromisoformat(r[k])
+                    elif table == 'core.changelog':
+                        if k == 'ctime':
+                            r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
                 ret[anid] = copy.deepcopy(self.sample_data[table][anid])
@@ -345,6 +365,8 @@ class BackendTest(CdEDBTest):
         self.key = None
 
     def login(self, user, ip="127.0.0.0"):
+        if isinstance(user, str):
+            user = USER_DICT[user]
         # noinspection PyTypeChecker
         self.key = self.core.login(None, user['username'], user['password'], ip)
         return self.key
@@ -1207,6 +1229,9 @@ class CronBackendShim:
 
 
 class CronTest(unittest.TestCase):
+    _all_periodics: Set[str]
+    _run_periodics: Set[str]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stores = []
@@ -1219,6 +1244,20 @@ class CronTest(unittest.TestCase):
         cls.event = CronBackendShim(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = CronBackendShim(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = CronBackendShim(cls.cron, cls.cron.core.mlproxy)
+        cls._all_periodics = {
+            job.cron['name']
+            for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
+                             cls.cron.assembly, cls.cron.ml)
+            for job in cls.cron.find_periodics(frontend)
+        }
+        cls._run_periodics = set()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if (any(job not in cls._run_periodics for job in cls._all_periodics)
+                and not os.environ.get('CDEDB_TEST_SINGULAR')):
+            raise AssertionError(f"The following cron-periodics never ran:"
+                                 f" {cls._all_periodics - cls._run_periodics}")
 
     def setUp(self):
         subprocess.check_call(("make", "sql-test-shallow"),
@@ -1255,6 +1294,7 @@ class CronTest(unittest.TestCase):
         if not args:
             raise ValueError("Must specify jobs to run.")
         self.cron.execute(args)
+        self._run_periodics.update(args)
         if check_stores:
             expectation = set(args) | {"_base"}
             self.assertEqual(expectation, set(s.cron for s in self.stores))

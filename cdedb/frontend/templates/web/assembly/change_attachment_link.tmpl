@@ -56,7 +56,7 @@
             id="changeattachmentlinkform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/change_attachment_link') }}
         {{ util.input_hidden(name="attachment_id") }}
-        {{ util.form_input_select("new_ballot_id", label=gettext("Ballot"), entries=ballot_entries, nulloption="&nbsp;"|s) }}
+        {{ util.form_input_select("new_ballot_id", label=gettext("Ballot"), entries=ballot_entries, nulloption=nbsp) }}
         {{ util.form_input_submit(cancellink=(
             cdedblink('assembly/show_attachment') if attachment else (
                 cdedblink('assembly/show_ballot') if ambience['ballot']

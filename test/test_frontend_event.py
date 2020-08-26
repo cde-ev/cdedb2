@@ -2690,16 +2690,18 @@ etc;anything else""", f['entries_2'].value)
 
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=CustomCSVDialect))
-        self.assertIn('ToFi & Co', tuple(row['instructors'] for row in result))
-        self.assertIn('cancelled', tuple(row['track2'] for row in result))
-        self.assertIn('Seminarraum 42', tuple(row['fields.room']
+        self.assertIn('ToFi & Co', tuple(row['course.instructors'] for row in result))
+        self.assertTrue(any(
+            row['track2.is_offered'] == 'True'
+            and row['track2.takes_place'] == 'False' for row in result))
+        self.assertIn('Seminarraum 42', tuple(row['course_fields.xfield_room']
                                               for row in result))
         self.response = save.click(href='/event/event/1/download/csv_lodgements')
 
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=CustomCSVDialect))
-        self.assertIn('100', tuple(row['camping_mat_capacity'] for row in result))
-        self.assertIn('low', tuple(row['fields.contamination']
+        self.assertIn('100', tuple(row['lodgement.camping_mat_capacity'] for row in result))
+        self.assertIn('low', tuple(row['lodgement_fields.xfield_contamination']
                                    for row in result))
 
     @as_users("berta")

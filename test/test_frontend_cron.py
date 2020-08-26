@@ -315,8 +315,44 @@ class TestCron(CronTest):
         self.assertEqual(['privilege_change_remind'],
                          [mail.template for mail in self.mails])
 
+    @prepsql("UPDATE cde.lastschrift SET revoked_at = now() WHERE id = 2")
+    def test_forget_old_lastschrifts(self):
+        name = "forget_old_lastschrifts"
+        self.assertEqual(
+            [1, 2], list(self.cde.list_lastschrift(active=False)))
+        self.execute(name)
+        # Make sure only the old lastschrift is deleted.
+        self.assertEqual(
+            [2], list(self.cde.list_lastschrift(active=False))
+        )
+        self.assertEqual([1], self.core.get_cron_store(name)["deleted"])
+        self.execute(name)
+        # Make sure nothing changes when the cron job runs again.
+        self.assertEqual(
+            [2], list(self.cde.list_lastschrift(active=False))
+        )
+        self.assertEqual([1], self.core.get_cron_store(name)["deleted"])
+
+    def test_tally_ballots(self):
+        ballot_ids = set()
+        for assembly_id in self.assembly.list_assemblies():
+            ballot_ids |= self.assembly.list_ballots(assembly_id).keys()
+        ballots = self.assembly.get_ballots(ballot_ids)
+        self.assertTrue(all(not b['is_tallied'] for b in ballots.values()))
+        self.execute("check_tally_ballot")
+        ballots = self.assembly.get_ballots(ballot_ids)
+        self.assertEqual(2, sum(1 for b in ballots.values() if b['is_tallied']))
+        self.assertEqual(['ballot_tallied'] * 2,
+                         [mail.template for mail in self.mails])
+
+    def test_write_subscription_states(self):
+        # We just want to test that no exception is raised.
+        self.execute('write_subscription_states')
+
     @unittest.mock.patch("mailmanclient.Client")
     def test_mailman_sync(self, client_class):
+        self._run_periodics.add('mailman_sync')
+        self.skipTest("Mailman currently not implemented.")
         #
         # Prepare
         #

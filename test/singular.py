@@ -8,6 +8,7 @@ from test.common import MyTextTestResult
 if __name__ == "__main__":
     if not os.environ.get('CDEDB_TEST'):
         raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
+    os.environ['CDEDB_TEST_SINGULAR'] = "True"
     name = None
     filename = None
     if len(sys.argv) > 1 and sys.argv[1].startswith('test_'):

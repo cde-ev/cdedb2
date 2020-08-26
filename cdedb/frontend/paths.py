@@ -213,6 +213,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
             sub("/lastschrift/", (
                 rule("/", methods=_GET,
                      endpoint="lastschrift_index"),
+                rule("/create", methods=_GET,
+                     endpoint="lastschrift_create_form"),
+                rule("/create", methods=_POST,
+                     endpoint="lastschrift_create"),
                 rule("/form/download", methods=_GET,
                      endpoint="lastschrift_subscription_form"),
                 rule("/form/fill", methods=_GET,
