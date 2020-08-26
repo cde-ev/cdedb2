@@ -3,8 +3,7 @@
 Using the VM image
 ==================
 
-.. todo:: In Development und Orga Setup splitten und den unrelateten Development
-          Bezug verschieben.
+.. todo:: "unrelateten" Development Bezug verschieben?
 
 Here we describe how the VM image provided by the auto-build may be used for
 development and offline usage (i.e. at events).
@@ -222,46 +221,3 @@ there. Then the commit is transferred to the VM by issuing the command
 ``git pull ../cdedb2/`` inside the ``vm-repo/`` directory. Now the
 test suite is executed inside the VM and if successful the change is
 pushed from ``cdedb2/`` to the server.
-
-.. _event-offline-usage:
-
-Offline Usage
--------------
-
-.. todo:: In den Bereich Handbuch/Orgas verschieben
-
-The following assumes that you successfully set up the VM (i.e. what is
-covered in the first four sections of this document until the development
-specific bits start). This will now guide you through the steps to make the
-VM suitable for offline usage during an event.
-
-First you have to lock the event in the online instance disabling further
-changes. For this point your browser at the event overview page and hit the
-corresponding button. Then you export the event from the online instance by
-retrieving the corresponding download from the event's download page. This
-will result in a JSON-file containing the data of the event.
-
-Now copy this file via ``scp`` into the VM and run the offline
-initialization script inside the VM::
-
-  /cdedb2/bin/make_offline_vm.py path/to/export.json
-
-Note that this deletes all data inside the VM before importing the
-event.
-
-Now the VM is ready to be used for offline deployment. Access it via
-browser. For security reasons the VM does not contain your real login
-password. Everyone can log in with their normal username (i.e. their email
-address) and the fixed password ``secret`` (actually any password will do,
-but I find it easier to tell everybody to use a specific one).
-
-After the event you export the data from the offline instance the same way
-you exported the online instance, receiving a JSON-file with the data of the
-offline instance. This file you upload into the online instance thereby
-unlocking the event via the corresponding button on the event overview
-page. This overwrites all data of your event in the online instance with
-data from the offline VM (potentially deleting things).
-
-.. note:: You can test the offline deployment to see whether there are any
-   pitfalls. Simply do not lock the online instance. You have to dispose of
-   your trial offline instance of course.

@@ -1,9 +1,10 @@
-Einführung für Orgas
-====================
+Einführung
+==========
+
+.. todo:: Refactor
 
 Hier findet ihr allgemeine Hinweise um mittels der Datenbank eine
-Veranstaltung zu organisieren. Unter :ref:`orga-specific-hints` finden
-sich noch Detailhinweise zu spezifischen Aspekten.
+Veranstaltung zu organisieren.
 
 Einleitung
 ----------
@@ -35,17 +36,14 @@ mit der so ziemlich jede denkbare Anfrage zufriedenstellend beantwortet
 werden können sollte. Eine Ausnahme sind die Kurswahlen, für die es eine
 Extraseite gibt.
 
+.. hint:: Weiter Informationen zur Organisation von Veranstaltungen findet ihr im
+          `Akademieleitfaden <https://wiki.cde-ev.de/dokuwiki/doku.php?id=akademieleitfaden:allgemeines:technik:db>`_.
+
 Mailingliste
 ------------
 
 TODO
 
-Mitnahmeversion
----------------
-
-Die Datenbank kann als Offline-Version mittels einer virtuellen Maschine
-genutzt werden. Die allgemeine Dokumentation zur Benutzung der virtuellen
-Maschine ist unter :ref:`event-offline-usage` zu finden.
 
 Template-Renderer
 -----------------
@@ -73,11 +71,3 @@ Die Templates für die Emails, die von der Datenbank verschickt werden
 können auf
 :ref:`der Seite mit den Email-Templates <email-templates-for-realm-event>`
 eingesehen werden.
-
-Planung einer Veranstaltung
----------------------------
-
-Der Veranstaltungsleitfaden wurde im
-`Akademieleitfaden <https://wiki.cde-ev.de/dokuwiki/doku.php?id=akademieleitfaden:allgemeines:technik:db>`_
-eingepflegt. Ihr findet dort alle Informationen dazu, wie man mit der Datenbank
-eine Veranstaltung organisiert.

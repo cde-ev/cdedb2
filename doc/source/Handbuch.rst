@@ -11,9 +11,15 @@ Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
 .. toctree::
    :maxdepth: 1
 
-   Handbuch_Orga_Allgemeines
-   Handbuch_Orga_Spezielles
-   Handbuch_partieller_Import
-   Handbuch_Markdown
-   Handbuch_elektronisches_Wahlverfahren
+   Handbuch_Adminteam
+   Handbuch_Akademieteam
+   Handbuch_CdElokal
+   Handbuch_Finanzvorstand
+   Handbuch_Moderator
+   Handbuch_Orga
+   Handbuch_Versammlungsleitung
+   Handbuch_Verwaltungsteam
+   Handbuch_Vorstand
    Handbuch_Email_Templates
+   Handbuch_Markdown
+   Architecture_Privacy
