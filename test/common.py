@@ -1188,19 +1188,19 @@ class MultiAppFrontendTest(FrontendTest):
         cls.apps = [webtest.TestApp(Application(),
                                     extra_environ=cls.app_extra_environ)
                     for _ in range(cls.n)]
-        cls.app = cls.apps[0]
+        # The super().setUpClass overwrites the property, so reset it here.
+        cls.app = property(fget=cls.get_app, fset=cls.set_app)
         cls.responses = [None for _ in range(cls.n)]
         cls.current_app = 0
 
     def setUp(self) -> None:
         """Reset all apps and responses and the current app index."""
+        self.responses = [None for _ in range(self.n)]  # type: ignore
         super().setUp()
         for app in self.apps:
             app.reset()
             app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
-        self.responses = [None for _ in range(self.n)]  # type: ignore
         self.current_app = 0
-        self.app = self.apps[0]
 
     def get_response(self) -> webtest.TestResponse:
         return self.responses[self.current_app]
@@ -1209,6 +1209,14 @@ class MultiAppFrontendTest(FrontendTest):
         self.responses[self.current_app] = value
 
     response = property(fget=get_response, fset=set_response)
+
+    def get_app(self) -> webtest.TestApp:
+        return self.apps[self.current_app]
+
+    def set_app(self, value: webtest.TestApp) -> None:
+        self.apps[self.current_app] = value
+
+    app = property(fget=get_app, fset=set_app)
 
     def switch_app(self, i: int) -> None:
         """Switch to a different index.
@@ -1219,7 +1227,6 @@ class MultiAppFrontendTest(FrontendTest):
         """
         if not 0 <= i < self.n:
             raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")
-        self.app = self.apps[i]  # This is a reference so it works.
         self.current_app = i
 
 
