@@ -44,7 +44,7 @@ from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, PrivilegeError, RequestState, n_,
     roles_to_db_role, unwrap, PathLike, CdEDBObject, CdEDBObjectMap, now,
 )
-from cdedb.config import BasicConfig, SecretsConfig
+from cdedb.config import BasicConfig, SecretsConfig, Config
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -297,6 +297,7 @@ class CdEDBTest(unittest.TestCase):
     def setUpClass(cls):
         # Keep a clean copy of sample data that should not be messed with.
         cls._clean_sample_data = read_sample_data()
+        cls.conf = Config()
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),

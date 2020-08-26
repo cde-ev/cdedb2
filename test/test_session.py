@@ -65,7 +65,8 @@ class TestSessionBackend(BackendTest):
         user_data = USER_DICT["anton"]
         ip = "1.2.3.4"
         # Create and check the maximum number of allowed sessions.
-        keys = [self.login(user_data, ip=ip) for _ in range(5)]
+        keys = [self.login(user_data, ip=ip)
+                for _ in range(self.conf["MAX_ACTIVE_SESSIONS"])]
         for i, key in enumerate(keys):
             with self.subTest(i=i, key=key):
                 user = self.session.lookupsession(key, ip=ip)
