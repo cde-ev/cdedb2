@@ -11223,6 +11223,9 @@ msgstr "Fragebogen konfigurieren (%(title)s)"
 msgid "Reorder Questionnaire"
 msgstr "Fragebogen umordnen"
 
+msgid "Reorder Questionnaire (%(title)s)"
+msgstr "Fragebogen umordnen (%(title)s)"
+
 #: cdedb/frontend/templates/web/event/configure_additional_questionnaire.tmpl:52
 #: cdedb/frontend/templates/web/event/configure_registration.tmpl:52
 msgid "Add Part"
@@ -11248,6 +11251,9 @@ msgstr "Anmeldungsvorschau"
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:31
 msgid "Reorder Registration"
 msgstr "Anmeldung umordnen"
+
+msgid "Reorder Registration (%(title)s)"
+msgstr "Anmeldung umordnen (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:5
 #, python-format
