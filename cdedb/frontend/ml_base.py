@@ -206,7 +206,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 event_ids = self.eventproxy.list_db_events(rs)
                 events = self.eventproxy.get_events(rs, event_ids)
             else:
-                events = []
+                events = {}
             assemblies = (self.assemblyproxy.list_assemblies(rs)
                           if "assembly_id" in additional_fields else [])
             return self.render(rs, "create_mailinglist", {

@@ -170,12 +170,12 @@ class GeneralMailinglist:
                 for admin in cls.relevant_admins} | {"ml_mgmt"}
 
     @classmethod
-    def has_moderator_view(cls, user: User):
+    def has_moderator_view(cls, user: User) -> bool:
         return (cls.is_relevant_admin(user)
                 and bool(cls.moderator_admin_views() & user.admin_views))
 
     @classmethod
-    def has_management_view(cls, user: User):
+    def has_management_view(cls, user: User) -> bool:
         return (cls.is_relevant_admin(user)
                 and bool(cls.management_admin_views() & user.admin_views))
 
