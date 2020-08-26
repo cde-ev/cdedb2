@@ -1189,6 +1189,7 @@ class MultiAppFrontendTest(FrontendTest):
                                     extra_environ=cls.app_extra_environ)
                     for _ in range(cls.n)]
         cls.app = cls.apps[0]
+        cls.responses = [None for _ in range(cls.n)]
         cls.current_app = 0
 
     def setUp(self) -> None:
@@ -1200,7 +1201,14 @@ class MultiAppFrontendTest(FrontendTest):
         self.responses = [None for _ in range(self.n)]  # type: ignore
         self.current_app = 0
         self.app = self.apps[0]
-        self.response = None
+
+    def get_response(self) -> webtest.TestResponse:
+        return self.responses[self.current_app]
+
+    def set_response(self, value: webtest.TestResponse) -> None:
+        self.responses[self.current_app] = value
+
+    response = property(fget=get_response, fset=set_response)
 
     def switch_app(self, i: int) -> None:
         """Switch to a different index.
@@ -1212,9 +1220,6 @@ class MultiAppFrontendTest(FrontendTest):
         if not 0 <= i <= self.n:
             raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")
         self.app = self.apps[i]  # This is a reference so it works.
-        # This could be None, so overwrite explicitly.
-        self.responses[self.current_app] = self.response
-        self.response = self.responses[i]
         self.current_app = i
 
 
