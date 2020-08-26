@@ -308,6 +308,7 @@ _DEFAULTS = {
     # session parameters
     "SESSION_TIMEOUT": datetime.timedelta(days=2),
     "SESSION_LIFESPAN": datetime.timedelta(days=7),
+    "MAX_ACTIVE_SESSIONS": 5,
 
     #
     # CdE stuff

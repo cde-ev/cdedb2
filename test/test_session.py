@@ -61,6 +61,26 @@ class TestSessionBackend(BackendTest):
                 {"anonymous"},
                 self.session.lookupsession(keys[i], ips[i]).roles)
 
+    def test_max_active_sessions(self):
+        user_data = USER_DICT["anton"]
+        ip = "1.2.3.4"
+        # Create and check the maximum number of allowed sessions.
+        keys = [self.login(user_data, ip=ip) for _ in range(5)]
+        for i, key in enumerate(keys):
+            with self.subTest(i=i, key=key):
+                user = self.session.lookupsession(key, ip=ip)
+                self.assertEqual(user.persona_id, user_data['id'])
+                self.assertLess({"anonymous"}, user.roles)
+        # Create another session and check it.
+        keys.append(self.login(user_data, ip=ip))
+        user = self.session.lookupsession(keys[-1], ip=ip)
+        # self.assertEqual(user.persona_id, user_data['id'])
+        # self.assertLess({"anonymous"}, user.roles)
+        # Check that the oldest session has now been terminated.
+        user = self.session.lookupsession(keys[0], ip=ip)
+        self.assertIsNone(user.persona_id)
+        self.assertEqual({"anonymous"}, user.roles)
+
 
 class TestMultiSessionFrontend(MultiAppFrontendTest):
     n = 3  # Needs to be at least 3 for the following test to work correctly.
