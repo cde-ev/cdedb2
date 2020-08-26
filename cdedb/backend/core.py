@@ -1838,8 +1838,7 @@ class CoreBackend(AbstractBackend):
         if not all_sessions:
             constraints.append("sessionkey = %s")
             params.append(rs.sessionkey)
-        if constraints:
-            query += " WHERE " + " AND ".join(constraints)
+        query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)
 
     @access("persona")
