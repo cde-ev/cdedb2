@@ -30,7 +30,7 @@
             $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist();
         });
     </script>
-    {% set readonly = not ('ml_mgmt' in user.admin_views and is_relevant_admin(mailinglist_id=ambience['mailinglist']['id'])) %}
+    {% set readonly = not ambience['mailinglist']['ml_type_class'].has_management_view(user) %}
     {% if not readonly %}
         <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
             {{ util.anti_csrf_token('ml/change_mailinglist') }}

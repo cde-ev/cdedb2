@@ -196,7 +196,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertNoLink('assembly/assembly/1/log')
         self.traverse({'href': 'assembly/assembly/1/change'})
 
-        # Test Wahlleitungs Controls Admin View
+        # Test Presider Controls Admin View
         self.traverse({'href': '/assembly/assembly/1/show'})
         self.assertNoLink('/assembly/assembly/1/attachment/add')
         self.traverse({'href': '/assembly/assembly/1/ballot/list'})

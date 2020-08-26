@@ -5,7 +5,7 @@ from typing import (
 )
 
 from cdedb.common import (
-    extract_roles, n_, unwrap, CdEDBObject, RequestState
+    extract_roles, n_, unwrap, CdEDBObject, RequestState, User
 )
 from cdedb.query import Query, QueryOperators
 import cdedb.database.constants as const
@@ -141,7 +141,7 @@ class GeneralMailinglist:
     relevant_admins: Set[str] = set()
 
     @classmethod
-    def is_relevant_admin(cls, rs: RequestState) -> bool:
+    def is_relevant_admin(cls, user: User) -> bool:
         """Determine if the user is allowed to administrate a mailinglist.
 
         Instead of overriding this, you should set the `relevant_admins`
@@ -153,11 +153,31 @@ class GeneralMailinglist:
           a user to administrate a mailinglist. The semantics are similar to
           `@access`.
         """
-        return bool((cls.relevant_admins | {"ml_admin"}) & rs.user.roles)
+        return bool((cls.relevant_admins | {"ml_admin"}) & user.roles)
 
     if TYPE_CHECKING:
         role_map: OrderedDict[str, MailinglistInteractionPolicy]
     role_map = OrderedDict()
+
+    @classmethod
+    def moderator_admin_views(cls):
+        return {"ml_mod_" + admin.replace("_admin", "")
+                for admin in cls.relevant_admins} | {"ml_mod"}
+
+    @classmethod
+    def management_admin_views(cls):
+        return {"ml_mgmt_" + admin.replace("_admin", "")
+                for admin in cls.relevant_admins} | {"ml_mgmt"}
+
+    @classmethod
+    def has_moderator_view(cls, user: User):
+        return (cls.is_relevant_admin(user)
+                and bool(cls.moderator_admin_views() & user.admin_views))
+
+    @classmethod
+    def has_management_view(cls, user: User):
+        return (cls.is_relevant_admin(user)
+                and bool(cls.management_admin_views() & user.admin_views))
 
     @classmethod
     def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,

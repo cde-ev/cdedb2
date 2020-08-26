@@ -6835,7 +6835,7 @@ msgid "Assembly Administration"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:72
-msgid "Wahlleitungs Controls"
+msgid "Presider Controls"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:74

@@ -51,10 +51,10 @@
         {% endcall %}
     {% endif %}
 
-    {% if attachments or has_ballot_attachments or "assembly_contents" in user.admin_views %}
+    {% if attachments or has_ballot_attachments or "assembly_presider" in user.admin_views %}
         {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         <div class="row">
-            {% if attachments or "assembly_contents" in user.admin_views %}
+            {% if attachments or "assembly_presider" in user.admin_views %}
                 <div class="col-sm-6">
                     <h4>{% trans %}General Files{% endtrans %}</h4>
                     <ul class="slim" id="attachments">
@@ -62,12 +62,12 @@
                             <li class="hide-hover-container clearfix-after">
                                 {{ assembly_util.print_attachment(
                                         attachment, attachment_histories[attachment_id],
-                                        edit=("assembly_contents" in user.admin_views
+                                        edit=("assembly_presider" in user.admin_views
                                               and ambience['assembly']['is_active'])) }}
                             </li>
                         {% endfor %}
                     </ul>
-                    {% if "assembly_contents" in user.admin_views and ambience['assembly']['is_active'] %}
+                    {% if "assembly_presider" in user.admin_views and ambience['assembly']['is_active'] %}
                         <div class="p">
                             {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Add File"),
                                          aclass="btn btn-success btn-sm", icon="plus") }}

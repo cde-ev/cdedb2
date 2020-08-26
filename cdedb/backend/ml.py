@@ -84,7 +84,7 @@ class MlBackend(AbstractBackend):
                 if mailinglist['id'] != mailinglist_id:
                     raise ValueError(n_("Different mailinglists specified."))
             atype = ml_type.get_type(mailinglist['ml_type'])
-        return atype.is_relevant_admin(rs)
+        return atype.is_relevant_admin(rs.user)
 
     @access("ml", "droid_rklist")
     def is_moderator(self, rs: RequestState, ml_id: int) -> bool:
@@ -124,7 +124,7 @@ class MlBackend(AbstractBackend):
         :rtype: {const.MailinglistTypes}
         """
         ret = {enum_member for enum_member, atype in ml_type.TYPE_MAP.items()
-               if atype.is_relevant_admin(rs)}
+               if atype.is_relevant_admin(rs.user)}
         return ret
 
     @overload
@@ -1323,7 +1323,7 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             ml = self.get_mailinglist(rs, mailinglist_id)
             atype = self.get_ml_type(rs, mailinglist_id)
-            if not atype.is_relevant_admin(rs):
+            if not atype.is_relevant_admin(rs.user):
                 raise PrivilegeError(n_("Not privileged."))
 
             if not atype.periodic_cleanup(rs, ml):

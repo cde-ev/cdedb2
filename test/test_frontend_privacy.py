@@ -5,7 +5,8 @@ import unittest
 import urllib.parse
 
 from cdedb.common import encode_parameter
-from test.common import as_users, USER_DICT, FrontendTest
+from test.common import (
+    as_users, USER_DICT, FrontendTest, ADMIN_VIEWS_COOKIE_NAME, admin_views)
 
 # TODO Profilfoto
 
@@ -411,6 +412,32 @@ class TestPrivacyFrontend(FrontendTest):
         # for field in self.ALL_FIELDS - found:
         #     self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
         #                                        check_div=False)
+
+    @as_users("annika", "inga", "nina", "quintus", "werner")
+    @admin_views("ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_assembly",
+                 "ml_mod_cdelokal")
+    def test_profile_as_relevant_ml_admin(self, user):
+        all_ml = {
+            'public':      {'id': 64, 'user': 'janis',  'admin': 'nina'},
+            'cdelokal':    {'id': 65, 'user': 'janis',  'admin': 'inga'},
+            'team_ml':     {'id': 56, 'user': 'garcia', 'admin': 'quintus'},
+            'event_ml':    {'id':  9, 'user': 'garcia', 'admin': 'annika'},
+            'assembly_ml': {'id':  5, 'user': 'kalif',  'admin': 'werner'}}
+
+        for ml in all_ml.values():
+            inspected = USER_DICT[ml['user']]
+            self.get(
+                self.show_user_link(inspected['id']) + f"&ml_id={ml['id']}")
+            if user is USER_DICT[ml['admin']] or user is USER_DICT['nina']:
+                found = self._profile_moderator_view(inspected)
+            else:
+                found = self._profile_base_view(inspected)
+                # The username must not be visible, although "Email" occurs as
+                # field
+                self.assertNonPresence(inspected['username'])
+            for field in self.ALL_FIELDS - found:
+                self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
+                                       check_div=False)
 
     @as_users("annika", "berta", "emilia", "janis", "kalif", "nina", "quintus",
               "paul", "rowena", "werner")

@@ -618,6 +618,17 @@ def as_users(*users: str) -> Callable[[F], F]:
     return wrapper
 
 
+def admin_views(*views: str) -> Callable[[F], F]:
+    """Decorate a test to set different initial admin views."""
+    def decorator(fun: F) -> F:
+        @functools.wraps(fun)
+        def new_fun(self, *args, **kwargs):
+            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(views))
+            return fun(self, *args, **kwargs)
+        return cast(F, new_fun)
+    return decorator
+
+
 def prepsql(sql: AnyStr) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
     def decorator(fun: F) -> F:

@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/ml/generic.tmpl" as generic_ml with context %}
 {% block title %}
-    {% if 'ml_admin' in user. roles %}
+    {% if 'ml_admin' in user.roles %}
         {% trans %}All Mailinglists{% endtrans %}
     {% else %}
         {% trans %}Administered Mailinglists{% endtrans %}

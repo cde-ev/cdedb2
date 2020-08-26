@@ -61,7 +61,8 @@ from cdedb.common import (
     json_serialize, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
     encode_parameter, decode_parameter, make_proxy, EntitySorter,
     REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap,
-    CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User
+    CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User,
+    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS
 )
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -872,6 +873,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
             'GIT_COMMIT': self.conf["GIT_COMMIT"],
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
+            'ALL_MOD_ADMIN_VIEWS': ALL_MOD_ADMIN_VIEWS,
+            'ALL_MGMT_ADMIN_VIEWS': ALL_MGMT_ADMIN_VIEWS,
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management':
                 lambda roles: roles & ({'core_admin'} | set(
