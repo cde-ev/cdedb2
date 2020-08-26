@@ -1217,7 +1217,7 @@ class MultiAppFrontendTest(FrontendTest):
         All methods of the super class only interact with the active app and
         response.
         """
-        if not 0 <= i <= self.n:
+        if not 0 <= i < self.n:
             raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")
         self.app = self.apps[i]  # This is a reference so it works.
         self.current_app = i
