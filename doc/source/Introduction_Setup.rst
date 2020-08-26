@@ -22,7 +22,7 @@ We need some dependencies:
 * Apache (with mod_wsgi)
 * git
 * openldap
-* texlive (incl. luatex and cm-super, for generating pdf documents)
+* texlive (incl. luatex; for generating pdf documents)
 
 Further we depend on a number of python packages:
 
