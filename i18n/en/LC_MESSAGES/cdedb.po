@@ -8308,7 +8308,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:118
 msgid ""
 "For example the search for \"Aka\" in the full text search will not match"
-" \"Akademie\". However the search for \"Akadem\" will mitch \"Akademie\"."
+" \"Akademie\". However the search for \"Akadem\" will match \"Akademie\"."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:6
