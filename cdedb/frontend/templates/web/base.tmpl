@@ -44,6 +44,9 @@
     <body class="{% if CDEDB_DEV %}development{% elif CDEDB_OFFLINE_DEPLOYMENT %}offline{% endif %}">
         <div class="container page" id="maincontainer">
             <div class="clearfix" role="banner">
+                <div class="logo pull-left">
+                    <a href={{ cdedblink("core/index") }} ><img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" /></a>
+                </div>
                 <div class="pull-right text-right" style="width: 20%;">
                     {% if CDEDB_DEV %}
                         <div class="text-danger text-uppercase"><small>Development Mode</small></div>
@@ -76,10 +79,6 @@
                         {{ util.href(docurl("index"), gettext("Help"), title=gettext("Manual"), icon="question-circle") }}
                     </span>
                 </div>
-                <div class="logo pull-left">
-                    <a href={{ cdedblink("core/index") }} ><img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" /></a>
-                </div>
-
                 {% if jshint %}
                     <noscript>
                         {% if jshint == 'strong' %}
