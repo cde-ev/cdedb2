@@ -9,7 +9,9 @@ import collections
 import datetime
 import time
 import io
-from typing import Any, Dict, Tuple, Union, Optional, Collection
+from typing import (
+    Any, Dict, Tuple, Union, Optional, Collection, List, cast, Set
+)
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -18,12 +20,14 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
     check_validation as check, request_extractor, query_result_to_json,
     calculate_db_logparams, calculate_loglinks, process_dynamic_input,
+    periodic
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, mangle_query_input
+from cdedb.query import Query, QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter,
-    schulze_evaluate, xsorted, RequestState, get_hash
+    schulze_evaluate, xsorted, RequestState, get_hash, CdEDBObject,
+    DefaultReturnCode, CdEDBObjectMap,
 )
 import cdedb.database.constants as const
 
@@ -78,7 +82,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes", "username")
-    def create_user(self, rs: RequestState, data: Dict[str, Any]) -> Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject,
+                    ignore_warnings: bool = False) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -87,7 +92,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data)
+        return super().create_user(rs, data, ignore_warnings)
 
     @access("assembly_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
@@ -97,6 +102,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query]
         if is_search:
             query = check(rs, "query_input", query_input, "query",
                           spec=spec, allow_empty=False)
@@ -107,24 +113,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = "qview_persona"
             result = self.assemblyproxy.submit_general_query(rs, query)
             params['result'] = result
             if download:
-                fields = []
-                for csvfield in query.fields_of_interest:
-                    fields.extend(csvfield.split(','))
-                if download == "csv":
-                    csv_data = csv_output(result, fields)
-                    return self.send_csv_file(
-                        rs, data=csv_data, inline=False,
-                        filename="user_search_result.csv")
-                elif download == "json":
-                    json_data = query_result_to_json(result, fields)
-                    return self.send_file(
-                        rs, data=json_data, inline=False,
-                        filename="user_search_result.json")
+                return self.send_query_download(
+                    rs, result, fields=query.fields_of_interest, kind=download,
+                    filename="user_search_result")
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
@@ -144,7 +140,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                  length: Optional[int], persona_id: Optional[int],
                  submitted_by: Optional[int], additional_info: Optional[str],
                  time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]):
+                 time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -247,8 +243,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             delete_blockers = self.assemblyproxy.delete_assembly_blockers(
                 rs, assembly_id)
         else:
-            conclude_blockers = {"is_admin": False}
-            delete_blockers = {"is_admin": False}
+            conclude_blockers = {"is_admin": [False]}
+            delete_blockers = {"is_admin": [False]}
 
         return self.render(rs, "show_assembly", {
             "attachments": attachments,
@@ -333,11 +329,11 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/index")
         assembly_attachments = self.assemblyproxy.list_attachments(
                 rs, assembly_id=assembly_id)
-        all_attachments = {
+        all_attachments: Dict[Optional[int], CdEDBObjectMap] = {
             None: self.assemblyproxy.get_attachments(
                 rs, assembly_attachments)
         }
-        attachment_histories = {
+        attachment_histories: Dict[Optional[int], Dict[int, CdEDBObjectMap]] = {
             None: self.assemblyproxy.get_attachment_histories(
                 rs, assembly_attachments)
         }
@@ -471,9 +467,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     @staticmethod
-    def group_ballots(ballots: Dict[int, Dict[str, Any]]) -> \
-            Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any],
-                  Dict[str, Any]]:
+    def group_ballots(ballots: Dict[int, Dict[str, Any]]
+                      ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap,
+                                 CdEDBObjectMap, CdEDBObjectMap]:
         """Helper to group ballots by status.
 
         :type ballots: {int: str}
@@ -498,8 +494,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                     and (v['extended'] is False
                          or v['vote_extension_end'] <= ref))}
 
-        assert (len(ballots) == len(future) + len(current) +
-                len(extended) + len(done))
+        if not (len(future) + len(current) + len(extended) + len(done)
+                == len(ballots)):
+            raise RuntimeError(n_("Grouping ballots by status failed."))
 
         return done, extended, current, future
 
@@ -567,7 +564,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         history = self.assemblyproxy.get_attachment_history(
             rs, attachment_id)
         version = version or self.assemblyproxy.get_current_version(
-            rs, attachment_id)
+            rs, attachment_id, include_deleted=False)
         content = self.assemblyproxy.get_attachment_content(
             rs, attachment_id, version)
         if not content:
@@ -600,6 +597,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         if ballot_id and now() > rs.ambience['ballot']['vote_begin']:
             rs.notify("warning", n_("Voting has already begun."))
             return self.redirect(rs, "assembly/show_ballot")
+        attachment = None
+        history = None
         if attachment_id:
             attachment = rs.ambience['attachment']
             if (attachment['ballot_id'] != ballot_id or
@@ -612,9 +611,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                     return self.redirect(rs, "assembly/show_assembly")
             history = self.assemblyproxy.get_attachment_history(
                 rs, attachment_id)
-        else:
-            attachment = None
-            history = None
         return self.render(
             rs, "add_attachment", {
                 'attachment': attachment, 'history': history,
@@ -639,12 +635,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         if attachment and not filename:
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, "identifier", tmp, 'filename')
-        attachment = check(rs, "pdffile", attachment, 'attachment')
+        attachment = cast(bytes, check(rs, "pdffile", attachment, 'attachment'))
         if rs.has_validation_errors():
             return self.add_attachment_form(
                 rs, assembly_id=assembly_id, ballot_id=ballot_id,
                 attachment_id=attachment_id)
-        data = {
+        data: CdEDBObject = {
             'title': title,
             'filename': filename,
             'authors': authors,
@@ -730,7 +726,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.notify("warning", n_("Voting has already begun."))
                 return self.redirect(rs, "assembly/show_ballot")
 
-        data = {'id': attachment_id}
+        data: CdEDBObject = {'id': attachment_id}
         if new_ballot_id:
             ballot = self.assemblyproxy.get_ballot(rs, new_ballot_id)
             if ballot['assembly_id'] != assembly_id:
@@ -963,8 +959,9 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # Currently we don't distinguish between current and extended ballots
         current.update(extended)
-        ballot_list = sum((xsorted(bdict, key=lambda key: bdict[key]["title"])
-                           for bdict in (future, current, done)), [])
+        ballot_list: List[int] = sum((
+            xsorted(bdict, key=lambda key: bdict[key]["title"])
+            for bdict in (future, current, done)), [])
 
         i = ballot_list.index(ballot_id)
         length = len(ballot_list)
@@ -982,33 +979,35 @@ class AssemblyFrontend(AbstractUserFrontend):
         })
 
     def _update_ballot_state(self, rs: RequestState,
-                             ballot: Dict[str, Any]) -> bool:
+                             ballot: Dict[str, Any]) -> DefaultReturnCode:
         """Helper to automatically update a ballots state.
 
         State updates are necessary for extending and tallying a ballot.
         If this function performs a state update, the calling function should
         redirect to the calling page.
+
+        :returns: 1 if the ballot was tallied, -1 if it was extended,
+            0 otherwise.
         """
 
         timestamp = now()
-        update = False
 
         # check for extension
         if ballot['extended'] is None and timestamp > ballot['vote_end']:
             self.assemblyproxy.check_voting_priod_extension(rs, ballot['id'])
-            update = True
+            return -1
 
         finished = (
                 timestamp > ballot['vote_end']
                 and (not ballot['extended']
                      or timestamp > ballot['vote_extension_end']))
         # check whether we need to initiate tallying
-        if finished and not ballot['is_tallied'] and not update:
+        if finished and not ballot['is_tallied']:
             result = self.assemblyproxy.tally_ballot(rs, ballot['id'])
             if result:
                 afile = io.BytesIO(result)
                 my_hash = get_hash(result)
-                attachment_result = {
+                attachment_result: Dict[str, str] = {  # type: ignore
                     'file': afile,
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
@@ -1026,19 +1025,19 @@ class AssemblyFrontend(AbstractUserFrontend):
                     },
                     attachments=(attachment_result,),
                     params={'sha': my_hash, 'title': ballot['title']})
-                update = True
-        return update
+                return 1
+        return 0
 
-    def get_online_result(self, rs, ballot: Dict[str, Any]
+    def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
                           ) -> Union[Dict[str, Any], None]:
         """Helper to get the result information of a tallied ballot."""
         result = None
         if ballot['is_tallied']:
-            result = json.loads(
+            result = json.loads(  # type: ignore
                 self.assemblyproxy.get_ballot_result(rs, ballot['id']))
             tiers = tuple(x.split('=') for x in result['result'].split('>'))
-            winners = []
-            losers = []
+            winners: List[Collection[str]] = []
+            losers: List[Collection[str]] = []
             tmp = winners
             lookup = {e['moniker']: e['id']
                       for e in ballot['candidates'].values()}
@@ -1053,6 +1052,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             result['losers'] = losers
 
             # vote count for classical vote ballots
+            counts: Union[Dict[str, int],
+                          List[Dict[str, Union[int, List[str]]]]]
             if ballot['votes']:
                 counts = {e['moniker']: 0
                           for e in ballot['candidates'].values()}
@@ -1083,6 +1084,33 @@ class AssemblyFrontend(AbstractUserFrontend):
             result['abstentions'] = abstentions
 
         return result
+
+    @periodic("check_tally_ballot", period=1)
+    def check_tally_ballot(self, rs: RequestState, store: CdEDBObject
+                           ) -> CdEDBObject:
+        """Check whether any ballots need to be tallied or extended."""
+        tally_count = 0
+        extension_count = 0
+        assembly_ids = self.assemblyproxy.list_assemblies(rs, is_active=True)
+        assemblies = self.assemblyproxy.get_assemblies(rs, assembly_ids)
+        for assembly_id, assembly in assemblies.items():
+            rs.ambience['assembly'] = assembly
+            ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+            ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+            for ballot_id, ballot in ballots.items():
+                code = self._update_ballot_state(rs, ballot)
+                if code < 0:
+                    extension_count += 1
+                    ballot = self.assemblyproxy.get_ballot(rs, ballot_id)
+                    code = self._update_ballot_state(rs, ballot)
+                    if code > 0:
+                        tally_count += 1
+                elif code > 0:
+                    tally_count += 1
+        if extension_count or tally_count:
+            self.logger.info(f"Extended {extension_count} and tallied"
+                             f" {tally_count} ballots via cron job.")
+        return store
 
     @access("assembly")
     def summary_ballots(self, rs: RequestState, assembly_id: int) -> Response:
@@ -1246,7 +1274,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly_admin", modi={"POST"})
     def edit_candidates(self, rs: RequestState, assembly_id: int,
-                        ballot_id: Optional[int]) -> Response:
+                        ballot_id: int) -> Response:
         """Create, edit and delete candidates of ballot.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -1257,7 +1285,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, rs.ambience['ballot']['candidates'].keys(),
             {'moniker': "restrictive_identifier", 'description': "str"})
 
-        monikers = set()
+        monikers: Set[str] = set()
         for candidate_id, candidate in candidates.items():
             if candidate and candidate['moniker'] == ASSEMBLY_BAR_MONIKER:
                 rs.append_validation_error(

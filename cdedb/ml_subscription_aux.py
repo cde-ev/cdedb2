@@ -26,8 +26,10 @@ These are be imported in `cdedb:common.py` and should be imported from there.
 import enum
 from cdedb.database.constants import SubscriptionStates, MlLogCodes
 
+from typing import Any, Dict, Optional
 
-def n_(x):
+
+def n_(x: str) -> str:
     """Clone of `cdedb.common.n_` used for marking translatable strings."""
     return x
 
@@ -37,8 +39,8 @@ class SubscriptionError(RuntimeError):
     Exception for signalling that an action trying to change a subscription
     failed.
     """
-    def __init__(self, *args, kind="error", **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args: Any, kind: str = "error") -> None:
+        super(SubscriptionError, self).__init__(*args)
         if args:
             self.msg = args[0]
         else:
@@ -49,8 +51,8 @@ class SubscriptionError(RuntimeError):
 
 class SubscriptionInfo(SubscriptionError):
     """Exception for SubscriptionErrors with kind info."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, kind="info", **kwargs)
+    def __init__(self, *args):
+        super().__init__(*args, kind="info")
 
 
 @enum.unique
@@ -144,7 +146,9 @@ class SubscriptionActions(enum.IntEnum):
         error = SubscriptionError
         info = SubscriptionInfo
 
-        matrix = {
+        matrix: Dict[SubscriptionActions,
+                     Dict[Optional[SubscriptionStates],
+                          Optional[SubscriptionError]]] = {
             SubscriptionActions.add_subscriber: {
                 ss.subscribed: info(n_("User already subscribed.")),
                 ss.unsubscribed: None,

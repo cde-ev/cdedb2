@@ -10,12 +10,15 @@ dependencies.
 """
 
 import abc
+import werkzeug
+
+from typing import Mapping, Callable
 
 from cdedb.common import (
     n_, merge_dicts, PERSONA_DEFAULTS, RequestState, CdEDBObject
 )
 from cdedb.frontend.common import (
-    AbstractFrontend, Response, check_validation as check
+    AbstractFrontend, check_validation as check
 )
 
 
@@ -25,8 +28,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     This is basically every frontend with exception of 'core'.
     """
     #: Specification how user management works. To be filled by child classes.
-    user_management = {
-        "persona_getter": None,  # callable
+    user_management: Mapping[str, Callable] = {  # type: ignore
+        "persona_getter": None,
     }
 
     @classmethod
@@ -36,7 +39,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
     # @access("realm_admin")
     @abc.abstractmethod
-    def create_user_form(self, rs: RequestState) -> Response:
+    def create_user_form(self, rs: RequestState) -> werkzeug.Response:
         """Render form."""
         return self.render(rs, "create_user")
 
@@ -44,7 +47,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     # @REQUESTdatadict(...)
     @abc.abstractmethod
     def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> Response:
+                    ignore_warnings: bool = False) -> werkzeug.Response:
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
         data = check(
@@ -56,7 +59,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                 rs.extend_validation_errors(
                     (("username",
                       ValueError("User with this E-Mail exists already.")),))
-        if rs.has_validation_errors():
+        if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(
             rs, data, ignore_warnings=ignore_warnings)

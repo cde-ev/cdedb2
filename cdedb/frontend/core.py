@@ -10,12 +10,14 @@ import tempfile
 import datetime
 import operator
 import decimal
+import itertools
 
 import magic
 import werkzeug.exceptions
+from werkzeug import Response
 
 from typing import (
-    Optional, Collection, Set, cast, List, Tuple, Any
+    Optional, Collection, Set, cast, List, Tuple, Any, Dict,
 )
 
 from cdedb.frontend.common import (
@@ -23,14 +25,13 @@ from cdedb.frontend.common import (
     check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, querytoparams_filter,
     csv_output, query_result_to_json, enum_entries_filter, periodic,
-    calculate_db_logparams, calculate_loglinks, Response,
-    make_membership_fee_reference
+    calculate_db_logparams, calculate_loglinks, make_membership_fee_reference,
 )
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter, REALM_SPECIFIC_GENESIS_FIELDS,
-    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, xsorted, RequestState, get_hash,
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, xsorted, RequestState,
     CdEDBObject, PathLike, Realm, DefaultReturnCode,
     get_persona_fields_by_realm,
 )
@@ -78,7 +79,7 @@ class CoreFrontend(AbstractFrontend):
         """
         rs.ignore_validation_errors()  # drop an invalid "wants"
         meta_info = self.coreproxy.get_meta_info(rs)
-        dashboard = {}
+        dashboard: CdEDBObject = {}
         if not rs.user.persona_id:
             if wants:
                 rs.values['wants'] = self.encode_parameter(
@@ -226,27 +227,27 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
         if wants:
-            basic_redirect(rs, wants)
+            response = basic_redirect(rs, wants)
         elif "member" in rs.user.roles and "searchable" not in rs.user.roles:
             data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             if not data['decided_search']:
-                self.redirect(rs, "cde/consent_decision_form")
+                response = self.redirect(rs, "cde/consent_decision_form")
             else:
-                self.redirect(rs, "core/index")
+                response = self.redirect(rs, "core/index")
         else:
-            self.redirect(rs, "core/index")
-        rs.response.set_cookie("sessionkey", sessionkey, httponly=True,
-                               secure=True, samesite="Lax")
-        return rs.response
+            response = self.redirect(rs, "core/index")
+        response.set_cookie("sessionkey", sessionkey,  # type: ignore
+                               httponly=True, secure=True, samesite="Lax")
+        return response
 
     # We don't check anti CSRF tokens here, since logging does not harm anyone.
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
         """Invalidate session."""
         self.coreproxy.logout(rs)
-        self.redirect(rs, "core/index")
-        rs.response.delete_cookie("sessionkey")
-        return rs.response
+        response = self.redirect(rs, "core/index")
+        response.delete_cookie("sessionkey")
+        return response
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))
@@ -259,17 +260,17 @@ class CoreFrontend(AbstractFrontend):
         """
         rs.ignore_validation_errors()  # missing values are ok
         if wants:
-            basic_redirect(rs, wants)
+            response = basic_redirect(rs, wants)
         else:
-            self.redirect(rs, "core/index")
+            response = self.redirect(rs, "core/index")
 
         if locale in self.conf["I18N_LANGUAGES"]:
-            rs.response.set_cookie(
+            response.set_cookie(
                 "locale", locale,
                 expires=now() + datetime.timedelta(days=10 * 365))
         else:
             rs.notify("error", n_("Unsupported locale"))
-        return rs.response
+        return response
 
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata(("view_specifier", "printable_ascii"),
@@ -288,13 +289,13 @@ class CoreFrontend(AbstractFrontend):
         :param wants: URL to redirect to (typically URL of the previous page)
         """
         if wants:
-            basic_redirect(rs, wants)
+            response = basic_redirect(rs, wants)
         else:
-            self.redirect(rs, "core/index")
+            response = self.redirect(rs, "core/index")
 
         # Exit early on validation errors
         if rs.has_validation_errors():
-            return rs.response
+            return response
 
         enabled_views = set(rs.request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, "")
                             .split(','))
@@ -304,15 +305,16 @@ class CoreFrontend(AbstractFrontend):
             enabled_views.update(changed_views)
         else:
             enabled_views -= changed_views
-        rs.response.set_cookie(
+        response.set_cookie(
             ADMIN_VIEWS_COOKIE_NAME,
             ",".join(enabled_views & ALL_ADMIN_VIEWS),
             expires=now() + datetime.timedelta(days=10 * 365))
-        return rs.response
+        return response
 
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:
         """Convenience entry point for own data."""
+        assert rs.user.persona_id is not None
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("persona")
@@ -341,6 +343,7 @@ class CoreFrontend(AbstractFrontend):
         frontend function and not an incoming request. This allows to access
         this endpoint without a redirect to preserve validation results.
         """
+        assert rs.user.persona_id is not None
         if (persona_id != confirm_id or rs.has_validation_errors()) \
                 and not internal:
             return self.index(rs)
@@ -521,8 +524,8 @@ class CoreFrontend(AbstractFrontend):
         stati = const.MemberChangeStati
         constants = {}
         for f in fields:
-            total_const = tuple()
-            tmp = []
+            total_const: List[int] = []
+            tmp: List[int] = []
             already_committed = False
             for x, y in pairwise(xsorted(history.keys())):
                 if history[x]['change_status'] == stati.committed:
@@ -541,10 +544,10 @@ class CoreFrontend(AbstractFrontend):
                 else:
                     already_committed = False
                     if tmp:
-                        total_const += tuple(tmp)
+                        total_const.extend(tmp)
                         tmp = []
             if tmp:
-                total_const += tuple(tmp)
+                total_const.extend(tmp)
             constants[f] = total_const
         pending = {i for i in history
                    if history[i]['change_status'] == stati.pending}
@@ -652,6 +655,7 @@ class CoreFrontend(AbstractFrontend):
         Allowed kinds:
 
         - ``admin_persona``: Search for users as core_admin
+        - ``cde_user``: Search for a cde user as cde_admin.
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
         - ``pure_assembly_user``: Search for an assembly only user as
@@ -683,7 +687,7 @@ class CoreFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 
-        spec_additions = {}
+        spec_additions: Dict[str, str] = {}
         search_additions = []
         mailinglist = None
         event = None
@@ -693,6 +697,11 @@ class CoreFrontend(AbstractFrontend):
         if kind == "admin_persona":
             if not {"core_admin", "cde_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        elif kind == "cde_user":
+            if not {"cde_admin"} & rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append(
+                ("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
             if "cde_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -731,7 +740,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             return self.send_json(rs, {})
 
-        data = None
+        data: Optional[Tuple[CdEDBObject, ...]] = None
 
         # Core admins and meta admins are allowed to search by raw ID or
         # CDEDB-ID
@@ -740,19 +749,19 @@ class CoreFrontend(AbstractFrontend):
             if not errs:
                 tmp = self.coreproxy.get_personas(rs, (anid,))
                 if tmp:
-                    data = [unwrap(tmp)]
+                    data = (unwrap(tmp),)
             else:
                 anid, errs = validate.check_id(phrase, "phrase")
                 if not errs:
                     tmp = self.coreproxy.get_personas(rs, (anid,))
                     if tmp:
-                        data = [unwrap(tmp)]
+                        data = (unwrap(tmp),)
 
         # Don't query, if search phrase is too short
         if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:
             return self.send_json(rs, {})
 
-        terms = []
+        terms: Tuple[str, ...] = tuple()
         if data is None:
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             valid = True
@@ -761,7 +770,7 @@ class CoreFrontend(AbstractFrontend):
                 if errs:
                     valid = False
             if not valid:
-                data = []
+                data = tuple()
             else:
                 search: List[Tuple[str, QueryOperators, Any]]
                 search = [("username,family_name,given_names,display_name",
@@ -790,14 +799,14 @@ class CoreFrontend(AbstractFrontend):
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
-            tmp = xsorted(data, key=lambda e: e['id'])
-            data = tmp[:num_preview_personas]
+            data = tuple(xsorted(
+                data, key=lambda e: e['id'])[:num_preview_personas])
 
         def name(x):
-            return "{} {}".format(x['given_names'], x['family_name'])
+            return f"{x['given_names']} {x['family_name']}"
 
         # Check if name occurs multiple times to add email address in this case
-        counter = collections.defaultdict(lambda: 0)
+        counter: Dict[str, int] = collections.defaultdict(lambda: 0)
         for entry in data:
             counter[name(entry)] += 1
 
@@ -826,6 +835,7 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     def change_user_form(self, rs: RequestState) -> Response:
         """Render form."""
+        assert rs.user.persona_id is not None
         generation = self.coreproxy.changelog_get_generation(
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
@@ -847,6 +857,7 @@ class CoreFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int,
                     ignore_warnings: bool = False) -> Response:
         """Change own data set."""
+        assert rs.user.persona_id is not None
         attributes = get_persona_fields_by_realm(rs.user.roles, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
@@ -896,25 +907,14 @@ class CoreFrontend(AbstractFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = "qview_core_user"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
             if download:
-                fields = []
-                for csvfield in query.fields_of_interest:
-                    fields.extend(csvfield.split(','))
-                if download == "csv":
-                    csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_csv_file(
-                        rs, data=csv_data, inline=False,
-                        filename="user_search_result.csv")
-                elif download == "json":
-                    json_data = query_result_to_json(result, fields,
-                                                     substitutions=choices)
-                    return self.send_file(
-                        rs, data=json_data, inline=False,
-                        filename="user_search_result.json")
+                return self.send_query_download(
+                    rs, result, fields=query.fields_of_interest, kind=download,
+                    filename="user_search_result", substitutions=choices)
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
@@ -954,20 +954,10 @@ class CoreFrontend(AbstractFrontend):
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
             if download:
-                fields = []
-                for csvfield in query.fields_of_interest:
-                    fields.extend(csvfield.split(','))
-                if download == "csv":
-                    csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_csv_file(
-                        rs, data=csv_data, inline=False,
-                        filename="archived_user_search_result.csv")
-                elif download == "json":
-                    json_data = query_result_to_json(result, fields,
-                                                     substitutions=choices)
-                    return self.send_file(
-                        rs, data=json_data, inline=False,
-                        filename="archived_user_search_result.json")
+                return self.send_query_download(
+                    rs, result, fields=query.fields_of_interest, kind=download,
+                    filename="archived_user_search_result",
+                    substitutions=choices)
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "archived_user_search", params)
@@ -1034,7 +1024,7 @@ class CoreFrontend(AbstractFrontend):
 
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note,
-            ignore_warnings=ignore_warnings)
+            ignore_warnings=bool(ignore_warnings))
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
@@ -1048,7 +1038,7 @@ class CoreFrontend(AbstractFrontend):
             "core": self.coreproxy.list_admins(rs, "core"),
         }
 
-        display_realms = REALM_INHERITANCE.keys() & rs.user.roles
+        display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
         if "cde" in display_realms:
             display_realms.add("finance")
         if "ml" in display_realms:
@@ -1056,9 +1046,7 @@ class CoreFrontend(AbstractFrontend):
         for realm in display_realms:
             admins[realm] = self.coreproxy.list_admins(rs, realm)
 
-        persona_ids = set()
-        for adminlist in admins.values():
-            persona_ids |= set(adminlist)
+        persona_ids = set(itertools.chain.from_iterable(admins.values()))
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
         for admin in admins:
@@ -1309,7 +1297,7 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     @REQUESTdata(("target_realm", "realm_or_None"))
     def promote_user_form(self, rs: RequestState, persona_id: int,
-                          target_realm: Optional[realm], internal: bool = False
+                          target_realm: Optional[Realm], internal: bool = False
                           ) -> Response:
         """Render form.
 
@@ -1367,7 +1355,8 @@ class CoreFrontend(AbstractFrontend):
             data['is_{}_realm'.format(realm)] = True
         data = check(rs, "persona", data, transition=True)
         if rs.has_validation_errors():
-            return self.promote_user_form(rs, persona_id, internal=True)
+            return self.promote_user_form(  # type: ignore
+                rs, persona_id, internal=True)
         code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
         if code > 0 and target_realm == "cde":
@@ -1507,7 +1496,8 @@ class CoreFrontend(AbstractFrontend):
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        foto = check(rs, 'profilepic_or_None', foto, "foto")
+        foto = cast(Optional[bytes],
+                    check(rs, 'profilepic_or_None', foto, "foto"))
         if not foto and not delete:
             rs.append_validation_error(
                 ("foto", ValueError("Mustn't be empty.")))
@@ -1529,13 +1519,15 @@ class CoreFrontend(AbstractFrontend):
                  ValueError(n_("Please provide the user's email address."))))
         if rs.has_validation_errors():
             return self.show_user(
-                rs, persona_id, confirm_id=persona_id, internal=True)
+                rs, persona_id, confirm_id=persona_id, internal=True,
+                quote_me=False, event_id=None, ml_id=None)
         code = self.coreproxy.invalidate_password(rs, persona_id)
         self.notify_return_code(rs, code, success=n_("Password invalidated."))
 
         if not code:
             return self.show_user(
-                rs, persona_id, confirm_id=persona_id, internal=True)
+                rs, persona_id, confirm_id=persona_id, internal=True,
+                quote_me=False, event_id=None, ml_id=None)
         else:
             return self.redirect_show_user(rs, persona_id)
 
@@ -1550,6 +1542,7 @@ class CoreFrontend(AbstractFrontend):
     def change_password(self, rs: RequestState, old_password: str,
                         new_password: str, new_password2: str) -> Response:
         """Update your own password."""
+        assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.change_password_form(rs)
 
@@ -1625,7 +1618,8 @@ class CoreFrontend(AbstractFrontend):
                     {'To': (email,), 'Subject': "Passwort zurücksetzen"},
                     {'email': self.encode_parameter(
                         "core/do_password_reset_form", "email", email,
-                        persona_id=None, timeout=self.conf["PARAMETER_TIMEOUT"]),
+                        persona_id=None,
+                        timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
                 msg = "Sent password reset mail to {} for IP {}."
                 self.logger.info(msg.format(email, rs.request.remote_addr))
@@ -1672,7 +1666,8 @@ class CoreFrontend(AbstractFrontend):
                 {'To': (email,), 'Subject': "Passwort zurücksetzen"},
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email,
-                    persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
+                    persona_id=None,
+                    timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
                     'cookie': message})
             msg = "Sent password reset mail to {} for admin {}."
             self.logger.info(msg.format(email, rs.user.persona_id))
@@ -1786,6 +1781,7 @@ class CoreFrontend(AbstractFrontend):
         """Now we can do the actual change."""
         if rs.has_validation_errors():
             return self.change_username_form(rs)
+        assert rs.user.persona_id is not None
         code, message = self.coreproxy.change_username(
             rs, rs.user.persona_id, new_username, password)
         self.notify_return_code(rs, code, success=n_("Email address changed."),
@@ -1891,23 +1887,21 @@ class CoreFrontend(AbstractFrontend):
 
         This initiates the genesis process.
         """
+        attachment_data = None
         if attachment:
             attachment_filename = attachment.filename
-            attachment = cast(Optional[bytes],
-                              check(rs, 'pdffile', attachment, 'attachment'))
+            attachment_data = cast(
+                Optional[bytes], check(rs, 'pdffile', attachment, 'attachment'))
         attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
-        if attachment:
-            myhash = get_hash(attachment)
-            path = attachment_base_path / myhash
-            if not path.exists():
-                with open(path, 'wb') as f:
-                    f.write(attachment)
+        if attachment_data:
+            myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
             data['attachment'] = myhash
             rs.values['attachment_hash'] = myhash
             rs.values['attachment_filename'] = attachment_filename
         elif attachment_hash:
-            path = attachment_base_path / attachment_hash
-            if not path.exists():
+            attachment_data = self.coreproxy.genesis_get_attachment(
+                rs, attachment_hash)
+            if not attachment_data:
                 data['attachment'] = None
                 e = ("attachment", ValueError(n_(
                     "It seems like you took too long and "
@@ -1924,7 +1918,7 @@ class CoreFrontend(AbstractFrontend):
                 ("notes", ValueError(n_("Rationale too long."))))
         # We dont actually want gender == not_specified as a valid option if it
         # is required for the requested realm)
-        if 'gender' in REALM_SPECIFIC_GENESIS_FIELDS.get(data.get('realm'), {}):
+        if 'gender' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {}):
             if data['gender'] == const.Genders.not_specified:
                 rs.append_validation_error(
                     ("gender", ValueError(n_(
@@ -2063,12 +2057,7 @@ class CoreFrontend(AbstractFrontend):
         genesis_attachment_path: pathlib.Path = (
                 self.conf["STORAGE_DIR"] / "genesis_attachment")
 
-        attachment_count = 0
-        for attachment in genesis_attachment_path.iterdir():
-            if not attachment.is_dir():
-                if not self.coreproxy.genesis_attachment_usage(rs, attachment):
-                    attachment.unlink()
-                    attachment_count += 1
+        attachment_count = self.coreproxy.genesis_forget_attachments(rs)
 
         if count or attachment_count:
             msg = "genesis_forget: Deleted {} genesis cases and {} attachments"
@@ -2191,10 +2180,10 @@ class CoreFrontend(AbstractFrontend):
         }
         with Atomizer(rs):
             code = self.coreproxy.genesis_modify_case(rs, data)
-            persona_id = bool(code)
-            if code and data['case_status'] == const.GenesisStati.approved:
-                persona_id = self.coreproxy.genesis(rs, genesis_case_id)
-        if not persona_id:
+            success = bool(code)
+            if success and data['case_status'] == const.GenesisStati.approved:
+                success = bool(self.coreproxy.genesis(rs, genesis_case_id))
+        if not success:
             rs.notify("error", n_("Failed."))
             return self.genesis_list_cases(rs)
         if case_status == const.GenesisStati.approved:
@@ -2206,10 +2195,12 @@ class CoreFrontend(AbstractFrontend):
                 {'To': (case['username'],),
                  'Subject': "CdEDB-Account erstellt",
                  },
-                {'email': self.encode_parameter(
-                    "core/do_password_reset_form", "email", case['username'],
-                    persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
-                 'cookie': cookie,
+                {
+                    'email': self.encode_parameter(
+                        "core/do_password_reset_form", "email",
+                        case['username'], persona_id=None,
+                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
+                    'cookie': cookie,
                  })
             rs.notify("success", n_("Case approved."))
         else:
@@ -2301,8 +2292,9 @@ class CoreFrontend(AbstractFrontend):
         if not note:
             rs.notify("error", n_("Must supply archival note."))
         if rs.has_validation_errors():
-            return self.show_user(rs, persona_id, confirm_id=persona_id,
-                                  internal=True)
+            return self.show_user(
+                rs, persona_id, confirm_id=persona_id, internal=True,
+                quote_me=False, event_id=None, ml_id=None)
 
         try:
             code = self.coreproxy.archive_persona(rs, persona_id, note)
@@ -2437,7 +2429,7 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect(rs, "core/index")
         filename = pathlib.Path(tempfile.gettempdir(),
                                 "cdedb-mail-{}.txt".format(token))
-        with open(filename) as f:
+        with open(filename, 'rb') as f:
             rawtext = f.read()
         emailtext = quopri.decodestring(rawtext).decode('utf-8')
         return self.render(rs, "debug_email", {'emailtext': emailtext})
@@ -2458,6 +2450,7 @@ class CoreFrontend(AbstractFrontend):
             return self.send_json(rs, err)
 
         spec = {
+            "id": "id",
             "username": "str",
             "is_event_realm": "bool",
         }

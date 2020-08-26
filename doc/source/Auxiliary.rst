@@ -15,25 +15,10 @@ cdedb.common
 .. automodule:: cdedb.common
    :members:
 
-cdedb.query
------------
-
-.. automodule:: cdedb.query
-   :members:
-
 cdedb.enums
 -----------
 
 .. automodule:: cdedb.enums
-   :members:
-
-cdedb.validation
-----------------
-
-The annotations below are a bit flakey, because of the way the validators
-are created.
-
-.. automodule:: cdedb.validation
    :members:
 
 cdedb.ml_subscription_aux
@@ -46,4 +31,28 @@ cdedb.ml_type_aux
 -----------------
 
 .. automodule:: cdedb.ml_type_aux
+   :members:
+
+cdedb.query
+-----------
+
+.. automodule:: cdedb.query
+   :members:
+
+
+.. _autodoc-script-module:
+
+cdedb.script
+------------
+
+.. automodule:: cdedb.script
+   :members:
+
+cdedb.validation
+----------------
+
+The annotations below are a bit flakey, because of the way the validators
+are created.
+
+.. automodule:: cdedb.validation
    :members:

@@ -17,7 +17,7 @@ import werkzeug.exceptions
 import werkzeug.wrappers
 
 from typing import (
-    Tuple, Optional
+    Tuple, Dict, Callable, Optional, Set, Any
 )
 
 from cdedb.frontend.core import CoreFrontend
@@ -40,7 +40,6 @@ from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
-import cdedb.validation as validate
 
 
 class Application(BaseApp):
@@ -73,8 +72,8 @@ class Application(BaseApp):
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
                 str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
-            extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
-                        'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
+            extensions=['jinja2.ext.i18n', 'jinja2.ext.do',
+                        'jinja2.ext.loopcontrols'],
             finalize=sanitize_None, autoescape=True,
             auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.globals.update({
@@ -84,10 +83,10 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.policies['ext.i18n.trimmed'] = True
+        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.translations = {
             lang: gettext.translation(
-                'cdedb', languages=(lang,),
+                'cdedb', languages=[lang],
                 localedir=str(self.conf["REPOSITORY_PATH"] / 'i18n'))
             for lang in self.conf["I18N_LANGUAGES"]}
         if pathlib.Path("/PRODUCTIONVM").is_file():
@@ -116,7 +115,7 @@ class Application(BaseApp):
             if isinstance(error, werkzeug.exceptions.NotFound) \
                     and (error.description
                          is werkzeug.exceptions.NotFound.description):
-                error.description = None
+                error.description = None  # type: ignore
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
@@ -152,7 +151,7 @@ class Application(BaseApp):
                             status=error.code)
 
     @werkzeug.wrappers.Request.application
-    def __call__(self, request: werkzeug.wrappers.Request) -> Response:
+    def __call__(self, request: werkzeug.wrappers.Request) -> werkzeug.Response:
         # first try for handling exceptions
         try:
             # second try for logging exceptions
@@ -195,11 +194,12 @@ class Application(BaseApp):
                         # look even uglier.
                         fake_rs = types.SimpleNamespace()
                         fake_rs.user = user
-                        notifications = json.dumps([self.encode_notification(
-                            fake_rs, "error", n_("Session expired."))])
+                        notifications = json.dumps([
+                            self.encode_notification(  # type: ignore
+                                fake_rs, "error", n_("Session expired."))])
                         ret.set_cookie("displaynote", notifications)
                         return ret
-                coders = {
+                coders: Dict[str, Callable[..., Any]] = {
                     "encode_parameter": self.encode_parameter,
                     "decode_parameter": self.decode_parameter,
                     "encode_notification": self.encode_notification,
@@ -208,9 +208,9 @@ class Application(BaseApp):
                 lang = self.get_locale(request)
                 rs = RequestState(
                     sessionkey=sessionkey, apitoken=apitoken, user=user,
-                    request=request, response=None, notifications=[],
-                    mapadapter=urls, requestargs=args, errors=[], values=None,
-                    lang=lang, gettext=self.translations[lang].gettext,
+                    request=request, notifications=[], mapadapter=urls,
+                    requestargs=args, errors=[], values=None, lang=lang,
+                    gettext=self.translations[lang].gettext,
                     ngettext=self.translations[lang].ngettext,
                     coders=coders, begin=begin,
                     default_gettext=self.translations["en"].gettext,
@@ -227,6 +227,8 @@ class Application(BaseApp):
                             ntype, nmessage, nparams = (
                                 self.decode_notification(rs, note))
                             if ntype:
+                                assert nmessage is not None
+                                assert nparams is not None
                                 rs.notify(ntype, nmessage, nparams)
                             else:
                                 self.logger.info(
@@ -245,8 +247,8 @@ class Application(BaseApp):
 
                 # Check anti CSRF token (if required by the endpoint)
                 if handler.check_anti_csrf and 'droid' not in user.roles:
-                    okay, error = check_anti_csrf(rs, component, action)
-                    if not okay:
+                    error = check_anti_csrf(rs, component, action)
+                    if error is not None:
                         rs.csrf_alert = True
                         rs.extend_validation_errors(
                             ((ANTI_CSRF_TOKEN_NAME, ValueError(error)),))
@@ -257,13 +259,14 @@ class Application(BaseApp):
                 rs._conn = self.connpool[roles_to_db_role(user.roles)]
 
                 # Insert orga and moderator status context
-                orga = set()
+                orga: Set[int] = set()
                 if "event" in user.roles:
+                    assert user.persona_id is not None
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
-                moderator = set()
+                moderator: Set[int] = set()
                 if "ml" in user.roles:
-                    moderator = self.mlproxy.moderator_info(
-                        rs, user.persona_id)
+                    assert user.persona_id is not None
+                    moderator = self.mlproxy.moderator_info(rs, user.persona_id)
                 user.orga = orga
                 user.moderator = moderator
                 user.init_admin_views_from_cookie(
@@ -353,7 +356,7 @@ class Application(BaseApp):
 
 
 def check_anti_csrf(rs: RequestState, component: str, action: str
-                    ) -> Tuple[bool, Optional[str]]:
+                    ) -> Optional[str]:
     """
     A helper function to check the anti CSRF token
 
@@ -368,21 +371,20 @@ def check_anti_csrf(rs: RequestState, component: str, action: str
 
     :param action: The name of the endpoint, checked by 'decode_parameter'
     :param component: The name of the realm, checked by 'decode_parameter'
-    :return: The status of the CSRF token (True if okay, False if not) and the
-         error pertaining to it)
+    :return: None if everything is ok, or an error message otherwise.
     """
     val = rs.request.values.get(ANTI_CSRF_TOKEN_NAME, "").strip()
     if not val:
-        return False, n_("Anti CSRF token is required for this form.")
+        return n_("Anti CSRF token is required for this form.")
     # noinspection PyProtectedMember
     timeout, val = rs._coders['decode_parameter'](
         "{}/{}".format(component, action), ANTI_CSRF_TOKEN_NAME, val,
         rs.user.persona_id)
     if not val:
         if timeout:
-            return False, n_("Anti CSRF token expired. Please try again.")
+            return n_("Anti CSRF token expired. Please try again.")
         else:
-            return False, n_("Anti CSRF token is forged.")
+            return n_("Anti CSRF token is forged.")
     if val != ANTI_CSRF_TOKEN_PAYLOAD:
-        return False, n_("Anti CSRF token is invalid.")
-    return True, None
+        return n_("Anti CSRF token is invalid.")
+    return None

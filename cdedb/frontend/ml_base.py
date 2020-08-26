@@ -5,7 +5,7 @@
 import copy
 from datetime import datetime
 import collections
-from typing import Dict, Any, Iterable, Optional, Collection
+from typing import Dict, Any, Optional, Collection
 
 import mailmanclient
 import werkzeug
@@ -13,20 +13,19 @@ from werkzeug import Response
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
-    check_validation as check, mailinglist_guard, query_result_to_json,
+    check_validation as check, mailinglist_guard,
     cdedbid_filter as cdedbid, keydictsort_filter,
     calculate_db_logparams, calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
-    RequestState, CdEDBObject, PathLike)
+    RequestState, CdEDBObject, PathLike, CdEDBObjectMap)
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
 from cdedb.ml_type_aux import (
     MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type)
-
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -56,6 +55,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=sub_states)
+        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
             group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
@@ -81,7 +81,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes", "username")
-    def create_user(self, rs: RequestState, data: Dict[str, Any]) -> Response:
+    def create_user(self, rs: RequestState, data: Dict[str, Any],
+                    ignore_warnings: bool = False) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -90,7 +91,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data)
+        return super().create_user(rs, data, ignore_warnings)
 
     @access("ml_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
@@ -115,19 +116,9 @@ class MlBaseFrontend(AbstractUserFrontend):
             result = self.mlproxy.submit_general_query(rs, query)
             params['result'] = result
             if download:
-                fields = []
-                for csvfield in query.fields_of_interest:
-                    fields.extend(csvfield.split(','))
-                if download == "csv":
-                    csv_data = csv_output(result, fields)
-                    return self.send_csv_file(
-                        rs, data=csv_data, inline=False,
-                        filename="user_search_result.csv")
-                elif download == "json":
-                    json_data = query_result_to_json(result, fields)
-                    return self.send_file(
-                        rs, data=json_data, inline=False,
-                        filename="user_search_result.json")
+                return self.send_query_download(
+                    rs, result, fields=query.fields_of_interest, kind=download,
+                    filename="user_search_result")
         else:
             rs.values['is_search'] = False
         return self.render(rs, "user_search", params)
@@ -159,6 +150,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=sub_states)
+        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for ml_id in mailinglists:
             group_id = self.mlproxy.get_ml_type(rs, ml_id).sortkey
@@ -209,14 +201,20 @@ class MlBaseFrontend(AbstractUserFrontend):
                     ("ml_type", ValueError(n_(
                         "May not create mailinglist of this type."))))
             available_domains = atype.domains
-            event_ids = self.eventproxy.list_db_events(rs)
-            events = self.eventproxy.get_events(rs, event_ids)
-            assemblies = self.assemblyproxy.list_assemblies(rs)
+            additional_fields = [f for f, _ in atype.get_additional_fields()]
+            if "event_id" in additional_fields:
+                event_ids = self.eventproxy.list_db_events(rs)
+                events = self.eventproxy.get_events(rs, event_ids)
+            else:
+                events = []
+            assemblies = (self.assemblyproxy.list_assemblies(rs)
+                          if "assembly_id" in additional_fields else [])
             return self.render(rs, "create_mailinglist", {
                 'events': events,
                 'assemblies': assemblies,
                 'ml_type': ml_type,
                 'available_domains': available_domains,
+                'additional_fields': additional_fields,
             })
 
     @access("ml", modi={"POST"})
@@ -266,10 +264,10 @@ class MlBaseFrontend(AbstractUserFrontend):
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_log(self, rs: RequestState, codes: Iterable[const.MlLogCodes],
+    def view_log(self, rs: RequestState, codes: Collection[const.MlLogCodes],
                  mailinglist_id: Optional[int], offset: Optional[int],
                  length: Optional[int], persona_id: Optional[int],
-                 submitted_by: Optional[int], additional_info: Optional[int],
+                 submitted_by: Optional[int], additional_info: Optional[str],
                  time_start: Optional[datetime],
                  time_stop: Optional[datetime]) -> Response:
         """View activities."""
@@ -281,16 +279,16 @@ class MlBaseFrontend(AbstractUserFrontend):
         # no validation since the input stays valid, even if some options
         # are lost
         rs.ignore_validation_errors()
-        db_mailinglist_ids = [mailinglist_id] if mailinglist_id else None
+        db_mailinglist_ids = {mailinglist_id} if mailinglist_id else None
 
         relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
                                                       managed='managed')
+        relevant_set = set(relevant_mls)
         if not self.is_admin(rs):
             if db_mailinglist_ids is None:
-                db_mailinglist_ids = relevant_mls.keys()
-            elif not db_mailinglist_ids <= relevant_mls.keys():
-                db_mailinglist_ids =\
-                    set(db_mailinglist_ids) | set(relevant_mls.keys())
+                db_mailinglist_ids = relevant_set
+            elif not db_mailinglist_ids <= relevant_set:
+                db_mailinglist_ids = db_mailinglist_ids | relevant_set
                 rs.notify("warning", n_(
                     "Not privileged to view log for all these mailinglists."))
 
@@ -317,19 +315,20 @@ class MlBaseFrontend(AbstractUserFrontend):
     def show_mailinglist(self, rs: RequestState,
                          mailinglist_id: int) -> Response:
         """Details of a list."""
+        assert rs.user.persona_id is not None
         ml = rs.ambience['mailinglist']
         state = self.mlproxy.get_subscription(
             rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
 
         if not self.mlproxy.may_view(rs, ml):
-            return werkzeug.exceptions.Forbidden()
+            raise werkzeug.exceptions.Forbidden()
 
         sub_address = None
         if state and state.is_subscribed():
             sub_address = self.mlproxy.get_subscription_address(
                 rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
 
-        event = {}
+        event = None
         if ml['event_id']:
             event = self.eventproxy.get_event(rs, ml['event_id'])
             event['is_visible'] = (
@@ -337,7 +336,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 or rs.user.persona_id in event['orgas']
                 or event['is_visible'])
 
-        assembly = {}
+        assembly = None
         if ml['assembly_id']:
             all_assemblies = self.assemblyproxy.list_assemblies(rs)
             assembly = all_assemblies[ml['assembly_id']]
@@ -362,16 +361,23 @@ class MlBaseFrontend(AbstractUserFrontend):
     def change_mailinglist_form(self, rs: RequestState,
                                 mailinglist_id: int) -> Response:
         """Render form."""
-        event_ids = self.eventproxy.list_db_events(rs)
-        events = self.eventproxy.get_events(rs, event_ids)
-        sorted_events = keydictsort_filter(events, EntitySorter.event)
-        event_entries = [(k, v['title']) for k, v in sorted_events]
-        assemblies = self.assemblyproxy.list_assemblies(rs)
-        sorted_assemblies = keydictsort_filter(
-            assemblies, EntitySorter.assembly)
-        assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
         atype = TYPE_MAP[rs.ambience['mailinglist']['ml_type']]
         available_domains = atype.domains
+        additional_fields = [f for f, _ in atype.get_additional_fields()]
+        if "event_id" in additional_fields:
+            event_ids = self.eventproxy.list_db_events(rs)
+            events = self.eventproxy.get_events(rs, event_ids)
+            sorted_events = keydictsort_filter(events, EntitySorter.event)
+            event_entries = [(k, v['title']) for k, v in sorted_events]
+        else:
+            event_entries = []
+        if "assembly_id" in additional_fields:
+            assemblies = self.assemblyproxy.list_assemblies(rs)
+            sorted_assemblies = keydictsort_filter(
+                assemblies, EntitySorter.assembly)
+            assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
+        else:
+            assembly_entries = []
         merge_dicts(rs.values, rs.ambience['mailinglist'])
         if not self.mlproxy.is_relevant_admin(
                 rs, mailinglist=rs.ambience['mailinglist']):
@@ -381,6 +387,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
             'available_domains': available_domains,
+            'additional_fields': additional_fields,
         })
 
     @access("ml", modi={"POST"})
@@ -595,7 +602,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             output.append(pair)
 
         csv_data = csv_output(
-            sorted(output, key=lambda entry: EntitySorter.persona(entry)),
+            sorted(output, key=lambda e: EntitySorter.persona(
+                personas[int(e["db_id"][3:-2])])),
             columns)
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
@@ -865,6 +873,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         If this address has not been used before, we verify it.
         """
+        assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         if not self._check_address_change_requirements(rs, mailinglist_id,
@@ -888,7 +897,8 @@ class MlBaseFrontend(AbstractUserFrontend):
                 {'To': (email,),
                  'Subject': "E-Mail-Adresse für Mailingliste bestätigen"},
                 {'email': self.encode_parameter(
-                    "ml/do_address_change", "email", email, rs.user.persona_id)})
+                    "ml/do_address_change", "email", email,
+                    rs.user.persona_id)})
             rs.notify("info", n_("Confirmation email sent."))
         return self.redirect(rs, "ml/show_mailinglist")
 
@@ -900,6 +910,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         This is not a POST since the link is shared via email.
         """
+        assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         if not self._check_address_change_requirements(rs, mailinglist_id,
@@ -920,8 +931,9 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         :rtype: bool
         """
-        is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
-                                                   mailinglist_id)
+        assert rs.user.persona_id is not None
+        is_subscribed = self.mlproxy.is_subscribed(
+            rs, rs.user.persona_id, mailinglist_id)
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return False
@@ -940,8 +952,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         ml_ids = self.mlproxy.list_mailinglists(rs)
         current = now().timestamp()
         for ml_id in ml_ids:
-            states = {const.SubscriptionStates.pending}
-            requests = self.mlproxy.get_subscription_states(rs, ml_id, states)
+            requests = self.mlproxy.get_subscription_states(
+                rs, ml_id, states=(const.SubscriptionStates.pending,))
             requests = list(requests)  # convert from dict which breaks JSON
 
             ml_store = store.get(str(ml_id))

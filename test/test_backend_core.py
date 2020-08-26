@@ -3,6 +3,7 @@
 import copy
 import datetime
 import decimal
+from pathlib import Path
 
 import cdedb.database.constants as const
 from test.common import (
@@ -730,9 +731,11 @@ class TestCoreBackend(BackendTest):
             'country': "Arkadien",
             'attachment': attachment_hash,
         }
-        self.assertFalse(self.core.genesis_attachment_usage(self.key, attachment_hash))
+        self.assertFalse(self.core.genesis_attachment_usage(
+            self.key, attachment_hash))
         case_id = self.core.genesis_request(None, data)
-        self.assertTrue(self.core.genesis_attachment_usage(self.key, attachment_hash))
+        self.assertTrue(self.core.genesis_attachment_usage(
+            self.key, attachment_hash))
         self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(None, case_id))
         self.assertEqual(1, len(self.core.genesis_list_cases(
@@ -800,7 +803,22 @@ class TestCoreBackend(BackendTest):
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
         self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
-        self.assertFalse(self.core.genesis_attachment_usage(self.key, attachment_hash))
+        self.assertFalse(self.core.genesis_attachment_usage(
+            self.key, attachment_hash))
+
+    def test_genesis_attachments(self):
+        pdffile = Path("/tmp/cdedb-store/testfiles/form.pdf")
+        with open(pdffile, 'rb') as f:
+            pdfdata = f.read()
+        pdfhash = get_hash(pdfdata)
+        self.assertEqual(
+            pdfhash, self.core.genesis_set_attachment(self.key, pdfdata))
+        with self.assertRaises(PrivilegeError):
+            self.core.genesis_attachment_usage(self.key, pdfhash)
+        self.login(USER_DICT["anton"])
+        self.assertEqual(
+            0, self.core.genesis_attachment_usage(self.key, pdfhash))
+        self.assertEqual(1, self.core.genesis_forget_attachments(self.key))
 
     def test_genesis_verify_multiple(self):
         self.assertEqual((0, "core"), self.core.genesis_verify(None, 123))
@@ -912,13 +930,51 @@ class TestCoreBackend(BackendTest):
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
 
+        # Test correct handling of lastschrift during archival.
+        self.login("anton")
+        ls_data = {
+            "amount": decimal.Decimal("25.00"),
+            "persona_id": persona_id,
+            "iban": "DE12500105170648489890",
+            "account_owner": "Der Opa",
+            "account_address": "Nebenan",
+            "notes": "Ganz wichtige Notizen",
+            "granted_at": datetime.datetime.fromisoformat("2000-01-01"),
+            "revoked_at": datetime.datetime.fromisoformat("2000-01-01"),
+        }
+        old_ls_id = self.cde.create_lastschrift(self.key, ls_data)
+        del ls_data["revoked_at"]
+        ls_id = self.cde.create_lastschrift(self.key, ls_data)
+        self.login("vera")
+        with self.assertRaises(ArchiveError) as cm:
+            self.core.archive_persona(self.key, persona_id, "Testing")
+        self.assertEqual("Active lastschrift exists.", cm.exception.args[0])
+        update = {
+            'id': ls_id,
+            'revoked_at': now(),
+        }
+        self.cde.set_lastschrift(self.key, update)
+        self.core.archive_persona(self.key, persona_id, "Testing")
+        ls = self.cde.get_lastschrift(self.key, ls_id)
+        ls_data.update(update)
+        ls_data["submitted_by"] = 1
+        ls["granted_at"] = ls_data["granted_at"]
+        self.assertEqual(ls, ls_data)
+        old_ls = self.cde.get_lastschrift(self.key, old_ls_id)
+        self.assertEqual(old_ls["iban"], "")
+        self.assertEqual(old_ls["account_owner"], "")
+        self.assertEqual(old_ls["account_address"], "")
+        self.assertEqual(old_ls["amount"], 0)
+        self.assertEqual(old_ls["notes"], ls_data["notes"])
+        self.core.dearchive_persona(self.key, persona_id)
+
         # Check that sole moderators cannot be archived.
         self.ml.set_moderators(self.key, 1, {persona_id})
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
         self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])
 
-        # Test archival of user that is no modearator.
+        # Test archival of user that is no moderator.
         self.core.archive_persona(self.key, 6, "Testing")
 
     @as_users("vera")
@@ -1123,218 +1179,9 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_changelog_meta(self, user):
-        expectation = (30, (
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 1,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 2,
-             'reviewed_by': None,
-             'submitted_by': 2},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 3,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 4,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 5,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 6,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 7,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 8,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 9,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 10,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 11,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 12,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 13,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 14,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 15,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Deaktiviert, weil er seine Admin-Privilegien missbraucht.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 15,
-             'reviewed_by': None,
-             'submitted_by': 6},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 22,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 23,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 27,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 32,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 100,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 16,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 17,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 100,
-             'persona_id': 18,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 22,
-             'reviewed_by': None,
-             'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 23,
-            'reviewed_by': None,
-            'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 27,
-             'reviewed_by': None,
-             'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 32,
-             'reviewed_by': None,
-             'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 13,
-             'reviewed_by': None,
-             'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 17,
-             'reviewed_by': None,
-             'submitted_by': 100}))
-
-        self.assertEqual(expectation,
+        expectation = self.get_sample_data(
+            "core.changelog", range(1, 31),
+            ("submitted_by", "reviewed_by", "ctime", "generation",
+             "change_note", "change_status", "persona_id"))
+        self.assertEqual((len(expectation), tuple(expectation.values())),
                          self.core.retrieve_changelog_meta(self.key))

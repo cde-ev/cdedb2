@@ -16,8 +16,9 @@ import importlib.util
 import logging
 import pathlib
 import subprocess
-
 import pytz
+
+from typing import Mapping, Any
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
 from cdedb.common import n_, deduct_years, now, PathLike, EntitySorter, xsorted
@@ -557,7 +558,7 @@ _SECRECTS_DEFAULTS = {
 }
 
 
-class BasicConfig(collections.abc.Mapping):
+class BasicConfig(Mapping[str, Any]):
     """Global configuration for elementary options.
 
     This is the global configuration which is the same for all
@@ -567,19 +568,19 @@ class BasicConfig(collections.abc.Mapping):
     by this should be as small as possible.
     """
 
+    # noinspection PyUnresolvedReferences
     def __init__(self):
         try:
-            import cdedb.localconfig as config
+            import cdedb.localconfig as config_mod
             config = {
-                key: getattr(config, key)
-                for key in _BASIC_DEFAULTS.keys() & dir(config)
+                key: getattr(config_mod, key)
+                for key in _BASIC_DEFAULTS.keys() & set(dir(config_mod))
             }
         except ImportError:
             config = {}
 
         self._configchain = collections.ChainMap(
-            config,
-            _BASIC_DEFAULTS
+            config, _BASIC_DEFAULTS
         )
 
     def __getitem__(self, key):
@@ -614,6 +615,7 @@ class Config(BasicConfig):
                 "primaryconf", str(configpath)
             )
             primaryconf = importlib.util.module_from_spec(spec)
+            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
@@ -637,10 +639,10 @@ class Config(BasicConfig):
         )
 
         for key in _BASIC_DEFAULTS.keys() & set(dir(primaryconf)):
-            _LOGGER.info(f"Ignored basic config entry {key} in {configpath}.")
+            _LOGGER.debug(f"Ignored basic config entry {key} in {configpath}.")
 
 
-class SecretsConfig(collections.abc.Mapping):
+class SecretsConfig(Mapping[str, Any]):
     """Container for secrets (i.e. passwords).
 
     This works like :py:class:`Config`, but is used for secrets. Thus
@@ -655,6 +657,7 @@ class SecretsConfig(collections.abc.Mapping):
                 "primaryconf", str(configpath)
             )
             primaryconf = importlib.util.module_from_spec(spec)
+            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)

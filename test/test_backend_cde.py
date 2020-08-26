@@ -97,7 +97,7 @@ class TestCdEBackend(BackendTest):
             constraints=[
                 ("given_names,display_name", QueryOperators.regex, '[ae]'),
                 ("country,country2", QueryOperators.empty, None)],
-            order=(("family_name", True),),)
+            order=(("family_name,birth_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual(
             {2, 6, 9, 12, 15, 100}, {e['id'] for e in result})
@@ -131,6 +131,18 @@ class TestCdEBackend(BackendTest):
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2}, {e['id'] for e in result})
+
+    @as_users("vera")
+    def test_user_search_collation(self, user):
+        query = Query(
+            scope="qview_cde_user",
+            spec=dict(QUERY_SPECS["qview_cde_user"]),
+            fields_of_interest=("personas.id", "family_name",
+                                "address", "location"),
+            constraints=[("location", QueryOperators.match, 'Musterstadt')],
+            order=(("address", True),),)
+        result = self.cde.submit_general_query(self.key, query)
+        self.assertEqual([1, 27], [e['id'] for e in result])
 
     @as_users("vera")
     def test_demotion(self, user):
@@ -186,6 +198,33 @@ class TestCdEBackend(BackendTest):
         })
         self.assertEqual({new_id: newdata},
                          self.cde.get_lastschrifts(self.key, (new_id,)))
+        self.assertEqual(
+            ["revoked_at", "transactions"],
+            list(self.cde.delete_lastschrift_blockers(self.key, 2)))
+
+        transaction_data = {
+            "lastschrift_id": new_id,
+            "period_id": self.cde.current_period(self.key),
+        }
+        transaction_id = self.cde.issue_lastschrift_transaction(
+            self.key, transaction_data, check_unique=True)
+        self.assertEqual(
+            ["revoked_at", "transactions", "active_transactions"],
+            list(self.cde.delete_lastschrift_blockers(self.key, new_id)))
+        with self.assertRaises(ValueError):
+            self.cde.delete_lastschrift(
+                self.key, new_id, ["transactions", "active_transactions"])
+        self.cde.finalize_lastschrift_transaction(
+            self.key, transaction_id, const.LastschriftTransactionStati.success)
+        self.assertEqual(
+            ["revoked_at", "transactions"],
+            list(self.cde.delete_lastschrift_blockers(self.key, new_id)))
+
+        self.assertEqual(
+            ["transactions"],
+            list(self.cde.delete_lastschrift_blockers(self.key, 1)))
+        self.assertLess(
+            0, self.cde.delete_lastschrift(self.key, 1, ["transactions"]))
 
     @as_users("farin")
     def test_lastschrift_multiple_active(self, user):

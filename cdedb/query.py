@@ -12,7 +12,11 @@ up an environment for passing a query from frontend to backend.
 import collections
 import enum
 
-from cdedb.common import glue
+from typing import (
+    Collection, Tuple, Any
+)
+
+from cdedb.common import glue, CdEDBObject
 
 
 @enum.unique
@@ -87,6 +91,10 @@ MULTI_VALUE_OPERATORS = {_ops.oneof, _ops.otherthan, _ops.containsall,
 NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 
 
+QueryConstraint = Tuple[str, QueryOperators, Any]
+QueryOrder = Tuple[str, bool]
+
+
 class Query:
     """General purpose abstraction for an SQL query.
 
@@ -97,8 +105,10 @@ class Query:
     everything.
     """
 
-    def __init__(self, scope, spec, fields_of_interest, constraints, order,
-                 name=None):
+    def __init__(self, scope: str, spec: CdEDBObject,
+                 fields_of_interest: Collection[str],
+                 constraints: Collection[QueryConstraint],
+                 order: Collection[QueryOrder], name: str = None):
         """
         :type scope: str
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -118,16 +128,16 @@ class Query:
         """
         self.scope = scope
         self.spec = spec
-        self.fields_of_interest = fields_of_interest
-        self.constraints = constraints
-        self.order = order
+        self.fields_of_interest = list(fields_of_interest)
+        self.constraints = list(constraints)
+        self.order = list(order)
         self.name = name
 
-    def __repr__(self):
-        return glue(
-            "Query(scope={}, fields_of_interest={}, constraints={}, order={},",
-            "spec={})").format(self.scope, self.fields_of_interest,
-                               self.constraints, self.order, self.spec)
+    def __repr__(self) -> str:
+        return (f"Query(scope={self.scope},"
+                f" fields_of_interest={self.fields_of_interest},"
+                f" constraints={self.constraints}, order={self.order},"
+                f" spec={self.spec})")
 
     def fix_custom_columns(self):
         """Custom columns may contain upper case, this wraps them in qoutes."""

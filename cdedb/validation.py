@@ -3778,7 +3778,7 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
         newarray = []
         if key in val:
             for x in val[key]:
-                v, e = validator(x, _convert=_convert,
+                v, e = validator(x, argname=key, _convert=_convert,
                                  _ignore_warnings=_ignore_warnings)
                 if e:
                     errs.extend(e)
