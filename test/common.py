@@ -671,7 +671,7 @@ class FrontendTest(CdEDBTest):
         self.app.reset()
         # Make sure all available admin views are enabled.
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
-        self.response: None  # type: ignore
+        self.response = None  # type: ignore
 
     def basic_validate(self, verbose=False):
         if self.response.content_type == "text/html":
