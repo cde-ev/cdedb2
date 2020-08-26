@@ -308,6 +308,8 @@ _DEFAULTS = {
     # session parameters
     "SESSION_TIMEOUT": datetime.timedelta(days=2),
     "SESSION_LIFESPAN": datetime.timedelta(days=7),
+
+    # Maximum concurrent sessions per user. Set to None to disable limit.
     "MAX_ACTIVE_SESSIONS": 5,
 
     #

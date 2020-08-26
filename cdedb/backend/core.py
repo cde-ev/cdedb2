@@ -1805,7 +1805,10 @@ class CoreBackend(AbstractBackend):
             query = ("SELECT COUNT(*) FROM core.sessions"
                      " WHERE is_active = True AND persona_id = %s")
             count = unwrap(self.query_one(rs, query, (data["id"],)))
-            num = count - self.conf["MAX_ACTIVE_SESSIONS"]
+            if self.conf["MAX_ACTIVE_SESSIONS"] is None:
+                num = 0
+            else:
+                num = count - self.conf["MAX_ACTIVE_SESSIONS"]
             if num > 0:
                 query = ("SELECT id FROM core.sessions"
                          " WHERE persona_id = %s AND is_active = True"
