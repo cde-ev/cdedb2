@@ -1879,7 +1879,7 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def get_realms_multi(self, rs: RequestState, ids: Collection[int],
                          introspection_only: bool = False
-                         ) -> Dict[int, Set[Realm]]:
+                         ) -> Dict[Optional[int], Set[Realm]]:
         """Resolve persona ids into realms (only for active users)."""
         ids = affirm_set("id", ids)
         roles = self.get_roles_multi(rs, ids, introspection_only)
@@ -1890,7 +1890,8 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def verify_personas(self, rs: RequestState, ids: Collection[int],
                         required_roles: Collection[Role] = None,
-                        introspection_only: bool = True) -> Tuple[int, ...]:
+                        introspection_only: bool = True
+                        ) -> Set[Optional[int]]:
         """Check wether certain ids map to actual (active) personas.
 
         :param required_roles: If given check that all personas have
@@ -1901,8 +1902,8 @@ class CoreBackend(AbstractBackend):
         required_roles = required_roles or tuple()
         required_roles = affirm_set("str", required_roles)
         roles = self.get_roles_multi(rs, ids, introspection_only)
-        return tuple(key for key, value in roles.items()
-                     if value >= required_roles)
+        return set(key for key, value in roles.items()
+                   if value >= required_roles)
 
     @access("anonymous")
     def genesis_set_attachment(self, rs: RequestState, attachment: bytes
