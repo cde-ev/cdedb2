@@ -51,7 +51,7 @@
     title=title,
     **{ "aria-current": "page" if active }
 )|xmlattr }}{# We use the `active` attribute for navigation only #}>
-{{- make_icon(icon) + nbsp if icon }}{{ label }}
+{{- make_icon(icon) + "&nbsp;"|s if icon }}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
@@ -567,7 +567,7 @@
 {% macro event_field_input(fields, name='', readonly=False, defaultvalue='', anid='') %}
     {%- set name = name or "fields.{}".format(fields['field_name']) %}
     {%- if fields['entries'] %}
-        {{- input_select(name=name, entries=fields['entries'], nulloption=nbsp,
+        {{- input_select(name=name, entries=fields['entries'], nulloption="&nbsp;"|s,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=True) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
