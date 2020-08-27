@@ -7932,6 +7932,7 @@ msgstr "Verg. Veranstaltung anlegen"
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:203
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:105
 #: cdedb/frontend/templates/web/event/show_course.tmpl:16
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:222
 msgid "Courses"
 msgstr "Kurse"
 
@@ -10666,6 +10667,7 @@ msgstr "Kurseinteilung"
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:14
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:276
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:14
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:314
 msgid "Lodgements"
 msgstr "Unterkünfte"
 
@@ -12006,6 +12008,7 @@ msgstr "Unterkunftgruppen verwalten"
 
 #: cdedb/frontend/templates/web/event/lodgement_group_summary.tmpl:19
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:347
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:404
 msgid "Lodgement Groups"
 msgstr "Unterkunftgruppen"
 
@@ -12408,68 +12411,84 @@ msgid "Changed registrations"
 msgstr "Geänderte Anmeldungen"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:154
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:173
 msgid "Changed registration attributes"
 msgstr "Geänderte Anmeldungs-Attribute"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:170
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:189
 msgid "New registrations"
 msgstr "Neue Anmeldungen"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:187
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:206
 msgid "Deleted registrations"
 msgstr "Gelöschte Anmeldungen"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:208
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:227
 msgid "Changed courses"
 msgstr "Geänderte Kurse"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:228
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:266
 msgid "Changed course attributes"
 msgstr "Geänderte Kurs-Attribute"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:244
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:282
 msgid "New courses"
 msgstr "Neue Kurse"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:260
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:298
 msgid "Deleted courses"
 msgstr "Gelöschte Kurse"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:281
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:319
 msgid "Changed lodgements"
 msgstr "Geänderte Unterkünfte"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:299
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:356
 msgid "Changed lodgement attributes"
 msgstr "Geänderte Unterkunfts-Attribute"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:315
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:372
 msgid "New lodgements"
 msgstr "Neue Unterkünfte"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:331
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:388
 msgid "Deleted lodgements"
 msgstr "Gelöschte Unterkünfte"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:352
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:409
 msgid "Added"
 msgstr "Hinzugefügt"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:364
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:421
 msgid "Changed"
 msgstr "Geändert"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:377
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:434
 msgid "Deleted"
 msgstr "Gelöscht"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:395
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:452
 msgid "The input produced an empty diff. No changes are to be imported."
 msgstr ""
 "Die Eingabe erzeugte eine leere Differenz. Es sind keine Änderungen zu "
 "importieren."
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:402
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:459
 msgid "Apply changes"
 msgstr "Änderungen anwenden"
 
@@ -12763,7 +12782,6 @@ msgstr ""
 msgid "do not"
 msgstr "nicht"
 
-#: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:12
 #, python-format
 msgid "Reorder Registration (%(title)s)"
 msgstr "Anmeldung umordnen (%(title)s)"
@@ -13768,6 +13786,31 @@ msgstr "Mailinglisten-Log"
 #: cdedb/frontend/templates/web/assembly/base.tmpl:72
 msgid "Wahlleitungs Controls"
 msgstr "Wahlleitung-Schaltflächen"
+
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:118
+msgid ""
+"For example the search for \"Aka\" in the full text search will not match "
+"\"Akademie\". However the search for \"Akadem\" will mitch \"Akademie\"."
+msgstr ""
+"Beispielsweise wird bei \"Aka\" in der Volltextsuche \"Akademie\" nicht "
+"gefunden, bei \"Akadem\" hingegen wird \"Akademie\" gefunden."
+
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:140
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:231
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:323
+msgid "Expand all"
+msgstr "Alle ausklappen"
+
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:143
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:234
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:326
+msgid "Collapse all"
+msgstr "Alle einklappen"
+
+#: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:12
+#, python-format
+msgid "Reorder Registration (%(title)s)"
+msgstr "Anmeldung umordnen (%(title)s)"
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
@@ -15665,3 +15708,6 @@ msgstr "Wahlleitung-Schaltflächen"
 
 #~ msgid "Not all orgas given are event users."
 #~ msgstr "Nicht alle angegebenen Orgas sind Veranstaltungsnutzer."
+
+#~ msgid "CoreLogCodes.password_invalidated"
+#~ msgstr "Passwort gelöscht"
