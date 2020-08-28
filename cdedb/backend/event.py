@@ -2546,10 +2546,9 @@ class EventBackend(AbstractBackend):
         ret = {}
         for part_id, waitlist in full_waitlist.items():
             try:
-                if waitlist is None:
-                    raise ValueError
-                # the first place on the waitlist should be the 1st place
-                ret[part_id] = waitlist.index(reg_id) + 1
+                # If `reg_id` is not in the list, a ValueError will be raised.
+                # Offset the index by one.
+                ret[part_id] = (waitlist or []).index(reg_id) + 1
             except ValueError:
                 ret[part_id] = None
         return ret
