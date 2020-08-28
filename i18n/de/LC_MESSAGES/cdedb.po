@@ -1351,24 +1351,28 @@ msgid "cde_misc"
 msgstr "Linksammlung Mitgliederbereich"
 
 #: cdedb/ml_subscription_aux.py:149 cdedb/ml_subscription_aux.py:151
+#: cdedb/ml_subscription_aux.py:155 cdedb/ml_subscription_aux.py:157
 msgid "User already subscribed."
 msgstr "Der Nutzer ist bereits Abonnent."
 
-#: cdedb/ml_subscription_aux.py:152
+#: cdedb/ml_subscription_aux.py:152 cdedb/ml_subscription_aux.py:158
 msgid "User has been blocked. You can use Advanced Management to change this."
 msgstr ""
 "Der Nutzer wurde geblockt. Dies kannst du unter Erweiterte Verwaltung ändern."
 
 #: cdedb/ml_subscription_aux.py:155 cdedb/ml_subscription_aux.py:164
 #: cdedb/ml_subscription_aux.py:171 cdedb/ml_subscription_aux.py:185
+#: cdedb/ml_subscription_aux.py:161 cdedb/ml_subscription_aux.py:170
+#: cdedb/ml_subscription_aux.py:177 cdedb/ml_subscription_aux.py:191
 msgid "User has pending subscription request."
 msgstr "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt."
 
 #: cdedb/ml_subscription_aux.py:159 cdedb/ml_subscription_aux.py:163
+#: cdedb/ml_subscription_aux.py:165 cdedb/ml_subscription_aux.py:169
 msgid "User already unsubscribed."
 msgstr "Der Nutzer hat die Liste bereits deabonniert."
 
-#: cdedb/ml_subscription_aux.py:160
+#: cdedb/ml_subscription_aux.py:160 cdedb/ml_subscription_aux.py:166
 msgid ""
 "User cannot be removed, because of moderator override. You can use Advanced "
 "Management to change this."
@@ -1378,38 +1382,47 @@ msgstr ""
 
 #: cdedb/ml_subscription_aux.py:174 cdedb/ml_subscription_aux.py:175
 #: cdedb/ml_subscription_aux.py:177 cdedb/ml_subscription_aux.py:178
+#: cdedb/ml_subscription_aux.py:180 cdedb/ml_subscription_aux.py:181
+#: cdedb/ml_subscription_aux.py:183 cdedb/ml_subscription_aux.py:184
 msgid "User is not force-subscribed."
 msgstr "Nutzer ist kein fixierter Abonnent."
 
 #: cdedb/ml_subscription_aux.py:188 cdedb/ml_subscription_aux.py:189
 #: cdedb/ml_subscription_aux.py:190 cdedb/ml_subscription_aux.py:192
+#: cdedb/ml_subscription_aux.py:194 cdedb/ml_subscription_aux.py:195
+#: cdedb/ml_subscription_aux.py:196 cdedb/ml_subscription_aux.py:198
 msgid "User is not force-unsubscribed."
 msgstr "Nutzer ist nicht geblockt."
 
 #: cdedb/ml_subscription_aux.py:195 cdedb/ml_subscription_aux.py:197
 #: cdedb/ml_subscription_aux.py:203 cdedb/ml_subscription_aux.py:205
+#: cdedb/ml_subscription_aux.py:201 cdedb/ml_subscription_aux.py:209
+#: cdedb/ml_subscription_aux.py:211
 msgid "You are already subscribed."
 msgstr "Du bist bereits Abonnent."
 
-#: cdedb/ml_subscription_aux.py:199
+#: cdedb/ml_subscription_aux.py:199 cdedb/ml_subscription_aux.py:205
 msgid "Can not change subscription because you are blocked."
 msgstr "Keine Abonnement-Änderung möglich, da Du geblockt bist."
 
-#: cdedb/ml_subscription_aux.py:207
+#: cdedb/ml_subscription_aux.py:207 cdedb/ml_subscription_aux.py:213
 msgid "Can not request subscription because you are blocked."
 msgstr "Keine Abonnement-Anfrage möglich, da Du geblockt bist."
 
-#: cdedb/ml_subscription_aux.py:208
+#: cdedb/ml_subscription_aux.py:208 cdedb/ml_subscription_aux.py:214
 msgid "You already requested subscription"
 msgstr "Es existiert bereits eine Abonnement-Anfrage."
 
 #: cdedb/ml_subscription_aux.py:212 cdedb/ml_subscription_aux.py:217
-#: cdedb/ml_subscription_aux.py:218
+#: cdedb/ml_subscription_aux.py:218 cdedb/ml_subscription_aux.py:223
+#: cdedb/ml_subscription_aux.py:224
 msgid "You are already unsubscribed."
 msgstr "Du bist gar kein Abonnent."
 
 #: cdedb/ml_subscription_aux.py:221 cdedb/ml_subscription_aux.py:222
 #: cdedb/ml_subscription_aux.py:223 cdedb/ml_subscription_aux.py:224
+#: cdedb/ml_subscription_aux.py:227 cdedb/ml_subscription_aux.py:228
+#: cdedb/ml_subscription_aux.py:229 cdedb/ml_subscription_aux.py:230
 msgid "No subscription requested."
 msgstr "Keine Abonnement-Anfrage vorhanden."
 
@@ -1419,6 +1432,9 @@ msgstr "Keine Abonnement-Anfrage vorhanden."
 #: cdedb/ml_subscription_aux.py:237 cdedb/ml_subscription_aux.py:238
 #: cdedb/ml_subscription_aux.py:242 cdedb/ml_subscription_aux.py:244
 #: cdedb/ml_subscription_aux.py:246 cdedb/ml_subscription_aux.py:248
+#: cdedb/ml_subscription_aux.py:234 cdedb/ml_subscription_aux.py:241
+#: cdedb/ml_subscription_aux.py:243 cdedb/ml_subscription_aux.py:250
+#: cdedb/ml_subscription_aux.py:252 cdedb/ml_subscription_aux.py:254
 msgid "Not a pending subscription request."
 msgstr "Keine Abonnement-Anfrage."
 
@@ -2776,6 +2792,7 @@ msgstr "Es können nicht sämtliche Moderatoren entfernt werden."
 
 #: cdedb/backend/ml.py:476 cdedb/backend/ml.py:491
 #: cdedb/frontend/ml_base.py:238 cdedb/frontend/ml_base.py:617
+#: cdedb/frontend/ml_base.py:710
 msgid "Some of these users do not exist or are archived."
 msgstr "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
 
@@ -4405,8 +4422,13 @@ msgid "Mailinglist Type cannot be changed here."
 msgstr "Der Typ der Mailingliste kann hier nicht geändert werden."
 
 #: cdedb/frontend/ml_base.py:641
+#, fuzzy
 msgid "User is no moderator."
-msgstr "Person ist kein Moderator."
+msgstr ""
+"#-#-#-#-#  merge-po.AGZV.local (CdEDBv2 2.0)  #-#-#-#-#\n"
+"Person ist kein Moderator.\n"
+"#-#-#-#-#  merge-po.AGZV.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
+"Benutzer ist kein Moderator."
 
 #: cdedb/frontend/ml_base.py:648
 msgid "Not allowed to remove yourself as moderator."
@@ -4416,15 +4438,15 @@ msgstr "Du kannst Dich nicht selbst als Moderator entfernen."
 msgid "Cannot remove last moderator."
 msgstr "Der letzte Moderator kann nicht entfernt werden."
 
-#: cdedb/frontend/ml_base.py:892
+#: cdedb/frontend/ml_base.py:892 cdedb/frontend/ml_base.py:941
 msgid "Confirmation email sent."
 msgstr "Verifizierungsmail verschickt."
 
-#: cdedb/frontend/ml_base.py:926
+#: cdedb/frontend/ml_base.py:926 cdedb/frontend/ml_base.py:975
 msgid "Not subscribed."
 msgstr "Nicht abonniert."
 
-#: cdedb/frontend/ml_base.py:932
+#: cdedb/frontend/ml_base.py:932 cdedb/frontend/ml_base.py:981
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
@@ -5962,6 +5984,7 @@ msgstr "Keine Auswahl entspricht allem."
 #: cdedb/frontend/templates/web/logging.tmpl:117
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:80
 #: cdedb/frontend/templates/web/ml/management.tmpl:163
+#: cdedb/frontend/templates/web/ml/management.tmpl:56
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr "CdEDB-ID, Name oder E-Mail"
 
@@ -11254,9 +11277,6 @@ msgstr "Anmeldungsvorschau"
 msgid "Reorder Registration"
 msgstr "Anmeldung umordnen"
 
-msgid "Reorder Registration (%(title)s)"
-msgstr "Anmeldung umordnen (%(title)s)"
-
 #: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:5
 #, python-format
 msgid "Course Assignment Checks (%(title)s)"
@@ -12782,10 +12802,6 @@ msgstr ""
 msgid "do not"
 msgstr "nicht"
 
-#, python-format
-msgid "Reorder Registration (%(title)s)"
-msgstr "Anmeldung umordnen (%(title)s)"
-
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:92
 msgid "Order"
 msgstr "Reihenfolge"
@@ -13806,6 +13822,18 @@ msgstr "Alle ausklappen"
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:326
 msgid "Collapse all"
 msgstr "Alle einklappen"
+
+#: cdedb/ml_subscription_aux.py:175
+msgid "User is already force-subscribed."
+msgstr "Nutzer ist bereits fixierter Abonnent"
+
+#: cdedb/ml_subscription_aux.py:190
+msgid "User has already been blocked."
+msgstr "Nutzer ist bereits gebloockt."
+
+#: cdedb/frontend/ml_base.py:735
+msgid "Action had no effect."
+msgstr "Aktion hatte keinen Effekt."
 
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:12
 #, python-format

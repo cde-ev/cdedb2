@@ -1336,23 +1336,27 @@ msgid "cde_misc"
 msgstr "Link Collection Memberarea"
 
 #: cdedb/ml_subscription_aux.py:149 cdedb/ml_subscription_aux.py:151
+#: cdedb/ml_subscription_aux.py:155 cdedb/ml_subscription_aux.py:157
 msgid "User already subscribed."
 msgstr ""
 
-#: cdedb/ml_subscription_aux.py:152
+#: cdedb/ml_subscription_aux.py:152 cdedb/ml_subscription_aux.py:158
 msgid "User has been blocked. You can use Advanced Management to change this."
 msgstr ""
 
 #: cdedb/ml_subscription_aux.py:155 cdedb/ml_subscription_aux.py:164
 #: cdedb/ml_subscription_aux.py:171 cdedb/ml_subscription_aux.py:185
+#: cdedb/ml_subscription_aux.py:161 cdedb/ml_subscription_aux.py:170
+#: cdedb/ml_subscription_aux.py:177 cdedb/ml_subscription_aux.py:191
 msgid "User has pending subscription request."
 msgstr ""
 
 #: cdedb/ml_subscription_aux.py:159 cdedb/ml_subscription_aux.py:163
+#: cdedb/ml_subscription_aux.py:165 cdedb/ml_subscription_aux.py:169
 msgid "User already unsubscribed."
 msgstr ""
 
-#: cdedb/ml_subscription_aux.py:160
+#: cdedb/ml_subscription_aux.py:160 cdedb/ml_subscription_aux.py:166
 msgid ""
 "User cannot be removed, because of moderator override. You can use Advanced "
 "Management to change this."
@@ -1360,38 +1364,47 @@ msgstr ""
 
 #: cdedb/ml_subscription_aux.py:174 cdedb/ml_subscription_aux.py:175
 #: cdedb/ml_subscription_aux.py:177 cdedb/ml_subscription_aux.py:178
+#: cdedb/ml_subscription_aux.py:180 cdedb/ml_subscription_aux.py:181
+#: cdedb/ml_subscription_aux.py:183 cdedb/ml_subscription_aux.py:184
 msgid "User is not force-subscribed."
 msgstr ""
 
 #: cdedb/ml_subscription_aux.py:188 cdedb/ml_subscription_aux.py:189
 #: cdedb/ml_subscription_aux.py:190 cdedb/ml_subscription_aux.py:192
+#: cdedb/ml_subscription_aux.py:194 cdedb/ml_subscription_aux.py:195
+#: cdedb/ml_subscription_aux.py:196 cdedb/ml_subscription_aux.py:198
 msgid "User is not force-unsubscribed."
 msgstr ""
 
 #: cdedb/ml_subscription_aux.py:195 cdedb/ml_subscription_aux.py:197
 #: cdedb/ml_subscription_aux.py:203 cdedb/ml_subscription_aux.py:205
+#: cdedb/ml_subscription_aux.py:201 cdedb/ml_subscription_aux.py:209
+#: cdedb/ml_subscription_aux.py:211
 msgid "You are already subscribed."
 msgstr ""
 
-#: cdedb/ml_subscription_aux.py:199
+#: cdedb/ml_subscription_aux.py:199 cdedb/ml_subscription_aux.py:205
 msgid "Can not change subscription because you are blocked."
 msgstr ""
 
-#: cdedb/ml_subscription_aux.py:207
+#: cdedb/ml_subscription_aux.py:207 cdedb/ml_subscription_aux.py:213
 msgid "Can not request subscription because you are blocked."
 msgstr ""
 
-#: cdedb/ml_subscription_aux.py:208
+#: cdedb/ml_subscription_aux.py:208 cdedb/ml_subscription_aux.py:214
 msgid "You already requested subscription"
 msgstr ""
 
 #: cdedb/ml_subscription_aux.py:212 cdedb/ml_subscription_aux.py:217
-#: cdedb/ml_subscription_aux.py:218
+#: cdedb/ml_subscription_aux.py:218 cdedb/ml_subscription_aux.py:223
+#: cdedb/ml_subscription_aux.py:224
 msgid "You are already unsubscribed."
 msgstr ""
 
 #: cdedb/ml_subscription_aux.py:221 cdedb/ml_subscription_aux.py:222
 #: cdedb/ml_subscription_aux.py:223 cdedb/ml_subscription_aux.py:224
+#: cdedb/ml_subscription_aux.py:227 cdedb/ml_subscription_aux.py:228
+#: cdedb/ml_subscription_aux.py:229 cdedb/ml_subscription_aux.py:230
 msgid "No subscription requested."
 msgstr ""
 
@@ -1401,6 +1414,9 @@ msgstr ""
 #: cdedb/ml_subscription_aux.py:237 cdedb/ml_subscription_aux.py:238
 #: cdedb/ml_subscription_aux.py:242 cdedb/ml_subscription_aux.py:244
 #: cdedb/ml_subscription_aux.py:246 cdedb/ml_subscription_aux.py:248
+#: cdedb/ml_subscription_aux.py:234 cdedb/ml_subscription_aux.py:241
+#: cdedb/ml_subscription_aux.py:243 cdedb/ml_subscription_aux.py:250
+#: cdedb/ml_subscription_aux.py:252 cdedb/ml_subscription_aux.py:254
 msgid "Not a pending subscription request."
 msgstr ""
 
@@ -2736,6 +2752,7 @@ msgstr ""
 
 #: cdedb/backend/ml.py:476 cdedb/backend/ml.py:491
 #: cdedb/frontend/ml_base.py:238 cdedb/frontend/ml_base.py:617
+#: cdedb/frontend/ml_base.py:710
 msgid "Some of these users do not exist or are archived."
 msgstr ""
 
@@ -4332,15 +4349,15 @@ msgstr ""
 msgid "Cannot remove last moderator."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:892
+#: cdedb/frontend/ml_base.py:892 cdedb/frontend/ml_base.py:941
 msgid "Confirmation email sent."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:926
+#: cdedb/frontend/ml_base.py:926 cdedb/frontend/ml_base.py:975
 msgid "Not subscribed."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:932
+#: cdedb/frontend/ml_base.py:932 cdedb/frontend/ml_base.py:981
 msgid "Disallowed to change address."
 msgstr ""
 
@@ -5858,6 +5875,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/logging.tmpl:117
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:80
 #: cdedb/frontend/templates/web/ml/management.tmpl:163
+#: cdedb/frontend/templates/web/ml/management.tmpl:56
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr ""
 
@@ -13126,6 +13144,18 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:234
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:326
 msgid "Collapse all"
+msgstr ""
+
+#: cdedb/ml_subscription_aux.py:175
+msgid "User is already force-subscribed."
+msgstr ""
+
+#: cdedb/ml_subscription_aux.py:190
+msgid "User has already been blocked."
+msgstr ""
+
+#: cdedb/frontend/ml_base.py:735
+msgid "Action had no effect."
 msgstr ""
 
 #~ msgid "CoreLogCodes.password_invalidated"
