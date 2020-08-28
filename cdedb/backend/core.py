@@ -1802,18 +1802,13 @@ class CoreBackend(AbstractBackend):
                      " VALUES (%s, %s, %s)")
             self.query_exec(rs, query, (data["id"], ip, sessionkey))
 
-            query = ("SELECT COUNT(*) FROM core.sessions"
-                     " WHERE is_active = True AND persona_id = %s")
-            count = unwrap(self.query_one(rs, query, (data["id"],)))
-            if self.conf["MAX_ACTIVE_SESSIONS"] is None:
-                num = 0
-            else:
-                num = count - self.conf["MAX_ACTIVE_SESSIONS"]
-            if num > 0:
-                query = ("SELECT id FROM core.sessions"
-                         " WHERE persona_id = %s AND is_active = True"
-                         " ORDER BY atime ASC LIMIT %s")
-                old_sessions = self.query_all(rs, query, (data["id"], num))
+            # Terminate oldest sessions if we are over the allowed limit.
+            query = ("SELECT id FROM core.sessions"
+                     " WHERE persona_id = %s AND is_active = True"
+                     " ORDER BY atime DESC OFFSET %s")
+            old_sessions = self.query_all(
+                rs, query, (data["id"], self.conf["MAX_ACTIVE_SESSIONS"]))
+            if old_sessions:
                 query = ("UPDATE core.sessions SET is_active = FALSE"
                          " WHERE id = ANY(%s)")
                 self.query_exec(rs, query, ([e["id"] for e in old_sessions],))

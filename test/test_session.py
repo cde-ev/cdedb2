@@ -75,8 +75,8 @@ class TestSessionBackend(BackendTest):
         # Create another session and check it.
         keys.append(self.login(user_data, ip=ip))
         user = self.session.lookupsession(keys[-1], ip=ip)
-        # self.assertEqual(user.persona_id, user_data['id'])
-        # self.assertLess({"anonymous"}, user.roles)
+        self.assertEqual(user.persona_id, user_data['id'])
+        self.assertLess({"anonymous"}, user.roles)
         # Check that the oldest session has now been terminated.
         user = self.session.lookupsession(keys[0], ip=ip)
         self.assertIsNone(user.persona_id)
