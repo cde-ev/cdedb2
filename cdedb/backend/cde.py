@@ -818,7 +818,7 @@ class CdEBackend(AbstractBackend):
         """
         query = affirm("query", query)
         if query.scope == "qview_cde_member":
-            if self.core.quota(rs, num=1, check=True):
+            if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
             query.constraints.append(
                 ("is_cde_realm", QueryOperators.equal, True))
