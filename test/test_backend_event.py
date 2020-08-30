@@ -1151,7 +1151,7 @@ class TestEventBackend(BackendTest):
         new_reg['persona_id'] = 11
         with self.assertRaises(ValueError) as cm:
             self.event.create_registration(self.key, new_reg)
-        self.assertIn("The user is not an event-user.", cm.exception.args)
+        self.assertIn("The user is not an event user.", cm.exception.args)
 
         new_reg['persona_id'] = 3
         new_id = self.event.create_registration(self.key, new_reg)
@@ -2764,7 +2764,7 @@ class TestEventBackend(BackendTest):
                       cm.exception.args)
         with self.assertRaises(ValueError) as cm:
             self.event.set_event_orgas(self.key, event_id, {11})
-        self.assertIn("Some of these orgas are not event-users.",
+        self.assertIn("Some of these orgas are not event users.",
                       cm.exception.args)
 
     @as_users("annika")
