@@ -982,23 +982,29 @@ class FrontendTest(CdEDBTest):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
 
-    def assertValidationError(self, fieldname: str, message: str = "") -> None:
+    def assertValidationError(self, fieldname: str, message: str = "",
+                              index: int = 0) -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
         and a specific error message to be shown near the field.
 
         :param fieldname: The field's 'name' attribute
+        :param index: If more than one field with the given name exists,
+            specify which one should be checked.
         :param message: The expected error message
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
-        node = self.response.lxml.xpath(
+        nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
-        if len(node) != 1:
-            raise AssertionError("Input with name \"{}\" not found"
-                                 .format(fieldname))
+        try:
+            node = nodes[index]
+        except KeyError:
+            raise AssertionError(f"Input with name {fieldname!r} and index"
+                                 f" {index} not found") from None
+
         # From https://devhints.io/xpath#class-check
-        container = node[0].xpath(
+        container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
             "' has-error ')]")
         f = fieldname
