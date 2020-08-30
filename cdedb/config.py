@@ -310,6 +310,9 @@ _DEFAULTS = {
     "SESSION_TIMEOUT": datetime.timedelta(days=2),
     "SESSION_LIFESPAN": datetime.timedelta(days=7),
 
+    # Maximum concurrent sessions per user.
+    "MAX_ACTIVE_SESSIONS": 5,
+
     #
     # CdE stuff
     #

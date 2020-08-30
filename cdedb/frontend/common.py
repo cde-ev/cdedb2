@@ -1119,7 +1119,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_json(rs: RequestState, data: Any) -> Response:
         """Slim helper to create json responses."""
         response = Response(json_serialize(data),
-                               mimetype='application/json')
+                            mimetype='application/json')
         response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return response
 

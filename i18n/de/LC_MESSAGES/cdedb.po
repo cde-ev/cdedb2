@@ -4422,13 +4422,8 @@ msgid "Mailinglist Type cannot be changed here."
 msgstr "Der Typ der Mailingliste kann hier nicht geändert werden."
 
 #: cdedb/frontend/ml_base.py:641
-#, fuzzy
 msgid "User is no moderator."
-msgstr ""
-"#-#-#-#-#  merge-po.AGZV.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Person ist kein Moderator.\n"
-"#-#-#-#-#  merge-po.AGZV.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Benutzer ist kein Moderator."
+msgstr "Person ist kein Moderator."
 
 #: cdedb/frontend/ml_base.py:648
 msgid "Not allowed to remove yourself as moderator."
@@ -13839,6 +13834,12 @@ msgstr "Aktion hatte keinen Effekt."
 #, python-format
 msgid "Reorder Registration (%(title)s)"
 msgstr "Anmeldung umordnen (%(title)s)"
+
+msgid "Logout Everywhere"
+msgstr "Von allen Geräten abmelden"
+
+msgid "%(count)s session(s) terminated."
+msgstr "%(count)s Sitzung(en) beendet."
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
