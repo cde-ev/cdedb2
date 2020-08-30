@@ -431,7 +431,7 @@ class TestEventFrontend(FrontendTest):
             self.assertValidationError(
                 'orga_id', "Benutzer existiert nicht oder ist archiviert.",
                 index=-1)
-            # Try to add a non-existant user.
+            # Try to add a non-existent user.
             f['orga_id'] = "DB-1000-6"
             self.submit(f, check_notification=False)
             self.assertValidationError(
@@ -2090,7 +2090,7 @@ etc;anything else""", f['entries_2'].value)
         f['persona.persona_id'] = "DB-8-6"
         self.submit(f, check_notification=False)
         self.assertValidationError('persona.persona_id', "Ungültiger Account.")
-        # Try to add a non-existant user.
+        # Try to add a non-existent user.
         f['persona.persona_id'] = "DB-10000-5"
         self.submit(f, check_notification=False)
         self.assertValidationError('persona.persona_id', "Ungültiger Account.")

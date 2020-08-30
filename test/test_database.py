@@ -21,7 +21,7 @@ class TestDatabase(unittest.TestCase):
             self.assertIsInstance(conn, psycopg2.extensions.connection)
             self.assertIsInstance(conn, IrradiatedConnection)
         with self.assertRaises(ValueError):
-            factory["nonexistantrole"]
+            factory["nonexistentrole"]
 
     def test_less_users(self):
         factory = connection_pool_factory(

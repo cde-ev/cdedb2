@@ -625,7 +625,7 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
-                raise ValueError(n_("Nonexistant user."))
+                raise ValueError(n_("Nonexistent user."))
             current = unwrap(self.retrieve_personas(
                 rs, (data['id'],), columns=PERSONA_ALL_FIELDS))
             fulltext = self.create_fulltext(current)
@@ -2254,7 +2254,7 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select_one(rs, "core.personas", ("id", "is_active"),
                                    email, entity_key="username")
         if not data:
-            return False, n_("Nonexistant user.")
+            return False, n_("Nonexistent user.")
         if not data['is_active']:
             return False, n_("Inactive user.")
         ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
@@ -2276,7 +2276,7 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select_one(rs, "core.personas", ("id",), email,
                                    entity_key="username")
         if not data:
-            return False, n_("Nonexistant user.")
+            return False, n_("Nonexistent user.")
         if self.conf["LOCKDOWN"]:
             return False, n_("Lockdown active.")
         persona_id = unwrap(data)

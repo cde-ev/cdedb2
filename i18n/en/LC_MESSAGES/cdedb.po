@@ -2336,7 +2336,7 @@ msgstr ""
 
 #: cdedb/backend/core.py:625 cdedb/backend/core.py:2147
 #: cdedb/backend/core.py:2169 cdedb/frontend/core.py:1610
-msgid "Nonexistant user."
+msgid "Nonexistent user."
 msgstr ""
 
 #: cdedb/backend/core.py:670 cdedb/backend/core.py:1944

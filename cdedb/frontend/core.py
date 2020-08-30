@@ -1614,7 +1614,7 @@ class CoreFrontend(AbstractFrontend):
         exists = self.coreproxy.verify_existence(rs, email)
         if not exists:
             rs.append_validation_error(
-                ("email", ValueError(n_("Nonexistant user."))))
+                ("email", ValueError(n_("Nonexistent user."))))
             rs.ignore_validation_errors()
             return self.reset_password_form(rs)
         admin_exception = False

@@ -195,7 +195,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(new_pass, effective)
         with self.assertRaises(PrivilegeError):
             self.core.make_reset_cookie(self.key, "anton@example.cde")
-        ret, _ = self.core.make_reset_cookie(self.key, "nonexistant@example.cde")
+        ret, _ = self.core.make_reset_cookie(self.key, "nonexistent@example.cde")
         self.assertFalse(ret)
 
     @as_users("vera")
