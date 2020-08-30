@@ -45,9 +45,8 @@ from cdedb.common import (
     PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
     get_hash, mixed_existence_sorter, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, DeletionBlockers, CdEDBLog,
+    DefaultReturnCode, DeletionBlockers, CdEDBLog, secure_random_ascii,
 )
-from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const

@@ -18,6 +18,7 @@ import re
 import string
 import sys
 import hashlib
+from secrets import choice
 
 from typing import (
     Any, TypeVar, Mapping, Optional, Dict, List, overload, Sequence, Tuple,
@@ -1017,6 +1018,16 @@ def determine_age_class(birth: datetime.date, reference: datetime.date
     if birth <= deduct_years(reference, 14):
         return AgeClasses.u16
     return AgeClasses.u14
+
+
+def secure_random_ascii(length: int = 12, chars: str = None) -> str:
+    """Create a random string of printable ASCII characters.
+
+    :param length: number of characters in the returned string
+    :param chars: string of characters to choose from
+    """
+    chars = chars or (string.ascii_letters + string.digits + string.punctuation)
+    return ''.join(choice(chars) for _ in range(length))
 
 
 @enum.unique

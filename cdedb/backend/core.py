@@ -11,6 +11,7 @@ import datetime
 import decimal
 from passlib.hash import sha512_crypt
 from pathlib import Path
+from secrets import token_hex
 
 
 from typing import (
@@ -33,7 +34,6 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBLog, DefaultReturnCode, RequestState,
     DeletionBlockers, get_hash
 )
-from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
@@ -1827,7 +1827,7 @@ class CoreBackend(AbstractBackend):
                                           or data['is_core_admin']):
             # Short circuit in case of lockdown
             return None
-        sessionkey = secure_token_hex()
+        sessionkey = token_hex()
 
         with Atomizer(rs):
             # Invalidate expired sessions, but keep other around.
