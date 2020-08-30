@@ -3326,8 +3326,8 @@ etc;anything else""", f['entries_2'].value)
                 self.assertIn(no_member_surcharge, text)
 
     @as_users("garcia")
-    def test_no_tracks(self, user):
-        """This is a regression test for #1224 and #1271."""
+    def test_no_choices(self, user):
+        """This is a regression test for #1224, #1271 and #1395."""
         self.traverse({"description": "Veranstaltungen"},
                       {"description": "Große Testakademie 2222"},
                       {"description": "Veranstaltungsteile"})
@@ -3341,6 +3341,16 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.traverse({"description": "Anmeldungen"})
         f = self.response.forms['queryform']
+        for field in f.fields:
+            if field and field.startswith('qsel_'):
+                f[field].checked = True
+        self.submit(f)
+        self.traverse({'description': "Kurse"},
+                      {'description': "Kurssuche"})
+        f = self.response.forms['queryform']
+        for field in f.fields:
+            if field and field.startswith('qsel_'):
+                f[field].checked = True
         self.submit(f)
 
     @as_users("anton")
