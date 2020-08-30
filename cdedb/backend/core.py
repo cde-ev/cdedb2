@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import (
     Optional, Collection, Dict, Tuple, Set, List, Any, cast, overload
 )
-from typing_extensions import Literal
+from typing_extensions import Protocol
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
@@ -1901,6 +1901,7 @@ class CoreBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         is_archived = affirm("bool_or_None", is_archived)
+        # TODO check for is_archived here?
         if ids == {rs.user.persona_id}:
             return True
         query = "SELECT COUNT(*) AS num FROM core.personas"
@@ -1914,6 +1915,12 @@ class CoreBackend(AbstractBackend):
             query += " WHERE " + " AND ".join(constraints)
         num = unwrap(self.query_one(rs, query, params))
         return num == len(ids)
+
+    class VerifyID(Protocol):
+        def __call__(self, rs: RequestState, anid: int,
+                     is_archived: bool = None) -> bool: ...
+    verify_id: VerifyID
+    verify_id = singularize(verify_ids, "ids", "anid", passthrough=True)
 
     @internal
     @access("anonymous")
@@ -1958,6 +1965,14 @@ class CoreBackend(AbstractBackend):
         roles = self.get_roles_multi(rs, ids, introspection_only)
         return set(key for key, value in roles.items()
                    if value >= required_roles)
+
+    class VerifyPersona(Protocol):
+        def __call__(self, rs: RequestState, anid: int,
+                     required_roles: Collection[Role] = None,
+                     introspection_only: bool = True) -> Set[Optional[int]]: ...
+    verify_personas: VerifyPersona
+    verify_persona = singularize(
+        verify_personas, "ids", "anid", passthrough=True)
 
     @access("anonymous")
     def genesis_set_attachment(self, rs: RequestState, attachment: bytes
