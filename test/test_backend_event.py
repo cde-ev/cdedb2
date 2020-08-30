@@ -1136,9 +1136,24 @@ class TestEventBackend(BackendTest):
                 },
             },
             'payment': None,
-            'persona_id': 3,
+            'persona_id': 999,
             'real_persona_id': None
         }
+        with self.assertRaises(ValueError) as cm:
+            self.event.create_registration(self.key, new_reg)
+        self.assertIn("The user does not exist or is archived.",
+                      cm.exception.args)
+        new_reg['persona_id'] = 8
+        with self.assertRaises(ValueError) as cm:
+            self.event.create_registration(self.key, new_reg)
+        self.assertIn("The user does not exist or is archived.",
+                      cm.exception.args)
+        new_reg['persona_id'] = 11
+        with self.assertRaises(ValueError) as cm:
+            self.event.create_registration(self.key, new_reg)
+        self.assertIn("The user is not an event-user.", cm.exception.args)
+
+        new_reg['persona_id'] = 3
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id

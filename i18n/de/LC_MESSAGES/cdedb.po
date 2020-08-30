@@ -2662,8 +2662,11 @@ msgid "Unfit field for %(field)s"
 msgstr "Datentyp des Felds passt nicht zu %(field)s"
 
 #: cdedb/backend/event.py:1606 cdedb/frontend/event.py:459
-msgid "User is no event user."
+msgid "User is not an event user."
 msgstr "Benutzer ist kein Veranstaltunsnutzer."
+
+msgid "User does not exist or is archived."
+msgstr "Benutzer existiert nicht oder ist archiviert."
 
 #: cdedb/backend/event.py:1635 cdedb/backend/event.py:2746
 msgid "Non-existing parts specified."

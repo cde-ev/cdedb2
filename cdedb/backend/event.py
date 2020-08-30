@@ -2830,6 +2830,10 @@ class EventBackend(AbstractBackend):
                 and not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
+        if not self.core.verify_id(rs, data['persona_id'], is_archived=False):
+            raise ValueError(n_("The user does not exist or is archived."))
+        if not self.core.verify_persona(rs, data['persona_id'], {"event"}):
+            raise ValueError(n_("The user is not an event user."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
             data['fields'] = fdata

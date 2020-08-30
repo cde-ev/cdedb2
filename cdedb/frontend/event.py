@@ -4016,11 +4016,12 @@ class EventFrontend(AbstractUserFrontend):
         """
         persona_id = unwrap(
             request_extractor(rs, (("persona.persona_id", "cdedbid"),)))
-        if (persona_id is not None
-                and not self.coreproxy.verify_personas(
-                    rs, (persona_id,), required_roles=("event",))):
-            rs.append_validation_error(
-                ("persona.persona_id", ValueError(n_("Invalid persona."))))
+        if persona_id is not None:
+            if not (self.coreproxy.verify_id(rs, persona_id, is_archived=False)
+                    and self.coreproxy.verify_persona(
+                        rs, persona_id, {"event"})):
+                rs.append_validation_error(
+                    ("persona.persona_id", ValueError(n_("Invalid persona."))))
         if (not rs.has_validation_errors()
                 and self.eventproxy.list_registrations(rs, event_id,
                                                        persona_id=persona_id)):
