@@ -1511,7 +1511,7 @@ class EventBackend(AbstractBackend):
                         ids: Collection[int]) -> DefaultReturnCode:
         """Un-inlined code from `set_event`. Set the orgas of an event.
 
-        A complete set of orga IDs needs to be passed, wince this will
+        A complete set of orga IDs needs to be passed, since this will
         overwrite the current set.
         """
         event_id = affirm("id", event_id)
