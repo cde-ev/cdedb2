@@ -178,6 +178,7 @@
                 </ul>
                 <form action="{{ cdedblink('event/add_orga') }}" method="POST" id="addorgaform" class="p">
                     {{ util.anti_csrf_token('event/add_orga') }}
+                    {% call util.output_errors('orga_id', wrapper=True) %}
                     <div class="input-group has-success">
                         <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
                         {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
@@ -194,7 +195,7 @@
                             {{ util.input_submit(value=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
                         </div>
                     </div>
-                    {{ util.output_errors('orga_id', wrapper=True) }}
+                    {% endcall %}
                 </form>
                 {% endcall %}
             </div>

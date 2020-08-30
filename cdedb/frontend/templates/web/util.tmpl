@@ -237,6 +237,7 @@
             <div class="{{ "has-warning" if differentiate_warnings and is_warning(name)  else "has-error"}}">
         {% endif %}
         {# TODO sort #}
+        {%- if caller %}{{- caller() }}{% endif %}
         {%- for error in errors.get(name, []) if error and error.args %}
             <div class="help-block">
                 {{ make_icon('exclamation-circle') }}
@@ -244,6 +245,8 @@
             </div>
         {%- endfor %}
         {%- if wrapper %}</div>{% endif %}
+    {%- elif caller %}
+        {{- caller() }}
     {%- endif %}
 {%- endmacro %}
 
