@@ -539,6 +539,12 @@ class EventBackend(AbstractBackend):
             # the id to be distinct.
             def track_table(track):
                 track_id = track['id']
+                choices = ""
+                if track['num_choices'] > 0:
+                    choices = f"""
+                    LEFT OUTER JOIN (
+                        {choices_tables(track)}
+                    ) AS choices{track_id} ON base_id = choices{track_id}.id"""
                 return f"""LEFT OUTER JOIN (
                     (
                         SELECT
@@ -558,9 +564,7 @@ class EventBackend(AbstractBackend):
                         {instructors_table(track_id)}
                     ) AS instructors{track_id}
                         ON base_id = instructors{track_id}.id
-                    LEFT OUTER JOIN (
-                        {choices_tables(track)}
-                    ) AS choices{track_id} ON base_id = choices{track_id}.id
+                    {choices}
                 ) AS track{track_id}
                     ON course.id = track{track_id}.base_id"""
 
