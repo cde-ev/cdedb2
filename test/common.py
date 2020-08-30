@@ -54,6 +54,16 @@ from cdedb.query import QueryOperators
 _BASICCONF = BasicConfig()
 
 
+def check_test_setup() -> None:
+    """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
+    if pathlib.Path("/OFFLINEVM").exists():
+        raise RuntimeError("Cannot run tests in an Offline-VM.")
+    if pathlib.Path("/PRODUCTIONVM").exists():
+        raise RuntimeError("Cannot run tests in Production-VM.")
+    if not os.environ.get('CDEDB_TEST'):
+        raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
+
+
 class NearlyNow(datetime.datetime):
     """This is something, that equals an automatically generated timestamp.
 
