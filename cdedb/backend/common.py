@@ -690,6 +690,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             if reviewed_by:
                 conditions.append("reviewed_by = %s")
                 params.append(reviewed_by)
+        elif reviewed_by:
+            raise RuntimeError(
+                "reviewed_by column only defined for changelog.")
 
         if conditions:
             condition = "WHERE {}".format(" AND ".join(conditions))
