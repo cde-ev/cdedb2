@@ -416,15 +416,27 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Bertålotta")
         if user["id"] in {27, 6}:
             f = self.response.forms['addorgaform']
-            f['orga_id'] = "DB-10-2"
+            # Try to add an invalid cdedbid.
+            f['orga_id'] = "DB-1-1"
             self.submit(f, check_notification=False)
             self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-            f = self.response.forms['addorgaform']
+            # Try to add a non event-user.
             f['orga_id'] = "DB-10-8"
             self.submit(f, check_notification=False)
-            self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-            self.assertPresence("Benutzer ist kein Veranstaltunsnutzer.")
-            f = self.response.forms['addorgaform']
+            self.assertValidationError(
+                'orga_id', "Benutzer ist kein Veranstaltunsnutzer.", index=-1)
+            # Try to add an archived user.
+            f['orga_id'] = "DB-8-6"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'orga_id', "Benutzer existiert nicht oder ist archiviert.",
+                index=-1)
+            # Try to add a non-existant user.
+            f['orga_id'] = "DB-1000-6"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'orga_id', "Benutzer existiert nicht oder ist archiviert.",
+                index=-1)
             f['orga_id'] = "DB-2-7"
             self.submit(f)
             self.assertTitle("Universale Akademie")

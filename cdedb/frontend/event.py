@@ -453,17 +453,17 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             # Shortcircuit if we have got no workable cdedbid
             return self.show_event(rs, event_id)
-        orga = self.coreproxy.get_persona(rs, orga_id)
-        if 'event' not in extract_roles(orga, introspection_only=True):
+        if not self.coreproxy.verify_id(rs, orga_id, is_archived=False):
             rs.append_validation_error(
-                ('orga_id', ValueError(n_("User is no event user."))))
+                ('orga_id',
+                 ValueError(n_("User does not exist or is archived."))))
+        if not self.coreproxy.verify_persona(rs, orga_id, {"event"}):
+            rs.append_validation_error(
+                ('orga_id', ValueError(n_("User is not an event user."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        new = {
-            'id': event_id,
-            'orgas': rs.ambience['event']['orgas'] | {orga_id}
-        }
-        code = self.eventproxy.set_event(rs, new)
+        new = rs.ambience['event']['orgas'] | {orga_id}
+        code = self.eventproxy.set_event_orgas(rs, event_id, new)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
@@ -472,17 +472,14 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def remove_orga(self, rs: RequestState, event_id: int, orga_id: int
                     ) -> Response:
-        """Demote a persona.
+        """Remove a persona as orga of an event.
 
-        This can drop your own orga role (but only if you're admin).
+        This is only available for admins. This can drop your own orga role.
         """
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        new = {
-            'id': event_id,
-            'orgas': rs.ambience['event']['orgas'] - {orga_id}
-        }
-        code = self.eventproxy.set_event(rs, new)
+        new = rs.ambience['event']['orgas'] - {orga_id}
+        code = self.eventproxy.set_event_orgas(rs, event_id, new)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 

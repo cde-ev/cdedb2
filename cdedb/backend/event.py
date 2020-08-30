@@ -1506,6 +1506,48 @@ class EventBackend(AbstractBackend):
             self.event_log(rs, const.EventLogCodes.event_archived,
                            data['id'])
 
+    @access("event_admin")
+    def set_event_orgas(self, rs: RequestState, event_id: int,
+                        ids: Collection[int]) -> DefaultReturnCode:
+        """Un-inlined code from `set_event`. Set the orgas of an event.
+
+        A complete set of orga IDs needs to be passed, wince this will
+        overwrite the current set.
+        """
+        event_id = affirm("id", event_id)
+        ids = affirm_set("id", ids)
+        if not self.core.verify_ids(rs, ids, is_archived=False):
+            raise ValueError(n_(
+                "Some of these orgas do not exist or are archived."))
+        if not self.core.verify_personas(rs, ids, {"event"}):
+            raise ValueError(n_("Some of these orgas are not event users."))
+        self.assert_offline_lock(rs, event_id=event_id)
+
+        ret = 1
+        with Atomizer(rs):
+            current = self.sql_select(rs, "event.orgas", ("persona_id",),
+                                      (event_id,), entity_key="event_id")
+            existing = {unwrap(e) for e in current}
+            new = ids - existing
+            deleted = existing - ids
+            if new:
+                for anid in mixed_existence_sorter(new):
+                    new_orga = {
+                        'persona_id': anid,
+                        'event_id': event_id,
+                    }
+                    ret *= self.sql_insert(rs, "event.orgas", new_orga)
+                    self.event_log(rs, const.EventLogCodes.orga_added,
+                                   event_id, persona_id=anid)
+            if deleted:
+                query = ("DELETE FROM event.orgas"
+                         " WHERE persona_id = ANY(%s) AND event_id = %s")
+                ret *= self.query_exec(rs, query, (deleted, event_id))
+                for anid in mixed_existence_sorter(deleted):
+                    self.event_log(rs, const.EventLogCodes.orga_removed,
+                                   event_id, persona_id=anid)
+        return ret
+
     @access("event")
     def set_event(self, rs: RequestState,
                   data: CdEDBObject) -> DefaultReturnCode:
@@ -1597,34 +1639,7 @@ class EventBackend(AbstractBackend):
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])
             if 'orgas' in data:
-                if not self.is_admin(rs):
-                    raise PrivilegeError(n_("Not privileged."))
-                orgas = self.core.get_personas(rs, data['orgas'])
-                if any('event' not in extract_roles(orga,
-                                                    introspection_only=True)
-                        for orga in orgas.values()):
-                    raise ValueError(n_("User is no event user."))
-                current = self.sql_select(rs, "event.orgas", ("persona_id",),
-                                          (data['id'],), entity_key="event_id")
-                existing = {unwrap(e) for e in current}
-                new = data['orgas'] - existing
-                deleted = existing - data['orgas']
-                if new:
-                    for anid in mixed_existence_sorter(new):
-                        new_orga = {
-                            'persona_id': anid,
-                            'event_id': data['id'],
-                        }
-                        ret *= self.sql_insert(rs, "event.orgas", new_orga)
-                        self.event_log(rs, const.EventLogCodes.orga_added,
-                                       data['id'], persona_id=anid)
-                if deleted:
-                    query = ("DELETE FROM event.orgas"
-                             " WHERE persona_id = ANY(%s) AND event_id = %s")
-                    ret *= self.query_exec(rs, query, (deleted, data['id']))
-                    for anid in mixed_existence_sorter(deleted):
-                        self.event_log(rs, const.EventLogCodes.orga_removed,
-                                       data['id'], persona_id=anid)
+                ret *= self.set_event_orgas(rs, data['id'], data['orgas'])
             if 'parts' in data:
                 parts = data['parts']
                 has_registrations = self.has_registrations(rs, data['id'])

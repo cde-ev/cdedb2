@@ -2745,6 +2745,29 @@ class TestEventBackend(BackendTest):
                          decimal.Decimal("553.49"))
 
     @as_users("annika")
+    def test_set_event_orgas(self, user):
+        event_id = 1
+        self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertLess(0, self.event.set_event_orgas(self.key, event_id, {1}))
+        self.assertEqual({1}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertLess(
+            0, self.event.set_event(self.key, {'id': event_id, 'orgas': {7}}))
+        self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
+
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event_orgas(self.key, event_id, {8})
+        self.assertIn("Some of these orgas do not exist or are archived.",
+                      cm.exception.args)
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event_orgas(self.key, event_id, {1000})
+        self.assertIn("Some of these orgas do not exist or are archived.",
+                      cm.exception.args)
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event_orgas(self.key, event_id, {11})
+        self.assertIn("Some of these orgas are not event-users.",
+                      cm.exception.args)
+
+    @as_users("annika")
     def test_log(self, user):
         # first check the already existing log
         offset = 4
