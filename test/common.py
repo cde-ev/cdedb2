@@ -864,7 +864,7 @@ class FrontendTest(CdEDBTest):
         self.traverse({'href': '/{}/$'.format(realm)},
                       {'href': '/{}/search/user'.format(realm)},
                       verbose=verbose)
-        id_field = 'personas.id' if realm in {'event', 'cde'} else 'id'
+        id_field = 'personas.id'
         f = self.response.forms['queryform']
         f['qsel_' + id_field].checked = True
         f['qop_' + id_field] = QueryOperators.equal.value
