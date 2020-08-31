@@ -168,7 +168,11 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/1/management/advanced'},
                       {'href': '/ml/mailinglist/1/log'},
                       {'href': '/ml/mailinglist/1/change'})
-        self.assertNonPresence('Speichern')
+        f = self.response.forms['changelistform']
+        f['notes'] = "I can change this!"
+        f['subject_prefix'] = "Spaß"
+        self.submit(f)
+        self.assertPresence("I can change this!")
 
     @as_users("berta", "charly")
     def test_show_mailinglist(self, user):
@@ -1134,13 +1138,54 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Witz des Tages – Verwaltung")
         self.traverse({"href": "/ml/mailinglist/3/change"})
         self.assertTitle("Witz des Tages – Konfiguration")
-        self.assertPresence("Nur Administratoren dürfen die Mailinglisten-"
-                            "Konfiguration ändern.", div="notifications")
-        self.assertNotIn('changelistform', self.response.forms)
-        # TODO check that form elements are readonly
+        self.assertIn('changelistform', self.response.forms)
+        # TODO check that some form elements are readonly
 
         self.traverse({"href": "ml/mailinglist/3/log"})
         self.assertTitle("Witz des Tages: Log [0–0 von 0]")
+
+    @as_users("berta")
+    def test_moderator_change_mailinglist(self, user):
+        self.traverse({"description": "Mailinglisten"},
+                      {"description": "CdE-Party 2050 Teilnehmer"},
+                      {"description": "Konfiguration"})
+
+        f = self.response.forms['changelistform']
+        # This properties are disabled and should not change ...
+        f['title'].forced_value = "Party-Time"
+        f['local_part'].forced_value = "partyparty"
+        f['event_id'].forced_value = 1
+        f['registration_stati'] = [const.RegistrationPartStati.guest]
+        # ... and this should change.
+        f['is_active'] = False
+        f['description'] = "Wir machen Party!"
+        f['notes'] = "Nur geladene Gäste."
+        f['mod_policy'] = const.ModerationPolicy.unmoderated.value
+        f['subject_prefix'] = "party"
+        f['attachment_policy'] = const.AttachmentPolicy.allow.value
+        f['maxsize'] = 1111
+        self.submit(f)
+
+        # Check that this have not changed ...
+        self.traverse({"description": "Konfiguration"})
+        f = self.response.forms['changelistform']
+        old_ml = self.sample_data['ml.mailinglists'][60]
+        self.assertEqual(old_ml['title'], f['title'].value)
+        self.assertEqual(old_ml['local_part'], f['local_part'].value)
+        self.assertEqual(str(old_ml['event_id']), f['event_id'].value)
+        reality = {f.get("registration_stati", index=i).value for i in range(7)}
+        expectation = {str(i) for i in old_ml['registration_stati']}
+        self.assertEqual(expectation | {None}, reality)
+        # ... and this have changed.
+        self.assertEqual(None, f['is_active'].value)
+        self.assertEqual("Wir machen Party!", f['description'].value)
+        self.assertEqual("Nur geladene Gäste.", f['notes'].value)
+        self.assertEqual(str(const.ModerationPolicy.unmoderated.value),
+                         f['mod_policy'].value)
+        self.assertEqual("party", f['subject_prefix'].value)
+        self.assertEqual(str(const.AttachmentPolicy.allow.value),
+                         f['attachment_policy'].value)
+        self.assertEqual("1111", f['maxsize'].value)
 
     @as_users("inga")
     def test_cdelokal_admin(self, user):
