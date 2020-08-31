@@ -23,3 +23,5 @@ Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
    Handbuch_Email_Templates
    Handbuch_Markdown
    Architecture_Privacy
+
+.. the privacy page is the directly linked-in from the architecture

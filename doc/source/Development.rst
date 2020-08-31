@@ -13,6 +13,7 @@ cdedb ät lists.cde-ev.de.
    Development_FS_Overview
    Development_Workflows
    Development_Principles
+   Development_Typical_Request
 
 
 .. todo:: split this up and move it to the right places

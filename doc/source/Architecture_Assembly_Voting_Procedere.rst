@@ -1,7 +1,8 @@
 Elektronisches Wahlverfahren
 ============================
 
-.. todo:: translate
+.. This is linked to in the ballot tally emails, so it should stay German.
+
 
 Hier wird das elektronische Wahlverfahren, dass für die Abstimmungen in der
 CdE-Datenbank verwendet wird erklärt.

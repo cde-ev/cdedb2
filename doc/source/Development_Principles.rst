@@ -4,10 +4,6 @@ Programming Principles
 .. todo:: Add guidelines for variable naming conventions, code style
           (sql, python, jinja2, javascript), code encapsulation
 
-.. toctree::
-   :maxdepth: 1
-
-   Development_Typical_Request
 
 Minimal psycopg example
 -----------------------
