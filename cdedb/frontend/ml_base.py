@@ -20,13 +20,13 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
-    RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap)
+    RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap,
+    MOD_ALLOWED_FIELDS)
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
 from cdedb.ml_type_aux import (
-    MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type,
-    MOD_FORBIDDEN_FIELDS)
+    MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type)
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -404,7 +404,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if (not self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
                 or (atype.has_moderator_view(rs.user)
                     and not atype.has_management_view(rs.user))):
-            for field in MOD_FORBIDDEN_FIELDS:
+            for field in set(data) - MOD_ALLOWED_FIELDS:
                 data[field] = old_ml[field]
         data = check(rs, "mailinglist", data)
         if rs.has_validation_errors():

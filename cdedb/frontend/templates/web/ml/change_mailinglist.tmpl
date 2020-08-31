@@ -78,7 +78,7 @@
             {% endif %}
             {% if 'registration_stati' in additional_fields %}
                 {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
-                        readonly=readonly, entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
+                        entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {% endif %}
             {% if 'assembly_id' in additional_fields %}
                 {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption=nbsp,

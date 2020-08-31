@@ -21,9 +21,9 @@ from cdedb.common import (MAILINGLIST_FIELDS, CdEDBObject, CdEDBObjectMap,
                           DefaultReturnCode, DeletionBlockers, PrivilegeError,
                           make_proxy, RequestState, SubscriptionActions,
                           SubscriptionError, glue, implying_realms, n_, now,
-                          unwrap, PathLike, CdEDBLog)
+                          unwrap, PathLike, CdEDBLog, MOD_ALLOWED_FIELDS)
 from cdedb.database.connection import Atomizer
-from cdedb.ml_type_aux import MLType, MLTypeLike, MOD_FORBIDDEN_FIELDS
+from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
 
 SubStates = Collection[const.SubscriptionStates]
@@ -604,10 +604,11 @@ class MlBackend(AbstractBackend):
                        if k not in current or v != current[k]}
             # determinate if changes are permitted
             if not self.is_relevant_admin(rs, mailinglist=current):
-                if MOD_FORBIDDEN_FIELDS & changed:
-                    raise PrivilegeError(n_("Not privileged."))
+                if not changed <= MOD_ALLOWED_FIELDS:
+                    raise PrivilegeError(n_("Need to be admin to change this."))
                 elif not self.is_moderator(rs, current['id']):
-                    raise PrivilegeError(n_("Not privileged."))
+                    raise PrivilegeError(n_(
+                        "Need to be moderator or admin to change mailinglist"))
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:
@@ -615,15 +616,14 @@ class MlBackend(AbstractBackend):
                     rs, dict(current, **mdata))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
-                # Check if privileges allow new state of the mailinglist.
-                if 'ml_type' in changed and not self.is_relevant_admin(
-                        rs, mailinglist_id=data['id']):
-                    raise PrivilegeError("Not privileged to make this change.")
             if data.get('moderators'):
                 ret *= self.set_moderators(rs, data['id'], data['moderators'])
             if data.get('whitelist'):
                 ret *= self.set_whitelist(rs, data['id'], data['whitelist'])
             if 'ml_type' in changed:
+                # Check if privileges allow new state of the mailinglist.
+                if not self.is_relevant_admin(rs, mailinglist_id=data['id']):
+                    raise PrivilegeError("Not privileged to make this change.")
                 if not ml_type.TYPE_MAP[data['ml_type']].allow_unsub:
                     # Delete all unsubscriptions for mandatory list.
                     query = ("DELETE FROM ml.subscription_states "
@@ -638,7 +638,9 @@ class MlBackend(AbstractBackend):
                     new_type=data['ml_type'])
 
             # Subscription changing changes are not permitted for moderators
-            if MOD_FORBIDDEN_FIELDS & changed:
+            # TODO: remove this check after resolving of moderator access to
+            #  the called functions in get_implicit_subscriptions
+            if not changed <= MOD_ALLOWED_FIELDS:
                 ret *= self.write_subscription_states(rs, data['id'])
         return ret
 

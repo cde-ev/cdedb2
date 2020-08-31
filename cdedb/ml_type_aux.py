@@ -527,7 +527,3 @@ TYPE_MAP = {
 
 ADDITIONAL_TYPE_FIELDS = set.union(*(atype.get_additional_fields()
                                      for atype in TYPE_MAP.values()))
-
-MOD_FORBIDDEN_FIELDS = (
-        {'title', 'local_part', 'domain', 'ml_type',}
-        | {k for k, v in ADDITIONAL_TYPE_FIELDS})
