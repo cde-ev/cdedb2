@@ -329,6 +329,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/index")
         assembly_attachments = self.assemblyproxy.list_attachments(
                 rs, assembly_id=assembly_id)
+        count = len(assembly_attachments)
         all_attachments: Dict[Optional[int], CdEDBObjectMap] = {
             None: self.assemblyproxy.get_attachments(
                 rs, assembly_attachments)
@@ -342,6 +343,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for ballot_id in ballot_ids:
             attachment_ids = self.assemblyproxy.list_attachments(
                 rs, ballot_id=ballot_id)
+            count += len(attachment_ids)
             all_attachments[ballot_id] = self.assemblyproxy.get_attachments(
                 rs, attachment_ids)
             attachment_histories[ballot_id] = (
@@ -350,6 +352,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             "all_attachments": all_attachments,
             "attachment_histories": attachment_histories,
             "ballots": ballots,
+            "count": count,
         })
 
     def process_signup(self, rs: RequestState, assembly_id: int,
