@@ -259,23 +259,63 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina", "berta")
     def test_moderator_set_mailinglist(self, user):
-        mailinglist_id = 7
+        mailinglist_id = 60
 
-        mdata = {
+        admin_mdata_1 = {
             'id': mailinglist_id,
-            'moderators': {2, 10, 1},
-            'whitelist': {'link@example.cde'},
+            'ml_type': 20,
+            'title': 'Hallo Welt',
+        }
+        admin_mdata_2 = {
+            'id': mailinglist_id,
+            'ml_type': 20,
+            'local_part': 'alternativ',
+        }
+        admin_mdata_3 = {
+            'id': mailinglist_id,
+            'ml_type': 20,
+            'registration_stati': [1],
+        }
+        admin_mdata_4 = {
+            'id': mailinglist_id,
+            'ml_type': 20,
+            'event_id': 1,
+            'registration_stati': [],
+        }
+        admin_mdata_5 = {
+            'id': mailinglist_id,
+            'ml_type': 21,
+            'event_id': None,
+            'registration_stati': [],
+        }
+        mod_mdata = {
+            'id': mailinglist_id,
+            'ml_type': 20,
+            'description': "Nice one",
+            'is_active': False,
+            'notes': "Blabediblubblabla",
+            'mod_policy': 1,
+            'attachment_policy': 1,
+            'subject_prefix': 'Aufbruch',
+            'maxsize': 101,
         }
         expectation = self.ml.get_mailinglist(self.key, mailinglist_id)
-        expectation.update(mdata)
 
-        if user['id'] in {2}:
-            with self.assertRaises(PrivilegeError):
-                self.ml.set_mailinglist(self.key, mdata)
-            self.assertLess(0, self.ml.set_moderators(self.key, mdata['id'], mdata['moderators']))
-            self.assertLess(0, self.ml.set_whitelist(self.key, mdata['id'], mdata['whitelist']))
-        else:
-            self.assertLess(0, self.ml.set_mailinglist(self.key, mdata))
+        for data in [admin_mdata_1, admin_mdata_2, admin_mdata_3, admin_mdata_4,
+                     admin_mdata_5]:
+            if user['id'] in {2}:
+                with self.assertRaises(PrivilegeError):
+                    self.ml.set_mailinglist(self.key, data)
+            else:
+                expectation.update(data)
+                self.assertLess(0, self.ml.set_mailinglist(self.key, data))
+
+        expectation.update(mod_mdata)
+        self.assertLess(0, self.ml.set_mailinglist(self.key, mod_mdata))
+
+        if user in [USER_DICT['nina']]:
+            # adjust address form changed local part
+            expectation['address'] = 'alternativ@aka.cde-ev.de'
 
         reality = self.ml.get_mailinglist(self.key, mailinglist_id)
         self.assertEqual(expectation, reality)
