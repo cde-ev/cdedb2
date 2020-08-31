@@ -34,7 +34,7 @@
         <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
             {{ util.anti_csrf_token('ml/change_mailinglist') }}
         <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
-            {{ util.form_input_checkbox(name="is_active", label=gettext("Active")) }}
+            {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly) }}
             {{ util.form_input_text(name="title", label=gettext("Title"), readonly=readonly) }}
             {{ util.form_input_text(name="local_part", label=gettext("Address"), readonly=readonly,
                                     addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}

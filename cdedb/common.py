@@ -2022,7 +2022,7 @@ MAILINGLIST_FIELDS = (
 #: Fields of a mailinglist which may be changed by moderators
 MOD_ALLOWED_FIELDS = {
     "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
-    "maxsize", "is_active", "registration_stati"}
+    "maxsize", "registration_stati"}
 
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
