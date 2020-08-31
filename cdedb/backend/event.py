@@ -1509,7 +1509,12 @@ class EventBackend(AbstractBackend):
     @access("event_admin")
     def set_event_orgas(self, rs: RequestState, event_id: int,
                         ids: Collection[int]) -> DefaultReturnCode:
-        """Un-inlined code from `set_event`. Set the orgas of an event.
+        """Set the orgas of an event.
+
+        This is basically un-inlined code from `set_event`, but may also be
+        called separately.
+
+        Note that this is only available to admins in contrast to `set_event`.
 
         A complete set of orga IDs needs to be passed, since this will
         overwrite the current set.
