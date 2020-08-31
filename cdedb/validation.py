@@ -3740,7 +3740,7 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
     optional_validation_fields = {('whitelist', '[email]'),}
     if "ml_type" not in val:
         return val, [("ml_type", ValueError(
-            "Must provid ml_type for setting mailinglist."))]
+            "Must provide ml_type for setting mailinglist."))]
     atype = ml_type.get_type(val["ml_type"])
     mandatory_validation_fields.update(atype.mandatory_validation_fields)
     optional_validation_fields.update(atype.optional_validation_fields)
