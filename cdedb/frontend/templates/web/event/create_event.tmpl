@@ -44,7 +44,10 @@
         <h4 class="heading-underline">{% trans %}Orgas{% endtrans %}</h4>
         {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5",
+                                    info=gettext("Supports %(infolink)s.")|format(
+                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
+                                                           title=gettext("Short Markdown summary")))|s) }}
         <script nonce="{{ csp_nonce }}">
             $('#input-orgas').cdedbSearchPerson(
                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_admin_user&phrase=%s'|s) }}',

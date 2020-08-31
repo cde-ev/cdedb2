@@ -23,7 +23,10 @@
 {% block content %}
     <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_event') }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5",
+                                    info=gettext("Supports %(infolink)s.")|format(
+                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
+                                                           title=gettext("Short Markdown summary")))|s) }}
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
