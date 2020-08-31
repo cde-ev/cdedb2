@@ -691,7 +691,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 conditions.append("reviewed_by = %s")
                 params.append(reviewed_by)
         elif reviewed_by:
-            raise RuntimeError(
+            raise ValueError(
                 "reviewed_by column only defined for changelog.")
 
         if conditions:
