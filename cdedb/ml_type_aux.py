@@ -62,7 +62,6 @@ class EventAssociatedMeta:
     # Allow empty event_id to mark legacy event-lists.
     mandatory_validation_fields = {
         ("event_id", "id_or_None"),
-        ("registration_stati", "[enum_registrationpartstati]"),
     }
 
     @classmethod
@@ -302,6 +301,10 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
+    # TODO I bet this can be done more simple, but I dont get how
+    mandatory_validation_fields = (
+            EventAssociatedMeta.mandatory_validation_fields
+            | {("registration_stati", "[enum_registrationpartstati]")})
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -372,10 +375,6 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
 class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
-    # TODO I bet this can be done more simple, but I dont get how
-    mandatory_validation_fields = (
-            EventAssociatedMeta.mandatory_validation_fields
-            - {("registration_stati", "[enum_registrationpartstati]")})
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
