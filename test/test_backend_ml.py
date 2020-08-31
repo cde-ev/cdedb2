@@ -274,7 +274,7 @@ class TestMlBackend(BackendTest):
         admin_mdata_3 = {
             'id': mailinglist_id,
             'ml_type': 20,
-            'registration_stati': [1],
+            'is_active': False,
         }
         admin_mdata_4 = {
             'id': mailinglist_id,
@@ -292,12 +292,12 @@ class TestMlBackend(BackendTest):
             'id': mailinglist_id,
             'ml_type': 20,
             'description': "Nice one",
-            'is_active': False,
             'notes': "Blabediblubblabla",
             'mod_policy': 1,
             'attachment_policy': 1,
             'subject_prefix': 'Aufbruch',
             'maxsize': 101,
+            'registration_stati': [1],
         }
         expectation = self.ml.get_mailinglist(self.key, mailinglist_id)
 

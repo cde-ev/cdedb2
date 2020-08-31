@@ -1150,34 +1150,43 @@ class TestMlFrontend(FrontendTest):
                       {"description": "CdE-Party 2050 Teilnehmer"},
                       {"description": "Konfiguration"})
 
+        old_ml = self.sample_data['ml.mailinglists'][60]
+
+        # this properties are not allowed to be changed by moderators
         f = self.response.forms['changelistform']
-        # This properties are disabled and should not change ...
-        f['title'].forced_value = "Party-Time"
-        f['local_part'].forced_value = "partyparty"
-        f['event_id'].forced_value = 1
-        f['registration_stati'] = [const.RegistrationPartStati.guest]
-        # ... and this should change.
-        f['is_active'] = False
+        f['title'].force_value("Party-Time")
+        f['local_part'].force_value("partyparty")
+        f['event_id'].force_value(1)
+        f['is_active'].force_value(False)
+        self.submit(f, check_notification=False)
+
+        msg = "Keine Berechtigung zu ändern."
+        self.assertValidationError('title', msg)
+        self.assertValidationError('local_part', msg)
+        self.assertValidationError('event_id', msg)
+        self.assertValidationError('is_active', msg)
+
+        # this properties can be changed by moderators
+        self.traverse({"description": "Konfiguration"})
+        f = self.response.forms['changelistform']
         f['description'] = "Wir machen Party!"
         f['notes'] = "Nur geladene Gäste."
         f['mod_policy'] = const.ModerationPolicy.unmoderated.value
         f['subject_prefix'] = "party"
         f['attachment_policy'] = const.AttachmentPolicy.allow.value
         f['maxsize'] = 1111
+        f['registration_stati'] = [const.RegistrationPartStati.guest.value]
         self.submit(f)
 
         # Check that this have not changed ...
         self.traverse({"description": "Konfiguration"})
         f = self.response.forms['changelistform']
-        old_ml = self.sample_data['ml.mailinglists'][60]
+        self.assertEqual('True', f['is_active'].value)
         self.assertEqual(old_ml['title'], f['title'].value)
         self.assertEqual(old_ml['local_part'], f['local_part'].value)
         self.assertEqual(str(old_ml['event_id']), f['event_id'].value)
-        reality = {f.get("registration_stati", index=i).value for i in range(7)}
-        expectation = {str(i) for i in old_ml['registration_stati']}
-        self.assertEqual(expectation | {None}, reality)
+
         # ... and this have changed.
-        self.assertEqual(None, f['is_active'].value)
         self.assertEqual("Wir machen Party!", f['description'].value)
         self.assertEqual("Nur geladene Gäste.", f['notes'].value)
         self.assertEqual(str(const.ModerationPolicy.unmoderated.value),
@@ -1186,6 +1195,9 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual(str(const.AttachmentPolicy.allow.value),
                          f['attachment_policy'].value)
         self.assertEqual("1111", f['maxsize'].value)
+        reality = {f.get("registration_stati", index=i).value for i in range(7)}
+        expectation = {None, str(const.RegistrationPartStati.guest.value)}
+        self.assertEqual(expectation, reality)
 
     @as_users("inga")
     def test_cdelokal_admin(self, user):
