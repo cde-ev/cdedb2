@@ -602,8 +602,9 @@ class MlBackend(AbstractBackend):
             current = unwrap(self.get_mailinglists(rs, (data['id'],)))
             changed = {k for k, v in data.items()
                        if k not in current or v != current[k]}
+            is_admin = self.is_relevant_admin(rs, mailinglist=current)
             # determinate if changes are permitted
-            if not self.is_relevant_admin(rs, mailinglist=current):
+            if not is_admin:
                 if not changed <= MOD_ALLOWED_FIELDS:
                     raise PrivilegeError(n_("Need to be admin to change this."))
                 elif not self.is_moderator(rs, current['id']):
@@ -637,10 +638,9 @@ class MlBackend(AbstractBackend):
                     rs, data['id'], old_type=current['ml_type'],
                     new_type=data['ml_type'])
 
-            # Subscription changing changes are not permitted for moderators
             # TODO: remove this check after resolving of moderator access to
             #  the called functions in get_implicit_subscriptions
-            if not changed <= MOD_ALLOWED_FIELDS:
+            if is_admin:
                 ret *= self.write_subscription_states(rs, data['id'])
         return ret
 

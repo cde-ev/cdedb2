@@ -261,54 +261,56 @@ class TestMlBackend(BackendTest):
     def test_moderator_set_mailinglist(self, user):
         mailinglist_id = 60
 
-        admin_mdata_1 = {
-            'id': mailinglist_id,
-            'ml_type': 20,
-            'title': 'Hallo Welt',
-        }
-        admin_mdata_2 = {
-            'id': mailinglist_id,
-            'ml_type': 20,
-            'local_part': 'alternativ',
-        }
-        admin_mdata_3 = {
-            'id': mailinglist_id,
-            'ml_type': 20,
-            'is_active': False,
-        }
-        admin_mdata_4 = {
-            'id': mailinglist_id,
-            'ml_type': 20,
-            'event_id': 1,
-            'registration_stati': [],
-        }
-        admin_mdata_5 = {
-            'id': mailinglist_id,
-            'ml_type': 21,
-            'event_id': None,
-            'registration_stati': [],
-        }
+        admin_mdatas = [
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'title': 'Hallo Welt',
+            },
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'local_part': 'alternativ',
+            },
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'is_active': False,
+            },
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'event_id': 1,
+                'registration_stati': [],
+            },
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_orga,
+                'event_id': None,
+                'registration_stati': [],
+            },
+        ]
+
         mod_mdata = {
             'id': mailinglist_id,
-            'ml_type': 20,
+            'ml_type': const.MailinglistTypes.event_associated,
             'description': "Nice one",
             'notes': "Blabediblubblabla",
-            'mod_policy': 1,
-            'attachment_policy': 1,
+            'mod_policy': const.ModerationPolicy.unmoderated,
+            'attachment_policy': const.AttachmentPolicy.allow,
             'subject_prefix': 'Aufbruch',
             'maxsize': 101,
-            'registration_stati': [1],
+            'registration_stati': [const.RegistrationPartStati.applied],
         }
         expectation = self.ml.get_mailinglist(self.key, mailinglist_id)
 
-        for data in [admin_mdata_1, admin_mdata_2, admin_mdata_3, admin_mdata_4,
-                     admin_mdata_5]:
-            if user['id'] in {2}:
-                with self.assertRaises(PrivilegeError):
-                    self.ml.set_mailinglist(self.key, data)
-            else:
+        for data in admin_mdatas:
+            if user == USER_DICT['nina']:
                 expectation.update(data)
                 self.assertLess(0, self.ml.set_mailinglist(self.key, data))
+            else:
+                with self.assertRaises(PrivilegeError):
+                    self.ml.set_mailinglist(self.key, data)
 
         expectation.update(mod_mdata)
         self.assertLess(0, self.ml.set_mailinglist(self.key, mod_mdata))

@@ -172,7 +172,11 @@ class TestMlFrontend(FrontendTest):
         f['notes'] = "I can change this!"
         f['subject_prefix'] = "Spaß"
         self.submit(f)
-        self.assertPresence("I can change this!")
+
+        self.traverse({"description": "Konfiguration"})
+        f = self.response.forms['changelistform']
+        self.assertEqual("I can change this!", f['notes'].value)
+        self.assertEqual("Spaß", f['subject_prefix'].value)
 
     @as_users("berta", "charly")
     def test_show_mailinglist(self, user):

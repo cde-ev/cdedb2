@@ -4417,8 +4417,8 @@ msgid "Not privileged to view log for all these mailinglists."
 msgstr "Keine Berechtigung um auf die Logs aller Mailinglisten zuzugreifen."
 
 #: cdedb/frontend/ml_base.py:379
-msgid "Only Admins may change mailinglist configuration."
-msgstr "Nur Administratoren dürfen die Mailinglisten-Konfiguration ändern."
+msgid "Some fields may only be changed by admins."
+msgstr "Manche Felder dürfen nur von Admins geändert werden."
 
 #: cdedb/frontend/ml_base.py:401
 msgid "Mailinglist Type cannot be changed here."
