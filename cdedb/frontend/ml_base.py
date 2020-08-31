@@ -397,18 +397,21 @@ class MlBaseFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
+        data = check(rs, "mailinglist", data)
+        if rs.has_validation_errors():
+            return self.change_mailinglist_form(rs, mailinglist_id)
         old_ml = rs.ambience['mailinglist']
-        # moderator forbidden fields are disabled in the template and therefore
-        # not submitted, so we restore the previous value
         atype = old_ml['ml_type_class']
+
+        # ensure that moderators change only allowed fields
         if (not self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
                 or (atype.has_moderator_view(rs.user)
                     and not atype.has_management_view(rs.user))):
             for field in set(data) - MOD_ALLOWED_FIELDS:
-                data[field] = old_ml[field]
-        data = check(rs, "mailinglist", data)
-        if rs.has_validation_errors():
-            return self.change_mailinglist_form(rs, mailinglist_id)
+                if data[field] != old_ml[field]:
+                    rs.append_validation_error(
+                        (field, ValueError(n_("Not allowed to change."))))
+
         if data['ml_type'] != old_ml['ml_type']:
             rs.append_validation_error(
                 ("ml_type", ValueError(n_(

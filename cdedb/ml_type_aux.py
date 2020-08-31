@@ -364,7 +364,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
                  mailinglist["registration_stati"]),
             ],
             order=tuple())
-        # TODO is this is broken for moderators who are not orgas of the event?
+        # TODO this is broken for moderators who are not orgas of the event
+        # TODO this is broken for non-event user moderators
         data = bc.event.submit_general_query(rs, query, event_id=event["id"])
 
         return {e["persona.id"] for e in data}

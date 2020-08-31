@@ -72,6 +72,9 @@ msgstr "Alle Anmeldungen"
 msgid "02_query_event_registration_orgas"
 msgstr "Orgas"
 
+msgid "Not allowed to change."
+msgstr "Keine Berechtigung zu ändern."
+
 #: cdedb/config.py:99
 msgid "10_query_event_registration_not_paid"
 msgstr "Noch nicht bezahlt"
