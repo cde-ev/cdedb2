@@ -928,15 +928,16 @@ def unwrap(data):
         return None
     if isinstance(data, (str, bytes)):
         raise TypeError(n_("Cannot unwrap str or bytes. Got %(data)s."),
-                        {'data': repr(data)})
+                        {'data': type(data)})
     if not isinstance(data, collections.abc.Collection):
         raise TypeError(
             n_("Can only unwrap collections. Got %(data)s."),
-            {'data': repr(data)})
+            {'data': type(data)})
     if not len(data) == 1:
         raise ValueError(
-            n_("Can only unwrap collections with one element. Got %(data)s."),
-            {'data': repr(data)})
+            n_("Can only unwrap collections with one element."
+               " Got %(len)s elements."),
+            {'len': len(data)})
     if isinstance(data, collections.abc.Mapping):
         [value] = data.values()
     elif isinstance(data, collections.abc.Collection):
