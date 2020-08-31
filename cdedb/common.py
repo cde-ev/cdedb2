@@ -1765,9 +1765,10 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     return result
 
 
-#: Deprecated, use EVENT_SCHEMA_VERSION instead.
+#: Deprecated, use EVENT_SCHEMA_VERSION instead. This should no longer be
+#: modified.
 #: TODO remove it
-CDEDB_EXPORT_EVENT_VERSION = 14
+CDEDB_EXPORT_EVENT_VERSION = 13
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
