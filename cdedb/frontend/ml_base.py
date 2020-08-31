@@ -25,7 +25,8 @@ import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
 from cdedb.ml_type_aux import (
-    MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type)
+    MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type,
+    MOD_FORBIDDEN_FIELDS)
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -379,10 +380,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         else:
             assembly_entries = []
         merge_dicts(rs.values, rs.ambience['mailinglist'])
-        if not self.mlproxy.is_relevant_admin(
-                rs, mailinglist=rs.ambience['mailinglist']):
-            rs.notify("info",
-                      n_("Only Admins may change mailinglist configuration."))
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
@@ -391,7 +388,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         })
 
     @access("ml", modi={"POST"})
-    @mailinglist_guard(allow_moderators=False)
+    @mailinglist_guard()
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
@@ -400,13 +397,23 @@ class MlBaseFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
+        old_ml = rs.ambience['mailinglist']
+        # moderator forbidden fields are disabled in the template and therefore
+        # not submitted, so we restore the previous value
+        atype = old_ml['ml_type_class']
+        if (not self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
+                or (atype.has_moderator_view(rs.user)
+                    and not atype.has_management_view(rs.user))):
+            for field in MOD_FORBIDDEN_FIELDS:
+                data[field] = old_ml[field]
         data = check(rs, "mailinglist", data)
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
-        if data['ml_type'] != rs.ambience['mailinglist']['ml_type']:
+        if data['ml_type'] != old_ml['ml_type']:
             rs.append_validation_error(
                 ("ml_type", ValueError(n_(
                     "Mailinglist Type cannot be changed here."))))
+
         # Check if mailinglist address is unique
         try:
             self.mlproxy.validate_address(rs, data)
