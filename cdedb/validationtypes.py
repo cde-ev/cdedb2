@@ -35,7 +35,7 @@ GermanPostalCode = NewType("GermanPostalCode", str)
 IBAN = NewType("IBAN", str)
 SafeStr = NewType("SafeStr", str)
 Vote = NewType("Vote", str)
-Regex = NewType("Regex", str)  # TODO or Pattern?
+Regex = NewType("Regex", str)
 NonRegex = NewType("NonRegex", str)
 
 IntCSVList = NewType("IntCSVList", List[int])
@@ -50,4 +50,4 @@ ProfilePicture = NewType("ProfilePicture", bytes)
 PDFFile = NewType("PDFFile", bytes)
 
 
-JSON = NewType("JSON", dict)  # actually Any
+JSON = NewType("JSON", dict)  # TODO actually Any

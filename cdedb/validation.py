@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # pylint: disable=undefined-variable
 # we do some setattrs which confuse pylint
+# TODO why does this have a shebang?
+# TODO using doctest may be nice for the atomic validators
+# TODO split in multiple files?
+# TODO do not use underscore for protection but instead specify __all__
+# TODO why sometimes function and sometimes .copy() for field templates?
 
 """User data input mangling.
 
@@ -121,10 +126,9 @@ _LOGGER = logging.getLogger(__name__)
 T = TypeVar('T')
 F = Callable[..., T]
 
-_ALL = []
-
-
 # TODO maybe add values_progress attribute or similar
+
+
 class ValidationSummary(ValueError, Sequence[Exception]):
     args: Tuple[Exception, ...]
 
@@ -154,12 +158,6 @@ class ValidatorStorage(Dict[Type, Callable]):
 
 
 _ALL_TYPED = ValidatorStorage()
-
-
-def _addvalidator(fun):
-    """Mark a function for processing into validators."""
-    _ALL.append(fun)
-    return fun
 
 
 def _add_typed_validator(fun: F[T]) -> F[T]:
@@ -4009,8 +4007,8 @@ def _regex(
         raise ValidationSummary(
             ValueError(argname,
                        n_("Invalid  regular expression (position %(pos)s)."), {
-                       'pos': e.pos})) from e  # type: ignore
-                       # TODO wait for mypy to ship updated typeshed
+                           'pos': e.pos})) from e  # type: ignore
+        # TODO wait for mypy to ship updated typeshed
     return Regex(val)
 
 
