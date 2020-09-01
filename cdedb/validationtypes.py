@@ -5,6 +5,8 @@ from typing import Any, Iterable, List, Mapping, NewType, Optional
 # needs typing_extensions.TypedDict until 3.9 due to runtime inspection
 # from typing_extensions import Literal, TypedDict
 
+# SIMPLE/PRIMITIVE/ATOMIC TYPES
+
 NonNegativeInt = NewType("NonNegativeInt", int)
 PositiveInt = NewType("PositiveInt", int)
 ID = NewType("ID", int)
@@ -51,3 +53,19 @@ PDFFile = NewType("PDFFile", bytes)
 
 
 JSON = NewType("JSON", dict)  # TODO actually Any
+
+# COMPLEX/DICTIONARY TYPES
+
+Persona = NewType("Persona", dict)
+GenesisCase = NewType("GenesisCase", dict)
+PrivilegeChange = NewType("PrivilegeChange", dict)
+Period = NewType("Period", dict)
+ExPuls = NewType("ExPuls", dict)
+Lastschrift = NewType("Lastschrift", dict)
+LastschriftTransaction = NewType("LastschriftTransaction", dict)
+SepaTransaction = NewType("SepaTransaction", dict)
+SepaMeta = NewType("SepaMeta", dict)
+MetaInfo = NewType("MetaInfo", dict)
+Institution = NewType("Institution", dict)
+PastEvent = NewType("PastEvent", dict)
+Event = NewType("Event", dict)
