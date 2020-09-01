@@ -263,6 +263,7 @@ class TestMlBackend(BackendTest):
 
         mdata = {
             'id': mailinglist_id,
+            'ml_type': self.sample_data['ml.mailinglists'][mailinglist_id]['ml_type'],
             'moderators': {2, 10, 1},
             'whitelist': {'link@example.cde'},
         }

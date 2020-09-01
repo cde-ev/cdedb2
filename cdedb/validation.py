@@ -3736,12 +3736,14 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
                          _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    mandatory_validation_fields = [('moderators', '[id]'),]
-    optional_validation_fields = [('whitelist', '[email]'),]
-    if "ml_type" in val:
-        atype = ml_type.get_type(val["ml_type"])
-        mandatory_validation_fields.extend(atype.mandatory_validation_fields)
-        optional_validation_fields.extend(atype.optional_validation_fields)
+    mandatory_validation_fields = {('moderators', '[id]'),}
+    optional_validation_fields = {('whitelist', '[email]'),}
+    if "ml_type" not in val:
+        return val, [("ml_type", ValueError(
+            "Must provide ml_type for setting mailinglist."))]
+    atype = ml_type.get_type(val["ml_type"])
+    mandatory_validation_fields.update(atype.mandatory_validation_fields)
+    optional_validation_fields.update(atype.optional_validation_fields)
     mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
     optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
     iterable_fields = []
