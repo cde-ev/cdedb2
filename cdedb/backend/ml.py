@@ -609,7 +609,7 @@ class MlBackend(AbstractBackend):
                     raise PrivilegeError(n_("Need to be admin to change this."))
                 elif not self.is_moderator(rs, current['id']):
                     raise PrivilegeError(n_(
-                        "Need to be moderator or admin to change mailinglist"))
+                        "Need to be moderator or admin to change mailinglist."))
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:

@@ -73,7 +73,7 @@ msgid "02_query_event_registration_orgas"
 msgstr "Orgas"
 
 msgid "Not allowed to change."
-msgstr "Keine Berechtigung zu ändern."
+msgstr "Keine Berechtigung zum Ändern."
 
 #: cdedb/config.py:99
 msgid "10_query_event_registration_not_paid"
@@ -130,6 +130,12 @@ msgstr "Alle Nutzer"
 #: cdedb/config.py:397
 msgid "10_query_cde_user_trial_members"
 msgstr "Probemitglieder"
+
+msgid "Need to be moderator or admin to change mailinglist."
+msgstr "Um eine Mailingliste zu ändern muss man Moderator oder Admin sein."
+
+msgid "Need to be admin to change this."
+msgstr "Um das zu ändern muss man Admin sein.Nur Admins dürfen das ändern."
 
 #: cdedb/config.py:403
 msgid "20_query_cde_user_expuls"
