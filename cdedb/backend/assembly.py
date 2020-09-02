@@ -30,6 +30,7 @@ import copy
 import hmac
 import datetime
 from pathlib import Path
+from secrets import token_urlsafe
 
 from typing import (
     Set, Dict, Tuple, Union, Callable, Collection, Optional
@@ -47,7 +48,6 @@ from cdedb.common import (
     get_hash, mixed_existence_sorter, CdEDBObject, CdEDBObjectMap,
     DefaultReturnCode, DeletionBlockers, CdEDBLog,
 )
-from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -913,7 +913,7 @@ class AssemblyBackend(AbstractBackend):
             if now() > assembly['signup_end']:
                 raise ValueError(n_("Signup already ended."))
 
-            secret = secure_random_ascii()
+            secret = token_urlsafe(12)
             new_attendee = {
                 'assembly_id': assembly_id,
                 'persona_id': persona_id,
@@ -1009,7 +1009,7 @@ class AssemblyBackend(AbstractBackend):
                 if secret is None:
                     raise ValueError(n_("Could not determine secret."))
             if not has_voted:
-                salt = secure_random_ascii()
+                salt = token_urlsafe(12)
                 entry = {
                     'ballot_id': ballot_id,
                     'vote': vote,

@@ -35,6 +35,7 @@ import threading
 import urllib.parse
 import decimal
 from enum import Enum, EnumMeta
+from secrets import token_hex
 
 import markdown
 import markdown.extensions.toc
@@ -75,7 +76,6 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
-from cdedb.security import secure_token_hex
 import cdedb.query as query_mod
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -1181,7 +1181,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
-        csp_nonce = secure_token_hex(12)
+        csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
 
         html = self.fill_template(rs, "web", templatename, params)
