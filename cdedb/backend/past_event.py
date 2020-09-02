@@ -480,7 +480,7 @@ class PastEventBackend(AbstractBackend):
         """Add a participant to a concluded event.
 
         A persona can participate multiple times in a single event. For
-        example if she took several courses in different parts of the event.
+        example if they took several courses in different parts of the event.
 
         :param pcourse_id: If None the persona participated in the event, but
           not in a course (this should be common for orgas).

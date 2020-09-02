@@ -84,13 +84,13 @@
                     {{ util.input_hidden(name="is_instructor", value=False) }}
                     <div class="row">
                         <div class="col-sm-7 {% if 'persona_id' in errors %}has-error{% endif %}">
-                            {{ util.input_text(name="persona_id", placeholder=gettext("DB-XXXX-X"),
+                            {{ util.input_text(name="persona_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                     anid="input-add-participant", aclass="form-control input-sm",
                                     arialabel=gettext("ID of the new Participant")) }}
                             <script nonce="{{ csp_nonce }}">
                                 $('#input-add-participant').cdedbSearchPerson(
                                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=past_event_user&phrase=%s'|s) }}',
-                                    {{ participants.keys()|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                    {{ participants.keys()|list|json|s }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                                 );
                             </script>
                             {{ util.output_errors('persona_id') }}

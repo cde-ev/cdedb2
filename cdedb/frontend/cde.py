@@ -2584,10 +2584,12 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("pcourse_id", "id_or_None"), ("persona_id", "cdedbid"),
+    @REQUESTdata(("pcourse_id", "id_or_None"),
+                 ("persona_ids", "cdedbid_csv_list"),
                  ("is_instructor", "bool"), ("is_orga", "bool"))
     def add_participant(self, rs: RequestState, pevent_id: int,
-                        pcourse_id: Optional[int], persona_id: int,
+                        pcourse_id: Optional[int],
+                        persona_ids: Collection[int],
                         is_instructor: bool, is_orga: bool) -> Response:
         """Add participant to concluded event."""
         if rs.has_validation_errors():
@@ -2595,19 +2597,34 @@ class CdEFrontend(AbstractUserFrontend):
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
                 return self.show_past_event(rs, pevent_id)
+
+        # Check presence of valid event users for the given ids
+        if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
+            rs.append_validation_error(("persona_ids",
+                ValueError(n_("Some of these users do not exist."))))
+        verified_ids = self.coreproxy.verify_personas(
+            rs, persona_ids, {"event"})
+        if verified_ids != set(persona_ids):
+            rs.append_validation_error(("persona_id",
+                ValueError(n_("Some of these users are not event users."))))
+        if rs.has_validation_errors():
+            if pcourse_id:
+                return self.show_past_course(rs, pevent_id, pcourse_id)
+            else:
+                return self.show_past_event(rs, pevent_id)
+
         if pcourse_id:
             param = {'pcourse_id': pcourse_id}
         else:
             param = {'pevent_id': pevent_id}
         participants = self.pasteventproxy.list_participants(rs, **param)
-        if persona_id in participants:
-            rs.notify("warning", n_("Participant already present."))
-            if pcourse_id:
-                return self.show_past_course(rs, pevent_id, pcourse_id)
+        code = 1
+        for persona_id in persona_ids:
+            if persona_id in participants:
+                rs.notify("warning", n_("Participant already present."))
             else:
-                return self.show_past_event(rs, pevent_id)
-        code = self.pasteventproxy.add_participant(
-            rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
+                code *= self.pasteventproxy.add_participant(rs, pevent_id,
+                    pcourse_id, persona_id, is_instructor, is_orga)
         self.notify_return_code(rs, code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course",
