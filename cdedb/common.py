@@ -900,19 +900,18 @@ ASSEMBLY_BAR_MONIKER = "_bar_"
 
 
 @overload
-def unwrap(single_element_list: Union[AbstractSet[T], MutableSequence[T],
-                                      Tuple[T, ...]]) -> T: ...
+def unwrap(data: None) -> None: ...
 
 
 @overload
-def unwrap(single_element_list: Mapping[Any, T]) -> T: ...
+def unwrap(data: Mapping[Any, T]) -> T: ...
 
 
 @overload
-def unwrap(single_element_list: None) -> None: ...
+def unwrap(data: Collection[T]) -> T: ...
 
 
-def unwrap(single_element_list):
+def unwrap(data):
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -926,15 +925,27 @@ def unwrap(single_element_list):
     in that it uses the values instead of the keys. To unwrap the keys pass
     `data.keys()` instead.
     """
-    if single_element_list is None:
+    if data is None:
         return None
-    if (not isinstance(single_element_list, collections.abc.Iterable)
-            or (isinstance(single_element_list, collections.abc.Sized)
-                and len(single_element_list) != 1)):
-        raise RuntimeError(n_("Unable to unwrap!"))
-    if isinstance(single_element_list, collections.abc.Mapping):
-        single_element_list = single_element_list.values()
-    return next(i for i in single_element_list)
+    if isinstance(data, (str, bytes)):
+        raise TypeError(n_("Cannot unwrap str or bytes. Got %(data)s."),
+                        {'data': type(data)})
+    if not isinstance(data, collections.abc.Collection):
+        raise TypeError(
+            n_("Can only unwrap collections. Got %(data)s."),
+            {'data': type(data)})
+    if not len(data) == 1:
+        raise ValueError(
+            n_("Can only unwrap collections with one element."
+               " Got %(len)s elements."),
+            {'len': len(data)})
+    if isinstance(data, collections.abc.Mapping):
+        [value] = data.values()
+    elif isinstance(data, collections.abc.Collection):
+        [value] = data
+    else:
+        raise NotImplementedError
+    return value
 
 
 @enum.unique
