@@ -54,7 +54,12 @@ PDFFile = NewType("PDFFile", bytes)
 
 JSON = NewType("JSON", dict)  # TODO actually Any
 
+# TODO this probably requires custom logic...
+ByFieldDatatype = NewType("ByFieldDatatype", str)
+
 # COMPLEX/DICTIONARY TYPES
+# TODO replace dict with CdEDBObject = Dict[str, Any]
+# TODO some could be subtypes (e.g. serializedeventupload -> serializedevent)
 
 Persona = NewType("Persona", dict)
 GenesisCase = NewType("GenesisCase", dict)
@@ -69,3 +74,23 @@ MetaInfo = NewType("MetaInfo", dict)
 Institution = NewType("Institution", dict)
 PastEvent = NewType("PastEvent", dict)
 Event = NewType("Event", dict)
+EventPart = NewType("EventPart", dict)
+EventTrack = NewType("EventTrack", dict)
+EventField = NewType("EventField", dict)
+EventFeeModifier = NewType("EventFeeModifier", dict)
+PastCourse = NewType("PastCourse", dict)
+Course = NewType("Course", dict)
+Registration = NewType("Registration", dict)
+RegistrationPart = NewType("RegistrationPart", dict)
+RegistrationTrack = NewType("RegistrationTrack", dict)
+EventAssociatedFields = NewType("EventAssociatedFields", dict)
+LodgementGroup = NewType("LodgementGroup", dict)
+Lodgement = NewType("Lodgement", dict)
+Questionnaire = NewType("Questionnaire", dict)
+SerializedEventUpload = NewType("SerializedEventUpload", dict)
+SerializedEvent = NewType("SerializedEvent", dict)
+SerializedPartialEventUpload = NewType("SerializedPartialEventUpload", dict)
+SerializedPartialEvent = NewType("SerializedPartialEvent", dict)
+PartialCourse = NewType("PartialCourse", dict)
+PartialLodgementGroup = NewType("PartialLodgementGroup", dict)
+PartialLodgement = NewType("PartialLodgement", dict)
