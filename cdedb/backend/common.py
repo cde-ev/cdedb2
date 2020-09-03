@@ -630,8 +630,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                              entity_ids: Collection[Any] = None,
                              offset: int = None, length: int = None,
                              additional_columns: Collection[str] = None,
-                             persona_id: int = None, submitted_by: int = None,
-                             additional_info: str = None,
+                             persona_id: int = None,
+                             submitted_by: int = None,
+                             reviewed_by: int = None,
+                             change_note: str = None,
                              time_start: datetime.datetime = None,
                              time_stop: datetime.datetime = None
                              ) -> CdEDBLog:
@@ -660,7 +662,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :param additional_columns: Extra values to retrieve.
         :param persona_id: Filter for persona_id column.
         :param submitted_by: Filter for submitted_by column.
-        :param additional_info: Filter for additional_info column
+        :param reviewed_by: Filter for reviewed_by column.
+            Only for core.changelog.
+        :param change_note: Filter for change_note column
         :param time_start: lower bound for ctime columns
         :param time_stop: upper bound for ctime column
         """
@@ -672,7 +676,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             "restrictive_identifier", additional_columns, allow_None=True)
         persona_id = affirm_validation("id_or_None", persona_id)
         submitted_by = affirm_validation("id_or_None", submitted_by)
-        additional_info = affirm_validation("regex_or_None", additional_info)
+        reviewed_by = affirm_validation("id_or_None", reviewed_by)
+        change_note = affirm_validation("regex_or_None", change_note)
         time_start = affirm_validation("datetime_or_None", time_start)
         time_stop = affirm_validation("datetime_or_None", time_stop)
 
@@ -694,9 +699,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if submitted_by:
             conditions.append("submitted_by = %s")
             params.append(submitted_by)
-        if additional_info:
-            conditions.append("additional_info ~* %s")
-            params.append(diacritic_patterns(additional_info))
+        if change_note:
+            conditions.append("change_note ~* %s")
+            params.append(diacritic_patterns(change_note))
         if time_start and time_stop:
             conditions.append("%s <= ctime AND ctime <= %s")
             params.extend((time_start, time_stop))
@@ -706,6 +711,16 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         elif time_stop:
             conditions.append("ctime <= %s")
             params.append(time_stop)
+
+        # Special column for core.changelog
+        if table == "core.changelog":
+            additional_columns += ("reviewed_by", "generation")
+            if reviewed_by:
+                conditions.append("reviewed_by = %s")
+                params.append(reviewed_by)
+        elif reviewed_by:
+            raise ValueError(
+                "reviewed_by column only defined for changelog.")
 
         if conditions:
             condition = "WHERE {}".format(" AND ".join(conditions))
@@ -728,7 +743,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         # Now, query the actual information
         query = (f"SELECT id, ctime, code, submitted_by, {entity_name}_id,"
-                 f" persona_id, additional_info {extra_columns} FROM {table}"
+                 f" persona_id, change_note {extra_columns} FROM {table}"
                  f" {condition} ORDER BY id LIMIT {length}")
         if offset is not None:
             query = glue(query, "OFFSET {}".format(offset))
