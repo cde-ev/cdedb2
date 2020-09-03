@@ -9,5 +9,5 @@ Orgas
 
    Handbuch_Orga_Allgemeines
    Handbuch_Orga_Mitnahmeversion
-   Handbuch_Orga_Partieller_Import
+   Handbuch_Orga_Partieller-Import
    Handbuch_Orga_Beitragsmodifikator

@@ -6,5 +6,5 @@ Mailinglist Realm
 .. toctree::
    :maxdepth: 1
 
-   Architecture_Mailinglist_Types
-   Architecture_Mailinglist_Management
+   Realm_Mailinglist_Types
+   Realm_Mailinglist_Management

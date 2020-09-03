@@ -8,6 +8,6 @@ Event Realm
 .. toctree::
    :maxdepth: 1
 
-   Architecture_Event_Course_Query
-   Architecture_Event_Registration_Query
-   Architecture_Event_Lodgement_Query
+   Realm_Event_Course-Query
+   Realm_Event_Registration-Query
+   Realm_Event_Lodgement-Query

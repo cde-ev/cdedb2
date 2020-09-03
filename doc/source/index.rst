@@ -7,7 +7,9 @@ Contents:
    :maxdepth: 1
 
    Development
-   Architecture
+   Design
+   Realm
+   API
    Handbuch
    Archive
 

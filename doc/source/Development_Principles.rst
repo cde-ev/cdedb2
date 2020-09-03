@@ -4,14 +4,6 @@ Programming Principles
 .. todo:: Add guidelines for variable naming conventions, code style
           (sql, python, jinja2, javascript), code encapsulation
 
-
-Minimal psycopg example
------------------------
-
-.. literalinclude:: psycopg_example.py
-    :language: python
-
-
 Coding Guidelines
 -----------------
 

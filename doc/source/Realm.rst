@@ -15,3 +15,13 @@ Then there are some more specialised realms.
 
 * core -- basic infrastructure, servicing all realms
 * session -- backend only, used for resolving session keys stored in cookies
+
+.. toctree::
+   :maxdepth: 1
+
+   Realm_Assembly
+   Realm_CdE
+   Realm_Core
+   Realm_Event
+   Realm_Mailinglist
+   Realm_Session

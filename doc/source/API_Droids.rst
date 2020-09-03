@@ -1,5 +1,5 @@
-API Droids
-==========
+Droids
+======
 
 The accounts used for API access are called droids. These are separate from
 the persona accounts which are bound to human beings. Instead each droid is

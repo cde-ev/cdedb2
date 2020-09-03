@@ -27,3 +27,16 @@ Additionally there are API access accounts which are referred to as
 droids. These do not have an associated session but instead authenticate
 with a token.
 
+.. toctree::
+   :maxdepth: 1
+
+   Design_Roles
+   Design_WSGI
+   Design_Database
+   Design_Backend
+   Design_Frontend
+   Design_Template
+   Design_Configuration
+   Design_Validation
+   Design_Logging
+   Design_Internationalisation

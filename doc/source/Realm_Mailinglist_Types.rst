@@ -7,7 +7,7 @@ mailinglist types. This allows us to support even complex use cases if required,
 while not overloading the interface. Furthermore, additional admin roles
 are allowed to manage mailinglists depending on their type. More information
 about implicit subscriptions is provided in the
-:doc:`Architecture_Mailinglist_Management` section.
+:doc:`Realm_Mailinglist_Management` section.
 
 Currently, we are using the following types:
 

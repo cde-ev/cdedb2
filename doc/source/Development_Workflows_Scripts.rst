@@ -2,19 +2,19 @@ Scripts
 =======
 
 For doing modifications to the live instance and it's data we provide a
-collection of functionality in :ref:`autodoc-script-module`.
+collection of functionality in ``cdedb/script.py``.
 
 A production script should have 3 sections for setup (imports, etc.),
 configuration and doing the actual work.
 
+.. highlight:: python
+
 Setting up a script
 -------------------
 
-.. highlight:: python
+.. note:: The following code snippets are basic examples, in an actual script
+          you might need completely different imports or even none at all.
 
-.. note::
-   The following code snippets are basic examples, in an actual script
-   you might need completely different imports or even none at all.
 
 The first thing that should be done when setting up a script is ensuring that
 the `cdedb` modules are accessible: ::

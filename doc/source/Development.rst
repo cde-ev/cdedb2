@@ -8,12 +8,11 @@ cdedb ät lists.cde-ev.de.
 .. toctree::
    :maxdepth: 1
 
-   Development_VM_Setup
-   Development_Manual_Setup
-   Development_FS_Overview
+   Development_Setup
+   Development_FS-Overview
    Development_Workflows
    Development_Principles
-   Development_Typical_Request
+   Development_Typical-Request
 
 
 .. todo:: split this up and move it to the right places

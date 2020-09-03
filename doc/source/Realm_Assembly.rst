@@ -7,4 +7,4 @@ Assembly Realm
 .. toctree::
    :maxdepth: 1
 
-   Architecture_Assembly_Voting_Procedere
+   Realm_Assembly_Voting-Procedere

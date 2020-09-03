@@ -1,6 +1,4 @@
-.. _privileges:
-
-Privileges
+Role Model
 ==========
 
 Personas
@@ -33,6 +31,8 @@ following additional privileges are there.
 * orga of an event
 * moderator of a mailing list
 
+.. todo:: Weiterführende Referenz auf Realm_Core_Personas
+
 Droids
 ------
 
@@ -41,6 +41,8 @@ Each droid can have the following privileges:
 * being a droid (in contrast to anonymous access)
 * per droid identity privilege
 * infrastructure toggle (making them exempt from lockdown)
+
+More to droids at :doc:`API_Droids`.
 
 
 Database
@@ -52,3 +54,5 @@ In the database everything is mapped onto four tiers
 * persona,
 * member,
 * admin.
+
+More to database at :doc:`Design_Database`.
