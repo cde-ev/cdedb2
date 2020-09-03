@@ -3172,30 +3172,25 @@ def _PARTIAL_REGISTRATION_OPTIONAL_FIELDS(): return {
     'fields': Mapping,
 }
 
+# TODO Can we auto generate all these partial validators?
 
-@ _addvalidator
-def _partial_registration(val, argname=None, *, creation=False, _convert=True,
-                          _ignore_warnings=False):
+
+@_add_typed_validator
+def _partial_registration(
+    val: Any, argname: str = "registration", *,
+    creation: bool = False, **kwargs
+) -> PartialRegistration:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "registration"
 
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+    val = _mapping(val, argname, **kwargs)
+
     if creation:
         # creation does not allow fields for sake of simplicity
         mandatory_fields = dict(_PARTIAL_REGISTRATION_COMMON_FIELDS(),
-                                persona_id=_id)
+                                persona_id=ID)
         optional_fields = _PARTIAL_REGISTRATION_OPTIONAL_FIELDS()
     else:
         # no event_id/persona_id, since associations should be fixed
@@ -3203,118 +3198,108 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True,
         optional_fields = dict(
             _PARTIAL_REGISTRATION_COMMON_FIELDS(),
             **_PARTIAL_REGISTRATION_OPTIONAL_FIELDS())
-    val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
+
+    errs = ValidationSummary()
     if 'amount_owed' in val:
         del val['amount_owed']
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():
-            anid, e = _id(anid, 'parts', _convert=_convert,
-                          _ignore_warnings=_ignore_warnings)
-            part, ee = _partial_registration_part(
-                part, 'parts', _convert=_convert,
-                _ignore_warnings=_ignore_warnings)
-            if e or ee:
+            try:
+                anid = _id(anid, 'parts', **kwargs)
+                part = _partial_registration_part(part, 'parts', **kwargs)
+            except ValidationSummary as e:
                 errs.extend(e)
-                errs.extend(ee)
             else:
                 newparts[anid] = part
         val['parts'] = newparts
     if 'tracks' in val:
         newtracks = {}
         for anid, track in val['tracks'].items():
-            anid, e = _id(anid, 'tracks', _convert=_convert,
-                          _ignore_warnings=_ignore_warnings)
-            track, ee = _partial_registration_track(
-                track, 'tracks', _convert=_convert,
-                _ignore_warnings=_ignore_warnings)
-            if e or ee:
+            try:
+                anid = _id(anid, 'tracks', **kwargs)
+                track = _partial_registration_track(track, 'tracks', **kwargs)
+            except ValidationSummary as e:
                 errs.extend(e)
-                errs.extend(ee)
             else:
                 newtracks[anid] = track
         val['tracks'] = newtracks
+
+    if errs:
+        raise errs
+
     # the check of fields is delegated to _event_associated_fields
-    return val, errs
+    return PartialRegistration(val)
 
 
-@ _addvalidator
-def _partial_registration_part(val, argname=None, *, _convert=True,
-                               _ignore_warnings=False):
+@_add_typed_validator
+def _partial_registration_part(
+    val: Any, argname: str = "partial_registration_part", **kwargs
+) -> PartialRegistrationPart:
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
     case is applicable.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "partial_registration_part"
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+
+    val = _mapping(val, argname, **kwargs)
+
     optional_fields = {
         'status': _enum_registrationpartstati,
         'lodgement_id': Optional[PartialImportID],
         'is_camping_mat': bool,
     }
-    return _examine_dictionary_fields(
-        val, {}, optional_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
+
+    return PartialRegistrationPart(_examine_dictionary_fields(
+        val, {}, optional_fields, **kwargs))
 
 
-@ _addvalidator
-def _partial_registration_track(val, argname=None, *, _convert=True,
-                                _ignore_warnings=False):
+@_add_typed_validator
+def _partial_registration_track(
+    val: Any, argname: str = "partial_registration_track", **kwargs
+) -> PartialRegistrationTrack:
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
     case is applicable.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "partial_registration_track"
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+
+    val = _mapping(val, argname, **kwargs)
+
     optional_fields = {
         'course_id': Optional[PartialImportID],
         'course_instructor': Optional[PartialImportID],
         'choices': Iterable,
     }
-    val, errs = _examine_dictionary_fields(
-        val, {}, optional_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
+
+    val = _examine_dictionary_fields(val, {}, optional_fields, **kwargs)
+
+    errs = ValidationSummary()
     if 'choices' in val:
         newchoices = []
         for choice in val['choices']:
-            choice, e = _partial_import_id(choice, 'choices', _convert=_convert,
-                                           _ignore_warnings=_ignore_warnings)
-            if e:
+            try:
+                # TODO why not use partial id validator above?
+                choice = _partial_import_id(choice, 'choices', **kwargs)
+            except ValidationSummary as e:
                 errs.extend(e)
-                break
+                break  # TODO why break and not continues? - directly raise?
             else:
                 newchoices.append(choice)
         val['choices'] = newchoices
-    return val, errs
+
+    if errs:
+        raise errs
+
+    return PartialRegistrationTrack(val)
 
 
 def _MAILINGLIST_COMMON_FIELDS(): return {
     'title': str,
-    'local_part': _email_local_part,
+    'local_part': EmailLocalPart,
     'domain': _enum_mailinglistdomain,
     'description': Optional[str],
     'mod_policy': _enum_moderationpolicy,
@@ -3328,9 +3313,9 @@ def _MAILINGLIST_COMMON_FIELDS(): return {
 
 
 def _MAILINGLIST_OPTIONAL_FIELDS(): return {
-    'assembly_id': _None,
-    'event_id': _None,
-    'registration_stati': _empty_list,
+    'assembly_id': None,
+    'event_id': None,
+    'registration_stati': EmptyList,
 }
 
 
@@ -3341,24 +3326,19 @@ _MAILINGLIST_READONLY_FIELDS = {
 }
 
 
-@ _addvalidator
-def _mailinglist(val, argname=None, *, creation=False, _convert=True,
-                 _ignore_warnings=False, _allow_readonly=False):
+@_add_typed_validator
+def _mailinglist(
+    val: Any, argname: str = "mailinglist", *,
+    creation=False, _allow_readonly=False, **kwargs
+) -> Mailinglist:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "mailinglist"
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+
+    val = _mapping(val, argname, **kwargs)
+
+    # TODO replace these with generic types
     mandatory_validation_fields = [('moderators', '[id]'), ]
     optional_validation_fields = [('whitelist', '[email]'), ]
     if "ml_type" in val:
@@ -3367,6 +3347,7 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
         optional_validation_fields.extend(atype.optional_validation_fields)
     mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
     optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
+
     iterable_fields = []
     for source, target in ((mandatory_validation_fields, mandatory_fields),
                            (optional_validation_fields, optional_fields)):
@@ -3382,6 +3363,7 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
         for key in _MAILINGLIST_READONLY_FIELDS:
             if key in val:
                 del val[key]
+
     if creation:
         pass
     else:
@@ -3389,35 +3371,43 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
         # precedence.
         optional_fields = dict(optional_fields, **mandatory_fields)
         mandatory_fields = {'id': ID}
-    val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
+
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
+
     if val and "moderators" in val and len(val["moderators"]) == 0:
-        errs.append(("moderators", ValueError(n_("Must not be empty."))))
-    if errs:
-        return val, errs
+        # TODO is this legitimate (postpone after other errors?)
+        raise ValidationSummary(ValueError(
+            "moderators", n_("Must not be empty.")))
+
+    errs = ValidationSummary()
     for key, validator_str in iterable_fields:
         validator = getattr(current_module, validator_str)
         newarray = []
         if key in val:
             for x in val[key]:
-                v, e = validator(x, argname=key, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
-                if e:
+                try:
+                    v = validator(x, argname=key, **kwargs)
+                except ValidationSummary as e:
                     errs.extend(e)
                 else:
                     newarray.append(v)
             val[key] = newarray
+
     if "domain" in val:
         if "ml_type" not in val:
-            errs.append(("domain", ValueError(n_(
-                "Must specify mailinglist type to change domain."))))
+            errs.append(ValueError("domain", n_(
+                "Must specify mailinglist type to change domain.")))
         else:
             atype = ml_type.get_type(val["ml_type"])
             if val["domain"].value not in atype.domains:
-                errs.append(("domain", ValueError(n_(
-                    "Invalid domain for this mailinglist type."))))
-    return val, errs
+                errs.append(ValueError("domain", n_(
+                    "Invalid domain for this mailinglist type.")))
+
+    if errs:
+        raise errs
+
+    return Mailinglist(val)
 
 
 _SUBSCRIPTION_ID_FIELDS = {
@@ -3436,60 +3426,60 @@ _SUBSCRIPTION_ADDRESS_FIELDS = {
 }
 
 
-@ _addvalidator
-def _subscription_identifier(val, argname=None, *, _convert=True,
-                             _ignore_warnings=False):
-    argname = argname or "subscription identifier"
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+# TODO argname with space?
+@_add_typed_validator
+def _subscription_identifier(
+    val: Any, argname: str = "subscription identifier", **kwargs
+) -> SubscriptionIdentifier:
+    val = _mapping(val, argname, **kwargs)
+
+    # TODO why is deepcopy mandatory?
+    # TODO maybe make signature of examine dict to take a non-mutable mapping?
     mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
-    return _examine_dictionary_fields(
-        val, mandatory_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
+
+    return SubscriptionIdentifier(_examine_dictionary_fields(
+        val, mandatory_fields, **kwargs))
 
 
-@ _addvalidator
-def _subscription_state(val, argname=None, *, _convert=True,
-                        _ignore_warnings=False):
-    argname = argname or "subscription state"
-    val, errs = _mapping(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
+@_add_typed_validator
+def _subscription_state(
+    val: Any, argname: str = "subscription state", **kwargs
+) -> SubscriptionState:
+    val = _mapping(val, argname, **kwargs)
+
+    # TODO instead of deepcopy simply do not mutate mandatory_fields
+    # TODO or use function returning the dict everywhere instead
     mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_STATE_FIELDS())
-    return _examine_dictionary_fields(
-        val, mandatory_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
+
+    return SubscriptionState(_examine_dictionary_fields(
+        val, mandatory_fields, **kwargs))
 
 
-@ _addvalidator
-def _subscription_address(val, argname=None, *, _convert=True,
-                          _ignore_warnings=False):
-    argname = argname or "subscription address"
-    val, errs = _mapping(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
+@_add_typed_validator
+def _subscription_address(
+    val: Any, argname: str = "subscription address", **kwargs
+) -> SubscriptionAddress:
+    val, errs = _mapping(val, argname, **kwargs)
+
     mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
-    return _examine_dictionary_fields(
-        val, mandatory_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
+
+    return SubscriptionAddress(_examine_dictionary_fields(
+        val, mandatory_fields, **kwargs))
 
 
-@ _addvalidator
-def _subscription_request_resolution(val, argname=None, *, _convert=True,
-                                     _ignore_warnings=False):
-    argname = argname or "subscription request resolution"
-    val, errs = _mapping(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
+@_add_typed_validator
+def _subscription_request_resolution(
+    val: Any, argname: str = "subscription request resolution", **kwargs
+) -> SubscriptionRequestResolution:
+    val = _mapping(val, argname, **kwargs)
+
     mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS())
-    return _examine_dictionary_fields(
-        val, mandatory_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
+
+    return SubscriptionRequestResolution(_examine_dictionary_fields(
+        val, mandatory_fields, **kwargs))
 
 
 def _ASSEMBLY_COMMON_FIELDS(): return {
@@ -3506,24 +3496,17 @@ def _ASSEMBLY_OPTIONAL_FIELDS(): return {
 }
 
 
-@ _addvalidator
-def _assembly(val, argname=None, *, creation=False, _convert=True,
-              _ignore_warnings=False):
+@_add_typed_validator
+def _assembly(
+    val: Any, argname: str = "assembly", *,
+    creation=False, **kwargs
+) -> Assembly:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "assembly"
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+    val = _mapping(val, argname, **kwargs)
+
     if creation:
         mandatory_fields = _ASSEMBLY_COMMON_FIELDS()
         optional_fields = _ASSEMBLY_OPTIONAL_FIELDS()
@@ -3531,9 +3514,9 @@ def _assembly(val, argname=None, *, creation=False, _convert=True,
         mandatory_fields = {'id': ID}
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
                                **_ASSEMBLY_OPTIONAL_FIELDS())
-    return _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
+
+    return Assembly(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
 
 
 def _BALLOT_COMMON_FIELDS(): return {
@@ -3556,87 +3539,83 @@ def _BALLOT_OPTIONAL_FIELDS(): return {
 }
 
 
-@ _addvalidator
-def _ballot(val, argname=None, *, creation=False, _convert=True,
-            _ignore_warnings=False):
+@_add_typed_validator
+def _ballot(
+    val: Any, argname: str = "ballot", *,
+    creation=False, **kwargs
+) -> Ballot:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "ballot"
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+    val = _mapping(val, argname, **kwargs)
+
     if creation:
-        mandatory_fields = dict(_BALLOT_COMMON_FIELDS(), assembly_id=_id)
+        mandatory_fields = dict(_BALLOT_COMMON_FIELDS(), assembly_id=ID)
         optional_fields = _BALLOT_OPTIONAL_FIELDS()
     else:
         mandatory_fields = {'id': ID}
         optional_fields = dict(_BALLOT_COMMON_FIELDS(),
                                **_BALLOT_OPTIONAL_FIELDS())
-    val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
+
+    errs = ValidationSummary()
+    # TODO why are all these nested?
     if 'vote_begin' in val:
         if val['vote_begin'] <= now():
-            errs.append(
-                ("vote_begin", ValueError(n_("Mustn’t be in the past.")))
-            )
+            errs.append(ValueError(
+                "vote_begin", n_("Mustn’t be in the past.")))
         if 'vote_end' in val:
             if val['vote_end'] <= val['vote_begin']:
-                errs.append(
-                    ("vote_end", ValueError(n_(
-                        "Mustn’t be before start of voting period.")))
-                )
+                errs.append(ValueError("vote_end", n_(
+                    "Mustn’t be before start of voting period.")))
             if 'vote_extension_end' in val and val['vote_extension_end']:
                 if val['vote_extension_end'] <= val['vote_end']:
-                    errs.append(
-                        ("vote_extension_end", ValueError(n_(
-                            "Mustn’t be before end of voting period.")))
-                    )
+                    errs.append(ValueError("vote_extension_end", n_(
+                        "Mustn’t be before end of voting period.")))
+
     if 'candidates' in val:
         newcandidates = {}
         for anid, candidate in val['candidates'].items():
-            anid, e = _int(anid, 'candidates', _convert=_convert,
-                           _ignore_warnings=_ignore_warnings)
-            if e:
+            try:
+                anid = _int(anid, 'candidates', **kwargs)
+            except ValidationSummary as e:
                 errs.extend(e)
             else:
                 creation = (anid < 0)
-                candidate, ee = _ballot_candidate_or_None(
-                    candidate, 'candidates', creation=creation,
-                    _convert=_convert, _ignore_warnings=_ignore_warnings)
-                if ee:
-                    errs.extend(ee)
+                try:
+                    candidate = _ballot_candidate_or_None(
+                        candidate, 'candidates', creation=creation, **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
                 else:
                     newcandidates[anid] = candidate
         val['candidates'] = newcandidates
+
     if ('quorum' in val) != ('vote_extension_end' in val):
-        errs.extend(
-            [("vote_extension_end",
-              ValueError(n_("Must be specified if quorum is given."))),
-             ("quorum", ValueError(
-                 n_("Must be specified if vote extension end is given.")))]
-        )
+        errs.extend([
+            ValueError("vote_extension_end", n_(
+                "Must be specified if quorum is given.")),
+            ValueError("quorum", n_(
+                "Must be specified if vote extension end is given."))
+        ])
+
     if 'quorum' in val and 'vote_extension_end' in val:
         if not ((val['quorum'] != 0 and val['vote_extension_end'] is not None)
                 or (val['quorum'] == 0 and val['vote_extension_end'] is None)):
-            errs.extend(
-                [("vote_extension_end",
-                  ValueError(n_("Inconsitent with quorum."))),
-                 ("quorum", ValueError(
-                     n_("Inconsitent with vote extension end.")))]
-            )
-    return val, errs
+            errs.extend([
+                ValueError("vote_extension_end", n_(
+                    "Inconsitent with quorum.")),
+                ValueError("quorum", n_(
+                    "Inconsitent with vote extension end."))
+            ])
+
+    if errs:
+        raise errs
+
+    return Ballot(val)
 
 
 _BALLOT_CANDIDATE_COMMON_FIELDS = {
@@ -3645,38 +3624,32 @@ _BALLOT_CANDIDATE_COMMON_FIELDS = {
 }
 
 
-@ _addvalidator
-def _ballot_candidate(val, argname=None, *, creation=False, _convert=True,
-                      _ignore_warnings=False):
+@_add_typed_validator
+def _ballot_candidate(
+    val: Any, argname: str = "ballot_candidate", *,
+    creation=False, **kwargs
+) -> BallotCandidate:
     """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "ballot_candidate"
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+    val = _mapping(val, argname, **kwargs)
+
     if creation:
         mandatory_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
         optional_fields = {}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
-    val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
+
     if val.get('moniker') == ASSEMBLY_BAR_MONIKER:
-        errs.append(("moniker", ValueError(n_("Mustn’t be the bar moniker."))))
-    return val, errs
+        raise ValidationSummary(ValueError(
+            "moniker", n_("Mustn’t be the bar moniker.")))
+
+    return BallotCandidate(val)
 
 
 def _ASSEMBLY_ATTACHMENT_FIELDS(): return {
@@ -3692,74 +3665,60 @@ def _ASSEMBLY_ATTACHMENT_VERSION_FIELDS(): return {
 }
 
 
-@ _addvalidator
-def _assembly_attachment(val, argname=None, *, creation=False, _convert=True,
-                         _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type creation: bool
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (dict or None, [(str or None, exception)])
-    """
-    argname = argname or "assembly_attachment"
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+@_add_typed_validator
+def _assembly_attachment(
+    val: Any, argname: str = "assembly_attachment", *,
+    creation: bool = False, **kwargs
+) -> AssemblyAttachment:
+    val = _mapping(val, argname, **kwargs)
+
     if creation:
         mandatory_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
         optional_fields = _ASSEMBLY_ATTACHMENT_FIELDS()
     else:
-        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_FIELDS(), id=_id)
+        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_FIELDS(), id=ID)
         optional_fields = {}
-    val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
-    if errs:
-        return val, errs
+
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
+
+    errs = ValidationSummary()
     if val.get("assembly_id") and val.get("ballot_id"):
-        errs.append((argname, ValueError(n_("Only one host allowed."))))
+        errs.append(ValueError(argname, n_("Only one host allowed.")))
     if not val.get("assembly_id") and not val.get("ballot_id"):
-        errs.append((argname, ValueError(n_("No host given."))))
-    if errs:
-        return None, errs
-    return val, errs
+        errs.append(ValueError(argname, n_("No host given.")))
 
-
-@ _addvalidator
-def _assembly_attachment_version(val, argname=None, *, creation=False,
-                                 _convert=True, _ignore_warnings=False):
-    """
-    :type val: object
-    :type argname: str or None
-    :type creation: bool
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :rtype: (dict or None, [(str or None, exception)])
-    """
-    argname = argname or "assembly_attachment_version"
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
     if errs:
-        return val, errs
-    if creation:
-        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_VERSION_FIELDS(),
-                                attachment_id=_id)
-        optional_fields = {}
-    else:
-        mandatory_fields = {'attachment_id': ID, 'version': _id}
-        optional_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
-    val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert,
-        _ignore_warnings=_ignore_warnings)
-    return val, errs
+        raise errs
+
+    return val
 
 
 @_add_typed_validator
+def _assembly_attachment_version(
+    val: Any, argname: str = "assembly_attachment_version", *,
+    creation: bool = False, **kwargs
+) -> AssemblyAttachmentVersion:
+    val = _mapping(val, argname, **kwargs)
+
+    if creation:
+        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_VERSION_FIELDS(),
+                                attachment_id=ID)
+        optional_fields = {}
+    else:
+        mandatory_fields = {'attachment_id': ID, 'version': ID}
+        optional_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
+
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
+
+    return AssemblyAttachmentVersion(val)
+
+
+# TODO replace ballot with CdEDBObject
+@_add_typed_validator
 def _vote(
-    val: Any, argname: str = "vote", ballot: Mapping[str, Any] = None, **kwargs
+    val: Any, argname: str = "vote", ballot: Mapping[str, Any], **kwargs
 ) -> Vote:
     """Validate a single voters intent.
 
@@ -3768,7 +3727,6 @@ def _vote(
 
     :param ballot: Ballot the vote was cast for.
     """
-    assert ballot is not None  # TODO needed because of default for argname, change this
     val = _str(val, argname, **kwargs)
     errs = ValidationSummary()
 
@@ -3831,10 +3789,13 @@ def _non_regex(
     return NonRegex(val)
 
 
-@ _addvalidator
-def _query_input(val, argname=None, *, spec=None, allow_empty=False,
-                 _convert=True, _ignore_warnings=False, separator=',',
-                 escape='\\'):
+@_add_typed_validator
+def _query_input(
+    val: Any, argname: str = None, *,
+    spec: Mapping[str, str], allow_empty: bool = False,
+    separator: str = ',', escape: str = '\\',
+    **kwargs
+) -> QueryInput:
     """This is for the queries coming from the web.
 
     It is not usable with decorators since the spec is often only known at
@@ -3860,35 +3821,41 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
       separator for multi-value-inputs.
     :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
     """
-    if spec is None:
-        raise RuntimeError(n_("Query must be specified."))
-    val, errs = _mapping(val, argname, _convert=_convert,
-                         _ignore_warnings=_ignore_warnings)
+
+    val = _mapping(val, argname, **kwargs)
+
     fields_of_interest = []
     constraints = []
     order = []
+    errs = ValidationSummary()
     for field, validator in spec.items():
         # First the selection of fields of interest
-        selected, e = _bool(
-            val.get("qsel_{}".format(field), "False"), field, _convert=_convert,
-            _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
+        try:
+            selected = _bool(val.get("qsel_{}".format(
+                field), "False"), field, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+            selected = None
+            # TODO why not continue/break here?
+
         if selected:
             fields_of_interest.append(field)
 
         # Second the constraints (filters)
         # Get operator
-        operator, e = _enum_queryoperators_or_None(
-            val.get("qop_{}".format(field)), field, _convert=_convert,
-            _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
-        if e or not operator:
-            # Skip if invalid or empty operator
+        try:
+            # TODO do not allow None
+            operator = _enum_queryoperators_or_None(
+                val.get("qop_{}".format(field)), field, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
             continue
+
         if operator not in VALID_QUERY_OPERATORS[validator]:
-            errs.append((field,
-                         ValueError(n_("Invalid operator for this field."))))
+            errs.append(ValueError(
+                field, n_("Invalid operator for this field.")))
             continue
+
         if operator in NO_VALUE_OPERATORS:
             constraints.append((field, operator, None))
             continue
@@ -3905,171 +3872,210 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
             value = []
             for v in values:
                 # Validate every single value
-                vv, e = getattr(current_module,
-                                "_{}_or_None".format(validator))(
-                    v, field, _convert=_convert,
-                    _ignore_warnings=_ignore_warnings)
-                errs.extend(e)
-                if e or not vv:
+                # TODO do not allow None/falsy
+                try:
+                    vv = getattr(current_module, "_{}_or_None".format(
+                        validator))(v, field, **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
                     continue
+
                 if operator in (QueryOperators.containsall,
                                 QueryOperators.containssome,
                                 QueryOperators.containsnone):
-                    vv, e = _non_regex(vv, field, _convert=_convert,
-                                       _ignore_warnings=_ignore_warnings)
-                    errs.extend(e)
-                if e or not vv:
-                    continue
+                    try:
+                        vv = _non_regex(vv, field, **kwargs)
+                    except ValidationSummary as e:
+                        errs.extend(e)
+                        continue
+
+                assert vv  # TODO check this (i.e. the above todos)
                 value.append(vv)
+
             if not value:
                 continue
+
             if (operator in (QueryOperators.between, QueryOperators.outside)
                     and len(value) != 2):
-                errs.append((field, ValueError(n_("Two endpoints required."))))
+                errs.append(ValueError(field, n_("Two endpoints required.")))
                 continue
+
         elif operator in (QueryOperators.match, QueryOperators.unmatch):
-            value, e = _non_regex_or_None(value, field, _convert=_convert,
-                                          _ignore_warnings=_ignore_warnings)
-            errs.extend(e)
-            if e or not value:
+            # TODO remove all _or_None in this validator!
+            try:
+                value = _non_regex_or_None(value, field, **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
                 continue
         elif operator in (QueryOperators.regex, QueryOperators.notregex):
-            value, e = _regex_or_None(value, field, _convert=_convert,
-                                      _ignore_warnings=_ignore_warnings)
-            errs.extend(e)
-            if e or not value:
+            try:
+                value = _regex_or_None(value, field, **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
                 continue
         else:
-            value, e = getattr(current_module, "_{}_or_None".format(validator))(
-                value, field, _convert=_convert,
-                _ignore_warnings=_ignore_warnings)
-            errs.extend(e)
-            if e:
+            try:
+                value = getattr(current_module, "_{}_or_None".format(
+                    validator))(value, field, **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
                 continue
+
         if value is not None:
             constraints.append((field, operator, value))
+        else:
+            pass  # TODO raise error here?
+
     if not fields_of_interest and not allow_empty:
-        errs.append((argname, ValueError(n_("Selection may not be empty."))))
+        errs.append(ValueError(argname, n_("Selection may not be empty.")))
 
     # Third the ordering
     for postfix in ("primary", "secondary", "tertiary"):
         if "qord_" + postfix not in val:
             continue
-        value, e = _csv_identifier_or_None(
-            val["qord_" + postfix], "qord_" + postfix, _convert=_convert,
-            _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
+
+        try:
+            value = _csv_identifier_or_None(
+                val["qord_" + postfix], "qord_" + postfix, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+            continue
+
         tmp = "qord_" + postfix + "_ascending"
-        ascending, e = _bool(val.get(tmp, "True"), tmp, _convert=_convert,
-                             _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
-        if value:
-            order.append((value, ascending))
+        try:
+            ascending = _bool(val.get(tmp, "True"), tmp, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+            continue
+
+        assert value is not None  # TODO check this
+        order.append((value, ascending))
+
     if errs:
-        return None, errs
+        raise errs
+
     return Query(None, spec, fields_of_interest, constraints, order), errs
 
 
 # TODO ignore _ignore_warnings here too?
-@ _addvalidator
-def _query(val, argname=None, *, _convert=None, _ignore_warnings=False):
+@_add_typed_validator
+def _query(
+    val: Any, argname: str = None, **kwargs
+) -> Query:
     """Check query object for consistency.
 
     This is a tad weird, since the specification against which we check
     is also provided by the query object. If we use an actual RPC
     mechanism queries must be serialized and this gets more interesting.
-
-    :type val: object
-    :type argname: str or None
-    :type _convert: None
-    :param _convert: Ignored and only present for compatability reasons.
-    :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
     """
+
     if not isinstance(val, Query):
-        return None, [(argname, TypeError(n_("Not a Query.")))]
+        raise ValidationSummary(TypeError(argname, n_("Not a Query.")))
+
+    errs = ValidationSummary()
+
     # scope
-    _, errs = _identifier(val.scope, "scope", _convert=False,
-                          _ignore_warnings=_ignore_warnings)
+    # TODO why no convert here?
+    _identifier(val.scope, "scope", **{**kwargs, '_convert': False})
+
     if not val.scope.startswith("qview_"):
         errs.append(("scope", ValueError(n_("Must start with “qview_”."))))
+
     # spec
     for field, validator in val.spec.items():
-        _, e = _csv_identifier(field, "spec", _convert=False,
-                               _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
-        _, e = _printable_ascii(validator, "spec", _convert=False,
-                                _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
+        try:
+            _csv_identifier(field, "spec", **{**kwargs, '_convert': False})
+        except ValidationSummary as e:
+            errs.extend(e)
+
+        try:
+            _printable_ascii(validator, "spec", **
+                             {**kwargs, '_convert': False})
+        except ValidationSummary as e:
+            errs.extend(e)
+
     # fields_of_interest
     for field in val.fields_of_interest:
-        _, e = _csv_identifier(field, "fields_of_interest", _convert=False,
-                               _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
+        try:
+            _csv_identifier(field, "fields_of_interest", **
+                            {**kwargs, '_convert': False})
+        except ValidationSummary as e:
+            errs.extend(e)
     if not val.fields_of_interest:
-        errs.append(
-            ("fields_of_interest",
-             ValueError(
-                 n_("Mustn’t be empty."))))
+        errs.append(ValueError("fields_of_interest", n_("Mustn’t be empty.")))
+
     # constraints
     for idx, x in enumerate(val.constraints):
         try:
             field, operator, value = x
         except ValueError:
             msg = n_("Invalid constraint number %(index)s")
-            errs.append(("constraints", ValueError(msg, {"index": idx})))
+            errs.append(ValueError("constraints", msg, {"index": idx}))
             continue
-        field, e = _csv_identifier(field, "constraints", _convert=False,
-                                   _ignore_warnings=_ignore_warnings)
+
+        field, e = _csv_identifier(
+            field, "constraints", **{**kwargs, '_convert': False})
         errs.extend(e)
         if field not in val.spec:
             errs.append(("constraints", KeyError(n_("Invalid field."))))
             continue
-        operator, e = _enum_queryoperators(
-            operator, "constraints/{}".format(field), _convert=False,
-            _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
-        if operator not in VALID_QUERY_OPERATORS[val.spec[field]]:
-            errs.append(("constraints/{}".format(field),
-                         ValueError(n_("Invalid operator."))))
+
+        try:
+            operator = _enum_queryoperators(
+                operator, "constraints/{}".format(field), **{**kwargs, '_convert': False})
+        except ValidationSummary as e:
+            errs.extend(e)
             continue
+
+        if operator not in VALID_QUERY_OPERATORS[val.spec[field]]:
+            errs.append(ValueError("constraints/{}".format(field),
+                                   n_("Invalid operator.")))
+            continue
+
         if operator in NO_VALUE_OPERATORS:
             value = None
+
         elif operator in MULTI_VALUE_OPERATORS:
             validator = getattr(current_module, "_{}".format(val.spec[field]))
             for v in value:
-                v, e = validator(
-                    v, "constraints/{}".format(field), _convert=False,
-                    _ignore_warnings=_ignore_warnings)
-                errs.extend(e)
+                try:
+                    validator(v, "constraints/{}".format(field),
+                              **{**kwargs, '_convert': False})
+                except ValidationSummary as e:
+                    errs.extend(e)
         else:
-            _, e = getattr(current_module, "_{}".format(val.spec[field]))(
-                value, "constraints/{}".format(field), _convert=False,
-                _ignore_warnings=_ignore_warnings)
-            errs.extend(e)
+            try:
+                getattr(current_module, "_{}".format(val.spec[field]))(
+                    value, "constraints/{}".format(field), **{**kwargs, '_convert': False})
+            except ValidationSummary as e:
+                errs.extend(e)
+
     # order
     for idx, entry in enumerate(val.order):
-        entry, e = _iterable(entry, 'order', _convert=False,
-                             _ignore_warnings=_ignore_warnings)
-        errs.extend(e)
-        if e:
+        try:
+            entry = _iterable(entry, 'order', **{**kwargs, '_convert': False})
+        except ValidationSummary as e:
+            errs.extend(e)
             continue
+
         try:
             field, ascending = entry
         except ValueError:
             msg = n_("Invalid ordering condition number %(index)s")
             errs.append(('order', ValueError(msg, {'index': idx})))
         else:
-            _, e = _csv_identifier(field, "order", _convert=False,
-                                   _ignore_warnings=_ignore_warnings)
-            _, ee = _bool(ascending, "order", _convert=False,
-                          _ignore_warnings=_ignore_warnings)
-            errs.extend(e)
-            errs.extend(ee)
+            try:
+                _csv_identifier(field, "order", **
+                                {**kwargs, '_convert': False})
+                _bool(ascending, "order", **{**kwargs, '_convert': False})
+            except ValidationSummary as e:
+                errs.extend(e)
+
     if errs:
-        val = None
-    else:
-        val = copy.deepcopy(val)
-    return val, errs
+        raise errs
+
+    # TODO why deepcopy?
+    return copy.deepcopy(val)
 
 
 def _enum_validator_maker(anenum, name=None, internal=False):
