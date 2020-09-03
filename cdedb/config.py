@@ -37,9 +37,10 @@ try:
 except FileNotFoundError: # only catch git executable not found
     with Path(_repopath, '.git/HEAD').open() as head:
         _git_commit = head.read().strip()
-        if head.startswith('ref'):
-            with Path(_repopath, '.git', head[len('ref: '):]).open() as ref:
-                _git_commit = ref.read().strip()
+
+    if _git_commit.startswith('ref'):
+        with Path(_repopath, '.git', head[len('ref: '):]).open() as ref:
+            _git_commit = ref.read().strip()
 
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
