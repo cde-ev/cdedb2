@@ -30,7 +30,7 @@ from cdedb.common import (
     mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
     xsorted, RequestState, extract_roles, CdEDBObject, CdEDBObjectMap, CdEDBLog,
     DefaultReturnCode, DeletionBlockers, InfiniteEnum, get_hash, PathLike,
-    EVENT_SCHEMA_VERSION, CdEDBOptionalMap
+    EVENT_SCHEMA_VERSION, CdEDBOptionalMap, EVENT_FIELD_SPEC
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators, Query
@@ -1339,6 +1339,8 @@ class EventBackend(AbstractBackend):
                               wishes.
         * course_room_fields: An event that uses this field for course room
                               assignment.
+        * waitlist_fields:    An event_part that uses this field for waitlist
+                              management.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -1378,6 +1380,13 @@ class EventBackend(AbstractBackend):
         if course_room_fields:
             blockers["course_room_fields"] = [
                 e["id"] for e in course_room_fields]
+
+        waitlist_fields = self.sql_select(
+            rs, "event.event_parts", ("id",), (field_id,),
+            entity_key="waitlist_field")
+        if waitlist_fields:
+            blockers["waitlist_fields"] = [
+                e["id"] for e in waitlist_fields]
 
         return blockers
 
@@ -1436,6 +1445,13 @@ class EventBackend(AbstractBackend):
                         'course_room_field': None,
                     }
                     ret += self.sql_update(rs, "event.events", deletor)
+            if "waitlist_fields" in cascade:
+                for anid in blockers["waitlist_fields"]:
+                    deletor = {
+                        'id': anid,
+                        'waitlist_field': None,
+                    }
+                    ret += self.sql_update(rs, "event.event_parts", deletor)
             blockers = self._delete_event_field_blockers(rs, field_id)
 
         if not blockers:
@@ -1521,7 +1537,7 @@ class EventBackend(AbstractBackend):
         * If the key 'orgas' is present you have to pass the complete set
           of orga IDs, which will superseed the current list of orgas.
         * If the keys 'parts', 'fee_modifiers' or 'fields' are present,
-          the associated dict mapping the part, fee_mdoifier or field ids to
+          the associated dict mapping the part, fee_modifier or field ids to
           the respective data sets can contain an arbitrary number of entities,
           absent entities are not modified.
 
@@ -1548,6 +1564,7 @@ class EventBackend(AbstractBackend):
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['id'])
+
         ret = 1
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
@@ -1561,45 +1578,41 @@ class EventBackend(AbstractBackend):
                         rs, "event.field_definitions",
                         ("id", "event_id", "kind", "association"),
                         indirect_fields)
-                    correct_assoc = const.FieldAssociations.registration
-                    correct_datatype = const.FieldDatatypes.str
+                    legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['lodge']
                     if edata.get('lodge_field'):
                         lodge_data = unwrap(
                             [x for x in indirect_data
                              if x['id'] == edata['lodge_field']])
                         if (lodge_data['event_id'] != data['id']
-                                or lodge_data['kind'] != correct_datatype
-                                or lodge_data['association'] != correct_assoc):
+                                or lodge_data['kind'] not in legal_datatypes
+                                or lodge_data['association'] not in legal_assocs):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'lodge_field'})
-                    correct_datatype = const.FieldDatatypes.bool
+                    legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['camping_mat']
                     if edata.get('camping_mat_field'):
                         camping_mat_data = unwrap(
                             [x for x in indirect_data
                              if x['id'] == edata['camping_mat_field']])
                         if (camping_mat_data['event_id'] != data['id']
-                                or camping_mat_data['kind'] != correct_datatype
-                                or camping_mat_data[
-                                    'association'] != correct_assoc):
+                                or camping_mat_data['kind'] not in legal_datatypes
+                                or camping_mat_data['association'] not in legal_assocs):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'camping_mat_field'})
-                    correct_assoc = const.FieldAssociations.course
                     # TODO make this include lodgement datatype per Issue #71
-                    correct_datatypes = {const.FieldDatatypes.str}
+                    legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['course_room']
                     if edata.get('course_room_field'):
                         course_room_data = unwrap(
                             [x for x in indirect_data
                              if x['id'] == edata['course_room_field']])
                         if (course_room_data['event_id'] != data['id']
-                                or course_room_data[
-                                    'kind'] not in correct_datatypes
-                                or course_room_data[
-                                    'association'] != correct_assoc):
+                                or course_room_data['kind'] not in legal_datatypes
+                                or course_room_data['association'] not in legal_assocs):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'course_room_field'})
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])
+
             if 'orgas' in data:
                 if not self.is_admin(rs):
                     raise PrivilegeError(n_("Not privileged."))
@@ -1629,6 +1642,7 @@ class EventBackend(AbstractBackend):
                     for anid in mixed_existence_sorter(deleted):
                         self.event_log(rs, const.EventLogCodes.orga_removed,
                                        data['id'], persona_id=anid)
+
             if 'parts' in data:
                 parts = data['parts']
                 has_registrations = self.has_registrations(rs, data['id'])
@@ -1651,6 +1665,17 @@ class EventBackend(AbstractBackend):
                     new_part = copy.deepcopy(parts[x])
                     new_part['event_id'] = data['id']
                     tracks = new_part.pop('tracks', {})
+                    if new_part.get('waitlist_field'):
+                        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+                        waitlist_data = self.sql_select_one(
+                            rs, "event.field_definitions",
+                            ("id", "event_id", "kind", "association"),
+                            new_part['waitlist_field'])
+                        if (waitlist_data['event_id'] != data['id']
+                                or waitlist_data['kind'] not in legal_datatypes
+                                or waitlist_data['association'] not in legal_assocs):
+                            raise ValueError(n_("Unfit field for %(field)s"),
+                                             {'field': 'waitlist_field'})
                     new_id = self.sql_insert(rs, "event.event_parts", new_part)
                     ret *= new_id
                     ret *= self._set_tracks(rs, data['id'], new_id, tracks)
@@ -1664,6 +1689,19 @@ class EventBackend(AbstractBackend):
                     update = copy.deepcopy(parts[x])
                     update['id'] = x
                     tracks = update.pop('tracks', {})
+                    if update.get('waitlist_field'):
+                        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+                        waitlist_data = self.sql_select_one(
+                            rs, "event.field_definitions",
+                            ("id", "event_id", "kind", "association"),
+                            update['waitlist_field'])
+                        if not waitlist_data:
+                            raise ValueError(n_("Unknown field."))
+                        if (waitlist_data['event_id'] != data['id']
+                                or waitlist_data['kind'] not in legal_datatypes
+                                or waitlist_data['association'] not in legal_assocs):
+                            raise ValueError(n_("Unfit field for %(field)s"),
+                                             {'field': 'waitlist_field'})
                     ret *= self.sql_update(rs, "event.event_parts", update)
                     ret *= self._set_tracks(rs, data['id'], x, tracks)
                     self.event_log(
@@ -1677,6 +1715,7 @@ class EventBackend(AbstractBackend):
                         cascade = ("fee_modifiers", "course_tracks",
                                    "registration_parts")
                         self._delete_event_part(rs, part_id=x, cascade=cascade)
+
             if 'fields' in data:
                 fields = data['fields']
                 current = self.sql_select(
@@ -1743,17 +1782,17 @@ class EventBackend(AbstractBackend):
                         continue
                     if 'field_id' in fee_modifier:
                         field = event_fields.get(fee_modifier['field_id'])
+                        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
                         if not field:
                             raise ValueError(n_(
                                 "Fee Modifier linked to unknown field."))
-                        if not field['association'] == \
-                               const.FieldAssociations.registration:
+                        if field['kind'] not in legal_datatypes:
+                            raise ValueError(n_(
+                                "Fee Modifier linked to non-bool field."))
+                        if field['association'] not in legal_assocs:
                             raise ValueError(n_(
                                 "Fee Modifier linked to non-registration "
                                 "field."))
-                        if not field['kind'] == const.FieldDatatypes.bool:
-                            raise ValueError(n_(
-                                "Fee Modifier linked to non-bool field."))
                 # Do the actual work.
                 part_ids = {e['id'] for e in self.sql_select(
                     rs, "event.event_parts", ("id",), (data['id'],),
@@ -2349,6 +2388,7 @@ class EventBackend(AbstractBackend):
         event are returned and he himself must have the status 'participant'.
 
         :param persona_id: If passed restrict to registrations by this persona.
+        :returns: Mapping of registration ids to persona_ids.
         """
         event_id = affirm("id", event_id)
         persona_id = affirm("id_or_None", persona_id)
@@ -2433,6 +2473,88 @@ class EventBackend(AbstractBackend):
             event_ids, entity_key="event_id")
         ret = {(e["event_id"], e["persona_id"]): e["id"] for e in data}
 
+        return ret
+
+    @internal
+    @access("event")
+    def _get_waitlist(self, rs: RequestState, event_id: int,
+                      part_ids: Collection[int] = None
+                      ) -> Dict[int, Optional[List[int]]]:
+        """Compute the waitlist in order for the given parts.
+
+        :returns: Part id maping to None, if no waitlist ordering is defined
+            or a list of registration ids otherwise.
+        """
+        event_id = affirm("id", event_id)
+        part_ids = affirm_set("id", part_ids, allow_None=True)
+        with Atomizer(rs):
+            event = self.get_event(rs, event_id)
+            if part_ids is None:
+                part_ids = event['parts'].keys()
+            elif not part_ids <= event['parts'].keys():
+                raise ValueError(n_("Unknown part for the given event."))
+            ret = {}
+            waitlist = const.RegistrationPartStati.waitlist
+            query = ("SELECT id, fields FROM event.registrations"
+                     " WHERE event_id = %s")
+            fields_by_id = {
+                reg['id']: cast_fields(reg['fields'], event['fields'])
+                for reg in self.query_all(rs, query, (event_id,))}
+            for part_id in part_ids:
+                part = event['parts'][part_id]
+                if not part['waitlist_field']:
+                    ret[part_id] = None
+                    continue
+                field = event['fields'][part['waitlist_field']]
+                query = ("SELECT reg.id, rparts.status"
+                         " FROM event.registrations AS reg"
+                         " LEFT OUTER JOIN event.registration_parts AS rparts"
+                         " ON reg.id = rparts.registration_id"
+                         " WHERE rparts.part_id = %s AND rparts.status = %s")
+                data = self.query_all(rs, query, (part_id, waitlist))
+                ret[part_id] = xsorted(
+                    (reg['id'] for reg in data), key=lambda r_id:
+                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))
+            return ret
+
+    @access("event")
+    def get_waitlist(self, rs: RequestState, event_id: int,
+                     part_ids: Collection[int] = None
+                     ) -> Dict[int, Optional[List[int]]]:
+        """Public wrapper around _get_waitlist. Adds privilege check."""
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError(n_("Must be orga to access full waitlist."))
+        return self._get_waitlist(rs, event_id, part_ids)
+
+    @access("event")
+    def get_waitlist_position(self, rs: RequestState, event_id: int,
+                              part_ids: Collection[int] = None,
+                              persona_id: int = None
+                              ) -> Dict[int, Optional[int]]:
+        """Compute the waitlist position of a user for the given parts.
+
+        :returns: Mapping of part id to position on waitlist or None if user is
+            not on the waitlist in that part.
+        """
+        full_waitlist = self._get_waitlist(rs, event_id, part_ids)
+        if persona_id is None:
+            persona_id = rs.user.persona_id
+        if persona_id != rs.user.persona_id:
+            if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+                raise PrivilegeError(
+                    n_("Must be orga to access full waitlist."))
+        reg_ids = self.list_registrations(rs, event_id, persona_id)
+        if not reg_ids:
+            raise ValueError(n_("Not registered for this event."))
+        reg_id = unwrap(reg_ids.keys())
+        ret = {}
+        for part_id, waitlist in full_waitlist.items():
+            try:
+                # If `reg_id` is not in the list, a ValueError will be raised.
+                # Offset the index by one.
+                ret[part_id] = (waitlist or []).index(reg_id) + 1
+            except ValueError:
+                ret[part_id] = None
         return ret
 
     @access("event")
@@ -3871,6 +3993,9 @@ class EventBackend(AbstractBackend):
             for part in export_event['parts'].values():
                 del part['id']
                 del part['event_id']
+                for f in ('waitlist_field',):
+                    if part[f]:
+                        part[f] = event['fields'][part[f]]['field_name']
                 for track in part['tracks'].values():
                     del track['id']
                     del track['part_id']

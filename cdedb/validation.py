@@ -2356,12 +2356,13 @@ def _event(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-_EVENT_PART_COMMON_FIELDS = {
+_EVENT_PART_COMMON_FIELDS = lambda: {
     'title': _str,
     'shortname': _str,
     'part_begin': _date,
     'part_end': _date,
     'fee': _non_negative_decimal,
+    'waitlist_field': _id_or_None,
     'tracks': _mapping,
 }
 
@@ -2385,11 +2386,11 @@ def _event_part(val, argname=None, *, creation=False, _convert=True,
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = _EVENT_PART_COMMON_FIELDS
+        mandatory_fields = _EVENT_PART_COMMON_FIELDS()
         optional_fields = {}
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_PART_COMMON_FIELDS
+        optional_fields = _EVENT_PART_COMMON_FIELDS()
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)

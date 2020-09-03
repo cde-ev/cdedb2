@@ -70,6 +70,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56"),
+                    'waitlist_field': None,
                 },
                 -2: {
                     'tracks': {
@@ -84,6 +85,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'fee': decimal.Decimal("0.00"),
+                    'waitlist_field': None,
                 },
             },
             'fields': {
@@ -196,12 +198,14 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'fee': decimal.Decimal("123.40"),
+            'waitlist_field': None,
         }
         changed_part = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
+            'waitlist_field': None,
             'tracks': {
                 1002: {'title': "Second lecture v2",
                        'shortname': "Second v2",
@@ -1887,6 +1891,7 @@ class TestEventBackend(BackendTest):
         new_data['event.event_parts'][4000] = {
             'event_id': 1,
             'fee': decimal.Decimal('666.66'),
+            'waitlist_field': None,
             'id': 4000,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2097,6 +2102,7 @@ class TestEventBackend(BackendTest):
         stored_data['event.event_parts'][1001] = {
             'event_id': 1,
             'fee': decimal.Decimal('666.66'),
+            'waitlist_field': None,
             'id': 1001,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2684,6 +2690,9 @@ class TestEventBackend(BackendTest):
         data = {
             'id': event_id,
             'fields': {
+                5: {
+                    'kind': const.FieldDatatypes.bool,
+                   },
                 -1: {
                     'association': const.FieldAssociations.registration,
                     'field_name': 'solidarity',
@@ -2728,6 +2737,75 @@ class TestEventBackend(BackendTest):
         self.assertTrue(self.event.set_registration(self.key, data))
         self.assertEqual(self.event.calculate_fee(self.key, reg_id),
                          decimal.Decimal("553.49"))
+
+    @as_users("garcia")
+    def test_waitlist(self, user):
+        edata = {
+            'id': 1,
+            'fields': {
+                -1: {
+                    'field_name': "waitlist",
+                    'association': const.FieldAssociations.registration,
+                    'kind': const.FieldDatatypes.int,
+                    'entries': None,
+                },
+            },
+        }
+        self.event.set_event(self.key, edata)
+        edata = {
+            'id': 1,
+            'parts': {
+                1: {
+                    'waitlist_field': 1001,
+                },
+
+                2: {
+                    'waitlist_field': 1001,
+                },
+
+                3: {
+                    'waitlist_field': 1001,
+                },
+            }
+        }
+        self.event.set_event(self.key, edata)
+        regs = [
+            {
+                'id': anid,
+                'parts': {
+                    1: {
+                        'status': const.RegistrationPartStati.waitlist,
+                    },
+                    2: {
+                        'status': const.RegistrationPartStati.waitlist
+                    } if anid in {2, 3} else {},
+                    3: {
+                        'status': const.RegistrationPartStati.waitlist
+                    } if anid in {2, 3} else {},
+                },
+                'fields': {
+                    'waitlist': i,
+                },
+            }
+            for i, anid in enumerate((5, 4, 3, 2, 1))
+        ]
+        for rdata in regs:
+            self.event.set_registration(self.key, rdata)
+        self.assertEqual({1: [5, 4, 3, 2, 1], 2: [3, 2], 3: [3, 2]},
+                         self.event.get_waitlist(self.key, event_id=1))
+        self.assertEqual({1: 3, 2: 1, 3: 1},
+                         self.event.get_waitlist_position(self.key, event_id=1))
+        self.assertEqual({1: 4, 2: 2, 3: 2},
+                         self.event.get_waitlist_position(
+                             self.key, event_id=1, persona_id=5))
+        self.login(USER_DICT["emilia"])
+        self.event._get_waitlist(self.key, event_id=1)
+        self.assertEqual({1: 4, 2: 2, 3: 2},
+                         self.event.get_waitlist_position(
+                             self.key, event_id=1))
+        with self.assertRaises(PrivilegeError) as cm:
+            self.event.get_waitlist_position(
+                self.key, event_id=1, persona_id=1)
 
     @as_users("annika")
     def test_log(self, user):
@@ -2798,6 +2876,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56"),
+                    'waitlist_field': None,
                 },
                 -2: {
                     'tracks': {
@@ -2811,6 +2890,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'fee': decimal.Decimal("0.00"),
+                    'waitlist_field': None,
                 },
             },
             'fields': {
@@ -2868,6 +2948,7 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'fee': decimal.Decimal("123.40"),
+            'waitlist_field': None,
         }
         changed_part = {
             'title': "Second coming",

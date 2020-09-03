@@ -46,7 +46,7 @@ from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
     LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
-    InfiniteEnum, DefaultReturnCode
+    InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC
 )
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -379,9 +379,30 @@ class EventFrontend(AbstractUserFrontend):
         institution_ids = self.pasteventproxy.list_institutions(rs).keys()
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['event'])
-        return self.render(rs, "change_event",
-                           {'institutions': institutions,
-                            'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
+
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
+        lodge_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.registration
+            and field['kind'] == const.FieldDatatypes.str
+        ]
+        camping_mat_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.registration
+            and field['kind'] == const.FieldDatatypes.bool
+        ]
+        course_room_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.course
+            and field['kind'] == const.FieldDatatypes.str
+        ]
+        return self.render(rs, "change_event", {
+            'institutions': institutions,
+            'accounts': self.conf["EVENT_BANK_ACCOUNTS"],
+            'lodge_fields': lodge_fields,
+            'camping_mat_fields': camping_mat_fields,
+            'course_room_fields': course_room_fields})
 
     @access("event", modi={"POST"})
     @REQUESTdatadict(
@@ -543,11 +564,13 @@ class EventFrontend(AbstractUserFrontend):
         for track_id in referenced_tracks:
             referenced_parts.add(tracks[track_id]['part_id'])
 
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
         fee_modifier_fields = [
-            (field['id'], field['field_name'])
-            for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.registration
-            and field['kind'] == const.FieldDatatypes.bool
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] in legal_assocs
+            and field['kind'] in legal_datatypes
         ]
         fee_modifiers_by_part = {
             part_id: {
@@ -557,9 +580,16 @@ class EventFrontend(AbstractUserFrontend):
             }
             for part_id in rs.ambience['event']['parts']
         }
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+        waitlist_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] in legal_assocs
+            and field['kind'] in legal_datatypes
+        ]
         return self.render(rs, "part_summary", {
             'fee_modifier_fields': fee_modifier_fields,
             'fee_modifiers_by_part': fee_modifiers_by_part,
+            'waitlist_fields': waitlist_fields,
             'referenced_parts': referenced_parts,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,
@@ -594,20 +624,33 @@ class EventFrontend(AbstractUserFrontend):
             'part_begin': "date",
             'part_end': "date",
             'fee': "decimal",
+            'waitlist_field': "id_or_None",
         }
         params = tuple(("{}_{}".format(key, part_id), value)
                        for part_id in parts if part_id not in deletes
                        for key, value in spec.items())
 
         # noinspection PyRedundantParentheses
-        def part_constraint_maker(part_id: int) -> RequestConstraint:
+        def part_constraint_maker(part_id: int) -> List[RequestConstraint]:
             begin = f"part_begin_{part_id}"
             end = f"part_end_{part_id}"
             msg = n_("Must be later than part begin.")
-            return (lambda d: d[begin] <= d[end], (end, ValueError(msg)))
+            ret = [(lambda d: d[begin] <= d[end], (end, ValueError(msg)))]
 
-        constraints = tuple(part_constraint_maker(part_id)
-                            for part_id in parts if part_id not in deletes)
+            key = f"waitlist_field_{part_id}"
+            fields = rs.ambience['event']['fields']
+            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+            ret.append((
+                lambda d: d[key] is None or
+                          fields[d[key]]['association'] in legal_assocs
+                          and fields[d[key]]['kind'] in legal_datatypes,
+                (key, ValueError(n_(
+                    "Waitlist linked to non-fitting field.")))))
+            return ret
+
+        constraints = tuple(itertools.chain.from_iterable(
+            part_constraint_maker(part_id)
+            for part_id in parts if part_id not in deletes))
         data = request_extractor(rs, params, constraints)
         ret: Dict[int, CdEDBObject] = {
             part_id: {key: data["{}_{}".format(key, part_id)] for key in spec}
@@ -648,7 +691,7 @@ class EventFrontend(AbstractUserFrontend):
                     raise ValueError(n_("Registrations exist, no creation."))
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
-                constraints = (part_constraint_maker(-marker),)
+                constraints = part_constraint_maker(-marker)
                 data = request_extractor(rs, params, constraints)
                 ret[-marker] = {key: data["{}_-{}".format(key, marker)]
                                 for key in spec}
@@ -784,18 +827,15 @@ class EventFrontend(AbstractUserFrontend):
             if mod['id'] not in fee_modifier_deletes))
 
         def constraint_maker(part_id, fee_modifier_id):
-            key = "fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id)
+            key = f"fee_modifier_field_id_{part_id}_{fee_modifier_id}"
             fields = rs.ambience['event']['fields']
-            ret = [
-                (lambda d: fields[d[key]]['association'] ==
-                           const.FieldAssociations.registration,
-                 (key, ValueError(n_(
-                     "Fee Modifier linked to non-registration field.")))),
-                (lambda d: fields[d[key]]['kind'] == const.FieldDatatypes.bool,
-                 (key, ValueError(n_(
-                     "Fee Modifier linked to non-bool field."))))
-                ]
-            return ret
+            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
+            msg = n_("Fee Modifier linked to non-fitting field.")
+            return [(
+                lambda d: fields[d[key]]['association'] in legal_assocs
+                             and fields[d[key]]['kind'] in legal_datatypes,
+                (key, ValueError(msg))
+            )]
 
         constraints = tuple(itertools.chain.from_iterable(
             constraint_maker(mod['part_id'], mod['id'])
@@ -937,6 +977,9 @@ class EventFrontend(AbstractUserFrontend):
         for mod in rs.ambience['event']['fee_modifiers'].values():
             referenced.add(mod['field_id'])
             fee_modifiers.add(mod['field_id'])
+        for part_id, part in rs.ambience['event']['parts'].items():
+            if part['waitlist_field']:
+                referenced.add(part['waitlist_field'])
         return self.render(rs, "field_summary", {
             'referenced': referenced, 'fee_modifiers': fee_modifiers})
 
@@ -1127,6 +1170,7 @@ class EventFrontend(AbstractUserFrontend):
                 'part_begin': event_begin,
                 'part_end': event_end,
                 'fee': decimal.Decimal(0),
+                'waitlist_field': None,
                 'tracks': ({-1: new_track} if create_track else {}),
             }
         }
@@ -3281,10 +3325,13 @@ class EventFrontend(AbstractUserFrontend):
             (part_id, registration['parts'][part_id]) for part_id in part_order)
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, (const.QuestionnaireUsages.registration,)))
+        waitlist_position = self.eventproxy.get_waitlist_position(
+            rs, event_id, persona_id=rs.user.persona_id)
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'reference': reference,
+            'waitlist_position': waitlist_position,
         })
 
     @access("event")
@@ -3761,10 +3808,12 @@ class EventFrontend(AbstractUserFrontend):
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_event_fee_reference(persona, rs.ambience['event'])
         fee = self.eventproxy.calculate_fee(rs, registration_id)
+        waitlist_position = self.eventproxy.get_waitlist_position(
+            rs, event_id, persona_id=persona['id'])
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
-            'reference': reference,
+            'reference': reference, 'waitlist_position': waitlist_position
         })
 
     @access("event")
@@ -5361,7 +5410,7 @@ class EventFrontend(AbstractUserFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
         default_queries = self.conf["DEFAULT_QUERIES_REGISTRATION"](
-            rs.ambience['event'], spec)
+            rs.gettext, rs.ambience['event'], spec)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
