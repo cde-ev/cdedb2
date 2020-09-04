@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
 "POT-Creation-Date: 2020-09-01 00:09+0200\n"
-"PO-Revision-Date: 2020-08-07 16:52+0200\n"
+"PO-Revision-Date: 2020-09-04 16:19+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -2266,7 +2266,7 @@ msgstr "Die Abstimmung hat noch nicht begonnen."
 
 #: cdedb/backend/assembly.py:1010
 msgid "Could not determine secret."
-msgstr ""
+msgstr "Geheimnis konnte nicht bestimmt werden."
 
 #: cdedb/backend/assembly.py:1044 cdedb/backend/assembly.py:1081
 #: cdedb/backend/assembly.py:1040 cdedb/backend/assembly.py:1077
@@ -2672,7 +2672,7 @@ msgstr "Account ist nicht im Veranstaltungsbereich."
 
 #: cdedb/backend/core.py:1647
 msgid "May not provide more than one input."
-msgstr ""
+msgstr "Es können nicht mehrere Eingaben gleichzeitig gemacht werden."
 
 #: cdedb/backend/core.py:1690 cdedb/backend/core.py:1650
 msgid "Not a CdE user."
@@ -3142,7 +3142,7 @@ msgstr "Kann Versammlung mit offenen Abstimmungen nicht abschließen."
 
 #: cdedb/frontend/assembly.py:499
 msgid "Grouping ballots by status failed."
-msgstr ""
+msgstr "Gruppierung der Abstimmungen nach Status fehlgeschlagen."
 
 #: cdedb/frontend/assembly.py:571 cdedb/frontend/assembly.py:574
 msgid "File not found."
@@ -3502,12 +3502,12 @@ msgstr "Validierung fehlgeschlagen."
 
 #: cdedb/frontend/common.py:998
 msgid "Given method is not callable."
-msgstr ""
+msgstr "Die fragliche Methode ist nicht aufrufbar."
 
 #: cdedb/frontend/common.py:1027
 #, python-format
 msgid "Default values cannot be overridden: %(keys)s"
-msgstr ""
+msgstr "Standardwerte können nicht überschrieben werden: %(keys)s"
 
 #: cdedb/frontend/common.py:1080 cdedb/frontend/common.py:1090
 msgid "Ambiguous input."
@@ -3515,7 +3515,7 @@ msgstr "Uneindeutige Eingabe."
 
 #: cdedb/frontend/common.py:1096
 msgid "Invalid datatype read from file."
-msgstr ""
+msgstr "Ungültiger Datentyp aus Datei eingelesen."
 
 #: cdedb/frontend/common.py:1103
 msgid "Invalid input type."
@@ -3523,11 +3523,11 @@ msgstr "Ungültiger Eingabetyp."
 
 #: cdedb/frontend/common.py:1142
 msgid "Cannot download query result without fields of interest."
-msgstr ""
+msgstr "Download eines Abfrageergebnis nicht möglich ohne selektierte Ausgabefelder."
 
 #: cdedb/frontend/common.py:1157
 msgid "Unknown download kind {kind}."
-msgstr ""
+msgstr "Unbekannte Downloadart {kind}."
 
 #: cdedb/frontend/common.py:1181 cdedb/frontend/common.py:1148
 msgid "The database currently undergoes maintenance and is unavailable."
@@ -3902,7 +3902,7 @@ msgstr "Nicht-existenter Veranstaltungsteil."
 
 #: cdedb/frontend/event.py:344
 msgid "Only one part id allowed."
-msgstr ""
+msgstr "Lediglich die Id eines Teils ist zulässig."
 
 #: cdedb/frontend/event.py:438 cdedb/frontend/event.py:461
 msgid "Mustn't be empty."
@@ -4302,7 +4302,7 @@ msgstr "Keine Teilnehmer zur Bearbeitung ausgewählt."
 
 #: cdedb/frontend/event.py:4217
 msgid "Invalid key. Expected 'course_id' or 'event_id"
-msgstr ""
+msgstr "Ungültiger Schlüssel. Mögliche Werte sind 'course_id' und 'event_id'."
 
 #: cdedb/frontend/event.py:4287 cdedb/frontend/event.py:4269
 msgid "Mixed lodgement with non-mixing participants."
@@ -6439,7 +6439,7 @@ msgstr "zu dieser Seite"
 
 #: cdedb/frontend/templates/web/util.tmpl:221
 msgid "Malformed error."
-msgstr ""
+msgstr "Nicht-wohlgeformter Fehler."
 
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:178
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:25
