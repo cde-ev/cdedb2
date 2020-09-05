@@ -21,7 +21,9 @@ import pytz
 from typing import Mapping, Any
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import n_, deduct_years, now, PathLike, EntitySorter, xsorted
+from cdedb.common import (
+    n_, deduct_years, now, PathLike, EntitySorter, xsorted, CdEDBObject
+)
 import cdedb.database.constants as const
 
 _LOGGER = logging.getLogger(__name__)
@@ -167,13 +169,13 @@ def generate_event_registration_default_queries(gettext, event, spec):
             default_sort),
     }
 
-    def get_waitlist_order(part) -> str:
+    def get_waitlist_order(part: CdEDBObject) -> str:
         if part['waitlist_field']:
             field = event['fields'][part['waitlist_field']]
             return f"reg_fields.xfield_{field['field_name']}"
         return "ctime.creation_time"
 
-    def waitlist_query_name(part) -> str:
+    def waitlist_query_name(part: CdEDBObject) -> str:
         ret = gettext("17_query_event_registration_waitlist")
         if len(event['parts']) > 1:
             ret += f" {part['shortname']}"

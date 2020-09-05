@@ -635,6 +635,7 @@ class EventFrontend(AbstractUserFrontend):
             begin = f"part_begin_{part_id}"
             end = f"part_end_{part_id}"
             msg = n_("Must be later than part begin.")
+            ret: List[RequestConstraint]
             ret = [(lambda d: d[begin] <= d[end], (end, ValueError(msg)))]
 
             key = f"waitlist_field_{part_id}"
@@ -648,7 +649,7 @@ class EventFrontend(AbstractUserFrontend):
                     "Waitlist linked to non-fitting field.")))))
             return ret
 
-        constraints = tuple(itertools.chain.from_iterable(
+        constraints = list(itertools.chain.from_iterable(
             part_constraint_maker(part_id)
             for part_id in parts if part_id not in deletes))
         data = request_extractor(rs, params, constraints)
@@ -658,17 +659,17 @@ class EventFrontend(AbstractUserFrontend):
         }
 
         def track_params(part_id: int, track_id: int
-                         ) -> Iterable[Tuple[str, str]]:
+                         ) -> List[Tuple[str, str]]:
             """
             Helper function to create the parameter extraction configuration
             for the data of a single track.
             """
-            return (
+            return [
                 ("track_{}_{}_{}".format(k, part_id, track_id), t)
                 for k, t in (('title', 'str'), ('shortname', 'str'),
                              ('num_choices', 'non_negative_int'),
                              ('min_choices', 'non_negative_int'),
-                             ('sortkey', 'int')))
+                             ('sortkey', 'int'))]
 
         def track_excavator(req_data: CdEDBObject, part_id: int, track_id: int
                             ) -> CdEDBObject:
@@ -722,13 +723,14 @@ class EventFrontend(AbstractUserFrontend):
             if track_id not in track_deletes))
 
         # noinspection PyRedundantParentheses
-        def track_constraint_maker(part_id: int, track_id: int) -> RequestConstraint:
+        def track_constraint_maker(part_id: int, track_id: int
+                                   ) -> RequestConstraint:
             min = "track_min_choices_{}_{}".format(part_id, track_id)
             num = "track_num_choices_{}_{}".format(part_id, track_id)
             msg = n_("Must be less or equal than total Course Choices.")
             return (lambda d: d[min] <= d[num], (min, ValueError(msg)))
 
-        constraints = tuple(
+        constraints = list(
             track_constraint_maker(part_id, track_id)
             for part_id, part in parts.items()
             for track_id in part['tracks']
@@ -752,7 +754,7 @@ class EventFrontend(AbstractUserFrontend):
                         raise ValueError(
                             n_("Registrations exist, no creation."))
                     params = tuple(track_params(part_id, -marker))
-                    constraints = (track_constraint_maker(part_id, -marker),)
+                    constraints = [track_constraint_maker(part_id, -marker)]
                     newtrack = track_excavator(
                         request_extractor(rs, params, constraints),
                         part_id, -marker)
@@ -773,7 +775,8 @@ class EventFrontend(AbstractUserFrontend):
                       "bool"),)))
                 if will_create:
                     params = tuple(track_params(-new_part_id, -marker))
-                    constraints = (track_constraint_maker(-new_part_id, -marker),)
+                    constraints = [
+                        track_constraint_maker(-new_part_id, -marker)]
                     newtrack = track_excavator(
                         request_extractor(rs, params, constraints),
                         -new_part_id, -marker)
@@ -783,18 +786,20 @@ class EventFrontend(AbstractUserFrontend):
                 marker += 1
             rs.values['track_create_last_index'][-new_part_id] = marker - 1
 
-        def fee_modifier_params(part_id, fee_modifier_id):
+        def fee_modifier_params(part_id: int, fee_modifier_id: int
+                                ) -> List[Tuple[str, str]]:
             """
             Helper function to create the parameter extraction configuration
             for the data of a single fee modifier.
             """
-            return (
+            return [
                 ("fee_modifier_{}_{}_{}".format(k, part_id, fee_modifier_id), t)
                 for k, t in (('modifier_name', 'restrictive_identifier'),
                              ('amount', 'decimal'),
-                             ('field_id', 'id')))
+                             ('field_id', 'id'))]
 
-        def fee_modifier_excavator(req_data, part_id, fee_modifier_id):
+        def fee_modifier_excavator(req_data: CdEDBObject, part_id: int,
+                                   fee_modifier_id: int) -> CdEDBObject:
             """
             Helper function to create a single fee modifier's data dict from the
             extracted request data.
@@ -826,18 +831,19 @@ class EventFrontend(AbstractUserFrontend):
             for mod in fee_modifiers.values()
             if mod['id'] not in fee_modifier_deletes))
 
-        def constraint_maker(part_id, fee_modifier_id):
+        def constraint_maker(part_id: int, fee_modifier_id: int
+                             ) -> List[RequestConstraint]:
             key = f"fee_modifier_field_id_{part_id}_{fee_modifier_id}"
             fields = rs.ambience['event']['fields']
             legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
             msg = n_("Fee Modifier linked to non-fitting field.")
             return [(
-                lambda d: fields[d[key]]['association'] in legal_assocs
-                             and fields[d[key]]['kind'] in legal_datatypes,
+                lambda d: (fields[d[key]]['association'] in legal_assocs
+                           and fields[d[key]]['kind'] in legal_datatypes),
                 (key, ValueError(msg))
             )]
 
-        constraints = tuple(itertools.chain.from_iterable(
+        constraints = list(itertools.chain.from_iterable(
             constraint_maker(mod['part_id'], mod['id'])
             for mod in fee_modifiers.values()
             if mod['id'] not in fee_modifier_deletes))

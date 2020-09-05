@@ -682,7 +682,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         time_stop = affirm_validation("datetime_or_None", time_stop)
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        additional_columns: Collection[str] = additional_columns or tuple()
+        additional_columns: List[str] = list(additional_columns or [])
 
         # First, define the common WHERE filter clauses
         conditions = []
@@ -714,7 +714,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         # Special column for core.changelog
         if table == "core.changelog":
-            additional_columns += ("reviewed_by", "generation")
+            additional_columns += ["reviewed_by", "generation"]
             if reviewed_by:
                 conditions.append("reviewed_by = %s")
                 params.append(reviewed_by)
