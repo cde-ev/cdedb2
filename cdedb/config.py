@@ -18,7 +18,7 @@ import pathlib
 import subprocess
 import pytz
 
-from typing import Mapping, Any
+from typing import Any, Callable, Dict, Iterable, Mapping
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
 from cdedb.common import (
@@ -63,7 +63,9 @@ _BASIC_DEFAULTS = {
 }
 
 
-def generate_event_registration_default_queries(gettext, event, spec):
+def generate_event_registration_default_queries(
+        gettext: Callable[[str], str], event: CdEDBObject,
+        spec: Dict[str, str]) -> Dict[str, Query]:
     """
     Generate default queries for registration_query.
 
@@ -583,7 +585,7 @@ class BasicConfig(Mapping[str, Any]):
     """
 
     # noinspection PyUnresolvedReferences
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             import cdedb.localconfig as config_mod
             config = {
@@ -597,13 +599,14 @@ class BasicConfig(Mapping[str, Any]):
             config, _BASIC_DEFAULTS
         )
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    def __iter__(self):
+    # TODO: Why is this wrong?
+    def __iter__(self) -> Iterable[str]:  # type: ignore
         return self._configchain.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._configchain.__len__()
 
 
@@ -695,11 +698,12 @@ class SecretsConfig(Mapping[str, Any]):
             primaryconf, secondaryconf, _SECRECTS_DEFAULTS
         )
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    def __iter__(self):
+    # TODO: Why is this wrong?
+    def __iter__(self) -> Iterable[str]:  # type: ignore
         return self._configchain.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._configchain.__len__()

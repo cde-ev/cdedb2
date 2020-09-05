@@ -1,7 +1,7 @@
 import enum
 from collections import OrderedDict
 from typing import (
-    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, Sequence
+    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, NoReturn
 )
 
 from cdedb.common import (
@@ -18,7 +18,7 @@ MIPolMap = Dict[int, MIPol]
 
 
 class BackendContainer:
-    def __init__(self, *, core=None, event=None, assembly=None):
+    def __init__(self, *, core=None, event=None, assembly=None):  # type: ignore
         self.core = core
         self.event = event
         self.assembly = assembly
@@ -97,7 +97,7 @@ class GeneralMailinglist:
       hierarchical way for trivial mailinglist types.
 
     """
-    def __init__(self):
+    def __init__(self) -> None:
         raise RuntimeError()
 
     sortkey: MailinglistGroup = MailinglistGroup.other
@@ -159,12 +159,12 @@ class GeneralMailinglist:
     role_map = OrderedDict()
 
     @classmethod
-    def moderator_admin_views(cls):
+    def moderator_admin_views(cls) -> Set[str]:
         return {"ml_mod_" + admin.replace("_admin", "")
                 for admin in cls.relevant_admins} | {"ml_mod"}
 
     @classmethod
-    def management_admin_views(cls):
+    def management_admin_views(cls) -> Set[str]:
         return {"ml_mgmt_" + admin.replace("_admin", "")
                 for admin in cls.relevant_admins} | {"ml_mgmt"}
 

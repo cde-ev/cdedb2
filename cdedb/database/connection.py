@@ -9,12 +9,17 @@ This should be the only module which makes subsistantial use of psycopg.
 """
 
 import logging
+from types import TracebackType
+from typing import Any, Collection, Mapping, NoReturn, Optional, Type
 
 import psycopg2
 import psycopg2.extras
 import psycopg2.extensions
 
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
+
+from cdedb.config import SecretsConfig
+from cdedb.common import Role, RequestState
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, None)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, None)
@@ -27,15 +32,12 @@ def n_(x: str) -> str:
     return x
 
 
-def _create_connection(dbname, dbuser, password, port,
-                       isolation_level=SERIALIZABLE):
+def _create_connection(dbname: str, dbuser: str, password: str, port: int,
+                       isolation_level: Optional[int] = SERIALIZABLE
+                       ) -> "IrradiatedConnection":
     """This creates a wrapper around :py:class:`psycopg2.extensions.connection`
     and correctly initializes the database connection.
 
-    :type dbname: str
-    :type dbuser: str
-    :type password: str
-    :type port: int
     :param isolation_level: Isolation level of database connection, a
         constant coming from :py:mod:`psycopg2.extensions`. This should be used
         very sparingly!
@@ -54,8 +56,10 @@ def _create_connection(dbname, dbuser, password, port,
     return conn
 
 
-def connection_pool_factory(dbname, roles, secrets, port,
-                            isolation_level=SERIALIZABLE):
+def connection_pool_factory(dbname: str, roles: Collection[Role],
+                            secrets: SecretsConfig, port: int,
+                            isolation_level: Optional[int] = SERIALIZABLE
+                            ) -> Mapping[str, "IrradiatedConnection"]:
     """This returns a dict-like object which has database roles as keys and
     database connections as values (which are created on the fly).
 
@@ -82,13 +86,13 @@ def connection_pool_factory(dbname, roles, secrets, port,
                 :py:class:`IrradiatedConnection`}
     """
 
-    class InstantConnectionPool:
+    class InstantConnectionPool(Mapping[Role, "IrradiatedConnection"]):
         """Dict-like for providing database connections."""
 
-        def __init__(self, roles):
+        def __init__(self, roles: Collection[Role]):
             self.roles = roles
 
-        def __getitem__(self, role):
+        def __getitem__(self, role: Role) -> "IrradiatedConnection":
             if role not in self.roles:
                 raise ValueError(n_("role %(role)s not available"),
                                  {'role': role})
@@ -96,17 +100,19 @@ def connection_pool_factory(dbname, roles, secrets, port,
                 dbname, role, secrets["CDB_DATABASE_ROLES"][role], port,
                 isolation_level)
 
-        def __delitem__(self, key):
+        def __delitem__(self, key: Any) -> NoReturn:
             raise NotImplementedError(n_("Not available for instant pool"))
 
-        def __len__(self):
+        def __len__(self) -> NoReturn:
             raise NotImplementedError(n_("Not available for instant pool"))
 
-        def __setitem__(self, key, val):
+        def __setitem__(self, key: Any, val: Any) -> NoReturn:
             raise NotImplementedError(n_("Not available for instant pool"))
 
-    _LOGGER.debug("Initialised instant connection pool for roles {}".format(
-        roles))
+        def __iter__(self) -> NoReturn:
+            raise NotImplementedError(n_("Not available for instant pool"))
+
+    _LOGGER.debug(f"Initialised instant connection pool for roles {roles}")
     return InstantConnectionPool(roles)
 
 
@@ -144,17 +150,16 @@ class Atomizer:
     about them, however they are still a bad idea.
     """
 
-    def __init__(self, rs):
-        """
-        :type rs: :py:class:`cdedb.common.RequestState`
-        """
+    def __init__(self, rs: RequestState):
         self.rs = rs
 
-    def __enter__(self):
+    def __enter__(self) -> "IrradiatedConnection":
         self.rs._conn.contaminate()
         return self.rs._conn.__enter__()
 
-    def __exit__(self, atype, value, tb):
+    def __exit__(self, atype: Optional[Type[Exception]],
+                 value: Optional[Exception],
+                 tb: Optional[TracebackType]) -> bool:
         self.rs._conn.decontaminate()
         return self.rs._conn.__exit__(atype, value, tb)
 
@@ -170,15 +175,15 @@ class IrradiatedConnection(psycopg2.extensions.connection):
     See :py:class:`Atomizer` for the documentation.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._radiation_level = 0
         # keep a copy of any exception we encounter
-        self._saved_etype = None
-        self._saved_evalue = None
-        self._saved_tb = None
+        self._saved_etype: Optional[Type[Exception]] = None
+        self._saved_evalue: Optional[Exception] = None
+        self._saved_tb: Optional[TracebackType] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "IrradiatedConnection":
         if self._radiation_level:
             return self
         else:
@@ -190,13 +195,15 @@ class IrradiatedConnection(psycopg2.extensions.connection):
             self._saved_tb = None
             return super().__enter__()
 
-    def __exit__(self, etype, evalue, tb):
+    def __exit__(self, etype: Optional[Type[Exception]],
+                 evalue: Optional[Exception],
+                 tb: Optional[TracebackType]) -> bool:
         if self._radiation_level:
             # grab any exception
             self._saved_etype = etype or self._saved_etype
             self._saved_evalue = evalue or self._saved_evalue
             self._saved_tb = tb or self._saved_tb
-            return None
+            return False
         else:
             if not etype and self._saved_etype:
                 # we encountered an exception but it was suppressed
@@ -210,20 +217,17 @@ class IrradiatedConnection(psycopg2.extensions.connection):
                 raise RuntimeError(n_("Suppressed exception detected"))
             return super().__exit__(etype, evalue, tb)
 
-    def contaminate(self):
+    def contaminate(self) -> None:
         """Increase recursion by one."""
         self._radiation_level += 1
 
-    def decontaminate(self):
+    def decontaminate(self) -> None:
         """Reduce recursion by one."""
         if self._radiation_level <= 0:
             raise RuntimeError(n_("No contamination!"))
         self._radiation_level -= 1
 
     @property
-    def is_contaminated(self):
-        """Test for usage af an Atomizer higher up the in the stack.
-
-        :rtype: bool
-        """
+    def is_contaminated(self) -> bool:
+        """Test for usage af an Atomizer higher up the in the stack."""
         return bool(self._radiation_level)

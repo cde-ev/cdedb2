@@ -33,7 +33,7 @@ from pathlib import Path
 from secrets import token_urlsafe
 
 from typing import (
-    Set, Dict, Tuple, Union, Callable, Collection, Optional
+    Any, Set, Dict, Tuple, Union, Callable, Collection, Optional
 )
 from typing_extensions import Protocol
 
@@ -57,7 +57,7 @@ class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
     realm = "assembly"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.attachment_base_path: Path = (
                 self.conf['STORAGE_DIR'] / "assembly_attachment")

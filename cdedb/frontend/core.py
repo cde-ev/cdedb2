@@ -816,7 +816,7 @@ class CoreFrontend(AbstractFrontend):
             data = tuple(xsorted(
                 data, key=lambda e: e['id'])[:num_preview_personas])
 
-        def name(x):
+        def name(x: CdEDBObject) -> str:
             return f"{x['given_names']} {x['family_name']}"
 
         # Check if name occurs multiple times to add email address in this case
@@ -909,8 +909,8 @@ class CoreFrontend(AbstractFrontend):
         elif is_search:
             # mangle the input, so we can prefill the form
             query_input = mangle_query_input(rs, spec)
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -945,11 +945,10 @@ class CoreFrontend(AbstractFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_archived_persona'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query", spec=spec,
-                          allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -963,7 +962,7 @@ class CoreFrontend(AbstractFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = "qview_archived_persona"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -1971,7 +1970,7 @@ class CoreFrontend(AbstractFrontend):
                      {
                          'genesis_case_id': self.encode_parameter(
                              "core/genesis_verify", "genesis_case_id",
-                             case_id, persona_id=None),
+                             str(case_id), persona_id=None),
                          'given_names': data['given_names'],
                          'family_name': data['family_name'],
                      })

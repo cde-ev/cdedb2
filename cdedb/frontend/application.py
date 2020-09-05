@@ -28,7 +28,7 @@ from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
     n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, make_proxy,
-    ADMIN_VIEWS_COOKIE_NAME, make_root_logger, PathLike
+    ADMIN_VIEWS_COOKIE_NAME, make_root_logger, PathLike, CdEDBObject
 )
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
@@ -119,7 +119,7 @@ class Application(BaseApp):
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
-            def _cdedblink(endpoint, params=None):
+            def _cdedblink(endpoint: str, params: CdEDBObject = None) -> str:
                 return urls.build(endpoint, params or {})
 
             begin = now()

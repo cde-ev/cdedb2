@@ -34,7 +34,7 @@ import tempfile
 import threading
 import urllib.parse
 import decimal
-from enum import Enum, EnumMeta
+import enum
 from secrets import token_hex
 
 import markdown
@@ -52,7 +52,7 @@ import werkzeug.wrappers
 from typing import (
     Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
     Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO,
+    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO, Type
 )
 from typing_extensions import Protocol
 
@@ -63,7 +63,7 @@ from cdedb.common import (
     encode_parameter, decode_parameter, make_proxy, EntitySorter,
     REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap,
     CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User,
-    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS
+    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, _tdelta
 )
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -129,8 +129,10 @@ class BaseApp(metaclass=abc.ABCMeta):
                 secrets["URL_PARAMETER_SALT"], target, name, param,
                 persona_id))
 
-        def local_encode(target, name, param, persona_id,
-                         timeout=self.conf["PARAMETER_TIMEOUT"]):
+        def local_encode(
+                target: str, name: str, param: str, persona_id: Optional[int],
+                timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"]
+        ) -> str:
             return encode_parameter(secrets["URL_PARAMETER_SALT"], target, name,
                                     param, persona_id, timeout)
 
@@ -214,7 +216,7 @@ def safe_filter(val: None) -> None: ...
 def safe_filter(val: str) -> jinja2.Markup: ...
 
 
-def safe_filter(val):
+def safe_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """Custom jinja filter to mark a string as safe.
 
     This prevents autoescaping of this entity. To be used for dynamically
@@ -276,14 +278,17 @@ def datetime_filter(val: Optional[datetime.datetime],
 
 
 @overload
-def money_filter(val: None) -> None: ...
+def money_filter(val: None, currency: str = "EUR", lang: str = "de"
+                 ) -> None: ...
 
 
 @overload
-def money_filter(val: decimal.Decimal, currency: str, land: str) -> str: ...
+def money_filter(val: decimal.Decimal, currency: str = "EUR", lang: str = "de"
+                 ) -> str: ...
 
 
-def money_filter(val, currency="EUR", lang="de"):
+def money_filter(val: Optional[decimal.Decimal], currency: str = "EUR",
+                 lang: str = "de") -> Optional[str]:
     """Custom jinja filter to format ``decimal.Decimal`` objects.
 
     This is for values representing monetary amounts.
@@ -302,7 +307,7 @@ def decimal_filter(val: None, lang: str) -> None: ...
 def decimal_filter(val: float, lang: str) -> str: ...
 
 
-def decimal_filter(val, lang):
+def decimal_filter(val: Optional[float], lang: str) -> Optional[str]:
     """Cutom jinja filter to format floating point numbers."""
     if val is None:
         return None
@@ -318,7 +323,7 @@ def cdedbid_filter(val: None) -> None: ...
 def cdedbid_filter(val: int) -> str: ...
 
 
-def cdedbid_filter(val):
+def cdedbid_filter(val: Optional[int]) -> Optional[str]:
     """Custom jinja filter to format persona ids with a check digit. Every user
     visible id should be formatted with this filter. The check digit is
     one of the letters between 'A' and 'K' to make a clear distinction
@@ -337,7 +342,7 @@ def iban_filter(val: None) -> None: ...
 def iban_filter(val: str) -> str: ...
 
 
-def iban_filter(val):
+def iban_filter(val: Optional[str]) -> Optional[str]:
     """Custom jinja filter for displaying IBANs in nice to read blocks."""
     if val is None:
         return None
@@ -354,7 +359,7 @@ def escape_filter(val: None) -> None: ...
 def escape_filter(val: str) -> jinja2.Markup: ...
 
 
-def escape_filter(val):
+def escape_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """Custom jinja filter to reconcile escaping with the finalize method
     (which suppresses all ``None`` values and thus mustn't be converted to
     strings first).
@@ -387,7 +392,7 @@ def tex_escape_filter(val: None) -> None: ...
 def tex_escape_filter(val: str) -> str: ...
 
 
-def tex_escape_filter(val):
+def tex_escape_filter(val: Optional[str]) -> Optional[str]:
     """Custom jinja filter for escaping LaTeX-relevant charakters."""
     if val is None:
         return None
@@ -438,16 +443,14 @@ def json_filter(val: Any) -> str:
 
 
 @overload
-def enum_filter(val: None, enum: Any) -> None:
-    pass
+def enum_filter(val: None, enum: Type[enum.Enum]) -> None: ...
 
 
 @overload
-def enum_filter(val: int, enum: Enum) -> str:
-    pass
+def enum_filter(val: int, enum: Type[enum.Enum]) -> str: ...
 
 
-def enum_filter(val, enum):
+def enum_filter(val: Optional[int], enum: Type[enum.Enum]) -> Optional[str]:
     """Custom jinja filter to convert enums to something printable.
 
     This exists mainly because of the possibility of None values.
@@ -458,17 +461,17 @@ def enum_filter(val, enum):
 
 
 @overload
-def genus_filter(val: None, female: Any, male: Any, unknown: Any) -> None:
-    pass
+def genus_filter(val: None, female: str, male: str, unknown: Optional[str]
+                 ) -> None: ...
 
 
 @overload
 def genus_filter(val: int, female: str, male: str,
-                 unknown: Optional[str]) -> Optional[str]:
-    pass
+                 unknown: Optional[str]) -> Optional[str]: ...
 
 
-def genus_filter(val, female, male, unknown=None):
+def genus_filter(val: Optional[int], female: str, male: str,
+                 unknown: str = None) -> Optional[str]:
     """Custom jinja filter to select gendered form of a string."""
     if val is None:
         return None
@@ -522,17 +525,16 @@ def querytoparams_filter(val: query_mod.Query) -> CdEDBObject:
 
 
 @overload
-def linebreaks_filter(val: None, replacements: Any) -> None:
-    pass
+def linebreaks_filter(val: None, replacement: str) -> None: ...
 
 
 @overload
 def linebreaks_filter(val: Union[str, jinja2.Markup],
-                      replacement: str) -> jinja2.Markup:
-    pass
+                      replacement: str) -> jinja2.Markup: ...
 
 
-def linebreaks_filter(val, replacement="<br>"):
+def linebreaks_filter(val: Union[None, str, jinja2.Markup],
+                      replacement: str = "<br>") -> Optional[jinja2.Markup]:
     """Custom jinja filter to convert line breaks to <br>.
 
     This filter escapes the input value (if required), replaces the linebreaks
@@ -590,16 +592,14 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
 
 
 @overload
-def bleach_filter(val: None) -> None:
-    pass
+def bleach_filter(val: None) -> None: ...
 
 
 @overload
-def bleach_filter(val: str) -> jinja2.Markup:
-    pass
+def bleach_filter(val: str) -> jinja2.Markup: ...
 
 
-def bleach_filter(val):
+def bleach_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """Custom jinja filter to convert sanitize html with bleach."""
     if val is None:
         return None
@@ -657,16 +657,14 @@ def get_markdown_parser() -> markdown.Markdown:
 
 
 @overload
-def md_filter(val: None) -> None:
-    pass
+def md_filter(val: None) -> None: ...
 
 
 @overload
-def md_filter(val: str) -> jinja2.Markup:
-    pass
+def md_filter(val: str) -> jinja2.Markup: ...
 
 
-def md_filter(val):
+def md_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """Custom jinja filter to convert markdown to html."""
     if val is None:
         return None
@@ -730,7 +728,7 @@ def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def enum_entries_filter(enum: EnumMeta, processing: Callable[[Any], str] = None,
+def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = None,
                         raw: bool = False,
                         prefix: str = "") -> List[Tuple[int, str]]:
     """
@@ -957,7 +955,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params = {
                 'persona_id': persona_id,
                 'confirm_id': self.encode_parameter(
-                    "core/show_user", "confirm_id", persona_id,
+                    "core/show_user", "confirm_id", str(persona_id),
                     persona_id=user.persona_id, timeout=None)}
             if quote_me:
                 params['quote_me'] = True
@@ -1355,7 +1353,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         somewhat lengthy and only necessary because of our paranoia.
         """
         cid = self.encode_parameter(
-            "core/show_user", "confirm_id", persona_id,
+            "core/show_user", "confirm_id", str(persona_id),
             persona_id=rs.user.persona_id, timeout=None)
         params = {'confirm_id': cid, 'persona_id': persona_id}
         if quote_me is not None:
@@ -1574,7 +1572,7 @@ class Worker(threading.Thread):
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
-        def runner():
+        def runner() -> None:
             """Implement the actual loop running the task inside the Thread."""
             name = task.__name__
             doc = f" {task.__doc__.splitlines()[0]}" if task.__doc__ else ""
@@ -1613,12 +1611,12 @@ def reconnoitre_ambience(obj: AbstractFrontend,
     Scout = collections.namedtuple('Scout', ('getter', 'param_name',
                                              'object_name', 'dependencies'))
 
-    def do_assert(x):
+    def do_assert(x: bool) -> None:
         if not x:
             raise werkzeug.exceptions.BadRequest(
                 rs.gettext("Inconsistent request."))
 
-    def attachment_check(a):
+    def attachment_check(a: CdEDBObject) -> None:
         if a['attachment']['ballot_id']:
             do_assert(a['attachment']['ballot_id']
                       == rs.requestargs.get('ballot_id'))
@@ -1764,7 +1762,7 @@ class PeriodicJob(Protocol):
     cron: CdEDBObject
 
     def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        pass
+        ...
 
 
 def periodic(name: str, period: int = 1
