@@ -1062,7 +1062,7 @@
             "is_finance_admin": false,
             "is_event_admin": false,
             "is_ml_admin": false,
-            "is_assembly_admin": true,
+            "is_assembly_admin": false,
             "is_cdelokal_admin": false,
             "is_cde_realm": true,
             "is_event_realm": true,
@@ -2306,7 +2306,7 @@
             "is_finance_admin": false,
             "is_event_admin": false,
             "is_ml_admin": false,
-            "is_assembly_admin": true,
+            "is_assembly_admin": false,
             "is_cdelokal_admin": false,
             "is_cde_realm": true,
             "is_event_realm": true,
@@ -4532,6 +4532,16 @@
             "signup_end": "2222-02-22T00:00:00+00:00",
             "is_active": true,
             "notes": null
+        }
+    ],
+    "assembly.presiders": [
+        {
+            "assembly_id": 1,
+            "persona_id": 23
+        },
+        {
+            "assembly_id": 3,
+            "persona_id": 23
         }
     ],
     "assembly.attendees": [

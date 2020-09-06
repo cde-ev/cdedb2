@@ -68,6 +68,7 @@ class TestAssemblyBackend(BackendTest):
             'is_active': True,
             'mail_address': 'kongress@example.cde',
             'notes': None,
+            'presiders': {23},
             'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
             'title': 'Internationaler Kongress'}
         self.assertEqual(expectation, self.assembly.get_assembly(
@@ -82,25 +83,36 @@ class TestAssemblyBackend(BackendTest):
         expectation.update(data)
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 1))
-        data = {
+        new_assembly = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
             'signup_end': now(),
-            'title': 'Außerordentliche Mitgliederversammlung'
+            'title': 'Außerordentliche Mitgliederversammlung',
+            'presiders': {1, 23},
         }
-        new_id = self.assembly.create_assembly(self.key, data)
-        expectation = data
+        self.login("anton")
+        new_id = self.assembly.create_assembly(self.key, new_assembly)
+        expectation = new_assembly
         expectation['id'] = new_id
         expectation['mail_address'] = None
         expectation['is_active'] = True
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, new_id))
-
+        data = {
+            'id': new_id,
+            'presiders': {1},
+        }
+        self.assertLess(0, self.assembly.set_assembly(self.key, data))
+        self.assertLess(0, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        # Check return of setting presiders to the same thing.
+        self.assertLess(0, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        expectation['presiders'] = {23}
+        self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
         self.assertLess(0, self.assembly.delete_assembly(
-            self.key, new_id, ("ballots", "attendees", "attachments", "log",
-                               "mailinglists")))
+            self.key, new_id, ("ballots", "attendees", "attachments",
+                               "presiders", "log", "mailinglists")))
 
-    @as_users("werner")
+    @as_users("anton")
     def test_ticket_176(self, user):
         data = {
             'description': None,
@@ -418,8 +430,8 @@ class TestAssemblyBackend(BackendTest):
             with open("/tmp/cdedb-store/ballot_result/1", 'rb') as g:
                 self.assertEqual(json.load(f), json.load(g))
 
-    @as_users("werner")
-    def test_conclusion(self, user):
+    def test_conclusion(self):
+        self.login("anton")
         data = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
@@ -427,8 +439,11 @@ class TestAssemblyBackend(BackendTest):
             'title': 'Außerordentliche Mitgliederversammlung'
         }
         new_id = self.assembly.create_assembly(self.key, data)
+        self.assertLess(0, self.assembly.set_assembly_presiders(
+            self.key, new_id, {USER_DICT["werner"]["id"]}))
+        self.login("werner")
         # werner is no member, so he must use the external signup function
-        self.assembly.external_signup(self.key, new_id, user['id'])
+        self.assembly.external_signup(self.key, new_id, USER_DICT["werner"]['id'])
         future = now() + datetime.timedelta(seconds=.5)
         farfuture = now() + datetime.timedelta(seconds=1)
         data = {
@@ -456,6 +471,7 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assembly.set_assembly(self.key, update)
         self.assertEqual({23, 11}, self.assembly.list_attendees(self.key, new_id))
+        self.login("anton")
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
     @as_users("werner")
@@ -681,13 +697,13 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
 
-    @as_users("werner")
-    def test_log(self, user):
+    def test_log(self):
         # first generate some data
         self.test_entity_assembly()
         self.test_vote()
         self.test_entity_ballot()
 
+        self.login("anton")
         # now check it
         sub_id = USER_DICT['werner']['id']
         expectation = (11, (
@@ -699,70 +715,70 @@ class TestAssemblyBackend(BackendTest):
              'persona_id': None,
              'submitted_by': sub_id},
             # we delete all log entries related to an entity when deleting it
-            {'id': 1003,
+            {'id': 1009,
              'change_note': "Außerordentliche Mitgliederversammlung",
              'assembly_id': None,
              'code': const.AssemblyLogCodes.assembly_deleted,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1004,
+             'submitted_by': 1},
+            {'id': 1010,
              'change_note': 'Farbe des Logos',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1005,
+            {'id': 1011,
              'change_note': 'aqua',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1006,
+            {'id': 1012,
              'change_note': 'rot',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_updated,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1007,
+            {'id': 1013,
              'change_note': 'gelb',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_removed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1008,
+            {'id': 1014,
              'change_note': 'j',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1009,
+            {'id': 1015,
              'change_note': 'n',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1010,
+            {'id': 1016,
              'change_note': 'Verstehen wir Spaß',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1011,
+            {'id': 1017,
              'change_note': 'Verstehen wir Spaß',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_created,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1012,
+            {'id': 1018,
              'change_note': 'Farbe des Logos',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_deleted,
@@ -770,4 +786,5 @@ class TestAssemblyBackend(BackendTest):
              'persona_id': None,
              'submitted_by': sub_id},
         ))
-        self.assertEqual(expectation, self.assembly.retrieve_log(self.key))
+        result = self.assembly.retrieve_log(self.key)
+        self.assertEqual(expectation, result)

@@ -207,6 +207,9 @@ def make_backend_shim(backend: B, internal=False) -> B:
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(  # type: ignore
                 rs, rs.user.persona_id)
+        if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
+            rs.user.presider = backend.presider_info(  # type: ignore
+                rs, rs.user.persona_id)
         return rs
 
     class Proxy:
@@ -359,6 +362,8 @@ class BackendTest(CdEDBTest):
     """
     Base class for a TestCase that uses some backends. Needs to be subclassed.
     """
+    maxDiff = None
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
