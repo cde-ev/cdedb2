@@ -383,7 +383,6 @@ class BackendTest(CdEDBTest):
     def login(self, user, ip="127.0.0.0"):
         if isinstance(user, str):
             user = USER_DICT[user]
-        # noinspection PyTypeChecker
         self.key = self.core.login(None, user['username'], user['password'], ip)
         return self.key
 
@@ -831,6 +830,8 @@ class FrontendTest(CdEDBTest):
 
         :param verbose: If True display additional debug information.
         """
+        if isinstance(user, str):
+            user = USER_DICT[user]
         self.get("/", verbose=verbose)
         f = self.response.forms['loginform']
         f['username'] = user['username']
