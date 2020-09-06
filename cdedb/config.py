@@ -32,8 +32,17 @@ _currentpath = pathlib.Path(__file__).resolve().parent
 if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':
     raise RuntimeError(n_("Failed to locate repository"))
 _repopath = _currentpath.parent
-_git_commit = subprocess.check_output(
-    ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+
+try:
+    _git_commit = subprocess.check_output(
+        ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+except FileNotFoundError: # only catch git executable not found
+    with Path(_repopath, '.git/HEAD').open() as head:
+        _git_commit = head.read().strip()
+
+    if _git_commit.startswith('ref'):
+        with Path(_repopath, '.git', head[len('ref: '):]).open() as ref:
+            _git_commit = ref.read().strip()
 
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
