@@ -58,7 +58,7 @@
                 <div class="col-sm-6">
                     <h4>{% trans %}General Files{% endtrans %}</h4>
                     <ul class="slim" id="attachments">
-                        {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.meta_attachment) %}
+                        {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.get_attachment_sorter(attachment_histories)) %}
                             <li class="hide-hover-container clearfix-after">
                                 {{ assembly_util.print_attachment(
                                         attachment, attachment_histories[attachment_id],

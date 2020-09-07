@@ -592,18 +592,13 @@ class EntitySorter:
     def ballot(ballot: CdEDBObject) -> Sortkey:
         return (ballot['title'], ballot['id'])
 
-    @classmethod
-    def meta_attachment(cls, attachment_histories: CdEDBObject) -> KeyFunction:
-        def keyfunction(meta_attachment: CdEDBObject) -> Sortkey:
-            attachment_history = attachment_histories[meta_attachment['id']]
-            return cls.attachment(
-                attachment_history[meta_attachment['current_version']])
+    @staticmethod
+    def get_attachment_sorter(histories: CdEDBObject) -> KeyFunction:
+        def attachment(attachment: CdEDBObject) -> Sortkey:
+            attachment = histories[attachment['id']][attachment['current_version']
+            return (attachment['title'], attachment['attachment_id'])
 
         return keyfunction
-
-    @staticmethod
-    def attachment(attachment: CdEDBObject) -> Sortkey:
-        return (attachment['title'], attachment['attachment_id'])
 
     @staticmethod
     def attachment_version(version: CdEDBObject) -> Sortkey:
