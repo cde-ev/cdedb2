@@ -406,12 +406,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         old_ml = rs.ambience['mailinglist']
-        atype = old_ml['ml_type_class']
 
         # ensure that moderators change only allowed fields
-        if (not self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
-                or (atype.has_moderator_view(rs.user)
-                    and not atype.has_management_view(rs.user))):
+        if not self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
             # some fields may only be changed by privileged moderators
             if self.mlproxy.is_moderator(rs, mailinglist_id, privileged=True):
                 allowed = PRIVILEGED_MOD_ALLOWED_FIELDS
