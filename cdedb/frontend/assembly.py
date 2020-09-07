@@ -2,6 +2,7 @@
 
 """Services for the assembly realm."""
 
+from collections import OrderedDict
 import copy
 import json
 import pathlib
@@ -222,6 +223,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        presiders = self.coreproxy.get_personas(
+            rs, rs.ambience['assembly']['presiders'])
 
         has_ballot_attachments = False
         ballot_attachments = {}
@@ -250,11 +253,47 @@ class AssemblyFrontend(AbstractUserFrontend):
             "attachments": attachments,
             "attachment_histories": attachment_histories,
             "attends": attends, "ballots": ballots,
-            "delete_blockers": delete_blockers,
-            "conclude_blockers": conclude_blockers,
             "ballot_attachments": ballot_attachments,
+            "conclude_blockers": conclude_blockers,
+            "delete_blockers": delete_blockers,
             "has_ballot_attachments": has_ballot_attachments,
+            "presiders": presiders,
         })
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("presider_ids", "cdedbid_csv_list"))
+    def add_presiders(self, rs: RequestState, assembly_id: int,
+                      presider_ids: Collection[int]) -> Response:
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
+        if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):
+            rs.append_validation_error(("presider_ids", ValueError(n_(
+                "Some of these users do not exist or are archived."))))
+            return self.show_assembly(rs, assembly_id)
+        if not set(presider_ids) == self.coreproxy.verify_personas(
+                rs, presider_ids, {"assembly"}):
+            rs.append_validation_error(("presider_ids", ValueError(n_(
+                "Some of these presiders are not assembly users."))))
+            return self.show_assembly(rs, assembly_id)
+        presider_ids = set(presider_ids) | rs.ambience['assembly']['presiders']
+        code = self.assemblyproxy.set_assembly_presiders(
+            rs, assembly_id, presider_ids)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/show_assembly")
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("presider_id", "cdedbid"))
+    def remove_presider(self, rs: RequestState, assembly_id: int,
+                        presider_id: int) -> Response:
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
+        if presider_id not in rs.ambience['assembly']['presiders']:
+            rs.notify(n_("This user is not a presider for this assembly."))
+            return self.redirect(rs, "assembly/show")
+        ids = rs.ambience['assembly']['presiders'] - {presider_id}
+        code = self.assemblyproxy.set_assembly_presiders(rs, assembly_id, ids)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly")
     @assembly_guard
