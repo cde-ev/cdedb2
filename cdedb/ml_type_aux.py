@@ -160,22 +160,42 @@ class GeneralMailinglist:
     role_map = OrderedDict()
 
     @classmethod
-    def moderator_admin_views(cls):
+    def moderator_admin_views(cls) -> Set:
+        """All admin views which toggle the moderator view for this mailinglist.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
         return {"ml_mod_" + admin.replace("_admin", "")
                 for admin in cls.relevant_admins} | {"ml_mod"}
 
     @classmethod
-    def management_admin_views(cls):
+    def management_admin_views(cls) -> Set:
+        """All admin views which toggle the management view for this mailinglist.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
         return {"ml_mgmt_" + admin.replace("_admin", "")
                 for admin in cls.relevant_admins} | {"ml_mgmt"}
 
     @classmethod
     def has_moderator_view(cls, user: User) -> bool:
+        """Checks admin privileges and if a appropriated admin view is enabled.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
         return (cls.is_relevant_admin(user)
                 and bool(cls.moderator_admin_views() & user.admin_views))
 
     @classmethod
     def has_management_view(cls, user: User) -> bool:
+        """Checks admin privileges and if a appropriated admin view is enabled.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
         return (cls.is_relevant_admin(user)
                 and bool(cls.management_admin_views() & user.admin_views))
 
