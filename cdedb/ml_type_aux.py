@@ -138,6 +138,17 @@ class GeneralMailinglist:
         """
         return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
 
+    @classmethod
+    def restricted_moderators(cls, rs: RequestState, bc: BackendContainer,
+                               mailinglist: CdEDBObject) -> Set[int]:
+        """Shrink the pool of privileged moderators.
+
+        Everyone with ml realm may be moderator of any mailinglist. But for some
+        lists, you must have additional privileges to change subscriptions to
+        this mailinglist (think on orgas or presiders).
+        """
+        return set()
+
     relevant_admins: Set[str] = set()
 
     @classmethod
@@ -324,6 +335,18 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
 
     @classmethod
+    def restricted_moderators(cls, rs: RequestState, bc: BackendContainer,
+                              mailinglist: CdEDBObject) -> Set[int]:
+        """Shrink the pool of privileged moderators.
+
+        For EventAssociatedMailinglists, this are the orgas of the event.
+        """
+        if mailinglist['event_id'] is None:
+            return set()
+        event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
+        return event["orgas"]
+
+    @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
@@ -438,6 +461,17 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
 class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
                                     AssemblyMailinglist):
+    @classmethod
+    def restricted_moderators(cls, rs: RequestState, bc: BackendContainer,
+                              mailinglist: CdEDBObject) -> Set[int]:
+        """Shrink the pool of privileged moderators.
+
+        For AssemblyAssociatedMailinglists, this are assembly admins.
+        """
+        # TODO replace with presiders
+        assembly_admins = bc.core.list_admins(rs, "assembly")
+        return set(assembly_admins)
+
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,

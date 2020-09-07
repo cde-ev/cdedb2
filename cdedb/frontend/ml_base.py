@@ -21,7 +21,7 @@ from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
     RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap,
-    MOD_ALLOWED_FIELDS)
+    MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, PrivilegeError)
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
@@ -410,7 +410,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         if (not self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
                 or (atype.has_moderator_view(rs.user)
                     and not atype.has_management_view(rs.user))):
-            for field in set(data) - MOD_ALLOWED_FIELDS:
+            # some fields may only be changed by privileged moderators
+            if self.mlproxy.is_moderator(rs, mailinglist_id, privileged=True):
+                allowed = PRIVILEGED_MOD_ALLOWED_FIELDS
+            else:
+                allowed = MOD_ALLOWED_FIELDS
+            for field in set(data) - allowed:
                 if data[field] != old_ml[field]:
                     rs.append_validation_error(
                         (field, ValueError(n_("Not allowed to change."))))
@@ -714,6 +719,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
         except SubscriptionError as se:
             rs.notify(se.kind, se.msg)
+        except PrivilegeError as pe:
+            rs.notify("error", n_("Not privileged to change subscriptions."))
         else:
             self.notify_return_code(rs, code)
 
@@ -737,7 +744,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if len(persona_ids) == 1:
             self._subscription_action_handler(rs, action,
                 mailinglist_id=mailinglist_id, persona_id=unwrap(persona_ids))
-
+            return
         # Iterate over all subscriber_ids
         code = 0
         # This tracks whether every single action failed with
@@ -752,6 +759,10 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs.notify(se.multikind, se.msg)
                 if se.multikind != 'info':
                     infos_only = False
+            except PrivilegeError as pe:
+                infos_only = False
+                rs.notify("error",
+                          n_("Not privileged to change subscriptions."))
         if infos_only:
             self.notify_return_code(rs, -1, pending=n_("Action had no effect."))
         else:
