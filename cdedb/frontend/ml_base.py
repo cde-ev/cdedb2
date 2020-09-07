@@ -383,11 +383,13 @@ class MlBaseFrontend(AbstractUserFrontend):
         if not self.mlproxy.is_relevant_admin(
                 rs, mailinglist=rs.ambience['mailinglist']):
             rs.notify("info", n_("Some fields may only be changed by admins."))
+        privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
             'available_domains': available_domains,
             'additional_fields': additional_fields,
+            'privileged': privileged,
         })
 
     @access("ml", modi={"POST"})
