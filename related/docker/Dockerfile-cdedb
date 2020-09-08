@@ -73,36 +73,36 @@ RUN mkdir /var/lib/cdedb \
     \
     && useradd --system cdedb
 
-WORKDIR /cdedb2
-
-COPY . ./
+COPY ./related/auto-build/files/stage3 /tmp
 
 RUN a2enmod ssl wsgi headers \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
-    && cp ./related/auto-build/files/stage3/cdedb-site.conf /etc/apache2/sites-available \
+    && cp /tmp/cdedb-site.conf /etc/apache2/sites-available \
     && a2ensite cdedb-site \
-    && cp ./related/auto-build/files/stage3/index.html /var/www/html/ \
+    && cp /tmp/index.html /var/www/html/ \
     \
-    && cp ./related/auto-build/files/stage3/localconfig.py ./cdedb/ \
+    && cp /tmp/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
+    && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
+    && chmod 640 /etc/cdedb-mailman-htpasswd
+
+EXPOSE 443
+
+WORKDIR /cdedb2
+
+COPY . ./
+
+RUN cp ./related/auto-build/files/stage3/localconfig.py ./cdedb/ \
     && chown cdedb:cdedb ./cdedb/localconfig.py \
     && chmod 644 ./cdedb/localconfig.py \
     && sed --in-place \
         -e 's|Path("/log/|Path("/var/log/cdedb/|' \
         cdedb/localconfig.py \
-    \
-    && cp ./related/auto-build/files/stage3/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
-    && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
-    && chmod 640 /etc/cdedb-mailman-htpasswd \
     && sed --in-place \
         -e '/_git_commit = subprocess.check_output/,+1d' \
         -e 's/"GIT_COMMIT": _git_commit/"GIT_COMMIT": "abcd1234"/' \
         cdedb/config.py
 
-EXPOSE 443
-
 RUN make doc && make i18n-compile
 
-# USER cdedb
-
-CMD ["apachectl", "-D", "FOREGROUND"]
+CMD ["apachectl", "-DFOREGROUND"]
