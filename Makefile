@@ -70,14 +70,14 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
 	sudo rm -rf "/var/lib/cdedb/*"
-	sudo mkdir -p "/var/lib/cdedb/foto/"
-	sudo mkdir -p "/var/lib/cdedb/minor_form/"
-	sudo mkdir -p "/var/lib/cdedb/event_logo/"
-	sudo mkdir -p "/var/lib/cdedb/course_logo/"
-	sudo mkdir -p "/var/lib/cdedb/ballot_result/"
-	sudo mkdir -p "/var/lib/cdedb/assembly_attachment/"
-	sudo mkdir -p "/var/lib/cdedb/mailman_templates/"
-	sudo mkdir -p "/var/lib/cdedb/genesis_attachment/"
+	sudo mkdir "/var/lib/cdedb/foto/"
+	sudo mkdir "/var/lib/cdedb/minor_form/"
+	sudo mkdir "/var/lib/cdedb/event_logo/"
+	sudo mkdir "/var/lib/cdedb/course_logo/"
+	sudo mkdir "/var/lib/cdedb/ballot_result/"
+	sudo mkdir "/var/lib/cdedb/assembly_attachment/"
+	sudo mkdir "/var/lib/cdedb/mailman_templates/"
+	sudo mkdir "/var/lib/cdedb/genesis_attachment/"
 	sudo cp test/ancillary_files/$(TESTFOTONAME) /var/lib/cdedb/foto/
 	sudo cp test/ancillary_files/rechen.pdf \
 		/var/lib/cdedb/assembly_attachment/1_v1
