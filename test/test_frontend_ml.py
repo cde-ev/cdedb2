@@ -382,7 +382,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Inga Iota", div="moderator_list")
         self.assertNotIn("removesubscriberform9", self.response.forms)
         f = self.response.forms['addsubscriberform']
-        f['subscriber_id'] = "DB-9-4"
+        f['subscriber_ids'] = "DB-9-4"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
         self.assertIn("removesubscriberform9", self.response.forms)
@@ -410,14 +410,14 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("Inga Iota", div="modsubscriber-list")
         f = self.response.forms['addmodsubscriberform']
-        f['modsubscriber_id'] = "DB-9-4"
+        f['modsubscriber_ids'] = "DB-9-4"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertPresence("Inga Iota", div="modsubscriber-list")
 
         self.assertNonPresence("Emilia E. Eventis", div="modunsubscriber-list")
         f = self.response.forms['addmodunsubscriberform']
-        f['modunsubscriber_id'] = "DB-5-1"
+        f['modunsubscriber_ids'] = "DB-5-1"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertPresence("Emilia E. Eventis", div="modunsubscriber-list")
@@ -481,10 +481,100 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Sozialistischer Kampfbrief – Erweiterte Verwaltung")
         self.assertNonPresence("Janis Jalapeño")
         f = self.response.forms['addmodsubscriberform']
-        f['modsubscriber_id'] = "DB-10-8"
+        f['modsubscriber_ids'] = "DB-10-8"
         self.submit(f)
         self.assertTitle("Sozialistischer Kampfbrief – Erweiterte Verwaltung")
         self.assertPresence("Janis Jalapeño")
+
+    @as_users("berta")
+    def test_mailinglist_management_multi(self, user):
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Aktivenforum 2001'},
+                      {'description': 'Verwaltung'})
+        self.assertTitle("Aktivenforum 2001 – Verwaltung")
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_ids'] = "DB-1-9, DB-2-7"
+        self.submit(f)
+        # noop
+        self.assertTitle("Aktivenforum 2001 – Verwaltung")
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_ids'] = "DB-1-9, DB-2-7"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Aktion hatte keinen Effekt.", div='notifications')
+        # Partial noop
+        self.assertTitle("Aktivenforum 2001 – Verwaltung")
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_ids'] = "DB-1-9, DB-9-4"
+        self.submit(f)
+        self.assertPresence("Der Nutzer ist bereits Abonnent.",
+                            div='notifications')
+        # One user archived. Action aborted.
+        self.assertTitle("Aktivenforum 2001 – Verwaltung")
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_ids'] = "DB-1-9, DB-8-6"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Einige dieser Nutzer exisitieren nicht "
+                            "oder sind archiviert.")
+        # one user is event user only
+        self.assertTitle("Aktivenforum 2001 – Verwaltung")
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_ids'] = "DB-7-8, DB-5-1"
+        self.submit(f)
+        self.assertPresence("Der Nutzer hat keine Berechtigung auf "
+                            "dieser Liste zu stehen.",
+                            div='notifications')
+        # noop with one event user
+        self.assertTitle("Aktivenforum 2001 – Verwaltung")
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_ids'] = "DB-7-8, DB-5-1"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Der Nutzer hat keine Berechtigung auf "
+                            "dieser Liste zu stehen.",
+                            div='notifications')
+        self.assertPresence("Der Nutzer ist bereits Abonnent.",
+                            div='notifications')
+        self.assertPresence("Änderung fehlgeschlagen.", div='notifications')
+
+    @as_users("berta")
+    def test_advanced_management_multi(self, user):
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Aktivenforum 2001'},
+                      {'description': 'Erweiterte Verwaltung'})
+        self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
+        for state in ('modsubscriber', 'modunsubscriber'):
+            form = 'add' + state + 'form'
+            field = state + '_ids'
+
+            f = self.response.forms[form]
+            f[field] = "DB-1-9, DB-2-7"
+            self.submit(f)
+            # noop
+            self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
+            f = self.response.forms[form]
+            f[field] = "DB-1-9, DB-2-7"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Aktion hatte keinen Effekt.", div='notifications')
+            # Partial noop
+            self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
+            f = self.response.forms[form]
+            f[field] = "DB-1-9, DB-9-4"
+            self.submit(f)
+            self.assertPresence("Info! Nutzer ist ", div='notifications')
+            # One user archived. Action aborted.
+            self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
+            f = self.response.forms[form]
+            f[field] = "DB-1-9, DB-8-6"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Einige dieser Nutzer exisitieren nicht "
+                                "oder sind archiviert.")
+            # one user is event user only
+            self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
+            f = self.response.forms[form]
+            f[field] = "DB-7-8, DB-5-1"
+            self.submit(f)
+            self.assertNonPresence("Der Nutzer hat keine Berechtigung auf "
+                                   "dieser Liste zu stehen.",
+                                    div='notifications')
 
     @as_users("nina")
     def test_create_mailinglist(self, user):
@@ -605,6 +695,8 @@ class TestMlFrontend(FrontendTest):
                     self.assertValidationError('event_id',
                                                "Muss „None“ sein.")
                     self.assertPresence("Muss eine leere Liste sein.")
+                elif ml_type == const.MailinglistTypes.event_orga:
+                    self.assertPresence("Muss eine leere Liste sein.")
                 else:
                     self.assertNonPresence("Muss eine leere Liste sein.")
                 if ml_type not in assembly_types:
@@ -699,7 +791,7 @@ class TestMlFrontend(FrontendTest):
     def test_moderator_add_subscriber(self, user):
         self.get("/ml/mailinglist/7/management")
         f = self.response.forms['addsubscriberform']
-        f['subscriber_id'] = "DB-1-9"
+        f['subscriber_ids'] = "DB-1-9"
         self.submit(f)
         self.assertPresence("Anton Armin A. Administrator")
 
@@ -745,7 +837,7 @@ class TestMlFrontend(FrontendTest):
                 self.traverse({'description': 'Erweiterte Verwaltung'})
                 self.assertTitle(mdata['title'] + " – Erweiterte Verwaltung")
                 f = self.response.forms['addmodsubscriberform']
-                f['modsubscriber_id'] = "DB-2-7"
+                f['modsubscriber_ids'] = "DB-2-7"
                 self.submit(f)
                 f = self.response.forms['removemodsubscriberform2']
                 self.submit(f)
@@ -792,7 +884,7 @@ class TestMlFrontend(FrontendTest):
         # testing: try to add a subscription request
         # as normal user
         f = self.response.forms['addsubscriberform']
-        f['subscriber_id'] = "DB-9-4"
+        f['subscriber_ids'] = "DB-9-4"
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertIn(
@@ -801,7 +893,7 @@ class TestMlFrontend(FrontendTest):
         # as mod subscriber
         self.traverse({'href': '/ml/mailinglist/4/management/advanced'}, )
         f = self.response.forms['addmodsubscriberform']
-        f['modsubscriber_id'] = "DB-9-4"
+        f['modsubscriber_ids'] = "DB-9-4"
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertIn(
@@ -809,7 +901,7 @@ class TestMlFrontend(FrontendTest):
             self.response.text)
         # as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
-        f['modunsubscriber_id'] = "DB-9-4"
+        f['modunsubscriber_ids'] = "DB-9-4"
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertIn(
@@ -819,11 +911,11 @@ class TestMlFrontend(FrontendTest):
         # testing: mod subscribe and unsubscribe
         # add already subscribed user as mod subscribe
         f = self.response.forms['addmodsubscriberform']
-        f['modsubscriber_id'] = "DB-1-9"
+        f['modsubscriber_ids'] = "DB-1-9"
         self.submit(f, check_notification=True)
         # add already subscribed user as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
-        f['modunsubscriber_id'] = "DB-10-8"
+        f['modunsubscriber_ids'] = "DB-10-8"
         self.submit(f, check_notification=True)
         # try to remove mod subscribe with normal subscriber form
         self.traverse({'href': '/ml/mailinglist/4/management'}, )
@@ -836,7 +928,7 @@ class TestMlFrontend(FrontendTest):
             self.response.text)
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
-        f['subscriber_id'] = "DB-7-8"
+        f['subscriber_ids'] = "DB-7-8"
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertPresence("Der Nutzer wurde geblockt. "

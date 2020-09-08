@@ -17,7 +17,7 @@
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% if "assembly_contents" in user.admin_views and ambience['assembly']['is_active'] %}
+    {% if "assembly_presider" in user.admin_views and ambience['assembly']['is_active'] %}
         <div class="p">
             {{ util.href(cdedblink("assembly/create_ballot"), gettext("Create Ballot"), aclass="btn btn-success btn-sm",
                     icon="plus") }}
@@ -45,7 +45,7 @@
                                     <span class="text-danger">{{ gettext("Not yet voted") }}</span>
                                 {%- endif -%})
                             {% endif %}
-                            {% if "assembly_contents" in user.admin_views and now() < ballot['vote_begin'] %}
+                            {% if "assembly_presider" in user.admin_views and now() < ballot['vote_begin'] %}
                                 {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), gettext("Edit"),
                                             aclass="btn btn-xs btn-warning list-button-float hide-hover", icon="pen") }}
                             {% endif %}

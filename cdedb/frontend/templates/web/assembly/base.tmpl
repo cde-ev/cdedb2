@@ -24,7 +24,7 @@
                 {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), gettext("Configuration"),
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
             {% endif %}
-            {% if "assembly_contents" in user.admin_views %}
+            {% if "assembly_presider" in user.admin_views %}
                 {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}), gettext("Log"),
                              aclass="list-group-item", icon="far fa-list-alt", active=(sidenav_active == 'assembly_assembly_log')) }}
             {% endif %}
@@ -69,7 +69,7 @@
 {% block adminviews %}
     {% if ambience['assembly'] %}
         {{ util.admin_views_toggle(((gettext("Assembly Administration"), ["assembly_mgmt"], None),
-                                    (gettext("Wahlleitungs Controls"), ["assembly_contents"], None))) }}
+                                    (gettext("Presider Controls"), ["assembly_presider"], None))) }}
     {% else %}
         {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
                                     (gettext("Assembly Administration"), ["assembly_mgmt"], None))) }}

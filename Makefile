@@ -264,5 +264,14 @@ mypy-backend:
 mypy-frontend:
 	${MYPYBIN} cdedb/frontend/
 
+mypy-test:
+	${MYPYBIN} test/__init__.py test/common.py \
+		test/create_sample_data_json.py test/create_sample_data_sql.py \
+		test/main.py test/singular.py
+
 mypy:
-	${MYPYBIN} cdedb/
+	# Do not provide cdedb/validation.py on purpose.
+	${MYPYBIN} cdedb/backend/ cdedb/frontend cdedb/__init__.py \
+		cdedb/common.py cdedb/enums.py cdedb/i18n_additional.py \
+		cdedb/ml_subscription_aux.py cdedb/ml_type_aux.py cdedb/query.py \
+		cdedb/script.py cdedb/validationdata.py

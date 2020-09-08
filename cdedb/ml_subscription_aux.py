@@ -26,8 +26,10 @@ These are be imported in `cdedb:common.py` and should be imported from there.
 import enum
 from cdedb.database.constants import SubscriptionStates, MlLogCodes
 
+from typing import Any, Dict, Optional
 
-def n_(x):
+
+def n_(x: str) -> str:
     """Clone of `cdedb.common.n_` used for marking translatable strings."""
     return x
 
@@ -37,20 +39,26 @@ class SubscriptionError(RuntimeError):
     Exception for signalling that an action trying to change a subscription
     failed.
     """
-    def __init__(self, *args, kind="error", **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args: Any, kind: str = "error") -> None:
+        super(SubscriptionError, self).__init__(*args)
         if args:
             self.msg = args[0]
         else:
             self.msg = ""
+
+        # Kind if only a single notification is shown
         self.kind = kind
-    pass
+
+        # Kind if multiple notifications are shown
+        self.multikind = kind
+        if self.multikind == "error":
+            self.multikind = "warning"
 
 
 class SubscriptionInfo(SubscriptionError):
     """Exception for SubscriptionErrors with kind info."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, kind="info", **kwargs)
+    def __init__(self, *args):
+        super().__init__(*args, kind="info")
 
 
 @enum.unique
@@ -144,7 +152,9 @@ class SubscriptionActions(enum.IntEnum):
         error = SubscriptionError
         info = SubscriptionInfo
 
-        matrix = {
+        matrix: Dict[SubscriptionActions,
+                     Dict[Optional[SubscriptionStates],
+                          Optional[SubscriptionError]]] = {
             SubscriptionActions.add_subscriber: {
                 ss.subscribed: info(n_("User already subscribed.")),
                 ss.unsubscribed: None,
@@ -166,7 +176,7 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.add_subscription_override: {
                 ss.subscribed: None,
                 ss.unsubscribed: None,
-                ss.subscription_override: None,
+                ss.subscription_override: info(n_("User is already force-subscribed.")),
                 ss.unsubscription_override: None,
                 ss.pending: error(n_("User has pending subscription request.")),
             },
@@ -181,7 +191,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscribed: None,
                 ss.unsubscribed: None,
                 ss.subscription_override: None,
-                ss.unsubscription_override: None,
+                ss.unsubscription_override: info(n_("User has already been blocked.")),
                 ss.pending: error(n_("User has pending subscription request.")),
             },
             SubscriptionActions.remove_unsubscription_override: {

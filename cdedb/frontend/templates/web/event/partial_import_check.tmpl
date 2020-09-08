@@ -4,7 +4,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
-    	Partial Import Validation ({{ title }})
+        Partial Import Validation ({{ title }})
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
@@ -88,7 +88,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
 {% block content %}
     <p class="text-warning">
         {{ util.make_icon('exclamation-triangle') }}
-        {% trans manual=util.href(docurl('Handbuch_partieller_Import'), gettext('manual')) %}
+        {% trans manual=util.href(docurl('Handbuch_Orga_Partieller-Import'), gettext('manual')) %}
             Carefully check the summary below, as this tool has the potential to do irreversible damage
             to your event. (You read the {{ manual }}, right?)
         {% endtrans %}
@@ -133,8 +133,19 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% if summary['changed_registrations'] %}
             <div class="row">
                 <div class="col-md-8">
-                    {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info',
+                    {% call util.bootstrap_panel(gettext("Changed registrations"),
+                                                 aclass='panel panel-info details-panel',
                                                  icon='user', anid='box-changed-registrations') %}
+                        {% if summary['changed_registrations']|length > 3 %}
+                            <div class="form-group details-toggles hidden">
+                                <button type="button" class="btn btn-default" value="expand">
+                                    {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
+                                </button>
+                                <button type="button" class="btn btn-default" value="collapse">
+                                    {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
+                                </button>
+                            </div>
+                        {% endif %}
                         <ul class="slim details-list">
                             {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
                                 <li>
@@ -205,8 +216,19 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% if summary['changed_courses'] %}
             <div class="row">
                 <div class="col-md-8">
-                    {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='book',
-                                                 anid='box-changed-courses') %}
+                    {% call util.bootstrap_panel(gettext("Changed courses"),
+                                                 aclass='panel panel-info details-panel',
+                                                 icon='book', anid='box-changed-courses') %}
+                        {% if summary['changed_courses']|length > 3 %}
+                            <div class="form-group details-toggles hidden">
+                                <button type="button" class="btn btn-default" value="expand">
+                                    {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
+                                </button>
+                                <button type="button" class="btn btn-default" value="collapse">
+                                    {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
+                                </button>
+                            </div>
+                        {% endif %}
                         <ul class="slim details-list">
                             {% for course_id, course_diff in summary['changed_courses'].items() %}
                                 <li>
@@ -278,8 +300,19 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% if summary['changed_lodgements'] %}
             <div class="row">
                 <div class="col-md-8">
-                    {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='home',
-                                                 anid='box-changed-lodgements') %}
+                    {% call util.bootstrap_panel(gettext("Changed lodgements"),
+                                                 aclass='panel panel-info details-panel',
+                                                 icon='home', anid='box-changed-lodgements') %}
+                        {% if summary['changed_lodgements']|length > 3 %}
+                            <div class="form-group details-toggles hidden">
+                                <button type="button" class="btn btn-default" value="expand">
+                                    {{ util.make_icon('chevron-down') }} {% trans %}Expand all{% endtrans %}
+                                </button>
+                                <button type="button" class="btn btn-default" value="collapse">
+                                    {{ util.make_icon('minus') }} {% trans %}Collapse all{% endtrans %}
+                                </button>
+                            </div>
+                        {% endif %}
                         <ul class="slim details-list">
                             {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
                                 <li>
@@ -289,7 +322,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                             {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
                                         </summary>
                                         {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
-                                   </details>
+                                    </details>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -401,4 +434,17 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {{ util.input_hidden(name='partial_import_data') }}
         {{ util.form_input_submit(value=gettext('Apply changes'), cancellink=cdedblink('event/partial_import_form'), horizontal=False) }}
     </form>
+
+    <script nonce="{{ csp_nonce }}">
+        for(const detailsPanel of document.getElementsByClassName('details-panel')) {
+            for(const button of detailsPanel.querySelectorAll('.details-toggles button')) {
+                button.addEventListener('click', () =>
+                    detailsPanel.querySelectorAll('.details-list details').forEach(detail =>
+                        detail.open = button.value == "expand"
+                    )
+                )
+            }
+        }
+        document.querySelectorAll('.details-toggles.hidden').forEach(element => element.classList.remove('hidden'))
+    </script>
 {% endblock %}

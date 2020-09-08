@@ -20,12 +20,13 @@ from typing import (
     Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict,
     ClassVar
 )
+from typing_extensions import Literal
 
 import cdedb.validation as validate
 from cdedb.common import (
     PrivilegeError, PsycoJson, diacritic_patterns, glue, make_proxy,
     make_root_logger, n_, unwrap, RequestState, Role, Realm, PathLike,
-    CdEDBObject, CdEDBObjectMap, CdEDBLog,
+    CdEDBObject, CdEDBObjectMap, CdEDBLog, LOCALE
 )
 from cdedb.query import Query
 from cdedb.config import Config
@@ -39,10 +40,21 @@ T = TypeVar('T')
 S = TypeVar('S')
 
 
-def singularize(function: Callable,
-                array_param_name: str = "ids",
-                singular_param_name: str = "anid",
-                passthrough: bool = False) -> Callable:
+@overload
+def singularize(function: Callable[..., Mapping[Any, T]],
+                array_param_name: str = "",
+                singular_param_name: str = ""
+                ) -> Callable[..., T]: ...
+
+
+@overload
+def singularize(function: Callable[..., T], array_param_name: str = "",
+                singular_param_name: str = "",
+                passthrough: Literal[True] = True) -> Callable[..., T]: ...
+
+
+def singularize(function, array_param_name="ids",
+                singular_param_name="anid", passthrough=False):
     """This takes a function and returns a singularized version.
 
     The function has to accept an array as a parameter and return a dict
@@ -59,7 +71,8 @@ def singularize(function: Callable,
     """
 
     @functools.wraps(function)
-    def singularized(self, rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+    def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
+                     **kwargs: Any) -> Callable[..., T]:
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
             kwargs[array_param_name] = (param,)
@@ -92,7 +105,8 @@ def batchify(function: Callable[..., T],
     """
 
     @functools.wraps(function)
-    def batchified(self, rs: RequestState, *args: Any, **kwargs: Any) -> List:
+    def batchified(self: AbstractBackend, rs: RequestState, *args: Any,
+                   **kwargs: Any) -> List[T]:
         ret = []
         with Atomizer(rs):
             if array_param_name in kwargs:
@@ -124,7 +138,8 @@ def access(*roles: Role) -> Callable[[F], F]:
     def decorator(function: F) -> F:
 
         @functools.wraps(function)
-        def wrapper(self, rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+        def wrapper(self: AbstractBackend, rs: RequestState, *args: Any,
+                    **kwargs: Any) -> Any:
             if rs.user.roles.isdisjoint(roles):
                 raise PrivilegeError(
                     n_("%(user_roles)s is disjoint from %(roles)s"),
@@ -289,7 +304,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             raise RuntimeError(n_("No contamination!"))
 
     def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
-                         params: Sequence) -> None:
+                         params: Sequence[Any]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
@@ -306,14 +321,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
 
-    def query_exec(self, rs: RequestState, query: str, params: Sequence) -> int:
+    def query_exec(self, rs: RequestState, query: str, params: Sequence[Any]
+                   ) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    def query_one(self, rs: RequestState, query: str, params: Sequence
+    def query_one(self, rs: RequestState, query: str, params: Sequence[Any]
                   ) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -324,7 +340,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.execute_db_query(cur, query, params)
                 return self._sanitize_db_output(cur.fetchone())  # type: ignore
 
-    def query_all(self, rs: RequestState, query: str, params: Sequence
+    def query_all(self, rs: RequestState, query: str, params: Sequence[Any]
                   ) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -374,9 +390,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES {value_list}"
         return self.query_exec(rs, query, params)
 
-    # KeysView should be a subclass of Collection, but PyCharm disagrees :/
     def sql_select(self, rs: RequestState, table: str, columns: Sequence[str],
-                   entities: Union[Collection, KeysView], entity_key: str = "id"
+                   entities: Collection[Any], entity_key: str = "id"
                    ) -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
@@ -443,8 +458,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         params += (data[entity_key],)
         return self.query_exec(rs, query, params)
 
-    def sql_delete(self, rs: RequestState, table: str, entities: Collection,
-                   entity_key: str = "id") -> int:
+    def sql_delete(self, rs: RequestState, table: str,
+                   entities: Collection[Any], entity_key: str = "id") -> int:
         """Generic SQL deletion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -455,7 +470,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_exec(rs, query, (entities,))
 
     def sql_delete_one(self, rs: RequestState, table: str, entity: Any,
-                       entity_key: str = "id"):
+                       entity_key: str = "id") -> int:
         """Generic SQL deletion query for a single row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -482,12 +497,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                            for field in query.fields_of_interest
                            for column in field.split(','))
         if query.order:
-            orders = ", ".join(entry.split(',')[0] for entry, _ in query.order)
-            select = glue(select, ',', orders)
+            # Collate compatible to COLLATOR in python
+            orders = []
+            for entry, _ in query.order:
+                if query.spec[entry] == 'str':
+                    orders.append(f'{entry.split(",")[0]} COLLATE "{LOCALE}"')
+                else:
+                    orders.append(entry.split(',')[0])
+            select += ", " + ", ".join(orders)
         select = glue(select, ',', QUERY_PRIMARIES[query.scope])
         view = view or QUERY_VIEWS[query.scope]
-        q = "SELECT {} {} FROM {}".format("DISTINCT" if distinct else "",
-                                          select, view)
+        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
         params: List[Any] = []
         constraints = []
         _ops = QueryOperators
@@ -590,20 +610,30 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if constraints:
             q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))
         if query.order:
-            q = glue(q, "ORDER BY",
-                     ", ".join("{} {}".format(entry.split(',')[0],
-                                              "ASC" if ascending else "DESC")
-                               for entry, ascending in query.order))
+            # Collate compatible to COLLATOR in python
+            orders = []
+            for entry, ascending in query.order:
+                if query.spec[entry] == 'str':
+                    orders.append(
+                        f'{entry.split(",")[0]} COLLATE "{LOCALE}" '
+                        f'{"ASC" if ascending else "DESC"}')
+                else:
+                    orders.append(
+                        f'{entry.split(",")[0]} '
+                        f'{"ASC" if ascending else "DESC"}')
+            q = glue(q, "ORDER BY", ", ".join(orders))
         return self.query_all(rs, q, params)
 
     def generic_retrieve_log(self, rs: RequestState, code_validator: str,
                              entity_name: str, table: str,
                              codes: Collection[int] = None,
-                             entity_ids: Collection = None,
+                             entity_ids: Collection[Any] = None,
                              offset: int = None, length: int = None,
                              additional_columns: Collection[str] = None,
-                             persona_id: int = None, submitted_by: int = None,
-                             additional_info: str = None,
+                             persona_id: int = None,
+                             submitted_by: int = None,
+                             reviewed_by: int = None,
+                             change_note: str = None,
                              time_start: datetime.datetime = None,
                              time_stop: datetime.datetime = None
                              ) -> CdEDBLog:
@@ -632,7 +662,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :param additional_columns: Extra values to retrieve.
         :param persona_id: Filter for persona_id column.
         :param submitted_by: Filter for submitted_by column.
-        :param additional_info: Filter for additional_info column
+        :param reviewed_by: Filter for reviewed_by column.
+            Only for core.changelog.
+        :param change_note: Filter for change_note column
         :param time_start: lower bound for ctime columns
         :param time_stop: upper bound for ctime column
         """
@@ -644,12 +676,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             "restrictive_identifier", additional_columns, allow_None=True)
         persona_id = affirm_validation("id_or_None", persona_id)
         submitted_by = affirm_validation("id_or_None", submitted_by)
-        additional_info = affirm_validation("regex_or_None", additional_info)
+        reviewed_by = affirm_validation("id_or_None", reviewed_by)
+        change_note = affirm_validation("regex_or_None", change_note)
         time_start = affirm_validation("datetime_or_None", time_start)
         time_stop = affirm_validation("datetime_or_None", time_stop)
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        additional_columns: Collection[str] = additional_columns or tuple()
+        additional_columns: List[str] = list(additional_columns or [])
 
         # First, define the common WHERE filter clauses
         conditions = []
@@ -666,9 +699,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if submitted_by:
             conditions.append("submitted_by = %s")
             params.append(submitted_by)
-        if additional_info:
-            conditions.append("additional_info ~* %s")
-            params.append(diacritic_patterns(additional_info))
+        if change_note:
+            conditions.append("change_note ~* %s")
+            params.append(diacritic_patterns(change_note))
         if time_start and time_stop:
             conditions.append("%s <= ctime AND ctime <= %s")
             params.extend((time_start, time_stop))
@@ -678,6 +711,16 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         elif time_stop:
             conditions.append("ctime <= %s")
             params.append(time_stop)
+
+        # Special column for core.changelog
+        if table == "core.changelog":
+            additional_columns += ["reviewed_by", "generation"]
+            if reviewed_by:
+                conditions.append("reviewed_by = %s")
+                params.append(reviewed_by)
+        elif reviewed_by:
+            raise ValueError(
+                "reviewed_by column only defined for changelog.")
 
         if conditions:
             condition = "WHERE {}".format(" AND ".join(conditions))
@@ -700,7 +743,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         # Now, query the actual information
         query = (f"SELECT id, ctime, code, submitted_by, {entity_name}_id,"
-                 f" persona_id, additional_info {extra_columns} FROM {table}"
+                 f" persona_id, change_note {extra_columns} FROM {table}"
                  f" {condition} ORDER BY id LIMIT {length}")
         if offset is not None:
             query = glue(query, "OFFSET {}".format(offset))
@@ -753,7 +796,7 @@ def affirm_array_validation(assertion: str, values: Iterable[T],
 
 
 # noinspection PyPep8Naming
-def affirm_array_validation(assertion, values, allow_None=False, **kwargs: Any):
+def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
     :param allow_None: Since we don't have the luxury of an automatic
@@ -808,7 +851,7 @@ def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
     """
     spec: Dict[str, FieldDatatypes]
     spec = {v['field_name']: v['kind'] for v in fields.values()}
-    casters = {
+    casters: Dict[FieldDatatypes, Callable[[Any], Any]] = {
         FieldDatatypes.int: lambda x: x,
         FieldDatatypes.str: lambda x: x,
         FieldDatatypes.float: lambda x: x,

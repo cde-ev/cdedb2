@@ -8,9 +8,10 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
+from typing import Set, Dict
 
 
-def n_(x):
+def n_(x: str) -> str:
     """Clone of :py:func:`cdedb.common.n_` for marking translatable strings."""
     return x
 
@@ -27,7 +28,7 @@ class Genders(enum.IntEnum):
 
 @enum.unique
 class MemberChangeStati(enum.IntEnum):
-    """Spec for field change_status of core.changelog."""
+    """Spec for field code of core.changelog."""
     pending = 1  #:
     committed = 2  #:
     superseded = 10  #:
@@ -47,21 +48,15 @@ class RegistrationPartStati(enum.IntEnum):
     cancelled = 5  #:
     rejected = 6  #:
 
-    def is_involved(self):
-        """Any status which warrants further attention by the orgas.
-
-        :rtype: bool
-        """
+    def is_involved(self) -> bool:
+        """Any status which warrants further attention by the orgas."""
         return self in (RegistrationPartStati.applied,
                         RegistrationPartStati.participant,
                         RegistrationPartStati.waitlist,
                         RegistrationPartStati.guest,)
 
-    def is_present(self):
-        """Any status which will be on site for the event.
-
-        :rtype: bool
-        """
+    def is_present(self) -> bool:
+        """Any status which will be on site for the event."""
         return self in (RegistrationPartStati.participant,
                         RegistrationPartStati.guest,)
 
@@ -73,7 +68,7 @@ class FieldAssociations(enum.IntEnum):
     course = 2  #:
     lodgement = 3  #:
 
-    def get_icon(self):
+    def get_icon(self) -> str:
         icons = {
             FieldAssociations.registration: "user",
             FieldAssociations.course: "book",
@@ -99,15 +94,15 @@ class QuestionnaireUsages(enum.IntEnum):
     registration = 1
     additional = 2
 
-    def allow_readonly(self):
+    def allow_readonly(self) -> bool:
         """Whether or not rows with this usage are allowed to be readonly."""
         return self == QuestionnaireUsages.additional
 
-    def allow_fee_modifier(self):
+    def allow_fee_modifier(self) -> bool:
         """Whether or not rows with this usage may use fee modifier fields."""
         return self == QuestionnaireUsages.registration
 
-    def get_icon(self):
+    def get_icon(self) -> str:
         icons = {
             QuestionnaireUsages.registration: "sign-in-alt",
             QuestionnaireUsages.additional: "pen",
@@ -159,11 +154,11 @@ class SubscriptionStates(enum.IntEnum):
     #: The user is subscribed by virtue of being part of some group.
     implicit = 30
 
-    def is_subscribed(self):
+    def is_subscribed(self) -> bool:
         return self in self.subscribing_states()
 
     @classmethod
-    def subscribing_states(cls):
+    def subscribing_states(cls) -> Set['SubscriptionStates']:
         return {SubscriptionStates.subscribed,
                 SubscriptionStates.subscription_override,
                 SubscriptionStates.implicit}
@@ -205,14 +200,14 @@ class MailinglistDomain(enum.IntEnum):
     cdemuenchen = 10
     dokuforge = 11
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self not in _DOMAIN_STR_MAP:
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
 
 
 # Instead of importing this, call str() on a MailinglistDomain.
-_DOMAIN_STR_MAP = {
+_DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
     MailinglistDomain.lists: "lists.cde-ev.de",
     MailinglistDomain.aka: "aka.cde-ev.de",
     MailinglistDomain.general: "cde-ev.de",
@@ -236,11 +231,9 @@ class MailinglistInteractionPolicy(enum.IntEnum):
     #: only implicit subscribers allowed
     implicits_only = 6
 
-    def is_implicit(self):
+    def is_implicit(self) -> bool:
         """Short-hand for
         policy == const.MailinglistInteractionPolicy.implicits_only
-
-        :rtype: bool
         """
         return self == MailinglistInteractionPolicy.implicits_only
 
@@ -266,6 +259,7 @@ class AttachmentPolicy(enum.IntEnum):
     forbid = 3  #:
 
 
+# This is deprecated and will be removed soon. Do not use.
 @enum.unique
 class AudiencePolicy(enum.IntEnum):
     """Regulate who may subscribe to a mailing list by status."""
@@ -274,63 +268,6 @@ class AudiencePolicy(enum.IntEnum):
     require_event = 3  #:
     require_cde = 4  #:
     require_member = 5  #:
-
-    @staticmethod
-    def applicable(roles):
-        """Which audience policies apply to a user with the passed roles?
-
-        :type roles: [str]
-        :rtype: [AudiencePolicy]
-        """
-        ret = []
-        if "ml" in roles:
-            ret.append(AudiencePolicy.everybody)
-        if "assembly" in roles:
-            ret.append(AudiencePolicy.require_assembly)
-        if "event" in roles:
-            ret.append(AudiencePolicy.require_event)
-        if "cde" in roles:
-            ret.append(AudiencePolicy.require_cde)
-        if "member" in roles:
-            ret.append(AudiencePolicy.require_member)
-        return ret
-
-    def check(self, roles):
-        """Test if the status is enough to satisfy this policy.
-
-        :type roles: [str]
-        :rtype: bool
-        """
-        if self == AudiencePolicy.everybody:
-            return "ml" in roles
-        elif self == AudiencePolicy.require_assembly:
-            return "assembly" in roles
-        elif self == AudiencePolicy.require_event:
-            return "event" in roles
-        elif self == AudiencePolicy.require_cde:
-            return "cde" in roles
-        elif self == AudiencePolicy.require_member:
-            return "member" in roles
-        else:
-            raise RuntimeError(n_("Impossible."))
-
-    def sql_test(self):
-        """Provide SQL query to check this policy.
-
-        :rtype: str
-        """
-        if self == AudiencePolicy.everybody:
-            return "is_ml_realm = True"
-        elif self == AudiencePolicy.require_assembly:
-            return "is_assembly_realm = True"
-        elif self == AudiencePolicy.require_event:
-            return "is_event_realm = True"
-        elif self == AudiencePolicy.require_cde:
-            return "is_cde_realm = True"
-        elif self == AudiencePolicy.require_member:
-            return "is_member = True"
-        else:
-            raise RuntimeError(n_("Impossible."))
 
 
 @enum.unique

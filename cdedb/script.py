@@ -13,15 +13,15 @@ import getpass
 import gettext
 import time
 import tempfile
-import pathlib
 
 import psycopg2
 import psycopg2.extras
 import psycopg2.extensions
 
 from types import TracebackType
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, Set, cast
 
+from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.past_event import PastEventBackend
@@ -40,8 +40,8 @@ class User:
     def __init__(self, persona_id: int):
         self.persona_id = persona_id
         self.roles = ALL_ROLES
-        self.orga = set()
-        self.moderator = set()
+        self.orga: Set[int] = set()
+        self.moderator: Set[int] = set()
         self.username = None
         self.display_name = None
         self.given_names = None
@@ -61,9 +61,9 @@ class RequestState:
         self.urlmap = None
         self.values = None
         self.lang = "de"
-        self.gettext = gettext.translation('cdedb', languages=("de",),
+        self.gettext = gettext.translation('cdedb', languages=["de"],
                                            localedir="/cdedb2/i18n").gettext
-        self.ngettext = gettext.translation('cdedb', languages=("de",),
+        self.ngettext = gettext.translation('cdedb', languages=["de"],
                                             localedir="/cdedb2/i18n").ngettext
         self._coders = None
         self.begin = None
@@ -112,14 +112,17 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     return rs
 
 
-def make_backend(realm: str, proxy: bool = True, *, configpath: PathLike = None,
-                 **config: Any):
+# No return type annotation on purpose, because it confuses IDE autocompletion.
+def make_backend(realm: str, proxy: bool = True, *,  # type: ignore
+                 configpath: PathLike = None, **config: Any):
     """Instantiate backend objects and wrap them in proxy shims.
 
     :param realm: selects backend to return
     :param proxy: If True, wrap the backend in a proxy, otherwise return
         the raw backend, which gives access to the low-level SQL methods.
     """
+    if realm not in backend_map:
+        raise ValueError("Unrecognized realm")
     if config and configpath:
         raise ValueError("Mustn't specify both config and configpath.")
     elif config:
@@ -128,31 +131,23 @@ def make_backend(realm: str, proxy: bool = True, *, configpath: PathLike = None,
                 f.write(f"{k} = {v}\n")
             f.flush()
             filename = f.name
-            backend = _make_backend(realm, f.name)
+            backend = backend_map[realm](f.name)
     else:
-        backend = _make_backend(realm, configpath)
+        backend = backend_map[realm](configpath)
     if proxy:
         return make_proxy(backend)
     else:
         return backend
 
 
-def _make_backend(realm: str, configpath: PathLike = None):
-    if realm == "core":
-        backend = CoreBackend(configpath)
-    elif realm == "cde":
-        backend = CdEBackend(configpath)
-    elif realm == "past_event":
-        backend = PastEventBackend(configpath)
-    elif realm == "ml":
-        backend = MlBackend(configpath)
-    elif realm == "assembly":
-        backend = AssemblyBackend(configpath)
-    elif realm == "event":
-        backend = EventBackend(configpath)
-    else:
-        raise ValueError("Unrecognized realm")
-    return backend
+backend_map = {
+    "core": CoreBackend,
+    "cde": CdEBackend,
+    "past_event": PastEventBackend,
+    "ml": MlBackend,
+    "assembly": AssemblyBackend,
+    "event": EventBackend,
+}
 
 
 class DryRunError(Exception):

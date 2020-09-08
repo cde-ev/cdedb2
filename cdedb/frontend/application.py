@@ -17,7 +17,7 @@ import werkzeug.exceptions
 import werkzeug.wrappers
 
 from typing import (
-    Tuple, Dict, Callable, Optional, Set
+    Tuple, Dict, Callable, Optional, Set, Any
 )
 
 from cdedb.frontend.core import CoreFrontend
@@ -199,7 +199,7 @@ class Application(BaseApp):
                                 fake_rs, "error", n_("Session expired."))])
                         ret.set_cookie("displaynote", notifications)
                         return ret
-                coders: Dict[str, Callable] = {
+                coders: Dict[str, Callable[..., Any]] = {
                     "encode_parameter": self.encode_parameter,
                     "decode_parameter": self.decode_parameter,
                     "encode_notification": self.encode_notification,

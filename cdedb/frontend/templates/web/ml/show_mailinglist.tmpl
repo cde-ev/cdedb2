@@ -56,7 +56,7 @@
 
     {% if ambience['mailinglist']['notes']
             and (ambience['mailinglist']['id'] in user.moderator
-                 or ('ml_mgmt' in user.admin_views and is_relevant_admin(mailinglist=ambience['mailinglist']))) %}
+                 or ambience['mailinglist']['ml_type_class'].has_moderator_view(user)) %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed",
                                      anid="adminnotes") %}
             {{ ambience['mailinglist']['notes']|md }}
@@ -178,7 +178,7 @@
         {% endcall %}
     {% endif %}
 
-    {% if is_relevant_admin(mailinglist_id=ambience['mailinglist']['id']) and 'ml_mgmt' in user.admin_views %}
+    {% if ambience['mailinglist']['ml_type_class'].has_management_view(user) %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">

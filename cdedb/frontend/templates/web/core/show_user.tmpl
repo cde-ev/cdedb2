@@ -1,6 +1,7 @@
 {% if data['id'] == user.persona_id %}{% set sidenav_active='core_mydata'%}{% endif %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
@@ -26,7 +27,7 @@
     {{ views.append((gettext("Core Administration"), ["core"], None)) }}
     {{ views.append((gettext("Finance Administration"), ["finance"], None)) }}
     {% if "moderator" in access_mode %}
-        {{ views.append((gettext("Moderator Controls"), ["ml_moderator"], None)) }}
+        {{ views.append((gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS, None)) }}
     {% endif %}
     {% if "orga" in access_mode %}
         {{ views.append((gettext("Orga Controls"), ["event_orga"], None)) }}
@@ -74,7 +75,13 @@
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink("core/change_password_form"), gettext("Change Password"),
                             aclass="btn btn-warning btn-sm", icon="edit") }}
-                    {{ util.href(docurl('Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-circle") }}
+                    <form action="{{ cdedblink("core/logout_all") }}" method="POST" id="logoutallform"
+                          class="display-inline">
+                        {{ util.anti_csrf_token('core/logout_all') }}
+                        {{ util.input_submit(value=gettext("Logout Everywhere"), title=gettext("Logout Everywhere"),
+                                             icon="power-off", aclass="btn btn-danger btn-sm") }}
+                    </form>
+                    {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-circle") }}
                 {% endif %}
                 {% if is_relative_admin %}
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"), aclass="btn btn-info btn-sm",

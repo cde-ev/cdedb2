@@ -2356,12 +2356,13 @@ def _event(val, argname=None, *, creation=False, _convert=True,
     return val, errs
 
 
-_EVENT_PART_COMMON_FIELDS = {
+_EVENT_PART_COMMON_FIELDS = lambda: {
     'title': _str,
     'shortname': _str,
     'part_begin': _date,
     'part_end': _date,
     'fee': _non_negative_decimal,
+    'waitlist_field': _id_or_None,
     'tracks': _mapping,
 }
 
@@ -2385,11 +2386,11 @@ def _event_part(val, argname=None, *, creation=False, _convert=True,
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = _EVENT_PART_COMMON_FIELDS
+        mandatory_fields = _EVENT_PART_COMMON_FIELDS()
         optional_fields = {}
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_PART_COMMON_FIELDS
+        optional_fields = _EVENT_PART_COMMON_FIELDS()
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)
@@ -3237,7 +3238,7 @@ def _serialized_event(val, argname=None, *, _convert=True,
             _empty_dict, {'id': _id, 'ctime': _datetime, 'code': _int,
                           'submitted_by': _id, 'event_id': _id_or_None,
                           'persona_id': _id_or_None,
-                          'additional_info': _str_or_None}),
+                          'change_note': _str_or_None}),
         'event.orgas': _augment_dict_validator(
             _empty_dict, {'id': _id, 'event_id': _id, 'persona_id': _id}),
         'event.field_definitions': _augment_dict_validator(
@@ -3736,12 +3737,14 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
                          _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    mandatory_validation_fields = [('moderators', '[id]'),]
-    optional_validation_fields = [('whitelist', '[email]'),]
-    if "ml_type" in val:
-        atype = ml_type.get_type(val["ml_type"])
-        mandatory_validation_fields.extend(atype.mandatory_validation_fields)
-        optional_validation_fields.extend(atype.optional_validation_fields)
+    mandatory_validation_fields = {('moderators', '[id]'),}
+    optional_validation_fields = {('whitelist', '[email]'),}
+    if "ml_type" not in val:
+        return val, [("ml_type", ValueError(
+            "Must provide ml_type for setting mailinglist."))]
+    atype = ml_type.get_type(val["ml_type"])
+    mandatory_validation_fields.update(atype.mandatory_validation_fields)
+    optional_validation_fields.update(atype.optional_validation_fields)
     mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
     optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
     iterable_fields = []

@@ -40,15 +40,18 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon=None, aclass='', active=False, title='', rel='') -%}
+{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title='', rel='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
-{%- if aclass or active or readonly -%}
-    class="{{ aclass }}{% if active %} active{% endif -%}
-           {% if readonly %} {% if not 'btn' in aclass %}link-{% endif%}disabled{% endif %}"
-{%- endif %}
-{%- if active %} aria-current="page" {% endif %}{# We use the `active` attribute for navigation only #}
-{%- if title %} title="{{ title }}"{% endif %}>
-{%- if icon %}{{ make_icon(icon) }}&nbsp;{% endif %}{{ label }}
+{{ dict(
+    class=" ".join([
+        aclass,
+        "active" if active else "",
+        ("disabled" if 'btn' in aclass else "link-disabled") if readonly else "",
+    ]),
+    title=title,
+    **{ "aria-current": "page" if active }
+)|xmlattr }}{# We use the `active` attribute for navigation only #}>
+{{- make_icon(icon) + "&nbsp;"|s if icon }}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
@@ -62,13 +65,16 @@
               This is also used as arialabel, if you don't provide one explicitly.
    arialabel  A screenreader-only text to append to the icon.
               Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
-{% macro make_icon(icon, fixed_width=True, aclass="", title=None, arialabel=None) -%}
+{% macro make_icon(icon, fixed_width=True, aclass="", title=none, arialabel=none) -%}
     <span{{ dict(
-        class=("fas fa-{}".format(icon) if " " not in icon else icon)
-            + (" fa-fw" if fixed_width else "")
-            + (" {}".format(aclass) if aclass else ""),
+        class=" ".join([
+            aclass,
+            "fas fa-{}".format(icon) if " " not in icon else icon,
+            "fa-fw" if fixed_width else "",
+        ]),
         title=title,
-    )|xmlattr }} aria-hidden="true"></span>
+        **{ "aria-hidden": "true" }
+    )|xmlattr }}></span>
     {%- if arialabel or title %}<span class="sr-only">{{ arialabel or title }}</span>{% endif %}
 {%- endmacro%}
 
@@ -77,16 +83,14 @@
  # Layout helpers #
  # ############## #}
 
-{% macro bootstrap_panel(title="", aclass="panel-default", icon=None, anid="") %}
-    <div class="panel {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
+{% macro bootstrap_panel(title="", aclass="panel-default", icon=none, anid=none) %}
+    <div{{ dict(class="panel " + aclass, id=anid)|xmlattr }}>
         {%- if title or icon %}
             <div class="panel-heading">
-                <h3 class="panel-title">{% if icon %}{{ make_icon(icon) }} {% endif %}{{ title }}</h3>
+                <h3 class="panel-title">{{ make_icon(icon) + " " if icon }}{{ title }}</h3>
             </div>
         {%- endif %}
-        <div class="panel-body">
-            {{- caller() }}
-        </div>
+        <div class="panel-body">{{- caller() }}</div>
     </div>
 {%- endmacro %}
 
@@ -103,19 +107,20 @@
               the title attribute for the True state. The title is also used as an screenreader-readable hidden text.
               If you don't provide `titles` and the icon is semantically important, please make sure to make the value
               accessible to screen readers by any other means. #}
-{% macro deko_checkbox(checked, anid='', titles=[]) %}
-    {%- if checked %}
-        <span class="fas fa-check-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="True"
-                {%- if titles[1] %} title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{#-#}
-        <span class="sr-only">{% if titles[1] %}{{ titles[1] }}{% endif %}</span>
-    {%- elif checked is not none %}
-        <span class="far fa-times-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="False"
-                {%- if titles[0] %} title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{#-#}
-        <span class="sr-only">{% if titles[0] %}{{ titles[0] }}{% endif %}</span>
-    {%- endif %}
+{% macro deko_checkbox(checked, anid=none, titles=[]) %}
+    {% set title = titles[checked | int] %}
+    <span{{ dict(
+        class="fas fa-check-circle" if checked else "far fa-times-circle",
+        id=anid,
+        title=title,
+        **{
+            "data-checked": checked,
+            "aria-hidden": "true"
+        })|xmlattr }}></span>
+    {% if title %}<span class="sr-only">{{ title }}</span>{% endif %}
 {%- endmacro %}
 
-{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=None, ml_id=None) %}
+{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=none, ml_id=none) %}
     {%- if verbose -%}
         {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {} {} {}".format(
               persona['title'], persona['given_names'],
@@ -140,15 +145,15 @@
 
 {% macro tel_link(phonenumber) %}
     {% set linknumber = phonenumber|replace(" ", "")|replace("(", "")|replace(")", "")|replace("/", "") %}
-    {%- if linknumber[0] == "+" -%}
+    {%- if linknumber.startswith("+") -%}
         {{ util.href('tel:%s'|format(linknumber), phonenumber) }}
-    {%- elif linknumber[0] == "0" -%}
+    {%- elif linknumber.startswith("0") -%}
         {{ util.href('tel:%s'|format(linknumber|replace("0", "+49", 1)), phonenumber) }}
     {%- endif -%}
 {% endmacro %}
 
 {% macro web_link(weblink) %}
-    {%- if weblink[0:4] == "http" -%}
+    {%- if weblink.startswith(("http://", "https://")) -%}
         {{ util.href(weblink, weblink) }}
     {%- else -%}
         {{ util.href('https://%s'|format(weblink), weblink) }}
@@ -176,31 +181,27 @@
    name/title. In this case the icon should represent the type of the named object. For a complex example, take a look
    at the event/change_course template.
   #}
-{% macro breadcrumb_link(ref, label, icon=None, active=False, readonly=False) %}
-    {%- if active or readonly -%}
-        <li {% if active %}class="active" aria-current="location"{% endif %}>
-            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label -}}
+{% macro breadcrumb_link(ref, label, icon=none, active=False, readonly=False) %}
+    {%- if active or readonly -%} {#- TODO use actual bootstrap readonly anchor -#}
+        <li{% if active %} class="active" aria-current="location"{% endif %}>
+            {{ make_icon(icon) if icon }}
+            {{ label -}}
         </li>
     {%- else -%}
         <li><a href="{{ ref }}">
-                {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label -}}
+            {{ make_icon(icon) if icon }}
+            {{ label -}}
         </a></li>
     {%- endif -%}
 {% endmacro %}
 
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
-{% macro doclink(topic, anchor=None) %}
+{% macro doclink(topic, anchor=none) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
         {{ make_icon('question-circle') }}
-    {% trans %}
-        Help
-    {% endtrans %}
-    <span class="sr-only">
-        {% trans %}
-            for this site
-        {% endtrans %}
-    </span>
+        {% trans %}Help{% endtrans %}
+        <span class="sr-only">{% trans %}for this site{% endtrans %}</span>
     </a>
 {%- endmacro %}
 
@@ -217,38 +218,30 @@
     {%- elif error.args|length == 0 %}
         {#- Display nothing if no message was supplied. #}
     {%- else %}
-        Nicht wohlgeformter Fehler.<br />
+        {% trans %}Malformed error.{% endtrans %}<br />
     {%- endif %}
 {%- endmacro %}
 
-{% macro output_info(info, link='') %}
+{% macro output_info(info, link) %}
     {%- if info %}
         <p class="help-block no-color">
-	    {{ make_icon('info-circle') }} {{ info }}
-	    {% if link %}
-	        {{ link }}
-	    {% endif %}
-	</p>
+            {{ make_icon('info-circle') }} {{ info }}
+            {{ link }}
+        </p>
     {%- endif %}
 {%- endmacro %}
 
 {% macro output_errors(name, displayerrors=True, wrapper=False, differentiate_warnings=True) %}
     {%- if displayerrors and name in errors %}
         {%- if wrapper %}
-            <div class=" {% if differentiate_warnings and is_warning(name) %}
-                             has-warning
-                         {% else %}
-                             has-error
-                         {% endif %}">
+            <div class="{{ "has-warning" if differentiate_warnings and is_warning(name)  else "has-error"}}">
         {% endif %}
         {# TODO sort #}
-        {%- for error in errors.get(name, []) if error %}
-            {% if error.args %}
-                <div class="help-block">
-                    {{ make_icon('exclamation-circle') }}
-                    {{ format_error(error) }}
-                </div>
-            {% endif %}
+        {%- for error in errors.get(name, []) if error and error.args %}
+            <div class="help-block">
+                {{ make_icon('exclamation-circle') }}
+                {{ format_error(error) }}
+            </div>
         {%- endfor %}
         {%- if wrapper %}</div>{% endif %}
     {%- endif %}
@@ -269,14 +262,14 @@
    The form_input_* wraps the specific input macro and adds some divs, label and error output. These macros are meant to
    be used inside an form.form-horizontal. (If you want to use it in a non-horizontal form, you may pass the
    horizontal=False parameter.) #}
-{% macro input_hidden(name, value=None, defaultvalue='', anid='', aclass='') %}
-    {%- if value is none -%}
-        <input type="hidden" name="{{ name }}" value="{{ values.get(name, defaultvalue) }}"
-          {%- if anid %} id="{{ anid }}" {% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %} />
-    {%- else -%}
-        <input type="hidden" name="{{ name }}" value="{{ value }}" {%- if anid %} id="{{ anid }}" {% endif %}
-          {%- if aclass %} class="{{ aclass }}"{% endif %} />
-    {%- endif -%}
+{% macro input_hidden(name, value=none, defaultvalue='', anid=none, aclass=none) %}
+    <input{{ dict(
+        type="hidden",
+        name=name,
+        value=values.get(name, defaultvalue) if value is none else value,
+        id=anid,
+        class=aclass,
+    )|xmlattr }}/>
 {% endmacro %}
 
 {% macro form_input_general(name='', label='', anid='', small=False, info='', displayerrors=True,
@@ -289,59 +282,54 @@
                                {% endif %}
                            {% endif %}">
         {%- if label %}
-            <label{% if labelid %} id="{{ labelid }}"{% endif %}{% if anid %} for="{{ anid }}"{% endif %} {# -#}
-                    class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} {# -#}
-                           control-label">
-                {{- label -}}
-            </label>
+            <label{{ dict(
+                id=labelid,
+                for=anid,
+                class=(("col-sm-2" if small else "col-sm-4") if horizontal else "") + " control-label",
+            )|xmlattr }}>{{ label }}</label>
         {%- endif %}
-        {%- if horizontal %}<div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}
-                                       {%- if not label %}
-                                           {%- if small %} col-sm-offset-2{% else %} col-sm-offset-4{% endif %}
-                                       {%- endif %}">{% endif %}
-        {% if addon %}
-            <div class="input-group">
-        {% endif %}
-
+        {%- if horizontal %}
+            <div class="
+                {{ "col-sm-6" if small else "col-sm-8" }}
+                {{ ("col-sm-offset-2" if small else "col-sm-offset-4") if not label }}
+            ">
+        {%- endif %}
+        {% if addon %}<div class="input-group">{% endif %}
             {{- caller() }}
-
-        {% if addon %}
-                <span class="input-group-addon">
-                    {{ addon }}
-                </span>
-            </div>
-        {% endif %}
+        {% if addon %}<span class="input-group-addon">{{ addon }}</span></div>{% endif %}
             {{- output_errors(name, displayerrors, differentiate_warnings=differentiate_warnings) }}
             {{- output_info(info, infolink) }}
         {%- if horizontal %}</div>{% endif %}
     </div>
 {%- endmacro %}
 
-{% macro input_text(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, type='text',
+{% macro input_text(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=none, type='text',
         placeholder='', arialabel='', attributes='') %}
-    <input type="{{ type }}" {%- if aclass %} class="{{ aclass }}"{% endif %}
-            {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
-            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
-            {%- if anid %} id="{{ anid }}"{% endif %} {# -#}
-            name="{{ name }}"
-            {%- if type != 'password' %}
-                {%- if type == 'date' %}
-                    value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True) }}"
-                {%- elif type == 'datetime-local' %}
-                    value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True) }}"
-                {%- else %}
-                    value="{{ values.get(name, defaultvalue) }}"
-                {%- endif %}
-            {%- endif %}
-            {%- if readonly %} disabled{% endif %} {{ attributes }} />
-            {# TODO use actual readonly and bootstrap styles #}
+    <input{{ dict(
+        type=type,
+        name=name,
+        id=anid,
+        class=aclass,
+        maxlength=maxlength,
+        placeholder=placeholder,
+        disabled="disabled" if readonly,
+        **{ 'aria-label': arialabel }
+    )|xmlattr }}
+        {%- if type == 'date' %}
+            value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True) }}"
+        {%- elif type == 'datetime-local' %}
+            value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True) }}"
+        {%- elif type != 'password' %}
+            value="{{ values.get(name, defaultvalue) }}"
+        {%- endif %}
+        {{ attributes }}/>
+        {# TODO use actual readonly and bootstrap styles #}
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-    maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', infolink='', addon='',
+    maxlength=none, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', infolink='', addon='',
     differentiate_warnings=True) %}
-    {%- if not anid %}{% set anid = "input-text-{}".format(name) %}{% endif %}
+    {%- set anid = anid or "input-text-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink, addon=addon,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
@@ -350,36 +338,45 @@
 {%- endmacro %}
 
 {% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='', arialabel='') %}
-    <input type="file" {%- if aclass %} class="{{ aclass }}"{% endif %}
-            {%- if accept %} accept="{{ accept }}"{% endif %}
-            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
-            {%- if anid %} id="{{ anid }}"{% endif %} {# -#}
-            name="{{ name }}" {%- if readonly %} disabled{% endif %} />
+    <input{{ dict(
+        type="file",
+        name=name,
+        id=anid,
+        class=aclass,
+        accept=accept,
+        disabled="disabled" if readonly,
+        **{ 'aria-label': arialabel }
+    )|xmlattr }}/>
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
         aclass="", small=False, horizontal=True, infolink='', differentiate_warnings=True) %}
-    {%- if not anid %}{% set anid = "input-file-{}".format(name) %}{% endif %}
+    {%- set anid = anid or "input-file-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_file(name, readonly, defaultvalue, anid, accept=accept, aclass='form-control ' + aclass) }}
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, rows=3,
+{% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=none, rows=3,
                         arialabel='', attributes='') %}
-    <textarea {% if aclass %} class="{{ aclass }}"{% endif %} rows="{{ rows }}"
-            {%- if anid %} id="{{ anid }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {# -#}
-            name="{{ name }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {%- if readonly %} disabled{% endif %} {{ attributes }}>
+    <textarea{{ dict(
+        name=name,
+        id=anid,
+        class=aclass,
+        rows=rows,
+        maxlength=maxlength,
+        disabled="disabled" if readonly,
+        **{ 'aria-label': arialabel }
+    )|xmlattr }} {{ attributes }}>
     {#- TODO sort if this is a list -#}
         {{- values.get(name, defaultvalue) -}}
     </textarea>
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-        aclass='', small=False, maxlength=0, rows=3, horizontal=True, attributes='', infolink='', differentiate_warnings=True) %}
-    {%- if not anid %}{% set anid = "input-textarea-{}".format(name) %}{% endif %}
+        aclass='', small=False, maxlength=none, rows=3, horizontal=True, attributes='', infolink='', differentiate_warnings=True) %}
+    {%- set anid = anid or "input-textarea-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
@@ -390,27 +387,32 @@
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, anid='', aclass='', inline=False,
         radio=False, arialabel='', attributes='') -%}
-    <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
-        <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name }}" value="{{ value }}"
-            {%- if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %} {# -#}
-                checked
-            {%- endif %}
-            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
-            {%- if readonly %} disabled{% endif %} {%- if anid %} id="{{ anid }}"{% endif %}
-            {%- if aclass %} class="{{ aclass }}"{% endif %} {{ attributes }} />
+    <label{% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
+        <input{{ dict(
+            type="radio" if radio else "checkbox",
+            name=name,
+            id=anid,
+            class=aclass,
+            value=value,
+            checked="checked" if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue),
+            disabled="disabled" if readonly,
+            **{ 'aria-label': arialabel }
+        )|xmlattr }} {{ attributes }}/>
         {{ label -}}
     </label>
 {%- endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
         arialabeledby="", sort=False) %}
-    <div role="{% if radio %}radio{% endif %}group"
-            {%- if arialabeledby %} aria-labelledby="{{ arialabeledby }}"{% endif %}>
+    <div{{ dict(
+        role="radiogroup" if radio else "group",
+        **{'aria-labelledby': arialabeledby}
+    )|xmlattr }}>
         {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for entry_value, entry_label in entries %}
             {% if not inline -%}
-                <div class="{% if radio %}radio{% else %}checkbox{% endif %}{% if readonly %} disabled{% endif %}">
+                <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly}}">
             {%- endif -%}
                 {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
                                   aclass=aclass) }}
@@ -422,17 +424,14 @@
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False, defaultvalue='',
         anid='', horizontal=True, small=False, attributes='', infolink='', differentiate_warnings=True) %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
-    {%- if not anid %}{% set anid = "input-checkbox-{}".format(name) %}{% endif %}
-    <div class="form-group {% if name in errors %}
-                           {% if differentiate_warnings and is_warning(name) %}
-                               has-warning
-                           {% else %}
-                               has-error
-                           {% endif %}
-                       {% endif %}">
-        <div {% if horizontal %}class="{% if small %}col-sm-6 col-sm-offset-2{% else -%}
-                col-sm-8 col-sm-offset-4{% endif %}"{% endif %}>
-            <div class="checkbox {% if readonly %}disabled{% endif %}">
+    {%- set anid = anid or "input-checkbox-{}".format(name) %}
+    <div class="form-group
+        {{ ("has-warning" if differentiate_warnings and is_warning(name) else "has-error") if name in errors }}
+    ">
+        <div{% if horizontal %} class="
+            {{ "col-sm-6 col-sm-offset-2" if small else "col-sm-8 col-sm-offset-4" }}
+        "{% endif %}>
+            <div class="checkbox{{ " disabled" if readonly }}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, anid, attributes=attributes) }}
             </div>
             {{- output_errors(name, displayerrors) }}
@@ -441,10 +440,10 @@
     </div>
 {%- endmacro %}
 
+{#- This is the version for multiple checkboxes as opposed to input_checkbox().
+    entries is of type [(str, str)]. #}
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
         small=False, radio=False, horizontal=True, aclass='', labelid='', infolink='', differentiate_warnings=True, sort=False) %}
-    {#- This is the version for multiple checkboxes as opposed to input_checkbox().
-       entries is of type [(str, str)]. #}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
     {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
@@ -454,13 +453,17 @@
 {%- endmacro %}
 
 
-{% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
-        nulloption=None, arialabel='', attributes="", sort=False) %}
-    <select name="{{ name }}" {%- if anid %} id="{{ anid }}"{% endif %}
-            {%- if aclass %} class="{{ aclass }}"{% endif %}{% if readonly %} disabled{% endif %}
-            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {{ attributes }}>
+{% macro input_select(name, entries, readonly=False, defaultvalue=none, anid='', aclass='form-control',
+        nulloption=none, arialabel='', attributes="", sort=False) %}
+    <select{{ dict(
+        name=name,
+        id=anid,
+        class=aclass,
+        disabled="disabled" if readonly,
+        **{ 'aria-label': arialabel }
+    )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
-            <option value=""{% if values.get(name, defaultvalue) == None %} selected{% endif %}>
+            <option value=""{% if values.get(name, defaultvalue) == none %} selected{% endif %}>
                 {{- nulloption -}}
             </option>
         {%- endif %}
@@ -474,10 +477,10 @@
     </select>
 {%- endmacro %}
 
-{% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
-        nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="", differentiate_warnings=True,
+{% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=none,
+        nulloption=none, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="", differentiate_warnings=True,
         sort=False) %}
-    {%- if not anid %}{% set anid = "input-select-{}".format(name) %}{% endif %}
+    {%- set anid = anid or "input-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
@@ -486,15 +489,16 @@
 {%- endmacro%}
 
 {% macro input_static(value, anid='') %}
-    <div class="form-control-static"{% if anid %}id="{{ anid }}"{% endif %}>{{ value }}</div>
+    <div class="form-control-static"{% if anid %} id="{{ anid }}"{% endif %}>{{ value }}</div>
 {%- endmacro %}
+
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True, aclass='',
-        infolink='', icon=None, differentiate_warnings=True) %}
+        infolink='', icon=none, differentiate_warnings=True) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
-    {%- call form_input_general(None, label, anid, small, info, False, horizontal, infolink=infolink,
+    {%- call form_input_general(none, label, anid, small, info, False, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
-        <div class="form-control-static {{ aclass }}"{% if anid %}id="{{ anid }}"{% endif %}>
-            {%- if icon %}{{ make_icon(icon) }} {% endif %}
+        <div class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
+            {{ make_icon(icon) if icon }}
             {{- value -}}
         </div>
     {%- endcall %}
@@ -502,25 +506,34 @@
 
 {% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="check",
         readonly=False, title='', arialabel='') %}
-    <button type="submit" name="{{ name }}" {%- if readonly %} disabled{% endif %}
-            {%- if anid %} id="{{ anid }}"{% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %}
-            {%- if title %} title="{{ title }}"{% endif %} value="True"
-            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}>
-            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ value -}}</button>
+    <button{{ dict(
+        type="sumbit",
+        name=name,
+        id=anid,
+        class=aclass,
+        title=title,
+        value="True",
+        disabled="disabled" if readonly,
+        **{ 'aria-label': arialabeledby }
+    )|xmlattr }}>
+        {{ make_icon(icon) if icon }}
+        {{ value }}
+    </button>
 {%- endmacro %}
 
 {% macro form_input_submit(value="Save", name="submitform", readonly=False, anid='',
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
-        small=False, horizontal=True, differentiate_warnings=False) %}
+        small=False, horizontal=True, differentiate_warnings=False, title='') %}
     <div class="form-group mosp">
-        <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
-                col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
-            {{- input_submit(gettext(value), name, anid, aclass, icon, readonly) }}
+        <div{% if horizontal %} class="
+            {{ "col-sm-offset-2 col-sm-10" if small else "col-sm-offset-4 col-sm-8" }}
+        "{% endif %}>
+            {{- input_submit(gettext(value), name, anid, aclass, icon, readonly, title) }}
             {% if differentiate_warnings and has_warnings() %}
                 {{ input_submit(gettext("Ignore Warnings"), name="ignore_warnings", anid=anid, aclass=aclass, icon=icon, readonly=readonly) }}
             {% endif %}
             {%- if cancellink %}
-                &emsp; {{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
+                &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
             {%- endif %}
         </div>
     </div>
@@ -533,11 +546,11 @@
 
 {% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True,
         horizontal=True, infolink='') %}
-    <div class="form-group {% if name1 in errors or name2 in errors %}has-error{% endif %}">
-        <label class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
+    <div class="form-group{{ " has-error" if name1 in errors or name2 in errors }}">
+        <label class="control-label{% if horizontal %} {{ "col-sm-2" if small else "col-sm-4" }}{% endif %}">
             {{- label -}}
         </label>
-        <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
+        <div{% if horizontal %} class="{{ "col-sm-6" if small else "col-sm-8" }}"{% endif %}>
             <div class="input-group">
                 <span class="input-group-addon">{% trans %}from{% endtrans %}</span>
                 {{ input_text(name=name1, type=type, arialabel=gettext('%s from')|format(label)) }}
@@ -552,9 +565,7 @@
 {% endmacro %}
 
 {% macro event_field_input(fields, name='', readonly=False, defaultvalue='', anid='') %}
-    {%- if not name %}
-        {%- set name = "fields.{}".format(fields['field_name']) %}
-    {%- endif %}
+    {%- set name = name or "fields.{}".format(fields['field_name']) %}
     {%- if fields['entries'] %}
         {{- input_select(name=name, entries=fields['entries'], nulloption=nbsp,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=True) }}
@@ -583,14 +594,12 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro form_event_field_input(fields, name='', label=None, info='', displayerrors=True, readonly=False,
+{% macro form_event_field_input(fields, name='', label=none, info='', displayerrors=True, readonly=False,
                                 defaultvalue='', anid='', force_label=False, infolink='') %}
-    {%- if not name %}
-        {%- set name = "fields.{}".format(fields['field_name']) %}
-    {%- endif %}
-    {%- if label is none %}{% set label = fields['field_name'] %}{% endif %}
-    {%- if not anid %}{% set anid = "event-input-{}".format(name) %}{% endif %}
-    {%- call form_input_general(name, (None if fields['kind'] == enums['FieldDatatypes'].bool and not force_label else label), anid, False,
+    {%- set name = name or "fields.{}".format(fields['field_name']) %}
+    {%- set label = label or fields['field_name'] %}
+    {%- set anid = anid or "event-input-{}".format(name) %}
+    {%- call form_input_general(name, (none if fields['kind'] == enums['FieldDatatypes'].bool and not force_label else label), anid, False,
                                info, displayerrors, True, infolink=infolink) %}
         {{- event_field_input(fields, name, readonly, defaultvalue, anid) }}
     {%- endcall %}
@@ -641,7 +650,7 @@
    existing: a dict of already existing entries.
    locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
    sortkey:  to sort existing #}
-{% macro dynamic_row_table(name, columns, existing, locked=[], sortkey=None) %}
+{% macro dynamic_row_table(name, columns, existing, locked=[], sortkey=none) %}
     <table class="table table-condensed" id="drow-table">
         <thead>
             <tr>
@@ -832,7 +841,7 @@
      * `view_names` (2nd tuple entry) defines a list of admin_views to be toggled by this button together.
      * `relevant_views` (3rd tuple entry) defines a list of views, which are the subset of `view_names` that is relevant
        in the current page's context. The button is only displayed, if one of those views is available to the user.
-       For convenience, `relevant_views` may be set to None, in which case all `view_names` are considered relevant.
+       For convenience, `relevant_views` may be set to none, in which case all `view_names` are considered relevant.
        Example: A button in the Core realm may toggle all user admin views (`core_user`, `cde_user, `event_user`, ...),
        but should only be shown to core admins, i.e. users who have the `core_user` view available.
  #}
@@ -843,11 +852,9 @@
         <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" id="adminviewstoggleform">
             {% if original_request and original_request.url %}
                 {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
-                                                          original_request.url, user.persona_id, timeout=None)) }}
+                                                          original_request.url, user.persona_id, timeout=none)) }}
             {% endif %}
-            <div class="list-group tear-down">
-                {{ inner }}
-            </div>
+            <div class="list-group tear-down">{{ inner }}</div>
         </form>
     {% endif %}
 {% endmacro %}
@@ -861,11 +868,13 @@
             {# The button is "deactivated" as long as there are more "relevant views" which are available for the
                user but are not enabled yet. #}
             {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) -%}
-            <button type="submit"
-                    name="view_specifier"
-                    value="{% if active %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
-                    class="list-group-item list-group-item-info {% if active %}active{% endif %}"
-                    title="{{ (gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label) }}">
+            <button{{ dict(
+                type="submit",
+                name="view_specifier",
+                value=("-" if active else "+") + view_names|join(','),
+                class="list-group-item list-group-item-info" + (" active" if active else ""),
+                title=(gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label)
+            )|xmlattr }}>
                 {{- make_icon('wrench') }} {{ label -}}
                 {% if active %} <span class="sr-only">{% trans %}(enabled){% endtrans %}</span>{% endif -%}
             </button>
@@ -874,7 +883,7 @@
 {% endmacro %}
 
 {#
-    Creates a HTML compliant mailto: link (though not neccessarily RFC compliant)
+    Creates a HTML compliant mailto: URL (though not neccessarily RFC compliant)
     Additional header such as to, subject, body, cc, or bcc can be passed as kwargs
 #}
 {% macro mailto(address, name) -%}

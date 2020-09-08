@@ -1369,7 +1369,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
     def lastschrift_change(self, rs: RequestState, lastschrift_id: int,
-                           data: CdEDBObject):
+                           data: CdEDBObject) -> Response:
         """Modify one permit."""
         data['id'] = lastschrift_id
         data = check(rs, "lastschrift", data)
@@ -1381,12 +1381,13 @@ class CdEFrontend(AbstractUserFrontend):
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     @access("finance_admin")
-    def lastschrift_create_form(self, rs: RequestState, persona_id: int
+    def lastschrift_create_form(self, rs: RequestState, persona_id: int = None
                                 ) -> Response:
         """Render form."""
         return self.render(rs, "lastschrift_create")
 
     @access("finance_admin", modi={"POST"})
+    @REQUESTdata(('persona_id', 'cdedbid'))
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
     def lastschrift_create(self, rs: RequestState, persona_id: int,
@@ -1403,7 +1404,8 @@ class CdEFrontend(AbstractUserFrontend):
                 'persona_id': persona_id})
         new_id = self.cdeproxy.create_lastschrift(rs, data)
         self.notify_return_code(rs, new_id)
-        return self.redirect(rs, "cde/lastschrift_show")
+        return self.redirect(
+            rs, "cde/lastschrift_show", {'persona_id': persona_id})
 
     @access("finance_admin", modi={"POST"})
     def lastschrift_revoke(self, rs: RequestState, lastschrift_id: int
@@ -1652,7 +1654,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
     def lastschrift_skip(self, rs: RequestState, lastschrift_id: int,
-                         persona_id: Optional[int]):
+                         persona_id: Optional[int]) -> Response:
         """Do not do a direct debit transaction for this year.
 
         If persona_id is given return to the persona-specific
@@ -2641,7 +2643,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2650,7 +2652,7 @@ class CdEFrontend(AbstractUserFrontend):
                      codes: Collection[const.CdeLogCodes],
                      offset: Optional[int], length: Optional[int],
                      persona_id: Optional[int], submitted_by: Optional[int],
-                     additional_info: Optional[str],
+                     change_note: Optional[str],
                      time_start: Optional[datetime.datetime],
                      time_stop: Optional[datetime.datetime]) -> Response:
         """View general activity."""
@@ -2664,7 +2666,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.cdeproxy.retrieve_cde_log(
             rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -2679,7 +2681,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2688,7 +2690,7 @@ class CdEFrontend(AbstractUserFrontend):
                          codes: Optional[Collection[const.FinanceLogCodes]],
                          offset: Optional[int], length: Optional[int],
                          persona_id: Optional[int], submitted_by: Optional[int],
-                         additional_info: Optional[str],
+                         change_note: Optional[str],
                          time_start: Optional[datetime.datetime],
                          time_stop: Optional[datetime.datetime]) -> Response:
         """View financial activity."""
@@ -2702,7 +2704,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.cdeproxy.retrieve_finance_log(
             rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -2718,7 +2720,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2728,7 +2730,7 @@ class CdEFrontend(AbstractUserFrontend):
                       pevent_id: Optional[int], offset: Optional[int],
                       length: Optional[int], persona_id: Optional[int],
                       submitted_by: Optional[int],
-                      additional_info: Optional[str],
+                      change_note: Optional[str],
                       time_start: Optional[datetime.datetime],
                       time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning concluded events."""
@@ -2742,7 +2744,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.pasteventproxy.retrieve_past_log(
             rs, codes, pevent_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if

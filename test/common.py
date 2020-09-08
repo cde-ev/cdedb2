@@ -44,7 +44,7 @@ from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, PrivilegeError, RequestState, n_,
     roles_to_db_role, unwrap, PathLike, CdEDBObject, CdEDBObjectMap, now,
 )
-from cdedb.config import BasicConfig, SecretsConfig
+from cdedb.config import BasicConfig, SecretsConfig, Config
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -52,6 +52,16 @@ from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()
+
+
+def check_test_setup() -> None:
+    """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
+    if pathlib.Path("/OFFLINEVM").exists():
+        raise RuntimeError("Cannot run tests in an Offline-VM.")
+    if pathlib.Path("/PRODUCTIONVM").exists():
+        raise RuntimeError("Cannot run tests in Production-VM.")
+    if not os.environ.get('CDEDB_TEST'):
+        raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
 
 
 class NearlyNow(datetime.datetime):
@@ -297,6 +307,7 @@ class CdEDBTest(unittest.TestCase):
     def setUpClass(cls):
         # Keep a clean copy of sample data that should not be messed with.
         cls._clean_sample_data = read_sample_data()
+        cls.conf = Config()
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),
@@ -618,6 +629,17 @@ def as_users(*users: str) -> Callable[[F], F]:
     return wrapper
 
 
+def admin_views(*views: str) -> Callable[[F], F]:
+    """Decorate a test to set different initial admin views."""
+    def decorator(fun: F) -> F:
+        @functools.wraps(fun)
+        def new_fun(self, *args, **kwargs):
+            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(views))
+            return fun(self, *args, **kwargs)
+        return cast(F, new_fun)
+    return decorator
+
+
 def prepsql(sql: AnyStr) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
     def decorator(fun: F) -> F:
@@ -657,16 +679,17 @@ class FrontendTest(CdEDBTest):
     lang = "de"
     app: webtest.TestApp
     response: webtest.TestResponse
+    app_extra_environ = {
+        'REMOTE_ADDR': "127.0.0.0",
+        'SERVER_PROTOCOL': "HTTP/1.1",
+        'wsgi.url_scheme': 'https'}
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         app = Application()
         cls.gettext = app.translations[cls.lang].gettext
-        cls.app = webtest.TestApp(app, extra_environ={
-            'REMOTE_ADDR': "127.0.0.0",
-            'SERVER_PROTOCOL': "HTTP/1.1",
-            'wsgi.url_scheme': 'https'})
+        cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
         cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
@@ -690,7 +713,7 @@ class FrontendTest(CdEDBTest):
         self.app.reset()
         # Make sure all available admin views are enabled.
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
-        self.response: None  # type: ignore
+        self.response = None  # type: ignore
 
     def basic_validate(self, verbose=False):
         if self.response.content_type == "text/html":
@@ -724,7 +747,7 @@ class FrontendTest(CdEDBTest):
     def get(self, url: str, *args, verbose=False, **kwargs) -> None:
         """Navigate directly to a given URL using GET."""
         self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
-        # TODO: Is there a reason to not follow() here?
+        self.follow()
         self.basic_validate(verbose=verbose)
 
     def follow(self, **kwargs) -> None:
@@ -1191,6 +1214,62 @@ class FrontendTest(CdEDBTest):
         else:
             if fail:
                 self.fail(f"Form {form} not found after {count} reloads.")
+
+
+class MultiAppFrontendTest(FrontendTest):
+    """Subclass for testing multiple frontend instances simultaniously."""
+    n: int = 2  # The number of instances that should be created.
+    current_app: int  # Which instance is currently active 0 <= x < n
+    apps: List[webtest.TestApp]
+    responses: List[webtest.TestResponse]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Create n new apps, overwrite cls.app with a reference."""
+        super().setUpClass()
+        cls.apps = [webtest.TestApp(Application(),
+                                    extra_environ=cls.app_extra_environ)
+                    for _ in range(cls.n)]
+        # The super().setUpClass overwrites the property, so reset it here.
+        cls.app = property(fget=cls.get_app, fset=cls.set_app)
+        cls.responses = [None for _ in range(cls.n)]
+        cls.current_app = 0
+
+    def setUp(self) -> None:
+        """Reset all apps and responses and the current app index."""
+        self.responses = [None for _ in range(self.n)]  # type: ignore
+        super().setUp()
+        for app in self.apps:
+            app.reset()
+            app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+        self.current_app = 0
+
+    def get_response(self) -> webtest.TestResponse:
+        return self.responses[self.current_app]
+
+    def set_response(self, value: webtest.TestResponse) -> None:
+        self.responses[self.current_app] = value
+
+    response = property(fget=get_response, fset=set_response)
+
+    def get_app(self) -> webtest.TestApp:
+        return self.apps[self.current_app]
+
+    def set_app(self, value: webtest.TestApp) -> None:
+        self.apps[self.current_app] = value
+
+    app = property(fget=get_app, fset=set_app)
+
+    def switch_app(self, i: int) -> None:
+        """Switch to a different index.
+
+        Sets the app and response with the specified index as active.
+        All methods of the super class only interact with the active app and
+        response.
+        """
+        if not 0 <= i < self.n:
+            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")
+        self.current_app = i
 
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])

@@ -72,7 +72,7 @@
                 –
             {% endif %}
         </td>
-        <td>{{ entry['additional_info'] }}</td>
+        <td>{{ entry['change_note'] }}</td>
     </tr>
 {% endmacro %}
 
@@ -118,7 +118,7 @@
                     );
                 </script>
             {% endif %}
-            {{ util.form_input_text("additional_info", label=gettext("Additional Info"), small=True) }}
+            {{ util.form_input_text("change_note", label=gettext("Additional Info"), small=True) }}
             {{ util.form_input_text('length', label=gettext("Length"), type='number', small=True) }}
             {{ util.form_input_text('offset', label=gettext("Offset"), type='number', small=True) }}
             {{ util.form_input_from_to('time_start', 'time_stop', label=gettext("Timestamp"), type='datetime', small=True) }}

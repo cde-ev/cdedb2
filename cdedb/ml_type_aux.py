@@ -5,7 +5,7 @@ from typing import (
 )
 
 from cdedb.common import (
-    extract_roles, n_, unwrap, CdEDBObject, RequestState
+    extract_roles, n_, unwrap, CdEDBObject, RequestState, User
 )
 from cdedb.query import Query, QueryOperators
 import cdedb.database.constants as const
@@ -52,18 +52,17 @@ class AllMembersImplicitMeta:
 
 class AssemblyAssociatedMeta:
     """Metaclass for all assembly associated mailinglists."""
-    mandatory_validation_fields = [
+    mandatory_validation_fields = {
         ("assembly_id", "id"),
-    ]
+    }
 
 
 class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields = [
+    mandatory_validation_fields = {
         ("event_id", "id_or_None"),
-        ("registration_stati", "[enum_registrationpartstati]"),
-    ]
+    }
 
     @classmethod
     def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
@@ -108,14 +107,14 @@ class GeneralMailinglist:
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: List[Tuple[str, str]] = list()
-    optional_validation_fields: List[Tuple[str, str]] = list()
+    mandatory_validation_fields: Set[Tuple[str, str]] = set()
+    optional_validation_fields: Set[Tuple[str, str]] = set()
 
     @classmethod
     def get_additional_fields(cls) -> Set[Tuple[str, str]]:
         ret = set()
         for field, argtype in (cls.mandatory_validation_fields
-                               + cls.optional_validation_fields):
+                               | cls.optional_validation_fields):
             if argtype.startswith('[') and argtype.endswith(']'):
                 ret.add((field, "[str]"))
             else:
@@ -135,16 +134,13 @@ class GeneralMailinglist:
 
         - `viewer_roles`: A set of roles other than `ml_admin` which allows
           a user to view a mailinglist. The semantics are similar to `@access`.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: bool
         """
         return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
 
     relevant_admins: Set[str] = set()
 
     @classmethod
-    def is_relevant_admin(cls, rs: RequestState):
+    def is_relevant_admin(cls, user: User) -> bool:
         """Determine if the user is allowed to administrate a mailinglist.
 
         Instead of overriding this, you should set the `relevant_admins`
@@ -155,15 +151,32 @@ class GeneralMailinglist:
         - `relevant_admins`: A set of roles other than `ml_admin` which allows
           a user to administrate a mailinglist. The semantics are similar to
           `@access`.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: bool
         """
-        return bool((cls.relevant_admins | {"ml_admin"}) & rs.user.roles)
+        return bool((cls.relevant_admins | {"ml_admin"}) & user.roles)
 
     if TYPE_CHECKING:
         role_map: OrderedDict[str, MailinglistInteractionPolicy]
     role_map = OrderedDict()
+
+    @classmethod
+    def moderator_admin_views(cls):
+        return {"ml_mod_" + admin.replace("_admin", "")
+                for admin in cls.relevant_admins} | {"ml_mod"}
+
+    @classmethod
+    def management_admin_views(cls):
+        return {"ml_mgmt_" + admin.replace("_admin", "")
+                for admin in cls.relevant_admins} | {"ml_mgmt"}
+
+    @classmethod
+    def has_moderator_view(cls, user: User) -> bool:
+        return (cls.is_relevant_admin(user)
+                and bool(cls.moderator_admin_views() & user.admin_views))
+
+    @classmethod
+    def has_management_view(cls, user: User) -> bool:
+        return (cls.is_relevant_admin(user)
+                and bool(cls.management_admin_views() & user.admin_views))
 
     @classmethod
     def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,
@@ -187,12 +200,6 @@ class GeneralMailinglist:
         This does not do a permission check, because it is not exposed to the
         frontend and does not currently have a way of accessing the relevant
         methods of the MailinglistBackend.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type bc: :py:class:`BackendContainer`
-        :type mailinglist: {str: object}
-        :type persona_ids: [int]
-        :rtype: :py:class`const.MailinglistInteractionPolicy` or None
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
 
@@ -212,24 +219,13 @@ class GeneralMailinglist:
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
-        """Retrieve a set of personas, which should be subscribers.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type bc: :py:class:`BackendContainer`
-        :type mailinglist: {str: object}
-        :rtype: {int}
-        """
+        """Retrieve a set of personas, which should be subscribers."""
         return set()
 
     @classmethod
     def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
                          ) -> bool:
-        """Whether or not to do periodic subscription cleanup on this list.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist: {str: object}
-        :rtype: bool
-        """
+        """Whether or not to do periodic subscription cleanup on this list."""
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
         return True
 
@@ -305,6 +301,10 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
+    # TODO I bet this can be done more simple, but I dont get how
+    mandatory_validation_fields = (
+            EventAssociatedMeta.mandatory_validation_fields
+            | {("registration_stati", "[enum_registrationpartstati]")})
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,

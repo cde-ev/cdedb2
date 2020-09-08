@@ -129,7 +129,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata(("codes", "[int]"), ("assembly_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -138,9 +138,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                  codes: Collection[const.AssemblyLogCodes],
                  assembly_id: Optional[int], offset: Optional[int],
                  length: Optional[int], persona_id: Optional[int],
-                 submitted_by: Optional[int], additional_info: Optional[str],
+                 submitted_by: Optional[int], change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]):
+                 time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -152,7 +152,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.assemblyproxy.retrieve_log(
             rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         personas = (
                 {entry['submitted_by'] for entry in log if
@@ -172,7 +172,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -182,7 +182,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                           assembly_id: Optional[int], offset: Optional[int],
                           length: Optional[int], persona_id: Optional[int],
                           submitted_by: Optional[int],
-                          additional_info: Optional[str],
+                          change_note: Optional[str],
                           time_start: Optional[datetime.datetime],
                           time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
@@ -196,7 +196,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.assemblyproxy.retrieve_log(
             rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         personas = (
                 {entry['submitted_by'] for entry in log if
@@ -329,6 +329,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/index")
         assembly_attachments = self.assemblyproxy.list_attachments(
                 rs, assembly_id=assembly_id)
+        count = len(assembly_attachments)
         all_attachments: Dict[Optional[int], CdEDBObjectMap] = {
             None: self.assemblyproxy.get_attachments(
                 rs, assembly_attachments)
@@ -342,6 +343,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for ballot_id in ballot_ids:
             attachment_ids = self.assemblyproxy.list_attachments(
                 rs, ballot_id=ballot_id)
+            count += len(attachment_ids)
             all_attachments[ballot_id] = self.assemblyproxy.get_attachments(
                 rs, attachment_ids)
             attachment_histories[ballot_id] = (
@@ -350,6 +352,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             "all_attachments": all_attachments,
             "attachment_histories": attachment_histories,
             "ballots": ballots,
+            "count": count,
         })
 
     def process_signup(self, rs: RequestState, assembly_id: int,
@@ -1028,7 +1031,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 return 1
         return 0
 
-    def get_online_result(self, rs, ballot: Dict[str, Any]
+    def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
                           ) -> Union[Dict[str, Any], None]:
         """Helper to get the result information of a tallied ballot."""
         result = None

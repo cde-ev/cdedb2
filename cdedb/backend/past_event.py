@@ -7,7 +7,7 @@ concluded events.
 import datetime
 
 from typing import (
-    Collection, Dict, Callable, Optional, Tuple, Union, List, Set
+    Collection, Dict, Callable, Optional, Tuple, Union, List, Set, Any
 )
 
 from cdedb.backend.common import (
@@ -78,7 +78,7 @@ class PastEventBackend(AbstractBackend):
 
     def past_event_log(self, rs: RequestState, code: const.PastEventLogCodes,
                        pevent_id: Optional[int], persona_id: int = None,
-                       additional_info: str = None) -> int:
+                       change_note: str = None) -> int:
         """Make an entry in the log for concluded events.
 
         See
@@ -91,7 +91,7 @@ class PastEventBackend(AbstractBackend):
             "pevent_id": pevent_id,
             "submitted_by": rs.user.persona_id,
             "persona_id": persona_id,
-            "additional_info": additional_info,
+            "change_note": change_note,
         }
         return self.sql_insert(rs, "past_event.log", data)
 
@@ -100,7 +100,7 @@ class PastEventBackend(AbstractBackend):
                           codes: Collection[const.PastEventLogCodes] = None,
                           pevent_id: int = None, offset: int = None,
                           length: int = None, persona_id: int = None,
-                          submitted_by: int = None, additional_info: str = None,
+                          submitted_by: int = None, change_note: str = None,
                           time_start: datetime.datetime = None,
                           time_stop: datetime.datetime = None) -> CdEDBLog:
         """Get recorded activity for concluded events.
@@ -114,7 +114,7 @@ class PastEventBackend(AbstractBackend):
             rs, "enum_pasteventlogcodes", "pevent", "past_event.log",
             codes=codes, entity_ids=pevent_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info, time_start=time_start,
+            change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
     @access("cde", "event")
@@ -147,7 +147,7 @@ class PastEventBackend(AbstractBackend):
         ret = self.sql_update(rs, "past_event.institutions", data)
         current = unwrap(self.get_institutions(rs, (data['id'],)))
         self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
-                            pevent_id=None, additional_info=current['title'])
+                            pevent_id=None, change_note=current['title'])
         return ret
 
     @access("cde_admin", "event_admin")
@@ -157,7 +157,7 @@ class PastEventBackend(AbstractBackend):
         data = affirm("institution", data, creation=True)
         ret = self.sql_insert(rs, "past_event.institutions", data)
         self.past_event_log(rs, const.PastEventLogCodes.institution_created,
-                            pevent_id=None, additional_info=data['title'])
+                            pevent_id=None, change_note=data['title'])
         return ret
 
     # TODO: rework deletion interface
@@ -181,7 +181,7 @@ class PastEventBackend(AbstractBackend):
                                       institution_id)
             self.past_event_log(
                 rs, const.PastEventLogCodes.institution_deleted,
-                pevent_id=None, additional_info=current['title'])
+                pevent_id=None, change_note=current['title'])
         return ret
 
     @access("persona")
@@ -350,7 +350,7 @@ class PastEventBackend(AbstractBackend):
                 ret *= self.sql_delete_one(rs, "past_event.events", pevent_id)
                 self.past_event_log(rs, const.PastEventLogCodes.event_deleted,
                                     pevent_id=None, persona_id=None,
-                                    additional_info=pevent['title'])
+                                    change_note=pevent['title'])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -398,7 +398,7 @@ class PastEventBackend(AbstractBackend):
         current.update(data)
         self.past_event_log(
             rs, const.PastEventLogCodes.course_changed, current['pevent_id'],
-            additional_info=current['title'])
+            change_note=current['title'])
         return ret
 
     @access("cde_admin", "event_admin")
@@ -408,7 +408,7 @@ class PastEventBackend(AbstractBackend):
         data = affirm("past_course", data, creation=True)
         ret = self.sql_insert(rs, "past_event.courses", data)
         self.past_event_log(rs, const.PastEventLogCodes.course_created,
-                            data['pevent_id'], additional_info=data['title'])
+                            data['pevent_id'], change_note=data['title'])
         return ret
 
     @access("cde_admin")
@@ -469,7 +469,7 @@ class PastEventBackend(AbstractBackend):
                 ret *= self.sql_delete_one(rs, "past_event.courses", pcourse_id)
                 self.past_event_log(
                     rs, const.PastEventLogCodes.course_deleted,
-                    pcourse['pevent_id'], additional_info=pcourse['title'])
+                    pcourse['pevent_id'], change_note=pcourse['title'])
         return ret
 
     @access("cde_admin", "event_admin")
@@ -611,7 +611,7 @@ class PastEventBackend(AbstractBackend):
         q1 = query + " AND nr = %s"
         q2 = query + " AND title ~* %s"
         q3 = query + " AND similarity(title, %s) > %s"
-        params: Tuple = (pevent_id, phrase)
+        params: Tuple[Any, ...] = (pevent_id, phrase)
         ret = self.query_all(rs, q1, params)
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or

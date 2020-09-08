@@ -84,7 +84,7 @@ class MlBackend(AbstractBackend):
                 if mailinglist['id'] != mailinglist_id:
                     raise ValueError(n_("Different mailinglists specified."))
             atype = ml_type.get_type(mailinglist['ml_type'])
-        return atype.is_relevant_admin(rs)
+        return atype.is_relevant_admin(rs.user)
 
     @access("ml", "droid_rklist")
     def is_moderator(self, rs: RequestState, ml_id: int) -> bool:
@@ -124,7 +124,7 @@ class MlBackend(AbstractBackend):
         :rtype: {const.MailinglistTypes}
         """
         ret = {enum_member for enum_member, atype in ml_type.TYPE_MAP.items()
-               if atype.is_relevant_admin(rs)}
+               if atype.is_relevant_admin(rs.user)}
         return ret
 
     @overload
@@ -240,7 +240,7 @@ class MlBackend(AbstractBackend):
 
     def ml_log(self, rs: RequestState, code: const.MlLogCodes,
                mailinglist_id: Optional[int], persona_id: Optional[int] = None,
-               additional_info: Optional[str] = None) -> DefaultReturnCode:
+               change_note: Optional[str] = None) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -252,8 +252,8 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int or None
         :type persona_id: int or None
         :param persona_id: ID of affected user (like who was subscribed).
-        :type additional_info: str or None
-        :param additional_info: Infos not conveyed by other columns.
+        :type change_note: str or None
+        :param change_note: Infos not conveyed by other columns.
         :rtype: int
         :returns: default return code
         """
@@ -264,7 +264,7 @@ class MlBackend(AbstractBackend):
             "mailinglist_id": mailinglist_id,
             "submitted_by": rs.user.persona_id,
             "persona_id": persona_id,
-            "additional_info": additional_info,
+            "change_note": change_note,
 
         }
         return self.sql_insert(rs, "ml.log", new_log)
@@ -276,7 +276,7 @@ class MlBackend(AbstractBackend):
                      offset: Optional[int] = None, length: Optional[int] = None,
                      persona_id: Optional[int] = None,
                      submitted_by: Optional[int] = None,
-                     additional_info: Optional[str] = None,
+                     change_note: Optional[str] = None,
                      time_start: Optional[datetime] = None,
                      time_stop: Optional[datetime] = None) -> CdEDBLog:
         """Get recorded activity.
@@ -294,7 +294,7 @@ class MlBackend(AbstractBackend):
         :type length: int or None
         :type persona_id: int or None
         :type submitted_by: int or None
-        :type additional_info: str or None
+        :type change_note: str or None
         :type time_start: datetime or None
         :type time_stop: datetime or None
         :rtype: [{str: object}]
@@ -308,7 +308,7 @@ class MlBackend(AbstractBackend):
             rs, "enum_mllogcodes", "mailinglist", "ml.log", codes=codes,
             entity_ids=mailinglist_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info, time_start=time_start,
+            change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
     @access("ml_admin")
@@ -547,14 +547,14 @@ class MlBackend(AbstractBackend):
                     }
                     ret *= self.sql_insert(rs, "ml.whitelist", new_white)
                     self.ml_log(rs, const.MlLogCodes.whitelist_added,
-                                mailinglist_id, additional_info=address)
+                                mailinglist_id, change_note=address)
             if deleted:
                 query = ("DELETE FROM ml.whitelist"
                          " WHERE address = ANY(%s) AND mailinglist_id = %s")
                 ret *= self.query_exec(rs, query, (deleted, mailinglist_id))
                 for address in deleted:
                     self.ml_log(rs, const.MlLogCodes.whitelist_removed,
-                                mailinglist_id, additional_info=address)
+                                mailinglist_id, change_note=address)
         return ret
 
     def _ml_type_transition(self, rs: RequestState, mailinglist_id: int,
@@ -790,7 +790,7 @@ class MlBackend(AbstractBackend):
                 ret *= self.sql_delete_one(
                     rs, "ml.mailinglists", mailinglist_id)
                 self.ml_log(rs, const.MlLogCodes.list_deleted,
-                            mailinglist_id=None, additional_info="{} ({})".
+                            mailinglist_id=None, change_note="{} ({})".
                             format(ml_data['title'], ml_data['address']))
             else:
                 raise ValueError(
@@ -1005,7 +1005,7 @@ class MlBackend(AbstractBackend):
             if ret:
                 self.ml_log(
                     rs, const.MlLogCodes.subscription_changed,
-                    mailinglist_id, persona_id, additional_info=email)
+                    mailinglist_id, persona_id, change_note=email)
 
         return ret
 
@@ -1323,7 +1323,7 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             ml = self.get_mailinglist(rs, mailinglist_id)
             atype = self.get_ml_type(rs, mailinglist_id)
-            if not atype.is_relevant_admin(rs):
+            if not atype.is_relevant_admin(rs.user):
                 raise PrivilegeError(n_("Not privileged."))
 
             if not atype.periodic_cleanup(rs, ml):
@@ -1622,5 +1622,5 @@ class MlBackend(AbstractBackend):
                 address, reasons.get(error, "Unbekanntes Problem."),
                 now().date().isoformat())
             self.ml_log(rs, const.MlLogCodes.email_trouble, None,
-                        persona_id=unwrap(data)['id'], additional_info=line)
+                        persona_id=unwrap(data)['id'], change_note=line)
             return True

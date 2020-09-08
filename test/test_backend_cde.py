@@ -30,11 +30,19 @@ class TestCdEBackend(BackendTest):
 
     @as_users("berta")
     def test_quota(self, user):
-        self.assertEqual(0, self.core.quota(self.key, []))
+        self.assertEqual(0, self.core.quota(self.key))
         for i in range(1, 22):
-            self.assertEqual(i * 2, self.core.quota(self.key, (1, 2, 6)))
+            if i % 2 == 0:
+                self.assertEqual(i*2, self.core.quota(self.key, ids=(1, 2, 6)))
+            else:
+                self.assertEqual(i*2, self.core.quota(self.key, num=2))
         with self.assertRaises(QuotaException):
             self.core.get_cde_users(self.key, (1, 2, 6))
+
+        query = Query(scope="qview_cde_member", spec={},
+                      fields_of_interest=["id"], constraints=[], order=[])
+        with self.assertRaises(QuotaException):
+            self.cde.submit_general_query(self.key, query)
 
     @as_users("berta")
     def test_displacement(self, user):
@@ -97,7 +105,7 @@ class TestCdEBackend(BackendTest):
             constraints=[
                 ("given_names,display_name", QueryOperators.regex, '[ae]'),
                 ("country,country2", QueryOperators.empty, None)],
-            order=(("family_name", True),),)
+            order=(("family_name,birth_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual(
             {2, 6, 9, 12, 15, 100}, {e['id'] for e in result})
@@ -131,6 +139,18 @@ class TestCdEBackend(BackendTest):
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2}, {e['id'] for e in result})
+
+    @as_users("vera")
+    def test_user_search_collation(self, user):
+        query = Query(
+            scope="qview_cde_user",
+            spec=dict(QUERY_SPECS["qview_cde_user"]),
+            fields_of_interest=("personas.id", "family_name",
+                                "address", "location"),
+            constraints=[("location", QueryOperators.match, 'Musterstadt')],
+            order=(("address", True),),)
+        result = self.cde.submit_general_query(self.key, query)
+        self.assertEqual([1, 27], [e['id'] for e in result])
 
     @as_users("vera")
     def test_demotion(self, user):

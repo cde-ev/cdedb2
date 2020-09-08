@@ -20,7 +20,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
-    RequestState, CdEDBObject, PathLike, CdEDBObjectMap)
+    RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap)
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
@@ -196,7 +196,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 })
         else:
             atype = TYPE_MAP[ml_type]
-            if not atype.is_relevant_admin(rs):
+            if not atype.is_relevant_admin(rs.user):
                 rs.append_validation_error(
                     ("ml_type", ValueError(n_(
                         "May not create mailinglist of this type."))))
@@ -206,7 +206,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 event_ids = self.eventproxy.list_db_events(rs)
                 events = self.eventproxy.get_events(rs, event_ids)
             else:
-                events = []
+                events = {}
             assemblies = (self.assemblyproxy.list_assemblies(rs)
                           if "assembly_id" in additional_fields else [])
             return self.render(rs, "create_mailinglist", {
@@ -259,7 +259,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdata(("codes", "[int]"), ("mailinglist_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -267,7 +267,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def view_log(self, rs: RequestState, codes: Collection[const.MlLogCodes],
                  mailinglist_id: Optional[int], offset: Optional[int],
                  length: Optional[int], persona_id: Optional[int],
-                 submitted_by: Optional[int], additional_info: Optional[str],
+                 submitted_by: Optional[int], change_note: Optional[str],
                  time_start: Optional[datetime],
                  time_stop: Optional[datetime]) -> Response:
         """View activities."""
@@ -295,7 +295,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         total, log = self.mlproxy.retrieve_log(
             rs, codes, db_mailinglist_ids, _offset, _length,
             persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info,
+            change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -475,7 +475,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -484,7 +484,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def view_ml_log(self, rs: RequestState, mailinglist_id: int,
                     codes: Collection[const.MlLogCodes], offset: Optional[int],
                     length: Optional[int], persona_id: Optional[int],
-                    submitted_by: Optional[int], additional_info: Optional[str],
+                    submitted_by: Optional[int], change_note: Optional[str],
                     time_start: Optional[datetime],
                     time_stop: Optional[datetime]) -> Response:
         """View activities pertaining to one list."""
@@ -499,7 +499,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         total, log = self.mlproxy.retrieve_log(
             rs, codes, [mailinglist_id], _offset, _length,
             persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info, time_start=time_start,
+            change_note=change_note, time_start=time_start,
             time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -696,11 +696,51 @@ class MlBaseFrontend(AbstractUserFrontend):
     def _subscription_action_handler(self, rs: RequestState,
                                      action: SubscriptionActions,
                                      **kwargs: Any) -> None:
-        """Un-inlined code from all subscription action initiating endpoints."""
+        """Un-inlined code from all single subscription action initiating endpoints."""
         try:
             code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
         except SubscriptionError as se:
             rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
+
+    def _subscription_multi_action_handler(self, rs: RequestState,
+                                           field: str,
+                                           action: SubscriptionActions,
+                                           mailinglist_id: int,
+                                           persona_ids: Collection[int]) -> None:
+        """Un-inlined code from all multi subscription action initiating endpoints.
+
+        Falls back to _subscription_action_handler if only a single action is
+        done."""
+        if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=False):
+            rs.append_validation_error(
+                (field, ValueError(n_(
+                    "Some of these users do not exist or are archived."))))
+            self.notify_return_code(rs, 0)
+            return
+
+        # Use different error pattern if only one action is done
+        if len(persona_ids) == 1:
+            self._subscription_action_handler(rs, action,
+                mailinglist_id=mailinglist_id, persona_id=unwrap(persona_ids))
+
+        # Iterate over all subscriber_ids
+        code = 0
+        # This tracks whether every single action failed with
+        # an error of kind "info".
+        infos_only = True
+        for persona_id in persona_ids:
+            try:
+                code += self.mlproxy.do_subscription_action(rs, action,
+                    mailinglist_id=mailinglist_id, persona_id=persona_id)
+                infos_only = False
+            except SubscriptionError as se:
+                rs.notify(se.multikind, se.msg)
+                if se.multikind != 'info':
+                    infos_only = False
+        if infos_only:
+            self.notify_return_code(rs, -1, pending=n_("Action had no effect."))
         else:
             self.notify_return_code(rs, code)
 
@@ -744,17 +784,20 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "cdedbid"))
+    @REQUESTdata(("subscriber_ids", "cdedbid_csv_list"))
     @mailinglist_guard()
-    def add_subscriber(self, rs: RequestState, mailinglist_id: int,
-                       subscriber_id: int) -> Response:
+    def add_subscribers(self, rs: RequestState, mailinglist_id: int,
+                        subscriber_ids: Collection[int]) -> Response:
         """Administratively subscribe somebody."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
-        self._subscription_action_handler(
-            rs, SubscriptionActions.add_subscriber,
-            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
-        return self.redirect(rs, "ml/management")
+        self._subscription_multi_action_handler(
+            rs, 'subscriber_ids', SubscriptionActions.add_subscriber,
+            mailinglist_id=mailinglist_id, persona_ids=subscriber_ids)
+        if rs.has_validation_errors():
+            return self.management(rs, mailinglist_id)
+        else:
+            return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("subscriber_id", "id"))
@@ -770,17 +813,20 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("modsubscriber_id", "cdedbid"))
+    @REQUESTdata(("modsubscriber_ids", "cdedbid_csv_list"))
     @mailinglist_guard()
-    def add_subscription_override(self, rs: RequestState, mailinglist_id: int,
-                                  modsubscriber_id: int) -> Response:
+    def add_subscription_overrides(self, rs: RequestState, mailinglist_id: int,
+                                   modsubscriber_ids: Collection[int]) -> Response:
         """Administratively subscribe somebody with moderator override."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
-        self._subscription_action_handler(
-            rs, SubscriptionActions.add_subscription_override,
-            mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
-        return self.redirect(rs, "ml/show_subscription_details")
+        self._subscription_multi_action_handler(
+            rs, 'modsubscriber_ids', SubscriptionActions.add_subscription_override,
+            mailinglist_id=mailinglist_id, persona_ids=modsubscriber_ids)
+        if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        else:
+            return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modsubscriber_id", "id"))
@@ -797,17 +843,20 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("modunsubscriber_id", "cdedbid"))
+    @REQUESTdata(("modunsubscriber_ids", "cdedbid_csv_list"))
     @mailinglist_guard()
-    def add_unsubscription_override(self, rs: RequestState, mailinglist_id: int,
-                                    modunsubscriber_id: int) -> Response:
+    def add_unsubscription_overrides(self, rs: RequestState, mailinglist_id: int,
+                                     modunsubscriber_ids: Collection[int]) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
-        self._subscription_action_handler(
-            rs, SubscriptionActions.add_unsubscription_override,
-            mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
-        return self.redirect(rs, "ml/show_subscription_details")
+        self._subscription_multi_action_handler(
+            rs, 'modunsubscriber_ids', SubscriptionActions.add_unsubscription_override,
+            mailinglist_id=mailinglist_id, persona_ids=modunsubscriber_ids)
+        if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        else:
+            return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modunsubscriber_id", "id"))
