@@ -118,14 +118,13 @@ storage-test:
 		/tmp/cdedb-store/assembly_attachment/3_v1
 	cp -t /tmp/cdedb-store/testfiles/ test/ancillary_files/{$(TESTFILES)}
 
-sql: test/ancillary_files/sample_data.sql
+sql-schema:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
 		-v cdb_database_name=cdb
@@ -133,45 +132,27 @@ endif
 		-v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data.sql
-	sudo systemctl start pgbouncer
+
+sql: test/ancillary_files/sample_data.sql
+	$(MAKE) sql-schema
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		test/ancillary_files/sample_data.sql cdb cdb_test
 
 sql-test:
-	sudo systemctl stop pgbouncer
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb_test
-	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		cdedb/database/cdedb-tables.sql cdb_test
 	$(MAKE) sql-test-shallow
-	sudo systemctl start pgbouncer
 
 sql-test-shallow: test/ancillary_files/sample_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/clean_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		test/ancillary_files/clean_data.sql cdb_test
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		test/ancillary_files/sample_data.sql cdb_test
 
 sql-xss:
-ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(error Refusing to touch live instance)
-endif
-ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
-	$(error Refusing to touch orga instance)
-endif
-	sudo systemctl stop pgbouncer
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb_test
-	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb \
-		-f test/ancillary_files/sample_data_escaping.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data_escaping.sql
-	sudo systemctl start pgbouncer
+	$(MAKE) sql-schema
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		test/ancillary_files/sample_data_escaping.sql cdb cdb_test
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
