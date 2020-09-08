@@ -132,10 +132,13 @@ endif
 	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
 
-sql: test/ancillary_files/sample_data.sql
+sql:
 	$(MAKE) sql-schema
+	$(MAKE) sql-seed-database
+
+sql-seed-database: test/ancillary_files/sample_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py \
-		test/ancillary_files/sample_data.sql cdb cdb_test
+                test/ancillary_files/sample_data.sql cdb cdb_test
 
 sql-test:
 	$(PYTHONBIN) bin/execute_sql_script.py \
