@@ -1019,8 +1019,14 @@ class FrontendTest(CdEDBTest):
         nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
         f = fieldname
-        if index is None and len(nodes) == 1:
-            node = nodes[0]
+        if index is None:
+            if len(nodes) == 1:
+                node = nodes[0]
+            elif len(nodes) == 0:
+                raise AssertionError(f"No input with name {f!r} found.")
+            else:
+                raise AssertionError(f"More than one input with name {f!r}"
+                                     f" found. Need to specify index.")
         else:
             try:
                 node = nodes[index]

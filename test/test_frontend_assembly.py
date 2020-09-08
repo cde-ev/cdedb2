@@ -991,18 +991,21 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         # Try non-existing user.
         f['presider_ids'] = "DB-1000-6"
         self.submit(f, check_notification=False)
-        self.assertValidationError("Einige dieser Nutzer existieren nicht"
-                                   " oder sind archiviert.", "persider_ids")
+        self.assertValidationError(
+            "presider_ids",
+            "Einige dieser Nutzer existieren nicht oder sind archiviert.")
         # Try archived user.
         f['presider_ids'] = "DB-8-6"
         self.submit(f, check_notification=False)
-        self.assertValidationError("Einige dieser Nutzer existieren nicht"
-                                   " oder sind archiviert.", "persider_ids")
+        self.assertValidationError(
+            "presider_ids",
+            "Einige dieser Nutzer existieren nicht oder sind archiviert.")
         # Try non-assembly user.
         f['presider_ids'] = "DB-5-1"
         self.submit(f, check_notification=False)
-        self.assertValidationError("Einige dieser Nutzer sind keine"
-                                   " Versammlungsnutzer.", "persider_ids")
+        self.assertValidationError(
+            "presider_ids",
+            "Einige dieser Nutzer sind keine Versammlungsnutzer.")
         # Proceed with a valid user.
         f['presider_ids'] = USER_DICT["werner"]['DB-ID']
         self.submit(f)
