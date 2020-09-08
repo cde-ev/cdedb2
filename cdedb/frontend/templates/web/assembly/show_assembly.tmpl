@@ -75,23 +75,24 @@
             </ul>
             <form action="{{ cdedblink('assembly/add_presiders') }}" method="POST" id="addpresidersform" class="p">
                 {{ util.anti_csrf_token('assembly/add_presiders') }}
-                <div class="input-group has-success">
-                    <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Presiders")) }}</span>
-                    {{ util.input_text(name="presider_ids", placeholder="DB-XXXX-X, DB-XXXX-X, …",
-                                       anid='input-add-presiders', arialabel=gettext("IDs of the new Presiders.")) }}
-                    <script nonce="{{ csp_nonce }}">
-                        $('#input-add-presiders').cdedbSearchPerson(
-                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_admin_user&phrase=%s&aux='|s) +
-                                (ambience['assembly']['id']|string|e) }}',
-                            {{ ambience['assembly']['presiders']|list|json|s }}, false, true,
-                            "{{ gettext("ID, name, email") }}"
-                        );
-                    </script>
-                    <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Add"), aclass='btn btn-success') }}
+                {% call util.output_errors('presider_ids', wrapper=True) %}
+                    <div class="input-group has-success">
+                        <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Presiders")) }}</span>
+                        {{ util.input_text(name="presider_ids", placeholder="DB-XXXX-X, DB-XXXX-X, …",
+                                           anid='input-add-presiders', arialabel=gettext("IDs of the new Presiders.")) }}
+                        <script nonce="{{ csp_nonce }}">
+                            $('#input-add-presiders').cdedbSearchPerson(
+                                '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_admin_user&phrase=%s&aux='|s) +
+                                    (ambience['assembly']['id']|string|e) }}',
+                                {{ ambience['assembly']['presiders']|list|json|s }}, false, true,
+                                "{{ gettext("ID, name, email") }}"
+                            );
+                        </script>
+                        <div class="input-group-btn">
+                            {{ util.input_submit(value=gettext("Add"), aclass='btn btn-success') }}
+                        </div>
                     </div>
-                </div>
-                {{ util.output_errors('presider_ids', wrapper=True) }}
+                {% endcall %}
             </form>
             {% endcall %}
         </div>
