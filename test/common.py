@@ -24,7 +24,7 @@ import copy
 import decimal
 
 from typing import (
-    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set,
+    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set, Union,
     MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection, Iterable,
 )
 
@@ -797,9 +797,12 @@ class FrontendTest(CdEDBTest):
                 raise AssertionError(
                     "Post request did not produce success notification.")
 
-    def traverse(self, *links: MutableMapping[str, Any], verbose: bool = False
-                 ) -> None:
+    def traverse(self, *links: Union[MutableMapping[str, Any], str],
+                 verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
+
+        A link can also be just a string, in which case that string is assumed
+        to be the `description` of the link.
 
         A link should usually contain some of the following descriptors:
 
@@ -815,6 +818,8 @@ class FrontendTest(CdEDBTest):
         :param verbose: If True, display additional debug information.
         """
         for link in links:
+            if isinstance(link, str):
+                link = {'description': link}
             if 'index' not in link:
                 link['index'] = 0
             try:
