@@ -1,21 +1,20 @@
-FROM httpd:2.4
+FROM debian:buster-20200607
 
+# TODO replace with mount from host or snakeoil?
 RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
     && mkdir /etc/ssl/apache2 \
     && openssl req \
-    -x509 \
-    -newkey rsa:4096 \
-    -out /etc/ssl/apache2/server.pem \
-    -keyout /etc/ssl/apache2/server.key \
-    -days 365 \
-    -nodes \
-    -subj "/C=DE/O=CdE e.V./CN=cdedb.local/emailAddress=cdedb@lists.cde-ev.de" \
+        -x509 \
+        -newkey rsa:4096 \
+        -out /etc/ssl/apache2/server.pem \
+        -keyout /etc/ssl/apache2/server.key \
+        -days 365 \
+        -nodes \
+        -subj "/C=DE/O=CdE e.V./CN=cdedb.local/emailAddress=cdedb@lists.cde-ev.de" \
     && apt-get purge --yes --autoremove openssl \
     && rm -rf /var/lib/apt/lists/*
 
-# maybe fonts-lmodern instead of cm-super
-# missing pylint3, mypy etc
-# git is needed to get version hash
+# TODO maybe add pylint3, mypy?
 RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
     && echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
     \
@@ -23,6 +22,7 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     sudo \
     make \
     gettext \
+    apache2 \
     libapache2-mod-wsgi-py3 \
     slapd \
     ldap-utils \
@@ -58,15 +58,18 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-typing-extensions \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /var/lib/cdedb/ \
-    && mkdir /var/lib/cdedb/foto/ \
-    && mkdir /var/lib/cdedb/minor_form/ \
-    && mkdir /var/lib/cdedb/ballot_result/ \
-    && mkdir /var/lib/cdedb/assembly_attachment/ \
-    && mkdir /var/lib/cdedb/mailman_templates/ \
-    && chown --recursive www-data:www-data /var/lib/cdedb/ \
-    && mkdir /log \
-    && chown www-data:www-data /log \
+RUN mkdir /var/lib/cdedb \
+    && mkdir /var/lib/cdedb/foto \
+    && mkdir /var/lib/cdedb/minor_form \
+    && mkdir /var/lib/cdedb/ballot_result \
+    && mkdir /var/lib/cdedb/assembly_attachment \
+    && mkdir /var/lib/cdedb/mailman_templates \
+    && chown --recursive www-data:www-data /var/lib/cdedb \
+    \
+    && mkdir /var/log/cdedb \
+    && ln -s /var/log/apache2/ssl_error.log /var/log/cdedb/ssl_error.log \
+    && ln -s /var/log/apache2/ssl_access.log /var/log/cdedb/ssl_access.log \
+    && chown --recursive www-data:www-data /var/log/cdedb \
     \
     && useradd --system cdedb
 
@@ -74,32 +77,32 @@ WORKDIR /cdedb2
 
 COPY . ./
 
-RUN sed --in-place \
-    -e 's/^#\(LoadModule .*mod_ssl.so\)/\1/' \
-    -e 's/^#\(LoadModule .*mod_socache_shmcb.so\)/\1/' \
-    -e 's/^User .*/User www-data/' \
-    -e 's/^Group .*/Group www-data/' \
-    /usr/local/apache2/conf/httpd.conf \
-    && echo "Include /etc/apache2/mods-available/wsgi.load" >> /usr/local/apache2/conf/httpd.conf \
-    && echo "Include /etc/apache2/mods-available/wsgi.conf" >> /usr/local/apache2/conf/httpd.conf \
-    && mkdir -p /var/www/html /var/log/apache2 /var/run/apache2 \
-    && cat ./related/auto-build/files/stage3/cdedb-site.conf >> /usr/local/apache2/conf/httpd.conf \
+RUN a2enmod ssl wsgi headers \
+    && a2dissite 000-default \
+    && echo "" > /etc/apache2/ports.conf \
+    && cp ./related/auto-build/files/stage3/cdedb-site.conf /etc/apache2/sites-available \
+    && a2ensite cdedb-site \
     && cp ./related/auto-build/files/stage3/index.html /var/www/html/ \
-    && chown www-data:www-data /var/www/html/index.html \
     \
     && cp ./related/auto-build/files/stage3/localconfig.py ./cdedb/ \
     && chown cdedb:cdedb ./cdedb/localconfig.py \
     && chmod 644 ./cdedb/localconfig.py \
+    && sed --in-place \
+        -e 's|Path("/log/|Path("/var/log/cdedb/|' \
+        cdedb/localconfig.py \
+    \
     && cp ./related/auto-build/files/stage3/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     && sed --in-place \
-    -e '/_git_commit = subprocess.check_output/,+1d' \
-    -e 's/"GIT_COMMIT": _git_commit/"GIT_COMMIT": "abcd1234"/' \
-    cdedb/config.py
+        -e '/_git_commit = subprocess.check_output/,+1d' \
+        -e 's/"GIT_COMMIT": _git_commit/"GIT_COMMIT": "abcd1234"/' \
+        cdedb/config.py
 
 EXPOSE 443
 
 RUN make doc && make i18n-compile
 
 # USER cdedb
+
+CMD ["apachectl", "-D", "FOREGROUND"]

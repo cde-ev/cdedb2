@@ -11,7 +11,7 @@ services:
     environment:
       POSTGRES_PASSWORD: passwd
   app:
-    image: cdedb:apache
+    image: cdedb
     build:
       context: ../..
       dockerfile: ./related/docker/Dockerfile-cdedb
