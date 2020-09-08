@@ -17,7 +17,8 @@
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% if "assembly_presider" in user.admin_views and ambience['assembly']['is_active'] %}
+    {% if ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
+                                                 or ambience['assembly']['id'] in user.presider) %}
         <div class="p">
             {{ util.href(cdedblink("assembly/create_ballot"), gettext("Create Ballot"), aclass="btn btn-success btn-sm",
                     icon="plus") }}

@@ -15,7 +15,8 @@
 {% endblock %}
 {% block content %}
     <div class="p">
-        {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['is_active'] %}
+        {% if ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
+                                                     or ambience['assembly']['id'] in user.presider) %}
             {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
                          icon="cog") }}
         {% endif %}
@@ -97,7 +98,8 @@
         </div>
     {% endif %}
 
-    {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['notes'] %}
+    {% if ambience['assembly']['notes'] and ("assembly_presider" in user.admin_views
+                                             or ambience['assembly']['id'] in user.presider) %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             <div id="notes">
                 {{ ambience['assembly']['notes']|md }}
@@ -105,10 +107,12 @@
         {% endcall %}
     {% endif %}
 
-    {% if attachments or has_ballot_attachments or "assembly_presider" in user.admin_views %}
+    {% if attachments or has_ballot_attachments or ("assembly_presider" in user.admin_views
+                                                    or ambience['assembly']['id'] in user.presider) %}
         {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         <div class="row">
-            {% if attachments or "assembly_presider" in user.admin_views %}
+            {% if attachments or ("assembly_presider" in user.admin_views
+                                  or ambience['assembly']['id'] in user.presider) %}
                 <div class="col-sm-6">
                     <h4>{% trans %}General Files{% endtrans %}</h4>
                     <ul class="slim" id="attachments">
@@ -121,7 +125,8 @@
                             </li>
                         {% endfor %}
                     </ul>
-                    {% if "assembly_presider" in user.admin_views and ambience['assembly']['is_active'] %}
+                    {% if ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
+                                                                 or ambience['assembly']['id'] in user.presider) %}
                         <div class="p">
                             {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Add File"),
                                          aclass="btn btn-success btn-sm", icon="plus") }}

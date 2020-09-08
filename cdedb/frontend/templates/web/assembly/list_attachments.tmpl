@@ -24,7 +24,8 @@
 
 {% endblock %}
 {% block content %}
-    {% set edit = ("assembly_presider" in user.admin_views) and ambience['assembly']['is_active'] %}
+    {% set edit = ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
+                                                         or ambience['assembly']['id'] in user.presider) %}
     {% set timestamp = now() %}
     {% for ballot_id, ballot in [(None, None)] + ballots|keydictsort(EntitySorter.ballot) %}
         {% set attachments = all_attachments[ballot_id] %}
