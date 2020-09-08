@@ -988,6 +988,22 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         self.assertNoLink("Log")
         self.switch_app(0)
         f = self.response.forms['addpresidersform']
+        # Try non-existing user.
+        f['presider_ids'] = "DB-1000-6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("Einige dieser Nutzer existieren nicht"
+                                   " oder sind archiviert.", "persider_ids")
+        # Try archived user.
+        f['presider_ids'] = "DB-8-6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("Einige dieser Nutzer existieren nicht"
+                                   " oder sind archiviert.", "persider_ids")
+        # Try non-assembly user.
+        f['presider_ids'] = "DB-5-1"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("Einige dieser Nutzer sind keine"
+                                   " Versammlungsnutzer.", "persider_ids")
+        # Proceed with a valid user.
         f['presider_ids'] = USER_DICT["werner"]['DB-ID']
         self.submit(f)
         self.assertPresence("Werner Wahlleitung", div='assembly-presiders')

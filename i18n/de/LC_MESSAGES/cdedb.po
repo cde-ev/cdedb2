@@ -2963,6 +2963,9 @@ msgstr "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
 msgid "Some of these users are not ml-users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
 
+msgid "Some of these users are not assembly users."
+msgstr "Einige dieser Nutzer sind keine Versammlugnsnutzer."
+
 #: cdedb/backend/ml.py:679 cdedb/backend/ml.py:678
 msgid "Non-unique mailinglist name"
 msgstr "Uneindeutige Mailadresse"
