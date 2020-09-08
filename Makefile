@@ -69,15 +69,15 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-	sudo rm -rf "/var/lib/cdedb/*"
-	sudo mkdir "/var/lib/cdedb/foto/"
-	sudo mkdir "/var/lib/cdedb/minor_form/"
-	sudo mkdir "/var/lib/cdedb/event_logo/"
-	sudo mkdir "/var/lib/cdedb/course_logo/"
-	sudo mkdir "/var/lib/cdedb/ballot_result/"
-	sudo mkdir "/var/lib/cdedb/assembly_attachment/"
-	sudo mkdir "/var/lib/cdedb/mailman_templates/"
-	sudo mkdir "/var/lib/cdedb/genesis_attachment/"
+	sudo rm -rf -- /var/lib/cdedb/*
+	sudo mkdir /var/lib/cdedb/foto/
+	sudo mkdir /var/lib/cdedb/minor_form/
+	sudo mkdir /var/lib/cdedb/event_logo/
+	sudo mkdir /var/lib/cdedb/course_logo/
+	sudo mkdir /var/lib/cdedb/ballot_result/
+	sudo mkdir /var/lib/cdedb/assembly_attachment/
+	sudo mkdir /var/lib/cdedb/mailman_templates/
+	sudo mkdir /var/lib/cdedb/genesis_attachment/
 	sudo cp test/ancillary_files/$(TESTFOTONAME) /var/lib/cdedb/foto/
 	sudo cp test/ancillary_files/rechen.pdf \
 		/var/lib/cdedb/assembly_attachment/1_v1
@@ -96,17 +96,17 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf$\
 		,TestAka_partial_export_event.json
 
 storage-test:
-	rm -rf "/tmp/cdedb-store/"
-	mkdir -p "/tmp/cdedb-store/foto/"
+	rm -rf -- /tmp/cdedb-store/*
+	mkdir -p /tmp/cdedb-store/foto/
 	cp test/ancillary_files/$(TESTFOTONAME) /tmp/cdedb-store/foto/
-	mkdir -p "/tmp/cdedb-store/minor_form/"
-	mkdir -p "/tmp/cdedb-store/event_logo/"
-	mkdir -p "/tmp/cdedb-store/course_logo/"
-	mkdir -p "/tmp/cdedb-store/ballot_result/"
-	mkdir -p "/tmp/cdedb-store/assembly_attachment/"
-	mkdir -p "/tmp/cdedb-store/genesis_attachment/"
-	mkdir -p "/tmp/cdedb-store/mailman_templates/"
-	mkdir -p "/tmp/cdedb-store/testfiles/"
+	mkdir -p /tmp/cdedb-store/minor_form/
+	mkdir -p /tmp/cdedb-store/event_logo/
+	mkdir -p /tmp/cdedb-store/course_logo/
+	mkdir -p /tmp/cdedb-store/ballot_result/
+	mkdir -p /tmp/cdedb-store/assembly_attachment/
+	mkdir -p /tmp/cdedb-store/genesis_attachment/
+	mkdir -p /tmp/cdedb-store/mailman_templates/
+	mkdir -p /tmp/cdedb-store/testfiles/
 	cp test/ancillary_files/rechen.pdf \
 		/tmp/cdedb-store/assembly_attachment/1_v1
 	cp test/ancillary_files/kassen.pdf \
