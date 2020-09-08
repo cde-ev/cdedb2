@@ -841,9 +841,19 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_verify_personas(self, user):
-        self.assertEqual(
-            {1, 2, 3, 4, 5, 6, 7, 9, 12},
-            set(self.core.verify_personas(self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), ("event",))))
+        self.assertFalse(self.core.verify_personas(
+            self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), {"event"}))
+        self.assertFalse(self.core.verify_persona(self.key, 1000))
+        self.assertFalse(self.core.verify_persona(self.key, 5, {"cde"}))
+        self.assertTrue(self.core.verify_persona(self.key, 5, {"event"}))
+        self.assertTrue(self.core.verify_persona(self.key, 2, {"cde"}))
+        self.assertTrue(self.core.verify_persona(self.key, 1, {"meta_admin"}))
+        self.assertTrue(self.core.verify_personas(
+            self.key, (1, 2, 3, 7, 9), {"cde", "member"}))
+        self.assertFalse(self.core.verify_personas(
+            self.key, (1, 2, 3, 7, 9), {"searchable"}))
+        self.assertTrue(self.core.verify_personas(
+            self.key, (1, 2, 9), {"searchable"}))
 
     @as_users("vera")
     def test_user_getters(self, user):

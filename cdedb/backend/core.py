@@ -1950,20 +1950,20 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def verify_personas(self, rs: RequestState, ids: Collection[int],
                         required_roles: Collection[Role] = None,
-                        introspection_only: bool = True
-                        ) -> Set[Optional[int]]:
+                        introspection_only: bool = True) -> bool:
         """Check wether certain ids map to actual (active) personas.
+
+        Note that this will return True for an empty set of ids.
 
         :param required_roles: If given check that all personas have
           these roles.
-        :returns: All ids which successfully validated.
         """
         ids = affirm_set("id", ids)
         required_roles = required_roles or tuple()
         required_roles = affirm_set("str", required_roles)
         roles = self.get_roles_multi(rs, ids, introspection_only)
-        return set(key for key, value in roles.items()
-                   if value >= required_roles)
+        return len(roles) == len(ids) and all(
+            value >= required_roles for value in roles.values())
 
     class VerifyPersona(Protocol):
         def __call__(self, rs: RequestState, anid: int,

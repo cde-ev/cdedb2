@@ -456,10 +456,10 @@ class EventFrontend(AbstractUserFrontend):
         if not self.coreproxy.verify_id(rs, orga_id, is_archived=False):
             rs.append_validation_error(
                 ('orga_id',
-                 ValueError(n_("User does not exist or is archived."))))
+                 ValueError(n_("The user does not exist or is archived."))))
         if not self.coreproxy.verify_persona(rs, orga_id, {"event"}):
             rs.append_validation_error(
-                ('orga_id', ValueError(n_("User is not an event user."))))
+                ('orga_id', ValueError(n_("The user is not an event user."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         new = rs.ambience['event']['orgas'] | {orga_id}
@@ -4014,11 +4014,14 @@ class EventFrontend(AbstractUserFrontend):
         persona_id = unwrap(
             request_extractor(rs, (("persona.persona_id", "cdedbid"),)))
         if persona_id is not None:
-            if not (self.coreproxy.verify_id(rs, persona_id, is_archived=False)
-                    and self.coreproxy.verify_persona(
-                        rs, persona_id, {"event"})):
+            if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
                 rs.append_validation_error(
-                    ("persona.persona_id", ValueError(n_("Invalid persona."))))
+                    ("persona.persona_id", ValueError(n_(
+                        "This user does not exist or is archived."))))
+            elif not self.coreproxy.verify_persona(rs, persona_id, {"event"}):
+                rs.append_validation_error(
+                    ("persona.persona_id", ValueError(n_(
+                        "This user is not an event user."))))
         if (not rs.has_validation_errors()
                 and self.eventproxy.list_registrations(rs, event_id,
                                                        persona_id=persona_id)):

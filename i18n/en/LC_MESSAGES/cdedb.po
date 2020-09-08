@@ -2758,7 +2758,7 @@ msgstr ""
 
 #: cdedb/backend/ml.py:480 cdedb/backend/ml.py:494
 #: cdedb/frontend/ml_base.py:242 cdedb/frontend/ml_base.py:622
-msgid "Some of these users are not ml-users."
+msgid "Some of these users are not ml users."
 msgstr ""
 
 #: cdedb/backend/ml.py:678

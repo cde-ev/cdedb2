@@ -238,7 +238,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
-                    "Some of these users are not ml-users."))))
+                    "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         # Check if mailinglist address is unique
@@ -624,11 +624,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
                     "Some of these users do not exist or are archived."))))
-        verified = set(self.coreproxy.verify_personas(rs, moderators, {"ml"}))
-        if not verified == moderators:
+        if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
-                    "Some of these users are not ml-users."))))
+                    "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 

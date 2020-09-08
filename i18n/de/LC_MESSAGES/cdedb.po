@@ -2799,10 +2799,16 @@ msgstr "Es können nicht sämtliche Moderatoren entfernt werden."
 msgid "Some of these users do not exist or are archived."
 msgstr "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
 
+msgid "This user does not exist or is archived."
+msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
+
 #: cdedb/backend/ml.py:480 cdedb/backend/ml.py:494
 #: cdedb/frontend/ml_base.py:242 cdedb/frontend/ml_base.py:622
-msgid "Some of these users are not ml-users."
+msgid "Some of these users are not ml users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
+
+msgid "This user is not an event user."
+msgstr "Dieser Benutzer ist kein Veranstaltungsnutzer."
 
 #: cdedb/backend/ml.py:678
 msgid "Non-unique mailinglist name"
