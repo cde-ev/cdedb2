@@ -23,6 +23,7 @@ help:
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
 MYPYBIN ?= mypy
+TESTPREPARATION ?= automatic
 
 doc:
 	bin/create_email_template_list.sh .
@@ -201,10 +202,12 @@ lint:
 
 
 prepare-check:
+ifneq($(TESTPREPARATION), "manual")
 	$(MAKE) i18n-compile
 	$(MAKE) sample-data-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
 		|| true
+endif
 
 check: export CDEDB_TEST=True
 check:
