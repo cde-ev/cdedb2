@@ -1901,7 +1901,6 @@ class CoreBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         is_archived = affirm("bool_or_None", is_archived)
-        # TODO check for is_archived here?
         if ids == {rs.user.persona_id}:
             return True
         query = "SELECT COUNT(*) AS num FROM core.personas"
