@@ -100,9 +100,9 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": psycopg2.extras.RealDictCursor
     }
-    try: # TODO simply check if inside docker first
+    try:
         cdb = psycopg2.connect(**connection_parameters, host="localhost")
-    except psycopg2.OperationalError: # Docker uses 5432/tcp instead of sockets
+    except psycopg2.OperationalError: # DB inside Docker listens on "cdb"
         cdb = psycopg2.connect(**connection_parameters, host="cdb")
     cdb.set_client_encoding("UTF8")
 
