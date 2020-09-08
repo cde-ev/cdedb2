@@ -282,7 +282,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("presider_id", "cdedbid"))
+    @REQUESTdata(("presider_id", "id"))
     def remove_presider(self, rs: RequestState, assembly_id: int,
                         presider_id: int) -> Response:
         if rs.has_validation_errors():
