@@ -3188,7 +3188,7 @@ msgstr "Es können nicht sämtliche Moderatoren entfernt werden."
 #: cdedb/backend/ml.py:491 cdedb/frontend/ml_base.py:238
 #: cdedb/frontend/ml_base.py:617 cdedb/frontend/ml_base.py:710
 msgid "Some of these users do not exist or are archived."
-msgstr "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
+msgstr "Einige dieser Nutzer existieren nicht oder sind archiviert."
 
 #: cdedb/backend/ml.py:481 cdedb/backend/ml.py:495
 #: cdedb/frontend/ml_base.py:240 cdedb/frontend/ml_base.py:630
@@ -3198,7 +3198,7 @@ msgid "Some of these users are not ml-users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
 
 msgid "Some of these users are not assembly users."
-msgstr "Einige dieser Nutzer sind keine Versammlugnsnutzer."
+msgstr "Einige dieser Nutzer sind keine Versammlungsnutzer."
 
 #: cdedb/backend/ml.py:679 cdedb/backend/ml.py:678
 msgid "Non-unique mailinglist name"
