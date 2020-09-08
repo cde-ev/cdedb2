@@ -328,9 +328,12 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "signup_end", "notes")
-    def create_assembly(self, rs: RequestState,
+    @REQUESTdata(("presider_ids", "cdedbid_csv_list"))
+    def create_assembly(self, rs: RequestState, presider_ids: Collection[int],
                         data: Dict[str, Any]) -> Response:
         """Make a new assembly."""
+        if presider_ids is not None:
+            data["presiders"] = presider_ids
         data = check(rs, "assembly", data, creation=True)
         if rs.has_validation_errors():
             return self.create_assembly_form(rs)
@@ -355,7 +358,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # Specify what to cascade
         cascade = {"ballots", "attendees", "attachments", "log",
-                   "mailinglists"} & blockers.keys()
+                   "mailinglists", "presiders"} & blockers.keys()
         code = self.assemblyproxy.delete_assembly(
             rs, assembly_id, cascade=cascade)
 
