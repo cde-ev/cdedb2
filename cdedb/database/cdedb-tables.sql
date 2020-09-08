@@ -276,7 +276,7 @@ CREATE TABLE core.log (
         submitted_by            integer REFERENCES core.personas(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_core_log_code ON core.log(code);
 CREATE INDEX idx_core_log_persona_id ON core.log(persona_id);
@@ -297,7 +297,7 @@ CREATE TABLE core.changelog (
         change_note             varchar,
         -- enum for progress of change
         -- see cdedb.database.constants.MemberChangeStati
-        change_status           integer NOT NULL DEFAULT 0,
+        code                    integer NOT NULL DEFAULT 0,
         --
         -- data fields
         --
@@ -353,11 +353,11 @@ CREATE TABLE core.changelog (
         foto                    varchar,
         paper_expuls            boolean
 );
-CREATE INDEX idx_changelog_change_status ON core.changelog(change_status);
+CREATE INDEX idx_changelog_code ON core.changelog(code);
 CREATE INDEX idx_changelog_persona_id ON core.changelog(persona_id);
 GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
-GRANT UPDATE (change_status) ON core.changelog TO cdb_persona;
+GRANT UPDATE (code) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 GRANT DELETE ON core.changelog TO cdb_admin;
 
@@ -464,7 +464,7 @@ CREATE TABLE cde.finance_log (
         persona_id              integer REFERENCES core.personas(id),
         delta                   numeric(7,2),
         new_balance             numeric(7,2),
-        additional_info         varchar,
+        change_note             varchar,
         -- checksums
         -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
         members                 integer NOT NULL,
@@ -484,7 +484,7 @@ CREATE TABLE cde.log (
         submitted_by            integer REFERENCES core.personas(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_cde_log_code ON cde.log(code);
 CREATE INDEX idx_cde_log_persona_id ON cde.log(persona_id);
@@ -567,7 +567,7 @@ CREATE TABLE past_event.log (
         pevent_id               integer REFERENCES past_event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_past_event_log_code ON past_event.log(code);
 CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
@@ -615,7 +615,7 @@ CREATE TABLE event.events (
         courses_in_participant_list boolean NOT NULL DEFAULT False,
         is_archived                 boolean NOT NULL DEFAULT False,
         is_cancelled                boolean NOT NULL DEFAULT False,
-        -- JSON field for lodgement preference functionality
+        -- reference to special purpose custom data fields
         lodge_field                 integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         camping_mat_field           integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         course_room_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
@@ -635,7 +635,9 @@ CREATE TABLE event.event_parts (
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
         -- fees are cummulative
-        fee                     numeric(8,2) NOT NULL
+        fee                     numeric(8,2) NOT NULL,
+        -- reference to custom data field for waitlist management
+        waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
 );
 CREATE INDEX idx_event_parts_event_id ON event.event_parts(event_id);
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;
@@ -681,6 +683,7 @@ GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.fee_modifiers (
         id                      serial PRIMARY KEY,
@@ -867,7 +870,7 @@ CREATE TABLE event.log (
         event_id                integer REFERENCES event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_event_log_code ON event.log(code);
 CREATE INDEX idx_event_log_event_id ON event.log(event_id);
@@ -1032,7 +1035,7 @@ CREATE TABLE assembly.log (
         assembly_id             integer REFERENCES assembly.assemblies(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_assembly_log_code ON assembly.log(code);
 CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
@@ -1145,7 +1148,7 @@ CREATE TABLE ml.log (
         mailinglist_id          integer REFERENCES ml.mailinglists(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_ml_log_code ON ml.log(code);
 CREATE INDEX idx_ml_log_mailinglist_id ON ml.log(mailinglist_id);

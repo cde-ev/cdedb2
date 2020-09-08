@@ -9,7 +9,9 @@ import json
 
 from test.common import as_users, USER_DICT, FrontendTest
 
-from cdedb.common import ASSEMBLY_BAR_MONIKER, now, ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common import (
+    ASSEMBLY_BAR_MONIKER, now, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
+)
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
 
@@ -483,7 +485,15 @@ class TestAssemblyFrontend(FrontendTest):
             data = datafile.read()
         self.traverse({'description': 'Versammlungen$'},
                       {'description': 'Internationaler Kongress'},
-                      {'description': 'Datei hinzufügen'},)
+                      {'description': 'Datei-Übersicht'})
+        f = self.response.forms['adminviewstoggleform']
+        self.submit(f, button="view_specifier", value="-assembly_presider")
+        self.assertTitle("Datei-Übersicht (Internationaler Kongress)")
+        self.assertPresence("Es wurden noch keine Dateien hochgeladen.")
+        f = self.response.forms['adminviewstoggleform']
+        self.submit(f, button="view_specifier", value="+assembly_presider")
+        self.traverse({'description': r"\sÜbersicht"},
+                      {'description': "Datei hinzufügen"})
         self.assertTitle("Datei hinzufügen (Internationaler Kongress)")
 
         # First try upload with invalid default filename
@@ -534,6 +544,17 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Alternative Beschlussvorlage")
         self.assertPresence("Version 1 wurde gelöscht")
+
+        # Now check the attachment over view without the presider admin view.
+        self.traverse({'description': "Datei-Übersicht"})
+        f = self.response.forms['adminviewstoggleform']
+        self.submit(f, button="view_specifier", value="-assembly_presider")
+        self.assertTitle("Datei-Übersicht (Internationaler Kongress)")
+        self.assertPresence("Alternative Beschlussvorlage (Version 2)")
+        self.assertPresence("Version 1 wurde gelöscht.")
+        self.assertNonPresence("Es wurden noch keine Dateien hochgeladen.")
+        f = self.response.forms['adminviewstoggleform']
+        self.submit(f, button="view_specifier", value="+assembly_presider")
         f = self.response.forms['deleteattachmentform1001']
         f['attachment_ack_delete'].checked = True
         self.submit(f)

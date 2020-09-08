@@ -64,7 +64,7 @@ def changelog_template(**kwargs):
         'birthday': datetime.date(1980, 2, 11),
         'bub_search': True,
         'change_note': 'Radical change.',
-        'change_status': const.MemberChangeStati.pending.value,
+        'code': const.MemberChangeStati.pending.value,
         'country': None,
         'country2': 'Further Away',
         'ctime': now(),

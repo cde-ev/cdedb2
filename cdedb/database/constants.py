@@ -28,7 +28,7 @@ class Genders(enum.IntEnum):
 
 @enum.unique
 class MemberChangeStati(enum.IntEnum):
-    """Spec for field change_status of core.changelog."""
+    """Spec for field code of core.changelog."""
     pending = 1  #:
     committed = 2  #:
     superseded = 10  #:

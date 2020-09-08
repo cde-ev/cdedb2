@@ -21,7 +21,9 @@ import pytz
 from typing import Mapping, Any
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import n_, deduct_years, now, PathLike
+from cdedb.common import (
+    n_, deduct_years, now, PathLike, EntitySorter, xsorted, CdEDBObject
+)
 import cdedb.database.constants as const
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,8 +32,17 @@ _currentpath = pathlib.Path(__file__).resolve().parent
 if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':
     raise RuntimeError(n_("Failed to locate repository"))
 _repopath = _currentpath.parent
-_git_commit = subprocess.check_output(
-    ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+
+try:
+    _git_commit = subprocess.check_output(
+        ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+except FileNotFoundError: # only catch git executable not found
+    with Path(_repopath, '.git/HEAD').open() as head:
+        _git_commit = head.read().strip()
+
+    if _git_commit.startswith('ref'):
+        with Path(_repopath, '.git', head[len('ref: '):]).open() as ref:
+            _git_commit = ref.read().strip()
 
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
@@ -52,13 +63,14 @@ _BASIC_DEFAULTS = {
 }
 
 
-def generate_event_registration_default_queries(event, spec):
+def generate_event_registration_default_queries(gettext, event, spec):
     """
     Generate default queries for registration_query.
 
     Some of these contain dynamic information about the event's Parts,
     Tracks, etc.
 
+    :param gettext: The translation function for the current locale.
     :param event: The Event for which to generate the queries
     :type event:
     :param spec: The Query Spec, dynamically generated for the event
@@ -115,14 +127,6 @@ def generate_event_registration_default_queries(event, spec):
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),),
             default_sort),
-        n_("14_query_event_registration_waitlist"): Query(
-            "qview_registration", spec,
-            all_part_stati_column.split(",") +
-            ["persona.given_names", "persona.family_name",
-             "ctime.creation_time", "reg.payment"],
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.waitlist.value),),
-            (("ctime.creation_time", True),)),
         n_("20_query_event_registration_non_members"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name"),
@@ -173,6 +177,44 @@ def generate_event_registration_default_queries(event, spec):
               const.RegistrationPartStati.participant.value),),
             default_sort),
     }
+
+    def get_waitlist_order(part: CdEDBObject) -> str:
+        if part['waitlist_field']:
+            field = event['fields'][part['waitlist_field']]
+            return f"reg_fields.xfield_{field['field_name']}"
+        return "ctime.creation_time"
+
+    def waitlist_query_name(part: CdEDBObject) -> str:
+        ret = gettext("17_query_event_registration_waitlist")
+        if len(event['parts']) > 1:
+            ret += f" {part['shortname']}"
+        return ret
+
+    if len(event['parts']) > 1:
+        queries.update({
+            n_("16_query_event_registration_waitlist"): Query(
+                "qview_registration", spec,
+                all_part_stati_column.split(",") +
+                ["persona.given_names", "persona.family_name",
+                 "ctime.creation_time", "reg.payment"],
+                ((all_part_stati_column, QueryOperators.equal,
+                  const.RegistrationPartStati.waitlist.value),),
+                (("ctime.creation_time", True),)),
+        })
+
+    queries.update({
+        n_("17_query_event_registration_waitlist") + f"_{i}_part{part['id']}":
+            Query(
+                "qview_registration", spec,
+                ("persona.given_names", "persona.family_name"),
+                ((f"part{part['id']}.status", QueryOperators.equal,
+                  const.RegistrationPartStati.waitlist.value),),
+                ((get_waitlist_order(part), True),),
+                name=waitlist_query_name(part)
+            )
+        for i, part in enumerate(xsorted(
+            event['parts'].values(), key=EntitySorter.event_part))
+    })
 
     return queries
 

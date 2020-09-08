@@ -18,6 +18,7 @@ import re
 import string
 import sys
 import hashlib
+from secrets import choice
 
 from typing import (
     Any, TypeVar, Mapping, Optional, Dict, List, overload, Sequence, Tuple,
@@ -32,6 +33,8 @@ import werkzeug
 import werkzeug.routing
 
 import icu
+
+import cdedb.database.constants as const
 
 # The following imports are only for re-export. They are not used
 # here. All other uses should import them from here and not their
@@ -899,19 +902,18 @@ ASSEMBLY_BAR_MONIKER = "_bar_"
 
 
 @overload
-def unwrap(single_element_list: Union[AbstractSet[T], MutableSequence[T],
-                                      Tuple[T, ...]]) -> T: ...
+def unwrap(data: None) -> None: ...
 
 
 @overload
-def unwrap(single_element_list: Mapping[Any, T]) -> T: ...
+def unwrap(data: Mapping[Any, T]) -> T: ...
 
 
 @overload
-def unwrap(single_element_list: None) -> None: ...
+def unwrap(data: Collection[T]) -> T: ...
 
 
-def unwrap(single_element_list):
+def unwrap(data):
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -925,15 +927,27 @@ def unwrap(single_element_list):
     in that it uses the values instead of the keys. To unwrap the keys pass
     `data.keys()` instead.
     """
-    if single_element_list is None:
+    if data is None:
         return None
-    if (not isinstance(single_element_list, collections.abc.Iterable)
-            or (isinstance(single_element_list, collections.abc.Sized)
-                and len(single_element_list) != 1)):
-        raise RuntimeError(n_("Unable to unwrap!"))
-    if isinstance(single_element_list, collections.abc.Mapping):
-        single_element_list = single_element_list.values()
-    return next(i for i in single_element_list)
+    if isinstance(data, (str, bytes)):
+        raise TypeError(n_("Cannot unwrap str or bytes. Got %(data)s."),
+                        {'data': type(data)})
+    if not isinstance(data, collections.abc.Collection):
+        raise TypeError(
+            n_("Can only unwrap collections. Got %(data)s."),
+            {'data': type(data)})
+    if not len(data) == 1:
+        raise ValueError(
+            n_("Can only unwrap collections with one element."
+               " Got %(len)s elements."),
+            {'len': len(data)})
+    if isinstance(data, collections.abc.Mapping):
+        [value] = data.values()
+    elif isinstance(data, collections.abc.Collection):
+        [value] = data
+    else:
+        raise NotImplementedError
+    return value
 
 
 @enum.unique
@@ -1777,7 +1791,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     return result
 
 
-#: Deprecated, use EVENT_SCHEMA_VERSION instead.
+#: Deprecated, use EVENT_SCHEMA_VERSION instead. This should no longer be
+#: modified.
 #: TODO remove it
 CDEDB_EXPORT_EVENT_VERSION = 13
 
@@ -1786,7 +1801,7 @@ CDEDB_EXPORT_EVENT_VERSION = 13
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (13, 1)
+EVENT_SCHEMA_VERSION = (13, 2)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1963,7 +1978,7 @@ EVENT_FIELDS = (
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
-                     "part_end", "fee")
+                     "part_end", "fee", "waitlist_field")
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
@@ -2057,6 +2072,16 @@ LASTSCHRIFT_FIELDS = (
 LASTSCHRIFT_TRANSACTION_FIELDS = (
     "id", "submitted_by", "lastschrift_id", "period_id", "status", "amount",
     "issued_at", "processed_at", "tally")
+
+#: Datatype and Association of special purpose event fields
+EVENT_FIELD_SPEC: Dict[
+    str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
+    'lodge': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
+    'camping_mat': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
+    'fee_modifier': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+}
 
 EPSILON = 10 ** (-6)  #:
 

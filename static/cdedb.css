@@ -203,6 +203,10 @@ dd>*:first-child {
     margin-top: 0;
 }
 
+/* Proper summaries */
+summary {
+    display: list-item;
+}
 
 /* List group responsive tear down */
 @media (max-width: 991px) {

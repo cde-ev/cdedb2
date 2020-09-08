@@ -9,11 +9,19 @@ Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
 über Anregungen an cdedb ät lists.cde-ev.de.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
 
-   Handbuch_Orga_Allgemeines
-   Handbuch_Orga_Spezielles
-   Handbuch_partieller_Import
+   Handbuch_Adminteam
+   Handbuch_Akademieteam
+   Handbuch_CdElokal
+   Handbuch_Finanzvorstand
+   Handbuch_Moderator
+   Handbuch_Orga
+   Handbuch_Versammlungsleitung
+   Handbuch_Verwaltungsteam
+   Handbuch_Vorstand
+   Handbuch_Email_Templates
    Handbuch_Markdown
-   Handbuch_elektronisches_Wahlverfahren
-   Privacy
+   Realm_Core_Privacy
+
+.. the privacy page is the directly linked-in from the realm architecture

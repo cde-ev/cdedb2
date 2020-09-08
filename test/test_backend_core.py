@@ -156,7 +156,7 @@ class TestCoreBackend(BackendTest):
             'persona_id': persona_id,
             'code': const.CoreLogCodes.username_change,
             'submitted_by': user['id'],
-            'additional_info': newaddress,
+            'change_note': newaddress,
         }
         _, log_entry = self.core.retrieve_log(self.key)
         self.assertIn(expected_log, log_entry)
@@ -230,7 +230,7 @@ class TestCoreBackend(BackendTest):
                 'birthday': None,
                 'bub_search': None,
                 'change_note': 'Account erstellt.',
-                'change_status': 2,
+                'code': 2,
                 'country': None,
                 'country2': None,
                 'ctime': nearly_now(),
@@ -459,7 +459,7 @@ class TestCoreBackend(BackendTest):
             'code': const.CoreLogCodes.realm_change,
             'persona_id': persona_id,
             'submitted_by': user['id'],
-            'additional_info': 'Bereiche geändert.'
+            'change_note': 'Bereiche geändert.'
         }
         _, expected_log = self.core.retrieve_log(self.key)
         self.assertIn(log_entry, expected_log)
@@ -555,7 +555,7 @@ class TestCoreBackend(BackendTest):
         genesis_deleted = const.CoreLogCodes.genesis_deleted
         log_entry_expectation = {
             'id': 1004,
-            'additional_info': case_data['username'],
+            'change_note': case_data['username'],
             'code': genesis_deleted,
             'ctime': nearly_now(),
             'persona_id': None,
@@ -1047,7 +1047,7 @@ class TestCoreBackend(BackendTest):
             # Finalizing the privilege process.
             {
                 'id': 1001,
-                'additional_info': "Änderung der Admin-Privilegien angestoßen.",
+                'change_note': "Änderung der Admin-Privilegien angestoßen.",
                 'code': const.CoreLogCodes.privilege_change_pending.value,
                 'ctime': nearly_now(),
                 'persona_id': new_admin["id"],
@@ -1056,7 +1056,7 @@ class TestCoreBackend(BackendTest):
             # Starting the privilege change process.
             {
                 'id': 1002,
-                'additional_info': "Änderung der Admin-Privilegien bestätigt.",
+                'change_note': "Änderung der Admin-Privilegien bestätigt.",
                 'code': const.CoreLogCodes.privilege_change_approved.value,
                 'ctime': nearly_now(),
                 'persona_id': new_admin["id"],
@@ -1065,7 +1065,7 @@ class TestCoreBackend(BackendTest):
             # Password invalidation.
             {
                 'id': 1003,
-                'additional_info': None,
+                'change_note': None,
                 'code': const.CoreLogCodes.password_invalidated,
                 'ctime': nearly_now(),
                 'persona_id': new_admin['id'],
@@ -1079,8 +1079,9 @@ class TestCoreBackend(BackendTest):
         changelog_expectation = (total, (
             # Committing the changed admin bits.
             {
+                'id': 1001,
                 'change_note': data["notes"],
-                'change_status': const.MemberChangeStati.committed.value,
+                'code': const.MemberChangeStati.committed.value,
                 'ctime': nearly_now(),
                 'generation': 2,
                 'persona_id': new_admin["id"],
@@ -1160,25 +1161,25 @@ class TestCoreBackend(BackendTest):
 
         expectation = (4, (
             {'id': 1001,
-             'additional_info': None,
+             'change_note': None,
              'code': const.CoreLogCodes.persona_creation,
              'ctime': nearly_now(),
              'persona_id': 1001,
              'submitted_by': user['id']},
             {'id': 1002,
-             'additional_info': 'zeldax@example.cde',
+             'change_note': 'zeldax@example.cde',
              'code': const.CoreLogCodes.genesis_request,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': None},
             {'id': 1003,
-             'additional_info': 'zeldax@example.cde',
+             'change_note': 'zeldax@example.cde',
              'code': const.CoreLogCodes.genesis_approved,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': user['id']},
             {'id': 1004,
-             'additional_info': None,
+             'change_note': None,
              'code': const.CoreLogCodes.password_change,
              'ctime': nearly_now(),
              'persona_id': 22,
@@ -1191,7 +1192,7 @@ class TestCoreBackend(BackendTest):
     def test_changelog_meta(self, user):
         expectation = self.get_sample_data(
             "core.changelog", range(1, 31),
-            ("submitted_by", "reviewed_by", "ctime", "generation",
-             "change_note", "change_status", "persona_id"))
+            ("id", "submitted_by", "reviewed_by", "ctime", "generation",
+             "change_note", "code", "persona_id"))
         self.assertEqual((len(expectation), tuple(expectation.values())),
                          self.core.retrieve_changelog_meta(self.key))

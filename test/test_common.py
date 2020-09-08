@@ -3,7 +3,7 @@
 import unittest
 from cdedb.common import (
     extract_roles, schulze_evaluate, int_to_words, xsorted,
-    mixed_existence_sorter)
+    mixed_existence_sorter, unwrap)
 import cdedb.database.constants as const
 import datetime
 import pytz
@@ -236,3 +236,27 @@ class TestCommon(unittest.TestCase):
         ]
         self.assertEqual(list(reversed(tuples)), xsorted(tuples))
         self.assertEqual(tuples, xsorted(tuples, key=lambda x: str(x)))
+
+    def test_unwrap(self):
+        self.assertIsInstance(unwrap([1]), int)
+        self.assertIsInstance(unwrap((1.0,)), float)
+        self.assertIsInstance(unwrap({"a"}), str)
+        self.assertIsInstance(unwrap({1: [1.0, "a"]}), list)
+        self.assertIsInstance(unwrap({1: [1.0, "a"]}.keys()), int)
+        self.assertIsInstance(unwrap({1: {"a": 1.0}}), dict)
+        self.assertIsInstance(unwrap(unwrap({1: {"a": 1.0}})), float)
+
+        for item in ("a", b"b"):
+            with self.assertRaises(TypeError) as cm:
+                unwrap(item)
+            self.assertIn("Cannot unwrap str or bytes.", cm.exception.args[0])
+        for col in ([1, 1.0], (1, "a"), {1.0, "a"}, {1: 1.0, "a": b"b"}):
+            with self.assertRaises(ValueError) as cm:
+                unwrap(col)
+            self.assertIn("Can only unwrap collections with one element.",
+                          cm.exception.args[0])
+        for ncol in (1, 1.0, (i for i in range(1))):
+            with self.subTest(ncol=ncol):
+                with self.assertRaises(TypeError) as cm:
+                    unwrap(ncol)
+                self.assertIn("Can only unwrap collections.", cm.exception.args[0])

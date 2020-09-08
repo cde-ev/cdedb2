@@ -26,6 +26,10 @@
             <div class="col-md-5">{{ ballot_result.show_result(ballot, result[ballot_id], short=True) }}</div>
         </div>
         {% endcall %}
+    {% else %}
+        <p class="text-muted">
+            {% trans %}No ballots have been tallied yet.{% endtrans %}
+        </p>
     {% endfor %}
 
     {{ ballot_result.explain_result(classical=True, preferential=True, use_bar=True) }}
