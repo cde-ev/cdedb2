@@ -23,4 +23,5 @@ BEGIN;
     GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_member;
     GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
     GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
+    GRANT SELECT on assembly.log TO cdb_member;
 COMMIT;
