@@ -97,11 +97,7 @@ RUN cp ./related/auto-build/files/stage3/localconfig.py ./cdedb/ \
     && chmod 644 ./cdedb/localconfig.py \
     && sed --in-place \
         -e 's|Path("/log/|Path("/var/log/cdedb/|' \
-        cdedb/localconfig.py \
-    && sed --in-place \
-        -e '/_git_commit = subprocess.check_output/,+1d' \
-        -e 's/"GIT_COMMIT": _git_commit/"GIT_COMMIT": "abcd1234"/' \
-        cdedb/config.py
+        cdedb/localconfig.py
 
 RUN make doc && make i18n-compile
 
