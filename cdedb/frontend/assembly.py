@@ -269,11 +269,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):
             rs.append_validation_error(("presider_ids", ValueError(n_(
                 "Some of these users do not exist or are archived."))))
-            return self.show_assembly(rs, assembly_id)
-        if not set(presider_ids) == self.coreproxy.verify_personas(
-                rs, presider_ids, {"assembly"}):
+        elif not self.coreproxy.verify_personas(rs, presider_ids, {"assembly"}):
             rs.append_validation_error(("presider_ids", ValueError(n_(
-                "Some of these presiders are not assembly users."))))
+                "Some of these users are not assembly users."))))
+        if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         presider_ids = set(presider_ids) | rs.ambience['assembly']['presiders']
         code = self.assemblyproxy.set_assembly_presiders(

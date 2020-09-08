@@ -527,9 +527,12 @@ class AssemblyBackend(AbstractBackend):
             if not assembly['is_active']:
                 raise ValueError(n_("Cannot alter assembly presiders after"
                                     " assembly has been concluded."))
-            if ids != set(self.core.verify_personas(rs, ids, {"assembly"},
-                                                    introspection_only=False)):
-                raise ValueError(n_("Some of these users are unfit."))
+            if not self.core.verify_ids(rs, ids, is_archived=False):
+                raise ValueError(n_(
+                    "Some of these users do not exist or are archived."))
+            if not self.core.verify_personas(rs, ids, {"assembly"}):
+                raise ValueError(n_(
+                    "Some of these users are not assembly users."))
             current = self.sql_select(rs, "assembly.presiders", ("persona_id",),
                                       (assembly_id,), entity_key="assembly_id")
             existing = {unwrap(e) for e in current}
