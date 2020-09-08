@@ -598,6 +598,15 @@ USER_DICT = {
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
     },
+    "viktor": {
+        'id': 48,
+        'DB-ID': "DB-48-5",
+        'username': "viktor@example.cde",
+        'password': "secret",
+        'display_name': "Viktor",
+        'given_names': "Viktor",
+        'family_name': "Versammlungsadmin",
+    },
     "akira": {
         'id': 100,
         'DB-ID': "DB-100-7",

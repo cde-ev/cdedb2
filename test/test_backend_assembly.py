@@ -39,8 +39,8 @@ class TestAssemblyBackend(BackendTest):
         expectation = {1, 2, 9, 11, 23, 100}
         self.assertEqual(expectation, self.assembly.list_attendees(self.key, 1))
 
-    @as_users("werner")
-    def test_entity_assembly(self, user):
+    def test_entity_assembly(self):
+        self.login("werner")
         expectation = {
             1: {
                 'id': 1,
@@ -90,7 +90,7 @@ class TestAssemblyBackend(BackendTest):
             'title': 'Außerordentliche Mitgliederversammlung',
             'presiders': {1, 23},
         }
-        self.login("anton")
+        self.login("viktor")
         new_id = self.assembly.create_assembly(self.key, new_assembly)
         expectation = new_assembly
         expectation['id'] = new_id
@@ -112,7 +112,7 @@ class TestAssemblyBackend(BackendTest):
             self.key, new_id, ("ballots", "attendees", "attachments",
                                "presiders", "log", "mailinglists")))
 
-    @as_users("anton")
+    @as_users("viktor")
     def test_ticket_176(self, user):
         data = {
             'description': None,
@@ -431,7 +431,7 @@ class TestAssemblyBackend(BackendTest):
                 self.assertEqual(json.load(f), json.load(g))
 
     def test_conclusion(self):
-        self.login("anton")
+        self.login("viktor")
         data = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
@@ -703,7 +703,7 @@ class TestAssemblyBackend(BackendTest):
         self.test_vote()
         self.test_entity_ballot()
 
-        self.login("anton")
+        self.login("viktor")
         # now check it
         sub_id = USER_DICT['werner']['id']
         expectation = (11, (

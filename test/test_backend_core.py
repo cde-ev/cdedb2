@@ -372,7 +372,7 @@ class TestCoreBackend(BackendTest):
         })
         self.assertEqual(data, new_data)
 
-    @as_users("vera", "werner")
+    @as_users("vera", "viktor")
     def test_create_assembly_user(self, user):
         data = copy.deepcopy(PERSONA_TEMPLATE)
         data['is_ml_realm'] = True

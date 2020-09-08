@@ -17,7 +17,7 @@ class TestMlFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'href': '/ml/'})
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor")
     def test_sidebar(self, user):
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
@@ -26,7 +26,7 @@ class TestMlFrontend(FrontendTest):
             out = ["Alle Mailinglisten", "Moderierte Mailinglisten",
                    "Aktive Mailinglisten", "Nutzer verwalten", "Log"]
         # Users with relative admin privileges for some mailinglists:
-        elif user['id'] in {USER_DICT['vera']['id'], USER_DICT['werner']['id']}:
+        elif user['id'] in {USER_DICT['vera']['id'], USER_DICT['viktor']['id']}:
             ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
                    "Log"]
             out = ["Übersicht", "Alle Mailinglisten",

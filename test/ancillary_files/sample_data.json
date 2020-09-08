@@ -1213,6 +1213,60 @@
             "paper_expuls": true
         },
         {
+            "id": 48,
+            "username": "viktor@example.cde",
+            "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": true,
+            "is_cdelokal_admin": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Viktor",
+            "given_names": "Viktor",
+            "family_name": "Versammlungsadmin",
+            "title": null,
+            "name_supplement": null,
+            "gender": 2,
+            "birthday": "1966-04-17",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": "Irgendwo im Nirgendwo",
+            "postal_code": "98765",
+            "location": "Nirvana",
+            "country": null,
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "0.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
             "id": 100,
             "username": "akira@example.cde",
             "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
@@ -1269,7 +1323,6 @@
     ],
     "core.changelog": [
         {
-            "id": 1,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1329,7 +1382,6 @@
             "paper_expuls": true
         },
         {
-            "id": 2,
             "submitted_by": 2,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1389,7 +1441,6 @@
             "paper_expuls": true
         },
         {
-            "id": 3,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1449,7 +1500,6 @@
             "paper_expuls": true
         },
         {
-            "id": 4,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1509,7 +1559,6 @@
             "paper_expuls": true
         },
         {
-            "id": 5,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1569,7 +1618,6 @@
             "paper_expuls": null
         },
         {
-            "id": 6,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1629,7 +1677,6 @@
             "paper_expuls": true
         },
         {
-            "id": 7,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1689,7 +1736,6 @@
             "paper_expuls": true
         },
         {
-            "id": 8,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1749,7 +1795,6 @@
             "paper_expuls": null
         },
         {
-            "id": 9,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1809,7 +1854,6 @@
             "paper_expuls": true
         },
         {
-            "id": 10,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1869,7 +1913,6 @@
             "paper_expuls": null
         },
         {
-            "id": 11,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1929,7 +1972,6 @@
             "paper_expuls": null
         },
         {
-            "id": 12,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1989,7 +2031,6 @@
             "paper_expuls": true
         },
         {
-            "id": 13,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2049,7 +2090,6 @@
             "paper_expuls": true
         },
         {
-            "id": 14,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2109,7 +2149,6 @@
             "paper_expuls": null
         },
         {
-            "id": 15,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2169,7 +2208,6 @@
             "paper_expuls": true
         },
         {
-            "id": 16,
             "submitted_by": 6,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2229,7 +2267,6 @@
             "paper_expuls": true
         },
         {
-            "id": 17,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2289,7 +2326,6 @@
             "paper_expuls": true
         },
         {
-            "id": 18,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2349,7 +2385,6 @@
             "paper_expuls": true
         },
         {
-            "id": 19,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2409,7 +2444,6 @@
             "paper_expuls": true
         },
         {
-            "id": 20,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2469,7 +2503,65 @@
             "paper_expuls": true
         },
         {
-            "id": 21,
+            "submitted_by": 1,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 1,
+            "change_note": "Init.",
+            "code": 2,
+            "persona_id": 48,
+            "username": "viktor@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": true,
+            "is_cdelokal_admin": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Viktor",
+            "given_names": "Viktor",
+            "family_name": "Versammlungsadmin",
+            "title": null,
+            "name_supplement": null,
+            "gender": 2,
+            "birthday": "1966-04-17",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": "Irgendwo im Nirgendwo",
+            "postal_code": "98765",
+            "location": "Nirvana",
+            "country": null,
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "0.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2529,7 +2621,6 @@
             "paper_expuls": true
         },
         {
-            "id": 22,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2589,7 +2680,6 @@
             "paper_expuls": true
         },
         {
-            "id": 23,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2649,7 +2739,6 @@
             "paper_expuls": true
         },
         {
-            "id": 24,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2709,7 +2798,6 @@
             "paper_expuls": null
         },
         {
-            "id": 25,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2769,7 +2857,6 @@
             "paper_expuls": true
         },
         {
-            "id": 26,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2829,7 +2916,6 @@
             "paper_expuls": true
         },
         {
-            "id": 27,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2889,7 +2975,6 @@
             "paper_expuls": true
         },
         {
-            "id": 28,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2949,7 +3034,6 @@
             "paper_expuls": true
         },
         {
-            "id": 29,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3009,7 +3093,6 @@
             "paper_expuls": true
         },
         {
-            "id": 30,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -6199,7 +6282,7 @@
         },
         {
             "mailinglist_id": 5,
-            "persona_id": 7
+            "persona_id": 23
         },
         {
             "mailinglist_id": 6,
@@ -6295,7 +6378,7 @@
         },
         {
             "mailinglist_id": 61,
-            "persona_id": 11
+            "persona_id": 23
         },
         {
             "mailinglist_id": 62,

@@ -424,7 +424,7 @@ class TestEventFrontend(FrontendTest):
             f['orga_id'] = "DB-10-8"
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'orga_id', "Benutzer ist kein Veranstaltunsnutzer.", index=-1)
+                'orga_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.", index=-1)
             # Try to add an archived user.
             f['orga_id'] = "DB-8-6"
             self.submit(f, check_notification=False)

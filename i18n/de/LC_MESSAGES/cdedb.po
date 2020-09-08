@@ -15270,7 +15270,7 @@ msgid "Some of these users are not ml users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
 
 msgid "This user is not an event user."
-msgstr "Dieser Benutzer ist kein Veranstaltungsnutzer."
+msgstr "Dieser Nutzer ist kein Veranstaltungsnutzer."
 
 #: cdedb/common.py:933
 #, python-format
