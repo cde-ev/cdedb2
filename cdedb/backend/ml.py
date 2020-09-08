@@ -21,7 +21,7 @@ from cdedb.common import (MAILINGLIST_FIELDS, CdEDBObject, CdEDBObjectMap,
                           DefaultReturnCode, DeletionBlockers, PrivilegeError,
                           make_proxy, RequestState, SubscriptionActions,
                           SubscriptionError, glue, implying_realms, n_, now,
-                          unwrap, PathLike, CdEDBLog)
+                          unwrap, PathLike, CdEDBLog, mixed_existence_sorter)
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
@@ -323,7 +323,7 @@ class MlBackend(AbstractBackend):
         """
         query = affirm("query", query)
         if query.scope == "qview_persona":
-            # Include only un-archived ml-users
+            # Include only un-archived ml users.
             query.constraints.append(("is_ml_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
@@ -476,9 +476,8 @@ class MlBackend(AbstractBackend):
             if not self.core.verify_ids(rs, moderators, is_archived=False):
                 raise ValueError(n_(
                     "Some of these users do not exist or are archived."))
-            verified = set(self.core.verify_personas(rs, moderators, {"ml"}))
-            if not verified == moderators:
-                raise ValueError(n_("Some of these users are not ml-users."))
+            if not self.core.verify_personas(rs, moderators, {"ml"}):
+                raise ValueError(n_("Some of these users are not ml users."))
 
             if not self.may_manage(rs, mailinglist_id):
                 raise PrivilegeError("Not privileged.")
@@ -488,13 +487,7 @@ class MlBackend(AbstractBackend):
             new = moderators - existing
             deleted = existing - moderators
             if new:
-                if not self.core.verify_ids(rs, new, is_archived=False):
-                    raise ValueError(n_(
-                        "Some of these users do not exist or are archived."))
-                if not self.core.verify_personas(rs, new, {"ml"}):
-                    raise ValueError(n_(
-                        "Some of these users are not ml-users."))
-                for anid in new:
+                for anid in mixed_existence_sorter(new):
                     new_mod = {
                         'persona_id': anid,
                         'mailinglist_id': mailinglist_id,
@@ -506,7 +499,7 @@ class MlBackend(AbstractBackend):
                 query = ("DELETE FROM ml.moderators"
                          " WHERE persona_id = ANY(%s) AND mailinglist_id = %s")
                 ret *= self.query_exec(rs, query, (deleted, mailinglist_id))
-                for anid in deleted:
+                for anid in mixed_existence_sorter(deleted):
                     self.ml_log(rs, const.MlLogCodes.moderator_removed,
                                 mailinglist_id, persona_id=anid)
         return ret

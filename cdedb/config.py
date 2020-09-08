@@ -32,8 +32,17 @@ _currentpath = pathlib.Path(__file__).resolve().parent
 if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':
     raise RuntimeError(n_("Failed to locate repository"))
 _repopath = _currentpath.parent
-_git_commit = subprocess.check_output(
-    ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+
+try:
+    _git_commit = subprocess.check_output(
+        ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+except FileNotFoundError: # only catch git executable not found
+    with Path(_repopath, '.git/HEAD').open() as head:
+        _git_commit = head.read().strip()
+
+    if _git_commit.startswith('ref'):
+        with Path(_repopath, '.git', head[len('ref: '):]).open() as ref:
+            _git_commit = ref.read().strip()
 
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
@@ -464,7 +473,7 @@ _DEFAULTS = {
                  ("personas.id", True))),
             n_("10_query_event_user_minors"): Query(
                 "qview_event_user", QUERY_SPECS['qview_event_user'],
-                ("persona.persona_id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "birthday"),
                 (("birthday", QueryOperators.greater,
                   deduct_years(now().date(), 18)),),
@@ -492,13 +501,13 @@ _DEFAULTS = {
         "qview_assembly_user": {
             n_("00_query_assembly_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name"),
+                ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_assembly_user_admin"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "is_assembly_admin"),
                 (("is_assembly_admin", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
@@ -507,13 +516,13 @@ _DEFAULTS = {
         "qview_ml_user": {
             n_("00_query_ml_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name"),
+                ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_ml_user_admin"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "is_ml_admin"),
                 (("is_ml_admin", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),

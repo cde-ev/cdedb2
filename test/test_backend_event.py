@@ -1140,9 +1140,24 @@ class TestEventBackend(BackendTest):
                 },
             },
             'payment': None,
-            'persona_id': 3,
+            'persona_id': 999,
             'real_persona_id': None
         }
+        with self.assertRaises(ValueError) as cm:
+            self.event.create_registration(self.key, new_reg)
+        self.assertIn("The user does not exist or is archived.",
+                      cm.exception.args)
+        new_reg['persona_id'] = 8
+        with self.assertRaises(ValueError) as cm:
+            self.event.create_registration(self.key, new_reg)
+        self.assertIn("The user does not exist or is archived.",
+                      cm.exception.args)
+        new_reg['persona_id'] = 11
+        with self.assertRaises(ValueError) as cm:
+            self.event.create_registration(self.key, new_reg)
+        self.assertIn("The user is not an event user.", cm.exception.args)
+
+        new_reg['persona_id'] = 3
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
@@ -2806,6 +2821,29 @@ class TestEventBackend(BackendTest):
         with self.assertRaises(PrivilegeError) as cm:
             self.event.get_waitlist_position(
                 self.key, event_id=1, persona_id=1)
+
+    @as_users("annika")
+    def test_set_event_orgas(self, user):
+        event_id = 1
+        self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertLess(0, self.event.set_event_orgas(self.key, event_id, {1}))
+        self.assertEqual({1}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertLess(
+            0, self.event.set_event(self.key, {'id': event_id, 'orgas': {7}}))
+        self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
+
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event_orgas(self.key, event_id, {8})
+        self.assertIn("Some of these orgas do not exist or are archived.",
+                      cm.exception.args)
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event_orgas(self.key, event_id, {1000})
+        self.assertIn("Some of these orgas do not exist or are archived.",
+                      cm.exception.args)
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event_orgas(self.key, event_id, {11})
+        self.assertIn("Some of these orgas are not event users.",
+                      cm.exception.args)
 
     @as_users("annika")
     def test_log(self, user):

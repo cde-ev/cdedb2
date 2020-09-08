@@ -81,7 +81,7 @@
                         {{ util.input_submit(value=gettext("Logout Everywhere"), title=gettext("Logout Everywhere"),
                                              icon="power-off", aclass="btn btn-danger btn-sm") }}
                     </form>
-                    {{ util.href(docurl('Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-circle") }}
+                    {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-circle") }}
                 {% endif %}
                 {% if is_relative_admin %}
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"), aclass="btn btn-info btn-sm",

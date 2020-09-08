@@ -1229,8 +1229,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
-        # do i18n here, so _create_mail needs to know less context
-        headers['Subject'] = headers['Subject']
         msg = self._create_mail(text, headers, attachments)
         ret = self._send_mail(msg)
         if ret:
@@ -1285,7 +1283,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for header in ("From", "Reply-To", "Return-Path"):
             msg[header] = headers[header]  # type: ignore
         subject = headers["Prefix"] + " " + headers['Subject']  # type: ignore
-        headers["Subject"] = subject
+        msg["Subject"] = subject
         msg["Message-ID"] = email.utils.make_msgid(
             domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
