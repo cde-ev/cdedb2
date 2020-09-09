@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
 "POT-Creation-Date: 2020-09-06 10:18+0200\n"
-"PO-Revision-Date: 2020-09-06 10:22+0200\n"
+"PO-Revision-Date: 2020-09-09 20:51+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -10038,11 +10038,7 @@ msgstr "Zusätzliche Daten"
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:93
 #, fuzzy
 msgid "Grant Trialmembership"
-msgstr ""
-"#-#-#-#-#  merge-po.I8bs.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Verleihe eine Probemitgliedschaft\n"
-"#-#-#-#-#  merge-po.I8bs.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Probemitgliedschaft gewähren"
+msgstr "Probemitgliedschaft gewähren"
 
 #: cdedb/frontend/templates/web/core/reset_password.tmpl:10
 msgid ""
