@@ -5728,7 +5728,7 @@ class EventFrontend(AbstractUserFrontend):
 
         spec = self.make_lodgement_query_spec(rs.ambience['event'])
         query_input = mangle_query_input(rs, spec)
-        qurey: Optional[Query] = None
+        query: Optional[Query] = None
         if is_search:
             query = cast(Query, check(rs, "query_input", query_input, "query",
                                       spec=spec, allow_empty=False))
