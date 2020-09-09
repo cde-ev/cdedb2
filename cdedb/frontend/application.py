@@ -270,7 +270,7 @@ class Application(BaseApp):
                     assert user.persona_id is not None
                     moderator = self.mlproxy.moderator_info(
                         rs, user.persona_id)
-                presider = set()
+                presider: Set[int] = set()
                 if "assembly" in user.roles:
                     assert user.persona_id is not None
                     presider = self.assemblyproxy.presider_info(
