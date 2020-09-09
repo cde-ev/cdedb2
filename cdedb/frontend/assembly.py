@@ -287,7 +287,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         if presider_id not in rs.ambience['assembly']['presiders']:
-            rs.notify(n_("This user is not a presider for this assembly."))
+            rs.notify("info", n_(
+                "This user is not a presider for this assembly."))
             return self.redirect(rs, "assembly/show")
         ids = rs.ambience['assembly']['presiders'] - {presider_id}
         code = self.assemblyproxy.set_assembly_presiders(rs, assembly_id, ids)
