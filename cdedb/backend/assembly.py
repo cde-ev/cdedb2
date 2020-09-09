@@ -472,7 +472,13 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_assemblies(self, rs: RequestState,
                        ids: Collection[int]) -> CdEDBObjectMap:
-        """Retrieve data for some assemblies."""
+        """Retrieve data for some assemblies.
+
+        In addition to the keys in `cdedb.common.ASSEMBLY_FIELDS`, this
+        retrieves a set of persona ids under the key `'presiders'`, identifying
+        those who have privileged access to the assembly (similar to orgas for
+        events).
+        """
         ids = affirm_set("id", ids)
         if not all(self.may_access(rs, assembly_id=anid) for anid in ids):
             raise PrivilegeError(n_("Not privileged."))
@@ -482,7 +488,8 @@ class AssemblyBackend(AbstractBackend):
             ids, entity_key="assembly_id")
         ret = {}
         for assembly in data:
-            assert 'persiders' not in assembly
+            if 'presiders' in assembly:
+                raise RuntimeError(n_("Something went wrong."))
             assembly['presiders'] = {p['persona_id'] for p in presider_data
                                      if p['assembly_id'] == assembly['id']}
             ret[assembly['id']] = assembly
@@ -495,7 +502,12 @@ class AssemblyBackend(AbstractBackend):
                      ) -> DefaultReturnCode:
         """Update some keys of an assembly.
 
-        Updating 'presiders' requires assembly_admin.
+        In addition to the keys in `cdedb.common.ASSEMBLY_FIELDS`, which is
+        possible for presiders of this the assembly, this can overwrite the
+        set of presiders for the assembly.
+
+        Updating the presiders is delegated to `set_assembly_presiders`, and
+        requires admin privileges.
         """
         data = affirm("assembly", data)
         if not self.is_presider(rs, assembly_id=data['id']):
@@ -520,6 +532,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly_admin")
     def set_assembly_presiders(self, rs: RequestState, assembly_id: int,
                                ids: Collection[int]) -> DefaultReturnCode:
+        """Overwrite the set of presiders for an assembly."""
         assembly_id = affirm("id", assembly_id)
         ids = affirm_set("id", ids)
         with Atomizer(rs):
@@ -894,6 +907,7 @@ class AssemblyBackend(AbstractBackend):
                       Prevents deletion.
         * candidates: Rows in the assembly.candidates table.
         * attachments: All attachments associated with this ballot.
+        * votes: Votes that have been cast in this ballot. Prevents deletion.
         * voters: Rows in the assembly.voters table. These do not actually
                   mean that anyone has voted for that ballot, as they are
                   created upon assembly signup and/or ballot creation.
@@ -903,6 +917,10 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm("id", ballot_id)
         blockers = {}
+
+        if not self.is_presider(rs, ballot_id=ballot_id):
+            raise RuntimeError(n_(
+                "Must have privileged access to delete ballot."))
 
         # TODO use an Atomizer here?
         ballot = self.get_ballot(rs, ballot_id)
@@ -941,12 +959,8 @@ class AssemblyBackend(AbstractBackend):
         .. note:: As with modification of ballots this is forbidden
           after voting has started.
 
-        .. note:: As with :py:func:`remove_attachment` the frontend has to take
-          care of the actual file manipulation for attachments.
-
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :returns: default return code
         """
         ballot_id = affirm("id", ballot_id)
         blockers = self.delete_ballot_blockers(rs, ballot_id)
@@ -964,7 +978,7 @@ class AssemblyBackend(AbstractBackend):
             current = self.get_ballot(rs, ballot_id)
             if not self.is_presider(rs, assembly_id=current['assembly_id']):
                 raise PrivilegeError(n_("Must have privileged access to delete"
-                                        " attachment."))
+                                        " ballot."))
             # cascade specified blockers
             if cascade:
                 if "vote_begin" in cascade:
@@ -1630,9 +1644,12 @@ class AssemblyBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        # TODO: add privilege check here?
         attachment_id = affirm("id", attachment_id)
         blockers = {}
+
+        if not self.is_presider(rs, attachment_id=attachment_id):
+            raise PrivilegeError(n_(
+                "Must have privileged access to delete attachment."))
 
         versions = self.get_attachment_history(rs, attachment_id)
         if versions:
