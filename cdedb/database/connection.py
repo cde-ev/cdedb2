@@ -11,6 +11,7 @@ This should be the only module which makes subsistantial use of psycopg.
 import logging
 from types import TracebackType
 from typing import Any, Collection, Mapping, NoReturn, Optional, Type
+from typing_extensions import Protocol
 
 import psycopg2
 import psycopg2.extras
@@ -18,8 +19,19 @@ import psycopg2.extensions
 
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 
-from cdedb.config import SecretsConfig
-from cdedb.common import Role, RequestState
+# We cannot import cdedb.config here.
+# from cdedb.config import SecretsConfig
+SecretsConfig = Mapping[str, Any]
+
+# We cannot import cdedb.common here.
+# from cdedb.common import Role, RequestState
+Role = str
+
+
+class RequestState(Protocol):
+    conn: "IrradiatedConnection"
+    _conn: "IrradiatedConnection"
+
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, None)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, None)
