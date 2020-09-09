@@ -142,6 +142,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/test/ancillary_files/"
         for e in table_data:
             _id = e.get('id', _id)
             assert _id not in data
+            e['id'] = _id
             data[_id] = e
             _id += 1
         ret[table] = data
