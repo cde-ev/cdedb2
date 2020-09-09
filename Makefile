@@ -202,11 +202,13 @@ lint:
 
 
 prepare-check:
-ifneq($(TESTPREPARATION), "manual")
+ifneq ($(TESTPREPARATION), manual)
 	$(MAKE) i18n-compile
 	$(MAKE) sample-data-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
 		|| true
+else
+	@echo "Omitting test preparation."
 endif
 
 check: export CDEDB_TEST=True

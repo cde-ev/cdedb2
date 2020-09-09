@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export TESTPREPARATIION=manual
+export TESTPREPARATION=manual
 cd /cdedb2
 git pull &> /dev/null
 
