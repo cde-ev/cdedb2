@@ -1075,8 +1075,8 @@ class TestCoreBackend(BackendTest):
         result = self.core.retrieve_log(self.key)
         self.assertEqual(core_log_expectation, result)
 
-        total = 31
-        changelog_expectation = (total, (
+        sample_entries = len(self.sample_data["core.changelog"])
+        changelog_expectation = (sample_entries + 1, (
             # Committing the changed admin bits.
             {
                 'id': 1001,
@@ -1090,7 +1090,8 @@ class TestCoreBackend(BackendTest):
             },
         ))
         # Set offset to avoid selecting the Init. changelog entries
-        result = self.core.retrieve_changelog_meta(self.key, offset=total-1)
+        result = self.core.retrieve_changelog_meta(
+            self.key, offset=sample_entries)
         self.assertEqual(changelog_expectation, result)
 
     @as_users("anton", "martin")
@@ -1191,7 +1192,7 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_changelog_meta(self, user):
         expectation = self.get_sample_data(
-            "core.changelog", range(1, 31),
+            "core.changelog", range(1, 32),
             ("id", "submitted_by", "reviewed_by", "ctime", "generation",
              "change_note", "code", "persona_id"))
         self.assertEqual((len(expectation), tuple(expectation.values())),

@@ -343,7 +343,7 @@ class TestCoreFrontend(FrontendTest):
                  status=403)
         self.assertTitle('403: Forbidden')
 
-    @as_users("berta", "garcia")
+    @as_users("berta", "werner")
     def test_selectpersona_ml_assembly(self, user):
         # Only assembly participants are shown
         self.get('/core/persona/select'

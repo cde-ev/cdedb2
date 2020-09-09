@@ -460,7 +460,7 @@ class TestPrivacyFrontend(FrontendTest):
                 'inspected': USER_DICT['kalif'],
                 'access': {get_id(u) for u in ("kalif", "paul", "viktor")},
                 'no_access': {
-                    get_id(u) for u in ("annika", "nina", "quintuns", "berta",
+                    get_id(u) for u in ("annika", "nina", "quintus", "berta",
                                         "janis", "emilia", "rowena")},
             },
             'event': {
@@ -505,11 +505,10 @@ class TestPrivacyFrontend(FrontendTest):
                 msg = "Forget {} in case {}.".format(user['given_names'], realm)
                 raise RuntimeError(msg)
 
-    @unittest.expectedFailure
     def test_profile_of_disabled_user(self):
         # a disabled user should be viewable as an equal non-disabled user
         # TODO maybe add all above tests as subtests?
-        raise NotImplementedError
+        self.skipTest("Test not yet implemented.")
 
     @as_users("ferdinand", "martin", "paul")
     def test_profile_of_archived_user(self, user):

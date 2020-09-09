@@ -721,7 +721,7 @@ class TestAssemblyBackend(BackendTest):
              'code': const.AssemblyLogCodes.assembly_deleted,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': 48},
             {'id': 1010,
              'change_note': 'Farbe des Logos',
              'assembly_id': 1,

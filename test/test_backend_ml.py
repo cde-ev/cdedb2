@@ -93,7 +93,7 @@ class TestMlBackend(BackendTest):
                 'ml_type': const.MailinglistTypes.assembly_associated.value,
                 'ml_type_class': ml_type.AssemblyAssociatedMailinglist,
                 'mod_policy': const.ModerationPolicy.non_subscribers.value,
-                'moderators': {2, 7},
+                'moderators': {2, 23},
                 'registration_stati': [],
                 'subject_prefix': 'kampf',
                 'title': 'Sozialistischer Kampfbrief',
