@@ -192,7 +192,7 @@
         {% endif %}
             {% if attachments|length > 1 %}
                 <ul class="slim" id="attachments-{{ "ballot-{}".format(ballot['id']) if ballot else "general"}}">
-                    {% for attachment_id, attachment in attachments.items() %}
+                    {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.get_attachment_sorter(histories)) %}
                         <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
                             {{ print_attachment(attachment, histories[attachment_id], edit=edit,
                                                 full_history=full_history, ballot=ballot,

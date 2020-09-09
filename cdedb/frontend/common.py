@@ -726,7 +726,7 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
 
 def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
                        reverse: bool = False) -> List[Tuple[T, S]]:
-    """Sort a dicts items by thei value."""
+    """Sort a dicts items by their value."""
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
