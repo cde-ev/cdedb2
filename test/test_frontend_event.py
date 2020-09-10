@@ -424,18 +424,18 @@ class TestEventFrontend(FrontendTest):
             f['orga_id'] = "DB-10-8"
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'orga_id', "Benutzer ist kein Veranstaltunsnutzer.", index=-1)
+                'orga_id', "Dieser Benutzer ist kein Veranstaltungsnutzer.", index=-1)
             # Try to add an archived user.
             f['orga_id'] = "DB-8-6"
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'orga_id', "Benutzer existiert nicht oder ist archiviert.",
+                'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
                 index=-1)
             # Try to add a non-existent user.
             f['orga_id'] = "DB-1000-6"
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'orga_id', "Benutzer existiert nicht oder ist archiviert.",
+                'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
                 index=-1)
             f['orga_id'] = "DB-2-7"
             self.submit(f)

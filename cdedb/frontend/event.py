@@ -477,10 +477,10 @@ class EventFrontend(AbstractUserFrontend):
         if not self.coreproxy.verify_id(rs, orga_id, is_archived=False):
             rs.append_validation_error(
                 ('orga_id',
-                 ValueError(n_("The user does not exist or is archived."))))
+                 ValueError(n_("This user does not exist or is archived."))))
         if not self.coreproxy.verify_persona(rs, orga_id, {"event"}):
             rs.append_validation_error(
-                ('orga_id', ValueError(n_("The user is not an event user."))))
+                ('orga_id', ValueError(n_("This user is not an event user."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         new = rs.ambience['event']['orgas'] | {orga_id}
