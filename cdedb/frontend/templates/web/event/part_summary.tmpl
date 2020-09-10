@@ -156,7 +156,8 @@
                                             attributes=('data-basename="fee_"'|s if newrow else ''),
                                             aclass='drow-input form-control', anid="input-text-fee_{}".format(part_id),
                                             addon='€') }}
-
+                    {{ util.form_input_select(name="waitlist_field_{}".format(part_id), label=gettext("Field for Waitlist"), entries=waitlist_fields,
+                                  nulloption=nbsp, info=gettext("Field to store the waitlist ranking of this part. Fieldtype: Integer")) }}
                 </div>
             </div>
                 <hr />

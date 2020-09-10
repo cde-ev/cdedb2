@@ -52,18 +52,17 @@ class AllMembersImplicitMeta:
 
 class AssemblyAssociatedMeta:
     """Metaclass for all assembly associated mailinglists."""
-    mandatory_validation_fields = [
+    mandatory_validation_fields = {
         ("assembly_id", "id"),
-    ]
+    }
 
 
 class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields = [
+    mandatory_validation_fields = {
         ("event_id", "id_or_None"),
-        ("registration_stati", "[enum_registrationpartstati]"),
-    ]
+    }
 
     @classmethod
     def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
@@ -108,14 +107,14 @@ class GeneralMailinglist:
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: List[Tuple[str, str]] = list()
-    optional_validation_fields: List[Tuple[str, str]] = list()
+    mandatory_validation_fields: Set[Tuple[str, str]] = set()
+    optional_validation_fields: Set[Tuple[str, str]] = set()
 
     @classmethod
     def get_additional_fields(cls) -> Set[Tuple[str, str]]:
         ret = set()
         for field, argtype in (cls.mandatory_validation_fields
-                               + cls.optional_validation_fields):
+                               | cls.optional_validation_fields):
             if argtype.startswith('[') and argtype.endswith(']'):
                 ret.add((field, "[str]"))
             else:
@@ -333,6 +332,10 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
+    # TODO I bet this can be done more simple, but I dont get how
+    mandatory_validation_fields = (
+            EventAssociatedMeta.mandatory_validation_fields
+            | {("registration_stati", "[enum_registrationpartstati]")})
 
     @classmethod
     def restricted_moderators(cls, rs: RequestState, bc: BackendContainer,

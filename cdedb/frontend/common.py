@@ -35,6 +35,7 @@ import threading
 import urllib.parse
 import decimal
 from enum import Enum, EnumMeta
+from secrets import token_hex
 
 import markdown
 import markdown.extensions.toc
@@ -75,7 +76,6 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
-from cdedb.security import secure_token_hex
 import cdedb.query as query_mod
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -565,7 +565,7 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
         'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
-        'sup', 'sub', 'br', 'u', 'dl', 'dt', 'dd', ]
+        'sup', 'sub', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary']
     attributes = {
         'a': ['href', 'title'],
         'abbr': ['title'],
@@ -582,6 +582,7 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         'h4': ['id'],
         'h5': ['id'],
         'h6': ['id'],
+        'details': ['open'],
     }
     cleaner = bleach.sanitizer.Cleaner(tags=tags, attributes=attributes)
     BLEACH_CLEANER.cleaner = cleaner
@@ -725,7 +726,7 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
 
 def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
                        reverse: bool = False) -> List[Tuple[T, S]]:
-    """Sort a dicts items by thei value."""
+    """Sort a dicts items by their value."""
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
@@ -1180,7 +1181,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
-        csp_nonce = secure_token_hex(12)
+        csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
 
         html = self.fill_template(rs, "web", templatename, params)
@@ -1228,8 +1229,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
-        # do i18n here, so _create_mail needs to know less context
-        headers['Subject'] = headers['Subject']
         msg = self._create_mail(text, headers, attachments)
         ret = self._send_mail(msg)
         if ret:
@@ -1284,7 +1283,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for header in ("From", "Reply-To", "Return-Path"):
             msg[header] = headers[header]  # type: ignore
         subject = headers["Prefix"] + " " + headers['Subject']  # type: ignore
-        headers["Subject"] = subject
+        msg["Subject"] = subject
         msg["Message-ID"] = email.utils.make_msgid(
             domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())

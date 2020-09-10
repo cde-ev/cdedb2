@@ -703,6 +703,8 @@ class TestMlFrontend(FrontendTest):
                     self.assertValidationError('event_id',
                                                "Muss „None“ sein.")
                     self.assertPresence("Muss eine leere Liste sein.")
+                elif ml_type == const.MailinglistTypes.event_orga:
+                    self.assertPresence("Muss eine leere Liste sein.")
                 else:
                     self.assertNonPresence("Muss eine leere Liste sein.")
                 if ml_type not in assembly_types:

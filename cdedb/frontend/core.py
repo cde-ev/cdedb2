@@ -542,7 +542,7 @@ class CoreFrontend(AbstractFrontend):
             tmp: List[int] = []
             already_committed = False
             for x, y in pairwise(xsorted(history.keys())):
-                if history[x]['change_status'] == stati.committed:
+                if history[x]['code'] == stati.committed:
                     already_committed = True
                 # Somewhat involved determination of a field being constant.
                 #
@@ -550,7 +550,7 @@ class CoreFrontend(AbstractFrontend):
                 # don't want to mask a change that was rejected and then
                 # resubmitted and accepted.
                 is_constant = history[x][f] == history[y][f]
-                if (history[x]['change_status'] == stati.nacked
+                if (history[x]['code'] == stati.nacked
                         and not already_committed):
                     is_constant = False
                 if is_constant:
@@ -564,14 +564,14 @@ class CoreFrontend(AbstractFrontend):
                 total_const.extend(tmp)
             constants[f] = total_const
         pending = {i for i in history
-                   if history[i]['change_status'] == stati.pending}
+                   if history[i]['code'] == stati.pending}
         # Track the omitted information whether a new value finally got
         # committed or not.
         #
         # This is necessary since we only show those data points, where the
         # data (e.g. the name) changes. This does especially not detect
         # meta-data changes (e.g. the change-status).
-        eventual_status = {f: {gen: entry['change_status']
+        eventual_status = {f: {gen: entry['code']
                                for gen, entry in history.items()
                                if gen not in constants[f]}
                            for f in fields}
@@ -579,7 +579,7 @@ class CoreFrontend(AbstractFrontend):
             for gen in xsorted(history):
                 if gen in constants[f]:
                     anchor = max(g for g in eventual_status[f] if g < gen)
-                    this_status = history[gen]['change_status']
+                    this_status = history[gen]['code']
                     if this_status == stati.committed:
                         eventual_status[f][anchor] = stati.committed
                     if (this_status == stati.nacked
@@ -854,7 +854,7 @@ class CoreFrontend(AbstractFrontend):
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
             rs, rs.user.persona_id, (generation,)))
-        if data['change_status'] == const.MemberChangeStati.pending:
+        if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
@@ -1007,7 +1007,7 @@ class CoreFrontend(AbstractFrontend):
             rs, persona_id, (generation,)))
         del data['change_note']
         merge_dicts(rs.values, data)
-        if data['change_status'] == const.MemberChangeStati.pending:
+        if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         shown_fields = get_persona_fields_by_realm(
             extract_roles(rs.ambience['persona']), restricted=False)
@@ -2271,12 +2271,12 @@ class CoreFrontend(AbstractFrontend):
         history = self.coreproxy.changelog_get_history(rs, persona_id,
                                                        generations=None)
         pending = history[max(history)]
-        if pending['change_status'] != const.MemberChangeStati.pending:
+        if pending['code'] != const.MemberChangeStati.pending:
             rs.notify("warning", n_("Persona has no pending change."))
             return self.list_pending_changes(rs)
         current = history[max(
             key for key in history
-            if (history[key]['change_status']
+            if (history[key]['code']
                 == const.MemberChangeStati.committed))]
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
@@ -2348,7 +2348,7 @@ class CoreFrontend(AbstractFrontend):
                  ("submitted_by", "cdedbid_or_None"),
                  ("reviewed_by", "cdedbid_or_None"),
                  ("persona_id", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2358,7 +2358,7 @@ class CoreFrontend(AbstractFrontend):
                             offset: Optional[int], length: Optional[int],
                             persona_id: Optional[int],
                             submitted_by: Optional[int],
-                            additional_info: Optional[str],
+                            change_note: Optional[str],
                             time_start: Optional[datetime.datetime],
                             time_stop: Optional[datetime.datetime],
                             reviewed_by: Optional[int]) -> Response:
@@ -2373,7 +2373,7 @@ class CoreFrontend(AbstractFrontend):
         rs.ignore_validation_errors()
         total, log = self.coreproxy.retrieve_changelog_meta(
             rs, stati, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -2390,7 +2390,7 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2398,7 +2398,7 @@ class CoreFrontend(AbstractFrontend):
     def view_log(self, rs: RequestState, codes: Collection[const.CoreLogCodes],
                  offset: Optional[int], length: Optional[int],
                  persona_id: Optional[int], submitted_by: Optional[int],
-                 additional_info: Optional[str],
+                 change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
                  time_stop: Optional[datetime.datetime]) -> Response:
         """View activity."""
@@ -2412,7 +2412,7 @@ class CoreFrontend(AbstractFrontend):
         rs.ignore_validation_errors()
         total, log = self.coreproxy.retrieve_log(
             rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
