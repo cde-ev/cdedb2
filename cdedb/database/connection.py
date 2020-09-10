@@ -186,14 +186,14 @@ class IrradiatedConnection(psycopg2.extensions.connection):
 
     See :py:class:`Atomizer` for the documentation.
     """
+    # keep a copy of any exception we encounter.
+    _saved_etype: Optional[Type[Exception]] = None
+    _saved_evalue: Optional[Exception] = None
+    _saved_tb: Optional[TracebackType] = None
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._radiation_level = 0
-        # keep a copy of any exception we encounter
-        self._saved_etype: Optional[Type[Exception]] = None
-        self._saved_evalue: Optional[Exception] = None
-        self._saved_tb: Optional[TracebackType] = None
 
     def __enter__(self) -> "IrradiatedConnection":
         if self._radiation_level:

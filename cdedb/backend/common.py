@@ -789,7 +789,7 @@ def affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
 # noinspection PyPep8Naming
 @overload
 def affirm_array_validation(assertion: str, values: None,
-                            allow_None: Literal[True] = True, **kwargs: Any
+                            allow_None: Literal[True], **kwargs: Any
                             ) -> None: ...
 
 

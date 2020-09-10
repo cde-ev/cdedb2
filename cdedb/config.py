@@ -18,7 +18,7 @@ import pathlib
 import subprocess
 import pytz
 
-from typing import Any, Callable, Dict, Iterable, Mapping
+from typing import Any, Callable, Dict, Iterator, Mapping
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
 from cdedb.common import (
@@ -602,8 +602,7 @@ class BasicConfig(Mapping[str, Any]):
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    # TODO: Why is this wrong?
-    def __iter__(self) -> Iterable[str]:  # type: ignore
+    def __iter__(self) -> Iterator[str]:
         return self._configchain.__iter__()
 
     def __len__(self) -> int:
@@ -701,8 +700,7 @@ class SecretsConfig(Mapping[str, Any]):
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    # TODO: Why is this wrong?
-    def __iter__(self) -> Iterable[str]:  # type: ignore
+    def __iter__(self) -> Iterator[str]:
         return self._configchain.__iter__()
 
     def __len__(self) -> int:
