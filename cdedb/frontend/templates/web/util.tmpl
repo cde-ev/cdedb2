@@ -312,7 +312,7 @@
         class=aclass,
         maxlength=maxlength,
         placeholder=placeholder,
-        readonly="readonly" if readonly,
+        disabled="disabled" if readonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
         {%- if type == 'date' %}
@@ -344,7 +344,7 @@
         id=anid,
         class=aclass,
         accept=accept,
-        readonly="readonly" if readonly,
+        disabled="disabled" if readonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }}/>
 {%- endmacro %}
@@ -366,7 +366,7 @@
         class=aclass,
         rows=rows,
         maxlength=maxlength,
-        readonly="readonly" if readonly,
+        disabled="disabled" if readonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
     {#- TODO sort if this is a list -#}
@@ -395,7 +395,7 @@
             class=aclass,
             value=value,
             checked="checked" if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue),
-            readonly="readonly" if readonly,
+            disabled="disabled" if readonly,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }}/>
         {{ label -}}
@@ -459,7 +459,7 @@
         name=name,
         id=anid,
         class=aclass,
-        readonly="readonly" if readonly,
+        disabled="disabled" if readonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
@@ -513,7 +513,7 @@
         class=aclass,
         title=title,
         value="True",
-        readonly="readonly" if readonly,
+        disabled="disabled" if readonly,
         **{ 'aria-label': arialabeledby }
     )|xmlattr }}>
         {{ make_icon(icon) if icon }}
