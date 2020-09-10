@@ -237,9 +237,9 @@ class EventBackend(AbstractBackend):
             assert event_id is not None
             # ml_admins are allowed to do this to be able to manage
             # subscribers of event mailinglists.
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)
-                    and "ml_admin" not in rs.user.roles):
+            if not (self.is_orga(rs, event_id=event_id)
+                    or self.is_admin(rs)
+                    or "ml_admin" in rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 

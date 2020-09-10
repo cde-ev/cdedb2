@@ -21,7 +21,8 @@ from cdedb.common import (MAILINGLIST_FIELDS, CdEDBObject, CdEDBObjectMap,
                           DefaultReturnCode, DeletionBlockers, PrivilegeError,
                           make_proxy, RequestState, SubscriptionActions,
                           SubscriptionError, glue, implying_realms, n_, now,
-                          unwrap, PathLike, CdEDBLog, MOD_ALLOWED_FIELDS)
+                          unwrap, PathLike, CdEDBLog, MOD_ALLOWED_FIELDS,
+                          PRIVILEGED_MOD_ALLOWED_FIELDS)
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
@@ -612,11 +613,15 @@ class MlBackend(AbstractBackend):
             is_admin = self.is_relevant_admin(rs, mailinglist=current)
             # determinate if changes are permitted
             if not is_admin:
-                if not changed <= MOD_ALLOWED_FIELDS:
-                    raise PrivilegeError(n_("Need to be admin to change this."))
-                elif not self.is_moderator(rs, current['id']):
+                if not self.is_moderator(rs, current['id']):
                     raise PrivilegeError(n_(
                         "Need to be moderator or admin to change mailinglist."))
+                if not changed <= PRIVILEGED_MOD_ALLOWED_FIELDS:
+                    raise PrivilegeError(n_("Need to be admin to change this."))
+                if not (changed <= MOD_ALLOWED_FIELDS or
+                        self.is_moderator(rs, current['id'], privileged=True)):
+                    raise PrivilegeError(n_(
+                        "Need to be privileged moderator to change this."))
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:

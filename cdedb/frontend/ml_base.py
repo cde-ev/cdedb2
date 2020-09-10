@@ -402,27 +402,22 @@ class MlBaseFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
+
+        if self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
+            # admins may change everything except ml_type which got its own site
+            allowed = set(data) - {'ml_type'}
+        elif self.mlproxy.is_moderator(rs, mailinglist_id, privileged=True):
+            allowed = PRIVILEGED_MOD_ALLOWED_FIELDS
+        else:
+            allowed = MOD_ALLOWED_FIELDS
+
+        # we discard every entry of not allowed fields silently
+        for key in set(data) - allowed:
+            data[key] = rs.ambience['mailinglist'][key]
+
         data = check(rs, "mailinglist", data)
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
-        old_ml = rs.ambience['mailinglist']
-
-        # ensure that moderators change only allowed fields
-        if not self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
-            # some fields may only be changed by privileged moderators
-            if self.mlproxy.is_moderator(rs, mailinglist_id, privileged=True):
-                allowed = PRIVILEGED_MOD_ALLOWED_FIELDS
-            else:
-                allowed = MOD_ALLOWED_FIELDS
-            for field in set(data) - allowed:
-                if data[field] != old_ml[field]:
-                    rs.append_validation_error(
-                        (field, ValueError(n_("Not allowed to change."))))
-
-        if data['ml_type'] != old_ml['ml_type']:
-            rs.append_validation_error(
-                ("ml_type", ValueError(n_(
-                    "Mailinglist Type cannot be changed here."))))
 
         # Check if mailinglist address is unique
         try:
