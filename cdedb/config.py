@@ -473,7 +473,7 @@ _DEFAULTS = {
                  ("personas.id", True))),
             n_("10_query_event_user_minors"): Query(
                 "qview_event_user", QUERY_SPECS['qview_event_user'],
-                ("persona.persona_id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "birthday"),
                 (("birthday", QueryOperators.greater,
                   deduct_years(now().date(), 18)),),
@@ -501,13 +501,13 @@ _DEFAULTS = {
         "qview_assembly_user": {
             n_("00_query_assembly_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name"),
+                ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_assembly_user_admin"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "is_assembly_admin"),
                 (("is_assembly_admin", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
@@ -516,13 +516,13 @@ _DEFAULTS = {
         "qview_ml_user": {
             n_("00_query_ml_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name"),
+                ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_ml_user_admin"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "is_ml_admin"),
                 (("is_ml_admin", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),

@@ -874,7 +874,7 @@ class FrontendTest(CdEDBTest):
         self.traverse({'href': '/{}/$'.format(realm)},
                       {'href': '/{}/search/user'.format(realm)},
                       verbose=verbose)
-        id_field = 'personas.id' if realm in {'event', 'cde'} else 'id'
+        id_field = 'personas.id'
         f = self.response.forms['queryform']
         f['qsel_' + id_field].checked = True
         f['qop_' + id_field] = QueryOperators.equal.value
@@ -992,26 +992,36 @@ class FrontendTest(CdEDBTest):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
 
-    def assertValidationError(self, fieldname: str, message: str = "") -> None:
+    def assertValidationError(self, fieldname: str, message: str = "",
+                              index: int = None) -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
         and a specific error message to be shown near the field.
 
         :param fieldname: The field's 'name' attribute
+        :param index: If more than one field with the given name exists,
+            specify which one should be checked.
         :param message: The expected error message
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
-        node = self.response.lxml.xpath(
+        nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
-        if len(node) != 1:
-            raise AssertionError("Input with name \"{}\" not found"
-                                 .format(fieldname))
+        f = fieldname
+        if index is None and len(nodes) == 1:
+            node = nodes[0]
+        else:
+            try:
+                node = nodes[index]
+            except IndexError:
+                raise AssertionError(f"Input with name {f!r} and index {index}"
+                                     f" not found. {len(nodes)} inputs with"
+                                     f" name {f!r} found.") from None
+
         # From https://devhints.io/xpath#class-check
-        container = node[0].xpath(
+        container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
             "' has-error ')]")
-        f = fieldname
         if not container:
             raise AssertionError(
                 f"Input with name {f!r} is not contained in an .has-error box")
