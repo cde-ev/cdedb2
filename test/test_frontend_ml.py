@@ -692,16 +692,14 @@ class TestMlFrontend(FrontendTest):
                 self.submit(f, check_notification=False)
                 self.assertIn("alert alert-danger", self.response.text)
                 if ml_type not in event_types:
-                    self.assertValidationError('event_id',
-                                               "Muss „None“ sein.")
+                    self.assertValidationError('event_id', "Muss leer sein.")
                     self.assertPresence("Muss eine leere Liste sein.")
                 elif ml_type == const.MailinglistTypes.event_orga:
                     self.assertPresence("Muss eine leere Liste sein.")
                 else:
                     self.assertNonPresence("Muss eine leere Liste sein.")
                 if ml_type not in assembly_types:
-                    self.assertValidationError('assembly_id',
-                                               "Muss „None“ sein.")
+                    self.assertValidationError('assembly_id', "Muss leer sein.")
 
                 f['event_id'] = ''
                 f['registration_stati'] = []
