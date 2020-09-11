@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-09-06 10:18+0200\n"
+"POT-Creation-Date: 2020-09-11 21:02+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.6.0\n"
 
 #: bin/archive/migrate_execute.py:393
 msgid "Initial import."
@@ -75,111 +75,111 @@ msgstr ""
 msgid "Failed to locate repository"
 msgstr ""
 
-#: cdedb/config.py:93
+#: cdedb/config.py:102
 msgid "00_query_event_registration_all"
 msgstr "All Registrations"
 
-#: cdedb/config.py:98
+#: cdedb/config.py:107
 msgid "02_query_event_registration_orgas"
 msgstr "Orgas"
 
-#: cdedb/config.py:103
+#: cdedb/config.py:112
 msgid "10_query_event_registration_not_paid"
 msgstr "Not yet Paid"
 
-#: cdedb/config.py:108
+#: cdedb/config.py:117
 msgid "12_query_event_registration_paid"
 msgstr "Paid"
 
-#: cdedb/config.py:114
+#: cdedb/config.py:123
 msgid "14_query_event_registration_participants"
 msgstr "All Participants"
 
-#: cdedb/config.py:121
+#: cdedb/config.py:130
 msgid "20_query_event_registration_non_members"
 msgstr "Non-Members"
 
-#: cdedb/config.py:126
+#: cdedb/config.py:135
 msgid "30_query_event_registration_orga_notes"
 msgstr "Orga Notes"
 
-#: cdedb/config.py:131
+#: cdedb/config.py:140
 msgid "40_query_event_registration_u18"
 msgstr "U18"
 
-#: cdedb/config.py:138
+#: cdedb/config.py:147
 msgid "42_query_event_registration_u16"
 msgstr "U16"
 
-#: cdedb/config.py:145
+#: cdedb/config.py:154
 msgid "44_query_event_registration_u14"
 msgstr "U14"
 
-#: cdedb/config.py:152
+#: cdedb/config.py:161
 msgid "50_query_event_registration_minors_no_consent"
 msgstr "U18 without Parental Consent"
 
-#: cdedb/config.py:160
+#: cdedb/config.py:169
 msgid "60_query_dokuteam_course_export"
 msgstr "Course Export Dokuteam"
 
-#: cdedb/config.py:165
+#: cdedb/config.py:174
 msgid "62_query_dokuteam_address_export"
 msgstr "Address Export Dokuteam"
 
-#: cdedb/config.py:179 cdedb/config.py:197
+#: cdedb/config.py:188 cdedb/config.py:206
 msgid "17_query_event_registration_waitlist"
 msgstr "Waitlist"
 
-#: cdedb/config.py:186
+#: cdedb/config.py:195
 msgid "16_query_event_registration_waitlist"
 msgstr "Waitlist"
 
-#: cdedb/config.py:428
+#: cdedb/config.py:437
 msgid "00_query_cde_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:434
+#: cdedb/config.py:443
 msgid "10_query_cde_user_trial_members"
 msgstr "Trial-Members"
 
-#: cdedb/config.py:440
+#: cdedb/config.py:449
 msgid "20_query_cde_user_expuls"
 msgstr "Address Export exPuls"
 
-#: cdedb/config.py:450
+#: cdedb/config.py:459
 msgid "00_query_archived_persona_all"
 msgstr "All archived users"
 
-#: cdedb/config.py:459
+#: cdedb/config.py:468
 msgid "00_query_event_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:465
+#: cdedb/config.py:474
 msgid "10_query_event_user_minors"
 msgstr "Minors"
 
-#: cdedb/config.py:475
+#: cdedb/config.py:484
 msgid "00_query_core_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:481
+#: cdedb/config.py:490
 msgid "10_query_core_any_admin"
 msgstr "All Admins"
 
-#: cdedb/config.py:493
+#: cdedb/config.py:502
 msgid "00_query_assembly_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:499
+#: cdedb/config.py:508
 msgid "02_query_assembly_user_admin"
 msgstr "Admins"
 
-#: cdedb/config.py:508
+#: cdedb/config.py:517
 msgid "00_query_ml_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:514
+#: cdedb/config.py:523
 msgid "02_query_ml_user_admin"
 msgstr "Admins"
 
@@ -1464,7 +1464,7 @@ msgid "Mandatory key missing."
 msgstr ""
 
 #: cdedb/validation.py:248
-msgid "Must be None."
+msgid "Must be empty."
 msgstr ""
 
 #: cdedb/validation.py:282
@@ -1519,8 +1519,10 @@ msgstr ""
 msgid "Must be a string."
 msgstr ""
 
-#: cdedb/validation.py:482 cdedb/validation.py:697 cdedb/validation.py:4398
-msgid "Mustn’t be empty."
+#: cdedb/frontend/event.py:459 cdedb/validation.py:482 cdedb/validation.py:697
+#: cdedb/validation.py:859 cdedb/validation.py:3135 cdedb/validation.py:3775
+#: cdedb/validation.py:4398
+msgid "Must not be empty."
 msgstr ""
 
 #: cdedb/validation.py:501
@@ -1597,10 +1599,6 @@ msgstr ""
 
 #: cdedb/validation.py:817
 msgid "Must be comma separated identifiers."
-msgstr ""
-
-#: cdedb/validation.py:859 cdedb/validation.py:3135 cdedb/validation.py:3775
-msgid "Must not be empty."
 msgstr ""
 
 #: cdedb/backend/core.py:2059 cdedb/frontend/core.py:1579
@@ -3660,10 +3658,6 @@ msgstr ""
 
 #: cdedb/frontend/event.py:344
 msgid "Only one part id allowed."
-msgstr ""
-
-#: cdedb/frontend/event.py:459
-msgid "Mustn't be empty."
 msgstr ""
 
 #: cdedb/frontend/event.py:463
@@ -13369,5 +13363,14 @@ msgstr ""
 #~ "in the full text search will not"
 #~ " match \"Akademie\". However the search "
 #~ "for \"Akadem\" will mitch \"Akademie\"."
+#~ msgstr ""
+
+#~ msgid "Must be None."
+#~ msgstr ""
+
+#~ msgid "Mustn’t be empty."
+#~ msgstr ""
+
+#~ msgid "Mustn't be empty."
 #~ msgstr ""
 
