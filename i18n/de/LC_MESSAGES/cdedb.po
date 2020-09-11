@@ -94,8 +94,11 @@ msgstr "Alle Teilnehmer"
 msgid "14_query_event_registration_waitlist"
 msgstr "Warteliste"
 
-msgid "You have only restricted moderator access and may not change subscriptions."
-msgstr "Du hast nur eingeschränkte Moderator Rechte und kannst keine Abonnements ändern"
+msgid ""
+"You have only restricted moderator access and may not change subscriptions."
+msgstr ""
+"Du hast nur eingeschränkte Moderator Rechte und kannst keine Abonnements "
+"ändern"
 
 #: cdedb/config.py:125 cdedb/config.py:121
 msgid "20_query_event_registration_non_members"
@@ -14684,7 +14687,7 @@ msgstr "Unpassendes Datenfeld für Beitragsmodifikator."
 msgid "Invalid key. Expected 'course_id' or 'event_id"
 msgstr "Ungültiger Schlüssel. Mögliche Werte sind 'course_id' und 'event_id'."
 
-#: cdedb/frontend/ml_base.py:385
+#: cdedb/frontend/ml_base.py:385 cdedb/frontend/ml_base.py:379
 msgid "Only Admins may change mailinglist configuration."
 msgstr "Nur Administratoren dürfen die Mailinglisten-Konfiguration ändern."
 
@@ -14716,6 +14719,29 @@ msgstr "Feld für die Warteliste dieses Veranstaltungsteils. Datentyp: Ganzzahl"
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:134
 msgid "Placement"
 msgstr "Platz"
+
+#: cdedb/backend/core.py:625 cdedb/backend/core.py:2147
+#: cdedb/backend/core.py:2169 cdedb/frontend/core.py:1610
+msgid "Nonexistent user."
+msgstr "Nutzer existiert nicht."
+
+#: cdedb/backend/event.py:1606 cdedb/frontend/event.py:459
+msgid "User is not an event user."
+msgstr "Benutzer ist kein Veranstaltunsnutzer."
+
+msgid "User does not exist or is archived."
+msgstr "Benutzer existiert nicht oder ist archiviert."
+
+msgid "This user does not exist or is archived."
+msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
+
+#: cdedb/backend/ml.py:480 cdedb/backend/ml.py:494
+#: cdedb/frontend/ml_base.py:242 cdedb/frontend/ml_base.py:622
+msgid "Some of these users are not ml users."
+msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
+
+msgid "This user is not an event user."
+msgstr "Dieser Benutzer ist kein Veranstaltungsnutzer."
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
