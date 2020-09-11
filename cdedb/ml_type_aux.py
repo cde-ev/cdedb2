@@ -1,7 +1,8 @@
 import enum
 from collections import OrderedDict
 from typing import (
-    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, Sequence
+    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, Sequence,
+    Optional
 )
 
 from cdedb.common import (
@@ -138,15 +139,17 @@ class GeneralMailinglist:
         return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
 
     @classmethod
-    def restricted_moderators(cls, rs: RequestState, bc: BackendContainer,
-                               mailinglist: CdEDBObject) -> Set[int]:
+    def privileged_moderators(cls, rs: RequestState, bc: BackendContainer,
+                               mailinglist: CdEDBObject) -> Optional[Set[int]]:
         """Shrink the pool of privileged moderators.
 
         Everyone with ml realm may be moderator of any mailinglist. But for some
-        lists, you must have additional privileges to change subscriptions to
+        lists, you must have additional privileges to change subscriptions of
         this mailinglist (think on orgas or presiders).
+
+        Per default, every moderator is privileged.
         """
-        return set()
+        return None
 
     relevant_admins: Set[str] = set()
 
@@ -338,14 +341,14 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             | {("registration_stati", "[enum_registrationpartstati]")})
 
     @classmethod
-    def restricted_moderators(cls, rs: RequestState, bc: BackendContainer,
-                              mailinglist: CdEDBObject) -> Set[int]:
+    def privileged_moderators(cls, rs: RequestState, bc: BackendContainer,
+                              mailinglist: CdEDBObject) -> Optional[Set[int]]:
         """Shrink the pool of privileged moderators.
 
         For EventAssociatedMailinglists, this are the orgas of the event.
         """
         if mailinglist['event_id'] is None:
-            return set()
+            return None
         event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
         return event["orgas"]
 
@@ -465,8 +468,8 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
                                     AssemblyMailinglist):
     @classmethod
-    def restricted_moderators(cls, rs: RequestState, bc: BackendContainer,
-                              mailinglist: CdEDBObject) -> Set[int]:
+    def privileged_moderators(cls, rs: RequestState, bc: BackendContainer,
+                              mailinglist: CdEDBObject) -> Optional[Set[int]]:
         """Shrink the pool of privileged moderators.
 
         For AssemblyAssociatedMailinglists, this are assembly admins.
