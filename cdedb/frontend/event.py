@@ -456,7 +456,7 @@ class EventFrontend(AbstractUserFrontend):
             bytes, check(rs, 'pdffile_or_None', minor_form, "minor_form"))
         if not minor_form and not delete:
             rs.append_validation_error(
-                ("minor_form", ValueError(n_("Mustn't be empty."))))
+                ("minor_form", ValueError(n_("Must not be empty."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.change_minor_form(rs, event_id, minor_form)

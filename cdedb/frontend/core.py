@@ -1514,7 +1514,7 @@ class CoreFrontend(AbstractFrontend):
                     check(rs, 'profilepic_or_None', foto, "foto"))
         if not foto and not delete:
             rs.append_validation_error(
-                ("foto", ValueError("Mustn't be empty.")))
+                ("foto", ValueError("Must not be empty.")))
         if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
         code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
