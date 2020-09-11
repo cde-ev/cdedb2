@@ -230,6 +230,9 @@ def make_backend_shim(backend: B, internal=False) -> B:
 
             return wrapper
 
+        def __setattr__(self, key, value):
+            return setattr(backend, key, value)
+
     return cast(B, Proxy())
 
 
@@ -369,6 +372,8 @@ class BackendTest(CdEDBTest):
         cls.pastevent = cls.initialize_backend(PastEventBackend)
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
+        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(
+            rs.sessionkey, persona_id)
 
     def setUp(self):
         """Reset login state."""
