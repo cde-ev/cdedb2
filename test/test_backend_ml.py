@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from test.common import BackendTest, as_users, USER_DICT, nearly_now
+from test.common import BackendTest, as_users, USER_DICT, nearly_now, prepsql
 from cdedb.query import QUERY_SPECS, QueryOperators
 from cdedb.common import (
     PrivilegeError, SubscriptionError, SubscriptionActions as SA)
@@ -257,7 +257,8 @@ class TestMlBackend(BackendTest):
 
                 self.assertEqual(expectation, result)
 
-    @as_users("nina", "berta")
+    @as_users("nina", "berta", "janis")
+    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (60, 10)")
     def test_moderator_set_mailinglist(self, user):
         mailinglist_id = 60
 
@@ -300,11 +301,18 @@ class TestMlBackend(BackendTest):
             'attachment_policy': const.AttachmentPolicy.allow,
             'subject_prefix': 'Aufbruch',
             'maxsize': 101,
+        }
+
+        privileged_mod_mdata = {
+            'id': mailinglist_id,
+            'ml_type': const.MailinglistTypes.event_associated,
             'registration_stati': [const.RegistrationPartStati.applied],
         }
+
         expectation = self.ml.get_mailinglist(self.key, mailinglist_id)
 
         for data in admin_mdatas:
+            # admins may change any attribute of a mailinglist
             if user == USER_DICT['nina']:
                 expectation.update(data)
                 self.assertLess(0, self.ml.set_mailinglist(self.key, data))
@@ -312,8 +320,18 @@ class TestMlBackend(BackendTest):
                 with self.assertRaises(PrivilegeError):
                     self.ml.set_mailinglist(self.key, data)
 
+        # every moderator may change this attributes ...
         expectation.update(mod_mdata)
         self.assertLess(0, self.ml.set_mailinglist(self.key, mod_mdata))
+
+        # ... but only privileged moderators (here: orgas) may change this.
+        if user == USER_DICT['janis']:
+            with self.assertRaises(PrivilegeError):
+                self.ml.set_mailinglist(self.key, privileged_mod_mdata)
+        else:
+            expectation.update(privileged_mod_mdata)
+            self.assertLess(0, self.ml.set_mailinglist(self.key,
+                                                       privileged_mod_mdata))
 
         if user in [USER_DICT['nina']]:
             # adjust address form changed local part

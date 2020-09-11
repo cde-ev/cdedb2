@@ -94,9 +94,15 @@ msgstr "Alle Teilnehmer"
 msgid "14_query_event_registration_waitlist"
 msgstr "Warteliste"
 
+msgid "You have only restricted moderator access and may not change subscriptions."
+msgstr "Du hast nur eingeschränkte Moderator Rechte und kannst keine Abonnements ändern"
+
 #: cdedb/config.py:125 cdedb/config.py:121
 msgid "20_query_event_registration_non_members"
 msgstr "Nicht-Mitglieder"
+
+msgid "Not privileged to change subscriptions."
+msgstr "Darf Abonnements nicht ändern."
 
 #: cdedb/config.py:130 cdedb/config.py:126
 msgid "30_query_event_registration_orga_notes"

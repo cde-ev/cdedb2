@@ -481,7 +481,8 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("zelda@example.cde")
 
-    @as_users("nina", "berta")
+    # TODO add a presider as moderator and use him too in this test
+    @as_users("nina")
     def test_mailinglist_management_outside_audience(self, user):
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Sozialistischer Kampfbrief'},
@@ -1157,24 +1158,14 @@ class TestMlFrontend(FrontendTest):
                       {"description": "Konfiguration"})
 
         old_ml = self.sample_data['ml.mailinglists'][60]
+        f = self.response.forms['changelistform']
 
         # this properties are not allowed to be changed by moderators
-        f = self.response.forms['changelistform']
         f['title'].force_value("Party-Time")
         f['local_part'].force_value("partyparty")
         f['event_id'].force_value(1)
         f['is_active'].force_value(False)
-        self.submit(f, check_notification=False)
-
-        msg = "Keine Berechtigung zu ändern."
-        self.assertValidationError('title', msg)
-        self.assertValidationError('local_part', msg)
-        self.assertValidationError('event_id', msg)
-        self.assertValidationError('is_active', msg)
-
         # this properties can be changed by moderators
-        self.traverse({"description": "Konfiguration"})
-        f = self.response.forms['changelistform']
         f['description'] = "Wir machen Party!"
         f['notes'] = "Nur geladene Gäste."
         f['mod_policy'] = const.ModerationPolicy.unmoderated.value
@@ -1204,6 +1195,24 @@ class TestMlFrontend(FrontendTest):
         reality = {f.get("registration_stati", index=i).value for i in range(7)}
         expectation = {None, str(const.RegistrationPartStati.guest.value)}
         self.assertEqual(expectation, reality)
+
+    @as_users("berta")
+    def test_non_privileged_moderator(self, user):
+        self.traverse({"description": "Mailinglisten"},
+                      {"description": "Sozialistischer Kampfbrief"},
+                      {"description": "Erweiterte Verwaltung"})
+        self.assertPresence("Du hast nur eingeschränkte Moderator Rechte",
+                            div="notifications")
+        # they can not add ...
+        f = self.response.forms['addmodsubscriberform']
+        f['modsubscriber_ids'] = "DB-1-9"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Darf Abonnements nicht ändern.", div="notifications")
+        # ... nor remove subscriptions.
+        f= self.response.forms['removemodsubscriberform100']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Darf Abonnements nicht ändern.",
+                            div="notifications")
 
     @as_users("inga")
     def test_cdelokal_admin(self, user):
