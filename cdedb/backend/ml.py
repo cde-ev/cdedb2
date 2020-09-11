@@ -611,15 +611,17 @@ class MlBackend(AbstractBackend):
             changed = {k for k, v in data.items()
                        if k not in current or v != current[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)
+            is_moderator = self.is_moderator(rs, current['id'])
+            is_privileged_mod = self.is_moderator(rs, current['id'],
+                                                  privileged=True)
             # determinate if changes are permitted
             if not is_admin:
-                if not self.is_moderator(rs, current['id']):
+                if not is_moderator:
                     raise PrivilegeError(n_(
                         "Need to be moderator or admin to change mailinglist."))
                 if not changed <= PRIVILEGED_MOD_ALLOWED_FIELDS:
                     raise PrivilegeError(n_("Need to be admin to change this."))
-                if not (changed <= MOD_ALLOWED_FIELDS or
-                        self.is_moderator(rs, current['id'], privileged=True)):
+                if not (changed <= MOD_ALLOWED_FIELDS or is_privileged_mod):
                     raise PrivilegeError(n_(
                         "Need to be privileged moderator to change this."))
 
@@ -650,7 +652,10 @@ class MlBackend(AbstractBackend):
                     rs, data['id'], old_type=current['ml_type'],
                     new_type=data['ml_type'])
 
-            ret *= self.write_subscription_states(rs, data['id'])
+            # only privileged moderators and admins can make subscription state
+            # related changes.
+            if is_admin or is_privileged_mod:
+                ret *= self.write_subscription_states(rs, data['id'])
         return ret
 
     @access("ml")
