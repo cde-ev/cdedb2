@@ -12,6 +12,18 @@ ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 make -B test/ancillary_files/sample_data.sql &> /dev/null
 make sample-data &> /dev/null
 make sample-data-test &> /dev/null
+sudo -u postgres psql -U postgres -d cdb_test \
+     -c "SELECT (table_schema || '.' || table_name) AS full_name
+         FROM information_schema.tables
+         WHERE table_schema != 'information_schema'
+               AND table_schema != 'pg_catalog'
+         ORDER BY table_schema, table_name" \
+    | sort > /tmp/alltables.txt
+for table in $(cat /tmp/alltables.txt)
+do
+    sudo -u postgres psql -U postgres -d cdb_test -c "\d $table" \
+        | sort > /tmp/spec-old-$table.txt
+done;
 
 # new version
 echo "Checkout $3"
@@ -30,9 +42,29 @@ for evolution in $(cat /tmp/todoevolutions.txt); do
 done
 make i18n-compile
 make sample-data-test-shallow
+sudo -u postgres psql -U postgres -d cdb_test \
+     -c "SELECT (table_schema || '.' || table_name) AS full_name
+         FROM information_schema.tables
+         WHERE table_schema != 'information_schema'
+               AND table_schema != 'pg_catalog'
+         ORDER BY table_schema, table_name" \
+    | sort > /tmp/alltables.txt
+for table in $(cat /tmp/alltables.txt)
+do
+    sudo -u postgres psql -U postgres -d cdb_test -c "\d $table" \
+        | sort > /tmp/spec-new-$table.txt
+done;
+
 
 # perform check
 ./bin/check.sh 2> >(tee -a /tmp/output-check.txt >&2)
+echo ""
+echo "DATABASE COMPARISON:"
+for table in $(cat /tmp/alltables.txt)
+do
+    echo "Comparing spec for $table"
+    diff -u /tmp/spec-old-$table.txt /tmp/spec-new-$table.txt
+done;
 echo ""
 echo "CONDENSED REPORT:"
 grep -E '^(ERROR|FAIL):' /tmp/output-check.txt
