@@ -176,12 +176,10 @@ def _add_typed_validator(fun: F) -> F:
 
 def _examine_dictionary_fields(
     adict: Mapping,
-    mandatory_fields: Mapping[str, Callable],
-    optional_fields: Mapping[str, Callable] = None,
+    mandatory_fields: Mapping[str, Type],
+    optional_fields: Mapping[str, Type] = None,
     *,
-    allow_superfluous: bool = False,
-    _convert: bool = True,
-    _ignore_warnings: bool = False
+    allow_superfluous: bool = False, **kwargs
 ) -> Dict[str, Any]:
     """Check more complex dictionaries.
 
@@ -203,15 +201,15 @@ def _examine_dictionary_fields(
     for key, value in adict.items():
         if key in mandatory_fields:
             try:
-                v = mandatory_fields[key](value, argname=key, _convert=_convert,
-                                          _ignore_warnings=_ignore_warnings)
+                v = _ALL_TYPED[mandatory_fields[key]](
+                    value, argname=key, **kwargs)
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
         elif key in optional_fields:
             try:
-                v = optional_fields[key](value, argname=key, _convert=_convert,
-                                         _ignore_warnings=_ignore_warnings)
+                v = _ALL_TYPED[optional_fields[key]](
+                    value, argname=key, **kwargs)
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
@@ -231,7 +229,7 @@ def _examine_dictionary_fields(
 
 def _augment_dict_validator(
     validator: Callable,
-    augmentation: Dict[str, Callable],
+    augmentation: Dict[str, Type],
     strict: bool = True
 ) -> Callable:
     """Beef up a dict validator.
@@ -249,7 +247,7 @@ def _augment_dict_validator(
     @functools.wraps(validator)
     def new_validator(
         val: Any, argname: str = None, **kwargs
-    ) -> Tuple[Dict[str, Any], ValidationSummary]:
+    ) -> Dict[str, Any]:
         mandatory_fields = augmentation if strict else {}
         optional_fields = {} if strict else augmentation
 
@@ -274,9 +272,11 @@ def _augment_dict_validator(
 
         if ret is not None and v is not None:
             ret.update(v)
+
         if errs:
             raise errs
-        return ret, errs
+
+        return ret
 
     return new_validator
 
@@ -1055,7 +1055,7 @@ def _persona(
         for key, checkers in realm_checks.items():
             if val.get(key):
                 mandatory_fields.update(checkers)
-        optional_fields = {key: _bool for key in realm_checks}
+        optional_fields = {key: bool for key in realm_checks}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = _PERSONA_COMMON_FIELDS()
@@ -2561,14 +2561,12 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes: Dict[str, Callable] = {}
+    datatypes: Dict[str, Type] = {}
     for field in fields.values():
         if field['association'] == association:
             dt = _enum_fielddatatypes(  # type: ignore
                 field['kind'], field['field_name'], **kwargs)
-            # TODO figure out how to do this dynamically with the new system, should be easy
-            datatypes[field['field_name']] = getattr(
-                current_module, "_{}_or_None".format(dt.name))
+            datatypes[field['field_name']] = f"Optional[{dt.name}]" # type: ignore
     optional_fields = {
         field['field_name']: datatypes[field['field_name']]
         for field in fields.values() if field['association'] == association
@@ -2882,7 +2880,7 @@ def _serialized_event(
             _course, {'event_id': ID}),
         'event.course_segments': _augment_dict_validator(
             _empty_dict, {'id': ID, 'course_id': ID, 'track_id': ID,
-                          'is_active': _bool}),
+                          'is_active': bool}),
         'event.log': _augment_dict_validator(
             _empty_dict, {'id': ID, 'ctime': datetime.datetime, 'code': int,
                           'submitted_by': ID, 'event_id': Optional[ID],
@@ -2892,14 +2890,14 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'event_id': ID, 'persona_id': ID}),
         'event.field_definitions': _augment_dict_validator(
             _event_field, {'id': ID, 'event_id': ID,
-                           'field_name': _restrictive_identifier}),
+                           'field_name': RestrictiveIdentifier}),
         'event.lodgement_groups': _augment_dict_validator(
             _lodgement_group, {'event_id': ID}),
         'event.lodgements': _augment_dict_validator(
             _lodgement, {'event_id': ID}),
         'event.registrations': _augment_dict_validator(
             _registration, {'event_id': ID, 'persona_id': ID,
-                            'amount_owed': _non_negative_decimal}),
+                            'amount_owed': NonNegativeDecimal}),
         'event.registration_parts': _augment_dict_validator(
             _registration_part, {'id': ID, 'part_id': ID,
                                  'registration_id': ID}),
@@ -2908,11 +2906,11 @@ def _serialized_event(
                                   'registration_id': ID}),
         'event.course_choices': _augment_dict_validator(
             _empty_dict, {'id': ID, 'course_id': ID, 'track_id': ID,
-                          'registration_id': ID, 'rank': _int}),
+                          'registration_id': ID, 'rank': int}),
         'event.questionnaire_rows': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'pos': int,
                           'field_id': Optional[ID], 'title': Optional[str],
-                          'info': Optional[str], 'input_size': Optional[_int],
+                          'info': Optional[str], 'input_size': Optional[int],
                           'readonly': Optional[bool],
                           'kind': _enum_questionnaireusages,  # type: ignore
                           }),
