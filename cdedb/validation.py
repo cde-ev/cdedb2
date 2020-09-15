@@ -57,6 +57,7 @@ import math
 import re
 import string
 import sys
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -66,6 +67,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -124,9 +126,7 @@ zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 _LOGGER = logging.getLogger(__name__)
 
 T = TypeVar('T')
-F = Callable[..., T]
-
-# TODO maybe add values_progress attribute or similar
+F = TypeVar('F', bound=Callable[..., Any])
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -149,10 +149,13 @@ class ValidationSummary(ValueError, Sequence[Exception]):
 
 
 class ValidatorStorage(Dict[Type, Callable]):
-    __setitem__: Callable[["ValidatorStorage", Type[T], F[T]], None]
-    __getitem__: Callable[["ValidatorStorage", Type[T]], F[T]]
+    def __setitem__(self, type_: Type[T], validator: Callable[..., T]) -> None:
+        super().__setitem__(type_, validator)
 
-    def __missing__(self, type_: Type[T]) -> F[T]:
+    def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
+        return super().__getitem__(type_)
+
+    def __missing__(self, type_: Type[T]) -> Callable[..., T]:
         # TODO implement dynamic lookup for container types
         raise NotImplementedError()
 
@@ -160,9 +163,9 @@ class ValidatorStorage(Dict[Type, Callable]):
 _ALL_TYPED = ValidatorStorage()
 
 
-def _add_typed_validator(fun: F[T]) -> F[T]:
+def _add_typed_validator(fun: F) -> F:
     """Mark a typed function for processing into validators."""
-    return_type: Type[T] = get_type_hints(fun)["return"]
+    return_type: Type = get_type_hints(fun)["return"]
     if return_type in _ALL_TYPED:
         raise RuntimeError(f"Type {return_type:r} already registered")
     _ALL_TYPED[return_type] = fun
@@ -172,14 +175,14 @@ def _add_typed_validator(fun: F[T]) -> F[T]:
 
 
 def _examine_dictionary_fields(
-    adict: Dict,
-    mandatory_fields: Dict[str, Callable],
-    optional_fields: Dict[str, Callable] = None,
+    adict: Mapping,
+    mandatory_fields: Mapping[str, Callable],
+    optional_fields: Mapping[str, Callable] = None,
     *,
     allow_superfluous: bool = False,
     _convert: bool = True,
     _ignore_warnings: bool = False
-) -> Tuple[Dict[str, Any], ValidationSummary]:
+) -> Dict[str, Any]:
     """Check more complex dictionaries.
 
     :param adict: a :py:class:`dict` to check
@@ -219,9 +222,11 @@ def _examine_dictionary_fields(
     if missing_mandatory:
         for key in missing_mandatory:
             errs.append(KeyError(key, n_("Mandatory key missing.")))
+
+    if errs:
         raise errs
 
-    return retval, errs
+    return retval
 
 
 def _augment_dict_validator(
@@ -251,7 +256,7 @@ def _augment_dict_validator(
         errs = ValidationSummary()
         ret: Dict[str, Any] = {}
         try:
-            ret, errs = _examine_dictionary_fields(
+            ret = _examine_dictionary_fields(
                 val, mandatory_fields, optional_fields, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
@@ -708,7 +713,7 @@ def _csv_identifier(
 # TODO manual handling of @_add_typed_validator inside decorator or storage?
 @_add_typed_validator
 def _list_of(
-    val: Any, validator: Callable[..., T],
+    val: Any, type: Type[T],
     argname: str = None, *,
     _convert: bool = True, _allow_empty: bool = True, **kwargs
 ) -> List[T]:
@@ -730,7 +735,8 @@ def _list_of(
     errs = ValidationSummary()
     for v in val:
         try:
-            vals.append(validator(v, argname, _convert=_convert, **kwargs))
+            vals.append(_ALL_TYPED[type](
+                v, argname, _convert=_convert, **kwargs))
         except ValidationSummary as e:
             errs.extend(e)
     if errs:
@@ -746,7 +752,7 @@ def _list_of(
 def _int_csv_list(
     val: Any, argname: str = None, **kwargs
 ) -> IntCSVList:
-    return IntCSVList(_list_of(val, _int, argname, **kwargs))
+    return IntCSVList(_list_of(val, int, argname, **kwargs))
 
 
 @_add_typed_validator
@@ -756,7 +762,7 @@ def _cdedbid_csv_list(
     """This deals with strings containing multiple cdedbids,
     like when they are returned from cdedbSearchPerson.
     """
-    return CdedbIDList(_list_of(val, _cdedbid, argname, **kwargs))
+    return CdedbIDList(_list_of(val, CdedbID, argname, **kwargs))
 
 
 @_add_typed_validator  # TODO split into Password and AdminPassword?
@@ -1516,7 +1522,7 @@ def _pair_of_int(
 ) -> Tuple[int, int]:
     """Validate a pair of integers."""
 
-    val: List[int] = _list_of(val, _int, argname, **kwargs)
+    val: List[int] = _list_of(val, int, argname, **kwargs)
 
     try:
         a, b = val
@@ -1707,14 +1713,14 @@ _SEPA_TRANSACTIONS_LIMITS = {
 }
 
 
+# TODO make use of _list_of?
 @_add_typed_validator
 def _sepa_transactions(
     val: Any, argname: str = "sepa_transactions", **kwargs
-) -> SepaTransaction:
+) -> SepaTransactions:
     val = _iterable(val, argname, **kwargs)
 
     mandatory_fields = _SEPA_TRANSACTIONS_FIELDS
-    optional_fields = {}
     ret = []
     errs = ValidationSummary()
 
@@ -1727,7 +1733,7 @@ def _sepa_transactions(
 
         try:
             entry = _examine_dictionary_fields(
-                entry, mandatory_fields, optional_fields, **kwargs)
+                entry, mandatory_fields, {}, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -1749,7 +1755,7 @@ def _sepa_transactions(
     if errs:
         raise errs
 
-    return SepaTransaction(ret)
+    return SepaTransactions(ret)
 
 
 _SEPA_META_FIELDS = {
@@ -1782,13 +1788,12 @@ def _sepa_meta(
     val = _mapping(val, argname, **kwargs)
 
     mandatory_fields = _SEPA_META_FIELDS
-    optional_fields = {}
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, mandatory_fields, {}, **kwargs)
 
     mandatory_fields = _SEPA_SENDER_FIELDS
     val['sender'] = _examine_dictionary_fields(
-        val['sender'], mandatory_fields, optional_fields, **kwargs)
+        val['sender'], mandatory_fields, {}, **kwargs)
 
     errs = ValidationSummary()
     for attribute, validator in _SEPA_META_FIELDS.items():
@@ -1847,10 +1852,9 @@ def _meta_info(
 ) -> MetaInfo:
     val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields = {}
     optional_fields = {key: Optional[str] for key in keys}
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, {}, optional_fields, **kwargs)
 
     return MetaInfo(val)
 
@@ -2013,7 +2017,7 @@ def _event(
             else:  # TODO maybe use continue instead of else or move into try block
                 creation = (anid < 0)
                 try:
-                    part = _event_part_or_None(
+                    part = _event_part_or_None(  # type: ignore
                         part, 'parts', creation=creation, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -2032,7 +2036,7 @@ def _event(
             else:
                 creation = (anid < 0)
                 try:
-                    field = _event_field_or_None(
+                    field = _event_field_or_None(  # type: ignore
                         field, 'fields', creation=creation, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -2050,7 +2054,7 @@ def _event(
             else:
                 creation = (anid < 0)
                 try:
-                    fee_modifier = _event_fee_modifier_or_None(
+                    fee_modifier = _event_fee_modifier_or_None(  # type: ignore
                         fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -2059,10 +2063,13 @@ def _event(
 
         msg = n_("Must not have multiple fee modifiers linked to the same"
                  " field in one event part.")
+
+        e1: EventFeeModifier
+        e2: EventFeeModifier
         for e1, e2 in itertools.combinations(
                 filter(None, val['fee_modifiers'].values()), 2):
-            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
-                if e1['part_id'] == e2['part_id']:
+            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:  # type: ignore
+                if e1['part_id'] == e2['part_id']:  # type: ignore
                     errs.append(ValueError('fee_modifiers', msg))
 
     if errs:
@@ -2120,16 +2127,18 @@ def _event_part(
                         track = _event_track(
                             track, 'tracks', creation=True, **kwargs)
                     else:
-                        track = _event_track_or_None(track, 'tracks', **kwargs)
+                        track = _event_track_or_None(  # type: ignore
+                            track, 'tracks', **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                 else:
                     newtracks[anid] = track
         val['tracks'] = newtracks
+
     if errs:
         raise errs
 
-    return EventPart(errs)
+    return EventPart(val)
 
 
 _EVENT_TRACK_COMMON_FIELDS = {
@@ -2218,7 +2227,7 @@ def _event_field(
             errs.extend(e)
         else:
             # TODO replace combine entries and seen_values into dict?
-            seen_values = set()
+            seen_values: Set[str] = set()
             entries = []
             for idx, entry in enumerate(oldentries):
                 try:
@@ -2446,7 +2455,8 @@ def _registration(
         for anid, part in val['parts'].items():
             try:
                 anid = _id(anid, 'parts', **kwargs)
-                part = _registration_part_or_None(part, 'parts', **kwargs)
+                part = _registration_part_or_None(  # type: ignore
+                    part, 'parts', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -2457,7 +2467,8 @@ def _registration(
         for anid, track in val['tracks'].items():
             try:
                 anid = _id(anid, 'tracks', **kwargs)
-                track = _registration_track_or_None(track, 'tracks', **kwargs)
+                track = _registration_track_or_None(  # type: ignore
+                    track, 'tracks', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -2485,7 +2496,7 @@ def _registration_part(
     val = _mapping(val, argname, **kwargs)
 
     optional_fields = {
-        'status': _enum_registrationpartstati,
+        'status': _enum_registrationpartstati,  # type: ignore
         'lodgement_id': Optional[ID],
         'is_camping_mat': bool,
     }
@@ -2533,9 +2544,8 @@ def _registration_track(
 
 @_add_typed_validator
 def _event_associated_fields(
-    val: Any, argname: str = "fields",
-    fields: Dict[int, dict] = None, association: FieldAssociations = None,
-    **kwargs
+    val: Any, argname: str = "fields", *,
+    fields: Dict[int, dict], association: FieldAssociations, **kwargs
 ) -> EventAssociatedFields:
     """Check fields associated to an event entity.
 
@@ -2551,10 +2561,10 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes = {}
+    datatypes: Dict[str, Callable] = {}
     for field in fields.values():
         if field['association'] == association:
-            dt = _enum_fielddatatypes(
+            dt = _enum_fielddatatypes(  # type: ignore
                 field['kind'], field['field_name'], **kwargs)
             # TODO figure out how to do this dynamically with the new system, should be easy
             datatypes[field['field_name']] = getattr(
@@ -2568,7 +2578,7 @@ def _event_associated_fields(
         val, {}, optional_fields, **kwargs)
 
     errs = ValidationSummary()
-    lookup = {v['field_name']: k for k, v in fields.items()}
+    lookup: Dict[str, int] = {v['field_name']: k for k, v in fields.items()}
     for field in val:
         field_id = lookup[field]
         if fields[field_id]['entries'] is not None and val[field] is not None:
@@ -2688,11 +2698,11 @@ def _questionnaire(
     val = _mapping(val, argname, **kwargs)
 
     errs = ValidationSummary()
-    ret = {}
+    ret: Dict[int, List] = {}
     fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
     for k, v in copy.deepcopy(val).items():
         try:
-            k = _enum_questionnaireusages(k, argname, **kwargs)
+            k = _enum_questionnaireusages(k, argname, **kwargs)  # type: ignore
             v = _iterable(v, argname, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
@@ -2707,7 +2717,7 @@ def _questionnaire(
                 'default_value': Optional[str],
             }
             optional_fields = {
-                'kind': _enum_questionnaireusages,
+                'kind': _enum_questionnaireusages,  # type: ignore
             }
             for value in v:
                 try:
@@ -2736,10 +2746,13 @@ def _questionnaire(
                         errs.append(KeyError('default_value', n_(
                             "Referenced field does not exist.")))
                         continue
-                    value['default_value'], e = _by_field_datatype(
-                        value['default_value'], "default_value",
-                        kind=field.get('kind', FieldDatatypes.str), **kwargs)
-                    errs.extend(e)
+
+                    try:
+                        value['default_value'] = _by_field_datatype(
+                            value['default_value'], "default_value",
+                            kind=field.get('kind', FieldDatatypes.str), **kwargs)
+                    except ValidationSummary as e:
+                        errs.extend(e)
 
                 field_id = value['field_id']
                 if field_id and field_id in fee_modifier_fields:
@@ -2901,7 +2914,7 @@ def _serialized_event(
                           'field_id': Optional[ID], 'title': Optional[str],
                           'info': Optional[str], 'input_size': Optional[_int],
                           'readonly': Optional[bool],
-                          'kind': _enum_questionnaireusages,
+                          'kind': _enum_questionnaireusages,  # type: ignore
                           }),
         'event.fee_modifiers': _event_fee_modifier,
     }
@@ -2911,9 +2924,9 @@ def _serialized_event(
         new_table = {}
         for key, entry in val[table].items():
             try:
-                new_entry = validator(entry, table, **kwargs)
+                new_entry = validator(entry, table, **kwargs)  # type: ignore
                 # _convert=True to fix JSON key restriction
-                new_key, ee = _int(key, table, **{**kwargs, '_convert': True})
+                new_key = _int(key, table, **{**kwargs, '_convert': True})
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -2933,8 +2946,8 @@ def _serialized_event(
 
     for k, v in val.items():
         if k not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
-            for e in v.values():
-                if e.get('event_id') and e['event_id'] != val['id']:
+            for event in v.values():
+                if event.get('event_id') and event['event_id'] != val['id']:
                     errs.append(ValueError(k, n_("Mismatched event.")))
 
     if errs:
@@ -3073,7 +3086,8 @@ def _partial_course(
         for key, entry in val['segments'].items():
             try:
                 new_key = _int(key, 'segments', **{**kwargs, '_convert': True})
-                new_entry = _bool_or_None(entry, 'segments', **kwargs)
+                new_entry = _bool_or_None(  # type: ignore
+                    entry, 'segments', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -3248,7 +3262,7 @@ def _partial_registration_part(
     val = _mapping(val, argname, **kwargs)
 
     optional_fields = {
-        'status': _enum_registrationpartstati,
+        'status': _enum_registrationpartstati,  # type: ignore
         'lodgement_id': Optional[PartialImportID],
         'is_camping_mat': bool,
     }
@@ -3300,11 +3314,11 @@ def _partial_registration_track(
 def _MAILINGLIST_COMMON_FIELDS(): return {
     'title': str,
     'local_part': EmailLocalPart,
-    'domain': _enum_mailinglistdomain,
+    'domain': _enum_mailinglistdomain,  # type: ignore
     'description': Optional[str],
-    'mod_policy': _enum_moderationpolicy,
-    'attachment_policy': _enum_attachmentpolicy,
-    'ml_type': _enum_mailinglisttypes,
+    'mod_policy': _enum_moderationpolicy,  # type: ignore
+    'attachment_policy': _enum_attachmentpolicy,  # type: ignore
+    'ml_type': _enum_mailinglisttypes,  # type: ignore
     'subject_prefix': Optional[str],
     'maxsize': Optional[ID],
     'is_active': bool,
@@ -3359,7 +3373,7 @@ def _mailinglist(
                 target[key] = getattr(current_module, "_" + validator_str)
     # Optionally remove readonly attributes, take care to keep the original.
     if _allow_readonly:
-        val = copy.deepcopy(val)
+        val = dict(copy.deepcopy(val))
         for key in _MAILINGLIST_READONLY_FIELDS:
             if key in val:
                 del val[key]
@@ -3417,12 +3431,19 @@ _SUBSCRIPTION_ID_FIELDS = {
 
 
 def _SUBSCRIPTION_STATE_FIELDS(): return {
-    'subscription_state': _enum_subscriptionstates,
+    'subscription_state': _enum_subscriptionstates,  # type: ignore
 }
 
 
 _SUBSCRIPTION_ADDRESS_FIELDS = {
     'address': Email,
+}
+
+# TODO the enum does not exist anymore?
+
+
+def _SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS(): return {
+    'resolution': _enum_subscriptionrequestresolutions,  # type: ignore
 }
 
 
@@ -3460,9 +3481,9 @@ def _subscription_state(
 def _subscription_address(
     val: Any, argname: str = "subscription address", **kwargs
 ) -> SubscriptionAddress:
-    val, errs = _mapping(val, argname, **kwargs)
+    val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
+    mandatory_fields: Dict[str, Type] = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
 
     return SubscriptionAddress(_examine_dictionary_fields(
@@ -3586,7 +3607,7 @@ def _ballot(
             else:
                 creation = (anid < 0)
                 try:
-                    candidate = _ballot_candidate_or_None(
+                    candidate = _ballot_candidate_or_None(  # type: ignore
                         candidate, 'candidates', creation=creation, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -3691,7 +3712,7 @@ def _assembly_attachment(
     if errs:
         raise errs
 
-    return val
+    return AssemblyAttachment(val)
 
 
 @_add_typed_validator
@@ -3718,7 +3739,8 @@ def _assembly_attachment_version(
 # TODO replace ballot with CdEDBObject
 @_add_typed_validator
 def _vote(
-    val: Any, argname: str = "vote", ballot: Mapping[str, Any], **kwargs
+    val: Any, argname: str = "vote", *args,
+    ballot: Mapping[str, Any], **kwargs
 ) -> Vote:
     """Validate a single voters intent.
 
@@ -3806,20 +3828,11 @@ def _query_input(
     This has to be careful to treat checkboxes and selects correctly
     (which are partly handled by an absence of data).
 
-    :type val: object
-    :type argname: str or None
-    :type spec: {str: str}
     :param spec: a query spec from :py:mod:`cdedb.query`
-    :type allow_empty: bool
     :param allow_empty: Toggles whether no selected output fields is an error.
-    :type _convert: bool
-    :type _ignore_warnings: bool
-    :type separator: char
     :param separator: Defines separator for multi-value-inputs.
-    :type escape: char
     :param escape: Defines escape character so that the input may contain a
       separator for multi-value-inputs.
-    :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
     """
 
     val = _mapping(val, argname, **kwargs)
@@ -3835,7 +3848,7 @@ def _query_input(
                 field), "False"), field, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
-            selected = None
+            selected = False
             # TODO why not continue/break here?
 
         if selected:
@@ -3845,7 +3858,7 @@ def _query_input(
         # Get operator
         try:
             # TODO do not allow None
-            operator = _enum_queryoperators_or_None(
+            operator = _enum_queryoperators_or_None(  # type: ignore
                 val.get("qop_{}".format(field)), field, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
@@ -3903,13 +3916,14 @@ def _query_input(
         elif operator in (QueryOperators.match, QueryOperators.unmatch):
             # TODO remove all _or_None in this validator!
             try:
-                value = _non_regex_or_None(value, field, **kwargs)
+                value = _non_regex_or_None(  # type: ignore
+                    value, field, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
         elif operator in (QueryOperators.regex, QueryOperators.notregex):
             try:
-                value = _regex_or_None(value, field, **kwargs)
+                value = _regex_or_None(value, field, **kwargs)  # type: ignore
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
@@ -3935,7 +3949,7 @@ def _query_input(
             continue
 
         try:
-            value = _csv_identifier_or_None(
+            value = _csv_identifier_or_None(  # type: ignore
                 val["qord_" + postfix], "qord_" + postfix, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
@@ -3954,7 +3968,8 @@ def _query_input(
     if errs:
         raise errs
 
-    return Query(None, spec, fields_of_interest, constraints, order), errs
+    return QueryInput(
+        Query(None, spec, fields_of_interest, constraints, order))  # type: ignore
 
 
 # TODO ignore _ignore_warnings here too?
@@ -3979,7 +3994,7 @@ def _query(
     _identifier(val.scope, "scope", **{**kwargs, '_convert': False})
 
     if not val.scope.startswith("qview_"):
-        errs.append(("scope", ValueError(n_("Must start with “qview_”."))))
+        errs.append(ValueError("scope", n_("Must start with “qview_”.")))
 
     # spec
     for field, validator in val.spec.items():
@@ -4013,15 +4028,18 @@ def _query(
             errs.append(ValueError("constraints", msg, {"index": idx}))
             continue
 
-        field, e = _csv_identifier(
-            field, "constraints", **{**kwargs, '_convert': False})
-        errs.extend(e)
+        try:
+            field = _csv_identifier(
+                field, "constraints", **{**kwargs, '_convert': False})
+        except ValidationSummary as e:
+            errs.extend(e)
+
         if field not in val.spec:
-            errs.append(("constraints", KeyError(n_("Invalid field."))))
+            errs.append(KeyError("constraints", n_("Invalid field.")))
             continue
 
         try:
-            operator = _enum_queryoperators(
+            operator = _enum_queryoperators(  # type: ignore
                 operator, "constraints/{}".format(field), **{**kwargs, '_convert': False})
         except ValidationSummary as e:
             errs.extend(e)
@@ -4053,7 +4071,8 @@ def _query(
     # order
     for idx, entry in enumerate(val.order):
         try:
-            entry = _iterable(entry, 'order', **{**kwargs, '_convert': False})
+            entry = _iterable(  # type: ignore
+                entry, 'order', **{**kwargs, '_convert': False})
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4062,7 +4081,7 @@ def _query(
             field, ascending = entry
         except ValueError:
             msg = n_("Invalid ordering condition number %(index)s")
-            errs.append(('order', ValueError(msg, {'index': idx})))
+            errs.append(ValueError("order", msg, {'index': idx}))
         else:
             try:
                 _csv_identifier(field, "order", **
@@ -4078,58 +4097,48 @@ def _query(
     return copy.deepcopy(val)
 
 
-def _enum_validator_maker(anenum, name=None, internal=False):
+E = TypeVar('E', bound=Enum)
+
+
+def _enum_validator_maker(
+    anenum: Type[E], name: str = None, internal: bool = False
+) -> Callable[..., E]:
     """Automate validator creation for enums.
 
     Since this is pretty generic we do this all in one go.
 
-    :type anenum: Enum
-    :type name: str or None
     :param name: If given determines the name of the validator, otherwise the
       name is inferred from the name of the enum.
-    :type internal: bool
     :param internal: If True the validator is not added to the module.
     """
     error_msg = n_("Invalid input for the enumeration %(enum)s")
 
-    def the_validator(val, argname=None, *, _convert=True,
-                      _ignore_warnings=False):
-        """
-        :type val: object
-        :type argname: str or None
-        :type _convert: bool
-       :type _ignore_warnings: bool
-        :type _ignore_warnings: bool
-        :rtype: (enum or None, [(str or None, exception)])
-        """
+    def the_validator(
+        val: Any, argname: str = None, *,
+        _convert: bool = True, **kwargs
+    ) -> E:
         if _convert and not isinstance(val, anenum):
-            val, errs = _int(val, argname=argname, _convert=_convert,
-                             _ignore_warnings=_ignore_warnings)
-            if errs:
-                return val, errs
-            try:
-                val = anenum(val)
-            except ValueError:
-                return None, [(argname,
-                               ValueError(error_msg, {'enum': anenum}))]
-        else:
-            if not isinstance(val, anenum):
-                if isinstance(val, int):
-                    try:
-                        val = anenum(val)
-                    except ValueError:
-                        return None, [(
-                            argname, ValueError(error_msg, {'enum': anenum}))]
-                else:
-                    return None, [
-                        (argname, TypeError(n_("Must be a %(type)s."),
-                                            {'type': anenum}))]
-        return val, []
+            val = _int(val, argname=argname, _convert=_convert, **kwargs)
+
+        if not isinstance(val, anenum):
+            if isinstance(val, int):
+                try:
+                    val = anenum(val)
+                except ValueError as e:
+                    raise ValidationSummary(ValueError(
+                        argname, error_msg, {'enum': anenum})) from e
+            else:
+                raise ValidationSummary(TypeError(
+                    argname, n_("Must be a %(type)s."), {'type': anenum}))
+
+        return val
 
     the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())
+
     if not internal:
-        _addvalidator(the_validator)
+        _add_typed_validator(the_validator)
         setattr(current_module, the_validator.__name__, the_validator)
+
     return the_validator
 
 
@@ -4137,7 +4146,7 @@ for oneenum in ALL_ENUMS:
     _enum_validator_maker(oneenum)
 
 
-def _infinite_enum_validator_maker(anenum, name=None):
+def _infinite_enum_validator_maker(anenum: Type[E], name: str = None):
     """Automate validator creation for infinity enums.
 
     Since this is pretty generic we do this all in one go.
@@ -4145,61 +4154,51 @@ def _infinite_enum_validator_maker(anenum, name=None):
     For further information about infinite enums see
     :py:func:`cdedb.common.infinite_enum`.
 
-    :type anenum: Enum
-    :type name: str or None
     :param name: If given determines the name of the validator, otherwise the
       name is inferred from the name of the enum.
     """
     raw_validator = _enum_validator_maker(anenum, internal=True)
     error_msg = n_("Invalid input for the enumeration %(enum)s")
 
-    def the_validator(val, argname=None, *, _convert=True,
-                      _ignore_warnings=False):
-        """
-        :type val: object
-        :type argname: str or None
-        :type _convert: bool
-        :type _ignore_warnings: bool
-        :rtype: (InfiniteEnum or None, [(str or None, exception)])
-        """
+    def the_validator(
+        val: Any, argname: str = None, *,
+        _convert: bool = True, **kwargs
+    ) -> E:
+        val_int: Optional[int]
+
         if isinstance(val, InfiniteEnum):
-            val_enum, errs = raw_validator(
-                val.enum, argname=argname, _convert=_convert,
-                _ignore_warnings=_ignore_warnings)
-            if errs:
-                return None, errs
+            val_enum = raw_validator(
+                val.enum, argname=argname, _convert=_convert, **kwargs)
+
             if val.enum.value == INFINITE_ENUM_MAGIC_NUMBER:
-                val_int, errs = _non_negative_int(
-                    val.int, argname=argname, _convert=_convert,
-                    _ignore_warnings=_ignore_warnings)
+                val_int = _non_negative_int(
+                    val.int, argname=argname, _convert=_convert, **kwargs)
             else:
                 val_int = None
-            if errs:
-                return None, errs
+
         else:
             if _convert:
-                val, errs = _int(val, argname=argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
-                if errs:
-                    return None, errs
+                val = _int(val, argname=argname, _convert=_convert, **kwargs)
+
                 val_int = None
                 if val < 0:
                     try:
                         val_enum = anenum(val)
-                    except ValueError:
-                        return None, [
-                            (argname, ValueError(error_msg, {'enum': anenum}))]
+                    except ValueError as e:
+                        raise ValidationSummary(
+                            ValueError(argname, error_msg, {'enum': anenum})) from e
                 else:
                     val_enum = anenum(INFINITE_ENUM_MAGIC_NUMBER)
                     val_int = val
             else:
-                return None, [(argname, TypeError(n_("Must be a %(type)s."),
-                                                  {'type': anenum}))]
-        return InfiniteEnum(val_enum, val_int), []
+                raise ValidationSummary(TypeError(argname, n_(
+                    "Must be a %(type)s."), {'type': anenum}))
+
+        return InfiniteEnum(val_enum, val_int)  # type: ignore
 
     the_validator.__name__ = name or "_infinite_enum_{}".format(
         anenum.__name__.lower())
-    _addvalidator(the_validator)
+    _ALL_TYPED[anenum] = the_validator
     setattr(current_module, the_validator.__name__, the_validator)
 
 
@@ -4211,11 +4210,7 @@ for oneenum in ALL_INFINITE_ENUMS:
 # Above is the real stuff
 #
 
-def _create_assert_valid(fun):
-    """
-    :type fun: callable
-    """
-
+def _create_assert_valid(fun: F):
     @ functools.wraps(fun)
     def assert_valid(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
@@ -4228,11 +4223,7 @@ def _create_assert_valid(fun):
     return assert_valid
 
 
-def _create_is_valid(fun):
-    """
-    :type fun: callable
-    """
-
+def _create_is_valid(fun: F):
     @ functools.wraps(fun)
     def is_valid(*args, **kwargs):
         kwargs['_convert'] = False
@@ -4242,11 +4233,7 @@ def _create_is_valid(fun):
     return is_valid
 
 
-def _create_check_valid(fun):
-    """
-    :type fun: callable
-    """
-
+def _create_check_valid(fun: F):
     @ functools.wraps(fun)
     def check_valid(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
@@ -4259,11 +4246,10 @@ def _create_check_valid(fun):
     return check_valid
 
 
-def _allow_None(fun):
-    """Wrap a validator to allow ``None`` as valid input. This causes falsy
-    values to be mapped to ``None`` if there is an error.
+def _allow_None(fun: F):
+    """Wrap a validator to allow ``None`` as valid input.
 
-    :type fun: callable
+    This causes falsy values to be mapped to ``None`` if there is an error.
     """
 
     @ functools.wraps(fun)
@@ -4285,11 +4271,8 @@ def _allow_None(fun):
     return new_fun
 
 
-def _create_validators(funs):
-    """This instantiates the validators used in the rest of the code.
-
-    :type funs: [callable]
-    """
+def _create_validators(funs: Iterable[F]):
+    """This instantiates the validators used in the rest of the code."""
     for fun in funs:
         setattr(current_module, "is{}".format(fun.__name__),
                 _create_is_valid(fun))
@@ -4307,51 +4290,4 @@ def _create_validators(funs):
                 _create_check_valid(fun_or_None))
 
 
-_create_validators(_ALL)
-
-
-def typed_assert_valid(
-    type_: Type[T], value: Any, *args: Any, **kwargs: Any
-) -> T:
-
-    try:
-        val = _ALL_TYPED[type_](value, *args, **kwargs)
-    except (ValueError, TypeError) as err:
-        raise ValidationSummary(err)
-    except ValidationSummary as errs:
-        argname, error = errs[0]
-        error.args = ("{} ({})".format(
-            error.args[0], argname),) + error.args[1:]
-        raise error
-    assert isinstance(val, type_)
-    return val
-
-
-def typed_is_valid(
-    type_: Type[T], value: Any, *args: Any, **kwargs: Any
-) -> bool:
-
-    kwargs['_convert'] = False
-    try:
-        _ALL_TYPED[type_](value, *args, **kwargs)
-        return True
-    except (ValueError, TypeError, ValidationSummary):
-        return False
-
-
-def typed_check_valid(
-    type_: Type[T], value: Any, *args: Any, **kwargs: Any
-) -> Tuple[Optional[T], List[Error]]:
-
-    try:
-        val = _ALL_TYPED[type_](value, *args, **kwargs)
-    except (ValueError, TypeError) as err:
-        raise ValidationSummary(err)
-    except ValidationSummary as errs:
-        _LOGGER.debug(
-            f"{errs} for '{_ALL_TYPED[type_].__name__}'"
-            f" with input {args}, {kwargs}."
-        )
-        errors = map(lambda err: (err.args[0], ValueError(err.args[1:])), errs)
-        return None, list(errors)
-    return val, []
+_create_validators(_ALL_TYPED.values())

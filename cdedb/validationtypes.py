@@ -2,6 +2,8 @@ import datetime
 import decimal
 from typing import Any, Iterable, List, Mapping, NewType, Optional
 
+from cdedb.query import Query
+
 # needs typing_extensions.TypedDict until 3.9 due to runtime inspection
 # from typing_extensions import Literal, TypedDict
 
@@ -68,7 +70,7 @@ Period = NewType("Period", dict)
 ExPuls = NewType("ExPuls", dict)
 Lastschrift = NewType("Lastschrift", dict)
 LastschriftTransaction = NewType("LastschriftTransaction", dict)
-SepaTransaction = NewType("SepaTransaction", dict)
+SepaTransactions = NewType("SepaTransactions", List[dict])
 SepaMeta = NewType("SepaMeta", dict)
 MetaInfo = NewType("MetaInfo", dict)
 Institution = NewType("Institution", dict)
@@ -110,4 +112,4 @@ Ballot = NewType("Ballot", dict)
 BallotCandidate = NewType("BallotCandidate", dict)
 AssemblyAttachment = NewType("AssemblyAttachment", dict)
 AssemblyAttachmentVersion = NewType("AssemblyAttachmentVersion", dict)
-QueryInput = NewType("QueryInput", dict)
+QueryInput = NewType("QueryInput", Query)

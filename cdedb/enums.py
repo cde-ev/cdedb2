@@ -5,21 +5,24 @@ is needed for creation of validators and serializers and thus we keep
 one list instead of two.
 """
 
+from enum import Enum
+from typing import Tuple, Type
+
 import cdedb.database.constants as const
-from cdedb.query import QueryOperators
 from cdedb.common import (
-    AgeClasses,
-    LineResolutions,
-    CourseFilterPositions,
-    CourseChoiceToolActions,
-    SubscriptionActions,
-    LodgementsSortkeys,
     Accounts,
+    AgeClasses,
+    CourseChoiceToolActions,
+    CourseFilterPositions,
+    LineResolutions,
+    LodgementsSortkeys,
+    SubscriptionActions,
     TransactionType,
 )
+from cdedb.query import QueryOperators
 
 #: The list of normal enums
-ALL_ENUMS = (
+ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.Genders,
     const.MemberChangeStati,
     const.RegistrationPartStati,
@@ -53,7 +56,8 @@ ALL_ENUMS = (
 )
 
 #: The list of infinite enums
-ALL_INFINITE_ENUMS = (CourseFilterPositions, CourseChoiceToolActions)
+ALL_INFINITE_ENUMS: Tuple[Type[Enum], ...] = (
+    CourseFilterPositions, CourseChoiceToolActions)
 
 #: A dict for enum lookup in the templates.
 ENUMS_DICT = {e.__name__: e for e in ALL_ENUMS}
