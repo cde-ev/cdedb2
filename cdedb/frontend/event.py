@@ -24,7 +24,7 @@ import werkzeug.exceptions
 from werkzeug import Response
 from typing import (
     Sequence, Dict, Any, Collection, Mapping, List, Tuple, Callable, Optional,
-    Union, cast, Set, Iterable
+    Union, cast, Set, NamedTuple
 )
 
 from cdedb.frontend.common import (
@@ -54,9 +54,10 @@ import cdedb.validation as validate
 import cdedb.ml_type_aux as ml_type
 
 
-# A lodgement problem consists of: a description, lodgement id, part id,
-# affected registration ids, severeness.
-LodgementProblem = Tuple[str, int, int, Collection[int], int]
+LodgementProblem = NamedTuple(
+    "LodgementProblem", [("description", str), ("lodgement_id", int),
+                         ("part_id", int), ("reg_ids", Collection[int]),
+                         ("severeness", int)])
 
 
 class EventFrontend(AbstractUserFrontend):
@@ -4332,7 +4333,7 @@ class EventFrontend(AbstractUserFrontend):
         :returns: problems as five-tuples of (problem description, lodgement
           id, part id, affected registrations, severeness).
         """
-        ret: List[Tuple[str, int, int, Collection[int], int]] = []
+        ret: List[LodgementProblem] = []
 
         # first some un-inlined code pieces (otherwise nesting is a bitch)
         def _mixed(group: Collection[int]) -> bool:
@@ -4345,7 +4346,7 @@ class EventFrontend(AbstractUserFrontend):
         def _mixing_problem(lodgement_id: int, part_id: int
                             ) -> LodgementProblem:
             """Un-inlined code to generate an entry for mixing problems."""
-            return (
+            return LodgementProblem(
                 n_("Mixed lodgement with non-mixing participants."),
                 lodgement_id, part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
@@ -4362,7 +4363,7 @@ class EventFrontend(AbstractUserFrontend):
         def _camping_mat_problem(lodgement_id: int, part_id: int
                                  ) -> LodgementProblem:
             """Un-inlined code to generate an entry for camping_mat problems."""
-            return (
+            return LodgementProblem(
                 n_("Too many camping mats used."), lodgement_id,
                 part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
@@ -4377,12 +4378,14 @@ class EventFrontend(AbstractUserFrontend):
                 num_camping_mat = _camping_mat(group, part_id)
                 if len(group) > (lodgement['regular_capacity'] +
                                  lodgement['camping_mat_capacity']):
-                    ret.append((n_("Overful lodgement."), lodgement_id, part_id,
-                                tuple(), 2))
+                    ret.append(LodgementProblem(
+                        n_("Overful lodgement."), lodgement_id, part_id,
+                        tuple(), 2))
                 elif lodgement['regular_capacity'] < (len(group) -
                                                       num_camping_mat):
-                    ret.append((n_("Too few camping mats used."),
-                                lodgement_id, part_id, tuple(), 2))
+                    ret.append(LodgementProblem(
+                        n_("Too few camping mats used."), lodgement_id,
+                        part_id, tuple(), 2))
                 if num_camping_mat > lodgement['camping_mat_capacity']:
                     ret.append(_camping_mat_problem(lodgement_id, part_id))
                 if _mixed(group) and any(
@@ -4390,13 +4393,13 @@ class EventFrontend(AbstractUserFrontend):
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
                 complex_gender_people = tuple(
-                    reg_id
-                    for reg_id in group
-                    if personas[registrations[reg_id]['persona_id']]['gender']
-                        in (const.Genders.other, const.Genders.not_specified))
+                    reg_id for reg_id in group
+                    if (personas[registrations[reg_id]['persona_id']]['gender']
+                        in (const.Genders.other, const.Genders.not_specified)))
                 if complex_gender_people:
-                    ret.append((n_("Non-Binary Participant."), lodgement_id,
-                                part_id, complex_gender_people, 1))
+                    ret.append(LodgementProblem(
+                        n_("Non-Binary Participant."), lodgement_id, part_id,
+                        complex_gender_people, 1))
         return ret
 
     @access("event")
