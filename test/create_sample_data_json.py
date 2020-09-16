@@ -7,7 +7,8 @@ from pprint import pprint
 sys.path.insert(0, "/cdedb2")
 
 from cdedb.script import setup, make_backend
-from cdedb.common import CustomJSONEncoder, nearly_now
+from cdedb.common import CustomJSONEncoder
+from test.common import nearly_now
 
 rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
 
@@ -88,12 +89,7 @@ query = "SELECT table_schema, table_name, column_name " \
 params = ("jsonb",)
 data = core.query_all(rs, query, params)
 
-JSON_FIELDS = {
-    (e["table_schema"] + "." + e["table_name"], e["column_name"])
-    for e in data
-}
-
-full_sample_data = dict()
+full_sample_data = {}
 
 for table in tables:
     entities = core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ())
@@ -104,6 +100,6 @@ for table in tables:
                 entity[field] = "---now---"
     full_sample_data[table] = entities
 
-with open("/cdedb2/sample_data.json", "w", encoding="utf8") as f:
+with open("/cdedb2/sample_data.json", "w") as f:
     json.dump(full_sample_data, f, cls=CustomJSONEncoder,
         indent=4, ensure_ascii=False)
