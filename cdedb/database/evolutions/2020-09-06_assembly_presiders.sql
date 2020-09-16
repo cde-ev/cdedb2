@@ -6,7 +6,6 @@ BEGIN;
         assembly_id     integer NOT NULL REFERENCES assembly.assemblies(id),
         persona_id      integer NOT NULL REFERENCES core.personas(id)
     );
-    CREATE INDEX idx_assembly_presiders_assembly_id ON assembly.presiders(assembly_id);
     CREATE INDEX idx_assembly_presiders_persona_id ON assembly.presiders(persona_id);
     CREATE UNIQUE INDEX idx_assembly_presiders_constraint ON assembly.presiders(assembly_id, persona_id);
     GRANT SELECT ON assembly.presiders TO cdb_persona;
