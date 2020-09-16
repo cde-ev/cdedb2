@@ -3878,6 +3878,7 @@ _ASSEMBLY_COMMON_FIELDS = lambda: {
 _ASSEMBLY_OPTIONAL_FIELDS = lambda: {
     'is_active': _bool,
     'mail_address': _str_or_None,
+    'presiders': _iterable,
 }
 
 
@@ -3906,6 +3907,16 @@ def _assembly(val, argname=None, *, creation=False, _convert=True,
         mandatory_fields = {'id': _id}
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
                                **_ASSEMBLY_OPTIONAL_FIELDS())
+    if 'presiders' in val:
+        presiders = set()
+        for anid in val['presiders']:
+            v, e = _id(anid, 'presiders', _convert=_convert,
+                       _ignore_warnings=_ignore_warnings)
+            if e:
+                errs.extend(e)
+            else:
+                presiders.add(v)
+        val['presiders'] = presiders
     return _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)

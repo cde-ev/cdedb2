@@ -674,6 +674,8 @@ class CoreFrontend(AbstractFrontend):
           event as cde_admin
         - ``pure_assembly_user``: Search for an assembly only user as
           assembly_admin
+        - ``assembly_admin_user``: Search for an assembly user as
+            assembly_admin.
         - ``ml_admin_user``: Search for a mailinglist user as ml_admin
         - ``mod_ml_user``: Search for a mailinglist user as a moderator
         - ``event_admin_user``: Search an event user as event_admin (for
@@ -728,6 +730,11 @@ class CoreFrontend(AbstractFrontend):
                 ("is_assembly_realm", QueryOperators.equal, True))
             search_additions.append(
                 ("is_member", QueryOperators.equal, False))
+        elif kind == "assembly_admin_user":
+            if "assembly_admin" not in rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append(
+                ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "ml_admin_user":
             if "ml_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))

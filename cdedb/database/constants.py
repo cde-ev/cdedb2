@@ -421,6 +421,8 @@ class AssemblyLogCodes(enum.IntEnum):
     candidate_updated = 21  #:
     candidate_removed = 22  #:
     new_attendee = 30  #:
+    assembly_presider_added = 35  #:
+    assembly_presider_removed = 36  #:
     attachment_added = 40  #:
     attachment_removed = 41  #:
     attachment_changed = 42

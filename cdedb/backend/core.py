@@ -1910,8 +1910,8 @@ class CoreBackend(AbstractBackend):
     class VerifyPersona(Protocol):
         def __call__(self, rs: RequestState, anid: int,
                      required_roles: Collection[Role] = None,
-                     introspection_only: bool = True) -> Set[Optional[int]]: ...
-    verify_personas: VerifyPersona
+                     introspection_only: bool = True) -> bool: ...
+    verify_persona: VerifyPersona
     verify_persona = singularize(
         verify_personas, "ids", "anid", passthrough=True)
 
