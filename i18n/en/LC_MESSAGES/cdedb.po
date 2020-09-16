@@ -13999,6 +13999,9 @@ msgstr ""
 msgid "Documentation"
 msgstr ""
 
+msgid "Doc"
+msgstr ""
+
 #: cdedb/frontend/templates/web/util.tmpl:221
 msgid "Malformed error."
 msgstr ""
