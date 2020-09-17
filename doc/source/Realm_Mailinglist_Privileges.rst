@@ -24,15 +24,16 @@ From these we now derive two additional privilege levels:
   other realms. A moderator can be privileged in certain constellations by
   having external (i.e. not ml) access rights.
 
-  Main example is the manipulation of implicit mailinglists where the
+  Main case is the manipulation of implicit mailinglists where the
   generation of the subscriber list needs additional access. For example
   event associated mailinglists need orga-level access to generate their
   subscriber list. But a participant could be promoted to be moderator of a
   specific mailinglist associated to the event without being orga. Currently
   the limitations of our architecture make it impossible for this
-  participant to change the subscriber list.
-
-
+  participant to change the subscriber list. This also affects manipulating
+  individual subscriber states as they are validated against external
+  information (like the participation status in an event) and not only
+  changing the entire subscriber list.
 
 .. todo:: Orgas have not automatically moderators right for mailinglists
    associated to their event? Is this correct?
