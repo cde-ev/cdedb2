@@ -98,7 +98,7 @@ RUN cp ./related/auto-build/files/stage3/localconfig.py ./cdedb/ \
     && chown cdedb:cdedb ./cdedb/localconfig.py \
     && chmod 644 ./cdedb/localconfig.py \
     && sed --in-place \
-        -e 's|Path("/log/|Path("/var/log/cdedb/|' \
+        -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
         cdedb/localconfig.py
 
 RUN make doc && make i18n-compile
