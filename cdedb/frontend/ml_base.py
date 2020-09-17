@@ -215,6 +215,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 'ml_type': ml_type,
                 'available_domains': available_domains,
                 'additional_fields': additional_fields,
+                'maxsize_default': atype.maxsize_default,
             })
 
     @access("ml", modi={"POST"})
