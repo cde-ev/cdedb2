@@ -2,7 +2,7 @@ import enum
 from collections import OrderedDict
 from typing import (
     Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, Sequence,
-    Optional
+    Optional, Iterable, Callable
 )
 
 from cdedb.common import (
@@ -140,7 +140,8 @@ class GeneralMailinglist:
 
     @classmethod
     def privileged_moderators(cls, rs: RequestState, bc: BackendContainer,
-                               mailinglist: CdEDBObject) -> Optional[Set[int]]:
+                              mailinglist: CdEDBObject
+                              ) -> Callable[[Iterable[int]], Set[int]]:
         """Shrink the pool of privileged moderators.
 
         Everyone with ml realm may be moderator of any mailinglist. But for some
@@ -154,8 +155,10 @@ class GeneralMailinglist:
               subscribers
 
         Per default, every moderator is privileged.
+
+        This returns a filter which allows the caller to check ids as desired.
         """
-        return None
+        return lambda x: x
 
     relevant_admins: Set[str] = set()
 
@@ -348,7 +351,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
     @classmethod
     def privileged_moderators(cls, rs: RequestState, bc: BackendContainer,
-                              mailinglist: CdEDBObject) -> Optional[Set[int]]:
+                              mailinglist: CdEDBObject
+                              ) -> Callable[[Iterable[int]], Set[int]]:
         """Shrink the pool of privileged moderators.
 
         For EventAssociatedMailinglists, this are the orgas of the event.
@@ -356,7 +360,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if mailinglist['event_id'] is None:
             return None
         event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
-        return event["orgas"]
+        return lambda x: set(x).intersection(set(event["orgas"]))
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -472,14 +476,15 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
                                     AssemblyMailinglist):
     @classmethod
     def privileged_moderators(cls, rs: RequestState, bc: BackendContainer,
-                              mailinglist: CdEDBObject) -> Optional[Set[int]]:
+                              mailinglist: CdEDBObject
+                              ) -> Callable[[Iterable[int]], Set[int]]:
         """Shrink the pool of privileged moderators.
 
         For AssemblyAssociatedMailinglists, this are assembly admins.
         """
         # TODO replace with presiders
         assembly_admins = bc.core.list_admins(rs, "assembly")
-        return set(assembly_admins)
+        return lambda x: set(x).intersection(set(assembly_admins))
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,

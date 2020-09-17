@@ -103,9 +103,8 @@ class MlBackend(AbstractBackend):
         if privileged and ml_id is not None:
             atype = self.get_ml_type(rs, ml_id)
             ml = self.get_mailinglist(rs, ml_id)
-            privileged = atype.privileged_moderators(rs, self.backends, ml)
-            if privileged:
-                is_moderator = is_moderator and rs.user.persona_id in privileged
+            checker = atype.privileged_moderators(rs, self.backends, ml)
+            is_moderator = is_moderator and checker({rs.user.persona_id})
 
         return ml_id is not None and (is_moderator
                                       or "droid_rklist" in rs.user.roles)
