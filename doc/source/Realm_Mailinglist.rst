@@ -8,3 +8,4 @@ Mailinglist Realm
 
    Realm_Mailinglist_Types
    Realm_Mailinglist_Management
+   Realm_Mailinglist_Privileges
