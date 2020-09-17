@@ -1037,8 +1037,8 @@ etc;anything else""", f['entries_2'].value)
         f['institution'] = 1
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
+        f['part_begin'] = "2345-01-01"
+        f['part_end'] = "2345-6-7"
         f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
@@ -1072,8 +1072,8 @@ etc;anything else""", f['entries_2'].value)
         f['title'] = "Alternative Akademie"
         f['institution'] = 1
         f['shortname'] = "AltAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
+        f['part_begin'] = "2345-01-01"
+        f['part_end'] = "2345-6-7"
         f['nonmember_surcharge'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True

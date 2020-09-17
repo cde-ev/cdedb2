@@ -1899,7 +1899,7 @@ msgstr ""
 #: cdedb/frontend/event.py:637 cdedb/validation.py:2402
 #: cdedb/frontend/event.py:605 cdedb/validation.py:2401
 #: cdedb/frontend/event.py:606
-msgid "Must be later than part begin."
+msgid "Must be later than begin."
 msgstr "Muss später als Beginn sein."
 
 #: cdedb/frontend/event.py:730 cdedb/validation.py:2471

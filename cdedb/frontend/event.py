@@ -631,7 +631,7 @@ class EventFrontend(AbstractUserFrontend):
         def part_constraint_maker(part_id: int) -> List[RequestConstraint]:
             begin = f"part_begin_{part_id}"
             end = f"part_end_{part_id}"
-            msg = n_("Must be later than part begin.")
+            msg = n_("Must be later than begin.")
             ret: List[RequestConstraint]
             ret = [(lambda d: d[begin] <= d[end], (end, ValueError(msg)))]
 
@@ -1145,15 +1145,15 @@ class EventFrontend(AbstractUserFrontend):
                             'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
+    @REQUESTdata(("part_begin", "date"), ("part_end", "date"),
                  ("orga_ids", "cdedbid_csv_list"), ("create_track", "bool"),
                  ("create_orga_list", "bool"),
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "iban", "nonmember_surcharge", "notes")
-    def create_event(self, rs: RequestState, event_begin: datetime.date,
-                     event_end: datetime.date, orga_ids: Collection[int],
+    def create_event(self, rs: RequestState, part_begin: datetime.date,
+                     part_end: datetime.date, orga_ids: Collection[int],
                      create_track: bool, create_orga_list: bool,
                      create_participant_list: bool, data: CdEDBObject
                      ) -> Response:
@@ -1170,8 +1170,8 @@ class EventFrontend(AbstractUserFrontend):
             -1: {
                 'title': data['title'],
                 'shortname': data['shortname'],
-                'part_begin': event_begin,
-                'part_end': event_end,
+                'part_begin': part_begin,
+                'part_end': part_end,
                 'fee': decimal.Decimal(0),
                 'waitlist_field': None,
                 'tracks': ({-1: new_track} if create_track else {}),
