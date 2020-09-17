@@ -587,6 +587,7 @@ class TestMlFrontend(FrontendTest):
         f['ml_type'] = const.MailinglistTypes.member_mandatory.value
         self.submit(f)
         f = self.response.forms['createlistform']
+        self.assertEqual(f['maxsize'].value, '64')
         f['title'] = "Munkelwand"
         f['mod_policy'] = 1
         f['attachment_policy'] = 2
