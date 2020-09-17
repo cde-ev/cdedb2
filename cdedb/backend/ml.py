@@ -115,8 +115,7 @@ class MlBackend(AbstractBackend):
                    privileged=False) -> bool:
         """Check whether a user is allowed to manage a given mailinglist.
 
-        :param privileged: check if the moderator is in the pool of privileged
-            moderators, provided by ml_type_aux.restriced_moderators.
+        :param privileged: pass privileged option to is_moderator
         """
         mailinglist_id = affirm("id_or_None", mailinglist_id)
 

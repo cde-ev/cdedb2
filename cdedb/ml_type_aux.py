@@ -144,8 +144,14 @@ class GeneralMailinglist:
         """Shrink the pool of privileged moderators.
 
         Everyone with ml realm may be moderator of any mailinglist. But for some
-        lists, you must have additional privileges to change subscriptions of
-        this mailinglist (think on orgas or presiders).
+        lists, you must have additional privileges to make subscription-state
+        related changes to a mailinglist (like being an orga or presider).
+
+        This includes
+            * Changing subscription states of any person which need moderator
+              privileges
+            * Changing properties of a mailinglist which influence implicit
+              subscribers
 
         Per default, every moderator is privileged.
         """
