@@ -82,6 +82,35 @@ class TestSessionBackend(BackendTest):
         self.assertIsNone(user.persona_id)
         self.assertEqual({"anonymous"}, user.roles)
 
+    def test_logout_everywhere(self):
+        ip = "1.2.3.4."
+
+        # Create some sessions for some different users.
+        keys = {u: self.login(u, ip) for u in USER_DICT
+                if u not in {"hades", "lisa", "olaf"}}
+        for u, key in keys.items():
+            with self.subTest(user=u, key=key):
+                user = self.session.lookupsession(key, ip)
+                self.assertEqual(user.persona_id, USER_DICT[u]["id"])
+                self.assertLess({"anonymous"}, user.roles)
+
+        # Create a new sessions and do a "logout everywhere" with it.
+        logout_user = "anton"
+        # This will only work with this specific ip:
+        key = self.login(logout_user, "127.0.0.0")
+        self.core.logout(key, all_sessions=True)
+
+        # Check that the other sessions (from other users) are still active.
+        for u, key in keys.items():
+            with self.subTest(user=u, key=key):
+                user = self.session.lookupsession(key, ip)
+                if u == logout_user:
+                    self.assertIsNone(user.persona_id)
+                    self.assertEqual({"anonymous"}, user.roles)
+                else:
+                    self.assertEqual(user.persona_id, USER_DICT[u]["id"])
+                    self.assertLess({"anonymous"}, user.roles)
+
 
 class TestMultiSessionFrontend(MultiAppFrontendTest):
     n = 3  # Needs to be at least 3 for the following test to work correctly.
