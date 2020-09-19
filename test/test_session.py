@@ -94,7 +94,7 @@ class TestSessionBackend(BackendTest):
                 self.assertEqual(user.persona_id, USER_DICT[u]["id"])
                 self.assertLess({"anonymous"}, user.roles)
 
-        # Create a new sessions and do a "logout everywhere" with it.
+        # Create a new session and do a "logout everywhere" with it.
         logout_user = "anton"
         # This will only work with this specific ip:
         key = self.login(logout_user, "127.0.0.0")
