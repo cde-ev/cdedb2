@@ -1826,8 +1826,8 @@ class CoreBackend(AbstractBackend):
                ) -> DefaultReturnCode:
         """Invalidate the current session."""
         query = "UPDATE core.sessions SET is_active = False, atime = now()"
-        constraints = ["is_active = True"]
-        params: List[Any] = []
+        constraints = ["persona_id = %s", "is_active = True"]
+        params: List[Any] = [rs.user.persona_id]
         if not all_sessions:
             constraints.append("sessionkey = %s")
             params.append(rs.sessionkey)
