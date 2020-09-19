@@ -1038,14 +1038,16 @@ etc;anything else""", f['entries_2'].value)
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"
-        f['part_end'] = "2345-6-7"
+        f['part_end'] = "1345-6-7"
         f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
         self.submit(f, check_notification=False)
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
         self.assertPresence("Janis Jalapeño ist kein Veranstaltungsnutzer.")
+        self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f = self.response.forms['createeventform']
+        f['part_end'] = "2345-6-7"
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
