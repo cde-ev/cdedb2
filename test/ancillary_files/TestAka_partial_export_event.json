@@ -2,7 +2,7 @@
     "CDEDB_EXPORT_EVENT_VERSION": 13,
     "EVENT_SCHEMA_VERSION": [
         13,
-        1
+        2
     ],
     "kind": "partial",
     "id": 1,
@@ -648,7 +648,8 @@
                 "part_begin": "2222-02-02",
                 "part_end": "2222-02-02",
                 "fee": "10.50",
-                "tracks": {}
+                "tracks": {},
+                "waitlist_field": null
             },
             "2": {
                 "title": "Erste H\u00e4lfte",
@@ -671,7 +672,8 @@
                         "min_choices": 1,
                         "sortkey": 2
                     }
-                }
+                },
+                "waitlist_field": null
             },
             "3": {
                 "title": "Zweite H\u00e4lfte",
@@ -687,7 +689,8 @@
                         "min_choices": 2,
                         "sortkey": 3
                     }
-                }
+                },
+                "waitlist_field": null
             }
         },
         "fee_modifiers": {

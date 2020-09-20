@@ -416,15 +416,27 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Bertålotta")
         if user["id"] in {27, 6}:
             f = self.response.forms['addorgaform']
-            f['orga_id'] = "DB-10-2"
+            # Try to add an invalid cdedbid.
+            f['orga_id'] = "DB-1-1"
             self.submit(f, check_notification=False)
             self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-            f = self.response.forms['addorgaform']
+            # Try to add a non event-user.
             f['orga_id'] = "DB-10-8"
             self.submit(f, check_notification=False)
-            self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-            self.assertPresence("Benutzer ist kein Veranstaltunsnutzer.")
-            f = self.response.forms['addorgaform']
+            self.assertValidationError(
+                'orga_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.", index=-1)
+            # Try to add an archived user.
+            f['orga_id'] = "DB-8-6"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
+                index=-1)
+            # Try to add a non-existent user.
+            f['orga_id'] = "DB-1000-6"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
+                index=-1)
             f['orga_id'] = "DB-2-7"
             self.submit(f)
             self.assertTitle("Universale Akademie")
@@ -1025,15 +1037,18 @@ etc;anything else""", f['entries_2'].value)
         f['institution'] = 1
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
+        f['part_begin'] = "2345-01-01"
+        f['part_end'] = "1345-6-7"
         f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
         self.submit(f, check_notification=False)
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-        self.assertPresence("Janis Jalapeño ist kein Veranstaltungsnutzer.")
+        self.assertValidationError('orga_ids', "Einige dieser Nutzer sind "
+                                               "keine Veranstaltungsnutzer.")
+        self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f = self.response.forms['createeventform']
+        f['part_end'] = "2345-6-7"
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
@@ -1060,8 +1075,8 @@ etc;anything else""", f['entries_2'].value)
         f['title'] = "Alternative Akademie"
         f['institution'] = 1
         f['shortname'] = "AltAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
+        f['part_begin'] = "2345-01-01"
+        f['part_end'] = "2345-6-7"
         f['nonmember_surcharge'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True
@@ -1537,10 +1552,10 @@ etc;anything else""", f['entries_2'].value)
         f['fee_modifier_modifier_name_4_-1'] = "is_child"
         f['fee_modifier_amount_4_-1'] = "-5"
         self.submit(f, check_notification=False)
-        self.assertPresence("Beitragsmodifikator mit Nicht-Ja/Nein-Feld verbunden", "feemodifierrow_4_-1")
+        self.assertPresence("Unpassendes Datenfeld für Beitragsmodifikator.", "feemodifierrow_4_-1")
         f['fee_modifier_field_id_4_-1'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertPresence("Beitragsmodifikator mit Nicht-Anmeldungsfeld verbunden", "feemodifierrow_4_-1")
+        self.assertPresence("Unpassendes Datenfeld für Beitragsmodifikator.", "feemodifierrow_4_-1")
         f['fee_modifier_field_id_4_-1'] = ''
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Eingabe für eine Ganzzahl", "feemodifierrow_4_-1")
@@ -1568,6 +1583,59 @@ etc;anything else""", f['entries_2'].value)
         f['fee_modifier_modifier_name_4_-1'] = "is_child2"
         f['fee_modifier_field_id_4_-1'] = 1002
         self.submit(f)
+
+    @as_users("garcia")
+    def test_waitlist(self, user):
+        # 1. Create some new fields.
+        self.traverse({'description': "Veranstaltungen"},
+                      {'description': "Große Testakademie 2222"})
+        self._create_event_field({
+            "field_name": "waitlist_position",
+            "kind": const.FieldDatatypes.int.value,
+            "association": const.FieldAssociations.registration.value,
+        })  # id 1001
+        self._create_event_field({
+            "field_name": "wrong1",
+            "kind": const.FieldDatatypes.str.value,
+            "association": const.FieldAssociations.registration.value,
+        })  # id 1002
+        self._create_event_field({
+            "field_name": "wrong2",
+            "kind": const.FieldDatatypes.int.value,
+            "association": const.FieldAssociations.course.value,
+        })  # id 1003
+        # 2. Check that the incorrect fields do not work as the waitlist field.
+        self.traverse({'description': "Veranstaltungsteile"})
+        f: webtest.Form = self.response.forms["partsummaryform"]
+        self.assertEqual(
+            [x[0] for x in f['waitlist_field_3'].options], ['', '1001'])
+        f['waitlist_field_1'].force_value(1002)
+        self.submit(f, check_notification=False)
+        self.assertPresence("Unpassendes Datenfeld für die Warteliste.")
+        f['waitlist_field_1'].force_value(1003)
+        self.submit(f, check_notification=False)
+        self.assertPresence("Unpassendes Datenfeld für die Warteliste.")
+        # 3. Set the correct waitlist field.
+        f['waitlist_field_1'] = '1001'
+        self.submit(f)
+        # 4. Check that the default query applies the correct ordering.
+        self.traverse({'description': 'Anmeldungen'},
+                      {'description': 'Warteliste Wu'})
+        f = self.response.forms['queryform']
+        self.assertEqual(f['qord_primary'].value,
+                         "reg_fields.xfield_waitlist_position")
+        self.assertEqual(f['qop_part1.status'].value,
+                         str(QueryOperators.equal.value))
+        self.assertEqual(f['qval_part1.status'].value,
+                         str(const.RegistrationPartStati.waitlist.value))
+        self.assertPresence("Emilia E.", div="result-container")
+        # 5. Check that participants can see their wailist position.
+        self.logout()
+        self.login(USER_DICT["emilia"])
+        self.traverse({'href': "/event/event/1/registration/status"})
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Warteliste (Platz 1)", exact=True,
+                            div="registration_status_part1")
 
     def test_participant_list(self):
         # first, check non-visibility for all participants
@@ -2074,6 +2142,19 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/add'})
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms['addregistrationform']
+        # Try to add an archived user.
+        f['persona.persona_id'] = "DB-8-6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('persona.persona_id', "Dieser Benutzer existiert nicht oder ist archiviert.")
+        # Try to add a non-existent user.
+        f['persona.persona_id'] = "DB-10000-5"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('persona.persona_id', "Dieser Benutzer existiert nicht oder ist archiviert.")
+        # Try to add a non-event user.
+        f['persona.persona_id'] = "DB-11-6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.")
+        # Now add an actually valid user.
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
         f['reg.mixed_lodging'].checked = False

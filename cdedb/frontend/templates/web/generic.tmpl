@@ -469,11 +469,11 @@
                 {% for list in queries | sort | slice(2) %}
                 <div class="col-sm-6">
                     <ul>
-                        {% for query in list %}
-                            <li>
-                                {{ util.href(cdedblink(target, queries[query]|querytoparams) + '#query-results',
-                                        gettext(query), aclass="default-query") }}
-                            </li>
+                        {% for query_name in list %}
+                            {% with query = queries[query_name] %}<li>
+                                {{ util.href(cdedblink(target, query|querytoparams) + '#query-results',
+                                        query.name if query.name else gettext(query_name), aclass="default-query") }}
+                            </li>{% endwith %}
                         {% endfor %}
                     </ul>
                 </div>

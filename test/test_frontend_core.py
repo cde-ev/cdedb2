@@ -313,7 +313,7 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
-    @as_users("werner")
+    @as_users("viktor")
     def test_selectpersona_relative_assembly_admin(self, user):
         self.get('/core/persona/select'
                  '?kind=mod_ml_user&phrase=@exam&aux=11')
@@ -343,7 +343,7 @@ class TestCoreFrontend(FrontendTest):
                  status=403)
         self.assertTitle('403: Forbidden')
 
-    @as_users("berta", "garcia")
+    @as_users("berta", "werner")
     def test_selectpersona_ml_assembly(self, user):
         # Only assembly participants are shown
         self.get('/core/persona/select'
@@ -781,7 +781,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Neubauer", div='query-result')
         self.assertPresence("Olafson", div='query-result')
         self.assertPresence("Vera", div='query-result')
-        self.assertPresence("Werner", div='query-result')
+        self.assertPresence("Viktor", div='query-result')
 
     def test_privilege_change(self):
         # Grant new admin privileges.

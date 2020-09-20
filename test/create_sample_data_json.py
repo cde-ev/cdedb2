@@ -1,8 +1,6 @@
 import sys
 import json
 import datetime
-import collections
-import decimal
 
 from pprint import pprint
 
@@ -91,28 +89,17 @@ query = "SELECT table_schema, table_name, column_name " \
 params = ("jsonb",)
 data = core.query_all(rs, query, params)
 
-JSON_FIELDS = {
-    (e["table_schema"] + "." + e["table_name"], e["column_name"])
-    for e in data
-}
-
-full_sample_data = collections.OrderedDict()
+full_sample_data = {}
 
 for table in tables:
-    query = "SELECT * FROM {} ORDER BY id".format(table)
-    params = tuple()
-    data = core.query_all(rs, query, params)
-    print(query, len(data))
-    for e in data:
-        for k, v in e.items():
-            if (table, k) in JSON_FIELDS:
-                e[k] = json.dumps(v)
-            if isinstance(v, datetime.datetime):
-                if v == nearly_now():
-                    e[k] = "---now---"
-    full_sample_data[table] = data
-    if not data:
-        print(table)
+    entities = core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ())
+    print(f"{query:60} ==> {len(entities):3}", "" if entities else "!")
+    for entity in entities:
+        for field, value in entity.items():
+            if isinstance(value, datetime.datetime) and value == nearly_now():
+                entity[field] = "---now---"
+    full_sample_data[table] = entities
 
-with open("/cdedb2/sample_data.json", "w", encoding="utf8") as f:
-    f.write(json.dumps(full_sample_data, cls=CustomJSONEncoder, indent=4))
+with open("/cdedb2/sample_data.json", "w") as f:
+    json.dump(full_sample_data, f, cls=CustomJSONEncoder,
+        indent=4, ensure_ascii=False)

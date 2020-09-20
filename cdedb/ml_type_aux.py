@@ -43,6 +43,8 @@ class MailinglistGroup(enum.IntEnum):
 
 class AllMembersImplicitMeta:
     """Metaclass for all mailinglists with members as implicit subscribers."""
+    maxsize_default = 64
+
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
@@ -52,18 +54,17 @@ class AllMembersImplicitMeta:
 
 class AssemblyAssociatedMeta:
     """Metaclass for all assembly associated mailinglists."""
-    mandatory_validation_fields = [
+    mandatory_validation_fields = {
         ("assembly_id", "id"),
-    ]
+    }
 
 
 class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields = [
+    mandatory_validation_fields = {
         ("event_id", "id_or_None"),
-        ("registration_stati", "[enum_registrationpartstati]"),
-    ]
+    }
 
     @classmethod
     def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
@@ -77,6 +78,7 @@ class TeamMeta:
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
     domains = [MailinglistDomain.lists, MailinglistDomain.dokuforge]
+    maxsize_default = 4096
 
 
 class GeneralMailinglist:
@@ -105,17 +107,20 @@ class GeneralMailinglist:
 
     domains: List[MailinglistDomain] = [MailinglistDomain.lists]
 
+    # default value for maxsize in KB
+    maxsize_default = 2048
+
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: List[Tuple[str, str]] = list()
-    optional_validation_fields: List[Tuple[str, str]] = list()
+    mandatory_validation_fields: Set[Tuple[str, str]] = set()
+    optional_validation_fields: Set[Tuple[str, str]] = set()
 
     @classmethod
     def get_additional_fields(cls) -> Set[Tuple[str, str]]:
         ret = set()
         for field, argtype in (cls.mandatory_validation_fields
-                               + cls.optional_validation_fields):
+                               | cls.optional_validation_fields):
             if argtype.startswith('[') and argtype.endswith(']'):
                 ret.add((field, "[str]"))
             else:
@@ -302,6 +307,10 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
+    # TODO I bet this can be done more simple, but I dont get how
+    mandatory_validation_fields = (
+            EventAssociatedMeta.mandatory_validation_fields
+            | {("registration_stati", "[enum_registrationpartstati]")})
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -372,6 +381,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
 class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
+
+    maxsize_default = 8192
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,

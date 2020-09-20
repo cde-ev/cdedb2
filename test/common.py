@@ -24,7 +24,7 @@ import copy
 import decimal
 
 from typing import (
-    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set,
+    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set, Union,
     MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection, Iterable,
 )
 
@@ -142,6 +142,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/test/ancillary_files/"
         for e in table_data:
             _id = e.get('id', _id)
             assert _id not in data
+            e['id'] = _id
             data[_id] = e
             _id += 1
         ret[table] = data
@@ -206,6 +207,9 @@ def make_backend_shim(backend: B, internal=False) -> B:
                 rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(  # type: ignore
+                rs, rs.user.persona_id)
+        if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
+            rs.user.presider = backend.presider_info(  # type: ignore
                 rs, rs.user.persona_id)
         return rs
 
@@ -359,6 +363,8 @@ class BackendTest(CdEDBTest):
     """
     Base class for a TestCase that uses some backends. Needs to be subclassed.
     """
+    maxDiff = None
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -378,7 +384,6 @@ class BackendTest(CdEDBTest):
     def login(self, user, ip="127.0.0.0"):
         if isinstance(user, str):
             user = USER_DICT[user]
-        # noinspection PyTypeChecker
         self.key = self.core.login(None, user['username'], user['password'], ip)
         return self.key
 
@@ -594,6 +599,15 @@ USER_DICT = {
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
     },
+    "viktor": {
+        'id': 48,
+        'DB-ID': "DB-48-5",
+        'username': "viktor@example.cde",
+        'password': "secret",
+        'display_name': "Viktor",
+        'given_names': "Viktor",
+        'family_name': "Versammlungsadmin",
+    },
     "akira": {
         'id': 100,
         'DB-ID': "DB-100-7",
@@ -793,9 +807,12 @@ class FrontendTest(CdEDBTest):
                 raise AssertionError(
                     "Post request did not produce success notification.")
 
-    def traverse(self, *links: MutableMapping[str, Any], verbose: bool = False
-                 ) -> None:
+    def traverse(self, *links: Union[MutableMapping[str, Any], str],
+                 verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
+
+        A link can also be just a string, in which case that string is assumed
+        to be the `description` of the link.
 
         A link should usually contain some of the following descriptors:
 
@@ -811,6 +828,8 @@ class FrontendTest(CdEDBTest):
         :param verbose: If True, display additional debug information.
         """
         for link in links:
+            if isinstance(link, str):
+                link = {'description': link}
             if 'index' not in link:
                 link['index'] = 0
             try:
@@ -826,6 +845,8 @@ class FrontendTest(CdEDBTest):
 
         :param verbose: If True display additional debug information.
         """
+        if isinstance(user, str):
+            user = USER_DICT[user]
         self.get("/", verbose=verbose)
         f = self.response.forms['loginform']
         f['username'] = user['username']
@@ -874,7 +895,7 @@ class FrontendTest(CdEDBTest):
         self.traverse({'href': '/{}/$'.format(realm)},
                       {'href': '/{}/search/user'.format(realm)},
                       verbose=verbose)
-        id_field = 'personas.id' if realm in {'event', 'cde'} else 'id'
+        id_field = 'personas.id'
         f = self.response.forms['queryform']
         f['qsel_' + id_field].checked = True
         f['qop_' + id_field] = QueryOperators.equal.value
@@ -992,26 +1013,42 @@ class FrontendTest(CdEDBTest):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
 
-    def assertValidationError(self, fieldname: str, message: str = "") -> None:
+    def assertValidationError(self, fieldname: str, message: str = "",
+                              index: int = None) -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
         and a specific error message to be shown near the field.
 
         :param fieldname: The field's 'name' attribute
+        :param index: If more than one field with the given name exists,
+            specify which one should be checked.
         :param message: The expected error message
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
-        node = self.response.lxml.xpath(
+        nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
-        if len(node) != 1:
-            raise AssertionError("Input with name \"{}\" not found"
-                                 .format(fieldname))
+        f = fieldname
+        if index is None:
+            if len(nodes) == 1:
+                node = nodes[0]
+            elif len(nodes) == 0:
+                raise AssertionError(f"No input with name {f!r} found.")
+            else:
+                raise AssertionError(f"More than one input with name {f!r}"
+                                     f" found. Need to specify index.")
+        else:
+            try:
+                node = nodes[index]
+            except IndexError:
+                raise AssertionError(f"Input with name {f!r} and index {index}"
+                                     f" not found. {len(nodes)} inputs with"
+                                     f" name {f!r} found.") from None
+
         # From https://devhints.io/xpath#class-check
-        container = node[0].xpath(
+        container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
             "' has-error ')]")
-        f = fieldname
         if not container:
             raise AssertionError(
                 f"Input with name {f!r} is not contained in an .has-error box")

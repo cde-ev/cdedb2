@@ -215,6 +215,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 'ml_type': ml_type,
                 'available_domains': available_domains,
                 'additional_fields': additional_fields,
+                'maxsize_default': atype.maxsize_default,
             })
 
     @access("ml", modi={"POST"})
@@ -238,7 +239,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
-                    "Some of these users are not ml-users."))))
+                    "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         # Check if mailinglist address is unique
@@ -259,7 +260,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdata(("codes", "[int]"), ("mailinglist_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -267,7 +268,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def view_log(self, rs: RequestState, codes: Collection[const.MlLogCodes],
                  mailinglist_id: Optional[int], offset: Optional[int],
                  length: Optional[int], persona_id: Optional[int],
-                 submitted_by: Optional[int], additional_info: Optional[str],
+                 submitted_by: Optional[int], change_note: Optional[str],
                  time_start: Optional[datetime],
                  time_stop: Optional[datetime]) -> Response:
         """View activities."""
@@ -295,7 +296,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         total, log = self.mlproxy.retrieve_log(
             rs, codes, db_mailinglist_ids, _offset, _length,
             persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info,
+            change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -475,7 +476,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -484,7 +485,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def view_ml_log(self, rs: RequestState, mailinglist_id: int,
                     codes: Collection[const.MlLogCodes], offset: Optional[int],
                     length: Optional[int], persona_id: Optional[int],
-                    submitted_by: Optional[int], additional_info: Optional[str],
+                    submitted_by: Optional[int], change_note: Optional[str],
                     time_start: Optional[datetime],
                     time_stop: Optional[datetime]) -> Response:
         """View activities pertaining to one list."""
@@ -499,7 +500,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         total, log = self.mlproxy.retrieve_log(
             rs, codes, [mailinglist_id], _offset, _length,
             persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info, time_start=time_start,
+            change_note=change_note, time_start=time_start,
             time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -624,11 +625,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
                     "Some of these users do not exist or are archived."))))
-        verified = set(self.coreproxy.verify_personas(rs, moderators, {"ml"}))
-        if not verified == moderators:
+        if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
-                    "Some of these users are not ml-users."))))
+                    "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 

@@ -23,6 +23,7 @@ help:
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
 MYPYBIN ?= mypy
+TESTPREPARATION ?= automatic
 
 doc:
 	bin/create_email_template_list.sh .
@@ -201,10 +202,14 @@ lint:
 
 
 prepare-check:
+ifneq ($(TESTPREPARATION), manual)
 	$(MAKE) i18n-compile
 	$(MAKE) sample-data-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
 		|| true
+else
+	@echo "Omitting test preparation."
+endif
 
 check: export CDEDB_TEST=True
 check:
@@ -293,4 +298,4 @@ mypy:
 	${MYPYBIN} cdedb/backend/ cdedb/frontend cdedb/__init__.py \
 		cdedb/common.py cdedb/enums.py cdedb/i18n_additional.py \
 		cdedb/ml_subscription_aux.py cdedb/ml_type_aux.py cdedb/query.py \
-		cdedb/script.py cdedb/security.py cdedb/validationdata.py
+		cdedb/script.py cdedb/validationdata.py

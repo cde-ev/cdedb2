@@ -237,7 +237,7 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
-    @as_users("werner")
+    @as_users("viktor")
     def test_profile_as_assembly_admin(self, user):
         self._disable_searchability('werner')
 
@@ -413,22 +413,24 @@ class TestPrivacyFrontend(FrontendTest):
         #     self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
         #                                        check_div=False)
 
-    @as_users("annika", "inga", "nina", "quintus", "werner")
+    @as_users("annika", "inga", "nina", "quintus", "viktor")
     @admin_views("ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_assembly",
                  "ml_mod_cdelokal")
     def test_profile_as_relevant_ml_admin(self, user):
-        all_ml = {
-            'public':      {'id': 64, 'user': 'janis',  'admin': 'nina'},
-            'cdelokal':    {'id': 65, 'user': 'janis',  'admin': 'inga'},
-            'team_ml':     {'id': 56, 'user': 'garcia', 'admin': 'quintus'},
-            'event_ml':    {'id':  9, 'user': 'garcia', 'admin': 'annika'},
-            'assembly_ml': {'id':  5, 'user': 'kalif',  'admin': 'werner'}}
+        ml_admin = USER_DICT['nina']['id']
+        all_ml = (
+            (64, 'janis', 'nina'),  # public
+            (65, 'janis', 'inga'),  # cdelokal
+            (56, 'garcia', 'quintus'),  # team
+            (9, 'garcia', 'annika'),  # event
+            (5, 'kalif', 'viktor'),  # assembly
+        )
 
-        for ml in all_ml.values():
-            inspected = USER_DICT[ml['user']]
+        for ml_id, profile, admin in all_ml:
+            inspected = USER_DICT[profile]
             self.get(
-                self.show_user_link(inspected['id']) + f"&ml_id={ml['id']}")
-            if user is USER_DICT[ml['admin']] or user is USER_DICT['nina']:
+                self.show_user_link(inspected['id']) + f"&ml_id={ml_id}")
+            if user['id'] == USER_DICT[admin]['id'] or user['id'] == ml_admin:
                 found = self._profile_moderator_view(inspected)
             else:
                 found = self._profile_base_view(inspected)
@@ -440,83 +442,48 @@ class TestPrivacyFrontend(FrontendTest):
                                        check_div=False)
 
     @as_users("annika", "berta", "emilia", "janis", "kalif", "nina", "quintus",
-              "paul", "rowena", "werner")
+              "paul", "rowena", "viktor")
     def test_profile_of_realm_user(self, user):
-        # ... of a ml user
-        ml_access = [
-            USER_DICT['janis'], USER_DICT['nina'], USER_DICT['paul']
-        ]
-        ml_no_access = [
-            USER_DICT['annika'], USER_DICT['quintus'], USER_DICT['werner'],
-            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['emilia'],
-            USER_DICT['rowena']
-        ]
 
-        # ... of an assembly user
-        assembly_access = [
-            USER_DICT['kalif'], USER_DICT['paul'], USER_DICT['werner']
-        ]
-        assembly_no_access = [
-            USER_DICT['annika'], USER_DICT['nina'], USER_DICT['quintus'],
-            USER_DICT['berta'], USER_DICT['janis'], USER_DICT['emilia'],
-            USER_DICT['rowena']
-        ]
-
-        # ... of an event user
-        event_access = [
-            USER_DICT['emilia'], USER_DICT['annika'], USER_DICT['paul']
-        ]
-        event_no_access = [
-            USER_DICT['quintus'], USER_DICT['nina'], USER_DICT['werner'],
-            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['janis'],
-            USER_DICT['rowena']
-        ]
-
-        # ... of an assembly and event user
-        a_e_access = [
-            USER_DICT['rowena'], USER_DICT['annika'], USER_DICT['werner'],
-            USER_DICT['paul']
-        ]
-        a_e_no_access = [
-            USER_DICT['quintus'], USER_DICT['nina'], USER_DICT['janis'],
-            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['emilia']
-        ]
-
-        # ... of a cde user
-        cde_access = [
-            USER_DICT['berta'], USER_DICT['quintus'], USER_DICT['paul']
-        ]
-        cde_no_access = [
-            USER_DICT['annika'], USER_DICT['nina'], USER_DICT['werner'],
-            USER_DICT['emilia'], USER_DICT['kalif'], USER_DICT['janis'],
-            USER_DICT['rowena']
-        ]
+        def get_id(name: str) -> int:
+            return USER_DICT[name]['id']
 
         cases = {
             'ml': {
                 'inspected': USER_DICT['janis'],
-                'access': ml_access,
-                'no_access': ml_no_access,
+                'access': {get_id(u) for u in ("janis", "nina", "paul")},
+                'no_access': {
+                    get_id(u) for u in ("annika", "quintus", "viktor", "berta",
+                                        "kalif", "emilia", "rowena")},
             },
             'assembly': {
                 'inspected': USER_DICT['kalif'],
-                'access': assembly_access,
-                'no_access': assembly_no_access,
+                'access': {get_id(u) for u in ("kalif", "paul", "viktor")},
+                'no_access': {
+                    get_id(u) for u in ("annika", "nina", "quintus", "berta",
+                                        "janis", "emilia", "rowena")},
             },
             'event': {
                 'inspected': USER_DICT['emilia'],
-                'access': event_access,
-                'no_access': event_no_access,
+                'access': {get_id(u) for u in ("emilia", "annika", "paul")},
+                'no_access': {
+                    get_id(u) for u in ("quintus", "nina", "viktor", "berta",
+                                        "kalif", "janis", "rowena")},
             },
             'a_e': {
                 'inspected': USER_DICT['rowena'],
-                'access': a_e_access,
-                'no_access': a_e_no_access,
+                'access': {get_id(u) for u in ("rowena", "annika", "viktor",
+                                               "paul")},
+                'no_access': {
+                    get_id(u) for u in ("quintus", "nina", "janis", "berta",
+                                        "kalif", "emilia")},
             },
             'cde': {
                 'inspected': USER_DICT['berta'],
-                'access': cde_access,
-                'no_access': cde_no_access,
+                'access': {get_id(u) for u in ("berta", "quintus", "paul")},
+                'no_access': {
+                    get_id(u) for u in ("annika", "nina", "viktor", "emilia",
+                                        "kalif", "janis", "rowena")},
             }
         }
 
@@ -524,10 +491,10 @@ class TestPrivacyFrontend(FrontendTest):
         for realm, case in cases.items():
             inspected = case['inspected']
             self.get(self.show_user_link(inspected['id']))
-            if user in case['access']:
+            if user['id'] in case['access']:
                 # username is only visible on extended profile views
                 self.assertPresence(inspected['username'], div='contact-email')
-            elif user in case['no_access']:
+            elif user['id'] in case['no_access']:
                 found = self._profile_base_view(inspected)
                 # username must not be visible on base profiles
                 self.assertNonPresence(inspected['username'])
@@ -538,11 +505,10 @@ class TestPrivacyFrontend(FrontendTest):
                 msg = "Forget {} in case {}.".format(user['given_names'], realm)
                 raise RuntimeError(msg)
 
-    @unittest.expectedFailure
     def test_profile_of_disabled_user(self):
         # a disabled user should be viewable as an equal non-disabled user
         # TODO maybe add all above tests as subtests?
-        raise NotImplementedError
+        self.skipTest("Test not yet implemented.")
 
     @as_users("ferdinand", "martin", "paul")
     def test_profile_of_archived_user(self, user):
@@ -556,64 +522,64 @@ class TestPrivacyFrontend(FrontendTest):
             self.get(self.show_user_link(inspected['id']), status="403 FORBIDDEN")
 
     @as_users("annika", "berta", "farin", "martin", "nina", "quintus", "paul",
-              "werner")
+              "viktor")
     def test_user_search(self, user):
         # users who should have access to the specific user search
-        core = [
-            USER_DICT['farin'], USER_DICT['paul']
-        ]
-        archive = [
-            USER_DICT['farin'], USER_DICT['paul']
-        ]
-        cde = [
-            USER_DICT['farin'], USER_DICT['quintus']
-        ]
-        event = [
-            USER_DICT['farin'], USER_DICT['annika']
-        ]
-        ml = [
-            USER_DICT['farin'], USER_DICT['nina']
-        ]
-        assembly = [
-            USER_DICT['farin'], USER_DICT['werner']
-        ]
+        core = {
+            USER_DICT['farin']['id'], USER_DICT['paul']['id']
+        }
+        archive = {
+            USER_DICT['farin']['id'], USER_DICT['paul']['id']
+        }
+        cde = {
+            USER_DICT['farin']['id'], USER_DICT['quintus']['id']
+        }
+        event = {
+            USER_DICT['farin']['id'], USER_DICT['annika']['id']
+        }
+        ml = {
+            USER_DICT['farin']['id'], USER_DICT['nina']['id']
+        }
+        assembly = {
+            USER_DICT['farin']['id'], USER_DICT['viktor']['id']
+        }
 
-        if user in core:
+        if user['id'] in core:
             self.get('/core/search/user')
             self.assertTitle("Allgemeine Nutzerverwaltung")
         else:
             self.get('/core/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
-        if user in archive:
+        if user['id'] in archive:
             self.get('/core/search/archiveduser')
             self.assertTitle("Archivsuche")
         else:
             self.get('/core/search/archiveduser', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
-        if user in cde:
+        if user['id'] in cde:
             self.get('/cde/search/user')
             self.assertTitle("CdE-Nutzerverwaltung")
         else:
             self.get('/cde/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
-        if user in event:
+        if user['id'] in event:
             self.get('/event/search/user')
             self.assertTitle("Veranstaltungs-Nutzerverwaltung")
         else:
             self.get('/event/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
-        if user in ml:
+        if user['id'] in ml:
             self.get('/ml/search/user')
             self.assertTitle("Mailinglisten-Nutzerverwaltung")
         else:
             self.get('/ml/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
-        if user in assembly:
+        if user['id'] in assembly:
             self.get('/assembly/search/user')
             self.assertTitle("Versammlungs-Nutzerverwaltung")
         else:

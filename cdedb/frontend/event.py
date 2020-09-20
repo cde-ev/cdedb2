@@ -46,7 +46,7 @@ from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
     LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
-    InfiniteEnum, DefaultReturnCode
+    InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC
 )
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -379,9 +379,30 @@ class EventFrontend(AbstractUserFrontend):
         institution_ids = self.pasteventproxy.list_institutions(rs).keys()
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['event'])
-        return self.render(rs, "change_event",
-                           {'institutions': institutions,
-                            'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
+
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
+        lodge_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.registration
+            and field['kind'] == const.FieldDatatypes.str
+        ]
+        camping_mat_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.registration
+            and field['kind'] == const.FieldDatatypes.bool
+        ]
+        course_room_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] == const.FieldAssociations.course
+            and field['kind'] == const.FieldDatatypes.str
+        ]
+        return self.render(rs, "change_event", {
+            'institutions': institutions,
+            'accounts': self.conf["EVENT_BANK_ACCOUNTS"],
+            'lodge_fields': lodge_fields,
+            'camping_mat_fields': camping_mat_fields,
+            'course_room_fields': course_room_fields})
 
     @access("event", modi={"POST"})
     @REQUESTdatadict(
@@ -435,7 +456,7 @@ class EventFrontend(AbstractUserFrontend):
             bytes, check(rs, 'pdffile_or_None', minor_form, "minor_form"))
         if not minor_form and not delete:
             rs.append_validation_error(
-                ("minor_form", ValueError(n_("Mustn't be empty."))))
+                ("minor_form", ValueError(n_("Must not be empty."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.change_minor_form(rs, event_id, minor_form)
@@ -453,17 +474,17 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             # Shortcircuit if we have got no workable cdedbid
             return self.show_event(rs, event_id)
-        orga = self.coreproxy.get_persona(rs, orga_id)
-        if 'event' not in extract_roles(orga, introspection_only=True):
+        if not self.coreproxy.verify_id(rs, orga_id, is_archived=False):
             rs.append_validation_error(
-                ('orga_id', ValueError(n_("User is no event user."))))
+                ('orga_id',
+                 ValueError(n_("This user does not exist or is archived."))))
+        if not self.coreproxy.verify_persona(rs, orga_id, {"event"}):
+            rs.append_validation_error(
+                ('orga_id', ValueError(n_("This user is not an event user."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        new = {
-            'id': event_id,
-            'orgas': rs.ambience['event']['orgas'] | {orga_id}
-        }
-        code = self.eventproxy.set_event(rs, new)
+        new = rs.ambience['event']['orgas'] | {orga_id}
+        code = self.eventproxy.set_event_orgas(rs, event_id, new)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
@@ -472,17 +493,14 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def remove_orga(self, rs: RequestState, event_id: int, orga_id: int
                     ) -> Response:
-        """Demote a persona.
+        """Remove a persona as orga of an event.
 
-        This can drop your own orga role (but only if you're admin).
+        This is only available for admins. This can drop your own orga role.
         """
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        new = {
-            'id': event_id,
-            'orgas': rs.ambience['event']['orgas'] - {orga_id}
-        }
-        code = self.eventproxy.set_event(rs, new)
+        new = rs.ambience['event']['orgas'] - {orga_id}
+        code = self.eventproxy.set_event_orgas(rs, event_id, new)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
@@ -543,11 +561,13 @@ class EventFrontend(AbstractUserFrontend):
         for track_id in referenced_tracks:
             referenced_parts.add(tracks[track_id]['part_id'])
 
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
         fee_modifier_fields = [
-            (field['id'], field['field_name'])
-            for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.registration
-            and field['kind'] == const.FieldDatatypes.bool
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] in legal_assocs
+            and field['kind'] in legal_datatypes
         ]
         fee_modifiers_by_part = {
             part_id: {
@@ -557,9 +577,16 @@ class EventFrontend(AbstractUserFrontend):
             }
             for part_id in rs.ambience['event']['parts']
         }
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+        waitlist_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] in legal_assocs
+            and field['kind'] in legal_datatypes
+        ]
         return self.render(rs, "part_summary", {
             'fee_modifier_fields': fee_modifier_fields,
             'fee_modifiers_by_part': fee_modifiers_by_part,
+            'waitlist_fields': waitlist_fields,
             'referenced_parts': referenced_parts,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,
@@ -594,20 +621,34 @@ class EventFrontend(AbstractUserFrontend):
             'part_begin': "date",
             'part_end': "date",
             'fee': "decimal",
+            'waitlist_field': "id_or_None",
         }
         params = tuple(("{}_{}".format(key, part_id), value)
                        for part_id in parts if part_id not in deletes
                        for key, value in spec.items())
 
         # noinspection PyRedundantParentheses
-        def part_constraint_maker(part_id: int) -> RequestConstraint:
+        def part_constraint_maker(part_id: int) -> List[RequestConstraint]:
             begin = f"part_begin_{part_id}"
             end = f"part_end_{part_id}"
-            msg = n_("Must be later than part begin.")
-            return (lambda d: d[begin] <= d[end], (end, ValueError(msg)))
+            msg = n_("Must be later than begin.")
+            ret: List[RequestConstraint]
+            ret = [(lambda d: d[begin] <= d[end], (end, ValueError(msg)))]
 
-        constraints = tuple(part_constraint_maker(part_id)
-                            for part_id in parts if part_id not in deletes)
+            key = f"waitlist_field_{part_id}"
+            fields = rs.ambience['event']['fields']
+            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+            ret.append((
+                lambda d: d[key] is None or
+                          fields[d[key]]['association'] in legal_assocs
+                          and fields[d[key]]['kind'] in legal_datatypes,
+                (key, ValueError(n_(
+                    "Waitlist linked to non-fitting field.")))))
+            return ret
+
+        constraints = list(itertools.chain.from_iterable(
+            part_constraint_maker(part_id)
+            for part_id in parts if part_id not in deletes))
         data = request_extractor(rs, params, constraints)
         ret: Dict[int, CdEDBObject] = {
             part_id: {key: data["{}_{}".format(key, part_id)] for key in spec}
@@ -615,17 +656,17 @@ class EventFrontend(AbstractUserFrontend):
         }
 
         def track_params(part_id: int, track_id: int
-                         ) -> Iterable[Tuple[str, str]]:
+                         ) -> List[Tuple[str, str]]:
             """
             Helper function to create the parameter extraction configuration
             for the data of a single track.
             """
-            return (
+            return [
                 ("track_{}_{}_{}".format(k, part_id, track_id), t)
                 for k, t in (('title', 'str'), ('shortname', 'str'),
                              ('num_choices', 'non_negative_int'),
                              ('min_choices', 'non_negative_int'),
-                             ('sortkey', 'int')))
+                             ('sortkey', 'int'))]
 
         def track_excavator(req_data: CdEDBObject, part_id: int, track_id: int
                             ) -> CdEDBObject:
@@ -648,7 +689,7 @@ class EventFrontend(AbstractUserFrontend):
                     raise ValueError(n_("Registrations exist, no creation."))
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
-                constraints = (part_constraint_maker(-marker),)
+                constraints = part_constraint_maker(-marker)
                 data = request_extractor(rs, params, constraints)
                 ret[-marker] = {key: data["{}_-{}".format(key, marker)]
                                 for key in spec}
@@ -679,13 +720,14 @@ class EventFrontend(AbstractUserFrontend):
             if track_id not in track_deletes))
 
         # noinspection PyRedundantParentheses
-        def track_constraint_maker(part_id: int, track_id: int) -> RequestConstraint:
+        def track_constraint_maker(part_id: int, track_id: int
+                                   ) -> RequestConstraint:
             min = "track_min_choices_{}_{}".format(part_id, track_id)
             num = "track_num_choices_{}_{}".format(part_id, track_id)
             msg = n_("Must be less or equal than total Course Choices.")
             return (lambda d: d[min] <= d[num], (min, ValueError(msg)))
 
-        constraints = tuple(
+        constraints = list(
             track_constraint_maker(part_id, track_id)
             for part_id, part in parts.items()
             for track_id in part['tracks']
@@ -709,7 +751,7 @@ class EventFrontend(AbstractUserFrontend):
                         raise ValueError(
                             n_("Registrations exist, no creation."))
                     params = tuple(track_params(part_id, -marker))
-                    constraints = (track_constraint_maker(part_id, -marker),)
+                    constraints = [track_constraint_maker(part_id, -marker)]
                     newtrack = track_excavator(
                         request_extractor(rs, params, constraints),
                         part_id, -marker)
@@ -730,7 +772,8 @@ class EventFrontend(AbstractUserFrontend):
                       "bool"),)))
                 if will_create:
                     params = tuple(track_params(-new_part_id, -marker))
-                    constraints = (track_constraint_maker(-new_part_id, -marker),)
+                    constraints = [
+                        track_constraint_maker(-new_part_id, -marker)]
                     newtrack = track_excavator(
                         request_extractor(rs, params, constraints),
                         -new_part_id, -marker)
@@ -740,18 +783,20 @@ class EventFrontend(AbstractUserFrontend):
                 marker += 1
             rs.values['track_create_last_index'][-new_part_id] = marker - 1
 
-        def fee_modifier_params(part_id, fee_modifier_id):
+        def fee_modifier_params(part_id: int, fee_modifier_id: int
+                                ) -> List[Tuple[str, str]]:
             """
             Helper function to create the parameter extraction configuration
             for the data of a single fee modifier.
             """
-            return (
+            return [
                 ("fee_modifier_{}_{}_{}".format(k, part_id, fee_modifier_id), t)
                 for k, t in (('modifier_name', 'restrictive_identifier'),
                              ('amount', 'decimal'),
-                             ('field_id', 'id')))
+                             ('field_id', 'id'))]
 
-        def fee_modifier_excavator(req_data, part_id, fee_modifier_id):
+        def fee_modifier_excavator(req_data: CdEDBObject, part_id: int,
+                                   fee_modifier_id: int) -> CdEDBObject:
             """
             Helper function to create a single fee modifier's data dict from the
             extracted request data.
@@ -783,21 +828,19 @@ class EventFrontend(AbstractUserFrontend):
             for mod in fee_modifiers.values()
             if mod['id'] not in fee_modifier_deletes))
 
-        def constraint_maker(part_id, fee_modifier_id):
-            key = "fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id)
+        def constraint_maker(part_id: int, fee_modifier_id: int
+                             ) -> List[RequestConstraint]:
+            key = f"fee_modifier_field_id_{part_id}_{fee_modifier_id}"
             fields = rs.ambience['event']['fields']
-            ret = [
-                (lambda d: fields[d[key]]['association'] ==
-                           const.FieldAssociations.registration,
-                 (key, ValueError(n_(
-                     "Fee Modifier linked to non-registration field.")))),
-                (lambda d: fields[d[key]]['kind'] == const.FieldDatatypes.bool,
-                 (key, ValueError(n_(
-                     "Fee Modifier linked to non-bool field."))))
-                ]
-            return ret
+            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
+            msg = n_("Fee Modifier linked to non-fitting field.")
+            return [(
+                lambda d: (fields[d[key]]['association'] in legal_assocs
+                           and fields[d[key]]['kind'] in legal_datatypes),
+                (key, ValueError(msg))
+            )]
 
-        constraints = tuple(itertools.chain.from_iterable(
+        constraints = list(itertools.chain.from_iterable(
             constraint_maker(mod['part_id'], mod['id'])
             for mod in fee_modifiers.values()
             if mod['id'] not in fee_modifier_deletes))
@@ -937,6 +980,9 @@ class EventFrontend(AbstractUserFrontend):
         for mod in rs.ambience['event']['fee_modifiers'].values():
             referenced.add(mod['field_id'])
             fee_modifiers.add(mod['field_id'])
+        for part_id, part in rs.ambience['event']['parts'].items():
+            if part['waitlist_field']:
+                referenced.add(part['waitlist_field'])
         return self.render(rs, "field_summary", {
             'referenced': referenced, 'fee_modifiers': fee_modifiers})
 
@@ -1099,15 +1145,15 @@ class EventFrontend(AbstractUserFrontend):
                             'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
+    @REQUESTdata(("part_begin", "date"), ("part_end", "date"),
                  ("orga_ids", "cdedbid_csv_list"), ("create_track", "bool"),
                  ("create_orga_list", "bool"),
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "iban", "nonmember_surcharge", "notes")
-    def create_event(self, rs: RequestState, event_begin: datetime.date,
-                     event_end: datetime.date, orga_ids: Collection[int],
+    def create_event(self, rs: RequestState, part_begin: datetime.date,
+                     part_end: datetime.date, orga_ids: Collection[int],
                      create_track: bool, create_orga_list: bool,
                      create_participant_list: bool, data: CdEDBObject
                      ) -> Response:
@@ -1124,9 +1170,10 @@ class EventFrontend(AbstractUserFrontend):
             -1: {
                 'title': data['title'],
                 'shortname': data['shortname'],
-                'part_begin': event_begin,
-                'part_end': event_end,
+                'part_begin': part_begin,
+                'part_end': part_end,
                 'fee': decimal.Decimal(0),
+                'waitlist_field': None,
                 'tracks': ({-1: new_track} if create_track else {}),
             }
         }
@@ -1144,20 +1191,19 @@ class EventFrontend(AbstractUserFrontend):
             data['orga_address'] = None
 
         data = check(rs, "event", data, creation=True)
-        if rs.has_validation_errors():
-            return self.create_event_form(rs)
-        if data['orgas']:
-            orgas = self.coreproxy.get_personas(rs, orga_ids)
-            for orga in orgas.values():
-                if 'event' not in extract_roles(orga, introspection_only=True):
-                    rs.append_validation_error(
-                        ('orga_ids', ValueError(
-                            n_("%(given_names)s %(family_name)s is not"
-                               " an event user."),
-                            {
-                                'given_names': orga['given_names'],
-                                'family_name': orga['family_name']
-                            })))
+        if orga_ids:
+            if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
+                rs.append_validation_error(
+                    ('orga_ids', ValueError(
+                        n_("Some of these users do not exist or are archived.")
+                    ))
+                )
+            if not self.coreproxy.verify_personas(rs, orga_ids, {"event"}):
+                rs.append_validation_error(
+                    ('orga_ids', ValueError(
+                        n_("Some of these users are not event users.")
+                    ))
+                )
         if rs.has_validation_errors():
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)
@@ -3281,10 +3327,13 @@ class EventFrontend(AbstractUserFrontend):
             (part_id, registration['parts'][part_id]) for part_id in part_order)
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, (const.QuestionnaireUsages.registration,)))
+        waitlist_position = self.eventproxy.get_waitlist_position(
+            rs, event_id, persona_id=rs.user.persona_id)
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'reference': reference,
+            'waitlist_position': waitlist_position,
         })
 
     @access("event")
@@ -3761,10 +3810,12 @@ class EventFrontend(AbstractUserFrontend):
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_event_fee_reference(persona, rs.ambience['event'])
         fee = self.eventproxy.calculate_fee(rs, registration_id)
+        waitlist_position = self.eventproxy.get_waitlist_position(
+            rs, event_id, persona_id=persona['id'])
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
-            'reference': reference,
+            'reference': reference, 'waitlist_position': waitlist_position
         })
 
     @access("event")
@@ -4016,11 +4067,15 @@ class EventFrontend(AbstractUserFrontend):
         """
         persona_id = unwrap(
             request_extractor(rs, (("persona.persona_id", "cdedbid"),)))
-        if (persona_id is not None
-                and not self.coreproxy.verify_personas(
-                    rs, (persona_id,), required_roles=("event",))):
-            rs.append_validation_error(
-                ("persona.persona_id", ValueError(n_("Invalid persona."))))
+        if persona_id is not None:
+            if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+                rs.append_validation_error(
+                    ("persona.persona_id", ValueError(n_(
+                        "This user does not exist or is archived."))))
+            elif not self.coreproxy.verify_persona(rs, persona_id, {"event"}):
+                rs.append_validation_error(
+                    ("persona.persona_id", ValueError(n_(
+                        "This user is not an event user."))))
         if (not rs.has_validation_errors()
                 and self.eventproxy.list_registrations(rs, event_id,
                                                        persona_id=persona_id)):
@@ -5361,7 +5416,7 @@ class EventFrontend(AbstractUserFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
         default_queries = self.conf["DEFAULT_QUERIES_REGISTRATION"](
-            rs.ambience['event'], spec)
+            rs.gettext, rs.ambience['event'], spec)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
@@ -6220,7 +6275,7 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -6228,7 +6283,7 @@ class EventFrontend(AbstractUserFrontend):
     def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
                  event_id: Optional[int], offset: Optional[int],
                  length: Optional[int], persona_id: Optional[int],
-                 submitted_by: Optional[int], additional_info: Optional[str],
+                 submitted_by: Optional[int], change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
                  time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning events organized via DB."""
@@ -6242,7 +6297,7 @@ class EventFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.eventproxy.retrieve_log(
             rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -6263,7 +6318,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -6273,7 +6328,7 @@ class EventFrontend(AbstractUserFrontend):
                        event_id: int, offset: Optional[int],
                        length: Optional[int], persona_id: Optional[int],
                        submitted_by: Optional[int],
-                       additional_info: Optional[str],
+                       change_note: Optional[str],
                        time_start: Optional[datetime.datetime],
                        time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning one event organized via DB."""
@@ -6287,7 +6342,7 @@ class EventFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.eventproxy.retrieve_log(
             rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
