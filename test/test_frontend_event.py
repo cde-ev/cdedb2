@@ -1044,7 +1044,8 @@ etc;anything else""", f['entries_2'].value)
         f['orga_ids'] = "DB-10-8"
         self.submit(f, check_notification=False)
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-        self.assertPresence("Janis Jalapeño ist kein Veranstaltungsnutzer.")
+        self.assertValidationError('orga_ids', "Einige dieser Nutzer sind "
+                                               "keine Veranstaltungsnutzer.")
         self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f = self.response.forms['createeventform']
         f['part_end'] = "2345-6-7"

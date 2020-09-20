@@ -4411,11 +4411,10 @@ msgstr ""
 msgid "Field name not unique."
 msgstr "Feldname nicht eindeutig."
 
-#: cdedb/frontend/event.py:1205 cdedb/frontend/event.py:1146
-#: cdedb/frontend/event.py:1155 cdedb/frontend/event.py:1192
+#: cdedb/frontend/event.py:1204
 #, python-format
-msgid "%(given_names)s %(family_name)s is not an event user."
-msgstr "%(given_names)s %(family_name)s ist kein Veranstaltungsnutzer."
+msgid "Some of these users are not event users."
+msgstr "Einige dieser Nutzer sind keine Veranstaltungsnutzer."
 
 #: cdedb/frontend/event.py:1374 cdedb/frontend/event.py:1308
 #: cdedb/frontend/event.py:1324 cdedb/frontend/event.py:1354
