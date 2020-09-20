@@ -1019,7 +1019,8 @@ class FrontendTest(CdEDBTest):
         self.assertEqual(name.strip(), span.text_content().strip())
 
     def assertValidationError(self, fieldname: str, message: str = "",
-                              index: int = None) -> None:
+                              index: int = None,
+                              check_notification: bool = True) -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
         and a specific error message to be shown near the field.
@@ -1028,9 +1029,15 @@ class FrontendTest(CdEDBTest):
         :param index: If more than one field with the given name exists,
             specify which one should be checked.
         :param message: The expected error message
+        :param check_notification: If True, check that an alert-danger
+            notification is indicating validation failure.
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
+        if check_notification:
+            self.assertIn("alert alert-danger", self.response.text)
+            self.assertPresence("Validierung fehlgeschlagen", 'notifications')
+
         nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
         f = fieldname
