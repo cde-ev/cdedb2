@@ -1191,9 +1191,7 @@ class EventFrontend(AbstractUserFrontend):
             data['orga_address'] = None
 
         data = check(rs, "event", data, creation=True)
-        if rs.has_validation_errors():
-            return self.create_event_form(rs)
-        if data['orgas']:
+        if orga_ids:
             orgas = self.coreproxy.get_personas(rs, orga_ids)
             for orga in orgas.values():
                 if 'event' not in extract_roles(orga, introspection_only=True):
