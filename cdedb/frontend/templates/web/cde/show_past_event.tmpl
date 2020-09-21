@@ -83,17 +83,18 @@
                     {{ util.input_hidden(name="pcourse_id", value="") }}
                     {{ util.input_hidden(name="is_instructor", value=False) }}
                     <div class="row">
-                        <div class="col-sm-7 {% if 'persona_id' in errors %}has-error{% endif %}">
-                            {{ util.input_text(name="persona_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…",
-                                    anid="input-add-participant", aclass="form-control input-sm",
-                                    arialabel=gettext("ID of the new Participant")) }}
-                            <script nonce="{{ csp_nonce }}">
-                                $('#input-add-participant').cdedbSearchPerson(
-                                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=past_event_user&phrase=%s'|s) }}',
-                                    {{ participants.keys()|list|json|s }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
-                                );
-                            </script>
-                            {{ util.output_errors('persona_id') }}
+                        <div class="col-sm-7 {% if 'persona_ids' in errors %}has-error{% endif %}">
+                            {% call util.output_errors('persona_ids') %}
+                                {{ util.input_text(name="persona_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                                                   anid='input-add-participant', aclass='form-control input-sm',
+                                                   arialabel=gettext("ID of the new Participant")) }}
+                                <script nonce="{{ csp_nonce }}">
+                                    $('#input-add-participant').cdedbSearchPerson(
+                                        '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'|s }}',
+                                        {{ participants.keys()|list|json|s }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                    );
+                                </script>
+                            {% endcall %}
                         </div>
                         <div class="col-sm-2">
                             <div class="checkbox input-sm">
