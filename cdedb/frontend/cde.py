@@ -2602,10 +2602,8 @@ class CdEFrontend(AbstractUserFrontend):
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
             rs.append_validation_error(("persona_ids",
                 ValueError(n_("Some of these users do not exist."))))
-        verified_ids = self.coreproxy.verify_personas(
-            rs, persona_ids, {"event"})
-        if verified_ids != set(persona_ids):
-            rs.append_validation_error(("persona_id",
+        if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
+            rs.append_validation_error(("persona_ids",
                 ValueError(n_("Some of these users are not event users."))))
         if rs.has_validation_errors():
             if pcourse_id:
