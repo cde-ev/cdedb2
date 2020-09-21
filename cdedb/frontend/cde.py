@@ -2615,14 +2615,11 @@ class CdEFrontend(AbstractUserFrontend):
             param = {'pcourse_id': pcourse_id}
         else:
             param = {'pevent_id': pevent_id}
-        participants = self.pasteventproxy.list_participants(rs, **param)
         code = 1
+        # TODO: Check if participants are already present.
         for persona_id in persona_ids:
-            if persona_id in participants:
-                rs.notify("warning", n_("Participant already present."))
-            else:
-                code *= self.pasteventproxy.add_participant(rs, pevent_id,
-                    pcourse_id, persona_id, is_instructor, is_orga)
+            code *= self.pasteventproxy.add_participant(rs, pevent_id,
+                pcourse_id, persona_id, is_instructor, is_orga)
         self.notify_return_code(rs, code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course",
