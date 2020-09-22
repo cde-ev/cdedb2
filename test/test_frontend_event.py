@@ -129,11 +129,14 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
-    @as_users("annika", "ferdinand")
+    @as_users("annika", "ferdinand", "vera")
     def test_create_user(self, user):
-        self.traverse({'description': 'Veranstaltunge'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': 'Nutzer anlegen'})
+        if user == USER_DICT["vera"]:
+            self.get('/event/user/create')
+        else:
+            self.traverse({'description': 'Veranstaltunge'},
+                          {'description': 'Nutzer verwalten'},
+                          {'description': 'Nutzer anlegen'})
         self.assertTitle("Neuen Veranstaltungsnutzer anlegen")
         data = {
             "username": 'zelda@example.cde',

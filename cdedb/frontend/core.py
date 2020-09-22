@@ -44,6 +44,13 @@ from cdedb.validation import (
 import cdedb.database.constants as const
 import cdedb.validation as validate
 
+# Name of each realm
+USER_REALM_NAMES = {
+    "cde": n_("CdE user / Member"),
+    "event": n_("Event user"),
+    "assembly": n_("Assembly user"),
+    "ml": n_("Mailinglist user"),
+}
 
 # Name of each realm's option in the genesis form
 GenesisRealmOptionName = collections.namedtuple(
@@ -939,6 +946,23 @@ class CoreFrontend(AbstractFrontend):
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
+
+    @access("core_admin")
+    def create_user_form(self, rs: RequestState) -> Response:
+        realms = USER_REALM_NAMES
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+            del realms["assembly"]
+            del realms["ml"]
+        return self.render(rs, "create_user", {'realms': realms})
+
+    @access("core_admin")
+    @REQUESTdata(("realm", "str"))
+    def create_user(self, rs: RequestState, realm: str) -> Response:
+        if realm not in USER_REALM_NAMES.keys():
+            rs.append_validation_error("realm", ValueError(n_("No valid realm.")))
+        if rs.has_validation_errors():
+            return self.create_user_form()
+        return self.redirect(rs, realm + "/create_user")
 
     @access("core_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))

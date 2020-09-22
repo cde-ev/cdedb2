@@ -7,6 +7,7 @@ import json
 import urllib.parse
 from test.common import USER_DICT, FrontendTest, as_users
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, get_hash
+from cdedb.frontend.core import USER_REALM_NAMES
 
 import cdedb.database.constants as const
 import webtest
@@ -1087,6 +1088,29 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Allgemeine Nutzerverwaltung")
         self.assertPresence("Ergebnis [13]", div='query-results')
         self.assertPresence("Jalapeño", div='query-result')
+
+    @as_users("vera")
+    def test_create_user(self, user):
+
+        def _traverse_to_realm(realm: str):
+            self.traverse({'description': 'Index'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Nutzer anlegen'})
+            self.assertTitle("Nutzer anlegen")
+            f = self.response.forms['selectrealmform']
+            f['realm'] = realm
+            return f
+
+        self.submit(_traverse_to_realm('cde'))
+        self.assertTitle("Neues Mitglied anlegen")
+        self.submit(_traverse_to_realm('event'))
+        self.assertTitle("Neuen Veranstaltungsnutzer anlegen")
+        self.submit(_traverse_to_realm('assembly'))
+        self.assertTitle("Neuen Versammlungsnutzer anlegen")
+        self.submit(_traverse_to_realm('ml'))
+        self.assertTitle("Neuen Mailinglistennutzer anlegen ")
+        # self.submit(_traverse_to_realm('core'), check_notification=False)
+        # self.assertValidationError('realm', "Kein gültiger Bereich.")
 
     @as_users("vera")
     def test_archived_user_search(self,  user):

@@ -113,9 +113,12 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Ergebnis [1]")
         self.assertPresence("Jalapeño")
 
-    @as_users("nina")
+    @as_users("nina", "vera")
     def test_create_user(self, user):
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'}, {'href': '/ml/user/create'})
+        if user == USER_DICT["vera"]:
+            self.get('/ml/user/create')
+        else:
+            self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'}, {'href': '/ml/user/create'})
         self.assertTitle("Neuen Mailinglistennutzer anlegen")
         data = {
             "username": 'zelda@example.cde',

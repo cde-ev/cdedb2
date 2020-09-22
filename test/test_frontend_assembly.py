@@ -159,11 +159,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Ergebnis [1]", div="query-results")
         self.assertPresence("Karabatschi", div="result-container")
 
-    @as_users("ferdinand")
+    @as_users("ferdinand", "vera")
     def test_create_user(self, user):
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': 'Nutzer anlegen'})
+        if user == USER_DICT["vera"]:
+            self.get('/assembly/user/create')
+        else:
+            self.traverse({'description': 'Versammlungen'},
+                          {'description': 'Nutzer verwalten'},
+                          {'description': 'Nutzer anlegen'})
         self.assertTitle("Neuen Versammlungsnutzer anlegen")
         data = {
             "username": 'zelda@example.cde',

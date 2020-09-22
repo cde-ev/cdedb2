@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-09-22 13:13+0200\n"
+"POT-Creation-Date: 2020-09-23 00:29+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.6.0\n"
 
 #: bin/archive/migrate_execute.py:393
 msgid "Initial import."
@@ -96,14 +96,14 @@ msgstr ""
 #: cdedb/frontend/assembly.py:614 cdedb/frontend/assembly.py:634
 #: cdedb/frontend/assembly.py:965 cdedb/frontend/assembly.py:1177
 #: cdedb/frontend/assembly.py:1275 cdedb/frontend/assembly.py:1329
-#: cdedb/frontend/core.py:715 cdedb/frontend/core.py:718
-#: cdedb/frontend/core.py:723 cdedb/frontend/core.py:728
-#: cdedb/frontend/core.py:735 cdedb/frontend/core.py:740
-#: cdedb/frontend/core.py:746 cdedb/frontend/core.py:751
-#: cdedb/frontend/core.py:758 cdedb/frontend/core.py:1505
-#: cdedb/frontend/core.py:1519 cdedb/frontend/core.py:2123
-#: cdedb/frontend/core.py:2137 cdedb/frontend/core.py:2168
-#: cdedb/frontend/core.py:2192 cdedb/frontend/event.py:6108
+#: cdedb/frontend/core.py:722 cdedb/frontend/core.py:725
+#: cdedb/frontend/core.py:730 cdedb/frontend/core.py:735
+#: cdedb/frontend/core.py:742 cdedb/frontend/core.py:747
+#: cdedb/frontend/core.py:753 cdedb/frontend/core.py:758
+#: cdedb/frontend/core.py:765 cdedb/frontend/core.py:1529
+#: cdedb/frontend/core.py:1543 cdedb/frontend/core.py:2147
+#: cdedb/frontend/core.py:2161 cdedb/frontend/core.py:2192
+#: cdedb/frontend/core.py:2216 cdedb/frontend/event.py:6108
 msgid "Not privileged."
 msgstr ""
 
@@ -456,7 +456,7 @@ msgid "Modification failed."
 msgstr ""
 
 #: cdedb/backend/core.py:570 cdedb/backend/core.py:2198
-#: cdedb/backend/core.py:2220 cdedb/frontend/core.py:1624
+#: cdedb/backend/core.py:2220 cdedb/frontend/core.py:1648
 msgid "Nonexistent user."
 msgstr ""
 
@@ -514,7 +514,7 @@ msgid "Special change not committed."
 msgstr ""
 
 #: cdedb/backend/core.py:806 cdedb/backend/core.py:882
-#: cdedb/frontend/core.py:1182 cdedb/frontend/core.py:1264
+#: cdedb/frontend/core.py:1206 cdedb/frontend/core.py:1288
 msgid "Cannot modify own meta admin privileges."
 msgstr ""
 
@@ -531,7 +531,7 @@ msgstr ""
 msgid "Invalid privilege change state: %(status)s."
 msgstr ""
 
-#: cdedb/backend/core.py:885 cdedb/frontend/core.py:1267
+#: cdedb/backend/core.py:885 cdedb/frontend/core.py:1291
 msgid "Only a different admin than the submitter may approve a privilege change."
 msgstr ""
 
@@ -596,12 +596,12 @@ msgstr ""
 msgid "Only admins may unset an email address."
 msgstr ""
 
-#: cdedb/backend/core.py:1458 cdedb/frontend/core.py:1771
+#: cdedb/backend/core.py:1458 cdedb/frontend/core.py:1795
 msgid "Name collision."
 msgstr ""
 
-#: cdedb/backend/core.py:1478 cdedb/frontend/core.py:1968
-#: cdedb/frontend/core.py:2208
+#: cdedb/backend/core.py:1478 cdedb/frontend/core.py:1992
+#: cdedb/frontend/core.py:2232
 msgid "Failed."
 msgstr ""
 
@@ -1202,7 +1202,7 @@ msgstr ""
 #: cdedb/frontend/assembly.py:351 cdedb/frontend/assembly.py:501
 #: cdedb/frontend/assembly.py:906 cdedb/frontend/assembly.py:1250
 #: cdedb/frontend/cde.py:2519 cdedb/frontend/cde.py:2577
-#: cdedb/frontend/core.py:2312 cdedb/frontend/core.py:2345
+#: cdedb/frontend/core.py:2336 cdedb/frontend/core.py:2369
 #: cdedb/frontend/event.py:1364 cdedb/frontend/event.py:4112
 #: cdedb/frontend/event.py:4732 cdedb/frontend/event.py:6015
 #: cdedb/frontend/event.py:6047 cdedb/frontend/ml_base.py:465
@@ -1401,12 +1401,12 @@ msgstr ""
 msgid "No Member with ID %(p_id)s found."
 msgstr ""
 
-#: cdedb/frontend/cde.py:1085 cdedb/frontend/core.py:530
-#: cdedb/frontend/core.py:1008 cdedb/frontend/core.py:1087
-#: cdedb/frontend/core.py:1335 cdedb/frontend/core.py:1401
-#: cdedb/frontend/core.py:1458 cdedb/frontend/core.py:1483
-#: cdedb/frontend/core.py:1507 cdedb/frontend/core.py:1827
-#: cdedb/frontend/core.py:1863
+#: cdedb/frontend/cde.py:1085 cdedb/frontend/core.py:537
+#: cdedb/frontend/core.py:1032 cdedb/frontend/core.py:1111
+#: cdedb/frontend/core.py:1359 cdedb/frontend/core.py:1425
+#: cdedb/frontend/core.py:1482 cdedb/frontend/core.py:1507
+#: cdedb/frontend/core.py:1531 cdedb/frontend/core.py:1851
+#: cdedb/frontend/core.py:1887
 msgid "Persona is archived."
 msgstr ""
 
@@ -1436,7 +1436,7 @@ msgstr ""
 msgid "Committed %(num)s transfers. There were %(new_members)s new members."
 msgstr ""
 
-#: cdedb/frontend/cde.py:1424 cdedb/frontend/core.py:1449
+#: cdedb/frontend/cde.py:1424 cdedb/frontend/core.py:1473
 msgid "Permit revoked."
 msgstr ""
 
@@ -1598,13 +1598,13 @@ msgstr ""
 msgid "Stored email to hard drive at %(path)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1367 cdedb/frontend/core.py:1271
-#: cdedb/frontend/core.py:2301
+#: cdedb/frontend/common.py:1367 cdedb/frontend/core.py:1295
+#: cdedb/frontend/core.py:2325
 msgid "Change committed."
 msgstr ""
 
-#: cdedb/frontend/common.py:1368 cdedb/frontend/core.py:865
-#: cdedb/frontend/core.py:1018
+#: cdedb/frontend/common.py:1368 cdedb/frontend/core.py:872
+#: cdedb/frontend/core.py:1042
 msgid "Change pending."
 msgstr ""
 
@@ -1668,232 +1668,252 @@ msgid ""
 "admins."
 msgstr ""
 
+#: cdedb/frontend/core.py:49
+msgid "CdE user / Member"
+msgstr ""
+
+#: cdedb/frontend/core.py:50
+msgid "Event user"
+msgstr ""
+
+#: cdedb/frontend/core.py:51
+msgid "Assembly user"
+msgstr ""
+
 #: cdedb/frontend/core.py:52
+msgid "Mailinglist user"
+msgstr ""
+
+#: cdedb/frontend/core.py:59
 msgid "CdE event"
 msgstr ""
 
-#: cdedb/frontend/core.py:53
+#: cdedb/frontend/core.py:60
 msgid "CdE membership"
 msgstr ""
 
-#: cdedb/frontend/core.py:54
+#: cdedb/frontend/core.py:61
 msgid "CdE members' assembly"
 msgstr ""
 
-#: cdedb/frontend/core.py:55
+#: cdedb/frontend/core.py:62
 msgid "CdE mailinglist"
 msgstr ""
 
-#: cdedb/frontend/core.py:223
+#: cdedb/frontend/core.py:230
 msgid "Login failure."
 msgstr ""
 
-#: cdedb/frontend/core.py:260
+#: cdedb/frontend/core.py:267
 #, python-format
 msgid "%(count)s session(s) terminated."
 msgstr ""
 
-#: cdedb/frontend/core.py:287
+#: cdedb/frontend/core.py:294
 msgid "Unsupported locale"
 msgstr ""
 
-#: cdedb/frontend/core.py:368
+#: cdedb/frontend/core.py:375
 msgid "Only admins may view archived datasets."
 msgstr ""
 
-#: cdedb/frontend/core.py:412
+#: cdedb/frontend/core.py:419
 msgid "Access to non-searchable member data."
 msgstr ""
 
-#: cdedb/frontend/core.py:528 cdedb/frontend/core.py:1006
-#: cdedb/frontend/core.py:1036 cdedb/frontend/core.py:1674
-#: cdedb/frontend/core.py:1825 cdedb/frontend/core.py:1839
-#: cdedb/frontend/core.py:1858
+#: cdedb/frontend/core.py:535 cdedb/frontend/core.py:1030
+#: cdedb/frontend/core.py:1060 cdedb/frontend/core.py:1698
+#: cdedb/frontend/core.py:1849 cdedb/frontend/core.py:1863
+#: cdedb/frontend/core.py:1882
 msgid "Not a relative admin."
 msgstr ""
 
-#: cdedb/frontend/core.py:652
+#: cdedb/frontend/core.py:659
 msgid "No account found."
 msgstr ""
 
-#: cdedb/frontend/core.py:1094 cdedb/frontend/core.py:1123
+#: cdedb/frontend/core.py:962
+msgid "No valid realm."
+msgstr ""
+
+#: cdedb/frontend/core.py:1118 cdedb/frontend/core.py:1147
 msgid "Resolve pending privilege change first."
 msgstr ""
 
-#: cdedb/frontend/core.py:1153
+#: cdedb/frontend/core.py:1177
 msgid ""
 "Cannot grant meta, core, CdE or CdElokal admin privileges to non CdE "
 "users."
 msgstr ""
 
-#: cdedb/frontend/core.py:1161
+#: cdedb/frontend/core.py:1185
 msgid "Cannot grant finance admin privileges to non CdE admins."
 msgstr ""
 
-#: cdedb/frontend/core.py:1166
+#: cdedb/frontend/core.py:1190
 msgid ""
 "Cannot grant mailinglist or CdElokal admin privileges to non mailinglist "
 "users."
 msgstr ""
 
-#: cdedb/frontend/core.py:1172
+#: cdedb/frontend/core.py:1196
 msgid "Cannot grant event admin privileges to non event users."
 msgstr ""
 
-#: cdedb/frontend/core.py:1177
+#: cdedb/frontend/core.py:1201
 msgid "Cannot grant assembly admin privileges to non assembly users."
 msgstr ""
 
-#: cdedb/frontend/core.py:1192
+#: cdedb/frontend/core.py:1216
 msgid "Privilege change waiting for approval by another Meta-Admin."
 msgstr ""
 
-#: cdedb/frontend/core.py:1197
+#: cdedb/frontend/core.py:1221
 msgid "No changes were made."
 msgstr ""
 
-#: cdedb/frontend/core.py:1224 cdedb/frontend/core.py:1255
+#: cdedb/frontend/core.py:1248 cdedb/frontend/core.py:1279
 msgid "Privilege change not pending."
 msgstr ""
 
-#: cdedb/frontend/core.py:1230
+#: cdedb/frontend/core.py:1254
 msgid ""
 "This privilege change is affecting your Meta-Admin privileges, so it has "
 "to be approved by another Meta-Admin."
 msgstr ""
 
-#: cdedb/frontend/core.py:1235
+#: cdedb/frontend/core.py:1259
 msgid ""
 "This privilege change was submitted by you, so it has to be approved by "
 "another Meta-Admin."
 msgstr ""
 
-#: cdedb/frontend/core.py:1271
+#: cdedb/frontend/core.py:1295
 msgid "Change rejected."
 msgstr ""
 
-#: cdedb/frontend/core.py:1272
+#: cdedb/frontend/core.py:1296
 msgid "Password reset issued for new admin."
 msgstr ""
 
-#: cdedb/frontend/core.py:1340
+#: cdedb/frontend/core.py:1364
 msgid "No promotion necessary."
 msgstr ""
 
-#: cdedb/frontend/core.py:1480
+#: cdedb/frontend/core.py:1504
 msgid "Nothing changed."
 msgstr ""
 
-#: cdedb/frontend/core.py:1528
+#: cdedb/frontend/core.py:1552
 msgid "Foto updated."
 msgstr ""
 
-#: cdedb/frontend/core.py:1529
+#: cdedb/frontend/core.py:1553
 msgid "Foto removed."
 msgstr ""
 
-#: cdedb/frontend/core.py:1540
+#: cdedb/frontend/core.py:1564
 msgid "Please provide the user's email address."
 msgstr ""
 
-#: cdedb/frontend/core.py:1546
+#: cdedb/frontend/core.py:1570
 msgid "Password invalidated."
 msgstr ""
 
-#: cdedb/frontend/core.py:1572 cdedb/frontend/core.py:1573
-#: cdedb/frontend/core.py:1575 cdedb/frontend/core.py:1730
-#: cdedb/frontend/core.py:1731 cdedb/frontend/core.py:1733
+#: cdedb/frontend/core.py:1596 cdedb/frontend/core.py:1597
+#: cdedb/frontend/core.py:1599 cdedb/frontend/core.py:1754
+#: cdedb/frontend/core.py:1755 cdedb/frontend/core.py:1757
 msgid "Passwords don’t match."
 msgstr ""
 
-#: cdedb/frontend/core.py:1590
+#: cdedb/frontend/core.py:1614
 msgid "Password changed."
 msgstr ""
 
-#: cdedb/frontend/core.py:1594
+#: cdedb/frontend/core.py:1618
 msgid "Wrong password."
 msgstr ""
 
-#: cdedb/frontend/core.py:1647 cdedb/frontend/core.py:1654
-#: cdedb/frontend/core.py:1695
+#: cdedb/frontend/core.py:1671 cdedb/frontend/core.py:1678
+#: cdedb/frontend/core.py:1719
 msgid "Email sent."
 msgstr ""
 
-#: cdedb/frontend/core.py:1714
+#: cdedb/frontend/core.py:1738
 msgid "Please try again."
 msgstr ""
 
-#: cdedb/frontend/core.py:1747
+#: cdedb/frontend/core.py:1771
 msgid "Password reset."
 msgstr ""
 
-#: cdedb/frontend/core.py:1766
+#: cdedb/frontend/core.py:1790
 msgid "Must be different from current email address."
 msgstr ""
 
-#: cdedb/frontend/core.py:1808 cdedb/frontend/core.py:1844
+#: cdedb/frontend/core.py:1832 cdedb/frontend/core.py:1868
 msgid "Email address changed."
 msgstr ""
 
-#: cdedb/frontend/core.py:1927
+#: cdedb/frontend/core.py:1951
 msgid "It seems like you took too long and your previous upload was deleted."
 msgstr ""
 
-#: cdedb/frontend/core.py:1939
+#: cdedb/frontend/core.py:1963
 msgid "Rationale too long."
 msgstr ""
 
-#: cdedb/frontend/core.py:1945
+#: cdedb/frontend/core.py:1969
 #, python-format
 msgid "Must specify gender for %(realm)s realm."
 msgstr ""
 
-#: cdedb/frontend/core.py:1958
+#: cdedb/frontend/core.py:1982
 msgid "Confirmation email has been resent."
 msgstr ""
 
-#: cdedb/frontend/core.py:1962
+#: cdedb/frontend/core.py:1986
 msgid "Email address already in DB. Reset password."
 msgstr ""
 
-#: cdedb/frontend/core.py:1987
+#: cdedb/frontend/core.py:2011
 msgid "Email sent. Please follow the link contained in the email."
 msgstr ""
 
-#: cdedb/frontend/core.py:2003
+#: cdedb/frontend/core.py:2027
 msgid "Verification failed. Please contact the administrators."
 msgstr ""
 
-#: cdedb/frontend/core.py:2004
+#: cdedb/frontend/core.py:2028
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
 
-#: cdedb/frontend/core.py:2006
+#: cdedb/frontend/core.py:2030
 msgid "This account request was already verified."
 msgstr ""
 
-#: cdedb/frontend/core.py:2139 cdedb/frontend/core.py:2170
-#: cdedb/frontend/core.py:2194
+#: cdedb/frontend/core.py:2163 cdedb/frontend/core.py:2194
+#: cdedb/frontend/core.py:2218
 msgid "Case not to review."
 msgstr ""
 
-#: cdedb/frontend/core.py:2226
+#: cdedb/frontend/core.py:2250
 msgid "Case approved."
 msgstr ""
 
-#: cdedb/frontend/core.py:2233
+#: cdedb/frontend/core.py:2257
 msgid "Case rejected."
 msgstr ""
 
-#: cdedb/frontend/core.py:2282
+#: cdedb/frontend/core.py:2306
 msgid "Persona has no pending change."
 msgstr ""
 
-#: cdedb/frontend/core.py:2301
+#: cdedb/frontend/core.py:2325
 msgid "Change dropped."
 msgstr ""
 
-#: cdedb/frontend/core.py:2314
+#: cdedb/frontend/core.py:2338
 msgid "Must supply archival note."
 msgstr ""
 
@@ -3657,6 +3677,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:12
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:10
 #: cdedb/frontend/templates/web/core/base.tmpl:21
+#: cdedb/frontend/templates/web/core/create_user.tmpl:18
 #: cdedb/frontend/templates/web/core/index.tmpl:31
 #: cdedb/frontend/templates/web/core/user_search.tmpl:18
 #: cdedb/frontend/templates/web/event/base.tmpl:108
@@ -6026,6 +6047,16 @@ msgstr ""
 msgid "Send verification mail"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/create_user.tmpl:12
+msgid "Create New Account"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/create_user.tmpl:25
+#: cdedb/frontend/templates/web/event/field_set_select.tmpl:34
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:22
+msgid "Continue"
+msgstr ""
+
 #: cdedb/frontend/templates/web/core/debug_email.tmpl:4
 msgid "View E-Mail"
 msgstr ""
@@ -6930,7 +6961,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/user_search.tmpl:12
-msgid "General-User Management"
+msgid "General User Management"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:15
@@ -8410,11 +8441,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/field_set_select.tmpl:32
 msgid "Field"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/field_set_select.tmpl:34
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:22
-msgid "Continue"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/field_set_select.tmpl:38
@@ -10325,6 +10351,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/create_user.tmpl:11
 #: cdedb/frontend/templates/web/cde/create_user.tmpl:11
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:16
+#: cdedb/frontend/templates/web/core/create_user.tmpl:19
+#: cdedb/frontend/templates/web/core/user_search.tmpl:24
 #: cdedb/frontend/templates/web/event/create_user.tmpl:13
 #: cdedb/frontend/templates/web/event/user_search.tmpl:19
 #: cdedb/frontend/templates/web/generic.tmpl:75
@@ -10337,7 +10365,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:15
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:33
 #: cdedb/frontend/templates/web/core/archived_user_search.tmpl:22
-#: cdedb/frontend/templates/web/core/user_search.tmpl:26
+#: cdedb/frontend/templates/web/core/user_search.tmpl:36
 #: cdedb/frontend/templates/web/event/course_query.tmpl:41
 #: cdedb/frontend/templates/web/event/lodgement_query.tmpl:41
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:75
@@ -10435,6 +10463,7 @@ msgstr ""
 msgid "Admin-Notes"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/create_user.tmpl:24
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:31
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:39
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:26
@@ -12971,8 +13000,8 @@ msgstr ""
 msgid "Must be comma separated identifiers."
 msgstr ""
 
-#: cdedb/backend/core.py:2073 cdedb/frontend/core.py:1586
-#: cdedb/frontend/core.py:1742 cdedb/validation.py:927
+#: cdedb/backend/core.py:2073 cdedb/frontend/core.py:1610
+#: cdedb/frontend/core.py:1766 cdedb/validation.py:927
 msgid "Password too weak."
 msgstr ""
 
@@ -13492,5 +13521,8 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "Some of these users are not ml-users."
+#~ msgstr ""
+
+#~ msgid "General-User Management"
 #~ msgstr ""
 
