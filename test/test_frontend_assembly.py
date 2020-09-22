@@ -313,17 +313,43 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Internationaler Kongress")
         self.assertNotIn('signupform', self.response.forms)
 
+    @as_users("kalif")
+    def test_no_signup(self, user):
+        self.traverse({'description': 'Versammlungen'},
+                      {'description': 'Internationaler Kongress'}, )
+        self.assertTitle("Internationaler Kongress")
+        self.assertNotIn('signupform', self.response.forms)
+
     @as_users("werner", "ferdinand")
     def test_external_signup(self, user):
         self.get("/assembly/assembly/3/show")
         self.traverse({'description': "Teilnehmer"})
         self.assertTitle("Anwesenheitsliste (Archiv-Sammlung)")
         self.assertNonPresence("Kalif", div='attendees-list')
+        # Valid request
         f = self.response.forms['addattendeeform']
         f['persona_id'] = "DB-11-6"
         self.submit(f)
         self.assertTitle('Anwesenheitsliste (Archiv-Sammlung)')
         self.assertPresence("Kalif", div='attendees-list')
+        # Archived user
+        f = self.response.forms['addattendeeform']
+        f['persona_id'] = "DB-8-6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("persona_id",
+            "Dieser Benutzer existiert nicht oder ist archiviert.")
+        # Member
+        f = self.response.forms['addattendeeform']
+        f['persona_id'] = "DB-2-7"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("persona_id",
+            "Mitglieder müssen sich selbst anmelden.")
+        # Event user
+        f = self.response.forms['addattendeeform']
+        f['persona_id'] = "DB-5-1"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("persona_id",
+            "Dieser Nutzer ist kein Versammlungsnutzer.")
 
     @as_users("kalif")
     def test_list_attendees(self, user):

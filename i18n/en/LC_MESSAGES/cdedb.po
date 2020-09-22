@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-09-22 13:13+0200\n"
+"POT-Creation-Date: 2020-09-22 22:58+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.6.0\n"
 
 #: bin/archive/migrate_execute.py:393
 msgid "Initial import."
@@ -92,10 +92,10 @@ msgstr ""
 #: cdedb/backend/ml.py:747 cdedb/backend/ml.py:988 cdedb/backend/ml.py:1021
 #: cdedb/backend/ml.py:1056 cdedb/backend/ml.py:1111 cdedb/backend/ml.py:1183
 #: cdedb/backend/ml.py:1320 cdedb/frontend/assembly.py:216
-#: cdedb/frontend/assembly.py:473 cdedb/frontend/assembly.py:556
-#: cdedb/frontend/assembly.py:614 cdedb/frontend/assembly.py:634
-#: cdedb/frontend/assembly.py:965 cdedb/frontend/assembly.py:1177
-#: cdedb/frontend/assembly.py:1275 cdedb/frontend/assembly.py:1329
+#: cdedb/frontend/assembly.py:486 cdedb/frontend/assembly.py:569
+#: cdedb/frontend/assembly.py:627 cdedb/frontend/assembly.py:647
+#: cdedb/frontend/assembly.py:978 cdedb/frontend/assembly.py:1190
+#: cdedb/frontend/assembly.py:1288 cdedb/frontend/assembly.py:1342
 #: cdedb/frontend/core.py:715 cdedb/frontend/core.py:718
 #: cdedb/frontend/core.py:723 cdedb/frontend/core.py:728
 #: cdedb/frontend/core.py:735 cdedb/frontend/core.py:740
@@ -116,7 +116,7 @@ msgid "Must have privileged access to change assembly."
 msgstr ""
 
 #: cdedb/backend/assembly.py:520 cdedb/backend/assembly.py:867
-#: cdedb/frontend/assembly.py:304 cdedb/frontend/assembly.py:586
+#: cdedb/frontend/assembly.py:304 cdedb/frontend/assembly.py:599
 msgid "Assembly already concluded."
 msgstr ""
 
@@ -136,7 +136,7 @@ msgid "Some of these users are not assembly users."
 msgstr ""
 
 #: cdedb/backend/assembly.py:668 cdedb/frontend/assembly.py:356
-#: cdedb/frontend/assembly.py:1255
+#: cdedb/frontend/assembly.py:1268
 msgid "Unable to remove active ballot."
 msgstr ""
 
@@ -170,7 +170,7 @@ msgstr ""
 msgid "Must have privileged access to change ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:805 cdedb/frontend/assembly.py:1201
+#: cdedb/backend/assembly.py:805 cdedb/frontend/assembly.py:1214
 msgid "Unable to modify active ballot."
 msgstr ""
 
@@ -310,15 +310,15 @@ msgstr ""
 msgid "Must have privileged access to remove attachment version."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1830 cdedb/frontend/assembly.py:922
+#: cdedb/backend/assembly.py:1830 cdedb/frontend/assembly.py:935
 msgid "This version does not exist."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1832 cdedb/frontend/assembly.py:925
+#: cdedb/backend/assembly.py:1832 cdedb/frontend/assembly.py:938
 msgid "This version has already been deleted."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1835 cdedb/frontend/assembly.py:929
+#: cdedb/backend/assembly.py:1835 cdedb/frontend/assembly.py:942
 #: cdedb/frontend/templates/web/assembly/util.tmpl:109
 msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
@@ -843,8 +843,8 @@ msgstr ""
 msgid "This is not useful."
 msgstr ""
 
-#: cdedb/backend/event.py:2981 cdedb/frontend/event.py:480
-#: cdedb/frontend/event.py:4073
+#: cdedb/backend/event.py:2981 cdedb/frontend/assembly.py:458
+#: cdedb/frontend/event.py:480 cdedb/frontend/event.py:4073
 msgid "This user does not exist or is archived."
 msgstr ""
 
@@ -1199,8 +1199,8 @@ msgstr ""
 msgid "This user is not a presider for this assembly."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:351 cdedb/frontend/assembly.py:501
-#: cdedb/frontend/assembly.py:906 cdedb/frontend/assembly.py:1250
+#: cdedb/frontend/assembly.py:351 cdedb/frontend/assembly.py:514
+#: cdedb/frontend/assembly.py:919 cdedb/frontend/assembly.py:1263
 #: cdedb/frontend/cde.py:2519 cdedb/frontend/cde.py:2577
 #: cdedb/frontend/core.py:2312 cdedb/frontend/core.py:2345
 #: cdedb/frontend/event.py:1364 cdedb/frontend/event.py:4112
@@ -1221,70 +1221,78 @@ msgstr ""
 msgid "Already signed up."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:484 cdedb/frontend/event.py:2659
+#: cdedb/frontend/assembly.py:461
+msgid "This user is not an assembly user."
+msgstr ""
+
+#: cdedb/frontend/assembly.py:464
+msgid "Members must sign up themselves."
+msgstr ""
+
+#: cdedb/frontend/assembly.py:497 cdedb/frontend/event.py:2659
 #: cdedb/frontend/event.py:2685 cdedb/frontend/event.py:2708
 #: cdedb/frontend/event.py:2733 cdedb/frontend/event.py:2756
 #: cdedb/frontend/event.py:2770 cdedb/frontend/ml_base.py:581
 msgid "Empty File."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:510
+#: cdedb/frontend/assembly.py:523
 msgid "Unable to conclude assembly with open ballot."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:548
+#: cdedb/frontend/assembly.py:561
 msgid "Grouping ballots by status failed."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:622
+#: cdedb/frontend/assembly.py:635
 msgid "File not found."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:650 cdedb/frontend/assembly.py:743
-#: cdedb/frontend/assembly.py:781 cdedb/frontend/assembly.py:794
-#: cdedb/frontend/assembly.py:829 cdedb/frontend/assembly.py:863
+#: cdedb/frontend/assembly.py:663 cdedb/frontend/assembly.py:756
+#: cdedb/frontend/assembly.py:794 cdedb/frontend/assembly.py:807
+#: cdedb/frontend/assembly.py:842 cdedb/frontend/assembly.py:876
 msgid "Voting has already begun."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:659 cdedb/frontend/assembly.py:734
-#: cdedb/frontend/assembly.py:776 cdedb/frontend/assembly.py:820
-#: cdedb/frontend/assembly.py:868
+#: cdedb/frontend/assembly.py:672 cdedb/frontend/assembly.py:747
+#: cdedb/frontend/assembly.py:789 cdedb/frontend/assembly.py:833
+#: cdedb/frontend/assembly.py:881
 msgid "Invalid attachment specified."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:719
+#: cdedb/frontend/assembly.py:732
 msgid "Attachment added."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:790
+#: cdedb/frontend/assembly.py:803
 msgid "Invalid ballot specified."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:936
+#: cdedb/frontend/assembly.py:949
 msgid "Unknown version."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1005
+#: cdedb/frontend/assembly.py:1018
 msgid "bar (options below this are declined)"
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1230
+#: cdedb/frontend/assembly.py:1243
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1286
+#: cdedb/frontend/assembly.py:1299
 msgid "Option not available."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1295
+#: cdedb/frontend/assembly.py:1308
 msgid "Rejection is exclusive."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1332
+#: cdedb/frontend/assembly.py:1345
 msgid "Ballot not yet tallied."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1361
+#: cdedb/frontend/assembly.py:1374
 msgid "Duplicate moniker."
 msgstr ""
 
@@ -13275,7 +13283,7 @@ msgstr ""
 msgid "Inconsitent with vote extension end."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1356 cdedb/validation.py:4062
+#: cdedb/frontend/assembly.py:1369 cdedb/validation.py:4062
 msgid "Mustn’t be the bar moniker."
 msgstr ""
 
