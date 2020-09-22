@@ -4,7 +4,7 @@ import csv
 import re
 
 import cdedb.database.constants as const
-from test.common import as_users, USER_DICT, FrontendTest
+from test.common import as_users, USER_DICT, FrontendTest, prepsql
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.frontend.common import CustomCSVDialect
 
@@ -1151,7 +1151,8 @@ class TestMlFrontend(FrontendTest):
         self.traverse({"href": "ml/mailinglist/3/log"})
         self.assertTitle("Witz des Tages: Log [0–0 von 0]")
 
-    @as_users("berta")
+    @as_users("berta", "janis")
+    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (60, 10)")
     def test_moderator_change_mailinglist(self, user):
         self.traverse({"description": "Mailinglisten"},
                       {"description": "CdE-Party 2050 Teilnehmer"},
@@ -1165,14 +1166,15 @@ class TestMlFrontend(FrontendTest):
         f['local_part'].force_value("partyparty")
         f['event_id'].force_value(1)
         f['is_active'].force_value(False)
-        # this properties can be changed by moderators
+        # these properties can be changed by privileged moderators
+        f['registration_stati'] = [const.RegistrationPartStati.guest.value]
+        # these properties can be changed by every moderator
         f['description'] = "Wir machen Party!"
         f['notes'] = "Nur geladene Gäste."
         f['mod_policy'] = const.ModerationPolicy.unmoderated.value
         f['subject_prefix'] = "party"
         f['attachment_policy'] = const.AttachmentPolicy.allow.value
         f['maxsize'] = 1111
-        f['registration_stati'] = [const.RegistrationPartStati.guest.value]
         self.submit(f)
 
         # Check that this have not changed ...
@@ -1183,7 +1185,16 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual(old_ml['local_part'], f['local_part'].value)
         self.assertEqual(str(old_ml['event_id']), f['event_id'].value)
 
-        # ... and this have changed.
+        # ... these have only changed if the moderator is privileged ...
+        reality = {f.get("registration_stati", index=i).value for i in range(7)}
+        if user == USER_DICT['berta']:
+            expectation = {None, str(const.RegistrationPartStati.guest.value)}
+        else:
+            expectation = {str(status)
+                           for status in old_ml['registration_stati']} | {None}
+        self.assertEqual(expectation, reality)
+
+        # ... and these have changed.
         self.assertEqual("Wir machen Party!", f['description'].value)
         self.assertEqual("Nur geladene Gäste.", f['notes'].value)
         self.assertEqual(str(const.ModerationPolicy.unmoderated.value),
@@ -1192,9 +1203,6 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual(str(const.AttachmentPolicy.allow.value),
                          f['attachment_policy'].value)
         self.assertEqual("1111", f['maxsize'].value)
-        reality = {f.get("registration_stati", index=i).value for i in range(7)}
-        expectation = {None, str(const.RegistrationPartStati.guest.value)}
-        self.assertEqual(expectation, reality)
 
     @as_users("berta")
     def test_non_privileged_moderator(self, user):
