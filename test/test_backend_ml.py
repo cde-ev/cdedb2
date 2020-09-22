@@ -320,11 +320,11 @@ class TestMlBackend(BackendTest):
                 with self.assertRaises(PrivilegeError):
                     self.ml.set_mailinglist(self.key, data)
 
-        # every moderator may change this attributes ...
+        # every moderator may change these attributes ...
         expectation.update(mod_mdata)
         self.assertLess(0, self.ml.set_mailinglist(self.key, mod_mdata))
 
-        # ... but only privileged moderators (here: orgas) may change this.
+        # ... but only privileged moderators (here: orgas) may change these.
         if user == USER_DICT['janis']:
             with self.assertRaises(PrivilegeError):
                 self.ml.set_mailinglist(self.key, privileged_mod_mdata)

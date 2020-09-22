@@ -1161,7 +1161,7 @@ class TestMlFrontend(FrontendTest):
         old_ml = self.sample_data['ml.mailinglists'][60]
         f = self.response.forms['changelistform']
 
-        # this properties are not allowed to be changed by moderators
+        # these properties are not allowed to be changed by moderators
         f['title'].force_value("Party-Time")
         f['local_part'].force_value("partyparty")
         f['event_id'].force_value(1)
@@ -1177,7 +1177,7 @@ class TestMlFrontend(FrontendTest):
         f['maxsize'] = 1111
         self.submit(f)
 
-        # Check that this have not changed ...
+        # Check that these have not changed ...
         self.traverse({"description": "Konfiguration"})
         f = self.response.forms['changelistform']
         self.assertEqual('True', f['is_active'].value)
@@ -1217,7 +1217,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence("Darf Abonnements nicht ändern.", div="notifications")
         # ... nor remove subscriptions.
-        f= self.response.forms['removemodsubscriberform100']
+        f = self.response.forms['removemodsubscriberform100']
         self.submit(f, check_notification=False)
         self.assertPresence("Darf Abonnements nicht ändern.",
                             div="notifications")

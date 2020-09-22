@@ -149,10 +149,8 @@ class GeneralMailinglist:
         related changes to a mailinglist (like being an orga or presider).
 
         This includes
-            * Changing subscription states of any person which need moderator
-              privileges
-            * Changing properties of a mailinglist which influence implicit
-              subscribers
+            * Changing subscription states as a moderator.
+            * Changing properties of a ml influencing implicit subscribers.
 
         Per default, every moderator is privileged.
 
