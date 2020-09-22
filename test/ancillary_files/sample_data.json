@@ -1792,7 +1792,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": null
+            "paper_expuls": true
         },
         {
             "submitted_by": 1,
