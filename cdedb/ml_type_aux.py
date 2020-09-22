@@ -358,7 +358,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         For EventAssociatedMailinglists, this are the orgas of the event.
         """
         if mailinglist['event_id'] is None:
-            return None
+            return lambda x: x
         event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
         return lambda x: set(x).intersection(set(event["orgas"]))
 
