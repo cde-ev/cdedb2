@@ -73,14 +73,15 @@
                                         </button>
                                     {% endfor %}
                                 {% endwith %}
-                            </form>|
+                            </form>
+                            |
                         {% endif %}
                         <span class="text-info text-uppercase small">
                             {{ util.href(docurl("index"), gettext("Doc"), title=gettext("Documentation"), icon="book") }}
                         </span>
                     </div>
                 </div>
-                {% if jshint or true %}
+                {% if jshint %}
                     <noscript>
                         {% if jshint == 'strong' %}
                             <div class="text-right text-danger">
