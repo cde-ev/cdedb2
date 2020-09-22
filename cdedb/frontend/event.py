@@ -133,7 +133,7 @@ class EventFrontend(AbstractUserFrontend):
             'open_events': open_events, 'orga_events': orga_events,
             'other_events': other_events})
 
-    @access("event_admin")
+    @access("core_admin", "event_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': False,
@@ -142,7 +142,7 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("event_admin", modi={"POST"})
+    @access("core_admin", "event_admin", modi={"POST"})
     @REQUESTdatadict(
         "title", "given_names", "family_name", "name_supplement",
         "display_name", "gender", "birthday", "username", "telephone",
