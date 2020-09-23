@@ -131,6 +131,8 @@ endif
 		-v cdb_database_name=cdb
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
 		-v cdb_database_name=cdb_test
+	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-aux.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-aux.sql
 	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
 	sudo systemctl start pgbouncer
@@ -148,6 +150,8 @@ endif
 		test/ancillary_files/sample_data.sql
 
 sql-test:
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
+		cdedb/database/cdedb-aux.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
 		cdedb/database/cdedb-tables.sql
 	$(MAKE) sql-test-shallow
