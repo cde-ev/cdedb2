@@ -1,10 +1,5 @@
 -- This file specifies the tables in the database and has the users in
--- cdedb-users.sql as prerequisite, as well as cdedb-db.sql .
-
-DROP EXTENSION IF EXISTS pg_trgm;
-CREATE EXTENSION pg_trgm;
-DROP COLLATION IF EXISTS "de-u-kn-true";
-CREATE COLLATION "de-u-kn-true" (provider = icu, locale = 'de-u-kn-true');
+-- cdedb-users.sql as prerequisite, as well as cdedb-db and cdedb-aux
 
 ---
 --- SCHEMA core
