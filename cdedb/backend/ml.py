@@ -97,17 +97,16 @@ class MlBackend(AbstractBackend):
         :param privileged: check if the moderator is in the pool of privileged
             moderators, provided by ml_type_aux.is_privileged_moderator.
         """
-        ml_id = affirm("id_or_None", ml_id)
+        ml_id = affirm("id", ml_id)
 
         is_moderator = ml_id in rs.user.moderator
-        if privileged and ml_id is not None:
+        if privileged:
             atype = self.get_ml_type(rs, ml_id)
             ml = self.get_mailinglist(rs, ml_id)
             is_privileged = atype.is_privileged_moderator(rs, self.backends, ml)
             is_moderator = is_moderator and is_privileged
 
-        return ml_id is not None and (is_moderator
-                                      or "droid_rklist" in rs.user.roles)
+        return is_moderator or "droid_rklist" in rs.user.roles
 
     @access("ml", "droid_rklist")
     def may_manage(self, rs: RequestState, mailinglist_id: int,
