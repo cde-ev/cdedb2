@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-09-23 01:29+0200\n"
+"POT-Creation-Date: 2020-09-23 13:36+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -4193,50 +4193,54 @@ msgstr ""
 msgid "View E-Mail in Browser"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:79
+#: cdedb/frontend/templates/web/base.tmpl:80
+msgid "Doc"
+msgstr ""
+
+#: cdedb/frontend/templates/web/base.tmpl:80
 msgid "Documentation"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:87
+#: cdedb/frontend/templates/web/base.tmpl:89
 msgid "This site provides additional functionality with JavaScript enabled."
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:92
+#: cdedb/frontend/templates/web/base.tmpl:94
 msgid "This site can be used more easily with JavaScript enabled."
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:99
 #: cdedb/frontend/templates/web/base.tmpl:101
+#: cdedb/frontend/templates/web/base.tmpl:103
 msgid "Main Menu"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:104
+#: cdedb/frontend/templates/web/base.tmpl:106
 msgid "Display Main Menu"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:118
+#: cdedb/frontend/templates/web/base.tmpl:120
 msgid "Logged-In as"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:123
-#: cdedb/frontend/templates/web/base.tmpl:124
+#: cdedb/frontend/templates/web/base.tmpl:125
 #: cdedb/frontend/templates/web/base.tmpl:126
+#: cdedb/frontend/templates/web/base.tmpl:128
 msgid "Logout"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:133
+#: cdedb/frontend/templates/web/base.tmpl:135
 #: cdedb/frontend/templates/web/core/login.tmpl:41
 msgid "Login"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:141
+#: cdedb/frontend/templates/web/base.tmpl:143
 #: cdedb/frontend/templates/web/core/base.tmpl:9
 #: cdedb/frontend/templates/web/core/index.tmpl:12
 #: cdedb/frontend/templates/web/core/login.tmpl:14
 msgid "Index"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:145
+#: cdedb/frontend/templates/web/base.tmpl:147
 #: cdedb/frontend/templates/web/cde/base.tmpl:5
 #: cdedb/frontend/templates/web/cde/base.tmpl:9
 #: cdedb/frontend/templates/web/cde/index.tmpl:9
@@ -4248,7 +4252,7 @@ msgstr ""
 msgid "Members"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:149
+#: cdedb/frontend/templates/web/base.tmpl:151
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:35
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:30
 #: cdedb/frontend/templates/web/core/show_history.tmpl:152
@@ -4264,7 +4268,7 @@ msgstr ""
 msgid "Events"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:153
+#: cdedb/frontend/templates/web/base.tmpl:155
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:34
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:29
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:22
@@ -4285,7 +4289,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base.tmpl:49
 #: cdedb/frontend/templates/web/assembly/index.tmpl:3
 #: cdedb/frontend/templates/web/assembly/index.tmpl:5
-#: cdedb/frontend/templates/web/base.tmpl:158
+#: cdedb/frontend/templates/web/base.tmpl:160
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:37
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:32
 #: cdedb/frontend/templates/web/core/show_user.tmpl:160
@@ -4296,31 +4300,31 @@ msgstr ""
 msgid "Assemblies"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:170
+#: cdedb/frontend/templates/web/base.tmpl:172
 msgid "Sub Menu"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:182
+#: cdedb/frontend/templates/web/base.tmpl:184
 msgid "You are here:"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:195
+#: cdedb/frontend/templates/web/base.tmpl:197
 msgid "Success!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:195
+#: cdedb/frontend/templates/web/base.tmpl:197
 msgid "Info!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:195
+#: cdedb/frontend/templates/web/base.tmpl:197
 msgid "Question:"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:196
+#: cdedb/frontend/templates/web/base.tmpl:198
 msgid "Error!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:196
+#: cdedb/frontend/templates/web/base.tmpl:198
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:101
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:107
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:113
@@ -4329,16 +4333,16 @@ msgstr ""
 msgid "Warning!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:214
+#: cdedb/frontend/templates/web/base.tmpl:216
 msgid "This should not be visible."
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:223
+#: cdedb/frontend/templates/web/base.tmpl:225
 msgid "Club der Ehemaligen e.V."
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:225
-#: cdedb/frontend/templates/web/base.tmpl:226
+#: cdedb/frontend/templates/web/base.tmpl:227
+#: cdedb/frontend/templates/web/base.tmpl:228
 #: cdedb/frontend/templates/web/error.tmpl:5
 #: cdedb/frontend/templates/web/error.tmpl:34
 #: cdedb/frontend/templates/web/error.tmpl:43
@@ -4346,7 +4350,7 @@ msgstr ""
 msgid "CdE-Datenbank development team"
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:230
+#: cdedb/frontend/templates/web/base.tmpl:232
 msgid "Version"
 msgstr ""
 
