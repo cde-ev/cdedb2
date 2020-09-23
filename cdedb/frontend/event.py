@@ -2849,7 +2849,7 @@ class EventFrontend(AbstractUserFrontend):
              | {e.get('persona_id')
                 for e in data.get('registrations', {}).values() if e})
             - {None})
-        personas = self.coreproxy.get_event_users(rs, persona_ids, event_id)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
 
         # Second invoke partial import
         try:
