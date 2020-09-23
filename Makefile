@@ -153,7 +153,7 @@ sql-test:
 	$(MAKE) sql-test-shallow
 
 sql-test-shallow: test/ancillary_files/sample_data.sql
-	$(PYTHONBIN) bin/execute_sql_script.py--dbname=cdb_test \
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
 		test/ancillary_files/clean_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
 		test/ancillary_files/sample_data.sql
