@@ -606,7 +606,7 @@ class TestPrivacyFrontend(FrontendTest):
         f['qval_fulltext'] = "Berta"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertNonPresence("Ergebnis")
+        self.assertPresence("Keine Mitglieder gefunden.")
 
         # second case: make berta searchable again ...
         self.admin_view_profile('berta')
@@ -624,17 +624,7 @@ class TestPrivacyFrontend(FrontendTest):
         f['qval_fulltext'] = "Berta"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertNonPresence("Ergebnis")
-
-    @as_users("charly", "daniel")
-    def test_member_search_access(self, user):
-        # they should not see the shortcut on the member index page ...
-        self.traverse({'description': 'Mitglieder'})
-        with self.assertRaises(KeyError) as exc:
-            self.response.forms['membersearchform']
-
-        # ... nor the member search page itself
-        self.get('/cde/search/member', status="403 FORBIDDEN")
+        self.assertPresence("Keine Mitglieder gefunden.")
 
     @as_users("charly", "daniel", "garcia", "inga")
     def test_show_past_event(self, user):
