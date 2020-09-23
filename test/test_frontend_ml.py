@@ -17,7 +17,7 @@ class TestMlFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'href': '/ml/'})
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner")
+    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor")
     def test_sidebar(self, user):
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
@@ -26,7 +26,7 @@ class TestMlFrontend(FrontendTest):
             out = ["Alle Mailinglisten", "Moderierte Mailinglisten",
                    "Aktive Mailinglisten", "Nutzer verwalten", "Log"]
         # Users with relative admin privileges for some mailinglists:
-        elif user['id'] in {USER_DICT['vera']['id'], USER_DICT['werner']['id']}:
+        elif user['id'] in {USER_DICT['vera']['id'], USER_DICT['viktor']['id']}:
             ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
                    "Log"]
             out = ["Übersicht", "Alle Mailinglisten",
@@ -368,7 +368,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Anton Armin A. Administrator", div="moderator_list")
         f = self.response.forms['addmoderatorform']
         # Check that you cannot add non-existing or archived moderators.
-        errormsg = "Einige dieser Nutzer exisitieren nicht oder sind archiviert."
+        errormsg = "Einige dieser Nutzer existieren nicht oder sind archiviert."
         f['moderators'] = "DB-100000-4"
         self.submit(f, check_notification=False)
         self.assertPresence(errormsg, div="addmoderatorform")
@@ -522,7 +522,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-1-9, DB-8-6"
         self.submit(f, check_notification=False)
-        self.assertPresence("Einige dieser Nutzer exisitieren nicht "
+        self.assertPresence("Einige dieser Nutzer existieren nicht "
                             "oder sind archiviert.")
         # one user is event user only
         self.assertTitle("Aktivenforum 2001 – Verwaltung")
@@ -574,7 +574,7 @@ class TestMlFrontend(FrontendTest):
             f = self.response.forms[form]
             f[field] = "DB-1-9, DB-8-6"
             self.submit(f, check_notification=False)
-            self.assertPresence("Einige dieser Nutzer exisitieren nicht "
+            self.assertPresence("Einige dieser Nutzer existieren nicht "
                                 "oder sind archiviert.")
             # one user is event user only
             self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
@@ -596,6 +596,7 @@ class TestMlFrontend(FrontendTest):
         f['ml_type'] = const.MailinglistTypes.member_mandatory.value
         self.submit(f)
         f = self.response.forms['createlistform']
+        self.assertEqual(f['maxsize'].value, '64')
         f['title'] = "Munkelwand"
         f['mod_policy'] = 1
         f['attachment_policy'] = 2
@@ -611,7 +612,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError("moderators", errormsg)
         # Check that you cannot add non-existing or archived moderators.
-        errormsg = "Einige dieser Nutzer exisitieren nicht oder sind archiviert"
+        errormsg = "Einige dieser Nutzer existieren nicht oder sind archiviert"
         f['moderators'] = "DB-100000-4"
         self.submit(f, check_notification=False)
         self.assertValidationError("moderators", errormsg)
@@ -701,16 +702,14 @@ class TestMlFrontend(FrontendTest):
                 self.submit(f, check_notification=False)
                 self.assertIn("alert alert-danger", self.response.text)
                 if ml_type not in event_types:
-                    self.assertValidationError('event_id',
-                                               "Muss „None“ sein.")
+                    self.assertValidationError('event_id', "Muss leer sein.")
                     self.assertPresence("Muss eine leere Liste sein.")
                 elif ml_type == const.MailinglistTypes.event_orga:
                     self.assertPresence("Muss eine leere Liste sein.")
                 else:
                     self.assertNonPresence("Muss eine leere Liste sein.")
                 if ml_type not in assembly_types:
-                    self.assertValidationError('assembly_id',
-                                               "Muss „None“ sein.")
+                    self.assertValidationError('assembly_id', "Muss leer sein.")
 
                 f['event_id'] = ''
                 f['registration_stati'] = []

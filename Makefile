@@ -23,6 +23,7 @@ help:
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
 MYPYBIN ?= mypy
+TESTPREPARATION ?= automatic
 
 doc:
 	bin/create_email_template_list.sh .
@@ -33,7 +34,7 @@ reload:
 	sudo systemctl restart apache2
 
 i18n-refresh:
-	pybabel extract -F ./babel.cfg  -o ./i18n/cdedb.pot\
+	pybabel extract -F ./babel.cfg  --sort-by-file -o ./i18n/cdedb.pot\
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
 	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb
 	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb
@@ -201,10 +202,14 @@ lint:
 
 
 prepare-check:
+ifneq ($(TESTPREPARATION), manual)
 	$(MAKE) i18n-compile
 	$(MAKE) sample-data-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
 		|| true
+else
+	@echo "Omitting test preparation."
+endif
 
 check: export CDEDB_TEST=True
 check:

@@ -245,7 +245,7 @@ def _None(val, argname=None, *, _convert=True, _ignore_warnings=False):
             val = None
     if val is None:
         return val, []
-    return None, [(argname, ValueError(n_("Must be None.")))]
+    return None, [(argname, ValueError(n_("Must be empty.")))]
 
 
 @_addvalidator
@@ -479,7 +479,7 @@ def _str(val, argname=None, *, zap='', sieve='', _convert=True,
     val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert,
                           _ignore_warnings=_ignore_warnings)
     if val is not None and not val:
-        errs.append((argname, ValueError(n_("Mustn’t be empty."))))
+        errs.append((argname, ValueError(n_("Must not be empty."))))
     return val, errs
 
 
@@ -683,7 +683,7 @@ def _printable_ascii_type(val, argname=None, *, _convert=True,
 def _printable_ascii(val, argname=None, *, _convert=True,
                      _ignore_warnings=False):
     """Like :py:func:`_printable_ascii_type` (parameters see there), but
-    mustn't be empty (whitespace doesn't count).
+    must not be empty (whitespace doesn't count).
 
     :type val: object
     :type argname: str or None
@@ -694,7 +694,7 @@ def _printable_ascii(val, argname=None, *, _convert=True,
     val, errs = _printable_ascii_type(val, argname, _convert=_convert,
                                       _ignore_warnings=_ignore_warnings)
     if val is not None and not val.strip():
-        errs.append((argname, ValueError(n_("Mustn’t be empty."))))
+        errs.append((argname, ValueError(n_("Must not be empty."))))
     return val, errs
 
 
@@ -2399,7 +2399,7 @@ def _event_part(val, argname=None, *, creation=False, _convert=True,
     if ('part_begin' in val and 'part_end' in val
             and val['part_begin'] > val['part_end']):
         errs.append(("part_end",
-                     ValueError(n_("Must be later than part begin."))))
+                     ValueError(n_("Must be later than begin."))))
     if 'tracks' in val:
         newtracks = {}
         for anid, track in val['tracks'].items():
@@ -3878,6 +3878,7 @@ _ASSEMBLY_COMMON_FIELDS = lambda: {
 _ASSEMBLY_OPTIONAL_FIELDS = lambda: {
     'is_active': _bool,
     'mail_address': _str_or_None,
+    'presiders': _iterable,
 }
 
 
@@ -3906,6 +3907,16 @@ def _assembly(val, argname=None, *, creation=False, _convert=True,
         mandatory_fields = {'id': _id}
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
                                **_ASSEMBLY_OPTIONAL_FIELDS())
+    if 'presiders' in val:
+        presiders = set()
+        for anid in val['presiders']:
+            v, e = _id(anid, 'presiders', _convert=_convert,
+                       _ignore_warnings=_ignore_warnings)
+            if e:
+                errs.extend(e)
+            else:
+                presiders.add(v)
+        val['presiders'] = presiders
     return _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)
@@ -4395,7 +4406,7 @@ def _query(val, argname=None, *, _convert=None, _ignore_warnings=False):
                                _ignore_warnings=_ignore_warnings)
         errs.extend(e)
     if not val.fields_of_interest:
-        errs.append(("fields_of_interest", ValueError(n_("Mustn’t be empty."))))
+        errs.append(("fields_of_interest", ValueError(n_("Must not be empty."))))
     # constraints
     for idx, x in enumerate(val.constraints):
         try:

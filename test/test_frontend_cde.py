@@ -415,7 +415,7 @@ class TestCdEFrontend(FrontendTest):
         f['qval_given_names,display_name'] = "Ant"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertNonPresence("Ergebnis")
+        self.assertPresence("Keine Mitglieder gefunden.")
 
         # len(entry) > 3 performs a wildcard search
         f['qval_given_names,display_name'] = "Anton"
@@ -431,7 +431,7 @@ class TestCdEFrontend(FrontendTest):
         f['qval_fulltext'] = "sta"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertNonPresence("Ergebnis")
+        self.assertPresence("Keine Mitglieder gefunden.")
 
         # len(word) > 3 can be just a part of a word
         f['qval_fulltext'] = "stadt"
@@ -462,10 +462,19 @@ class TestCdEFrontend(FrontendTest):
                             "Du die Datenschutzerklärung bestätigen.",
                             div='member-quick-search')
         self.assertNonPresence("CdE-Mitglied suchen")
-        with self.assertRaises(webtest.app.AppError) as exc:
-            self.get("/cde/search/member")
+        self.get("/cde/search/member")
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("Um die Mitgliedersuche verwenden zu können")
+        self.assertPresence("Datenschutzerklärung")
+        self.assertNonPresence("Suchmaske")
 
-        self.assertIn("Bad response: 403 FORBIDDEN", exc.exception.args[0])
+    @as_users("daniel", "janis")
+    def test_member_search_non_member(self, user):
+        self.get("/cde/search/member")
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("Um die Mitgliedersuche verwenden zu können")
+        self.assertNonPresence("Datenschutzerklärung")
+        self.assertNonPresence("Suchmaske")
 
     @as_users("inga")
     def test_member_profile_gender_privacy(self, user):
@@ -2109,7 +2118,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_changelog_meta(self, user):
         self.traverse({'description': 'Nutzerdaten-Log'})
-        self.assertTitle("Nutzerdaten-Log [1–30 von 30]")
+        self.assertTitle("Nutzerdaten-Log [1–31 von 31]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)

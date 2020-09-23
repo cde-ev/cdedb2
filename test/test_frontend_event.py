@@ -424,7 +424,7 @@ class TestEventFrontend(FrontendTest):
             f['orga_id'] = "DB-10-8"
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'orga_id', "Dieser Benutzer ist kein Veranstaltungsnutzer.", index=-1)
+                'orga_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.", index=-1)
             # Try to add an archived user.
             f['orga_id'] = "DB-8-6"
             self.submit(f, check_notification=False)
@@ -1037,15 +1037,18 @@ etc;anything else""", f['entries_2'].value)
         f['institution'] = 1
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
+        f['part_begin'] = "2345-01-01"
+        f['part_end'] = "1345-6-7"
         f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
         self.submit(f, check_notification=False)
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-        self.assertPresence("Janis Jalapeño ist kein Veranstaltungsnutzer.")
+        self.assertValidationError('orga_ids', "Einige dieser Nutzer sind "
+                                               "keine Veranstaltungsnutzer.")
+        self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f = self.response.forms['createeventform']
+        f['part_end'] = "2345-6-7"
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
@@ -1072,8 +1075,8 @@ etc;anything else""", f['entries_2'].value)
         f['title'] = "Alternative Akademie"
         f['institution'] = 1
         f['shortname'] = "AltAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
+        f['part_begin'] = "2345-01-01"
+        f['part_end'] = "2345-6-7"
         f['nonmember_surcharge'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True
@@ -2150,7 +2153,7 @@ etc;anything else""", f['entries_2'].value)
         # Try to add a non-event user.
         f['persona.persona_id'] = "DB-11-6"
         self.submit(f, check_notification=False)
-        self.assertValidationError('persona.persona_id', "Dieser Benutzer ist kein Veranstaltungsnutzer.")
+        self.assertValidationError('persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.")
         # Now add an actually valid user.
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."

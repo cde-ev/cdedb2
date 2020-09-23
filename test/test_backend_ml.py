@@ -93,7 +93,7 @@ class TestMlBackend(BackendTest):
                 'ml_type': const.MailinglistTypes.assembly_associated.value,
                 'ml_type_class': ml_type.AssemblyAssociatedMailinglist,
                 'mod_policy': const.ModerationPolicy.non_subscribers.value,
-                'moderators': {2, 7},
+                'moderators': {2, 23},
                 'registration_stati': [],
                 'subject_prefix': 'kampf',
                 'title': 'Sozialistischer Kampfbrief',
@@ -1571,7 +1571,7 @@ class TestMlBackend(BackendTest):
                          self.ml.get_subscription(
                              self.key, persona_id=9, mailinglist_id=4))
 
-    @as_users("annika", "werner", "quintus", "nina")
+    @as_users("annika", "viktor", "quintus", "nina")
     def test_relevant_admins(self, user):
         if user['display_name'] in {"Annika", "Nina"}:
             # Create a new event mailinglist.
@@ -1630,7 +1630,7 @@ class TestMlBackend(BackendTest):
                 self.key, new_id,
                 cascade=["moderators", "subscriptions", "log"]))
 
-        if user['display_name'] in {"Werner", "Nina"}:
+        if user['display_name'] in {"Viktor", "Nina"}:
             # Create a new assembly mailinglist.
             mldata = {
                 'local_part': "mgv-ag",

@@ -456,7 +456,7 @@ class EventFrontend(AbstractUserFrontend):
             bytes, check(rs, 'pdffile_or_None', minor_form, "minor_form"))
         if not minor_form and not delete:
             rs.append_validation_error(
-                ("minor_form", ValueError(n_("Mustn't be empty."))))
+                ("minor_form", ValueError(n_("Must not be empty."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.change_minor_form(rs, event_id, minor_form)
@@ -631,7 +631,7 @@ class EventFrontend(AbstractUserFrontend):
         def part_constraint_maker(part_id: int) -> List[RequestConstraint]:
             begin = f"part_begin_{part_id}"
             end = f"part_end_{part_id}"
-            msg = n_("Must be later than part begin.")
+            msg = n_("Must be later than begin.")
             ret: List[RequestConstraint]
             ret = [(lambda d: d[begin] <= d[end], (end, ValueError(msg)))]
 
@@ -1145,15 +1145,15 @@ class EventFrontend(AbstractUserFrontend):
                             'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
+    @REQUESTdata(("part_begin", "date"), ("part_end", "date"),
                  ("orga_ids", "cdedbid_csv_list"), ("create_track", "bool"),
                  ("create_orga_list", "bool"),
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "iban", "nonmember_surcharge", "notes")
-    def create_event(self, rs: RequestState, event_begin: datetime.date,
-                     event_end: datetime.date, orga_ids: Collection[int],
+    def create_event(self, rs: RequestState, part_begin: datetime.date,
+                     part_end: datetime.date, orga_ids: Collection[int],
                      create_track: bool, create_orga_list: bool,
                      create_participant_list: bool, data: CdEDBObject
                      ) -> Response:
@@ -1170,8 +1170,8 @@ class EventFrontend(AbstractUserFrontend):
             -1: {
                 'title': data['title'],
                 'shortname': data['shortname'],
-                'part_begin': event_begin,
-                'part_end': event_end,
+                'part_begin': part_begin,
+                'part_end': part_end,
                 'fee': decimal.Decimal(0),
                 'waitlist_field': None,
                 'tracks': ({-1: new_track} if create_track else {}),
@@ -1191,20 +1191,19 @@ class EventFrontend(AbstractUserFrontend):
             data['orga_address'] = None
 
         data = check(rs, "event", data, creation=True)
-        if rs.has_validation_errors():
-            return self.create_event_form(rs)
-        if data['orgas']:
-            orgas = self.coreproxy.get_personas(rs, orga_ids)
-            for orga in orgas.values():
-                if 'event' not in extract_roles(orga, introspection_only=True):
-                    rs.append_validation_error(
-                        ('orga_ids', ValueError(
-                            n_("%(given_names)s %(family_name)s is not"
-                               " an event user."),
-                            {
-                                'given_names': orga['given_names'],
-                                'family_name': orga['family_name']
-                            })))
+        if orga_ids:
+            if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
+                rs.append_validation_error(
+                    ('orga_ids', ValueError(
+                        n_("Some of these users do not exist or are archived.")
+                    ))
+                )
+            if not self.coreproxy.verify_personas(rs, orga_ids, {"event"}):
+                rs.append_validation_error(
+                    ('orga_ids', ValueError(
+                        n_("Some of these users are not event users.")
+                    ))
+                )
         if rs.has_validation_errors():
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)

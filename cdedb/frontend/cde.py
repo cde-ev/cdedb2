@@ -183,10 +183,15 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
-    @access("searchable")
+    @access("persona")
     @REQUESTdata(("is_search", "bool"))
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for members."""
+        if "searchable" not in rs.user.roles:
+            # As this is linked externally, show a meaningful error message to
+            # unprivileged users.
+            rs.ignore_validation_errors()
+            return self.render(rs, "member_search")
         defaults = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')

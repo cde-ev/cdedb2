@@ -40,7 +40,7 @@
 
 {% endblock %}
 {% block content %}
-    {% set edit = edit and ("assembly_presider" in user.admin_views) %}
+    {% set edit = edit and ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider) %}
     {% set ballot = ambience.get('ballot') %}
     {% if edit %}
         <div class="p">
