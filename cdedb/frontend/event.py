@@ -160,7 +160,7 @@ class EventFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data, ignore_warnings=ignore_warnings)
 
-    @access("event_admin")
+    @access("core_admin", "event_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:

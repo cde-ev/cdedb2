@@ -263,7 +263,7 @@ class CdEFrontend(AbstractUserFrontend):
             'cutoff': cutoff, 'count': count,
         })
 
-    @access("cde_admin")
+    @access("core_admin", "cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: str, is_search: bool
                     ) -> Response:

@@ -58,16 +58,20 @@ class TestEventFrontend(FrontendTest):
     def test_sidebar(self, user):
         self.traverse({'description': 'Veranstaltungen'})
         everyone = ["Veranstaltungen", "Übersicht"]
-        admin = ["Veranstaltungen verwalten", "Nutzer verwalten", "Log"]
+        admin = ["Veranstaltungen verwalten", "Log"]
 
         # not event admins (also orgas!)
-        if user in [USER_DICT['emilia'], USER_DICT['martin'], USER_DICT['vera'],
+        if user in [USER_DICT['emilia'], USER_DICT['martin'],
                     USER_DICT['werner']]:
             ins = everyone
+            out = admin + ["Nutzer verwalten"]
+        # core admins
+        elif user == USER_DICT['vera']:
+            ins = everyone+ ["Nutzer verwalten"]
             out = admin
         # event admins
         elif user == USER_DICT['annika']:
-            ins = everyone + admin
+            ins = everyone + admin + ["Nutzer verwalten"]
             out = []
         else:
             self.fail("Please adjust users for this test.")
@@ -113,7 +117,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Nein", div='account-active')
 
-    @as_users("annika", "ferdinand")
+    @as_users("annika", "vera")
     def test_user_search(self, user):
         self.traverse({'description': 'Veranstaltunge'},
                       {'description': 'Nutzer verwalten'})
@@ -131,12 +135,9 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika", "ferdinand", "vera")
     def test_create_user(self, user):
-        if user['id'] == USER_DICT['vera']['id']:
-            self.get('/event/user/create')
-        else:
-            self.traverse({'description': 'Veranstaltunge'},
-                          {'description': 'Nutzer verwalten'},
-                          {'description': 'Nutzer anlegen'})
+        self.traverse({'description': 'Veranstaltunge'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Nutzer anlegen'})
         self.assertTitle("Neuen Veranstaltungsnutzer anlegen")
         data = {
             "username": 'zelda@example.cde',

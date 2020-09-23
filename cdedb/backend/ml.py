@@ -311,7 +311,7 @@ class MlBackend(AbstractBackend):
             change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState,
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around

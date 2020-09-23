@@ -93,7 +93,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data, ignore_warnings)
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: str,
                     is_search: bool) -> Response:

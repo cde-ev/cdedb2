@@ -222,7 +222,7 @@ class EventBackend(AbstractBackend):
                                (event_id,), entity_key="event_id")
         return {e['id']: e['title'] for e in data}
 
-    @access("event", "ml_admin")
+    @access("event", "core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
                              event_id: int = None) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
@@ -467,7 +467,7 @@ class EventBackend(AbstractBackend):
                                       event_id))
             query.spec['event_id'] = "id"
         elif query.scope == "qview_event_user":
-            if not self.is_admin(rs):
+            if not self.is_admin(rs) and not "core_admin" in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,

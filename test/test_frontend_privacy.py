@@ -558,28 +558,28 @@ class TestPrivacyFrontend(FrontendTest):
             self.get('/core/search/archiveduser', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
-        if user['id'] in cde:
+        if user['id'] in core | cde:
             self.get('/cde/search/user')
             self.assertTitle("CdE-Nutzerverwaltung")
         else:
             self.get('/cde/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
-        if user['id'] in event:
+        if user['id'] in core | event:
             self.get('/event/search/user')
             self.assertTitle("Veranstaltungs-Nutzerverwaltung")
         else:
             self.get('/event/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
-        if user['id'] in ml:
+        if user['id'] in core | ml:
             self.get('/ml/search/user')
             self.assertTitle("Mailinglisten-Nutzerverwaltung")
         else:
             self.get('/ml/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
-        if user['id'] in assembly:
+        if user['id'] in core | assembly:
             self.get('/assembly/search/user')
             self.assertTitle("Versammlungs-Nutzerverwaltung")
         else:

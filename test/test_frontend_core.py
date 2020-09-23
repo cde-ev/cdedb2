@@ -189,11 +189,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn('activitytoggleform', self.response.forms)
         self.assertNotIn('sendpasswordresetform', self.response.forms)
 
-        # There should not be any admin toggle buttons for Vera in the assembly
-        # realm
-        self.traverse({'href': '/assembly'})
-        self.assertNotIn('adminviewstoggleform', self.response.forms)
-
     @as_users("vera")
     def test_adminshowuser(self, user):
         self.admin_view_profile('berta')
