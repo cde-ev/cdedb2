@@ -95,7 +95,7 @@ class MlBackend(AbstractBackend):
 
         This exceptionally promotes droid_rklist to moderator.
         :param privileged: check if the moderator is in the pool of privileged
-            moderators, provided by ml_type_aux.privileged_moderators.
+            moderators, provided by ml_type_aux.is_privileged_moderator.
         """
         ml_id = affirm("id_or_None", ml_id)
 
@@ -103,8 +103,8 @@ class MlBackend(AbstractBackend):
         if privileged and ml_id is not None:
             atype = self.get_ml_type(rs, ml_id)
             ml = self.get_mailinglist(rs, ml_id)
-            checker = atype.privileged_moderators(rs, self.backends, ml)
-            is_moderator = is_moderator and checker({rs.user.persona_id})
+            is_privileged = atype.is_privileged_moderator(rs, self.backends, ml)
+            is_moderator = is_moderator and is_privileged
 
         return ml_id is not None and (is_moderator
                                       or "droid_rklist" in rs.user.roles)

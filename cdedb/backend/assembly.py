@@ -145,7 +145,7 @@ class AssemblyBackend(AbstractBackend):
         assembly or ballot.
         Published variant of 'may_access' with input validation.
 
-        Exactly one of assembly_id, ballot_idand attachment_id has to be
+        Exactly one of assembly_id, ballot_id and attachment_id has to be
         provided.
 
         :type rs: :py:class:`cdedb.common.RequestState`

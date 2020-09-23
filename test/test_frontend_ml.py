@@ -1203,7 +1203,8 @@ class TestMlFrontend(FrontendTest):
                          f['attachment_policy'].value)
         self.assertEqual("1111", f['maxsize'].value)
 
-    @as_users("berta")
+    @as_users("janis")
+    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (5, 10)")
     def test_non_privileged_moderator(self, user):
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Sozialistischer Kampfbrief"},

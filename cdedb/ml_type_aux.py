@@ -1,8 +1,7 @@
 import enum
 from collections import OrderedDict
 from typing import (
-    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, Sequence,
-    Optional, Iterable, Callable
+    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List,
 )
 
 from cdedb.common import (
@@ -145,10 +144,10 @@ class GeneralMailinglist:
         return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
 
     @classmethod
-    def privileged_moderators(cls, rs: RequestState, bc: BackendContainer,
-                              mailinglist: CdEDBObject
-                              ) -> Callable[[Iterable[int]], Set[int]]:
-        """Shrink the pool of privileged moderators.
+    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+                                mailinglist: CdEDBObject
+                                ) -> bool:
+        """Check if moderator is privileged.
 
         Everyone with ml realm may be moderator of any mailinglist. But for some
         lists, you must have additional privileges to make subscription-state
@@ -162,7 +161,7 @@ class GeneralMailinglist:
 
         This returns a filter which allows the caller to check ids as desired.
         """
-        return lambda x: x
+        return mailinglist['id'] in rs.user.moderator
 
     relevant_admins: Set[str] = set()
 
@@ -354,17 +353,19 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             | {("registration_stati", "[enum_registrationpartstati]")})
 
     @classmethod
-    def privileged_moderators(cls, rs: RequestState, bc: BackendContainer,
-                              mailinglist: CdEDBObject
-                              ) -> Callable[[Iterable[int]], Set[int]]:
-        """Shrink the pool of privileged moderators.
+    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+                                mailinglist: CdEDBObject
+                                ) -> bool:
+        """Check if moderator is privileged.
 
         For EventAssociatedMailinglists, this are the orgas of the event.
         """
+        is_moderator = mailinglist['id'] in rs.user.moderator
         if mailinglist['event_id'] is None:
-            return lambda x: x
-        event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
-        return lambda x: set(x).intersection(set(event["orgas"]))
+            return is_moderator
+        is_privileged = (mailinglist['event_id'] in rs.user.orga
+                         or "event_admin" in rs.user.roles)
+        return is_moderator and is_privileged
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -481,16 +482,19 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
                                     AssemblyMailinglist):
     @classmethod
-    def privileged_moderators(cls, rs: RequestState, bc: BackendContainer,
-                              mailinglist: CdEDBObject
-                              ) -> Callable[[Iterable[int]], Set[int]]:
-        """Shrink the pool of privileged moderators.
+    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+                                mailinglist: CdEDBObject
+                                ) -> bool:
+        """Check if moderator is privileged.
 
         For AssemblyAssociatedMailinglists, this are assembly admins.
         """
-        # TODO replace with presiders
-        assembly_admins = bc.core.list_admins(rs, "assembly")
-        return lambda x: set(x).intersection(set(assembly_admins))
+        is_moderator = mailinglist['id'] in rs.user.moderator
+        if mailinglist['assembly_id'] is None:
+            return is_moderator
+        is_privileged = bc.assembly.may_assemble(rs,
+                                                 assembly_id=mailinglist['assembly_id'])
+        return is_moderator and is_privileged
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
