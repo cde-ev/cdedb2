@@ -115,7 +115,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("nina", "vera")
     def test_create_user(self, user):
-        if user == USER_DICT["vera"]:
+        if user['id'] == USER_DICT['vera']['id']:
             self.get('/ml/user/create')
         else:
             self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'}, {'href': '/ml/user/create'})

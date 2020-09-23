@@ -161,7 +161,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     @as_users("ferdinand", "vera")
     def test_create_user(self, user):
-        if user == USER_DICT["vera"]:
+        if user['id'] == USER_DICT['vera']['id']:
             self.get('/assembly/user/create')
         else:
             self.traverse({'description': 'Versammlungen'},

@@ -949,7 +949,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     def create_user_form(self, rs: RequestState) -> Response:
-        realms = USER_REALM_NAMES
+        realms = USER_REALM_NAMES.copy()
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             del realms["assembly"]
             del realms["ml"]
@@ -959,9 +959,10 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("realm", "str"))
     def create_user(self, rs: RequestState, realm: str) -> Response:
         if realm not in USER_REALM_NAMES.keys():
-            rs.append_validation_error("realm", ValueError(n_("No valid realm.")))
+            rs.append_validation_error(("realm",
+                                        ValueError(n_("No valid realm."))))
         if rs.has_validation_errors():
-            return self.create_user_form()
+            return self.create_user_form(rs)
         return self.redirect(rs, realm + "/create_user")
 
     @access("core_admin")

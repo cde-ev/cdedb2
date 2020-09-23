@@ -131,7 +131,7 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika", "ferdinand", "vera")
     def test_create_user(self, user):
-        if user == USER_DICT["vera"]:
+        if user['id'] == USER_DICT['vera']['id']:
             self.get('/event/user/create')
         else:
             self.traverse({'description': 'Veranstaltunge'},

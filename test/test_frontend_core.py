@@ -1092,13 +1092,14 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_create_user(self, user):
 
-        def _traverse_to_realm(realm: str):
+        def _traverse_to_realm(realm: str = None):
             self.traverse({'description': 'Index'},
                       {'description': 'Nutzer verwalten'},
                       {'description': 'Nutzer anlegen'})
             self.assertTitle("Nutzer anlegen")
             f = self.response.forms['selectrealmform']
-            f['realm'] = realm
+            if realm:
+                f['realm'] = realm
             return f
 
         self.submit(_traverse_to_realm('cde'))
@@ -1109,8 +1110,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Neuen Versammlungsnutzer anlegen")
         self.submit(_traverse_to_realm('ml'))
         self.assertTitle("Neuen Mailinglistennutzer anlegen ")
-        # self.submit(_traverse_to_realm('core'), check_notification=False)
-        # self.assertValidationError('realm', "Kein gültiger Bereich.")
+        # There is no kind "Core user"
+        f = _traverse_to_realm()
+        f['realm'].force_value('core')
+        self.submit(f, check_notification=False)
+        self.assertValidationError('realm', "Kein gültiger Bereich.")
 
     @as_users("vera")
     def test_archived_user_search(self,  user):
