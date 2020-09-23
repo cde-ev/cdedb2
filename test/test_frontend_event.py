@@ -3009,7 +3009,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Mittelgroße Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
-    @as_users("annika")
+    @as_users("annika", "garcia")
     def test_partial_import_normal(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -3071,7 +3071,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Geheime Etage")
         self.assertPresence("Geheimkabinett")
 
-    @as_users("annika")
+    @as_users("annika", "garcia")
     def test_partial_import_interleaved(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
