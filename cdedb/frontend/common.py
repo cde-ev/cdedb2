@@ -730,7 +730,7 @@ def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def dict_items_filter(d: Dict[str, str],
+def map_dict_filter(d: Dict[str, str],
                       processing: Callable[[Any], str]
                       ) -> ItemsView[str, str]:
     """
@@ -830,7 +830,6 @@ JINJA_FILTERS = {
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
     'iban': iban_filter,
-    'dict_items': dict_items_filter,
     'escape': escape_filter,
     'e': escape_filter,
     'json': json_filter,
@@ -838,6 +837,7 @@ JINJA_FILTERS = {
     'querytoparams': querytoparams_filter,
     'genus': genus_filter,
     'linebreaks': linebreaks_filter,
+    'map_dict': map_dict_filter,
     'md': md_filter,
     'enum': enum_filter,
     'sort': sort_filter,
