@@ -21,7 +21,7 @@
 {% block content %}
     <form action="{{ cdedblink('core/create_user') }}" method="GET" id="selectrealmform",
               class="form-horizontal">
-        {{ util.form_input_select(name="realm", label=gettext("Realm"), entries=realms.items()) }}
+        {{ util.form_input_select(name="realm", label=gettext("Realm"), entries=realms|dict_items(processing=gettext)) }}
         {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink("core/user_search"), icon="pen") }}
     </form>
 {% endblock %}

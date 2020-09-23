@@ -52,7 +52,7 @@ import werkzeug.wrappers
 from typing import (
     Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
     Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO,
+    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO, ItemsView,
 )
 from typing_extensions import Protocol
 
@@ -730,6 +730,18 @@ def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
+def dict_items_filter(d: Dict[str, str],
+                      processing: Callable[[Any], str]
+                      ) -> ItemsView[str, str]:
+    """
+    Processes the values of some string using processing function
+
+    :param processing: A function to be applied on the dict values
+    :return: The dict with its values replaced with the processed values
+    """
+    return {k: processing(v) for k, v in d.items()}.items()
+
+
 def enum_entries_filter(enum: EnumMeta, processing: Callable[[Any], str] = None,
                         raw: bool = False,
                         prefix: str = "") -> List[Tuple[int, str]]:
@@ -818,6 +830,7 @@ JINJA_FILTERS = {
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
     'iban': iban_filter,
+    'dict_items': dict_items_filter,
     'escape': escape_filter,
     'e': escape_filter,
     'json': json_filter,
