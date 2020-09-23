@@ -2,7 +2,10 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='strong' %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_dynamicrow.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+{% endblock %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
     	Configure Event-Parts ({{ title }})
@@ -24,32 +27,43 @@
 
 {% macro print_fee_modifier(part_id, fee_modifier_id, aclass="", newrow=False) %}
     <tr class="{{ aclass }}" id="feemodifierrow_{{ part_id }}_{{ fee_modifier_id }}">
-        <td {% if "fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id) in errors %}class="has-error"{% endif %}>
-            {{ util.input_text(name="fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id), aclass='drow-input1 form-control',
-                               attributes=('data-basename="fee_modifier_modifier_name_" data-basename1="_"'|s if newrow else ''),
-                               arialabel=gettext("Name of Fee Modifier"), placeholder=gettext("Modifier Name")) }}
-            {{ util.output_errors("fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id)) }}
+        <td>
+            {% call util.output_errors("fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id),
+                wrapper=True) %}
+                {{ util.input_text(
+                    name="fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id),
+                    aclass='drow-input1 form-control', placeholder=gettext("Modifier Name"),
+                    attributes=('data-basename="fee_modifier_modifier_name_" data-basename1="_"'|s if newrow else ''),
+                    arialabel=gettext("Name of Fee Modifier")) }}
+            {% endcall %}
         </td>
-        <td {% if "fee_modifier_amount_{}_{}".format(part_id, fee_modifier_id) in errors %}class="has-error"{% endif %}>
-            {{ util.input_text(name="fee_modifier_amount_{}_{}".format(part_id, fee_modifier_id), aclass='drow-input1 form-control',
-                               attributes=('data-basename="fee_modifier_amount_" data-basename1="_"'|s if newrow else ''),
-                               arialabel=gettext("Fee Modifier Amount"), type="number") }}
-            {{ util.output_errors("fee_modifier_amount_{}_{}".format(part_id, fee_modifier_id)) }}
+        <td>
+            {% call util.output_errors("fee_modifier_amount_{}_{}".format(part_id, fee_modifier_id), wrapper=True) %}
+                {{ util.input_text(
+                    name="fee_modifier_amount_{}_{}".format(part_id, fee_modifier_id),
+                    aclass='drow-input1 form-control', arialabel=gettext("Fee Modifier Amount"), type="number",
+                    attributes=('data-basename="fee_modifier_amount_" data-basename1="_"'|s if newrow else '')) }}
+            {% endcall %}
         </td>
-        <td {% if "fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id) in errors %}class="has-error"{% endif %}>
-            {{ util.input_select(name="fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id), aclass='drow-input1 form-control',
-                                 attributes=('data-basename="fee_modifier_field_id_" data-basename1=" "'|s if newrow else ''),
-                                 arialabel=gettext("Linked Field for Fee Modifier"), nulloption="", entries=fee_modifier_fields) }}
-            {{ util.output_errors("fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id)) }}
+        <td>
+            {% call util.output_errors("fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id), wrapper=True) %}
+                {{ util.input_select(
+                    name="fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id), entries=fee_modifier_fields,
+                    aclass='drow-input1 form-control', nulloption=nbsp,
+                    attributes=('data-basename="fee_modifier_field_id_" data-basename1=" "'|s if newrow else ''),
+                    arialabel=gettext("Linked Field for Fee Modifier")) }}
+            {% endcall %}
         </td>
         <td>
             <div class="drow-buttonspace1">
                 {% if newrow %}
-                    {{ util.input_checkbox("fee_modifier_create_{}_{}".format(part_id, fee_modifier_id), label=gettext("Add"),
-                                           attributes='data-basename="fee_modifier_create_"'|s, aclass='drow-indicator1') }}
+                    {{ util.input_checkbox(
+                        name="fee_modifier_create_{}_{}".format(part_id, fee_modifier_id), label=gettext("Add"),
+                        attributes='data-basename="fee_modifier_create_"'|s, aclass='drow-indicator1') }}
                 {% else %}
-                    {{ util.input_checkbox("fee_modifier_delete_{}_{}".format(part_id, fee_modifier_id), label=gettext("Remove"),
-                                           readonly=has_registrations, aclass='drow-indicator1') }}
+                    {{ util.input_checkbox(
+                        name="fee_modifier_delete_{}_{}".format(part_id, fee_modifier_id), label=gettext("Remove"),
+                        readonly=has_registrations, aclass='drow-indicator1') }}
                 {% endif %}
             </div>
         </td>
@@ -61,42 +75,51 @@
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_track(part_id, track_id, aclass="", newrow=False) %}
     <tr class="{{ aclass }}">
-        <td style="width: 40%;"
-            {% if "track_title_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
-            {{ util.input_text(name="track_title_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
-                               attributes=('data-basename="track_title_" data-basename1="_"'|s if newrow else ''),
-                               arialabel=gettext("Name of Coursetrack"), placeholder=gettext("Title")) }}
-            {{ util.output_errors("track_title_{}_{}".format(part_id, track_id)) }}
+        <td style="width: 40%;">
+            {% call util.output_errors("track_title_{}_{}".format(part_id, track_id), wrapper=True) %}
+                {{ util.input_text(
+                    name="track_title_{}_{}".format(part_id, track_id),
+                    aclass='drow-input1 form-control', placeholder=gettext("Title"),
+                    arialabel=gettext("Name of Coursetrack"),
+                    attributes=('data-basename="track_title_" data-basename1="_"'|s if newrow else '')) }}
+            {% endcall %}
         </td>
-        <td {% if "track_shortname_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
-            {{ util.input_text(name="track_shortname_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
-                               attributes=('data-basename="track_shortname_" data-basename1="_"'|s if newrow else ''),
-                               arialabel=gettext("Shortname of Coursetrack"), placeholder=gettext("Shortname")) }}
-            {{ util.output_errors("track_shortname_{}_{}".format(part_id, track_id)) }}
+        <td>
+            {% call util.output_errors("track_shortname_{}_{}".format(part_id, track_id), wrapper=True) %}
+                {{ util.input_text(
+                    name="track_shortname_{}_{}".format(part_id, track_id),
+                    aclass='drow-input1 form-control', placeholder=gettext("Shortname"),
+                    arialabel=gettext("Shortname of Coursetrack"),
+                    attributes=('data-basename="track_shortname_" data-basename1="_"'|s if newrow else '')) }}
+            {% endcall %}
         </td>
-        <td {% if "track_num_choices_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
-            {{ util.input_text(name="track_num_choices_{}_{}".format(part_id, track_id),
-                               aclass='drow-input1 form-control input-num-choices',
-                               attributes=('data-basename="track_num_choices_" data-basename1="_"'|s if newrow else '')
-                                    + ' min="0"'|s,
-                               arialabel=gettext("Number of Course Choices"), type="number",
-                               defaultvalue=DEFAULT_NUM_COURSE_CHOICES) }}
-            {{ util.output_errors("track_num_choices_{}_{}".format(part_id, track_id)) }}
+        <td>
+            {% call util.output_errors("track_num_choices_{}_{}".format(part_id, track_id), wrapper=True) %}
+                {{ util.input_text(
+                    name="track_num_choices_{}_{}".format(part_id, track_id), defaultvalue=DEFAULT_NUM_COURSE_CHOICES,
+                    aclass='drow-input1 form-control input-num-choices', type="number",
+                    attributes=(('data-basename="track_num_choices_" data-basename1="_"'|s if newrow else '')
+                                + ' min="0"'|s),
+                    arialabel=gettext("Number of Course Choices")) }}
+            {% endcall %}
         </td>
-        <td {% if "track_min_choices_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
-            {{ util.input_text(name="track_min_choices_{}_{}".format(part_id, track_id),
-                               aclass='drow-input1 form-control input-min-choices',
-                               attributes=('data-basename="track_min_choices_" data-basename1="_"'|s if newrow else '')
-                                    + ' min="0"'|s,
-                               arialabel=gettext("Number of Course Choices"), type="number",
-                               defaultvalue=DEFAULT_NUM_COURSE_CHOICES) }}
-            {{ util.output_errors("track_min_choices_{}_{}".format(part_id, track_id)) }}
+        <td>
+            {% call util.output_errors("track_min_choices_{}_{}".format(part_id, track_id), wrapper=True) %}
+                {{ util.input_text(
+                    name="track_min_choices_{}_{}".format(part_id, track_id), defaultvalue=DEFAULT_NUM_COURSE_CHOICES,
+                    aclass='drow-input1 form-control input-min-choices', type="number",
+                    attributes=(('data-basename="track_min_choices_" data-basename1="_"'|s if newrow else '')
+                                + ' min="0"'|s),
+                    arialabel=gettext("Number of Course Choices")) }}
+            {% endcall %}
         </td>
-        <td {% if "track_sortkey_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
-            {{ util.input_text(name="track_sortkey_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
-                               attributes=('data-basename="track_sortkey_" data-basename1="_"'|s if newrow else ''),
-                               arialabel=gettext("Sortkey of Coursetrack"), type="number", defaultvalue="1") }}
-            {{ util.output_errors("track_sortkey_{}_{}".format(part_id, track_id)) }}
+        <td>
+            {% call util.output_errors("track_sortkey_{}_{}".format(part_id, track_id)) %}
+                {{ util.input_text(
+                    name="track_sortkey_{}_{}".format(part_id, track_id), defaultvalue="1",
+                    aclass='drow-input1 form-control', type="number", arialabel=gettext("Sortkey of Coursetrack"),
+                    attributes=('data-basename="track_sortkey_" data-basename1="_"'|s if newrow else '')) }}
+            {% endcall %}
         </td>
         <td>
             <div class="drow-buttonspace1">
@@ -119,11 +142,13 @@
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_part(part_id, deletable, tracks={}, aclass="", newrow=False) %}
     <div class="panel panel-default {{ aclass }}">
-        <div class="panel-heading {% if "title_{}".format(part_id) in errors %}has-error{% endif %}">
-            {{ util.input_text(name="title_{}".format(part_id), placeholder=gettext("Name of Event-Part"),
-                               attributes=('data-basename="title_"'|s if newrow else ''),
-                               aclass='drow-input form-control', arialabel=gettext("Name of Event-Part")) }}
-            {{ util.output_errors("title_{}".format(part_id)) }}
+        <div class="panel-heading">
+            {% call util.output_errors("title_{}".format(part_id)) %}
+                {{ util.input_text(
+                    name="title_{}".format(part_id), placeholder=gettext("Name of Event-Part"),
+                    aclass='drow-input form-control', arialabel=gettext("Name of Event-Part"),
+                    attributes=('data-basename="title_"'|s if newrow else '')) }}
+            {% endcall %}
         </div>
         <div class="panel-body">
             <div class="row">
@@ -143,8 +168,9 @@
                         <div class="text-right col-sm-12">
                             <span class="drow-buttonspace">
                                 {% if newrow %}
-                                    {{ util.input_checkbox("create_{}".format(part_id), label=gettext("Add"),
-                                                           attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
+                                    {{ util.input_checkbox(
+                                        name="create_{}".format(part_id), label=gettext("Add"),
+                                        attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
                                 {% else %}
                                     {{ util.input_checkbox("delete_{}".format(part_id), label=gettext("Remove"),
                                                            readonly=not deletable, aclass='drow-indicator') }}
@@ -156,8 +182,10 @@
                                             attributes=('data-basename="fee_"'|s if newrow else ''),
                                             aclass='drow-input form-control', anid="input-text-fee_{}".format(part_id),
                                             addon='€') }}
-                    {{ util.form_input_select(name="waitlist_field_{}".format(part_id), label=gettext("Field for Waitlist"), entries=waitlist_fields,
-                                  nulloption=nbsp, info=gettext("Field to store the waitlist ranking of this part. Fieldtype: Integer")) }}
+                    {{ util.form_input_select(
+                        name="waitlist_field_{}".format(part_id), entries=waitlist_fields,
+                        label=gettext("Field for Waitlist"),nulloption=nbsp,
+                        info=gettext("Field to store the waitlist ranking of this part. Fieldtype: Integer")) }}
                 </div>
             </div>
                 <hr />
@@ -174,13 +202,15 @@
                     {% for fee_modifier in fee_modifiers_by_part[part_id].values() %}
                         {{ print_fee_modifier(fee_modifier['part_id'], fee_modifier['id'], aclass='drow-row1') }}
                     {% endfor %}
-                     {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+                     {# Items that were added by the user but failed validation.
+                        They are still new and have no official id. #}
                     {% for i in range(1, values.get('fee_modifier_create_last_index', {}).get(part_id, 0) + 1) %}
                         {{ print_fee_modifier(part_id, -i, aclass='drow-new1', newrow=True) }}
                     {% endfor %}
                     {% if not has_registrations %}
-                        {{ print_fee_modifier(part_id, -values.get('fee_modifier_create_last_index', {}).get(part_id, 0) - 1,
-                                              aclass='drow-prototype1', newrow=True) }}
+                        {{ print_fee_modifier(
+                            part_id, -values.get('fee_modifier_create_last_index', {}).get(part_id, 0) - 1,
+                            aclass='drow-prototype1', newrow=True) }}
                     {% endif %}
                 </tbody>
             </table>
@@ -207,7 +237,8 @@
                     {% for track_id, title in tracks|keydictsort(EntitySorter.course_track) %}
                         {{ print_track(part_id, track_id, aclass='drow-row1') }}
                     {% endfor%}
-                    {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+                    {# Items that were added by the user but failed validation.
+                       They are still new and have no official id. #}
                     {% for i in range(1, values.get('track_create_last_index', {}).get(part_id, 0) + 1) %}
                         {{ print_track(part_id, -i, aclass='drow-new1', newrow=True) }}
                     {% endfor %}
@@ -248,7 +279,8 @@
                 {{ print_part(-i, False, aclass='drow-new', newrow=True) }}
             {% endfor %}
             {% if not has_registrations %}
-                {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+                {# Prototype row.
+                   For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
                 {{ print_part(-values.get('create_last_index', 0) - 1, False, aclass='drow-prototype', newrow=True) }}
             {% endif %}
         </div>
@@ -268,14 +300,14 @@
                 delButtonTitle: "{{ gettext("Remove Coursetrack") }}",
                 nestingLevel: 1
             });
-        };
+        }
         function initialize_fee_modifier_dynrow() {
             $(this).cdedbDynamicRow({
                 addButton: $(this).closest('.panel-body').find('.add-fee-modifier-button'),
                 delButtonTitle: "{{ gettext("Remove Fee Modifier") }}",
                 nestingLevel: 1
             });
-        };
+        }
         /* Initialize DynamicRow for parts */
         $('#drow-container').cdedbDynamicRow({
             addButton: $('#drow-addbutton'),
