@@ -396,7 +396,7 @@ QUERY_SPECS = {
         ]),
     "qview_persona":  # query for a persona without past event infos
         collections.OrderedDict([
-            ("id", "id"),
+            ("personas.id", "id"),
             ("given_names", "str"),
             ("family_name", "str"),
             ("username", "str"),

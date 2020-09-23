@@ -2,7 +2,10 @@
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}{{ ambience['assembly']['title'] }}{% endblock %}
 {% block breadcrumb %}
@@ -12,7 +15,8 @@
 {% endblock %}
 {% block content %}
     <div class="p">
-        {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['is_active'] %}
+        {% if ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
+                                                     or ambience['assembly']['id'] in user.presider) %}
             {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
                          icon="cog") }}
         {% endif %}
@@ -41,9 +45,62 @@
                 {% endif %}
             {% endif %}
         </dd>
+        {% if presiders %}
+            <dt>{% trans %}Presiders{% endtrans %}</dt>
+            <dd id="assembly-presiders">
+                {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
+                    {{ util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+                {% endfor %}
+            </dd>
+        {% endif %}
     </dl>
 
-    {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['notes'] %}
+    {% if "assembly_mgmt" in user.admin_views %}
+        <div class="row">
+        <div class="col-md-6" id="manage-presiders">
+            {% call util.bootstrap_panel(title=gettext("Presiders"), icon='user-friends') %}
+            <ul>
+                {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
+                    <li class="hide-hover-container clearfix-after">
+                        {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
+                        <form action="{{ cdedblink('assembly/remove_presider') }}" method="POST"
+                                id="removepresiderform{{ anid }}" class="hide-hover display-inline">
+                            {{ util.anti_csrf_token('assembly/remove_presider') }}
+                            {{ util.input_hidden(name="presider_id", value=anid) }}
+                            {{ util.input_submit(value="", title=gettext("Remove Presider"), icon='minus',
+                                                 aclass='btn btn-xs btn-danger list-button-float') }}
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+            <form action="{{ cdedblink('assembly/add_presiders') }}" method="POST" id="addpresidersform" class="p">
+                {{ util.anti_csrf_token('assembly/add_presiders') }}
+                {% call util.output_errors('presider_ids', wrapper=True) %}
+                    <div class="input-group has-success">
+                        <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Presiders")) }}</span>
+                        {{ util.input_text(name="presider_ids", placeholder="DB-XXXX-X, DB-XXXX-X, …",
+                                           anid='input-add-presiders', arialabel=gettext("IDs of the new Presiders.")) }}
+                        <script nonce="{{ csp_nonce }}">
+                            $('#input-add-presiders').cdedbSearchPerson(
+                                '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_admin_user&phrase=%s&aux='|s) +
+                                    (ambience['assembly']['id']|string|e) }}',
+                                {{ ambience['assembly']['presiders']|list|json|s }}, false, true,
+                                "{{ gettext("ID, name, email") }}"
+                            );
+                        </script>
+                        <div class="input-group-btn">
+                            {{ util.input_submit(value=gettext("Add"), aclass='btn btn-success') }}
+                        </div>
+                    </div>
+                {% endcall %}
+            </form>
+            {% endcall %}
+        </div>
+        </div>
+    {% endif %}
+
+    {% if ambience['assembly']['notes'] and ("assembly_presider" in user.admin_views
+                                             or ambience['assembly']['id'] in user.presider) %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             <div id="notes">
                 {{ ambience['assembly']['notes']|md }}
@@ -51,10 +108,12 @@
         {% endcall %}
     {% endif %}
 
-    {% if attachments or has_ballot_attachments or "assembly_presider" in user.admin_views %}
+    {% if attachments or has_ballot_attachments or ("assembly_presider" in user.admin_views
+                                                    or ambience['assembly']['id'] in user.presider) %}
         {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         <div class="row">
-            {% if attachments or "assembly_presider" in user.admin_views %}
+            {% if attachments or ("assembly_presider" in user.admin_views
+                                  or ambience['assembly']['id'] in user.presider) %}
                 <div class="col-sm-6">
                     <h4>{% trans %}General Files{% endtrans %}</h4>
                     <ul class="slim" id="attachments">
@@ -67,7 +126,8 @@
                             </li>
                         {% endfor %}
                     </ul>
-                    {% if "assembly_presider" in user.admin_views and ambience['assembly']['is_active'] %}
+                    {% if ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
+                                                                 or ambience['assembly']['id'] in user.presider) %}
                         <div class="p">
                             {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Add File"),
                                          aclass="btn btn-success btn-sm", icon="plus") }}

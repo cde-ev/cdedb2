@@ -674,6 +674,8 @@ class CoreFrontend(AbstractFrontend):
           event as cde_admin
         - ``pure_assembly_user``: Search for an assembly only user as
           assembly_admin
+        - ``assembly_admin_user``: Search for an assembly user as
+            assembly_admin.
         - ``ml_admin_user``: Search for a mailinglist user as ml_admin
         - ``mod_ml_user``: Search for a mailinglist user as a moderator
         - ``event_admin_user``: Search an event user as event_admin (for
@@ -728,6 +730,11 @@ class CoreFrontend(AbstractFrontend):
                 ("is_assembly_realm", QueryOperators.equal, True))
             search_additions.append(
                 ("is_member", QueryOperators.equal, False))
+        elif kind == "assembly_admin_user":
+            if "assembly_admin" not in rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append(
+                ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "ml_admin_user":
             if "ml_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -1513,7 +1520,7 @@ class CoreFrontend(AbstractFrontend):
                     check(rs, 'profilepic_or_None', foto, "foto"))
         if not foto and not delete:
             rs.append_validation_error(
-                ("foto", ValueError("Mustn't be empty.")))
+                ("foto", ValueError("Must not be empty.")))
         if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
         code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
@@ -1613,7 +1620,7 @@ class CoreFrontend(AbstractFrontend):
         exists = self.coreproxy.verify_existence(rs, email)
         if not exists:
             rs.append_validation_error(
-                ("email", ValueError(n_("Nonexistant user."))))
+                ("email", ValueError(n_("Nonexistent user."))))
             rs.ignore_validation_errors()
             return self.reset_password_form(rs)
         admin_exception = False

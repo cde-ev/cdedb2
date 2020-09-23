@@ -113,7 +113,8 @@ class User:
                  roles: Set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
-                 moderator: Collection[int] = None) -> None:
+                 moderator: Collection[int] = None,
+                 presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
         self.roles = roles or {"anonymous"}
         self.username = username
@@ -122,6 +123,7 @@ class User:
         self.family_name = family_name
         self.orga: Set[int] = set(orga) if orga else set()
         self.moderator: Set[int] = set(moderator) if moderator else set()
+        self.presider: Set[int] = set(presider) if presider else set()
         self.admin_views: Set[AdminView] = set()
 
     @property

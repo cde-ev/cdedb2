@@ -43,6 +43,8 @@ class MailinglistGroup(enum.IntEnum):
 
 class AllMembersImplicitMeta:
     """Metaclass for all mailinglists with members as implicit subscribers."""
+    maxsize_default = 64
+
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
@@ -76,6 +78,7 @@ class TeamMeta:
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
     domains = [MailinglistDomain.lists, MailinglistDomain.dokuforge]
+    maxsize_default = 4096
 
 
 class GeneralMailinglist:
@@ -103,6 +106,9 @@ class GeneralMailinglist:
     sortkey: MailinglistGroup = MailinglistGroup.other
 
     domains: List[MailinglistDomain] = [MailinglistDomain.lists]
+
+    # default value for maxsize in KB
+    maxsize_default = 2048
 
     allow_unsub: bool = True
 
@@ -375,6 +381,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
 class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
+
+    maxsize_default = 8192
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,

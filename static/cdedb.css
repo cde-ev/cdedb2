@@ -38,8 +38,8 @@ body{
     background: url(dots.png);
 }
 .logo {
-    padding-bottom: 10px;
-    width: 80%;
+    display: inline-block;
+    padding-right: 1em;
 }
 .logo img {
     max-width: 100%;
@@ -483,10 +483,6 @@ a.headerlink {
     opacity: 1;
 }
 
-.jshint {
-    margin-bottom: 10px;
-    text-align: right;
-}
 .btn-lang-change {
     border: none;
     background: none;

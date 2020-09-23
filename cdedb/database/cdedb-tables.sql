@@ -898,8 +898,20 @@ CREATE TABLE assembly.assemblies (
         notes                   varchar
 );
 GRANT SELECT ON assembly.assemblies TO cdb_persona;
-GRANT INSERT, UPDATE, DELETE ON assembly.assemblies TO cdb_admin;
+GRANT INSERT, DELETE ON assembly.assemblies TO cdb_admin;
+GRANT UPDATE ON assembly.assemblies TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.assemblies_id_seq TO cdb_admin;
+
+CREATE TABLE assembly.presiders (
+        id                      serial PRIMARY KEY,
+        assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
+        persona_id              integer NOT NULL REFERENCES core.personas(id)
+);
+CREATE INDEX idx_assembly_presiders_persona_id ON assembly.presiders(persona_id);
+CREATE UNIQUE INDEX idx_assembly_presiders_constraint ON assembly.presiders(assembly_id, persona_id);
+GRANT SELECT ON assembly.presiders TO cdb_persona;
+GRANT INSERT, DELETE ON assembly.presiders TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.presiders_id_seq TO cdb_admin;
 
 CREATE TABLE assembly.ballots (
         id                      serial PRIMARY KEY,
@@ -942,8 +954,8 @@ CREATE TABLE assembly.ballots (
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
 GRANT SELECT ON assembly.ballots TO cdb_member;
 GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_member;
-GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_member;
 
 CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
@@ -953,8 +965,8 @@ CREATE TABLE assembly.candidates (
 );
 CREATE UNIQUE INDEX idx_moniker_constraint ON assembly.candidates(ballot_id, moniker);
 GRANT SELECT ON assembly.candidates TO cdb_member;
-GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attendees (
         id                      serial PRIMARY KEY,
@@ -975,9 +987,8 @@ CREATE TABLE assembly.voter_register (
         has_voted               boolean NOT NULL DEFAULT False
 );
 CREATE UNIQUE INDEX idx_voter_constraint ON assembly.voter_register(persona_id, ballot_id);
-GRANT SELECT, INSERT ON assembly.voter_register TO cdb_member;
+GRANT SELECT, INSERT, DELETE ON assembly.voter_register TO cdb_member;
 GRANT UPDATE (has_voted) ON assembly.voter_register TO cdb_member;
-GRANT DELETE ON assembly.voter_register TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.voter_register_id_seq TO cdb_member;
 
 CREATE TABLE assembly.votes (
@@ -1004,9 +1015,8 @@ CREATE TABLE assembly.attachments (
 );
 CREATE INDEX idx_attachments_assembly_id ON assembly.attachments(assembly_id);
 CREATE INDEX idx_attachments_ballot_id ON assembly.attachments(ballot_id);
-GRANT SELECT ON assembly.attachments TO cdb_member;
-GRANT INSERT, DELETE, UPDATE ON assembly.attachments TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_admin;
+GRANT SELECT, UPDATE, INSERT, DELETE ON assembly.attachments TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_versions (
         id                      bigserial PRIMARY KEY,
@@ -1022,9 +1032,8 @@ CREATE TABLE assembly.attachment_versions (
 );
 CREATE INDEX idx_attachment_versions_attachment_id ON assembly.attachment_versions(attachment_id);
 CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version);
-GRANT SELECT ON assembly.attachment_versions TO cdb_member;
-GRANT INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_admin;
-GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_admin;
+GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
+GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.log (
         id                      bigserial PRIMARY KEY,
@@ -1039,8 +1048,8 @@ CREATE TABLE assembly.log (
 );
 CREATE INDEX idx_assembly_log_code ON assembly.log(code);
 CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
-GRANT SELECT, DELETE ON assembly.log TO cdb_admin;
-GRANT INSERT ON assembly.log TO cdb_member;
+GRANT DELETE ON assembly.log TO cdb_admin;
+GRANT SELECT, INSERT ON assembly.log TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 
 ---

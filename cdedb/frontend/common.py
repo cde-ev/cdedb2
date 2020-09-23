@@ -2122,6 +2122,26 @@ def mailinglist_guard(argname: str = "mailinglist_id",
     return wrap
 
 
+def assembly_guard(fun: F) -> F:
+    """This decorator checks that the user has privileged access to an assembly.
+    """
+
+    @functools.wraps(fun)
+    def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
+                **kwargs: Any) -> Any:
+        if "assembly_id" in kwargs:
+            assembly_id = kwargs["assembly_id"]
+        else:
+            assembly_id = args[0]
+        if not obj.assemblyproxy.is_presider(rs, assembly_id=assembly_id):
+            raise werkzeug.exceptions.Forbidden(rs.gettext(
+                "This page may only be accessed by the assembly's"
+                " presiders or assembly admins."))
+        return fun(obj, rs, *args, **kwargs)
+
+    return cast(F, new_fun)
+
+
 def check_validation(rs: RequestState, assertion: str, value: T,
                      name: str = None, **kwargs: Any) -> T:
     """Helper to perform parameter sanitization.

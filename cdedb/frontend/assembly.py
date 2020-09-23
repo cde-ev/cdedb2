@@ -2,6 +2,7 @@
 
 """Services for the assembly realm."""
 
+from collections import OrderedDict
 import copy
 import json
 import pathlib
@@ -17,10 +18,9 @@ import werkzeug.exceptions
 from werkzeug import Response
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
-    check_validation as check, request_extractor, query_result_to_json,
-    calculate_db_logparams, calculate_loglinks, process_dynamic_input,
-    periodic
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
+    check_validation as check, request_extractor, calculate_db_logparams,
+    calculate_loglinks, process_dynamic_input, periodic
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import Query, QUERY_SPECS, mangle_query_input
@@ -167,7 +167,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'assemblies': assemblies, 'all_assemblies': all_assemblies,
             'loglinks': loglinks})
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("change_note", "str_or_None"),
@@ -220,6 +221,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        presiders = self.coreproxy.get_personas(
+            rs, rs.ambience['assembly']['presiders'])
 
         has_ballot_attachments = False
         ballot_attachments = {}
@@ -248,13 +251,50 @@ class AssemblyFrontend(AbstractUserFrontend):
             "attachments": attachments,
             "attachment_histories": attachment_histories,
             "attends": attends, "ballots": ballots,
-            "delete_blockers": delete_blockers,
-            "conclude_blockers": conclude_blockers,
             "ballot_attachments": ballot_attachments,
+            "conclude_blockers": conclude_blockers,
+            "delete_blockers": delete_blockers,
             "has_ballot_attachments": has_ballot_attachments,
+            "presiders": presiders,
         })
 
-    @access("assembly_admin")
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("presider_ids", "cdedbid_csv_list"))
+    def add_presiders(self, rs: RequestState, assembly_id: int,
+                      presider_ids: Collection[int]) -> Response:
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
+        if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):
+            rs.append_validation_error(("presider_ids", ValueError(n_(
+                "Some of these users do not exist or are archived."))))
+        elif not self.coreproxy.verify_personas(rs, presider_ids, {"assembly"}):
+            rs.append_validation_error(("presider_ids", ValueError(n_(
+                "Some of these users are not assembly users."))))
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
+        presider_ids = set(presider_ids) | rs.ambience['assembly']['presiders']
+        code = self.assemblyproxy.set_assembly_presiders(
+            rs, assembly_id, presider_ids)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/show_assembly")
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("presider_id", "id"))
+    def remove_presider(self, rs: RequestState, assembly_id: int,
+                        presider_id: int) -> Response:
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
+        if presider_id not in rs.ambience['assembly']['presiders']:
+            rs.notify("info", n_(
+                "This user is not a presider for this assembly."))
+            return self.redirect(rs, "assembly/show")
+        ids = rs.ambience['assembly']['presiders'] - {presider_id}
+        code = self.assemblyproxy.set_assembly_presiders(rs, assembly_id, ids)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/show_assembly")
+
+    @access("assembly")
+    @assembly_guard
     def change_assembly_form(self, rs: RequestState,
                              assembly_id: int) -> Response:
         """Render form."""
@@ -264,7 +304,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, rs.ambience['assembly'])
         return self.render(rs, "change_assembly")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdatadict("title", "description", "mail_address", "signup_end",
                      "notes")
     def change_assembly(self, rs: RequestState, assembly_id: int,
@@ -285,9 +326,12 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "signup_end", "notes")
-    def create_assembly(self, rs: RequestState,
+    @REQUESTdata(("presider_ids", "cdedbid_csv_list"))
+    def create_assembly(self, rs: RequestState, presider_ids: Collection[int],
                         data: Dict[str, Any]) -> Response:
         """Make a new assembly."""
+        if presider_ids is not None:
+            data["presiders"] = presider_ids
         data = check(rs, "assembly", data, creation=True)
         if rs.has_validation_errors():
             return self.create_assembly_form(rs)
@@ -312,7 +356,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # Specify what to cascade
         cascade = {"ballots", "attendees", "attachments", "log",
-                   "mailinglists"} & blockers.keys()
+                   "mailinglists", "presiders"} & blockers.keys()
         code = self.assemblyproxy.delete_assembly(
             rs, assembly_id, cascade=cascade)
 
@@ -394,7 +438,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdata(("persona_id", "cdedbid"))
     def external_signup(self, rs: RequestState, assembly_id: int,
                         persona_id: int) -> Response:
@@ -427,7 +472,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         attendees = self._get_list_attendees_data(rs, assembly_id)
         return self.render(rs, "list_attendees", {"attendees": attendees})
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def download_list_attendees(self, rs: RequestState,
                                 assembly_id: int) -> Response:
         """Provides a tex-snipped with all attendes of an assembly."""
@@ -529,7 +575,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballots': ballots, 'future': future, 'current': current,
             'done': done, 'votes': votes})
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def create_ballot_form(self, rs: RequestState,
                            assembly_id: int) -> Response:
         """Render form."""
@@ -538,7 +585,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly")
         return self.render(rs, "create_ballot")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
                      "vote_extension_end", "quorum", "votes", "notes",
                      "use_bar")
@@ -590,7 +638,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'edit': edit,
         })
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def add_attachment_form(self, rs: RequestState, assembly_id: int,
                             ballot_id: int = None,
                             attachment_id: int = None) -> Response:
@@ -617,7 +666,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'attachment': attachment, 'history': history,
             })
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdata(("title", "str"),
                  ("authors", "str_or_None"),
                  ("filename", "identifier_or_None"),)
@@ -669,7 +719,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'attachment_id': attachment_id if attachment_id else code,
         })
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def change_attachment_link_form(self, rs: RequestState,
                                     assembly_id: int, attachment_id: int,
                                     ballot_id: int = None) -> Response:
@@ -706,7 +757,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_entries': ballot_entries,
         })
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdata(("new_ballot_id", "id_or_None"))
     def change_attachment_link(self, rs: RequestState, assembly_id: int,
                                attachment_id: int, new_ballot_id: Optional[int],
@@ -752,7 +804,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_ballot_id,
         })
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     # ballot_id comes semantically after assembly_id, but is optional,
     # so needs to be at the end.
     def edit_attachment_version_form(
@@ -789,7 +842,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'version': version,
         })
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdata(("title", "str"), ("authors", "str_or_None"),
                  ("filename", "str"))
     def edit_attachment_version(self, rs: RequestState, assembly_id: int,
@@ -836,7 +890,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_attachment")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdata(("attachment_ack_delete", "bool"))
     # ballot_id is optional, but comes semantically before attachment_id
     def delete_attachment(self, rs: RequestState, assembly_id: int,
@@ -1135,7 +1190,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballots': done, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
             'result': result})
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def change_ballot_form(self, rs: RequestState, assembly_id: int,
                            ballot_id: int) -> Response:
         """Render form"""
@@ -1145,7 +1201,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, rs.ambience['ballot'])
         return self.render(rs, "change_ballot")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
                      "vote_extension_end", "use_bar", "quorum", "votes",
                      "notes")
@@ -1160,7 +1217,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     def ballot_start_voting(self, rs: RequestState, assembly_id: int,
                             ballot_id: int) -> Response:
         """Immediately start voting period of a ballot.
@@ -1179,7 +1237,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         time.sleep(1)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdata(("ack_delete", "bool"))
     def delete_ballot(self, rs: RequestState, assembly_id: int, ballot_id: int,
                       ack_delete: bool) -> Response:
@@ -1273,7 +1332,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.send_file(rs, data=result, inline=False,
                               filename=f"ballot_{ballot_id}_result.json")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     def edit_candidates(self, rs: RequestState, assembly_id: int,
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of ballot.
