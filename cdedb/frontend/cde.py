@@ -2611,10 +2611,6 @@ class CdEFrontend(AbstractUserFrontend):
             else:
                 return self.show_past_event(rs, pevent_id)
 
-        if pcourse_id:
-            param = {'pcourse_id': pcourse_id}
-        else:
-            param = {'pevent_id': pevent_id}
         code = 1
         # TODO: Check if participants are already present.
         for persona_id in persona_ids:
