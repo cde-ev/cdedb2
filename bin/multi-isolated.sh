@@ -25,20 +25,16 @@ if [[ -f "$CONTAINER" ]]; then
     exit
 fi
 
-REPOPATH=$(dirname $0)/..
+REPOPATH=$(pwd)/$(dirname $0)/..
 BASEIMAGE=${BASEIMAGE:-${REPOPATH}/related/auto-build/images/anautobuild.qcow2}
 # The base image has to be a recent autobuild. It should never be modified
 # (i.e. never be used as direct source for a VM). Instead it's just the
 # backing store for ephemeral images.
 
-echo $BASEIMAGE
-
-if [[ ! -f "$CONTAINER" ]]; then
+if [[ ! -f "$BASEIMAGE" ]]; then
     echo "Base image not found!"
     exit
 fi
-
-exit
 
 qemu-img create -f qcow2 -b "$BASEIMAGE" "$CONTAINER"
 
