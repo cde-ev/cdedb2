@@ -4614,7 +4614,7 @@ msgstr "Verg.-Veranstaltungen-Log"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:69
 msgid "Past Event Administration"
-msgstr "verg. Veranst. Administration"
+msgstr "Verg.-Veranst.-Administration"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:70
 #: cdedb/frontend/templates/web/core/show_user.tmpl:28
