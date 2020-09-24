@@ -350,6 +350,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f, check_notification=False)
         self.assertValidationError("persona_id",
             "Dieser Nutzer ist kein Versammlungsnutzer.")
+        # TODO: add a check for a non-existant user and an invalid DB-ID.
 
     @as_users("kalif")
     def test_list_attendees(self, user):
