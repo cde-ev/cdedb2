@@ -270,7 +270,7 @@ class AssemblyBackend(AbstractBackend):
             change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
-    @access("assembly_admin")
+    @access("core_admin", "assembly_admin")
     def submit_general_query(self, rs: RequestState,
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around

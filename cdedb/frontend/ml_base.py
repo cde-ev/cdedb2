@@ -69,7 +69,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos})
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': False,
@@ -78,7 +78,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("ml_admin", modi={"POST"})
+    @access("core_admin", "ml_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes", "username")
     def create_user(self, rs: RequestState, data: Dict[str, Any],
@@ -93,7 +93,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data, ignore_warnings)
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: str,
                     is_search: bool) -> Response:

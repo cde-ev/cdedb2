@@ -1775,7 +1775,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
-        result |= {"core_user", "core"}
+        result |= {"core", "core_user", "cde_user", "event_user",
+                   "assembly_user", "ml_user"}
     if "cde_admin" in roles:
         result |= {"cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:

@@ -88,16 +88,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     def test_sidebar(self, user):
         self.traverse({'description': 'Versammlungen'})
         everyone = ["Versammlungen", "Übersicht"]
-        admins = ["Nutzer verwalten", "Log"]
 
         # not assembly admins
         if user['id'] in {USER_DICT["annika"]['id'], USER_DICT["martin"]['id'],
-                          USER_DICT["vera"]['id'], USER_DICT["werner"]['id']}:
+                          USER_DICT["werner"]['id']}:
             ins = everyone
-            out = admins
+            out = ["Nutzer verwalten", "Log"]
+        # core admins
+        elif user['id'] == USER_DICT["vera"]['id']:
+            ins = everyone + ["Nutzer verwalten"]
+            out = ["Log"]
         # assembly admins
         elif user['id'] == USER_DICT["anton"]['id']:
-            ins = everyone + admins
+            ins = everyone + ["Nutzer verwalten", "Log"]
             out = []
         else:
             self.fail("Please adjust users for this test.")
@@ -143,7 +146,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertPresence('Nein', div='account-active')
 
-    @as_users("ferdinand")
+    @as_users("ferdinand", "vera")
     def test_user_search(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Nutzer verwalten'})
@@ -159,7 +162,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Ergebnis [1]", div="query-results")
         self.assertPresence("Karabatschi", div="result-container")
 
-    @as_users("ferdinand")
+    @as_users("ferdinand", "vera")
     def test_create_user(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Nutzer verwalten'},

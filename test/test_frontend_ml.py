@@ -25,8 +25,14 @@ class TestMlFrontend(FrontendTest):
             ins = ["Übersicht"]
             out = ["Alle Mailinglisten", "Moderierte Mailinglisten",
                    "Aktive Mailinglisten", "Nutzer verwalten", "Log"]
+        # Users with core admin privileges for some mailinglists:
+        elif user['id'] in {USER_DICT['vera']['id']}:
+            ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
+                   "Log", "Nutzer verwalten"]
+            out = ["Übersicht", "Alle Mailinglisten",
+                   "Moderierte Mailinglisten"]
         # Users with relative admin privileges for some mailinglists:
-        elif user['id'] in {USER_DICT['vera']['id'], USER_DICT['viktor']['id']}:
+        elif user['id'] in {USER_DICT['viktor']['id']}:
             ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
                    "Log"]
             out = ["Übersicht", "Alle Mailinglisten",
@@ -98,7 +104,7 @@ class TestMlFrontend(FrontendTest):
             False,
             self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
 
-    @as_users("nina", "ferdinand")
+    @as_users("nina", "vera")
     def test_user_search(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'})
         self.assertTitle("Mailinglisten-Nutzerverwaltung")
@@ -113,7 +119,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Ergebnis [1]")
         self.assertPresence("Jalapeño")
 
-    @as_users("nina")
+    @as_users("nina", "vera")
     def test_create_user(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'}, {'href': '/ml/user/create'})
         self.assertTitle("Neuen Mailinglistennutzer anlegen")

@@ -268,7 +268,7 @@ class CdEFrontend(AbstractUserFrontend):
             'cutoff': cutoff, 'count': count,
         })
 
-    @access("cde_admin")
+    @access("core_admin", "cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: str, is_search: bool
                     ) -> Response:
@@ -308,7 +308,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
 
-    @access("cde_admin")
+    @access("core_admin", "cde_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,
@@ -318,7 +318,7 @@ class CdEFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("cde_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdatadict(
         "title", "given_names", "family_name", "birth_name", "name_supplement",
         "display_name", "specialisation", "affiliation", "timeline",

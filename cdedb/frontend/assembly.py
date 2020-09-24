@@ -70,7 +70,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs, assembly_id=assembly_id)
         return self.render(rs, "index", {'assemblies': assemblies})
 
-    @access("assembly_admin")
+    @access("core_admin", "assembly_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': False,
@@ -79,7 +79,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("assembly_admin", modi={"POST"})
+    @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes", "username")
     def create_user(self, rs: RequestState, data: CdEDBObject,
@@ -94,7 +94,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data, ignore_warnings)
 
-    @access("assembly_admin")
+    @access("core_admin", "assembly_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: str,
                     is_search: bool) -> Response:
