@@ -37,8 +37,8 @@
     {% if "past_event" in user.admin_views %}
         {% call util.bootstrap_panel(title=gettext("Add Participant to this Course"),
                 aclass="panel-success panel-condensed", icon='plus') %}
-                <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
-                    {{ util.anti_csrf_token('cde/add_participant') }}
+                <form action="{{ cdedblink('cde/add_participants') }}" method="POST" id="addparticipantform">
+                    {{ util.anti_csrf_token('cde/add_participants') }}
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                     <div class="row">
                         <div class="col-sm-5 {% if 'persona_ids' in errors %}has-error{% endif %}">

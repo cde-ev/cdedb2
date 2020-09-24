@@ -78,8 +78,8 @@
                 <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
             </div>
             <div class="panel-body">
-                <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
-                    {{ util.anti_csrf_token('cde/add_participant') }}
+                <form action="{{ cdedblink('cde/add_participants') }}" method="POST" id="addparticipantform">
+                    {{ util.anti_csrf_token('cde/add_participants') }}
                     {{ util.input_hidden(name="pcourse_id", value="") }}
                     {{ util.input_hidden(name="is_instructor", value=False) }}
                     <div class="row">
