@@ -450,6 +450,19 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Signup already ended."))
             return self.redirect(rs, "assembly/list_attendees")
         if rs.has_validation_errors():
+            # Shortcircuit for invalid id
+            return self.list_attendees(rs, assembly_id)
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            rs.append_validation_error(
+                ('persona_id',
+                 ValueError(n_("This user does not exist or is archived."))))
+        elif not self.coreproxy.verify_persona(rs, persona_id, {"assembly"}):
+            rs.append_validation_error(
+                ('persona_id', ValueError(n_("This user is not an assembly user."))))
+        elif self.coreproxy.verify_persona(rs, persona_id, {"member"}):
+            rs.append_validation_error(
+                ('persona_id', ValueError(n_("Members must sign up themselves."))))
+        if rs.has_validation_errors():
             return self.list_attendees(rs, assembly_id)
         self.process_signup(rs, assembly_id, persona_id)
         return self.redirect(rs, "assembly/list_attendees")
