@@ -4,7 +4,7 @@ import csv
 import re
 
 import cdedb.database.constants as const
-from test.common import as_users, USER_DICT, FrontendTest
+from test.common import as_users, USER_DICT, FrontendTest, prepsql
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.frontend.common import CustomCSVDialect
 
@@ -174,7 +174,15 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/1/management/advanced'},
                       {'href': '/ml/mailinglist/1/log'},
                       {'href': '/ml/mailinglist/1/change'})
-        self.assertNonPresence('Speichern')
+        f = self.response.forms['changelistform']
+        f['notes'] = "I can change this!"
+        f['subject_prefix'] = "Spaß"
+        self.submit(f)
+
+        self.traverse({"description": "Konfiguration"})
+        f = self.response.forms['changelistform']
+        self.assertEqual("I can change this!", f['notes'].value)
+        self.assertEqual("Spaß", f['subject_prefix'].value)
 
     @as_users("berta", "charly")
     def test_show_mailinglist(self, user):
@@ -479,7 +487,8 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("zelda@example.cde")
 
-    @as_users("nina", "berta")
+    # TODO add a presider as moderator and use him too in this test
+    @as_users("nina")
     def test_mailinglist_management_outside_audience(self, user):
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Sozialistischer Kampfbrief'},
@@ -1141,13 +1150,83 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Witz des Tages – Verwaltung")
         self.traverse({"href": "/ml/mailinglist/3/change"})
         self.assertTitle("Witz des Tages – Konfiguration")
-        self.assertPresence("Nur Administratoren dürfen die Mailinglisten-"
-                            "Konfiguration ändern.", div="notifications")
-        self.assertNotIn('changelistform', self.response.forms)
-        # TODO check that form elements are readonly
+        self.assertIn('changelistform', self.response.forms)
+        # TODO check that some form elements are readonly
 
         self.traverse({"href": "ml/mailinglist/3/log"})
         self.assertTitle("Witz des Tages: Log [0–0 von 0]")
+
+    @as_users("berta", "janis")
+    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (60, 10)")
+    def test_moderator_change_mailinglist(self, user):
+        self.traverse({"description": "Mailinglisten"},
+                      {"description": "CdE-Party 2050 Teilnehmer"},
+                      {"description": "Konfiguration"})
+
+        old_ml = self.sample_data['ml.mailinglists'][60]
+        f = self.response.forms['changelistform']
+
+        # these properties are not allowed to be changed by moderators
+        f['title'].force_value("Party-Time")
+        f['local_part'].force_value("partyparty")
+        f['event_id'].force_value(1)
+        f['is_active'].force_value(False)
+        # these properties can be changed by privileged moderators
+        f['registration_stati'] = [const.RegistrationPartStati.guest.value]
+        # these properties can be changed by every moderator
+        f['description'] = "Wir machen Party!"
+        f['notes'] = "Nur geladene Gäste."
+        f['mod_policy'] = const.ModerationPolicy.unmoderated.value
+        f['subject_prefix'] = "party"
+        f['attachment_policy'] = const.AttachmentPolicy.allow.value
+        f['maxsize'] = 1111
+        self.submit(f)
+
+        # Check that these have not changed ...
+        self.traverse({"description": "Konfiguration"})
+        f = self.response.forms['changelistform']
+        self.assertEqual('True', f['is_active'].value)
+        self.assertEqual(old_ml['title'], f['title'].value)
+        self.assertEqual(old_ml['local_part'], f['local_part'].value)
+        self.assertEqual(str(old_ml['event_id']), f['event_id'].value)
+
+        # ... these have only changed if the moderator is privileged ...
+        reality = {f.get("registration_stati", index=i).value for i in range(7)}
+        if user == USER_DICT['berta']:
+            expectation = {None, str(const.RegistrationPartStati.guest.value)}
+        else:
+            expectation = {str(status)
+                           for status in old_ml['registration_stati']} | {None}
+        self.assertEqual(expectation, reality)
+
+        # ... and these have changed.
+        self.assertEqual("Wir machen Party!", f['description'].value)
+        self.assertEqual("Nur geladene Gäste.", f['notes'].value)
+        self.assertEqual(str(const.ModerationPolicy.unmoderated.value),
+                         f['mod_policy'].value)
+        self.assertEqual("party", f['subject_prefix'].value)
+        self.assertEqual(str(const.AttachmentPolicy.allow.value),
+                         f['attachment_policy'].value)
+        self.assertEqual("1111", f['maxsize'].value)
+
+    @as_users("janis")
+    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (5, 10)")
+    def test_non_privileged_moderator(self, user):
+        self.traverse({"description": "Mailinglisten"},
+                      {"description": "Sozialistischer Kampfbrief"},
+                      {"description": "Erweiterte Verwaltung"})
+        self.assertPresence("Du hast nur eingeschränkte Moderator Rechte",
+                            div="notifications")
+        # they can not add ...
+        f = self.response.forms['addmodsubscriberform']
+        f['modsubscriber_ids'] = "DB-1-9"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Darf Abonnements nicht ändern.", div="notifications")
+        # ... nor remove subscriptions.
+        f = self.response.forms['removemodsubscriberform100']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Darf Abonnements nicht ändern.",
+                            div="notifications")
 
     @as_users("inga")
     def test_cdelokal_admin(self, user):

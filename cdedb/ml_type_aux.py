@@ -1,7 +1,7 @@
 import enum
 from collections import OrderedDict
 from typing import (
-    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, Sequence
+    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List,
 )
 
 from cdedb.common import (
@@ -143,6 +143,26 @@ class GeneralMailinglist:
         """
         return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
 
+    @classmethod
+    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+                                mailinglist: CdEDBObject
+                                ) -> bool:
+        """Check if moderator is privileged.
+
+        Everyone with ml realm may be moderator of any mailinglist. But for some
+        lists, you must have additional privileges to make subscription-state
+        related changes to a mailinglist (like being an orga or presider).
+
+        This includes
+            * Changing subscription states as a moderator.
+            * Changing properties of a ml influencing implicit subscribers.
+
+        Per default, every moderator is privileged.
+
+        This returns a filter which allows the caller to check ids as desired.
+        """
+        return mailinglist['id'] in rs.user.moderator
+
     relevant_admins: Set[str] = set()
 
     @classmethod
@@ -165,22 +185,42 @@ class GeneralMailinglist:
     role_map = OrderedDict()
 
     @classmethod
-    def moderator_admin_views(cls):
+    def moderator_admin_views(cls) -> Set:
+        """All admin views which toggle the moderator view for this mailinglist.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
         return {"ml_mod_" + admin.replace("_admin", "")
                 for admin in cls.relevant_admins} | {"ml_mod"}
 
     @classmethod
-    def management_admin_views(cls):
+    def management_admin_views(cls) -> Set:
+        """All admin views which toggle the management view for this mailinglist.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
         return {"ml_mgmt_" + admin.replace("_admin", "")
                 for admin in cls.relevant_admins} | {"ml_mgmt"}
 
     @classmethod
     def has_moderator_view(cls, user: User) -> bool:
+        """Checks admin privileges and if a appropriated admin view is enabled.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
         return (cls.is_relevant_admin(user)
                 and bool(cls.moderator_admin_views() & user.admin_views))
 
     @classmethod
     def has_management_view(cls, user: User) -> bool:
+        """Checks admin privileges and if a appropriated admin view is enabled.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
         return (cls.is_relevant_admin(user)
                 and bool(cls.management_admin_views() & user.admin_views))
 
@@ -313,6 +353,21 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             | {("registration_stati", "[enum_registrationpartstati]")})
 
     @classmethod
+    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+                                mailinglist: CdEDBObject
+                                ) -> bool:
+        """Check if moderator is privileged.
+
+        For EventAssociatedMailinglists, this are the orgas of the event.
+        """
+        is_moderator = mailinglist['id'] in rs.user.moderator
+        if mailinglist['event_id'] is None:
+            return is_moderator
+        is_privileged = (mailinglist['event_id'] in rs.user.orga
+                         or "event_admin" in rs.user.roles)
+        return is_moderator and is_privileged
+
+    @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
@@ -331,7 +386,6 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         ret: MIPolMap = {}
         for persona_id in persona_ids:
-            # TODO this broken for moderators who are no orgas
             if bc.event.check_registration_status(
                     rs, persona_id, mailinglist['event_id'],
                     mailinglist['registration_stati']):
@@ -373,7 +427,6 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
                  mailinglist["registration_stati"]),
             ],
             order=tuple())
-        # TODO is this is broken for moderators who are not orgas of the event?
         data = bc.event.submit_general_query(rs, query, event_id=event["id"])
 
         return {e["persona.id"] for e in data}
@@ -429,6 +482,21 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
                                     AssemblyMailinglist):
     @classmethod
+    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+                                mailinglist: CdEDBObject
+                                ) -> bool:
+        """Check if moderator is privileged.
+
+        For AssemblyAssociatedMailinglists, this are assembly admins.
+        """
+        is_moderator = mailinglist['id'] in rs.user.moderator
+        if mailinglist['assembly_id'] is None:
+            return is_moderator
+        is_privileged = bc.assembly.may_assemble(rs,
+                                                 assembly_id=mailinglist['assembly_id'])
+        return is_moderator and is_privileged
+
+    @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
@@ -442,7 +510,6 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
 
         ret: MIPolMap = {}
         for persona_id in persona_ids:
-            # TODO this is broken for non-assembly users
             attending = bc.assembly.check_attendance(
                 rs, persona_id=persona_id,
                 assembly_id=mailinglist["assembly_id"])
@@ -461,8 +528,6 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
         linked assembly.
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
-        # TODO this is broken for moderators without assembly realm
-        # TODO this is broken for non-members who do not attend this assembly
         return bc.assembly.list_attendees(rs, mailinglist["assembly_id"])
 
 

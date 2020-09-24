@@ -26,10 +26,13 @@ via the ``@access`` decorator.
 
 Additionally there may be finer grained privileges which are encoded in
 various tables which are checked locally in the relevant pieces of code. The
-following additional privileges are there.
+following additional privileges are
 
 * orga of an event
-* moderator of a mailing list
+* moderator of a mailinglist
+
+Due to complex inter-realm dependencies, mailinglist privileges have some caveats
+which are explained further at :doc:`Realm_Mailinglist_Privileges`.
 
 .. todo:: Weiterführende Referenz auf Realm_Core_Personas
 
