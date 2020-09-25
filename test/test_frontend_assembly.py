@@ -707,8 +707,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     'use_bar': use_bar,
                 }
                 candidates = [
-                    {'shortname': 'arthur', 'description': 'Arthur Dent'},
-                    {'shortname': 'ford', 'description': 'Ford Prefect'},
+                    {'shortname': 'arthur', 'title': 'Arthur Dent'},
+                    {'shortname': 'ford', 'title': 'Ford Prefect'},
                 ]
                 self._create_ballot(bdata, candidates)
 
@@ -807,7 +807,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNotIn("Dunkelaquamarin", f.fields)
         f['create_-1'].checked = True
         f['shortname_-1'] = "aqua"
-        f['description_-1'] = "Dunkelaquamarin"
+        f['title_-1'] = "Dunkelaquamarin"
         self.submit(f)
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
@@ -825,13 +825,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
         f['shortname_8'] = "farbe"
-        f['description_6'] = "lila"
+        f['title_6'] = "lila"
         f['delete_7'].checked = True
         self.submit(f)
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertEqual("rot", f['shortname_6'].value)
-        self.assertEqual("lila", f['description_6'].value)
+        self.assertEqual("lila", f['title_6'].value)
         self.assertEqual("farbe", f['shortname_8'].value)
         self.assertEqual("aqua", f['shortname_1001'].value)
         self.assertNotIn("gelb", f.fields)
@@ -876,8 +876,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             'votes': "1",
         }
         candidates = [
-            {'shortname': 'ja', 'description': 'Ja'},
-            {'shortname': 'nein', 'description': 'Nein'},
+            {'shortname': 'ja', 'title': 'Ja'},
+            {'shortname': 'nein', 'title': 'Nein'},
         ]
         self._create_ballot(bdata, candidates)
 

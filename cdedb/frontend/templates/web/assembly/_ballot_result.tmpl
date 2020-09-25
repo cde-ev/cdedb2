@@ -34,7 +34,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {{ ballot['candidates'][candidate_id]['description'] }}
+                            {{ ballot['candidates'][candidate_id]['title'] }}
                             {% if not ballot['votes'] and not short %}
                                 <span class="label label-primary">
                                     {{- candidate_shortname -}}
@@ -162,7 +162,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {{ ballot['candidates'][candidate_id]['description'] }}
+                            {{ ballot['candidates'][candidate_id]['title'] }}
                             {% if not ballot['votes'] and not short %}
                                 <span class="label label-primary">
                                     {{- candidate_shortname -}}
@@ -330,7 +330,7 @@
             {% else %}
                 {% trans %}You voted for the following candidates:{% endtrans %}<br />
                 {% for vote in split_vote[0] %}
-                    {{ candidates[vote]['description'] }}{% if not loop.last %},{% endif %}
+                    {{ candidates[vote]['title'] }}{% if not loop.last %},{% endif %}
                 {% endfor %}
             {% endif %}
         {% else %}

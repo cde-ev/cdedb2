@@ -960,7 +960,7 @@ GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_member;
 CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
-        description             varchar NOT NULL,
+        title             varchar NOT NULL,
         shortname                 varchar NOT NULL
 );
 CREATE UNIQUE INDEX idx_shortname_constraint ON assembly.candidates(ballot_id, shortname);

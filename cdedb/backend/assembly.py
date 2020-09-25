@@ -760,7 +760,7 @@ class AssemblyBackend(AbstractBackend):
             ret = {e['id']: e for e in data}
             data = self.sql_select(
                 rs, "assembly.candidates",
-                ("id", "ballot_id", "description", "shortname"), ids,
+                ("id", "ballot_id", "title", "shortname"), ids,
                 entity_key="ballot_id")
             for anid in ids:
                 candidates = {e['id']: e for e in data
@@ -1340,7 +1340,7 @@ class AssemblyBackend(AbstractBackend):
             assembly = unwrap(
                 self.get_assemblies(rs, (ballot['assembly_id'],)))
             candidates = {
-                c['shortname']: c['description']
+                c['shortname']: c['title']
                 for c in xsorted(ballot['candidates'].values(),
                                  key=lambda x: x['shortname'])
             }

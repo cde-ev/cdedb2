@@ -4917,307 +4917,307 @@
         {
             "id": 2,
             "ballot_id": 1,
-            "description": "Ich",
+            "title": "Ich",
             "shortname": "1"
         },
         {
             "id": 3,
             "ballot_id": 1,
-            "description": "23",
+            "title": "23",
             "shortname": "2"
         },
         {
             "id": 4,
             "ballot_id": 1,
-            "description": "42",
+            "title": "42",
             "shortname": "3"
         },
         {
             "id": 5,
             "ballot_id": 1,
-            "description": "Philosophie",
+            "title": "Philosophie",
             "shortname": "4"
         },
         {
             "id": 6,
             "ballot_id": 2,
-            "description": "Rot",
+            "title": "Rot",
             "shortname": "rot"
         },
         {
             "id": 7,
             "ballot_id": 2,
-            "description": "Gelb",
+            "title": "Gelb",
             "shortname": "gelb"
         },
         {
             "id": 8,
             "ballot_id": 2,
-            "description": "Gr\u00fcn",
+            "title": "Gr\u00fcn",
             "shortname": "gruen"
         },
         {
             "id": 9,
             "ballot_id": 2,
-            "description": "Blau",
+            "title": "Blau",
             "shortname": "blau"
         },
         {
             "id": 10,
             "ballot_id": 3,
-            "description": "Lischert",
+            "title": "Lischert",
             "shortname": "Li"
         },
         {
             "id": 11,
             "ballot_id": 3,
-            "description": "Steinsgebiss",
+            "title": "Steinsgebiss",
             "shortname": "St"
         },
         {
             "id": 12,
             "ballot_id": 3,
-            "description": "Fichte",
+            "title": "Fichte",
             "shortname": "Fi"
         },
         {
             "id": 13,
             "ballot_id": 3,
-            "description": "Buchwald",
+            "title": "Buchwald",
             "shortname": "Bu"
         },
         {
             "id": 14,
             "ballot_id": 3,
-            "description": "L\u00f6scher",
+            "title": "L\u00f6scher",
             "shortname": "Lo"
         },
         {
             "id": 15,
             "ballot_id": 3,
-            "description": "Goldborn",
+            "title": "Goldborn",
             "shortname": "Go"
         },
         {
             "id": 17,
             "ballot_id": 4,
-            "description": "Wackelpudding",
+            "title": "Wackelpudding",
             "shortname": "W"
         },
         {
             "id": 18,
             "ballot_id": 4,
-            "description": "Salat",
+            "title": "Salat",
             "shortname": "S"
         },
         {
             "id": 19,
             "ballot_id": 4,
-            "description": "Eis",
+            "title": "Eis",
             "shortname": "E"
         },
         {
             "id": 20,
             "ballot_id": 4,
-            "description": "Joghurt",
+            "title": "Joghurt",
             "shortname": "J"
         },
         {
             "id": 21,
             "ballot_id": 4,
-            "description": "Nichts",
+            "title": "Nichts",
             "shortname": "N"
         },
         {
             "id": 23,
             "ballot_id": 5,
-            "description": "e",
+            "title": "e",
             "shortname": "e"
         },
         {
             "id": 24,
             "ballot_id": 5,
-            "description": "pi",
+            "title": "pi",
             "shortname": "pi"
         },
         {
             "id": 25,
             "ballot_id": 5,
-            "description": "i",
+            "title": "i",
             "shortname": "i"
         },
         {
             "id": 26,
             "ballot_id": 5,
-            "description": "1",
+            "title": "1",
             "shortname": "1"
         },
         {
             "id": 27,
             "ballot_id": 5,
-            "description": "0",
+            "title": "0",
             "shortname": "0"
         },
         {
             "id": 28,
             "ballot_id": 11,
-            "description": "Ja",
+            "title": "Ja",
             "shortname": "Ja"
         },
         {
             "id": 29,
             "ballot_id": 11,
-            "description": "Nein",
+            "title": "Nein",
             "shortname": "Nein"
         },
         {
             "id": 30,
             "ballot_id": 12,
-            "description": "Löwe",
+            "title": "Löwe",
             "shortname": "a"
         },
         {
             "id": 31,
             "ballot_id": 12,
-            "description": "Adler",
+            "title": "Adler",
             "shortname": "b"
         },
         {
             "id": 32,
             "ballot_id": 12,
-            "description": "Dachs",
+            "title": "Dachs",
             "shortname": "c"
         },
         {
             "id": 33,
             "ballot_id": 12,
-            "description": "Schlange",
+            "title": "Schlange",
             "shortname": "d"
         },
         {
             "id": 34,
             "ballot_id": 13,
-            "description": "Anton A. Administrator",
+            "title": "Anton A. Administrator",
             "shortname": "Anton"
         },
         {
             "id": 35,
             "ballot_id": 13,
-            "description": "Bertalotta Beispiel",
+            "title": "Bertalotta Beispiel",
             "shortname": "Berta"
         },
         {
             "id": 36,
             "ballot_id": 13,
-            "description": "Akira Abukara",
+            "title": "Akira Abukara",
             "shortname": "Akira"
         },
         {
             "id": 37,
             "ballot_id": 14,
-            "description": "Durch eine erhobene Steuer auf Tee und Schokolade",
+            "title": "Durch eine erhobene Steuer auf Tee und Schokolade",
             "shortname": "Steuern"
         },
         {
             "id": 38,
             "ballot_id": 14,
-            "description": "Durch Spendenbeiträge",
+            "title": "Durch Spendenbeiträge",
             "shortname": "Spenden"
         },
         {
             "id": 39,
             "ballot_id": 14,
-            "description": "Durch Infiltration des BMBF",
+            "title": "Durch Infiltration des BMBF",
             "shortname": "BMBF"
         },
         {
             "id": 40,
             "ballot_id": 15,
-            "description": "Sindarin (Elbisch, Herr der Ringe)",
+            "title": "Sindarin (Elbisch, Herr der Ringe)",
             "shortname": "Sindarin"
         },
         {
             "id": 41,
             "ballot_id": 15,
-            "description": "Khuzdul (Zwergisch, Herr der Ringe)",
+            "title": "Khuzdul (Zwergisch, Herr der Ringe)",
             "shortname": "Khuzdul"
         },
         {
             "id": 42,
             "ballot_id": 15,
-            "description": "Esperanto (Kunstsprache, Erde)",
+            "title": "Esperanto (Kunstsprache, Erde)",
             "shortname": "Esperanto"
         },
         {
             "id": 43,
             "ballot_id": 15,
-            "description": "Klingonisch (Klingonen, Star Trek)",
+            "title": "Klingonisch (Klingonen, Star Trek)",
             "shortname": "Klingonisch"
         },
         {
             "id": 44,
             "ballot_id": 7,
-            "description": "Ja",
+            "title": "Ja",
             "shortname": "Ja"
         },
         {
             "id": 45,
             "ballot_id": 7,
-            "description": "Nein",
+            "title": "Nein",
             "shortname": "Nein"
         },
         {
             "id": 46,
             "ballot_id": 8,
-            "description": "Eine Glühbirne mit Schriftzug",
+            "title": "Eine Glühbirne mit Schriftzug",
             "shortname": "Gluehbirne"
         },
         {
             "id": 47,
             "ballot_id": 8,
-            "description": "Die vier Wappentiere, die den Schriftzug CdE umringen",
+            "title": "Die vier Wappentiere, die den Schriftzug CdE umringen",
             "shortname": "Wappen"
         },
         {
             "id": 48,
             "ballot_id": 8,
-            "description": "Ein Baum mit Blättern und Grün!",
+            "title": "Ein Baum mit Blättern und Grün!",
             "shortname": "Baum"
         },
         {
             "id": 49,
             "ballot_id": 9,
-            "description": "Farin Finanzvorstand",
+            "title": "Farin Finanzvorstand",
             "shortname": "Farin"
         },
         {
             "id": 50,
             "ballot_id": 9,
-            "description": "Inga Iota",
+            "title": "Inga Iota",
             "shortname": "Inga"
         },
         {
             "id": 51,
             "ballot_id": 9,
-            "description": "Olaf Olafson",
+            "title": "Olaf Olafson",
             "shortname": "Olaf"
         },
         {
             "id": 52,
             "ballot_id": 10,
-            "description": "Investieren in Aktien und Fonds.",
+            "title": "Investieren in Aktien und Fonds.",
             "shortname": "Aktien"
         },
         {
             "id": 53,
             "ballot_id": 10,
-            "description": "Wir kaufen den Eisenberg!",
+            "title": "Wir kaufen den Eisenberg!",
             "shortname": "Eisenberg"
         },
         {
             "id": 54,
             "ballot_id": 10,
-            "description": "Kostenlose Akademien für alle.",
+            "title": "Kostenlose Akademien für alle.",
             "shortname": "Akademien"
         }
     ],

@@ -4024,7 +4024,7 @@ def _ballot(val, argname=None, *, creation=False, _convert=True,
 
 
 _BALLOT_CANDIDATE_COMMON_FIELDS = {
-    'description': _str,
+    'title': _str,
     'shortname': _identifier,
 }
 

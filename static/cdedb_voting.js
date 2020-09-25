@@ -287,10 +287,10 @@ if (!String.prototype.format) {
                 var $cand = $('<span></span>', {'class': 'prefvote_candidate',
                                                 'draggable': 'true',
                                                 'id': 'vote-cand_' + candidates[i][1].id,
-                                                'aria-label': 'Kandidat: ' + candidates[i][1].description,
+                                                'aria-label': 'Kandidat: ' + candidates[i][1].title,
                                                 'data-shortname': shortname,
                                                 'tabindex': '0'});
-                $cand.text(candidates[i][1].description);
+                $cand.text(candidates[i][1].title);
                 candidate_list[shortname] = $cand;
                 $cand.on('dragstart',function(e) {
                     e.originalEvent.dataTransfer.setData('text', $(this).attr('data-shortname'));
@@ -412,7 +412,7 @@ if (!String.prototype.format) {
      * jQuery plugin for the fancy interactive preferential voting.
      *
      * parameters:
-     * candidates: List of all candidates in form: [ [id, {'id', 'shortname', 'description'}] ]
+     * candidates: List of all candidates in form: [ [id, {'id', 'shortname', 'title'}] ]
      * bar_shortname: shortname of bar option, null if bar is not used
      * bar_name: Label of bar option / neutral stage box
      * labels : Object mapping some strings to internationalized/translated strings. It should contain the following

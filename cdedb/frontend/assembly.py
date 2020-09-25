@@ -1359,7 +1359,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         candidates = process_dynamic_input(
             rs, rs.ambience['ballot']['candidates'].keys(),
-            {'shortname': "restrictive_identifier", 'description': "str"})
+            {'shortname': "restrictive_identifier", 'title': "str"})
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():
