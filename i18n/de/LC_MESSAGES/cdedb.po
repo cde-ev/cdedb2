@@ -3163,7 +3163,7 @@ msgid "lodgement ID"
 msgstr "Unterkunfts-ID"
 
 #: cdedb/frontend/event.py:5347 cdedb/frontend/event.py:5205
-msgid "lodgement moniker"
+msgid "lodgement title"
 msgstr "Unterkunftskurzname"
 
 #: cdedb/frontend/event.py:5349 cdedb/frontend/event.py:5207
@@ -3191,7 +3191,7 @@ msgid "any part: lodgement ID"
 msgstr "Bel. Teil: Unterkunfts-ID"
 
 #: cdedb/frontend/event.py:5374 cdedb/frontend/event.py:5232
-msgid "any part: lodgement moniker"
+msgid "any part: lodgement title"
 msgstr "Bel. Teil: Unterkunftskurzname"
 
 #: cdedb/frontend/event.py:5377 cdedb/frontend/event.py:5235
@@ -3251,7 +3251,7 @@ msgstr "Unterkunfts-ID"
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:28
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:82
 #: cdedb/frontend/event.py:5521
-msgid "Moniker"
+msgid "Title"
 msgstr "Bezeichnung"
 
 #: cdedb/frontend/event.py:5674
@@ -3289,7 +3289,7 @@ msgid "Lodgement Group"
 msgstr "Unterkunftgruppe"
 
 #: cdedb/frontend/event.py:5680 cdedb/frontend/event.py:5527
-msgid "Lodgement Group Moniker"
+msgid "Lodgement Group Title"
 msgstr "Unterkunftsgruppe: Bezeichner"
 
 #: cdedb/frontend/event.py:5682 cdedb/frontend/event.py:5529

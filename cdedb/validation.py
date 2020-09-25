@@ -2911,7 +2911,7 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
 
 
 _LODGEMENT_GROUP_FIELDS = lambda: {
-    'moniker': _str,
+    'title': _str,
 }
 
 
@@ -2946,7 +2946,7 @@ def _lodgement_group(val, argname=None, *, creation=False, _convert=True,
 
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
-    'moniker': _str,
+    'title': _str,
     'regular_capacity': _non_negative_int,
     'camping_mat_capacity': _non_negative_int,
     'notes': _str_or_None,
@@ -3461,7 +3461,7 @@ def _partial_course(val, argname=None, *, creation=False, _convert=True,
 
 
 _PARTIAL_LODGEMENT_GROUP_FIELDS = lambda: {
-    'moniker': _str,
+    'title': _str,
 }
 
 
@@ -3495,7 +3495,7 @@ def _partial_lodgement_group(val, argname=None, *, creation=False,
 
 
 _PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
-    'moniker': _str,
+    'title': _str,
     'regular_capacity': _non_negative_int,
     'camping_mat_capacity': _non_negative_int,
     'notes': _str_or_None,

@@ -566,11 +566,11 @@ class EntitySorter:
 
     @staticmethod
     def lodgement(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['moniker'], lodgement['id'])
+        return (lodgement['title'], lodgement['id'])
 
     @staticmethod
     def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
-        return (lodgement_group['moniker'], lodgement_group['id'])
+        return (lodgement_group['title'], lodgement_group['id'])
 
     @staticmethod
     def event_part(event_part: CdEDBObject) -> Sortkey:
@@ -960,7 +960,7 @@ def unwrap(data):
 class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
     #: default sortkey (currently equal to EntitySorter.lodgement)
-    moniker = 1
+    title = 1
     #: regular_capacity which is used in this part
     used_regular = 10
     #: camping_mat_capacity which is used in this part
@@ -2023,10 +2023,10 @@ REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
                              "course_instructor")
 
 #: Fields of a lodgement group
-LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
+LODGEMENT_GROUP_FIELDS = ("id", "event_id", "title")
 
 #: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "moniker", "regular_capacity",
+LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
                     "camping_mat_capacity", "notes", "group_id", "fields")
 
 # Fields of a row in a questionnaire.

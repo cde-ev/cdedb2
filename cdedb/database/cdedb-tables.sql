@@ -364,7 +364,7 @@ GRANT DELETE ON core.changelog TO cdb_admin;
 CREATE TABLE core.cron_store
 (
         id                      serial PRIMARY KEY,
-        moniker                 varchar NOT NULL UNIQUE,
+        title                 varchar NOT NULL UNIQUE,
         store                   jsonb NOT NULL
 );
 GRANT SELECT, UPDATE ON core.cron_store_id_seq TO cdb_admin;
@@ -750,7 +750,7 @@ GRANT SELECT ON event.orgas TO cdb_anonymous;
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        moniker                 varchar NOT NULL
+        title                 varchar NOT NULL
 );
 CREATE INDEX ids_lodgement_groups_event_id ON event.lodgement_groups(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgement_groups TO cdb_persona;
@@ -759,7 +759,7 @@ GRANT SELECT, UPDATE ON event.lodgement_groups_id_seq TO cdb_persona;
 CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        moniker                 varchar NOT NULL,
+        title                 varchar NOT NULL,
         regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
         camping_mat_capacity    integer NOT NULL DEFAULT 0,

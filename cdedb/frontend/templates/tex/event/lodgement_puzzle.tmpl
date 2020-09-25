@@ -28,7 +28,7 @@
 <<% block content %>>
     <<% for lodgement_id, lodgement in lodgements|keydictsort(EntitySorter.lodgement) %>>
         <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
-            \lodgement{<<< lodgement['moniker']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['regular_capacity']|te >>>}%
+            \lodgement{<<< lodgement['title']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['regular_capacity']|te >>>}%
                       {<<< lodgement['camping_mat_capacity']|te >>>}{<<< lodgement['notes']|te >>>}
         <<% endfor %>>
     <<% endfor %>>

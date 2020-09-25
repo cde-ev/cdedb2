@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_manage_participants.js') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans lodgement=ambience['lodgement']['moniker'], title=ambience['event']['title'] %}
+    {% trans lodgement=ambience['lodgement']['title'], title=ambience['event']['title'] %}
     	Manage Inhabitants of Lodgement {{ lodgement }} ({{ title }})
     {% endtrans %}
 {% endblock %}
@@ -12,12 +12,12 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
-    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker'], icon='home') }}
+    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['title'], icon='home') }}
     {{ util.breadcrumb_link(cdedblink("event/manage_inhabitants"), gettext("Manage Inhabitants"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans lodgement=ambience['lodgement']['moniker']%}
+        {% trans lodgement=ambience['lodgement']['title']%}
         	Inhabitants of {{ lodgement }}
         {% endtrans %}
         <small>{{ util.make_icon('chalkboard-teacher', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
