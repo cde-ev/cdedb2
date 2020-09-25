@@ -504,7 +504,7 @@ GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 CREATE TABLE past_event.institutions (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
-        shortname                 varchar NOT NULL
+        shortname               varchar NOT NULL
 );
 GRANT SELECT ON past_event.institutions TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
@@ -750,7 +750,7 @@ GRANT SELECT ON event.orgas TO cdb_anonymous;
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        title                 varchar NOT NULL
+        title                   varchar NOT NULL
 );
 CREATE INDEX ids_lodgement_groups_event_id ON event.lodgement_groups(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgement_groups TO cdb_persona;
@@ -759,7 +759,7 @@ GRANT SELECT, UPDATE ON event.lodgement_groups_id_seq TO cdb_persona;
 CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        title                 varchar NOT NULL,
+        title                   varchar NOT NULL,
         regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
         camping_mat_capacity    integer NOT NULL DEFAULT 0,
@@ -960,8 +960,8 @@ GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_member;
 CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
-        title             varchar NOT NULL,
-        shortname                 varchar NOT NULL
+        title                   varchar NOT NULL,
+        shortname               varchar NOT NULL
 );
 CREATE UNIQUE INDEX idx_shortname_constraint ON assembly.candidates(ballot_id, shortname);
 GRANT SELECT ON assembly.candidates TO cdb_member;
