@@ -4918,307 +4918,307 @@
             "id": 2,
             "ballot_id": 1,
             "description": "Ich",
-            "moniker": "1"
+            "shortname": "1"
         },
         {
             "id": 3,
             "ballot_id": 1,
             "description": "23",
-            "moniker": "2"
+            "shortname": "2"
         },
         {
             "id": 4,
             "ballot_id": 1,
             "description": "42",
-            "moniker": "3"
+            "shortname": "3"
         },
         {
             "id": 5,
             "ballot_id": 1,
             "description": "Philosophie",
-            "moniker": "4"
+            "shortname": "4"
         },
         {
             "id": 6,
             "ballot_id": 2,
             "description": "Rot",
-            "moniker": "rot"
+            "shortname": "rot"
         },
         {
             "id": 7,
             "ballot_id": 2,
             "description": "Gelb",
-            "moniker": "gelb"
+            "shortname": "gelb"
         },
         {
             "id": 8,
             "ballot_id": 2,
             "description": "Gr\u00fcn",
-            "moniker": "gruen"
+            "shortname": "gruen"
         },
         {
             "id": 9,
             "ballot_id": 2,
             "description": "Blau",
-            "moniker": "blau"
+            "shortname": "blau"
         },
         {
             "id": 10,
             "ballot_id": 3,
             "description": "Lischert",
-            "moniker": "Li"
+            "shortname": "Li"
         },
         {
             "id": 11,
             "ballot_id": 3,
             "description": "Steinsgebiss",
-            "moniker": "St"
+            "shortname": "St"
         },
         {
             "id": 12,
             "ballot_id": 3,
             "description": "Fichte",
-            "moniker": "Fi"
+            "shortname": "Fi"
         },
         {
             "id": 13,
             "ballot_id": 3,
             "description": "Buchwald",
-            "moniker": "Bu"
+            "shortname": "Bu"
         },
         {
             "id": 14,
             "ballot_id": 3,
             "description": "L\u00f6scher",
-            "moniker": "Lo"
+            "shortname": "Lo"
         },
         {
             "id": 15,
             "ballot_id": 3,
             "description": "Goldborn",
-            "moniker": "Go"
+            "shortname": "Go"
         },
         {
             "id": 17,
             "ballot_id": 4,
             "description": "Wackelpudding",
-            "moniker": "W"
+            "shortname": "W"
         },
         {
             "id": 18,
             "ballot_id": 4,
             "description": "Salat",
-            "moniker": "S"
+            "shortname": "S"
         },
         {
             "id": 19,
             "ballot_id": 4,
             "description": "Eis",
-            "moniker": "E"
+            "shortname": "E"
         },
         {
             "id": 20,
             "ballot_id": 4,
             "description": "Joghurt",
-            "moniker": "J"
+            "shortname": "J"
         },
         {
             "id": 21,
             "ballot_id": 4,
             "description": "Nichts",
-            "moniker": "N"
+            "shortname": "N"
         },
         {
             "id": 23,
             "ballot_id": 5,
             "description": "e",
-            "moniker": "e"
+            "shortname": "e"
         },
         {
             "id": 24,
             "ballot_id": 5,
             "description": "pi",
-            "moniker": "pi"
+            "shortname": "pi"
         },
         {
             "id": 25,
             "ballot_id": 5,
             "description": "i",
-            "moniker": "i"
+            "shortname": "i"
         },
         {
             "id": 26,
             "ballot_id": 5,
             "description": "1",
-            "moniker": "1"
+            "shortname": "1"
         },
         {
             "id": 27,
             "ballot_id": 5,
             "description": "0",
-            "moniker": "0"
+            "shortname": "0"
         },
         {
             "id": 28,
             "ballot_id": 11,
             "description": "Ja",
-            "moniker": "Ja"
+            "shortname": "Ja"
         },
         {
             "id": 29,
             "ballot_id": 11,
             "description": "Nein",
-            "moniker": "Nein"
+            "shortname": "Nein"
         },
         {
             "id": 30,
             "ballot_id": 12,
             "description": "Löwe",
-            "moniker": "a"
+            "shortname": "a"
         },
         {
             "id": 31,
             "ballot_id": 12,
             "description": "Adler",
-            "moniker": "b"
+            "shortname": "b"
         },
         {
             "id": 32,
             "ballot_id": 12,
             "description": "Dachs",
-            "moniker": "c"
+            "shortname": "c"
         },
         {
             "id": 33,
             "ballot_id": 12,
             "description": "Schlange",
-            "moniker": "d"
+            "shortname": "d"
         },
         {
             "id": 34,
             "ballot_id": 13,
             "description": "Anton A. Administrator",
-            "moniker": "Anton"
+            "shortname": "Anton"
         },
         {
             "id": 35,
             "ballot_id": 13,
             "description": "Bertalotta Beispiel",
-            "moniker": "Berta"
+            "shortname": "Berta"
         },
         {
             "id": 36,
             "ballot_id": 13,
             "description": "Akira Abukara",
-            "moniker": "Akira"
+            "shortname": "Akira"
         },
         {
             "id": 37,
             "ballot_id": 14,
             "description": "Durch eine erhobene Steuer auf Tee und Schokolade",
-            "moniker": "Steuern"
+            "shortname": "Steuern"
         },
         {
             "id": 38,
             "ballot_id": 14,
             "description": "Durch Spendenbeiträge",
-            "moniker": "Spenden"
+            "shortname": "Spenden"
         },
         {
             "id": 39,
             "ballot_id": 14,
             "description": "Durch Infiltration des BMBF",
-            "moniker": "BMBF"
+            "shortname": "BMBF"
         },
         {
             "id": 40,
             "ballot_id": 15,
             "description": "Sindarin (Elbisch, Herr der Ringe)",
-            "moniker": "Sindarin"
+            "shortname": "Sindarin"
         },
         {
             "id": 41,
             "ballot_id": 15,
             "description": "Khuzdul (Zwergisch, Herr der Ringe)",
-            "moniker": "Khuzdul"
+            "shortname": "Khuzdul"
         },
         {
             "id": 42,
             "ballot_id": 15,
             "description": "Esperanto (Kunstsprache, Erde)",
-            "moniker": "Esperanto"
+            "shortname": "Esperanto"
         },
         {
             "id": 43,
             "ballot_id": 15,
             "description": "Klingonisch (Klingonen, Star Trek)",
-            "moniker": "Klingonisch"
+            "shortname": "Klingonisch"
         },
         {
             "id": 44,
             "ballot_id": 7,
             "description": "Ja",
-            "moniker": "Ja"
+            "shortname": "Ja"
         },
         {
             "id": 45,
             "ballot_id": 7,
             "description": "Nein",
-            "moniker": "Nein"
+            "shortname": "Nein"
         },
         {
             "id": 46,
             "ballot_id": 8,
             "description": "Eine Glühbirne mit Schriftzug",
-            "moniker": "Gluehbirne"
+            "shortname": "Gluehbirne"
         },
         {
             "id": 47,
             "ballot_id": 8,
             "description": "Die vier Wappentiere, die den Schriftzug CdE umringen",
-            "moniker": "Wappen"
+            "shortname": "Wappen"
         },
         {
             "id": 48,
             "ballot_id": 8,
             "description": "Ein Baum mit Blättern und Grün!",
-            "moniker": "Baum"
+            "shortname": "Baum"
         },
         {
             "id": 49,
             "ballot_id": 9,
             "description": "Farin Finanzvorstand",
-            "moniker": "Farin"
+            "shortname": "Farin"
         },
         {
             "id": 50,
             "ballot_id": 9,
             "description": "Inga Iota",
-            "moniker": "Inga"
+            "shortname": "Inga"
         },
         {
             "id": 51,
             "ballot_id": 9,
             "description": "Olaf Olafson",
-            "moniker": "Olaf"
+            "shortname": "Olaf"
         },
         {
             "id": 52,
             "ballot_id": 10,
             "description": "Investieren in Aktien und Fonds.",
-            "moniker": "Aktien"
+            "shortname": "Aktien"
         },
         {
             "id": 53,
             "ballot_id": 10,
             "description": "Wir kaufen den Eisenberg!",
-            "moniker": "Eisenberg"
+            "shortname": "Eisenberg"
         },
         {
             "id": 54,
             "ballot_id": 10,
             "description": "Kostenlose Akademien für alle.",
-            "moniker": "Akademien"
+            "shortname": "Akademien"
         }
     ],
     "assembly.attachments": [

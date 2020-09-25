@@ -1654,7 +1654,7 @@ msgstr "Abstimmung noch nicht ausgezählt."
 
 #: cdedb/frontend/assembly.py:1361 cdedb/frontend/assembly.py:1374
 #: cdedb/frontend/assembly.py:1270 cdedb/frontend/assembly.py:1301
-msgid "Duplicate moniker."
+msgid "Duplicate shortname."
 msgstr "Option doppelt gefunden."
 
 #: cdedb/frontend/cde.py:178 cdedb/frontend/cde.py:153
@@ -3999,7 +3999,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:272
 #, python-format
 msgid ""
-"Additionally the moniker %(abm)s shows where in the election the rejection "
+"Additionally the shortname %(abm)s shows where in the election the rejection "
 "limit was ranked. Should no candidate have won against the rejection limit, "
 "the board may take additional measures."
 msgstr ""
@@ -15340,7 +15340,7 @@ msgstr "Inkonsistent mit dem Ende des verlängerten Abstimmungszeitraums."
 #: cdedb/frontend/assembly.py:1369 cdedb/frontend/assembly.py:1265
 #: cdedb/validation.py:4048 cdedb/frontend/assembly.py:1296
 #: cdedb/validation.py:4051
-msgid "Mustn’t be the bar moniker."
+msgid "Mustn’t be the bar shortname."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
 #: cdedb/validation.py:4106 cdedb/validation.py:4092 cdedb/validation.py:4095
@@ -15764,7 +15764,7 @@ msgstr "Manche Felder dürfen nur von Admins geändert werden."
 #~ "Präferenz haben."
 
 #~ msgid ""
-#~ "Additionally the moniker %(abm)s shows where in the rejection bar was "
+#~ "Additionally the shortname %(abm)s shows where in the rejection bar was "
 #~ "ranked in the\n"
 #~ "                            overall preference list.\n"
 #~ "                            Should no candidate have won against the bar, "
@@ -16090,7 +16090,7 @@ msgstr "Manche Felder dürfen nur von Admins geändert werden."
 #~ "Präferenz haben."
 
 #~ msgid ""
-#~ "Additionally the moniker %(abm)s shows where in the rejection bar was "
+#~ "Additionally the shortname %(abm)s shows where in the rejection bar was "
 #~ "ranked in the\n"
 #~ "                        overall preference list.\n"
 #~ "                        Should no candidate have won against the bar, the "
@@ -16222,7 +16222,7 @@ msgstr "Manche Felder dürfen nur von Admins geändert werden."
 #~ "Präferenz haben."
 
 #~ msgid ""
-#~ "Additionally the moniker %(abm)s shows where in the rejection bar was "
+#~ "Additionally the shortname %(abm)s shows where in the rejection bar was "
 #~ "ranked in the\n"
 #~ "                    overall preference list.\n"
 #~ "                    Should no candidate have won against the bar, the "
@@ -17288,7 +17288,7 @@ msgstr "Manche Felder dürfen nur von Admins geändert werden."
 #~ "verloren."
 
 #~ msgid ""
-#~ "Additionally the moniker %(abm)s shows where in the rejection bar was "
+#~ "Additionally the shortname %(abm)s shows where in the rejection bar was "
 #~ "ranked in the overall preference list. Should no candidate have won "
 #~ "against the bar, the board may take additional measures."
 #~ msgstr ""

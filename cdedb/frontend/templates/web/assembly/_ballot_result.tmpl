@@ -25,7 +25,7 @@
             {% for candidate_ids in result['winners'] %}
                 {% set count.value = count.value + 1 %}
                 {% for candidate_id in candidate_ids %}
-                    {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
+                    {% set candidate_shortname = ballot['candidates'][candidate_id]['shortname'] %}
                     {% set first_candidate = loop.first %}
                     <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
                         <td>
@@ -37,27 +37,27 @@
                             {{ ballot['candidates'][candidate_id]['description'] }}
                             {% if not ballot['votes'] and not short %}
                                 <span class="label label-primary">
-                                    {{- candidate_moniker -}}
+                                    {{- candidate_shortname -}}
                                 </span>
                             {% endif %}
                         </td>
                     {% if is_classical_vote %}
                         <td>
                             {% if first_candidate %}
-                                {{ result['counts'][candidate_moniker] }}
+                                {{ result['counts'][candidate_shortname] }}
                             {% endif %}
                         </td>
                     {% else %}
                         <td>
                             {% for level in result['counts'] %}
-                                {% if candidate_moniker in level['winner'] and first_candidate %}
+                                {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['pro_votes'] }}
                                 {% endif %}
                             {% endfor %}
                         </td>
                         <td>
                             {% for level in result['counts'] %}
-                                {% if candidate_moniker in level['winner'] and first_candidate %}
+                                {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['contra_votes'] }}
                                 {% endif %}
                             {% endfor %}
@@ -78,8 +78,8 @@
                        So, if bar is a winner and not the only winner, we must not print an upper boarder.
                        This has to check nonetherless for bar not in level[winner] and not in level[looser], think
                        of a vote without losers.#}
-                    {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length != 1
-                       or ASSEMBLY_BAR_MONIKER in level['loser'] and level['loser']|length != 1 %}
+                    {% if ASSEMBLY_BAR_SHORTNAME in level['winner'] and level['winner']|length != 1
+                       or ASSEMBLY_BAR_SHORTNAME in level['loser'] and level['loser']|length != 1 %}
                         class="no-upper-border"
                     {% endif %}
                 {% endfor %}
@@ -125,14 +125,14 @@
             {% if is_classical_vote %}
                 {# this are the votes for the 'against all' choice #}
                 <td>
-                    {{ result['counts'][ASSEMBLY_BAR_MONIKER] }}
+                    {{ result['counts'][ASSEMBLY_BAR_SHORTNAME] }}
                 </td>
             {% else %}
                 <td>
                     {% for level in result['counts'] %}
                         {# It is possible that a candidate is equal to bar. This candidate will be in the winner section.
                            So, if bar is a winner and not the only winner, we do not show the votes. #}
-                        {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
+                        {% if ASSEMBLY_BAR_SHORTNAME in level['winner'] and level['winner']|length == 1 %}
                             {{ level['pro_votes'] }}
                         {% endif %}
                     {% endfor %}
@@ -140,7 +140,7 @@
                 <td>
                     {% for level in result['counts'] %}
                         {# see above for a detailed explanation #}
-                        {% if ASSEMBLY_BAR_MONIKER in level['winner'] and level['winner']|length == 1 %}
+                        {% if ASSEMBLY_BAR_SHORTNAME in level['winner'] and level['winner']|length == 1 %}
                             {{ level['contra_votes'] }}
                         {% endif %}
                     {% endfor %}
@@ -153,7 +153,7 @@
             {% for candidate_ids in result['losers'] %}
                 {% set count.value = count.value + 1 %}
                 {% for candidate_id in candidate_ids %}
-                    {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
+                    {% set candidate_shortname = ballot['candidates'][candidate_id]['shortname'] %}
                     {% set first_candidate = loop.first %}
                     <tr{% if not loop.first %} class="no-upper-border"{% endif %}>
                         <td>
@@ -165,27 +165,27 @@
                             {{ ballot['candidates'][candidate_id]['description'] }}
                             {% if not ballot['votes'] and not short %}
                                 <span class="label label-primary">
-                                    {{- candidate_moniker -}}
+                                    {{- candidate_shortname -}}
                                 </span>
                             {% endif %}
                         </td>
                     {% if is_classical_vote %}
                         <td>
                             {% if first_candidate %}
-                                {{ result['counts'][candidate_moniker] }}
+                                {{ result['counts'][candidate_shortname] }}
                             {% endif %}
                         </td>
                     {% else %}
                         <td>
                             {% for level in result['counts'] %}
-                                {% if candidate_moniker in level['winner'] and first_candidate %}
+                                {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['pro_votes'] }}
                                 {% endif %}
                             {% endfor %}
                         </td>
                         <td>
                             {% for level in result['counts'] %}
-                                {% if candidate_moniker in level['winner'] and first_candidate %}
+                                {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['contra_votes'] }}
                                 {% endif %}
                             {% endfor %}
@@ -269,8 +269,8 @@
         </p>
         {% if ambience['ballot']['use_bar'] %}
             <p>
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                    Additionally the moniker {{ abm }} shows where in the election the rejection limit was ranked.
+                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
+                    Additionally the shortname {{ abm }} shows where in the election the rejection limit was ranked.
                     Should no candidate have won against the rejection limit, the board may take additional measures.
                 {% endtrans %}
             </p>
@@ -325,7 +325,7 @@
             {# Show own vote under result: Classical vote #}
             {% if split_vote|length == 1 %}
                 {% trans %}You abstained.{% endtrans %}
-            {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
+            {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_SHORTNAME] %}
                 {% trans %}You voted against all candidates.{% endtrans %}
             {% else %}
                 {% trans %}You voted for the following candidates:{% endtrans %}<br />

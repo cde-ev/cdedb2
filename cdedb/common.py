@@ -587,7 +587,7 @@ class EntitySorter:
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
-        return (candidates['moniker'], candidates['id'])
+        return (candidates['shortname'], candidates['id'])
 
     @staticmethod
     def assembly(assembly: CdEDBObject) -> Sortkey:
@@ -804,7 +804,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     This is used by the assembly realm to tally votes -- however this is
     pretty abstract, so we move it here.
 
-    Votes have the form ``3>0>1=2>4`` where the monikers between the
+    Votes have the form ``3>0>1=2>4`` where the shortnames between the
     relation signs are exactly those passed in the ``candidates`` parameter.
 
     The Schulze method is described in the pdf found in the ``related``
@@ -903,8 +903,8 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     return condensed, detailed
 
 
-#: Magic value of moniker of the ballot candidate representing the bar.
-ASSEMBLY_BAR_MONIKER = "_bar_"
+#: Magic value of shortname of the ballot candidate representing the bar.
+ASSEMBLY_BAR_SHORTNAME = "_bar_"
 
 
 @overload

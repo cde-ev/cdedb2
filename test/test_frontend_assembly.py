@@ -10,7 +10,7 @@ import json
 from test.common import as_users, USER_DICT, FrontendTest, MultiAppFrontendTest
 
 from cdedb.common import (
-    ASSEMBLY_BAR_MONIKER, now, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
+    ASSEMBLY_BAR_SHORTNAME, now, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 )
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -627,10 +627,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Bester Hof (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual("Li", f['vote'].value)
-        f['vote'] = ASSEMBLY_BAR_MONIKER
+        f['vote'] = ASSEMBLY_BAR_SHORTNAME
         self.submit(f)
         self.assertTitle("Bester Hof (Internationaler Kongress)")
-        self.assertEqual(ASSEMBLY_BAR_MONIKER, f['vote'].value)
+        self.assertEqual(ASSEMBLY_BAR_SHORTNAME, f['vote'].value)
         self.assertNonPresence("Du hast Dich enthalten.")
         f = self.response.forms['abstentionform']
         self.submit(f)
@@ -659,11 +659,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         tmp = {f.get('vote', index=3).value, f.get('vote', index=4).value}
         self.assertEqual({"W", "S"}, tmp)
         self.assertEqual(None, f.get('vote', index=2).value)
-        f['vote'] = [ASSEMBLY_BAR_MONIKER]
+        f['vote'] = [ASSEMBLY_BAR_SHORTNAME]
         self.submit(f)
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
         f = self.response.forms['voteform']
-        self.assertEqual(ASSEMBLY_BAR_MONIKER, f.get('vote', index=5).value)
+        self.assertEqual(ASSEMBLY_BAR_SHORTNAME, f.get('vote', index=5).value)
         self.assertEqual(None, f.get('vote', index=0).value)
         self.assertEqual(None, f.get('vote', index=1).value)
         self.assertNonPresence("Du hast Dich enthalten.")
@@ -707,8 +707,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     'use_bar': use_bar,
                 }
                 candidates = [
-                    {'moniker': 'arthur', 'description': 'Arthur Dent'},
-                    {'moniker': 'ford', 'description': 'Ford Prefect'},
+                    {'shortname': 'arthur', 'description': 'Arthur Dent'},
+                    {'shortname': 'ford', 'description': 'Ford Prefect'},
                 ]
                 self._create_ballot(bdata, candidates)
 
@@ -724,7 +724,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
                 if use_bar:
                     f = self.response.forms["voteform"]
-                    f["vote"] = [ASSEMBLY_BAR_MONIKER]
+                    f["vote"] = [ASSEMBLY_BAR_SHORTNAME]
                     self.submit(f)
                     self.assertNonPresence("Du hast Dich enthalten.")
 
@@ -801,39 +801,39 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'description': 'Farbe des Logos'},)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
-        self.assertEqual("rot", f['moniker_6'].value)
-        self.assertEqual("gelb", f['moniker_7'].value)
-        self.assertEqual("gruen", f['moniker_8'].value)
+        self.assertEqual("rot", f['shortname_6'].value)
+        self.assertEqual("gelb", f['shortname_7'].value)
+        self.assertEqual("gruen", f['shortname_8'].value)
         self.assertNotIn("Dunkelaquamarin", f.fields)
         f['create_-1'].checked = True
-        f['moniker_-1'] = "aqua"
+        f['shortname_-1'] = "aqua"
         f['description_-1'] = "Dunkelaquamarin"
         self.submit(f)
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
-        self.assertEqual("aqua", f['moniker_1001'].value)
-        f['moniker_7'] = "rot"
+        self.assertEqual("aqua", f['shortname_1001'].value)
+        f['shortname_7'] = "rot"
         self.submit(f, check_notification=False)
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
-        f['moniker_7'] = "gelb"
-        f['moniker_8'] = "_bar_"
+        f['shortname_7'] = "gelb"
+        f['shortname_8'] = "_bar_"
         self.submit(f, check_notification=False)
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
-        f['moniker_8'] = "farbe"
+        f['shortname_8'] = "farbe"
         f['description_6'] = "lila"
         f['delete_7'].checked = True
         self.submit(f)
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertEqual("rot", f['moniker_6'].value)
+        self.assertEqual("rot", f['shortname_6'].value)
         self.assertEqual("lila", f['description_6'].value)
-        self.assertEqual("farbe", f['moniker_8'].value)
-        self.assertEqual("aqua", f['moniker_1001'].value)
+        self.assertEqual("farbe", f['shortname_8'].value)
+        self.assertEqual("aqua", f['shortname_1001'].value)
         self.assertNotIn("gelb", f.fields)
 
     @as_users("werner")
@@ -876,8 +876,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             'votes': "1",
         }
         candidates = [
-            {'moniker': 'ja', 'description': 'Ja'},
-            {'moniker': 'nein', 'description': 'Nein'},
+            {'shortname': 'ja', 'description': 'Ja'},
+            {'shortname': 'nein', 'description': 'Nein'},
         ]
         self._create_ballot(bdata, candidates)
 

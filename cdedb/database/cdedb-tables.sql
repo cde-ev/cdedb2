@@ -931,7 +931,7 @@ CREATE TABLE assembly.ballots (
         -- alternative title may be "reopen nominations".
         --
         -- It will not be listed in the assembly.candidates table, but added
-        -- on the fly. Its moniker will be "_bar_".
+        -- on the fly. Its shortname will be "_bar_".
         use_bar                 boolean NOT NULL,
         -- number of submitted votes necessary to not trigger extension
         quorum                  integer NOT NULL DEFAULT 0,
@@ -961,9 +961,9 @@ CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         description             varchar NOT NULL,
-        moniker                 varchar NOT NULL
+        shortname                 varchar NOT NULL
 );
-CREATE UNIQUE INDEX idx_moniker_constraint ON assembly.candidates(ballot_id, moniker);
+CREATE UNIQUE INDEX idx_shortname_constraint ON assembly.candidates(ballot_id, shortname);
 GRANT SELECT ON assembly.candidates TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_member;
@@ -995,7 +995,7 @@ CREATE TABLE assembly.votes (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         -- The vote is of the form '2>3=1>0>4' where the pieces between the
-        -- relation symbols are the corresponding monikers from
+        -- relation symbols are the corresponding shortnames from
         -- assembly.candidates.
         vote                    varchar NOT NULL,
         salt                    varchar NOT NULL,

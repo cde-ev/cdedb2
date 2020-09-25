@@ -64,7 +64,7 @@ from typing import (
 
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
-    ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
+    ASSEMBLY_BAR_SHORTNAME, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
     REALM_SPECIFIC_GENESIS_FIELDS, EVENT_SCHEMA_VERSION,
     ValidationWarning, Error)
 from cdedb.database.constants import FieldDatatypes, FieldAssociations
@@ -4025,7 +4025,7 @@ def _ballot(val, argname=None, *, creation=False, _convert=True,
 
 _BALLOT_CANDIDATE_COMMON_FIELDS = {
     'description': _str,
-    'moniker': _identifier,
+    'shortname': _identifier,
 }
 
 
@@ -4058,8 +4058,8 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    if val.get('moniker') == ASSEMBLY_BAR_MONIKER:
-        errs.append(("moniker", ValueError(n_("Mustn’t be the bar moniker."))))
+    if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
+        errs.append(("shortname", ValueError(n_("Mustn’t be the bar shortname."))))
     return val, errs
 
 
@@ -4162,9 +4162,9 @@ def _vote(val, argname=None, ballot=None, *, _convert=True,
     if errs:
         return val, errs
     entries = tuple(y for x in val.split('>') for y in x.split('='))
-    reference = set(e['moniker'] for e in ballot['candidates'].values())
+    reference = set(e['shortname'] for e in ballot['candidates'].values())
     if ballot['use_bar'] or ballot['votes']:
-        reference.add(ASSEMBLY_BAR_MONIKER)
+        reference.add(ASSEMBLY_BAR_SHORTNAME)
     if set(entries) - reference:
         errs.append((argname, KeyError(n_("Superfluous candidates."))))
     if reference - set(entries):
@@ -4180,8 +4180,8 @@ def _vote(val, argname=None, ballot=None, *, _convert=True,
         if len(groups[0].split('=')) > ballot['votes']:
             errs.append((argname, ValueError(n_("Too many votes."))))
         first_group = groups[0].split('=')
-        if (ASSEMBLY_BAR_MONIKER in first_group
-                and first_group != [ASSEMBLY_BAR_MONIKER]):
+        if (ASSEMBLY_BAR_SHORTNAME in first_group
+                and first_group != [ASSEMBLY_BAR_SHORTNAME]):
             errs.append((argname, ValueError(n_("Misplaced bar."))))
         if errs:
             return None, errs
