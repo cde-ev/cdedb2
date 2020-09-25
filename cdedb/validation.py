@@ -2132,7 +2132,7 @@ def _meta_info(val, keys, argname=None, *, _convert=True,
 
 _INSTITUTION_COMMON_FIELDS = lambda: {
     'title': _str,
-    'moniker': _str,
+    'shortname': _str,
 }
 
 

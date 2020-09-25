@@ -88,7 +88,7 @@ def populate_table(cur, table, data):
 
 
 def make_institution(cur, institution_id):
-    query = """INSERT INTO past_event.institutions (id, title, moniker)
+    query = """INSERT INTO past_event.institutions (id, title, shortname)
                VALUES (%s, %s, %s)"""
     params = (institution_id, 'Veranstaltungsservice', 'CdE')
     cur.execute(query, params)

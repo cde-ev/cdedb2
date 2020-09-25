@@ -1545,7 +1545,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNotIn("title_3", f.fields)
         f['create_-1'].checked = True
         f['title_-1'] = "Bildung und Begabung"
-        f['moniker_-1'] = "BuB"
+        f['shortname_-1'] = "BuB"
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
@@ -1553,7 +1553,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
         self.assertEqual("Bildung und Begabung", f['title_1001'].value)
         f['title_1'] = "Monster Academy"
-        f['moniker_1'] = "MA"
+        f['shortname_1'] = "MA"
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
@@ -1946,7 +1946,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['institutionsummaryform']
         f['create_-1'].checked = True
         f['title_-1'] = "East India Company advanced"
-        f['moniker_-1'] = "EIC"
+        f['shortname_-1'] = "EIC"
         self.submit(f)
         logs.append({1001: const.PastEventLogCodes.institution_created})
 

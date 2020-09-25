@@ -619,7 +619,7 @@ class EntitySorter:
 
     @staticmethod
     def institution(institution: CdEDBObject) -> Sortkey:
-        return (institution['moniker'], institution['id'])
+        return (institution['shortname'], institution['id'])
 
     @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
@@ -1965,7 +1965,7 @@ PRIVILEGE_CHANGE_FIELDS = (
     "is_assembly_admin", "is_cdelokal_admin", "notes", "reviewer")
 
 #: Fields for institutions of events
-INSTITUTION_FIELDS = ("id", "title", "moniker")
+INSTITUTION_FIELDS = ("id", "title", "shortname")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",

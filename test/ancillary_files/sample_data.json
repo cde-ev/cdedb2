@@ -3305,12 +3305,12 @@
         {
             "id": 1,
             "title": "Club der Ehemaligen",
-            "moniker": "CdE"
+            "shortname": "CdE"
         },
         {
             "id": 2,
             "title": "Disco des Ehemaligen",
-            "moniker": "DdE"
+            "shortname": "DdE"
         }
     ],
     "past_event.events": [

@@ -504,7 +504,7 @@ GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 CREATE TABLE past_event.institutions (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
-        moniker                 varchar NOT NULL
+        shortname                 varchar NOT NULL
 );
 GRANT SELECT ON past_event.institutions TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
