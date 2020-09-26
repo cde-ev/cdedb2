@@ -29,7 +29,7 @@
     <tr class="{{ aclass }}" id="feemodifierrow_{{ part_id }}_{{ fee_modifier_id }}">
         <td>
             {% call util.output_errors("fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id),
-                wrapper=True) %}
+                                       wrapper=True) %}
                 {{ util.input_text(
                     name="fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id),
                     aclass='drow-input1 form-control', placeholder=gettext("Modifier Name"),

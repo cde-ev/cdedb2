@@ -25,7 +25,7 @@ import decimal
 
 from typing import (
     TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set, Union,
-    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection, Iterable,
+    MutableMapping, Any, no_type_check, Iterable,
 )
 
 import pytz
@@ -1036,7 +1036,7 @@ class FrontendTest(CdEDBTest):
         """
         if check_notification:
             self.assertIn("alert alert-danger", self.response.text)
-            self.assertPresence("Validierung fehlgeschlagen", 'notifications')
+            self.assertPresence("Validierung fehlgeschlagen", div="notifications")
 
         nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))

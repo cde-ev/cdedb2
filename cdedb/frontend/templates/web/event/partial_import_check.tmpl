@@ -240,8 +240,8 @@
                                             {{ courses[course_id]['nr'] }}.{# -#}
                                             {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
                                             {{ courses[course_id]['shortname'] }}{# -#}
-                                            {%- if 'shortname' in course_diff -%}/
-                                                {{ course_diff['shortname'][1] }}
+                                            {%- if 'shortname' in course_diff -%}
+                                                /{{ course_diff['shortname'][1] }}
                                             {%- endif -%}
                                         </summary>
                                         {{ diff_table(course_diff, course_titles, course_choices) }}
@@ -438,7 +438,7 @@
            and not summary['new_course_ids'] and not summary['real_deleted_course_ids']
            and not summary['changed_lodgements'] and not summary['new_lodgement_ids']
            and not summary['real_deleted_lodgement_ids'] and not summary['changed_lodgement_groups']
-           and not summary['new_lodgement_group_ids'] and not summary['real_deleted_lodgement_group_ids'] %}
+           and not summary['new_lodgement_group_ids'] and not summary['real_deleted_lodgement_group_ids']) %}
         {% trans %}The input produced an empty diff. No changes are to be imported.{% endtrans %}
     {% endif %}
 
