@@ -1020,23 +1020,23 @@ class FrontendTest(CdEDBTest):
 
     def assertValidationError(self, fieldname: str, message: str = "",
                               index: int = None,
-                              check_notification: bool = True) -> None:
+                              notif_regex: str = "Validierung fehlgeschlagen") -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
-        and a specific error message to be shown near the field.
+        and a specific error message to be shown near the field. Also check that an
+        alert box (with the given text) is indicating validation failure.
 
         :param fieldname: The field's 'name' attribute
         :param index: If more than one field with the given name exists,
             specify which one should be checked.
         :param message: The expected error message
-        :param check_notification: If True, check that an alert-danger
-            notification is indicating validation failure.
+        :param notif_regex: Regex to match the notification (red alert) message against.
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
-        if check_notification:
-            self.assertIn("alert alert-danger", self.response.text)
-            self.assertPresence("Validierung fehlgeschlagen", div="notifications")
+        self.assertIn("alert alert-danger", self.response.text)
+        self.assertPresence(notif_regex, div="notifications",
+                            regex=True)
 
         nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
