@@ -2114,7 +2114,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Unbedingt in die Einzelzelle.", f['reg.orga_notes'].value)
-        f['reg.orga_notes'] = "Wir wllen mal nicht so sein."
+        f['reg.orga_notes'] = "Wir wollen mal nicht so sein."
         self.assertEqual(True, f['reg.mixed_lodging'].checked)
         f['reg.mixed_lodging'].checked = False
         self.assertEqual("0.00", f['reg.amount_paid'].value)
@@ -2134,7 +2134,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Om nom nom nom")
         self.traverse({'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
-        self.assertEqual("Wir wllen mal nicht so sein.", f['reg.orga_notes'].value)
+        self.assertEqual("Wir wollen mal nicht so sein.", f['reg.orga_notes'].value)
         self.assertEqual(False, f['reg.mixed_lodging'].checked)
         self.assertEqual("42.01", f['reg.amount_paid'].value)
         self.assertEqual("2", f['part1.status'].value)
