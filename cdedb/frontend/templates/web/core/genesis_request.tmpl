@@ -43,7 +43,7 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"), small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email",
-                                    attributes='autocomplete="email"') }}
+                                    attributes='autocomplete="email"'|s) }}
             {{ util.form_input_select(name="realm", small=True, entries=realm_options,
                                       label=gettext("Rationale"), anid="realm-select") }}
             {{ util.form_input_textarea(name="notes",
