@@ -25,6 +25,6 @@
         {% endfor %}
     {% endcall %}
 
-    {{ logging.filter('ml/view_log', enums['MlLogCodes'], 'ml_admin_user', 'mailinglist_id') }}
+    {{ logging.filter('ml/view_log', enums['MlLogCodes'], 'ml_privileged_user', 'mailinglist_id') }}
     {{ logging.navigation('ml/view_log', total, length, loglinks) }}
 {% endblock %}

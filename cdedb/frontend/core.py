@@ -683,8 +683,7 @@ class CoreFrontend(AbstractFrontend):
           assembly_admin
         - ``assembly_admin_user``: Search for an assembly user as
             assembly_admin.
-        - ``ml_admin_user``: Search for a mailinglist user as ml_admin
-        - ``mod_ml_user``: Search for a mailinglist user as a moderator
+        - ``ml_privileged_user``: Search for a mailinglist user as ml_admin or moderator
         - ``event_admin_user``: Search an event user as event_admin (for
           creating events)
         - ``orga_event_user``: Search for an event user as event orga
@@ -695,7 +694,7 @@ class CoreFrontend(AbstractFrontend):
 
         Required aux value based on the 'kind':
 
-        * ``mod_ml_user``: Id of the mailinglist you are moderator of
+        * ``ml_privileged_user``: Id of the mailinglist for context
         * ``orga_event_user``: Id of the event you are orga of
 
         The variant parameter allows to supply an additional integer to
@@ -704,7 +703,7 @@ class CoreFrontend(AbstractFrontend):
 
         Possible variants based on the 'kind':
 
-        - ``mod_ml_user``: Which action you are going to execute on this user.
+        - ``mml_privileged_user``: Which action you are going to execute on this user.
           A member of the SubscriptionActions enum.
         """
         if rs.has_validation_errors():
@@ -742,14 +741,12 @@ class CoreFrontend(AbstractFrontend):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_assembly_realm", QueryOperators.equal, True))
-        elif kind == "ml_admin_user":
-            if "ml_admin" not in rs.user.roles:
-                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(
-                ("is_ml_realm", QueryOperators.equal, True))
-        elif kind == "mod_ml_user" and aux:
-            mailinglist = self.mlproxy.get_mailinglist(rs, aux)
-            if not self.mlproxy.may_manage(rs, aux):
+        elif kind == "ml_privileged_user":
+            if aux:
+                mailinglist = self.mlproxy.get_mailinglist(rs, aux)
+                if not self.mlproxy.may_manage(rs, aux):
+                    raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            elif not rs.user.moderator and "ml_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))

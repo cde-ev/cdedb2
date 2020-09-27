@@ -233,7 +233,7 @@ class TestCoreFrontend(FrontendTest):
                            'id': 6,
                            'name': 'Ferdinand F. Findus'}]}
         self.assertEqual(expectation, self.response.json)
-        self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5')
+        self.get('/core/persona/select?kind=ml_privileged_user&phrase=@exam&aux=5')
         expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -268,8 +268,8 @@ class TestCoreFrontend(FrontendTest):
             self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if user['display_name'] != "Nina":
-            self.get('/core/persona/select?kind=ml_admin_user&phrase=@exam',
+        if user['display_name'] not in ("Bert\u00e5", "Nina", "Werner", "Annika"):
+            self.get('/core/persona/select?kind=ml_privileged_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
         if user['display_name'] != "Annika":
@@ -285,18 +285,18 @@ class TestCoreFrontend(FrontendTest):
                      status=403)
             self.assertTitle('403: Forbidden')
             self.get('/core/persona/select'
-                     '?kind=mod_ml_user&phrase=@exam&aux=57&variant=20',
+                     '?kind=ml_privileged_user&phrase=@exam&aux=57&variant=20',
                      status=403)
             self.assertTitle('403: Forbidden')
             self.get('/core/persona/select'
-                     '?kind=mod_ml_user&phrase=@exam&aux=57',
+                     '?kind=ml_privileged_user&phrase=@exam&aux=57',
                      status=403)
             self.assertTitle('403: Forbidden')
 
     @as_users("vera")
     def test_selectpersona_relative_cde_admin(self, user):
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=57')
+                 '?kind=ml_privileged_user&phrase=@exam&aux=57')
         expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -304,7 +304,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("annika")
     def test_selectpersona_relative_event_admin(self, user):
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=8')
+                 '?kind=ml_privileged_user&phrase=@exam&aux=8')
         expectation = (1, 2, 3)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -312,7 +312,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("viktor")
     def test_selectpersona_relative_assembly_admin(self, user):
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=11')
+                 '?kind=ml_privileged_user&phrase=@exam&aux=11')
         expectation = (1, 2, 3)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -322,12 +322,12 @@ class TestCoreFrontend(FrontendTest):
         # Only event participants are shown
         # ml_admins are allowed to do this even if they are no orgas.
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=9&variant=20')
+                 '?kind=ml_privileged_user&phrase=@exam&aux=9&variant=20')
         expectation = (1, 2, 5)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=inga&aux=9&variant=20')
+                 '?kind=ml_privileged_user&phrase=inga&aux=9&variant=20')
         expectation = (9,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -335,7 +335,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("berta")
     def test_selectpersona_ml_event_403(self, user):
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=9&variant=20',
+                 '?kind=ml_privileged_user&phrase=@exam&aux=9&variant=20',
                  status=403)
         self.assertTitle('403: Forbidden')
 
@@ -343,7 +343,7 @@ class TestCoreFrontend(FrontendTest):
     def test_selectpersona_ml_assembly(self, user):
         # Only assembly participants are shown
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=5&variant=20')
+                 '?kind=ml_privileged_user&phrase=@exam&aux=5&variant=20')
         expectation = (1, 2, 9)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -357,14 +357,14 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("berta")
     def test_selectpersona_unprivileged_ml(self, user):
-        self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=1')
+        self.get('/core/persona/select?kind=ml_privileged_user&phrase=@exam&aux=1')
         expectation = (1, 2, 3)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
     @as_users("janis")
     def test_selectpersona_unprivileged_ml2(self, user):
-        self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=2')
+        self.get('/core/persona/select?kind=ml_privileged_user&phrase=@exam&aux=2')
         expectation = (1, 2, 3)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
