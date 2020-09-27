@@ -10263,7 +10263,7 @@ msgid ""
 "The <strong>+x</strong> sort by the number of camping mat spaces used in the "
 "associated part."
 msgstr ""
-"Die <strong>+x</strong> sortieren nach den genutzen Isomattenplätzen in dem "
+"Die <strong>+x</strong> sortieren nach den genutzten Isomattenplätzen in dem "
 "zugehörigen Veranstaltungsteil."
 
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:184
@@ -14591,7 +14591,7 @@ msgstr "Das ist ein sehr häufiges Passwort."
 
 #: cdedb/i18n_additional.py:305
 msgid "This is similar to a commonly used password."
-msgstr "Das ist ähnlich zu einem häufig genutzen Passwort."
+msgstr "Das ist ähnlich zu einem häufig genutzten Passwort."
 
 #: cdedb/i18n_additional.py:306
 msgid "A word by itself is easy to guess."
