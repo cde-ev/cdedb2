@@ -364,7 +364,7 @@ GRANT DELETE ON core.changelog TO cdb_admin;
 CREATE TABLE core.cron_store
 (
         id                      serial PRIMARY KEY,
-        title                 varchar NOT NULL UNIQUE,
+        title                   varchar NOT NULL UNIQUE,
         store                   jsonb NOT NULL
 );
 GRANT SELECT, UPDATE ON core.cron_store_id_seq TO cdb_admin;
