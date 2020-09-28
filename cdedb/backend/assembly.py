@@ -1336,13 +1336,12 @@ class AssemblyBackend(AbstractBackend):
                 ballot['assembly_id'], change_note=ballot['title'])
 
             # now generate the result file
-            esc = json_serialize
             assembly = unwrap(
                 self.get_assemblies(rs, (ballot['assembly_id'],)))
             candidates = {
                 c['shortname']: c['title']
                 for c in xsorted(ballot['candidates'].values(),
-                                 key=lambda x: x['shortname'])
+                                 key=EntitySorter.candidates)
             }
             query = glue("SELECT persona_id FROM assembly.voter_register",
                          "WHERE ballot_id = %s and has_voted = True")
