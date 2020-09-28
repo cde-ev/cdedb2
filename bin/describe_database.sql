@@ -9,6 +9,6 @@ SELECT table_schema, table_name, column_name, privilege_type, grantee FROM infor
 -- List of general usage privileges
 SELECT object_schema, object_name, object_type, grantee FROM information_schema.usage_privileges WHERE grantor = 'cdb' ORDER BY object_schema, object_name;
 -- List of table constraints
-SELECT table_schema, table_name, constraint_name, constraint_type FROM information_schema.table_constraints ORDER BY table_schema, table_name , constraint_name;
+-- SELECT table_shema, table_name, constraint_name, constraint_type FROM information_schema.table_constraints ORDER BY table_schema, table_name , constraint_name;
 -- List of indexes
 SELECT schemaname, tablename, indexname, indexdef FROM pg_catalog.pg_indexes ORDER BY schemaname, tablename, indexname;
