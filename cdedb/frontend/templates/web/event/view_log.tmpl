@@ -32,6 +32,6 @@
         {% endfor %}
     {% endcall %}
 
-    {{ logging.filter('event/view_log', enums['EventLogCodes'], 'event_admin_user', 'event_id') }}
+    {{ logging.filter('event/view_log', enums['EventLogCodes'], 'event_user', 'event_id') }}
     {{ logging.navigation('event/view_log', total, length, loglinks) }}
 {% endblock %}

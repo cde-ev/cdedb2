@@ -237,7 +237,7 @@ class TestCoreFrontend(FrontendTest):
         expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
+        self.get('/core/persona/select?kind=event_user&phrase=bert')
         expectation = (2,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -272,16 +272,14 @@ class TestCoreFrontend(FrontendTest):
             self.get('/core/persona/select?kind=ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if user['display_name'] != "Annika":
-            self.get('/core/persona/select?kind=event_admin_user&phrase=@exam',
+        if user['display_name'] not in ("Annika", "Bertå"):
+            self.get('/core/persona/select?kind=event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
 
-        # These can be done by Berta for other values of aux.
-        if (user['display_name'] in
-                {"Berta", "Martin", "Werner"}):
+        if user['display_name'] in ("Martin", "Rowena", "Werner"):
             self.get('/core/persona/select'
-                     '?kind=orga_event_user&phrase=@exam&aux=1',
+                     '?kind=event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
             self.get('/core/persona/select'
@@ -346,7 +344,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("garcia")
     def test_selectpersona_unprivileged_event(self, user):
-        self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
+        self.get('/core/persona/select?kind=event_user&phrase=bert')
         expectation = (2,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)

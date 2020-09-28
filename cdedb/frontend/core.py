@@ -694,9 +694,7 @@ class CoreFrontend(AbstractFrontend):
             assembly_admin.
         - ``ml_user``: Search for a mailinglist user as ml_admin or moderator
         - ``ml_subscriber``: Search for a mailinglist user for subscription purposes
-        - ``event_admin_user``: Search an event user as event_admin (for
-          creating events)
-        - ``orga_event_user``: Search for an event user as event orga
+        - ``event_user``: Search an event user as event_admin or orga
 
         The aux parameter allows to supply an additional id for example
         in the case of a moderator this would be the relevant
@@ -705,7 +703,6 @@ class CoreFrontend(AbstractFrontend):
         Required aux value based on the 'kind':
 
         * ``ml_subscriber``: Id of the mailinglist for context
-        * ``orga_event_user``: Id of the event you are orga of
         """
         if rs.has_validation_errors():
             return self.send_json(rs, {})
@@ -713,7 +710,6 @@ class CoreFrontend(AbstractFrontend):
         spec_additions: Dict[str, str] = {}
         search_additions = []
         mailinglist = None
-        event = None
         num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
@@ -742,6 +738,11 @@ class CoreFrontend(AbstractFrontend):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_assembly_realm", QueryOperators.equal, True))
+        elif kind == "event_user":
+            if not rs.user.orga and "event_admin" not in rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append(
+                ("is_event_realm", QueryOperators.equal, True))
         elif kind == "ml_user":
             # No check by mailinglist, as this behaves identical for each list.
             if not rs.user.moderator and not ADMIN_ROLES & rs.user.roles:
@@ -754,25 +755,12 @@ class CoreFrontend(AbstractFrontend):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
-        elif kind == "event_admin_user":
-            if "event_admin" not in rs.user.roles:
-                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(
-                ("is_event_realm", QueryOperators.equal, True))
-        elif kind == "orga_event_user" and aux:
-            event = self.eventproxy.get_event(rs, aux)
-            if "event_admin" not in rs.user.roles:
-                if rs.user.persona_id not in event['orgas']:
-                    raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(
-                ("is_event_realm", QueryOperators.equal, True))
         else:
             return self.send_json(rs, {})
 
         data: Optional[Tuple[CdEDBObject, ...]] = None
 
-        # Core admins and meta admins are allowed to search by raw ID or
-        # CDEDB-ID
+        # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
             anid, errs = validate.check_cdedbid(phrase, "phrase")
             if not errs:
