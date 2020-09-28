@@ -61,6 +61,16 @@ GENESIS_REALM_OPTION_NAMES = (
     GenesisRealmOptionName("assembly", n_("CdE members' assembly")),
     GenesisRealmOptionName("ml", n_("CdE mailinglist")))
 
+ADMIN_ROLES = {
+    "core_admin",
+    "cde_admin",
+    "finance_admin",
+    "event_admin",
+    "assembly_admin",
+    "cdelokal_admin",
+    "ml_admin"
+}
+
 
 class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
@@ -660,10 +670,9 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
-                 ("variant", "non_negative_int_or_None"))
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
     def select_persona(self, rs: RequestState, phrase: str, kind: str,
-                       aux: Optional[int], variant: int = None) -> Response:
+                       aux: Optional[int]) -> Response:
         """Provide data for intelligent input fields.
 
         This searches for users by name so they can be easily selected
@@ -683,7 +692,8 @@ class CoreFrontend(AbstractFrontend):
           assembly_admin
         - ``assembly_admin_user``: Search for an assembly user as
             assembly_admin.
-        - ``ml_privileged_user``: Search for a mailinglist user as ml_admin or moderator
+        - ``ml_user``: Search for a mailinglist user as ml_admin or moderator
+        - ``ml_subscriber``: Search for a mailinglist user for subscription purposes
         - ``event_admin_user``: Search an event user as event_admin (for
           creating events)
         - ``orga_event_user``: Search for an event user as event orga
@@ -694,17 +704,8 @@ class CoreFrontend(AbstractFrontend):
 
         Required aux value based on the 'kind':
 
-        * ``ml_privileged_user``: Id of the mailinglist for context
+        * ``ml_subscriber``: Id of the mailinglist for context
         * ``orga_event_user``: Id of the event you are orga of
-
-        The variant parameter allows to supply an additional integer to
-        distinguish between different variants of a given search kind.
-        Usually, this will be an enum member marking the kind of action taken.
-
-        Possible variants based on the 'kind':
-
-        - ``mml_privileged_user``: Which action you are going to execute on this user.
-          A member of the SubscriptionActions enum.
         """
         if rs.has_validation_errors():
             return self.send_json(rs, {})
@@ -720,7 +721,7 @@ class CoreFrontend(AbstractFrontend):
             if not {"core_admin", "cde_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "cde_user":
-            if not {"cde_admin"} & rs.user.roles:
+            if "cde_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_cde_realm", QueryOperators.equal, True))
@@ -741,12 +742,15 @@ class CoreFrontend(AbstractFrontend):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_assembly_realm", QueryOperators.equal, True))
-        elif kind == "ml_privileged_user":
-            if aux:
-                mailinglist = self.mlproxy.get_mailinglist(rs, aux)
-                if not self.mlproxy.may_manage(rs, aux):
-                    raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            elif not rs.user.moderator and "ml_admin" not in rs.user.roles:
+        elif kind == "ml_user":
+            # No check by mailinglist, as this behaves identical for each list.
+            if not rs.user.moderator and not ADMIN_ROLES & rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append(
+                ("is_ml_realm", QueryOperators.equal, True))
+        elif kind == "ml_subscriber":
+            mailinglist = self.mlproxy.get_mailinglist(rs, aux)
+            if not self.mlproxy.may_manage(rs, aux, privileged=True):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
@@ -813,14 +817,10 @@ class CoreFrontend(AbstractFrontend):
         # Filter result to get only valid audience, if mailinglist is given
         if mailinglist:
             pol = const.MailinglistInteractionPolicy
-            action = check(rs, "enum_subscriptionactions_or_None", variant)
-            if rs.has_validation_errors():
-                return self.send_json(rs, {})
-            if action == SubscriptionActions.add_subscriber:
-                allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
-                                pol.invitation_only}
-                data = self.mlproxy.filter_personas_by_policy(
-                    rs, mailinglist, data, allowed_pols)
+            allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
+                            pol.invitation_only}
+            data = self.mlproxy.filter_personas_by_policy(
+                rs, mailinglist, data, allowed_pols)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:

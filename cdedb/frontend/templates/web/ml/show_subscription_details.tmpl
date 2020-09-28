@@ -44,9 +44,7 @@
                                        arialabel=gettext("ID of the new forced subscriber")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-forced').cdedbSearchPerson(
-                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_privileged_user&phrase=%s&aux='|s) +
-                                (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
-                                (enums['SubscriptionActions'].add_subscription_override.value|string|e) }}', {{ subscription_overrides|list|json|s }},
+                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ subscription_overrides|list|json|s }},
                             false, true, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
@@ -96,9 +94,7 @@
                                        arialabel=gettext("ID of the new blocked subscriber")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-blocked').cdedbSearchPerson(
-                           '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_privileged_user&phrase=%s&aux='|s) +
-                                (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
-                                (enums['SubscriptionActions'].add_unsubscription_override.value|string|e) }}', {{ unsubscription_overrides|list|json|s }},
+                           '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ unsubscription_overrides|list|json|s }},
                             false, true, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
