@@ -264,20 +264,20 @@ class TestCoreFrontend(FrontendTest):
             self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if user['display_name'] not in ("Viktor", "Werner"):
+        if user['display_name'] not in {"Viktor", "Werner"}:
             self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if user['display_name'] in ("Martin", "Rowena"):
+        if user['display_name'] in {"Martin", "Rowena"}:
             self.get('/core/persona/select?kind=ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if user['display_name'] not in ("Annika", "Bertå"):
+        if user['display_name'] not in {"Annika", "Bertå"}:
             self.get('/core/persona/select?kind=event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
 
-        if user['display_name'] in ("Martin", "Rowena", "Werner"):
+        if user['display_name'] in {"Martin", "Rowena", "Werner"}:
             self.get('/core/persona/select'
                      '?kind=event_user&phrase=@exam',
                      status=403)

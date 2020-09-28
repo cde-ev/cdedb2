@@ -91,7 +91,7 @@
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
                 $('#input-persona_id').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kindAUX=') + kind + ('&phrase=%s'|s) }}', [],
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&phrase=%s'|s) }}', [],
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>

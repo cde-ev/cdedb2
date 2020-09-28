@@ -61,15 +61,6 @@ GENESIS_REALM_OPTION_NAMES = (
     GenesisRealmOptionName("assembly", n_("CdE members' assembly")),
     GenesisRealmOptionName("ml", n_("CdE mailinglist")))
 
-ADMIN_ROLES = {
-    "core_admin",
-    "cde_admin",
-    "finance_admin",
-    "event_admin",
-    "assembly_admin",
-    "cdelokal_admin",
-    "ml_admin"
-}
 
 
 class CoreFrontend(AbstractFrontend):
@@ -689,10 +680,11 @@ class CoreFrontend(AbstractFrontend):
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
         - ``pure_assembly_user``: Search for an assembly only user as
-          assembly_admin or presider
+          assembly_admin or presider. Needed for external_signup.
         - ``assembly_user``: Search for an assembly user as assembly_admin or presider
         - ``ml_user``: Search for a mailinglist user as ml_admin or moderator
-        - ``ml_subscriber``: Search for a mailinglist user for subscription purposes
+        - ``ml_subscriber``: Search for a mailinglist user for subscription purposes.
+          Needed for add_subscriber action only.
         - ``event_user``: Search an event user as event_admin or orga
 
         The aux parameter allows to supply an additional id for example
@@ -726,6 +718,7 @@ class CoreFrontend(AbstractFrontend):
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
+            # No check by assembly, as this behaves identical for each assembly.
             if not rs.user.presider and "assembly_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
@@ -733,22 +726,27 @@ class CoreFrontend(AbstractFrontend):
             search_additions.append(
                 ("is_member", QueryOperators.equal, False))
         elif kind == "assembly_user":
+            # No check by assembly, as this behaves identical for each assembly.
             if not rs.user.presider and "assembly_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "event_user":
+            # No check by event, as this behaves identical for each event.
             if not rs.user.orga and "event_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "ml_user":
+            relevant_admin_roles = {"core_admin", "cde_admin", "event_admin",
+                                    "assembly_admin", "cdelokal_admin", "ml_admin"}
             # No check by mailinglist, as this behaves identical for each list.
-            if not rs.user.moderator and not ADMIN_ROLES & rs.user.roles:
+            if not rs.user.moderator and not relevant_admin_roles & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
         elif kind == "ml_subscriber":
+            # In this case, the return value depends on the respective mailinglist
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
             if not self.mlproxy.may_manage(rs, aux, privileged=True):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -801,7 +799,8 @@ class CoreFrontend(AbstractFrontend):
                      "display_name"), search, (("personas.id", True),))
                 data = self.coreproxy.submit_select_persona_query(rs, query)
 
-        # Filter result to get only valid audience, if mailinglist is given
+        # Filter result to get only users allowed to be a subscriber of a list,
+        # which potentially are no subscriber yet.
         if mailinglist:
             pol = const.MailinglistInteractionPolicy
             allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
