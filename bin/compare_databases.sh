@@ -19,11 +19,14 @@ ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
 echo "Compiling list of evolutions to apply."
 grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt \
      > /tmp/todoevolutions.txt
+echo ""
+cat /tmp/todoevolutions.txt
+echo ""
 echo "" > /tmp/output-evolution.txt
 for evolution in $(cat /tmp/todoevolutions.txt); do
     echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
     sudo -u postgres psql -U postgres -d $1 \
-         -f cdedb/database/evolutions/$evolution &> /dev/null
+         -f cdedb/database/evolutions/$evolution
 done
 echo "Creating database description."
 sudo -u postgres psql -U postgres -d $1 \
@@ -38,11 +41,8 @@ sudo -u postgres psql -U postgres -d $1 \
 bin/normalize_database_description.py /tmp/new-description.txt
 
 # perform check
-#echo "Old:"
-#cat /tmp/old-description.txt
-#echo "New:"
-#cat /tmp/new-description.txt
-echo "DATABASE COMPARISON:"
+echo ""
+echo "DATABASE COMPARISON (this should be empty):"
 comm -3 <(sort /tmp/old-description.txt) <(sort /tmp/new-description.txt)
 echo ""
 echo "EVOLUTIONS:"
