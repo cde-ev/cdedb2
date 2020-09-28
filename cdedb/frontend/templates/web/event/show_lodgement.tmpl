@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans lodgement=ambience['lodgement']['moniker'], title=ambience['event']['title'] %}
+    {% trans lodgement=ambience['lodgement']['title'], title=ambience['event']['title'] %}
     	Lodgement {{ lodgement }} ({{ title }})
     {% endtrans %}
 {% endblock %}
@@ -12,12 +12,12 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
-    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker'], active=True,
+    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['title'], active=True,
                             icon='home') }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {{ ambience['lodgement']['moniker'] }}
+        {{ ambience['lodgement']['title'] }}
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -39,7 +39,7 @@
                 <dt>{% trans %}Lodgement Group{% endtrans %}</dt>
                 <dd>
                     {% if ambience['lodgement']['group_id'] %}
-                        {{ groups[ambience['lodgement']['group_id']]['moniker'] }}
+                        {{ groups[ambience['lodgement']['group_id']]['title'] }}
                     {% else %}
                         —
                     {% endif %}

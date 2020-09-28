@@ -83,12 +83,12 @@
         "1": {
             "id": 1,
             "event_id": 1,
-            "moniker": "Haupthaus"
+            "title": "Haupthaus"
         },
         "2": {
             "id": 2,
             "event_id": 1,
-            "moniker": "AußenWohnGruppe"
+            "title": "AußenWohnGruppe"
         }
     },
     "event.lodgements": {
@@ -96,7 +96,7 @@
             "regular_capacity": 10,
             "camping_mat_capacity": 2,
             "id": 2,
-            "moniker": "Kalte Kammer",
+            "title": "Kalte Kammer",
             "event_id": 1,
             "notes": "Daf\u00fcr mit Frischluft.",
             "group_id": 1,
@@ -108,7 +108,7 @@
             "regular_capacity": 5,
             "camping_mat_capacity": 1,
             "id": 1,
-            "moniker": "Warme Stube",
+            "title": "Warme Stube",
             "event_id": 1,
             "notes": null,
             "group_id": 2,
@@ -120,7 +120,7 @@
             "regular_capacity": 0,
             "camping_mat_capacity": 100,
             "id": 3,
-            "moniker": "Kellerverlies",
+            "title": "Kellerverlies",
             "event_id": 1,
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
             "group_id": null,
@@ -132,7 +132,7 @@
             "regular_capacity": 1,
             "camping_mat_capacity": 0,
             "id": 4,
-            "moniker": "Einzelzelle",
+            "title": "Einzelzelle",
             "event_id": 1,
             "notes": null,
             "group_id": 1,
@@ -376,7 +376,10 @@
             "association": 1
         }
     },
-    "EVENT_SCHEMA_VERSION": [13, 2],
+    "EVENT_SCHEMA_VERSION": [
+        14,
+        1
+    ],
     "CDEDB_EXPORT_EVENT_VERSION": 13,
     "event.registration_parts": {
         "2": {

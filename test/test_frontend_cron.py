@@ -115,7 +115,7 @@ def changelog_template(**kwargs):
 
 def cron_template(**kwargs):
     defaults = {
-        'moniker': None,
+        'title': None,
         'store': {}
     }
     data = {**defaults, **kwargs}
@@ -162,7 +162,7 @@ class TestCron(CronTest):
     @prepsql(
         genesis_template(ctime=(now() - datetime.timedelta(hours=6)))
         + cron_template(
-            moniker="genesis_remind",
+            title="genesis_remind",
             store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
                    "ids": [1001]}))
     def test_genesis_remind_old(self):
@@ -171,7 +171,7 @@ class TestCron(CronTest):
 
     @prepsql(
         genesis_template(ctime=(now() - datetime.timedelta(hours=6)))
-        + cron_template(moniker="genesis_remind",
+        + cron_template(title="genesis_remind",
                         store={"tstamp": 1, "ids": [1001]}))
     def test_genesis_remind_older(self):
         self.execute('genesis_remind')
@@ -224,7 +224,7 @@ class TestCron(CronTest):
     @prepsql(
         changelog_template(ctime=now() - datetime.timedelta(hours=14))
         + cron_template(
-            moniker="pending_changelog_remind",
+            title="pending_changelog_remind",
             store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
                    "ids": ['2/2']}))
     def test_changelog_remind_old(self):
@@ -234,7 +234,7 @@ class TestCron(CronTest):
     @prepsql(
         changelog_template(ctime=now() - datetime.timedelta(hours=14))
         + cron_template(
-            moniker="pending_changelog_remind",
+            title="pending_changelog_remind",
             store={"tstamp": 1, "ids": ['2/2']}))
     def test_changelog_remind_older(self):
         self.execute('pending_changelog_remind')
@@ -264,7 +264,7 @@ class TestCron(CronTest):
         self.assertEqual(["subscription_request_remind"] * 5,
                          [mail.template for mail in self.mails])
 
-    @prepsql(cron_template(moniker="subscription_request_remind",
+    @prepsql(cron_template(title="subscription_request_remind",
                            store={7: {'persona_ids': [6],
                                       'tstamp': now().timestamp()},
                                   54: {'persona_ids': [2],
@@ -296,7 +296,7 @@ class TestCron(CronTest):
         privilege_change_template(is_cde_admin=True,
                                   ctime=now() - datetime.timedelta(hours=6))
         + cron_template(
-            moniker="privilege_change_remind",
+            title="privilege_change_remind",
             store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
                    "ids": [1001]}))
     def test_privilege_change_remind_old(self):
@@ -308,7 +308,7 @@ class TestCron(CronTest):
         privilege_change_template(is_cde_admin=True,
                                   ctime=now() - datetime.timedelta(hours=6))
         + cron_template(
-            moniker="privilege_change_remind",
+            title="privilege_change_remind",
             store={"tstamp": 1, "ids": [1001]}))
     def test_privilege_change_remind_older(self):
         self.execute('privilege_change_remind')

@@ -358,12 +358,12 @@ QUERY_SPECS = {
         collections.OrderedDict([
             ("lodgement.id", "id"),
             ("lodgement.lodgement_id", "id"),
-            ("lodgement.moniker", "str"),
+            ("lodgement.title", "str"),
             ("lodgement.regular_capacity", "int"),
             ("lodgement.camping_mat_capacity", "int"),
             ("lodgement.notes", "str"),
             ("lodgement.group_id", "int"),
-            ("lodgement_group.moniker", "int"),
+            ("lodgement_group.title", "int"),
             # This will be augmented with additional fields in the fly.
         ]),
     "qview_core_user":  # query for a general user including past event infos

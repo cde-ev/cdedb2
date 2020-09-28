@@ -3025,7 +3025,7 @@ class EventFrontend(AbstractUserFrontend):
         course_entries = {
             c["id"]: "{}. {}".format(c["nr"], c["shortname"])
             for c in courses.values()}
-        lodgement_entries = {l["id"]: l["moniker"]
+        lodgement_entries = {l["id"]: l["title"]
                              for l in lodgements.values()}
         reg_part_stati_entries =\
             dict(enum_entries_filter(const.RegistrationPartStati, rs.gettext))
@@ -4525,8 +4525,8 @@ class EventFrontend(AbstractUserFrontend):
                 primary_sort = (
                     regular if sortkey == LodgementsSortkeys.total_regular
                     else camping_mat,)
-            elif sortkey == LodgementsSortkeys.moniker:
-                primary_sort = (lodgement["moniker"])
+            elif sortkey == LodgementsSortkeys.title:
+                primary_sort = (lodgement["title"])
             else:
                 primary_sort = ()
             secondary_sort = EntitySorter.lodgement(lodgement)
@@ -4594,7 +4594,7 @@ class EventFrontend(AbstractUserFrontend):
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = process_dynamic_input(rs, group_ids.keys(), {'moniker': "str"},
+        groups = process_dynamic_input(rs, group_ids.keys(), {'title': "str"},
                                        {'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
@@ -4657,7 +4657,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity",
+    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "group_id", "notes")
     @event_guard(check_offline=True)
     def create_lodgement(self, rs: RequestState, event_id: int,
@@ -4695,7 +4695,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity",
+    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "notes", "group_id")
     @event_guard(check_offline=True)
     def change_lodgement(self, rs: RequestState, event_id: int,
@@ -5007,7 +5007,7 @@ class EventFrontend(AbstractUserFrontend):
             spec["part{0}.is_camping_mat".format(part_id)] = "bool"
             spec["part{0}.lodgement_id".format(part_id)] = "int"
             spec["lodgement{0}.id".format(part_id)] = "id"
-            spec["lodgement{0}.moniker".format(part_id)] = "str"
+            spec["lodgement{0}.title".format(part_id)] = "str"
             spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in xsorted(event['fields'].values(),
                              key=EntitySorter.event_field):
@@ -5049,7 +5049,7 @@ class EventFrontend(AbstractUserFrontend):
                           for part_id in event['parts'])] = "int"
             spec[",".join("lodgement{0}.id".format(part_id)
                           for part_id in event['parts'])] = "id"
-            spec[",".join("lodgement{0}.moniker".format(part_id)
+            spec[",".join("lodgement{0}.title".format(part_id)
                           for part_id in event['parts'])] = "str"
             spec[",".join("lodgement{0}.notes".format(part_id)
                           for part_id in event['parts'])] = "str"
@@ -5125,7 +5125,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = OrderedDict(
             (c_id, course_identifier(c))
             for c_id, c in keydictsort_filter(courses, EntitySorter.course))
-        lodge_identifier = lambda l: l["moniker"]
+        lodge_identifier = lambda l: l["title"]
         lodgement_choices = OrderedDict(
             (l_id, lodge_identifier(l))
             for l_id, l in keydictsort_filter(lodgements,
@@ -5343,8 +5343,8 @@ class EventFrontend(AbstractUserFrontend):
                     prefix + gettext("lodgement"),
                 "lodgement{0}.id".format(part_id):
                     prefix + gettext("lodgement ID"),
-                "lodgement{0}.moniker".format(part_id):
-                    prefix + gettext("lodgement moniker"),
+                "lodgement{0}.title".format(part_id):
+                    prefix + gettext("lodgement title"),
                 "lodgement{0}.notes".format(part_id):
                     prefix + gettext("lodgement notes"),
             })
@@ -5369,9 +5369,9 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("lodgement{0}.id".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement ID"),
-                ",".join("lodgement{0}.moniker".format(part_id)
+                ",".join("lodgement{0}.title".format(part_id)
                          for part_id in event['parts']):
-                    gettext("any part: lodgement moniker"),
+                    gettext("any part: lodgement title"),
                 ",".join("lodgement{0}.notes".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement notes"),
@@ -5643,12 +5643,12 @@ class EventFrontend(AbstractUserFrontend):
 
         # Construct choices.
         lodgement_choices = OrderedDict(
-            (l_id, l['moniker'])
+            (l_id, l['title'])
             for l_id, l in keydictsort_filter(lodgements,
                                               EntitySorter.lodgement))
         lodgement_group_choices = OrderedDict({-1: gettext(n_("--no group--"))})
         lodgement_group_choices.update(
-            [(lg_id, lg['moniker']) for lg_id, lg in keydictsort_filter(
+            [(lg_id, lg['title']) for lg_id, lg in keydictsort_filter(
                 lodgement_groups, EntitySorter.lodgement_group)])
         choices: Dict[str, Dict[int, str]] = {
             "lodgement.lodgement_id": lodgement_choices,
@@ -5670,14 +5670,14 @@ class EventFrontend(AbstractUserFrontend):
         titles: Dict[str, str] = {
             "lodgement.id": gettext(n_("Lodgement ID")),
             "lodgement.lodgement_id": gettext(n_("Lodgement")),
-            "lodgement.moniker": gettext(n_("Moniker")),
+            "lodgement.title": gettext(n_("Title")),
             "lodgement.regular_capacity": gettext(n_("Regular Capacity")),
             "lodgement.camping_mat_capacity":
                 gettext(n_("Camping Mat Capacity")),
             "lodgement.notes": gettext(n_("Lodgement Notes")),
             "lodgement.group_id": gettext(n_("Lodgement Group ID")),
             "lodgement_group.tmp_id": gettext(n_("Lodgement Group")),
-            "lodgement_group.moniker": gettext(n_("Lodgement Group Moniker")),
+            "lodgement_group.title": gettext(n_("Lodgement Group Title")),
             "lodgement_group.regular_capacity":
                 gettext(n_("Lodgement Group Regular Capacity")),
             "lodgement_group.camping_mat_capacity":
@@ -5736,7 +5736,7 @@ class EventFrontend(AbstractUserFrontend):
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
 
         parts = rs.ambience['event']['parts']
-        selection_default = ["lodgement.moniker"] + [
+        selection_default = ["lodgement.title"] + [
             f"lodgement_fields.xfield_{field['field_name']}"
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement]

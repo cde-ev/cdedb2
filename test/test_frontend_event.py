@@ -1977,10 +1977,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="lodgement2.title"]')[0].text.strip(),
             "Einzelzelle")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.title"]')[0].text.strip(),
             "")
 
     @as_users("annika")
@@ -2020,7 +2020,7 @@ etc;anything else""", f['entries_2'].value)
                 f[field].checked = True
         f['qop_part3.total_inhabitants'] = QueryOperators.greater.value
         f['qval_part3.total_inhabitants'] = 1
-        f['qord_primary'] = 'lodgement_group.moniker'
+        f['qord_primary'] = 'lodgement_group.title'
         self.submit(f)
         self.assertPresence("Ergebnis [2]", div="query-results")
         self.assertPresence("Kalte Kammer", div="result-container")
@@ -2283,7 +2283,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Kellerverlies")
         self.traverse({'href': '/event/event/1/lodgement/create'})
         f = self.response.forms['createlodgementform']
-        f['moniker'] = "Zelte"
+        f['title'] = "Zelte"
         f['regular_capacity'] = 0
         f['camping_mat_capacity'] = 20
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
@@ -2335,19 +2335,19 @@ etc;anything else""", f['entries_2'].value)
 
         # First try with invalid (empty name)
         f = self.response.forms["lodgementgroupsummaryform"]
-        self.assertEqual(f['moniker_1'].value, "Haupthaus")
+        self.assertEqual(f['title_1'].value, "Haupthaus")
         f['create_-1'] = True
-        f['moniker_1'] = "Hauptgebäude"
+        f['title_1'] = "Hauptgebäude"
         f['delete_2'] = True
         self.submit(f, check_notification=False)
         self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
-        self.assertValidationError('moniker_-1', "Darf nicht leer sein.")
+        self.assertValidationError('title_-1', "Darf nicht leer sein.")
 
         # Now, it should work
         f = self.response.forms["lodgementgroupsummaryform"]
-        f['moniker_-1'] = "Zeltplatz"
+        f['title_-1'] = "Zeltplatz"
         f['create_-2'] = True
-        f['moniker_-2'] = "Altes Schloss"
+        f['title_-2'] = "Altes Schloss"
         self.submit(f)
 
         # Check (non-)existence of groups in lodgement overview

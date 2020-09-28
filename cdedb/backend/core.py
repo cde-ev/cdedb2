@@ -2570,7 +2570,7 @@ class CoreBackend(AbstractBackend):
         If no entry exists, an empty dict ist returned.
         """
         ret = self.sql_select_one(rs, "core.cron_store", ("store",),
-                                  name, entity_key="moniker")
+                                  name, entity_key="title")
         return unwrap(ret) or {}
 
     @access("core_admin")
@@ -2578,12 +2578,12 @@ class CoreBackend(AbstractBackend):
                        data: CdEDBObject) -> DefaultReturnCode:
         """Update the store of a cron job."""
         update = {
-            'moniker': name,
+            'title': name,
             'store': PsycoJson(data),
         }
         with Atomizer(rs):
             ret = self.sql_update(rs, "core.cron_store", update,
-                                  entity_key='moniker')
+                                  entity_key='title')
             if not ret:
                 ret = self.sql_insert(rs, "core.cron_store", update)
             return ret
