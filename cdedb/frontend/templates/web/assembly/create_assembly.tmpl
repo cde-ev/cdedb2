@@ -27,7 +27,7 @@
         {{ util.form_input_text(name="presider_ids", label=gettext("Presiders"), anid="input-presider_ids") }}}
         <script nonce="{{ csp_nonce }}">
             $('#input-presider_ids').cdedbSearchPerson(
-                '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_admin_user&phrase=%s'|s) }}',
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_user&phrase=%s'|s) }}',
                 [], false, true, "{{ gettext("ID, name, email") }}"
             );
         </script>

@@ -254,7 +254,7 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
-    @as_users("berta", "martin", "nina", "rowena", "vera", "werner", "annika")
+    @as_users("berta", "martin", "nina", "rowena", "vera", "viktor", "werner", "annika")
     def test_selectpersona_403(self, user):
         # These can not be done by Berta no matter what.
         if user['display_name'] != "Vera":
@@ -264,7 +264,7 @@ class TestCoreFrontend(FrontendTest):
             self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if user['display_name'] != "Werner":
+        if user['display_name'] not in ("Viktor", "Werner"):
             self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
@@ -346,6 +346,23 @@ class TestCoreFrontend(FrontendTest):
     def test_selectpersona_unprivileged_event(self, user):
         self.get('/core/persona/select?kind=event_user&phrase=bert')
         expectation = (2,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("werner")
+    def test_selectpersona_unprivileged_assembly(self, user):
+        # Normal use search
+        self.get('/core/persona/select?kind=assembly_user&phrase=bert')
+        expectation = (2,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        # Pure assembly user search
+        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kalif')
+        expectation = (11,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=pure_assembly_user&phrase=bert')
+        expectation = tuple()
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
