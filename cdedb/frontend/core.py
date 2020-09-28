@@ -1913,9 +1913,9 @@ class CoreFrontend(AbstractFrontend):
             rs.values['attachment_hash'] = myhash
             rs.values['attachment_filename'] = attachment_filename
         elif attachment_hash:
-            attachment_data = self.coreproxy.genesis_check_attachment(
+            attachment_stored = self.coreproxy.genesis_check_attachment(
                 rs, attachment_hash)
-            if not attachment_data:
+            if not attachment_stored:
                 data['attachment'] = None
                 e = ("attachment", ValueError(n_(
                     "It seems like you took too long and "
