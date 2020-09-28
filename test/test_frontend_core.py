@@ -1581,8 +1581,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'})
         self.assertTitle("Zelda Zeruda-Hime")
 
-    @as_users("vera")
-    def test_genesis_cde(self, user):
+    def test_genesis_cde(self):
         self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
         self.assertPresence("Die maximale Dateigröße ist 8 MB.")
@@ -1605,6 +1604,7 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link(mail)
         self.get(link)
         self.follow()
+        self.login(USER_DICT["vera"])
         self.traverse({'href': '/core'},
                       {'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")

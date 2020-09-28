@@ -1913,7 +1913,7 @@ class CoreFrontend(AbstractFrontend):
             rs.values['attachment_hash'] = myhash
             rs.values['attachment_filename'] = attachment_filename
         elif attachment_hash:
-            attachment_data = self.coreproxy.genesis_get_attachment(
+            attachment_data = self.coreproxy.genesis_check_attachment(
                 rs, attachment_hash)
             if not attachment_data:
                 data['attachment'] = None
