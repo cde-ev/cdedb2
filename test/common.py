@@ -1113,6 +1113,9 @@ class FrontendTest(CdEDBTest):
         total = len(logs)
         self._log_subroutine(title, logs, start=1,
                              end=total if total < 50 else 50)
+        # check if the log page numbers are proper (no 0th page, no last+1 page)
+        self.assertNoLink(content="0")
+        self.assertNoLink(content="$" + str(total // 50 + 1))
 
         # check a combination of offset and length with 0th page
         length = total // 3
