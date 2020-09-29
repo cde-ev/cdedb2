@@ -1231,6 +1231,7 @@ class CoreBackend(AbstractBackend):
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,
+                'paper_expuls': True,
                 # 'foto' already adjusted
                 # 'fulltext' is set automatically
             }
