@@ -156,7 +156,8 @@ class CdEFrontend(AbstractUserFrontend):
         """
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         return self.render(rs, "consent_decision", {
-            'decided_search': data['decided_search']})
+            'decided_search': data['decided_search'],
+            'verwaltung': self.conf["MANAGEMENT_ADDRESS"] })
 
     @access("member", modi={"POST"})
     @REQUESTdata(("ack", "bool"))
