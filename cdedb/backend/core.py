@@ -1893,7 +1893,7 @@ class CoreBackend(AbstractBackend):
     def verify_personas(self, rs: RequestState, ids: Collection[int],
                         required_roles: Collection[Role] = None,
                         introspection_only: bool = True) -> bool:
-        """Check wether certain ids map to actual (active) personas.
+        """Check whether certain ids map to actual (active) personas.
 
         Note that this will return True for an empty set of ids.
 
