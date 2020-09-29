@@ -20,6 +20,6 @@
         {% endfor %}
     {% endcall %}
 
-    {{ logging.filter('cde/view_cde_log', enums['CdeLogCodes'], 'admin_persona') }}
     {{ logging.navigation('cde/view_cde_log', total, length, loglinks) }}
+    {{ logging.filter('cde/view_cde_log', enums['CdeLogCodes'], 'admin_persona') }}
 {% endblock %}

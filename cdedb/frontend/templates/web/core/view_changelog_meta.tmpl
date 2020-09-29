@@ -15,7 +15,7 @@
 {% endblock %}
 {% block content %}
     {{ logging.filterlink() }}
-    <table class="table table-condensed table-hover">
+    <table class="table table-condensed table-hover table-log">
         <thead>
             <tr>
                 <th>{% trans %}Timestamp{% endtrans %}</th>
@@ -69,6 +69,6 @@
         </tbody>
     </table>
 
-    {{ logging.filter('core/view_changelog_meta', enums['MemberChangeStati'], 'admin_persona', 'changelog') }}
     {{ logging.navigation('core/view_changelog_meta', total, length, loglinks) }}
+    {{ logging.filter('core/view_changelog_meta', enums['MemberChangeStati'], 'admin_persona', 'changelog') }}
 {% endblock %}
