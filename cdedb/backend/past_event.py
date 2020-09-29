@@ -207,7 +207,7 @@ class PastEventBackend(AbstractBackend):
         query = """
         SELECT
             events.id AS pevent_id, tempus, institutions.id AS institution_id,
-            institutions.moniker AS institution_moniker, 
+            institutions.shortname AS institution_shortname,
             COALESCE(course_count, 0) AS courses, 
             COALESCE(participant_count, 0) AS participants
         FROM (
@@ -480,7 +480,7 @@ class PastEventBackend(AbstractBackend):
         """Add a participant to a concluded event.
 
         A persona can participate multiple times in a single event. For
-        example if she took several courses in different parts of the event.
+        example if they took several courses in different parts of the event.
 
         :param pcourse_id: If None the persona participated in the event, but
           not in a course (this should be common for orgas).
@@ -548,7 +548,7 @@ class PastEventBackend(AbstractBackend):
                 for e in data}
 
     @access("cde_admin", "event_admin")
-    def find_past_event(self, rs: RequestState, moniker: str
+    def find_past_event(self, rs: RequestState, shortname: str
                         ) -> Tuple[Optional[int], List[Error], List[Error]]:
         """Look for events with a certain name.
 
@@ -556,12 +556,12 @@ class PastEventBackend(AbstractBackend):
         automatically resolve past events to their ids.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type moniker: str
+        :type shortname: str
         :rtype: (int or None, [exception])
         :returns: The id of the past event or None if there were errors.
         """
-        moniker = affirm("str_or_None", moniker)
-        if not moniker:
+        shortname = affirm("str_or_None", shortname)
+        if not shortname:
             return None, [], [("pevent_id",
                                ValueError(n_("No input supplied.")))]
         query = glue("SELECT id FROM past_event.events",
@@ -571,18 +571,18 @@ class PastEventBackend(AbstractBackend):
         today = now().date()
         reference = today - datetime.timedelta(days=200)
         reference = reference.replace(day=1, month=1)
-        ret = self.query_all(rs, query, (moniker, moniker, reference))
+        ret = self.query_all(rs, query, (shortname, shortname, reference))
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
         if len(ret) == 0:
             ret = self.query_all(rs, query,
-                                 (moniker, moniker, datetime.date.min))
+                                 (shortname, shortname, datetime.date.min))
         if len(ret) == 0:
             warnings.append(("pevent_id", ValueError(n_("Only fuzzy match."))))
-            ret = self.query_all(rs, query2, (moniker, 0.5, reference))
+            ret = self.query_all(rs, query2, (shortname, 0.5, reference))
         if len(ret) == 0:
-            ret = self.query_all(rs, query2, (moniker, 0.5, datetime.date.min))
+            ret = self.query_all(rs, query2, (shortname, 0.5, datetime.date.min))
         if len(ret) == 0:
             return None, [], [("pevent_id", ValueError(n_("No event found.")))]
         elif len(ret) > 1:

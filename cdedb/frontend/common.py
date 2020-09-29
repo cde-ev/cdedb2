@@ -2413,7 +2413,7 @@ def calculate_loglinks(rs: RequestState, total: int,
     # the first shown entry. This is done magically, if no offset has been
     # given.
     if offset is None:
-        trueoffset = length * ((total - 1) // length)
+        trueoffset = length * ((total - 1) // length) if total != 0 else 0
     else:
         trueoffset = offset
 
@@ -2427,15 +2427,13 @@ def calculate_loglinks(rs: RequestState, total: int,
         "last": new_md(),
     }
     pre = [new_md() for x in range(3) if trueoffset - x * length > 0]
-    post = [new_md() for x in range(3) if trueoffset + x * length < total]
+    post = [new_md() for x in range(3) if trueoffset + (x + 1) * length < total]
 
     # Fix the offset for each set of values.
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
     for x, _ in enumerate(pre):
-        pre[x]["offset"] = (
-                trueoffset - (len(pre) - x) * length
-        )
+        pre[x]["offset"] = (trueoffset - (len(pre) - x) * length)
     loglinks["previous"]["offset"] = trueoffset - length
     for x, _ in enumerate(post):
         post[x]["offset"] = trueoffset + (x + 1) * length

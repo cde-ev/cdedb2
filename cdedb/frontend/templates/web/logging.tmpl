@@ -22,7 +22,7 @@
 
 {% macro table(log, keytitle='') %}
     {{ filterlink() }}
-    <table class="table table-condensed table-hover">
+    <table class="table table-condensed table-hover table-log">
         <thead>
         <tr>
             <th>{% trans %}Timestamp{% endtrans %}</th>
@@ -129,7 +129,7 @@
 
 {% macro navigation(endpoint, total, length, loglinks) %}
     <nav class="text-center" aria-label="{% trans %}Log page navigation{% endtrans %}">
-    <ul class="pagination pagination-lg", id="log-pagination">
+    <ul class="pagination", id="log-pagination">
         {# How can I properly automate the target? #}
         {% if loglinks["current"]["offset"] < 0 %}
             {% set page = 0 %}

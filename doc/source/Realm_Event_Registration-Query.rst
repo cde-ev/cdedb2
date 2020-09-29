@@ -52,7 +52,7 @@ The following fields are avalable in the dynamic tables:
 * ``part{part_id}.lodgement_id``
 * ``part{part_id}.is_camping_mat``
 * ``lodgement{part_id}.xfield_{field_name}`` *For every part and every custom lodgement datafield.*
-* ``lodgement{part_id}.moniker``
+* ``lodgement{part_id}.title``
 * ``lodgement{part_id}.notes``
 * ``track{track_id}.course_id``
 * ``track{track_id}.course_instructor``
@@ -90,7 +90,7 @@ The second table provides a view of the assigned lodgement, should one exist. Al
 
   SELECT
       lodge_field_columns,
-      moniker, notes, id
+      title, notes, id
   FROM
       event.lodgements
   WHERE
@@ -155,7 +155,7 @@ The final view for regisration queries looks something like this: ::
   ) AS part1 ON reg.id = part1.registration_id
   LEFT OUTER JOIN (
       SELECT
-          (fields->>'contamination')::varchar AS "xfield_contamination", moniker, notes, id
+          (fields->>'contamination')::varchar AS "xfield_contamination", title, notes, id
       FROM
           event.lodgements
       WHERE
@@ -172,7 +172,7 @@ The final view for regisration queries looks something like this: ::
   LEFT OUTER JOIN (
       SELECT
           (fields->>'contamination')::varchar AS "xfield_contamination",
-          moniker, notes, id
+          title, notes, id
       FROM
           event.lodgements
       WHERE
@@ -189,7 +189,7 @@ The final view for regisration queries looks something like this: ::
   LEFT OUTER JOIN (
       SELECT
           (fields->>'contamination')::varchar AS "xfield_contamination",
-          moniker, notes, id
+          title, notes, id
       FROM
           event.lodgements
       WHERE

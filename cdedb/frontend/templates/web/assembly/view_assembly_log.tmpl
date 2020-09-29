@@ -21,6 +21,6 @@
         {% endfor %}
     {% endcall %}
 
-    {{ logging.filter('assembly/view_assembly_log', enums['AssemblyLogCodes'], 'assembly_user') }}
     {{ logging.navigation('assembly/view_assembly_log', total, length, loglinks) }}
+    {{ logging.filter('assembly/view_assembly_log', enums['AssemblyLogCodes'], 'assembly_user') }}
 {% endblock %}

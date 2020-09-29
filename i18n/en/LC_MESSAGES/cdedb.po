@@ -1320,7 +1320,7 @@ msgid "Ballot not yet tallied."
 msgstr ""
 
 #: cdedb/frontend/assembly.py:1361 cdedb/frontend/assembly.py:1374
-msgid "Duplicate moniker."
+msgid "Duplicate shortname."
 msgstr ""
 
 #: cdedb/frontend/cde.py:178
@@ -2531,7 +2531,7 @@ msgid "lodgement ID"
 msgstr ""
 
 #: cdedb/frontend/event.py:5347
-msgid "lodgement moniker"
+msgid "lodgement title"
 msgstr ""
 
 #: cdedb/frontend/event.py:5349
@@ -2559,7 +2559,7 @@ msgid "any part: lodgement ID"
 msgstr ""
 
 #: cdedb/frontend/event.py:5374
-msgid "any part: lodgement moniker"
+msgid "any part: lodgement title"
 msgstr ""
 
 #: cdedb/frontend/event.py:5377
@@ -2618,7 +2618,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:28
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:28
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:82
-msgid "Moniker"
+msgid "Title"
 msgstr ""
 
 #: cdedb/frontend/event.py:5674
@@ -2653,7 +2653,7 @@ msgid "Lodgement Group"
 msgstr ""
 
 #: cdedb/frontend/event.py:5680
-msgid "Lodgement Group Moniker"
+msgid "Lodgement Group Title"
 msgstr ""
 
 #: cdedb/frontend/event.py:5682
@@ -3282,7 +3282,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:272
 #, python-format
 msgid ""
-"Additionally the moniker %(abm)s shows where in the election the rejection "
+"Additionally the shortname %(abm)s shows where in the election the rejection "
 "limit was ranked. Should no candidate have won against the rejection limit, "
 "the board may take additional measures."
 msgstr ""
@@ -13392,7 +13392,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:1356 cdedb/validation.py:4062
 #: cdedb/frontend/assembly.py:1369
-msgid "Mustn’t be the bar moniker."
+msgid "Mustn’t be the bar shortname."
 msgstr ""
 
 #: cdedb/validation.py:4106

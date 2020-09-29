@@ -62,7 +62,6 @@ GENESIS_REALM_OPTION_NAMES = (
     GenesisRealmOptionName("ml", n_("CdE mailinglist")))
 
 
-
 class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
     anonymous access and personas. """

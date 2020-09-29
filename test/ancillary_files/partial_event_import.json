@@ -55,7 +55,7 @@
 	"id": 1,
 	"lodgement_groups": {
 		"-1": {
-			"moniker": "Geheime Etage"
+			"title": "Geheime Etage"
 		}
 	},
 	"lodgements": {
@@ -66,7 +66,7 @@
 			"fields": {
 				"contamination": "medium"
 			},
-			"moniker": "K\u00fchle Kammer",
+			"title": "K\u00fchle Kammer",
 			"notes": "mit Frischluft (also im Vergleich zum Rest)."
 		},
 		"1": {
@@ -84,7 +84,7 @@
 			"fields": {
 				"contamination": "none"
 			},
-			"moniker": "Geheimkabinett",
+			"title": "Geheimkabinett",
 			"notes": "Einfach den unsichtbaren Schildern folgen.",
 			"group_id": -1
 		},
@@ -94,7 +94,7 @@
 			"fields": {
 				"contamination": "low"
 			},
-			"moniker": "Handtuchraum",
+			"title": "Handtuchraum",
 			"notes": "Hier gibt es Handtücher für jeden.",
 			"group_id": null
 		}
@@ -252,5 +252,8 @@
 			}
 		}
 	},
-        "EVENT_SCHEMA_VERSION": [13, 2]
+        "EVENT_SCHEMA_VERSION": [
+			14,
+			1
+		]
 }

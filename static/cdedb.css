@@ -80,6 +80,9 @@ body{
 .table-layout-fixed {
     table-layout: fixed;
 }
+.table-log {
+    margin-bottom: 0;
+}
 .input-slim, .input-group>.input-slim {
     width: auto;
 }
