@@ -49,11 +49,21 @@
 
     <h1>{% trans %}Consent{% endtrans %}</h1>
 
-        {% if "searchable" in user.roles %}
+        {% if "searchable" in user.roles and not decided_search %}
             <p>
                 {% trans %}
                     The CdE-Datenbank relies on the principle of mutuality:
-                    Only if you consent to the following, others can access your data
+                    Only if you allow others to access your data you can search for and access others.
+                    In your case, an admin has manually set you to be searchable.
+                    If you do not want this, you can refuse consent below.
+                    Alternatively, please confirm that you consent to the following.
+                {% endtrans %}
+            </p>
+        {% elif "searchable" in user.roles %}
+            <p>
+                {% trans %}
+                    The CdE-Datenbank relies on the principle of mutuality:
+                    Because you have consented to the following, others can access your data
                     and you can search for and access others.
                 {% endtrans %}
             </p>
@@ -61,7 +71,7 @@
             <p>
                  {% trans %}
                     The CdE-Datenbank relies on the principle of mutuality:
-                    Because you have consented to the following, others can access your data
+                    Only if you consent to the following, others can access your data
                     and you can search for and access others.
                 {% endtrans %}
             </p>
@@ -90,7 +100,7 @@
         {% endtrans %}
     </p>
 
-    {% if not decided_search or not "searchable" in user.roles %}
+    {% if not decided_search or "searchable" not in user.roles %}
         <form action="{{ cdedblink('cde/consent_decision') }}" method="POST" id="ackconsentform" style="display: inline;">
             {{ util.anti_csrf_token('cde/consent_decision') }}
             {{ util.input_hidden(name="ack", value="True") }}
@@ -107,7 +117,7 @@
         </form>
 
         {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="clock", aclass="btn btn-default") }}
-    {% elif not "searchable" in user.roles %}
+    {% elif "searchable" not in user.roles %}
         {{ util.href(cdedblink("cde/index"), gettext("Don’t change anything"), icon="asterisk", aclass="btn btn-default") }}
     {% endif %}
 

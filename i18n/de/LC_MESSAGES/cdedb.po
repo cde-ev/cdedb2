@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-09-29 15:48+0200\n"
+"POT-Creation-Date: 2020-10-01 00:47+0200\n"
 "PO-Revision-Date: 2020-09-16 15:18+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -4887,39 +4887,46 @@ msgstr ""
 msgid "You have decided to be visible in this index."
 msgstr "Du hast Dich dafür entschieden, in diesem sichtbar zu sein."
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:34
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:31
+#, python-format
+msgid "If you would like to revoke this consent, please contact %(link)s."
+msgstr ""
+"Wenn du diese Einwilligung zurückziehen möchtest, kontaktiere bitte "
+"%(link)s."
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:37
 msgid "You have decided you do not want to be visible in this index."
 msgstr "Du hast Dich dagegen entschieden, in diesem sichtbar zu sein."
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:42
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:115
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:45
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:119
 msgid "Decide later"
 msgstr "Später entscheiden"
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:44
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:47
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:25
 #: cdedb/frontend/templates/web/core/show_user.tmpl:84
 msgid "Who can see my data?"
 msgstr "Wer sieht meine Daten?"
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:47
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:50
 msgid "Consent"
 msgstr "Einwilligung"
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:51
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:54
 msgid ""
-"The CdE-Datenbank relies on the principle of mutuality: Only if you "
-"consent to the following, others can access your data and you can search "
-"for and access others."
+"The CdE-Datenbank relies on the principle of mutuality: Only if you allow"
+" others to access your data you can search for and access others. In your"
+" case, an admin has manually set you to be searchable. If you do not want"
+" this, you can refuse consent below. Alternatively, please confirm that "
+"you consent to the following."
 msgstr ""
 "Die CdE-Datenbank beruht auf dem Prinzip der Gegenseitigkeit: Nur wenn Du"
-" die folgende Einwilligung erteilst, können andere Deine Daten aufrufen "
-"und Du die Daten anderer suchen und aufrufen."
-
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:58
-#, python-format
-msgid "If you would like to revoke this consent, please contact %(link)s."
-msgstr "Wenn du diese Einwilligung zurückziehen möchtest, kontaktiere bitte %(link)s."
+" anderen erlaubst, Deine Daten aufzurufen, kannst du die Daten anderer"
+" suchen und aufrufen. In deinem Fall hat ein Admin manuell eingestellt,"
+" dass du in der Datenbank zu finden bist. Falls du das nicht möchtest,"
+" kannst du unten deine Einwilligung verweigern. Anderenfalls, bestätige"
+" bitte, dass du die folgende Einwilligung erteilst."
 
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:64
 msgid ""
@@ -4931,13 +4938,23 @@ msgstr ""
 " folgende Einwilligung erteilt hast, können andere Deine Daten aufrufen "
 "und Du die Daten anderer suchen und aufrufen."
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:77
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:72
+msgid ""
+"The CdE-Datenbank relies on the principle of mutuality: Only if you "
+"consent to the following, others can access your data and you can search "
+"for and access others."
+msgstr ""
+"Die CdE-Datenbank beruht auf dem Prinzip der Gegenseitigkeit: Nur wenn Du"
+" die folgende Einwilligung erteilst, können andere Deine Daten aufrufen "
+"und Du die Daten anderer suchen und aufrufen."
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:82
 msgid "I accept that my data may be mailed to other CdE-Members by post."
 msgstr ""
 "Ich erkläre mich damit einverstanden, dass meine Daten per Post an andere"
 " CdEler verschickt werden können."
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:83
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:88
 msgid ""
 "I accept that my personal information can be accessed by other CdE-"
 "Members via the internet. (All data is encrypted and password-protected. "
@@ -4951,7 +4968,7 @@ msgstr ""
 "Einverständnis mit der Speicherung kann Dir der CdE Mails mit wichtigen "
 "Informationen und Erinnerungen an zu zahlende Beiträge schicken.)"
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:92
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:97
 msgid ""
 "I hereby declare that I will not pass the data of CdE-Members to third "
 "parties and that I will will not use it for any purpose, that is not in "
@@ -4960,15 +4977,15 @@ msgstr ""
 "Ich erkläre, dass ich Daten anderer CdEler nicht an Dritte weitergeben "
 "oder zu Zwecken benutzen werde, die nicht Sinn und Aufgabe des CdE sind."
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:103
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:107
 msgid "Give consent"
 msgstr "Einwilligung erteilen"
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:112
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:116
 msgid "Refuse consent"
 msgstr "Einwilligung verweigern"
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:117
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:121
 msgid "Don’t change anything"
 msgstr "Nichts ändern"
 

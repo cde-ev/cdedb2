@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-09-29 15:48+0200\n"
+"POT-Creation-Date: 2020-10-01 00:47+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -4689,35 +4689,37 @@ msgstr ""
 msgid "You have decided to be visible in this index."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:34
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:31
+#, python-format
+msgid "If you would like to revoke this consent, please contact %(link)s."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:37
 msgid "You have decided you do not want to be visible in this index."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:42
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:115
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:45
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:119
 msgid "Decide later"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:44
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:47
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:25
 #: cdedb/frontend/templates/web/core/show_user.tmpl:84
 msgid "Who can see my data?"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:47
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:50
 msgid "Consent"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:51
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:54
 msgid ""
-"The CdE-Datenbank relies on the principle of mutuality: Only if you "
-"consent to the following, others can access your data and you can search "
-"for and access others."
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:58
-#, python-format
-msgid "If you would like to revoke this consent, please contact %(link)s."
+"The CdE-Datenbank relies on the principle of mutuality: Only if you allow"
+" others to access your data you can search for and access others. In your"
+" case, an admin has manually set you to be searchable. If you do not want"
+" this, you can refuse consent below. Alternatively, please confirm that "
+"you consent to the following."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:64
@@ -4727,11 +4729,18 @@ msgid ""
 "search for and access others."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:77
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:72
+msgid ""
+"The CdE-Datenbank relies on the principle of mutuality: Only if you "
+"consent to the following, others can access your data and you can search "
+"for and access others."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:82
 msgid "I accept that my data may be mailed to other CdE-Members by post."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:83
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:88
 msgid ""
 "I accept that my personal information can be accessed by other CdE-"
 "Members via the internet. (All data is encrypted and password-protected. "
@@ -4740,22 +4749,22 @@ msgid ""
 "of your data.)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:92
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:97
 msgid ""
 "I hereby declare that I will not pass the data of CdE-Members to third "
 "parties and that I will will not use it for any purpose, that is not in "
 "the sense and purpose of the CdE."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:103
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:107
 msgid "Give consent"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:112
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:116
 msgid "Refuse consent"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:117
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:121
 msgid "Don’t change anything"
 msgstr ""
 
