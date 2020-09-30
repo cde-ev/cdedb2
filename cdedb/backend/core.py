@@ -1913,6 +1913,18 @@ class CoreBackend(AbstractBackend):
                 f.write(attachment)
         return myhash
 
+    @access("anonymous")
+    def genesis_check_attachment(self, rs: RequestState, attachment_hash: str
+                                 ) -> bool:
+        """Check whether a genesis attachment with the given hash is available.
+
+        Contrary to `genesis_get_attachment` this does not retrieve it's
+        content.
+        """
+        attachment_hash = affirm("str", attachment_hash)
+        path = self.genesis_attachment_dir / attachment_hash
+        return path.is_file()
+
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
