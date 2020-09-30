@@ -39,6 +39,8 @@ sudo -u cdedb echo '        rebase = merges' >> /cdedb2/.git/config
 sudo -u cdedb echo '' >> /cdedb2/.git/info/attributes
 sudo -u cdedb echo '*.po diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
 sudo -u cdedb echo '*.pot diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
+# add cdedb to python path
+sudo ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb
 # build the documentation
 sudo -u cdedb make doc
 # build the i18n files

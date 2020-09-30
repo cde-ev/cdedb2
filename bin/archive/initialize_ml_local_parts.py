@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
-
-sys.path.insert(0, "/cdedb2/")
 from cdedb.script import setup, make_backend
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import get_type, full_address
