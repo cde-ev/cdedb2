@@ -118,6 +118,7 @@ from cdedb.validationdata import (
 from cdedb.validationtypes import *
 
 _BASICCONF = BasicConfig()
+NoneType = type(None)
 
 current_module = sys.modules[__name__]
 
@@ -156,20 +157,112 @@ class ValidatorStorage(Dict[Type, Callable]):
         return super().__getitem__(type_)
 
     def __missing__(self, type_: Type[T]) -> Callable[..., T]:
+        # TODO resolve potential cyclic imports with enums
+        if callable(type_):
+            return type_  # we have a raw enum validator
         # TODO implement dynamic lookup for container types
-        raise NotImplementedError()
+        raise NotImplementedError(type_)
 
 
 _ALL_TYPED = ValidatorStorage()
 
 
-def _add_typed_validator(fun: F) -> F:
+def _create_assert_valid(fun: F):
+    @ functools.wraps(fun)
+    def assert_valid(*args, **kwargs):
+        try:
+            val = fun(*args, **kwargs)
+        except ValidationSummary as errs:
+            old_format = [(e.args[0], type(e)(*e.args[1:])) for e in errs]
+            _LOGGER.debug(
+                f"{old_format} for '{fun.__name__}'"
+                f" with input {args}, {kwargs}."
+            )
+            e = errs[0]
+            e.args = ("{} ({})".format(e.args[1], e.args[0]),) + e.args[2:]
+            raise e from errs
+        return val
+
+    return assert_valid
+
+
+def _create_is_valid(fun: F):
+    @ functools.wraps(fun)
+    def is_valid(*args, **kwargs) -> bool:
+        kwargs['_convert'] = False
+        try:
+            fun(*args, **kwargs)
+            return True
+        except ValidationSummary as errs:
+            return False
+
+    return is_valid
+
+
+def _create_check_valid(fun: F):
+    @ functools.wraps(fun)
+    def check_valid(*args, **kwargs):
+        try:
+            val = fun(*args, **kwargs)
+            return val, []
+        except ValidationSummary as errs:
+            old_format = [(e.args[0], type(e)(*e.args[1:])) for e in errs]
+            _LOGGER.debug(
+                f"{old_format} for '{fun.__name__}'"
+                f" with input {args}, {kwargs}."
+            )
+            return None, old_format
+
+    return check_valid
+
+
+def _allow_None(fun: F):
+    """Wrap a validator to allow ``None`` as valid input.
+
+    This causes falsy values to be mapped to ``None`` if there is an error.
+    """
+
+    @ functools.wraps(fun)
+    def new_fun(val, *args, **kwargs):
+        if val is None:
+            return None
+        else:
+            try:
+                return fun(val, *args, **kwargs)
+            except ValidationSummary as errs:  # we need to catch everything
+                if kwargs.get('_convert', True) and not val:
+                    return None
+                else:
+                    raise
+
+    new_fun.__name__ += "_or_None"
+
+    return new_fun
+
+
+def _create_validators(funs: Iterable[F]):
+    """This instantiates the validators used in the rest of the code."""
+    for fun in funs:
+        setattr(current_module, "is{}".format(fun.__name__),
+                _create_is_valid(fun))
+        setattr(current_module, "assert{}".format(fun.__name__),
+                _create_assert_valid(fun))
+        setattr(current_module, "check{}".format(fun.__name__),
+                _create_check_valid(fun))
+
+
+def _add_typed_validator(fun: F, return_type: Type = None) -> F:
     """Mark a typed function for processing into validators."""
-    return_type: Type = get_type_hints(fun)["return"]
+    # TODO get rid of dynamic return types for enum
+    if not return_type:
+        return_type = get_type_hints(fun)["return"]
+    assert return_type
     if return_type in _ALL_TYPED:
-        raise RuntimeError(f"Type {return_type:r} already registered")
+        raise RuntimeError(f"Type {return_type} already registered")
     _ALL_TYPED[return_type] = fun
-    _ALL_TYPED[Optional[return_type]] = fun
+    allow_none = _allow_None(fun)
+    _ALL_TYPED[Optional[return_type]] = allow_none
+    setattr(current_module, allow_none.__name__, allow_none)
 
     return fun
 
@@ -229,7 +322,7 @@ def _examine_dictionary_fields(
 
 def _augment_dict_validator(
     validator: Callable,
-    augmentation: Dict[str, Type],
+    augmentation: Mapping[str, Type],
     strict: bool = True
 ) -> Callable:
     """Beef up a dict validator.
@@ -255,7 +348,8 @@ def _augment_dict_validator(
         ret: Dict[str, Any] = {}
         try:
             ret = _examine_dictionary_fields(
-                val, mandatory_fields, optional_fields, **kwargs)
+                val, mandatory_fields, optional_fields,
+                **{"allow_superfluous": True, **kwargs})
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -355,7 +449,8 @@ def _int(
                 raise ValidationSummary(ValueError(
                     argname, n_("Precision loss.")))
             val = int(val)
-    if not isinstance(val, int):
+    # TODO why not allow bool?
+    if not isinstance(val, int) or isinstance(val, bool):
         raise ValidationSummary(TypeError(argname, n_("Must be an integer.")))
     return val
 
@@ -428,8 +523,8 @@ def _decimal(
         try:
             val = decimal.Decimal(val)
         except (ValueError, TypeError, decimal.InvalidOperation) as e:
-            raise ValueError(argname, n_(
-                "Invalid input for decimal number.")) from e
+            raise ValidationSummary(ValueError(argname, n_(
+                "Invalid input for decimal number."))) from e
     if not isinstance(val, decimal.Decimal):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a decimal.Decimal.")))
@@ -563,7 +658,7 @@ def _bool(
     # TODO why do we convert first if it may already be a subclass of bool?
     if _convert and val is not None:
         try:
-            return distutils.util.strtobool(val)
+            return bool(distutils.util.strtobool(val))
         except (AttributeError, ValueError):
             try:
                 return bool(val)
@@ -581,7 +676,7 @@ def _empty_dict(
 ) -> EmptyDict:
     if val != {}:
         raise ValidationSummary(
-            TypeError(argname, n_("Must be an empty dict.")))
+            ValueError(argname, n_("Must be an empty dict.")))
     return EmptyDict(val)
 
 
@@ -592,7 +687,8 @@ def _empty_list(
     if _convert:  # TODO why do we convert here but not for _empty_dict?
         val = list(_iterable(val, argname, _convert=_convert, **kwargs))
     if val != []:
-        raise TypeError(argname, n_("Must be an empty list."))
+        raise ValidationSummary(
+            ValueError(argname, n_("Must be an empty list.")))
     return EmptyList(val)
 
 
@@ -702,7 +798,8 @@ def _restrictive_identifier(
 
 @_add_typed_validator
 def _csv_identifier(
-        val: Any, argname: str = None, **kwargs):
+        val: Any, argname: str = None, **kwargs
+) -> CSVIdentifier:
     val = _printable_ascii(val, argname, **kwargs)
     if re.search(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$', val) is None:
         raise ValidationSummary(ValueError(argname, n_(
@@ -866,34 +963,34 @@ def _PERSONA_BASE_CREATION(): return {
     'display_name': str,
     'given_names': str,
     'family_name': str,
-    'title': None,
-    'name_supplement': None,
-    'gender': None,
-    'birthday': None,
-    'telephone': None,
-    'mobile': None,
-    'address_supplement': None,
-    'address': None,
-    'postal_code': None,
-    'location': None,
-    'country': None,
-    'birth_name': None,
-    'address_supplement2': None,
-    'address2': None,
-    'postal_code2': None,
-    'location2': None,
-    'country2': None,
-    'weblink': None,
-    'specialisation': None,
-    'affiliation': None,
-    'timeline': None,
-    'interests': None,
-    'free_form': None,
-    'trial_member': None,
-    'decided_search': None,
-    'bub_search': None,
-    'foto': None,
-    'paper_expuls': None,
+    'title': NoneType,
+    'name_supplement': NoneType,
+    'gender': NoneType,
+    'birthday': NoneType,
+    'telephone': NoneType,
+    'mobile': NoneType,
+    'address_supplement': NoneType,
+    'address': NoneType,
+    'postal_code': NoneType,
+    'location': NoneType,
+    'country': NoneType,
+    'birth_name': NoneType,
+    'address_supplement2': NoneType,
+    'address2': NoneType,
+    'postal_code2': NoneType,
+    'location2': NoneType,
+    'country2': NoneType,
+    'weblink': NoneType,
+    'specialisation': NoneType,
+    'affiliation': NoneType,
+    'timeline': NoneType,
+    'interests': NoneType,
+    'free_form': NoneType,
+    'trial_member': NoneType,
+    'decided_search': NoneType,
+    'bub_search': NoneType,
+    'foto': NoneType,
+    'paper_expuls': NoneType,
 }
 
 
@@ -1296,7 +1393,8 @@ def _german_postal_code(
     # "Deutschland"?
     if not aux or aux == "Deutschland":
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
-            raise ValidationWarning(argname, n_("Invalid german postal code."))
+            raise ValidationSummary(
+                ValidationWarning(argname, n_("Invalid german postal code.")))
     return GermanPostalCode(val)
 
 
@@ -1562,7 +1660,7 @@ def _period(
 def _expuls(
         val: Any, argname: str = "expuls", **kwargs
 ) -> ExPuls:
-    val, errs = _mapping(val, argname, **kwargs)
+    val = _mapping(val, argname, **kwargs)
 
     # TODO make these public?
     optional_fields = {
@@ -1664,7 +1762,7 @@ def _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS(): return {
     'status': _enum_lastschrifttransactionstati,
     'issued_at': datetime.datetime,
     'processed_at': Optional[datetime.datetime],
-    'tally': Optional[_decimal],
+    'tally': Optional[decimal.Decimal],
 }
 
 
@@ -1945,7 +2043,7 @@ def _EVENT_OPTIONAL_FIELDS(): return {
     'courses_in_participant_list': bool,
     'is_cancelled': bool,
     'is_archived': bool,
-    'iban': Optional[_iban],
+    'iban': Optional[IBAN],
     'nonmember_surcharge': NonNegativeDecimal,
     'orgas': Iterable,
     'mail_text': Optional[str],
@@ -1953,7 +2051,7 @@ def _EVENT_OPTIONAL_FIELDS(): return {
     'fields': Mapping,
     'fee_modifiers': Mapping,
     'registration_text': Optional[str],
-    'orga_address': Optional[_email],
+    'orga_address': Optional[Email],
     'lodge_field': Optional[ID],
     'camping_mat_field': Optional[ID],
     'course_room_field': Optional[ID],
@@ -2181,7 +2279,7 @@ def _event_track(
 def _EVENT_FIELD_COMMON_FIELDS(extra_suffix): return {
     'kind{}'.format(extra_suffix): _enum_fielddatatypes,
     'association{}'.format(extra_suffix): _enum_fieldassociations,
-    'entries{}'.format(extra_suffix): _any,
+    'entries{}'.format(extra_suffix): Any,
 }
 
 
@@ -2201,7 +2299,7 @@ def _event_field(
     field_name_key = "field_name{}".format(extra_suffix)
     if creation:
         spec = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
-        spec[field_name_key] = _restrictive_identifier
+        spec[field_name_key] = RestrictiveIdentifier
         mandatory_fields = spec
         optional_fields = {}
     else:
@@ -2218,7 +2316,7 @@ def _event_field(
     if not val.get(entries_key, True):
         val[entries_key] = None
     if entries_key in val and val[entries_key] is not None:
-        if isinstance(val[entries_key], str) and kwargs["_convert"]:
+        if isinstance(val[entries_key], str) and kwargs.get("_convert", True):
             val[entries_key] = tuple(tuple(y.strip() for y in x.split(';', 1))
                                      for x in val[entries_key].split('\n'))
         try:
@@ -2327,8 +2425,8 @@ def _COURSE_COMMON_FIELDS(): return {
     'nr': str,
     'shortname': str,
     'instructors': Optional[str],
-    'max_size': Optional[_non_negative_int],
-    'min_size': Optional[_non_negative_int],
+    'max_size': Optional[NonNegativeInt],
+    'min_size': Optional[NonNegativeInt],
     'notes': Optional[str],
 }
 
@@ -2506,7 +2604,8 @@ def _registration_part(
 # TODO make type of kwargs to be bools only?
 @_add_typed_validator
 def _registration_track(
-        val: Any, argname: str = "registration_track", **kwargs):
+        val: Any, argname: str = "registration_track", **kwargs
+) -> RegistrationTrack:
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
@@ -2566,7 +2665,13 @@ def _event_associated_fields(
         if field['association'] == association:
             dt = _enum_fielddatatypes(  # type: ignore
                 field['kind'], field['field_name'], **kwargs)
-            datatypes[field['field_name']] = f"Optional[{dt.name}]" # type: ignore
+            datatypes[field['field_name']] = cast(Type, eval(
+                f"Optional[{dt.name}]",
+                {
+                    'Optional': Optional,  # type: ignore
+                    'date': datetime.date,
+                    'datetime': datetime.datetime
+                }))
     optional_fields = {
         field['field_name']: datatypes[field['field_name']]
         for field in fields.values() if field['association'] == association
@@ -2710,7 +2815,7 @@ def _questionnaire(
                 'field_id': Optional[ID],
                 'title': Optional[str],
                 'info': Optional[str],
-                'input_size': Optional[_int],
+                'input_size': Optional[int],
                 'readonly': Optional[bool],
                 'default_value': Optional[str],
             }
@@ -3003,14 +3108,14 @@ def _serialized_partial_event(
             argname, n_("Schema version mismatch.")))
 
     domain_validators = {
-        'courses': Optional[_partial_course],
-        'lodgement_groups': Optional[_partial_lodgement_group],
-        'lodgements': Optional[_partial_lodgement],
-        'registrations': Optional[_partial_registration],
+        'courses': Optional[PartialCourse],
+        'lodgement_groups': Optional[PartialLodgementGroup],
+        'lodgements': Optional[PartialLodgement],
+        'registrations': Optional[PartialRegistration],
     }
 
     errs = ValidationSummary()
-    for domain, validator in domain_validators.items():
+    for domain, type_ in domain_validators.items():
         if domain not in val:
             continue
         new_dict = {}
@@ -3024,7 +3129,7 @@ def _serialized_partial_event(
 
             creation = (new_key < 0)
             try:
-                new_entry = validator(
+                new_entry = _ALL_TYPED[type_](
                     entry, domain, creation=creation, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
@@ -3044,8 +3149,8 @@ def _PARTIAL_COURSE_COMMON_FIELDS(): return {
     'nr': Optional[str],
     'shortname': str,
     'instructors': Optional[str],
-    'max_size': Optional[_int],
-    'min_size': Optional[_int],
+    'max_size': Optional[int],
+    'min_size': Optional[int],
     'notes': Optional[str],
 }
 
@@ -3325,8 +3430,8 @@ def _MAILINGLIST_COMMON_FIELDS(): return {
 
 
 def _MAILINGLIST_OPTIONAL_FIELDS(): return {
-    'assembly_id': None,
-    'event_id': None,
+    'assembly_id': NoneType,
+    'event_id': NoneType,
     'registration_stati': EmptyList,
 }
 
@@ -3551,7 +3656,7 @@ def _BALLOT_OPTIONAL_FIELDS(): return {
     'extended': Optional[bool],
     'vote_extension_end': Optional[datetime.datetime],
     'quorum': int,
-    'votes': Optional[_int],
+    'votes': Optional[int],
     'use_bar': bool,
     'is_tallied': bool,
     'candidates': Mapping
@@ -3855,11 +3960,13 @@ def _query_input(
         # Second the constraints (filters)
         # Get operator
         try:
-            # TODO do not allow None
             operator = _enum_queryoperators_or_None(  # type: ignore
                 val.get("qop_{}".format(field)), field, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
+            continue
+
+        if not operator:
             continue
 
         if operator not in VALID_QUERY_OPERATORS[validator]:
@@ -3953,6 +4060,9 @@ def _query_input(
             errs.extend(e)
             continue
 
+        if not value:
+            continue
+
         tmp = "qord_" + postfix + "_ascending"
         try:
             ascending = _bool(val.get(tmp, "True"), tmp, **kwargs)
@@ -3960,7 +4070,6 @@ def _query_input(
             errs.extend(e)
             continue
 
-        assert value is not None  # TODO check this
         order.append((value, ascending))
 
     if errs:
@@ -4134,7 +4243,7 @@ def _enum_validator_maker(
     the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())
 
     if not internal:
-        _add_typed_validator(the_validator)
+        _add_typed_validator(the_validator, anenum)
         setattr(current_module, the_validator.__name__, the_validator)
 
     return the_validator
@@ -4196,7 +4305,7 @@ def _infinite_enum_validator_maker(anenum: Type[E], name: str = None):
 
     the_validator.__name__ = name or "_infinite_enum_{}".format(
         anenum.__name__.lower())
-    _ALL_TYPED[anenum] = the_validator
+    _add_typed_validator(the_validator, anenum)
     setattr(current_module, the_validator.__name__, the_validator)
 
 
@@ -4207,85 +4316,5 @@ for oneenum in ALL_INFINITE_ENUMS:
 #
 # Above is the real stuff
 #
-
-def _create_assert_valid(fun: F):
-    @ functools.wraps(fun)
-    def assert_valid(*args, **kwargs):
-        val, errs = fun(*args, **kwargs)
-        if errs:
-            e = errs[0][1]
-            e.args = ("{} ({})".format(e.args[0], errs[0][0]),) + e.args[1:]
-            raise e
-        return val
-
-    return assert_valid
-
-
-def _create_is_valid(fun: F):
-    @ functools.wraps(fun)
-    def is_valid(*args, **kwargs):
-        kwargs['_convert'] = False
-        _, errs = fun(*args, **kwargs)
-        return not errs
-
-    return is_valid
-
-
-def _create_check_valid(fun: F):
-    @ functools.wraps(fun)
-    def check_valid(*args, **kwargs):
-        val, errs = fun(*args, **kwargs)
-        if errs:
-            _LOGGER.debug("{} for '{}' with input {}, {}.".format(
-                errs, fun.__name__, args, kwargs))
-            return None, errs
-        return val, errs
-
-    return check_valid
-
-
-def _allow_None(fun: F):
-    """Wrap a validator to allow ``None`` as valid input.
-
-    This causes falsy values to be mapped to ``None`` if there is an error.
-    """
-
-    @ functools.wraps(fun)
-    def new_fun(val, *args, **kwargs):
-        if val is None:
-            return None, []
-        else:
-            try:
-                retval, errs = fun(val, *args, **kwargs)
-            except BaseException:  # we need to catch everything
-                if kwargs.get('_convert', True) and not val:
-                    return None, []
-                else:
-                    raise
-            if errs and kwargs.get('_convert', True) and not val:
-                return None, []
-            return retval, errs
-
-    return new_fun
-
-
-def _create_validators(funs: Iterable[F]):
-    """This instantiates the validators used in the rest of the code."""
-    for fun in funs:
-        setattr(current_module, "is{}".format(fun.__name__),
-                _create_is_valid(fun))
-        setattr(current_module, "assert{}".format(fun.__name__),
-                _create_assert_valid(fun))
-        setattr(current_module, "check{}".format(fun.__name__),
-                _create_check_valid(fun))
-        fun_or_None = _allow_None(fun)
-        setattr(current_module, "{}_or_None".format(fun.__name__), fun_or_None)
-        setattr(current_module, "is{}_or_None".format(fun.__name__),
-                _create_is_valid(fun_or_None))
-        setattr(current_module, "assert{}_or_None".format(fun.__name__),
-                _create_assert_valid(fun_or_None))
-        setattr(current_module, "check{}_or_None".format(fun.__name__),
-                _create_check_valid(fun_or_None))
-
 
 _create_validators(_ALL_TYPED.values())
