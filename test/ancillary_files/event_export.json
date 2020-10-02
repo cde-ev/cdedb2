@@ -83,12 +83,12 @@
         "1": {
             "id": 1,
             "event_id": 1,
-            "moniker": "Haupthaus"
+            "title": "Haupthaus"
         },
         "2": {
             "id": 2,
             "event_id": 1,
-            "moniker": "AußenWohnGruppe"
+            "title": "AußenWohnGruppe"
         }
     },
     "event.lodgements": {
@@ -96,7 +96,7 @@
             "regular_capacity": 10,
             "camping_mat_capacity": 2,
             "id": 2,
-            "moniker": "Kalte Kammer",
+            "title": "Kalte Kammer",
             "event_id": 1,
             "notes": "Daf\u00fcr mit Frischluft.",
             "group_id": 1,
@@ -108,7 +108,7 @@
             "regular_capacity": 5,
             "camping_mat_capacity": 1,
             "id": 1,
-            "moniker": "Warme Stube",
+            "title": "Warme Stube",
             "event_id": 1,
             "notes": null,
             "group_id": 2,
@@ -120,7 +120,7 @@
             "regular_capacity": 0,
             "camping_mat_capacity": 100,
             "id": 3,
-            "moniker": "Kellerverlies",
+            "title": "Kellerverlies",
             "event_id": 1,
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
             "group_id": null,
@@ -132,7 +132,7 @@
             "regular_capacity": 1,
             "camping_mat_capacity": 0,
             "id": 4,
-            "moniker": "Einzelzelle",
+            "title": "Einzelzelle",
             "event_id": 1,
             "notes": null,
             "group_id": 1,
@@ -376,7 +376,10 @@
             "association": 1
         }
     },
-    "EVENT_SCHEMA_VERSION": [13, 1],
+    "EVENT_SCHEMA_VERSION": [
+        14,
+        1
+    ],
     "CDEDB_EXPORT_EVENT_VERSION": 13,
     "event.registration_parts": {
         "2": {
@@ -1279,7 +1282,7 @@
             "code": 50,
             "ctime": "2014-01-01T02:05:06+00:00",
             "submitted_by": 5,
-            "additional_info": null,
+            "change_note": null,
             "persona_id": 5
         },
         "1": {
@@ -1288,7 +1291,7 @@
             "code": 50,
             "ctime": "2014-01-01T01:04:05+00:00",
             "submitted_by": 1,
-            "additional_info": null,
+            "change_note": null,
             "persona_id": 1
         },
         "3": {
@@ -1297,7 +1300,7 @@
             "code": 50,
             "ctime": "2014-01-01T03:06:07+00:00",
             "submitted_by": 7,
-            "additional_info": null,
+            "change_note": null,
             "persona_id": 7
         },
         "4": {
@@ -1306,7 +1309,7 @@
             "code": 50,
             "ctime": "2014-01-01T04:07:08+00:00",
             "submitted_by": 9,
-            "additional_info": null,
+            "change_note": null,
             "persona_id": 9
         }
     },
@@ -1348,7 +1351,8 @@
             "part_begin": "2222-11-01",
             "fee": "123.00",
             "shortname": "1.H.",
-            "title": "Erste H\u00e4lfte"
+            "title": "Erste H\u00e4lfte",
+            "waitlist_field": null
         },
         "1": {
             "event_id": 1,
@@ -1357,7 +1361,8 @@
             "part_begin": "2222-02-02",
             "fee": "10.50",
             "shortname": "Wu",
-            "title": "Warmup"
+            "title": "Warmup",
+            "waitlist_field": null
         },
         "3": {
             "event_id": 1,
@@ -1366,7 +1371,8 @@
             "part_begin": "2222-11-11",
             "fee": "450.99",
             "shortname": "2.H.",
-            "title": "Zweite H\u00e4lfte"
+            "title": "Zweite H\u00e4lfte",
+            "waitlist_field": null
         }
     },
     "timestamp": "2018-12-15T09:58:04.241360+00:00"

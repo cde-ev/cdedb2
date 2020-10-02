@@ -25,9 +25,9 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title'),
                 defaultvalue=institutions['cde']) }}
-        {{ util.form_input_text(name="event_begin", label=gettext("Event Begin"), type="date",
+        {{ util.form_input_text(name="part_begin", label=gettext("Event Begin"), type="date",
                                 placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="event_end", label=gettext("Event End"), type="date",
+        {{ util.form_input_text(name="part_end", label=gettext("Event End"), type="date",
                                 placeholder="YYYY-MM-DD") }}
         {{ util.form_input_checkbox(name="create_track", label=gettext("Event with courses")) }}
 
@@ -39,12 +39,16 @@
         <h4 class="heading-underline">{% trans %}Financial{% endtrans %}</h4>
         {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption=nbsp,
                                   sort=True) }}
-        {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants.")) }}
+        {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants."),
+                                addon='€') }}
 
         <h4 class="heading-underline">{% trans %}Orgas{% endtrans %}</h4>
         {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5",
+                                    info=gettext("Supports %(infolink)s.")|format(
+                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
+                                                           title=gettext("Short Markdown summary")))|s) }}
         <script nonce="{{ csp_nonce }}">
             $('#input-orgas').cdedbSearchPerson(
                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_admin_user&phrase=%s'|s) }}',

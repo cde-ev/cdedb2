@@ -10,7 +10,7 @@
 {% endblock %}
 {% block title %}
     {% trans %}
-        General-User Management
+        General User Management
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
@@ -18,7 +18,17 @@
 {{ util.breadcrumb_link(cdedblink("core/user_search"), gettext("Manage Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.place_default_queries("core/user_search", default_queries) }}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="p button-par">
+                {{ util.href(cdedblink('core/create_user_form'), gettext("Create User"), icon="plus",
+                             aclass="btn btn-success btn-sm") }}
+            </div>
+        </div>
+        <div class="col-md-8">
+            {{ generic.place_default_queries("core/user_search", default_queries) }}
+        </div>
+    </div>
 
     {{ generic.user_search_mask("core", ("pevent_id",)) }}
 

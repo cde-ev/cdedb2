@@ -11,7 +11,7 @@ import inspect
 import pathlib
 import sys
 
-from typing import Collection, Iterator, Callable, Dict
+from typing import Collection, Iterator, Callable, Dict, Any
 
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdEFrontend
@@ -59,7 +59,7 @@ class CronFrontend(BaseApp):
         roles = ALL_ROLES
         user = User(roles=roles, persona_id=None)
         lang = "en"
-        coders: Dict[str, Callable] = {
+        coders: Dict[str, Callable[..., Any]] = {
             "encode_parameter": self.encode_parameter,
             "decode_parameter": self.decode_parameter,
             "encode_notification": self.encode_notification,

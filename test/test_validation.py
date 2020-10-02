@@ -424,11 +424,11 @@ class TestValidation(unittest.TestCase):
             'votes': None,
             'use_bar': True,
             'candidates': {
-                1: {'moniker': 'A'},
-                2: {'moniker': 'B'},
-                3: {'moniker': 'C'},
-                4: {'moniker': 'D'},
-                5: {'moniker': 'E'},
+                1: {'shortname': 'A'},
+                2: {'shortname': 'B'},
+                3: {'shortname': 'C'},
+                4: {'shortname': 'D'},
+                5: {'shortname': 'E'},
             }
         }
         classical_ballot = copy.deepcopy(ballot)

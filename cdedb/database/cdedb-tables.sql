@@ -276,7 +276,7 @@ CREATE TABLE core.log (
         submitted_by            integer REFERENCES core.personas(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_core_log_code ON core.log(code);
 CREATE INDEX idx_core_log_persona_id ON core.log(persona_id);
@@ -297,7 +297,7 @@ CREATE TABLE core.changelog (
         change_note             varchar,
         -- enum for progress of change
         -- see cdedb.database.constants.MemberChangeStati
-        change_status           integer NOT NULL DEFAULT 0,
+        code                    integer NOT NULL DEFAULT 0,
         --
         -- data fields
         --
@@ -353,18 +353,18 @@ CREATE TABLE core.changelog (
         foto                    varchar,
         paper_expuls            boolean
 );
-CREATE INDEX idx_changelog_change_status ON core.changelog(change_status);
+CREATE INDEX idx_changelog_code ON core.changelog(code);
 CREATE INDEX idx_changelog_persona_id ON core.changelog(persona_id);
 GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
-GRANT UPDATE (change_status) ON core.changelog TO cdb_persona;
+GRANT UPDATE (code) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 GRANT DELETE ON core.changelog TO cdb_admin;
 
 CREATE TABLE core.cron_store
 (
         id                      serial PRIMARY KEY,
-        moniker                 varchar NOT NULL UNIQUE,
+        title                   varchar NOT NULL UNIQUE,
         store                   jsonb NOT NULL
 );
 GRANT SELECT, UPDATE ON core.cron_store_id_seq TO cdb_admin;
@@ -464,7 +464,7 @@ CREATE TABLE cde.finance_log (
         persona_id              integer REFERENCES core.personas(id),
         delta                   numeric(7,2),
         new_balance             numeric(7,2),
-        additional_info         varchar,
+        change_note             varchar,
         -- checksums
         -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
         members                 integer NOT NULL,
@@ -484,7 +484,7 @@ CREATE TABLE cde.log (
         submitted_by            integer REFERENCES core.personas(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_cde_log_code ON cde.log(code);
 CREATE INDEX idx_cde_log_persona_id ON cde.log(persona_id);
@@ -504,7 +504,7 @@ GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 CREATE TABLE past_event.institutions (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
-        moniker                 varchar NOT NULL
+        shortname               varchar NOT NULL
 );
 GRANT SELECT ON past_event.institutions TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
@@ -567,7 +567,7 @@ CREATE TABLE past_event.log (
         pevent_id               integer REFERENCES past_event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_past_event_log_code ON past_event.log(code);
 CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
@@ -615,7 +615,7 @@ CREATE TABLE event.events (
         courses_in_participant_list boolean NOT NULL DEFAULT False,
         is_archived                 boolean NOT NULL DEFAULT False,
         is_cancelled                boolean NOT NULL DEFAULT False,
-        -- JSON field for lodgement preference functionality
+        -- reference to special purpose custom data fields
         lodge_field                 integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         camping_mat_field           integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         course_room_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
@@ -635,7 +635,9 @@ CREATE TABLE event.event_parts (
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
         -- fees are cummulative
-        fee                     numeric(8,2) NOT NULL
+        fee                     numeric(8,2) NOT NULL,
+        -- reference to custom data field for waitlist management
+        waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
 );
 CREATE INDEX idx_event_parts_event_id ON event.event_parts(event_id);
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;
@@ -681,6 +683,7 @@ GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.fee_modifiers (
         id                      serial PRIMARY KEY,
@@ -747,7 +750,7 @@ GRANT SELECT ON event.orgas TO cdb_anonymous;
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        moniker                 varchar NOT NULL
+        title                   varchar NOT NULL
 );
 CREATE INDEX ids_lodgement_groups_event_id ON event.lodgement_groups(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgement_groups TO cdb_persona;
@@ -756,7 +759,7 @@ GRANT SELECT, UPDATE ON event.lodgement_groups_id_seq TO cdb_persona;
 CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        moniker                 varchar NOT NULL,
+        title                   varchar NOT NULL,
         regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
         camping_mat_capacity    integer NOT NULL DEFAULT 0,
@@ -867,7 +870,7 @@ CREATE TABLE event.log (
         event_id                integer REFERENCES event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_event_log_code ON event.log(code);
 CREATE INDEX idx_event_log_event_id ON event.log(event_id);
@@ -895,8 +898,20 @@ CREATE TABLE assembly.assemblies (
         notes                   varchar
 );
 GRANT SELECT ON assembly.assemblies TO cdb_persona;
-GRANT INSERT, UPDATE, DELETE ON assembly.assemblies TO cdb_admin;
+GRANT INSERT, DELETE ON assembly.assemblies TO cdb_admin;
+GRANT UPDATE ON assembly.assemblies TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.assemblies_id_seq TO cdb_admin;
+
+CREATE TABLE assembly.presiders (
+        id                      serial PRIMARY KEY,
+        assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
+        persona_id              integer NOT NULL REFERENCES core.personas(id)
+);
+CREATE INDEX idx_assembly_presiders_persona_id ON assembly.presiders(persona_id);
+CREATE UNIQUE INDEX idx_assembly_presiders_constraint ON assembly.presiders(assembly_id, persona_id);
+GRANT SELECT ON assembly.presiders TO cdb_persona;
+GRANT INSERT, DELETE ON assembly.presiders TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.presiders_id_seq TO cdb_admin;
 
 CREATE TABLE assembly.ballots (
         id                      serial PRIMARY KEY,
@@ -916,7 +931,7 @@ CREATE TABLE assembly.ballots (
         -- alternative title may be "reopen nominations".
         --
         -- It will not be listed in the assembly.candidates table, but added
-        -- on the fly. Its moniker will be "_bar_".
+        -- on the fly. Its shortname will be "_bar_".
         use_bar                 boolean NOT NULL,
         -- number of submitted votes necessary to not trigger extension
         quorum                  integer NOT NULL DEFAULT 0,
@@ -939,19 +954,19 @@ CREATE TABLE assembly.ballots (
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
 GRANT SELECT ON assembly.ballots TO cdb_member;
 GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_member;
-GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_member;
 
 CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
-        description             varchar NOT NULL,
-        moniker                 varchar NOT NULL
+        title                   varchar NOT NULL,
+        shortname               varchar NOT NULL
 );
-CREATE UNIQUE INDEX idx_moniker_constraint ON assembly.candidates(ballot_id, moniker);
+CREATE UNIQUE INDEX idx_shortname_constraint ON assembly.candidates(ballot_id, shortname);
 GRANT SELECT ON assembly.candidates TO cdb_member;
-GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attendees (
         id                      serial PRIMARY KEY,
@@ -972,16 +987,15 @@ CREATE TABLE assembly.voter_register (
         has_voted               boolean NOT NULL DEFAULT False
 );
 CREATE UNIQUE INDEX idx_voter_constraint ON assembly.voter_register(persona_id, ballot_id);
-GRANT SELECT, INSERT ON assembly.voter_register TO cdb_member;
+GRANT SELECT, INSERT, DELETE ON assembly.voter_register TO cdb_member;
 GRANT UPDATE (has_voted) ON assembly.voter_register TO cdb_member;
-GRANT DELETE ON assembly.voter_register TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.voter_register_id_seq TO cdb_member;
 
 CREATE TABLE assembly.votes (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         -- The vote is of the form '2>3=1>0>4' where the pieces between the
-        -- relation symbols are the corresponding monikers from
+        -- relation symbols are the corresponding shortnames from
         -- assembly.candidates.
         vote                    varchar NOT NULL,
         salt                    varchar NOT NULL,
@@ -1001,9 +1015,8 @@ CREATE TABLE assembly.attachments (
 );
 CREATE INDEX idx_attachments_assembly_id ON assembly.attachments(assembly_id);
 CREATE INDEX idx_attachments_ballot_id ON assembly.attachments(ballot_id);
-GRANT SELECT ON assembly.attachments TO cdb_member;
-GRANT INSERT, DELETE, UPDATE ON assembly.attachments TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_admin;
+GRANT SELECT, UPDATE, INSERT, DELETE ON assembly.attachments TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_versions (
         id                      bigserial PRIMARY KEY,
@@ -1019,9 +1032,8 @@ CREATE TABLE assembly.attachment_versions (
 );
 CREATE INDEX idx_attachment_versions_attachment_id ON assembly.attachment_versions(attachment_id);
 CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version);
-GRANT SELECT ON assembly.attachment_versions TO cdb_member;
-GRANT INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_admin;
-GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_admin;
+GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
+GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.log (
         id                      bigserial PRIMARY KEY,
@@ -1032,12 +1044,12 @@ CREATE TABLE assembly.log (
         assembly_id             integer REFERENCES assembly.assemblies(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_assembly_log_code ON assembly.log(code);
 CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
-GRANT SELECT, DELETE ON assembly.log TO cdb_admin;
-GRANT INSERT ON assembly.log TO cdb_member;
+GRANT DELETE ON assembly.log TO cdb_admin;
+GRANT SELECT, INSERT ON assembly.log TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 
 ---
@@ -1145,7 +1157,7 @@ CREATE TABLE ml.log (
         mailinglist_id          integer REFERENCES ml.mailinglists(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
+        change_note             varchar
 );
 CREATE INDEX idx_ml_log_code ON ml.log(code);
 CREATE INDEX idx_ml_log_mailinglist_id ON ml.log(mailinglist_id);

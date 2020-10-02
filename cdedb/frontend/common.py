@@ -35,6 +35,7 @@ import threading
 import urllib.parse
 import decimal
 from enum import Enum, EnumMeta
+from secrets import token_hex
 
 import markdown
 import markdown.extensions.toc
@@ -51,7 +52,7 @@ import werkzeug.wrappers
 from typing import (
     Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
     Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO,
+    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO, ItemsView,
 )
 from typing_extensions import Protocol
 
@@ -61,7 +62,8 @@ from cdedb.common import (
     json_serialize, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
     encode_parameter, decode_parameter, make_proxy, EntitySorter,
     REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap,
-    CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User
+    CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User,
+    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS
 )
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -74,7 +76,6 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
-from cdedb.security import secure_token_hex
 import cdedb.query as query_mod
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -415,7 +416,8 @@ class CustomEscapingJSONEncoder(CustomJSONEncoder):
         else:
             return u''.join(chunks)
 
-    def iterencode(self, o: Any, _one_shot: bool = False) -> Generator:
+    def iterencode(self, o: Any, _one_shot: bool = False
+                   ) -> Generator[str, None, None]:
         chunks = super().iterencode(o, _one_shot)
         for chunk in chunks:
             chunk = chunk.replace('/', '\\x2f')
@@ -481,7 +483,7 @@ def genus_filter(val, female, male, unknown=None):
 
 
 # noinspection PyPep8Naming
-def stringIn_filter(val: Any, alist: Collection) -> bool:
+def stringIn_filter(val: Any, alist: Collection[Any]) -> bool:
     """Custom jinja filter to test if a value is in a list, but requiring
     equality only on string representation.
 
@@ -563,7 +565,7 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
         'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
-        'sup', 'sub', 'br', 'u', 'dl', 'dt', 'dd', ]
+        'sup', 'sub', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary']
     attributes = {
         'a': ['href', 'title'],
         'abbr': ['title'],
@@ -580,6 +582,7 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         'h4': ['id'],
         'h5': ['id'],
         'h6': ['id'],
+        'details': ['open'],
     }
     cleaner = bleach.sanitizer.Cleaner(tags=tags, attributes=attributes)
     BLEACH_CLEANER.cleaner = cleaner
@@ -672,8 +675,8 @@ def md_filter(val):
 
 
 @jinja2.environmentfilter
-def sort_filter(env, value: Iterable[T], reverse: bool = False,
-                attribute: Any = None) -> List[T]:
+def sort_filter(env: jinja2.Environment, value: Iterable[T],
+                reverse: bool = False, attribute: Any = None) -> List[T]:
     """Sort an iterable using `xsorted`, using correct collation.
 
     TODO: With Jinja 2.11, make_multi_attrgetter should be used
@@ -723,8 +726,20 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
 
 def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
                        reverse: bool = False) -> List[Tuple[T, S]]:
-    """Sort a dicts items by thei value."""
+    """Sort a dicts items by their value."""
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
+
+
+def map_dict_filter(d: Dict[str, str],
+                      processing: Callable[[Any], str]
+                      ) -> ItemsView[str, str]:
+    """
+    Processes the values of some string using processing function
+
+    :param processing: A function to be applied on the dict values
+    :return: The dict with its values replaced with the processed values
+    """
+    return {k: processing(v) for k, v in d.items()}.items()
 
 
 def enum_entries_filter(enum: EnumMeta, processing: Callable[[Any], str] = None,
@@ -822,6 +837,7 @@ JINJA_FILTERS = {
     'querytoparams': querytoparams_filter,
     'genus': genus_filter,
     'linebreaks': linebreaks_filter,
+    'map_dict': map_dict_filter,
     'md': md_filter,
     'enum': enum_filter,
     'sort': sort_filter,
@@ -871,6 +887,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
             'GIT_COMMIT': self.conf["GIT_COMMIT"],
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
+            'ALL_MOD_ADMIN_VIEWS': ALL_MOD_ADMIN_VIEWS,
+            'ALL_MGMT_ADMIN_VIEWS': ALL_MGMT_ADMIN_VIEWS,
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management':
                 lambda roles: roles & ({'core_admin'} | set(
@@ -980,7 +998,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 for param, kind in all_errors)
 
         def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
-                                  method_name: str) -> Callable:
+                                  method_name: str) -> Callable[..., Any]:
             """Provide a checker from the backend(proxy) for the templates.
 
             This wraps a call to the given backend method, to not require
@@ -1115,14 +1133,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_json(rs: RequestState, data: Any) -> Response:
         """Slim helper to create json responses."""
         response = Response(json_serialize(data),
-                               mimetype='application/json')
+                            mimetype='application/json')
         response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return response
 
     def send_query_download(self, rs: RequestState,
                             result: Collection[CdEDBObject], fields: List[str],
                             kind: str, filename: str,
-                            substitutions: Mapping[str, Mapping] = None
+                            substitutions: Mapping[
+                                str, Mapping[Any, Any]] = None
                             ) -> Response:
         """Helper to send download of query result.
 
@@ -1175,7 +1194,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
-        csp_nonce = secure_token_hex(12)
+        csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
 
         html = self.fill_template(rs, "web", templatename, params)
@@ -1223,8 +1242,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
-        # do i18n here, so _create_mail needs to know less context
-        headers['Subject'] = headers['Subject']
         msg = self._create_mail(text, headers, attachments)
         ret = self._send_mail(msg)
         if ret:
@@ -1279,7 +1296,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for header in ("From", "Reply-To", "Return-Path"):
             msg[header] = headers[header]  # type: ignore
         subject = headers["Prefix"] + " " + headers['Subject']  # type: ignore
-        headers["Subject"] = subject
+        msg["Subject"] = subject
         msg["Message-ID"] = email.utils.make_msgid(
             domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
@@ -1550,8 +1567,8 @@ class Worker(threading.Thread):
     concurrency is no concern.
     """
 
-    def __init__(self, conf: Config, task: Callable, rs: RequestState,
-                 *args: Any, **kwargs: Any) -> None:
+    def __init__(self, conf: Config, task: Callable[..., bool],
+                 rs: RequestState, *args: Any, **kwargs: Any) -> None:
         """
         :param task: Will be called with exactly one argument (the cloned
           request state) until it returns something falsy.
@@ -1699,10 +1716,10 @@ def reconnoitre_ambience(obj: AbstractFrontend,
     return ambience
 
 
-F = TypeVar('F', bound=Callable)
+F = TypeVar('F', bound=Callable[..., Any])
 
 
-def access(*roles: Role, modi: AbstractSet[str] = None,
+def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
            check_anti_csrf: bool = None) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
@@ -1713,8 +1730,6 @@ def access(*roles: Role, modi: AbstractSet[str] = None,
         on this endpoint. If not specified, it will be enabled, if "POST" is in
         the allowed methods.
     """
-    if modi is None:
-        modi = {"GET", "HEAD"}
     access_list = set(roles)
 
     def decorator(fun: F) -> F:
@@ -1745,7 +1760,6 @@ def access(*roles: Role, modi: AbstractSet[str] = None,
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
 
-        assert modi is not None
         new_fun.access_list = access_list  # type: ignore
         new_fun.modi = modi  # type: ignore
         new_fun.check_anti_csrf = (  # type: ignore
@@ -1845,7 +1859,7 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 
-def staticurl(path: str, version: str = None) -> str:
+def staticurl(path: str, version: str = "") -> str:
     """Construct an HTTP URL to a static resource (to be found in the static
     directory). We encapsulate this here so moving the directory around
     causes no pain.
@@ -1854,15 +1868,17 @@ def staticurl(path: str, version: str = None) -> str:
         parameter. This can be used to force Browsers to flush their caches on
         code updates.
     """
-    return str(pathlib.Path("/static", path)) \
-        + ('?v=' + version if version else '')
+    ret = str(pathlib.PurePosixPath("/static", path))
+    if version:
+        ret += '?v=' + version
+    return ret
 
 
-def docurl(topic: str, anchor: str = None) -> str:
+def docurl(topic: str, anchor: str = "") -> str:
     """Construct an HTTP URL to a doc page."""
-    ret = str(pathlib.Path("/doc", topic + ".html"))
+    ret = str(pathlib.PurePosixPath("/doc", topic + ".html"))
     if anchor:
-        ret = ret + "#" + anchor
+        ret += "#" + anchor
     return ret
 
 
@@ -1995,7 +2011,7 @@ def request_extractor(
     :returns: dict containing the requested values
     """
     @REQUESTdata(*args)
-    def fun(_, rs: RequestState, **kwargs: Any) -> CdEDBObject:
+    def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
                 if not checker(kwargs):
@@ -2016,7 +2032,7 @@ def request_dict_extractor(rs: RequestState,
     """
 
     @REQUESTdatadict(*args)
-    def fun(_, rs: RequestState, data: CdEDBObject) -> CdEDBObject:
+    def fun(_: None, rs: RequestState, data: CdEDBObject) -> CdEDBObject:
         return data
 
     # This looks wrong. but is correct, as the `REQUESTdatadict` decorator
@@ -2109,6 +2125,11 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
+                if not obj.mlproxy.may_manage(rs, **{argname: arg},
+                                              privileged=True):
+                    rs.notify("info", n_(
+                        "You have only restricted moderator access and may not "
+                        "change subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
@@ -2119,6 +2140,26 @@ def mailinglist_guard(argname: str = "mailinglist_id",
         return cast(F, new_fun)
 
     return wrap
+
+
+def assembly_guard(fun: F) -> F:
+    """This decorator checks that the user has privileged access to an assembly.
+    """
+
+    @functools.wraps(fun)
+    def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
+                **kwargs: Any) -> Any:
+        if "assembly_id" in kwargs:
+            assembly_id = kwargs["assembly_id"]
+        else:
+            assembly_id = args[0]
+        if not obj.assemblyproxy.is_presider(rs, assembly_id=assembly_id):
+            raise werkzeug.exceptions.Forbidden(rs.gettext(
+                "This page may only be accessed by the assembly's"
+                " presiders or assembly admins."))
+        return fun(obj, rs, *args, **kwargs)
+
+    return cast(F, new_fun)
 
 
 def check_validation(rs: RequestState, assertion: str, value: T,
@@ -2291,7 +2332,7 @@ class CustomCSVDialect(csv.Dialect):
 
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
-               substitutions: Mapping[str, Mapping] = None) -> str:
+               substitutions: Mapping[str, Mapping[Any, Any]] = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.
@@ -2321,7 +2362,8 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
 
 
 def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
-                         substitutions: Mapping[str, Mapping] = None) -> str:
+                         substitutions: Mapping[
+                             str, Mapping[Any, Any]] = None) -> str:
     """Generate a json representation of the passed data.
 
     :param substitutions: Allow replacements of values with better
@@ -2371,7 +2413,7 @@ def calculate_loglinks(rs: RequestState, total: int,
     # the first shown entry. This is done magically, if no offset has been
     # given.
     if offset is None:
-        trueoffset = length * ((total - 1) // length)
+        trueoffset = length * ((total - 1) // length) if total != 0 else 0
     else:
         trueoffset = offset
 
@@ -2385,15 +2427,13 @@ def calculate_loglinks(rs: RequestState, total: int,
         "last": new_md(),
     }
     pre = [new_md() for x in range(3) if trueoffset - x * length > 0]
-    post = [new_md() for x in range(3) if trueoffset + x * length < total]
+    post = [new_md() for x in range(3) if trueoffset + (x + 1) * length < total]
 
     # Fix the offset for each set of values.
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
     for x, _ in enumerate(pre):
-        pre[x]["offset"] = (
-                trueoffset - (len(pre) - x) * length
-        )
+        pre[x]["offset"] = (trueoffset - (len(pre) - x) * length)
     loglinks["previous"]["offset"] = trueoffset - length
     for x, _ in enumerate(post):
         post[x]["offset"] = trueoffset + (x + 1) * length

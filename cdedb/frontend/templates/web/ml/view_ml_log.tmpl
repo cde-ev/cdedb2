@@ -38,11 +38,11 @@
                         –
                     {% endif %}
                 </td>
-                <td>{{ entry['additional_info'] }}</td>
+                <td>{{ entry['change_note'] }}</td>
             </tr>
         {% endfor %}
     {% endcall %}
 
-    {{ logging.filter('ml/view_ml_log', enums['MlLogCodes'], 'mod_ml_user', aux=ambience['mailinglist']['id']) }}
     {{ logging.navigation('ml/view_ml_log', total, length, loglinks) }}
+    {{ logging.filter('ml/view_ml_log', enums['MlLogCodes'], 'mod_ml_user', aux=ambience['mailinglist']['id']) }}
 {% endblock %}

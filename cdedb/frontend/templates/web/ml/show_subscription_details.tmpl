@@ -35,26 +35,26 @@
                         Subscribed users who are protected from automatic unsubscription when loosing their means to acces the list.
                     {% endtrans %}
                 </p>
-            <form action="{{ cdedblink('ml/add_subscription_override') }}" method="POST"
+            <form action="{{ cdedblink('ml/add_subscription_overrides') }}" method="POST"
                   id="addmodsubscriberform" class="p">
-                {{ util.anti_csrf_token('ml/add_subscription_override') }}
+                {{ util.anti_csrf_token('ml/add_subscription_overrides') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="modsubscriber_id", anid="input-add-forced", placeholder="DB-XXXX-X",
+                    {{ util.input_text(name="modsubscriber_ids", anid="input-add-forced", placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                        arialabel=gettext("ID of the new forced subscriber")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-forced').cdedbSearchPerson(
                             '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
                                 (enums['SubscriptionActions'].add_subscription_override.value|string|e) }}', {{ subscription_overrides|list|json|s }},
-                            false, false, "{{ gettext("ID, name, email") }}"
+                            false, true, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
                     <div class="input-group-btn">
                         {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
-                {{ util.output_errors('modsubscriber_id', wrapper=True) }}
+                {{ util.output_errors('modsubscriber_ids', wrapper=True) }}
             </form>
 
             <ul id="modsubscriber-list">
@@ -87,26 +87,26 @@
                         Users who are blocked from subscribing and requesting subscription. They can see that they are blocked.
                     {% endtrans %}
                 </p>
-            <form action="{{ cdedblink('ml/add_unsubscription_override') }}" method="POST"
+            <form action="{{ cdedblink('ml/add_unsubscription_overrides') }}" method="POST"
                   id="addmodunsubscriberform" class="p">
-                {{ util.anti_csrf_token('ml/add_unsubscription_override') }}
+                {{ util.anti_csrf_token('ml/add_unsubscription_overrides') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="modunsubscriber_id", anid="input-add-blocked", placeholder="DB-XXXX-X",
+                    {{ util.input_text(name="modunsubscriber_ids", anid="input-add-blocked", placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                        arialabel=gettext("ID of the new blocked subscriber")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-blocked').cdedbSearchPerson(
                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
                                 (enums['SubscriptionActions'].add_unsubscription_override.value|string|e) }}', {{ unsubscription_overrides|list|json|s }},
-                            false, false, "{{ gettext("ID, name, email") }}"
+                            false, true, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
                     <div class="input-group-btn">
                         {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
-                {{ util.output_errors('modunsubscriber_id', wrapper=True) }}
+                {{ util.output_errors('modunsubscriber_ids', wrapper=True) }}
             </form>
 
             <ul id="modunsubscriber-list">
@@ -181,7 +181,7 @@
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans link=util.href(docurl("Architecture_Mailinglists", "mailinglist-management"), gettext("subscription state"), title=gettext("Summary of subscription states")) %}
+                    {% trans link=util.href(docurl("Realm_Mailinglist_Management"), gettext("subscription state"), title=gettext("Summary of subscription states")) %}
                         A download csv file of all users associated with this mailinglist (including name, email address and {{ link }}).
                     {% endtrans %}
                 </p>

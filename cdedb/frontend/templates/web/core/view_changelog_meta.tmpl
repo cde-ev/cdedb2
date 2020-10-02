@@ -15,7 +15,7 @@
 {% endblock %}
 {% block content %}
     {{ logging.filterlink() }}
-    <table class="table table-condensed table-hover">
+    <table class="table table-condensed table-hover table-log">
         <thead>
             <tr>
                 <th>{% trans %}Timestamp{% endtrans %}</th>
@@ -31,7 +31,7 @@
             {% for entry in log %}
                 <tr>
                     <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
-                    <td>{{ gettext(enums['MemberChangeStati'](entry['change_status'])|string) }}</td>
+                    <td>{{ gettext(enums['MemberChangeStati'](entry['code'])|string) }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
                             {{ util.href(show_user_link(user, entry['submitted_by']),
@@ -69,6 +69,6 @@
         </tbody>
     </table>
 
-    {{ logging.filter('core/view_changelog_meta', enums['MemberChangeStati'], 'admin_persona', 'changelog') }}
     {{ logging.navigation('core/view_changelog_meta', total, length, loglinks) }}
+    {{ logging.filter('core/view_changelog_meta', enums['MemberChangeStati'], 'admin_persona', 'changelog') }}
 {% endblock %}

@@ -1,11 +1,11 @@
 import enum
 from collections import OrderedDict
 from typing import (
-    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, Sequence
+    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List,
 )
 
 from cdedb.common import (
-    extract_roles, n_, unwrap, CdEDBObject, RequestState
+    extract_roles, n_, unwrap, CdEDBObject, RequestState, User
 )
 from cdedb.query import Query, QueryOperators
 import cdedb.database.constants as const
@@ -43,6 +43,8 @@ class MailinglistGroup(enum.IntEnum):
 
 class AllMembersImplicitMeta:
     """Metaclass for all mailinglists with members as implicit subscribers."""
+    maxsize_default = 64
+
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
@@ -52,18 +54,17 @@ class AllMembersImplicitMeta:
 
 class AssemblyAssociatedMeta:
     """Metaclass for all assembly associated mailinglists."""
-    mandatory_validation_fields = [
+    mandatory_validation_fields = {
         ("assembly_id", "id"),
-    ]
+    }
 
 
 class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields = [
+    mandatory_validation_fields = {
         ("event_id", "id_or_None"),
-        ("registration_stati", "[enum_registrationpartstati]"),
-    ]
+    }
 
     @classmethod
     def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
@@ -77,6 +78,7 @@ class TeamMeta:
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
     domains = [MailinglistDomain.lists, MailinglistDomain.dokuforge]
+    maxsize_default = 4096
 
 
 class GeneralMailinglist:
@@ -105,17 +107,20 @@ class GeneralMailinglist:
 
     domains: List[MailinglistDomain] = [MailinglistDomain.lists]
 
+    # default value for maxsize in KB
+    maxsize_default = 2048
+
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: List[Tuple[str, str]] = list()
-    optional_validation_fields: List[Tuple[str, str]] = list()
+    mandatory_validation_fields: Set[Tuple[str, str]] = set()
+    optional_validation_fields: Set[Tuple[str, str]] = set()
 
     @classmethod
     def get_additional_fields(cls) -> Set[Tuple[str, str]]:
         ret = set()
         for field, argtype in (cls.mandatory_validation_fields
-                               + cls.optional_validation_fields):
+                               | cls.optional_validation_fields):
             if argtype.startswith('[') and argtype.endswith(']'):
                 ret.add((field, "[str]"))
             else:
@@ -135,16 +140,33 @@ class GeneralMailinglist:
 
         - `viewer_roles`: A set of roles other than `ml_admin` which allows
           a user to view a mailinglist. The semantics are similar to `@access`.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: bool
         """
         return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
+
+    @classmethod
+    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+                                mailinglist: CdEDBObject
+                                ) -> bool:
+        """Check if moderator is privileged.
+
+        Everyone with ml realm may be moderator of any mailinglist. But for some
+        lists, you must have additional privileges to make subscription-state
+        related changes to a mailinglist (like being an orga or presider).
+
+        This includes
+            * Changing subscription states as a moderator.
+            * Changing properties of a ml influencing implicit subscribers.
+
+        Per default, every moderator is privileged.
+
+        This returns a filter which allows the caller to check ids as desired.
+        """
+        return mailinglist['id'] in rs.user.moderator
 
     relevant_admins: Set[str] = set()
 
     @classmethod
-    def is_relevant_admin(cls, rs: RequestState):
+    def is_relevant_admin(cls, user: User) -> bool:
         """Determine if the user is allowed to administrate a mailinglist.
 
         Instead of overriding this, you should set the `relevant_admins`
@@ -155,15 +177,52 @@ class GeneralMailinglist:
         - `relevant_admins`: A set of roles other than `ml_admin` which allows
           a user to administrate a mailinglist. The semantics are similar to
           `@access`.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: bool
         """
-        return bool((cls.relevant_admins | {"ml_admin"}) & rs.user.roles)
+        return bool((cls.relevant_admins | {"ml_admin"}) & user.roles)
 
     if TYPE_CHECKING:
         role_map: OrderedDict[str, MailinglistInteractionPolicy]
     role_map = OrderedDict()
+
+    @classmethod
+    def moderator_admin_views(cls) -> Set:
+        """All admin views which toggle the moderator view for this mailinglist.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
+        return {"ml_mod_" + admin.replace("_admin", "")
+                for admin in cls.relevant_admins} | {"ml_mod"}
+
+    @classmethod
+    def management_admin_views(cls) -> Set:
+        """All admin views which toggle the management view for this mailinglist.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
+        return {"ml_mgmt_" + admin.replace("_admin", "")
+                for admin in cls.relevant_admins} | {"ml_mgmt"}
+
+    @classmethod
+    def has_moderator_view(cls, user: User) -> bool:
+        """Checks admin privileges and if a appropriated admin view is enabled.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
+        return (cls.is_relevant_admin(user)
+                and bool(cls.moderator_admin_views() & user.admin_views))
+
+    @classmethod
+    def has_management_view(cls, user: User) -> bool:
+        """Checks admin privileges and if a appropriated admin view is enabled.
+
+        This is must be only used for cosmetic changes, similar to
+        core.is_relative_admin_view.
+        """
+        return (cls.is_relevant_admin(user)
+                and bool(cls.management_admin_views() & user.admin_views))
 
     @classmethod
     def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,
@@ -187,12 +246,6 @@ class GeneralMailinglist:
         This does not do a permission check, because it is not exposed to the
         frontend and does not currently have a way of accessing the relevant
         methods of the MailinglistBackend.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type bc: :py:class:`BackendContainer`
-        :type mailinglist: {str: object}
-        :type persona_ids: [int]
-        :rtype: :py:class`const.MailinglistInteractionPolicy` or None
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
 
@@ -212,24 +265,13 @@ class GeneralMailinglist:
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
-        """Retrieve a set of personas, which should be subscribers.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type bc: :py:class:`BackendContainer`
-        :type mailinglist: {str: object}
-        :rtype: {int}
-        """
+        """Retrieve a set of personas, which should be subscribers."""
         return set()
 
     @classmethod
     def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
                          ) -> bool:
-        """Whether or not to do periodic subscription cleanup on this list.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist: {str: object}
-        :rtype: bool
-        """
+        """Whether or not to do periodic subscription cleanup on this list."""
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
         return True
 
@@ -305,6 +347,25 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
+    # TODO I bet this can be done more simple, but I dont get how
+    mandatory_validation_fields = (
+            EventAssociatedMeta.mandatory_validation_fields
+            | {("registration_stati", "[enum_registrationpartstati]")})
+
+    @classmethod
+    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+                                mailinglist: CdEDBObject
+                                ) -> bool:
+        """Check if moderator is privileged.
+
+        For EventAssociatedMailinglists, this are the orgas of the event.
+        """
+        is_moderator = mailinglist['id'] in rs.user.moderator
+        if mailinglist['event_id'] is None:
+            return is_moderator
+        is_privileged = (mailinglist['event_id'] in rs.user.orga
+                         or "event_admin" in rs.user.roles)
+        return is_moderator and is_privileged
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -325,7 +386,6 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         ret: MIPolMap = {}
         for persona_id in persona_ids:
-            # TODO this broken for moderators who are no orgas
             if bc.event.check_registration_status(
                     rs, persona_id, mailinglist['event_id'],
                     mailinglist['registration_stati']):
@@ -367,7 +427,6 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
                  mailinglist["registration_stati"]),
             ],
             order=tuple())
-        # TODO is this is broken for moderators who are not orgas of the event?
         data = bc.event.submit_general_query(rs, query, event_id=event["id"])
 
         return {e["persona.id"] for e in data}
@@ -375,6 +434,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
 class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
+
+    maxsize_default = 8192
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -421,6 +482,21 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
                                     AssemblyMailinglist):
     @classmethod
+    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+                                mailinglist: CdEDBObject
+                                ) -> bool:
+        """Check if moderator is privileged.
+
+        For AssemblyAssociatedMailinglists, this are assembly admins.
+        """
+        is_moderator = mailinglist['id'] in rs.user.moderator
+        if mailinglist['assembly_id'] is None:
+            return is_moderator
+        is_privileged = bc.assembly.may_assemble(rs,
+                                                 assembly_id=mailinglist['assembly_id'])
+        return is_moderator and is_privileged
+
+    @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
@@ -434,7 +510,6 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
 
         ret: MIPolMap = {}
         for persona_id in persona_ids:
-            # TODO this is broken for non-assembly users
             attending = bc.assembly.check_attendance(
                 rs, persona_id=persona_id,
                 assembly_id=mailinglist["assembly_id"])
@@ -453,8 +528,6 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
         linked assembly.
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
-        # TODO this is broken for moderators without assembly realm
-        # TODO this is broken for non-members who do not attend this assembly
         return bc.assembly.list_attendees(rs, mailinglist["assembly_id"])
 
 

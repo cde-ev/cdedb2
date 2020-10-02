@@ -39,8 +39,8 @@ class TestAssemblyBackend(BackendTest):
         expectation = {1, 2, 9, 11, 23, 100}
         self.assertEqual(expectation, self.assembly.list_attendees(self.key, 1))
 
-    @as_users("werner")
-    def test_entity_assembly(self, user):
+    def test_entity_assembly(self):
+        self.login("werner")
         expectation = {
             1: {
                 'id': 1,
@@ -68,6 +68,7 @@ class TestAssemblyBackend(BackendTest):
             'is_active': True,
             'mail_address': 'kongress@example.cde',
             'notes': None,
+            'presiders': {23},
             'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
             'title': 'Internationaler Kongress'}
         self.assertEqual(expectation, self.assembly.get_assembly(
@@ -82,25 +83,36 @@ class TestAssemblyBackend(BackendTest):
         expectation.update(data)
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 1))
-        data = {
+        new_assembly = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
             'signup_end': now(),
-            'title': 'Außerordentliche Mitgliederversammlung'
+            'title': 'Außerordentliche Mitgliederversammlung',
+            'presiders': {1, 23},
         }
-        new_id = self.assembly.create_assembly(self.key, data)
-        expectation = data
+        self.login("viktor")
+        new_id = self.assembly.create_assembly(self.key, new_assembly)
+        expectation = new_assembly
         expectation['id'] = new_id
         expectation['mail_address'] = None
         expectation['is_active'] = True
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, new_id))
-
+        data = {
+            'id': new_id,
+            'presiders': {1},
+        }
+        self.assertLess(0, self.assembly.set_assembly(self.key, data))
+        self.assertLess(0, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        # Check return of setting presiders to the same thing.
+        self.assertLess(0, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        expectation['presiders'] = {23}
+        self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
         self.assertLess(0, self.assembly.delete_assembly(
-            self.key, new_id, ("ballots", "attendees", "attachments", "log",
-                               "mailinglists")))
+            self.key, new_id, ("ballots", "attendees", "attachments",
+                               "presiders", "log", "mailinglists")))
 
-    @as_users("werner")
+    @as_users("viktor")
     def test_ticket_176(self, user):
         data = {
             'description': None,
@@ -131,21 +143,21 @@ class TestAssemblyBackend(BackendTest):
             1: {'assembly_id': 1,
                 'use_bar': True,
                 'candidates': {2: {'ballot_id': 1,
-                                   'description': 'Ich',
+                                   'title': 'Ich',
                                    'id': 2,
-                                   'moniker': '1'},
+                                   'shortname': '1'},
                                3: {'ballot_id': 1,
-                                   'description': '23',
+                                   'title': '23',
                                    'id': 3,
-                                   'moniker': '2'},
+                                   'shortname': '2'},
                                4: {'ballot_id': 1,
-                                   'description': '42',
+                                   'title': '42',
                                    'id': 4,
-                                   'moniker': '3'},
+                                   'shortname': '3'},
                                5: {'ballot_id': 1,
-                                   'description': 'Philosophie',
+                                   'title': 'Philosophie',
                                    'id': 5,
-                                   'moniker': '4'}},
+                                   'shortname': '4'}},
                 'description': 'Nach dem Leben, dem Universum und dem ganzen Rest.',
                 'extended': True,
                 'id': 1,
@@ -160,25 +172,25 @@ class TestAssemblyBackend(BackendTest):
             4: {'assembly_id': 1,
                 'use_bar': True,
                 'candidates': {17: {'ballot_id': 4,
-                                    'description': 'Wackelpudding',
+                                    'title': 'Wackelpudding',
                                     'id': 17,
-                                    'moniker': 'W'},
+                                    'shortname': 'W'},
                                18: {'ballot_id': 4,
-                                    'description': 'Salat',
+                                    'title': 'Salat',
                                     'id': 18,
-                                    'moniker': 'S'},
+                                    'shortname': 'S'},
                                19: {'ballot_id': 4,
-                                    'description': 'Eis',
+                                    'title': 'Eis',
                                     'id': 19,
-                                    'moniker': 'E'},
+                                    'shortname': 'E'},
                                20: {'ballot_id': 4,
-                                    'description': 'Joghurt',
+                                    'title': 'Joghurt',
                                     'id': 20,
-                                    'moniker': 'J'},
+                                    'shortname': 'J'},
                                21: {'ballot_id': 4,
-                                    'description': 'Nichts',
+                                    'title': 'Nichts',
                                     'id': 21,
-                                    'moniker': 'N'},},
+                                    'shortname': 'N'},},
                 'description': 'denkt an die Frutaner',
                 'extended': None,
                 'id': 4,
@@ -202,21 +214,21 @@ class TestAssemblyBackend(BackendTest):
             'assembly_id': 1,
             'use_bar': False,
             'candidates': {6: {'ballot_id': 2,
-                               'description': 'Rot',
+                               'title': 'Rot',
                                'id': 6,
-                               'moniker': 'rot'},
+                               'shortname': 'rot'},
                            7: {'ballot_id': 2,
-                               'description': 'Gelb',
+                               'title': 'Gelb',
                                'id': 7,
-                               'moniker': 'gelb'},
+                               'shortname': 'gelb'},
                            8: {'ballot_id': 2,
-                               'description': 'Grün',
+                               'title': 'Grün',
                                'id': 8,
-                               'moniker': 'gruen'},
+                               'shortname': 'gruen'},
                            9: {'ballot_id': 2,
-                               'description': 'Blau',
+                               'title': 'Blau',
                                'id': 9,
-                               'moniker': 'blau'}},
+                               'shortname': 'blau'}},
             'description': 'Ulitmativ letzte Entscheidung',
             'extended': None,
             'id': 2,
@@ -233,9 +245,9 @@ class TestAssemblyBackend(BackendTest):
             'id': 2,
             'use_bar': True,
             'candidates': {
-                6: {'description': 'Teracotta', 'moniker': 'terra', 'id': 6},
+                6: {'title': 'Teracotta', 'shortname': 'terra', 'id': 6},
                 7: None,
-                -1: {'description': 'Aquamarin', 'moniker': 'aqua'},
+                -1: {'title': 'Aquamarin', 'shortname': 'aqua'},
             },
             'notes': "foo",
             'vote_extension_end': datetime.datetime(2222, 2, 20, 20, 22, 22, 222222, tzinfo=pytz.utc),
@@ -244,21 +256,21 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, self.assembly.set_ballot(self.key, data))
         for key in ('use_bar', 'notes', 'vote_extension_end', 'quorum'):
             expectation[key] = data[key]
-        expectation['candidates'][6]['description'] = data['candidates'][6]['description']
-        expectation['candidates'][6]['moniker'] = data['candidates'][6]['moniker']
+        expectation['candidates'][6]['title'] = data['candidates'][6]['title']
+        expectation['candidates'][6]['shortname'] = data['candidates'][6]['shortname']
         del expectation['candidates'][7]
         expectation['candidates'][1001] = {
             'id': 1001,
             'ballot_id': 2,
-            'description': 'Aquamarin',
-            'moniker': 'aqua'}
+            'title': 'Aquamarin',
+            'shortname': 'aqua'}
         self.assertEqual(expectation, self.assembly.get_ballot(self.key, 2))
 
         data = {
             'assembly_id': assembly_id,
             'use_bar': False,
-            'candidates': {-1: {'description': 'Ja', 'moniker': 'j'},
-                           -2: {'description': 'Nein', 'moniker': 'n'},},
+            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
+                           -2: {'title': 'Nein', 'shortname': 'n'},},
             'description': 'Sind sie sich sicher?',
             'notes': None,
             'quorum': 10,
@@ -274,13 +286,13 @@ class TestAssemblyBackend(BackendTest):
             'id': new_id,
             'is_tallied': False,
             'candidates': {1002: {'ballot_id': new_id,
-                                  'description': 'Ja',
+                                  'title': 'Ja',
                                   'id': 1002,
-                                  'moniker': 'j'},
+                                  'shortname': 'j'},
                            1003: {'ballot_id': new_id,
-                                  'description': 'Nein',
+                                  'title': 'Nein',
                                   'id': 1003,
-                                  'moniker': 'n'},},
+                                  'shortname': 'n'},},
         })
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
 
@@ -304,8 +316,8 @@ class TestAssemblyBackend(BackendTest):
         data = {
             'assembly_id': 1,
             'use_bar': False,
-            'candidates': {-1: {'description': 'Ja', 'moniker': 'j'},
-                           -2: {'description': 'Nein', 'moniker': 'n'},},
+            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
+                           -2: {'title': 'Nein', 'shortname': 'n'},},
             'description': 'Sind sie sich sicher?',
             'notes': None,
             'quorum': 11,
@@ -354,8 +366,8 @@ class TestAssemblyBackend(BackendTest):
         data = {
             'assembly_id': 1,
             'use_bar': False,
-            'candidates': {-1: {'description': 'Ja', 'moniker': 'j'},
-                           -2: {'description': 'Nein', 'moniker': 'n'},},
+            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
+                           -2: {'title': 'Nein', 'shortname': 'n'},},
             'description': 'Sind sie sich sicher?',
             'notes': None,
             'quorum': 10,
@@ -418,8 +430,8 @@ class TestAssemblyBackend(BackendTest):
             with open("/tmp/cdedb-store/ballot_result/1", 'rb') as g:
                 self.assertEqual(json.load(f), json.load(g))
 
-    @as_users("werner")
-    def test_conclusion(self, user):
+    def test_conclusion(self):
+        self.login("viktor")
         data = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
@@ -427,15 +439,18 @@ class TestAssemblyBackend(BackendTest):
             'title': 'Außerordentliche Mitgliederversammlung'
         }
         new_id = self.assembly.create_assembly(self.key, data)
+        self.assertLess(0, self.assembly.set_assembly_presiders(
+            self.key, new_id, {USER_DICT["werner"]["id"]}))
+        self.login("werner")
         # werner is no member, so he must use the external signup function
-        self.assembly.external_signup(self.key, new_id, user['id'])
+        self.assembly.external_signup(self.key, new_id, USER_DICT["werner"]['id'])
         future = now() + datetime.timedelta(seconds=.5)
         farfuture = now() + datetime.timedelta(seconds=1)
         data = {
             'assembly_id': new_id,
             'use_bar': False,
-            'candidates': {-1: {'description': 'Ja', 'moniker': 'j'},
-                           -2: {'description': 'Nein', 'moniker': 'n'},},
+            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
+                           -2: {'title': 'Nein', 'shortname': 'n'},},
             'description': 'Sind sie sich sicher?',
             'notes': None,
             'quorum': 0,
@@ -456,6 +471,7 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assembly.set_assembly(self.key, update)
         self.assertEqual({23, 11}, self.assembly.list_attendees(self.key, new_id))
+        self.login("anton")
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
     @as_users("werner")
@@ -681,93 +697,94 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
 
-    @as_users("werner")
-    def test_log(self, user):
+    def test_log(self):
         # first generate some data
         self.test_entity_assembly()
         self.test_vote()
         self.test_entity_ballot()
 
+        self.login("viktor")
         # now check it
         sub_id = USER_DICT['werner']['id']
         expectation = (11, (
             {'id': 1001,
-             'additional_info': None,
+             'change_note': None,
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.assembly_changed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
             # we delete all log entries related to an entity when deleting it
-            {'id': 1003,
-             'additional_info': "Außerordentliche Mitgliederversammlung",
+            {'id': 1009,
+             'change_note': "Außerordentliche Mitgliederversammlung",
              'assembly_id': None,
              'code': const.AssemblyLogCodes.assembly_deleted,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1004,
-             'additional_info': 'Farbe des Logos',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.ballot_changed,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1005,
-             'additional_info': 'aqua',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_added,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1006,
-             'additional_info': 'rot',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_updated,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1007,
-             'additional_info': 'gelb',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_removed,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1008,
-             'additional_info': 'j',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_added,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
-            {'id': 1009,
-             'additional_info': 'n',
-             'assembly_id': 1,
-             'code': const.AssemblyLogCodes.candidate_added,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': sub_id},
+             'submitted_by': 48},
             {'id': 1010,
-             'additional_info': 'Verstehen wir Spaß',
+             'change_note': 'Farbe des Logos',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
             {'id': 1011,
-             'additional_info': 'Verstehen wir Spaß',
+             'change_note': 'aqua',
+             'assembly_id': 1,
+             'code': const.AssemblyLogCodes.candidate_added,
+             'ctime': nearly_now(),
+             'persona_id': None,
+             'submitted_by': sub_id},
+            {'id': 1012,
+             'change_note': 'rot',
+             'assembly_id': 1,
+             'code': const.AssemblyLogCodes.candidate_updated,
+             'ctime': nearly_now(),
+             'persona_id': None,
+             'submitted_by': sub_id},
+            {'id': 1013,
+             'change_note': 'gelb',
+             'assembly_id': 1,
+             'code': const.AssemblyLogCodes.candidate_removed,
+             'ctime': nearly_now(),
+             'persona_id': None,
+             'submitted_by': sub_id},
+            {'id': 1014,
+             'change_note': 'j',
+             'assembly_id': 1,
+             'code': const.AssemblyLogCodes.candidate_added,
+             'ctime': nearly_now(),
+             'persona_id': None,
+             'submitted_by': sub_id},
+            {'id': 1015,
+             'change_note': 'n',
+             'assembly_id': 1,
+             'code': const.AssemblyLogCodes.candidate_added,
+             'ctime': nearly_now(),
+             'persona_id': None,
+             'submitted_by': sub_id},
+            {'id': 1016,
+             'change_note': 'Verstehen wir Spaß',
+             'assembly_id': 1,
+             'code': const.AssemblyLogCodes.ballot_changed,
+             'ctime': nearly_now(),
+             'persona_id': None,
+             'submitted_by': sub_id},
+            {'id': 1017,
+             'change_note': 'Verstehen wir Spaß',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_created,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1012,
-             'additional_info': 'Farbe des Logos',
+            {'id': 1018,
+             'change_note': 'Farbe des Logos',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_deleted,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
         ))
-        self.assertEqual(expectation, self.assembly.retrieve_log(self.key))
+        result = self.assembly.retrieve_log(self.key)
+        self.assertEqual(expectation, result)

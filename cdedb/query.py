@@ -108,7 +108,7 @@ class Query:
     def __init__(self, scope: str, spec: CdEDBObject,
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
-                 order: Collection[QueryOrder]):
+                 order: Collection[QueryOrder], name: str = None):
         """
         :type scope: str
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -131,6 +131,7 @@ class Query:
         self.fields_of_interest = list(fields_of_interest)
         self.constraints = list(constraints)
         self.order = list(order)
+        self.name = name
 
     def __repr__(self) -> str:
         return (f"Query(scope={self.scope},"
@@ -357,12 +358,12 @@ QUERY_SPECS = {
         collections.OrderedDict([
             ("lodgement.id", "id"),
             ("lodgement.lodgement_id", "id"),
-            ("lodgement.moniker", "str"),
+            ("lodgement.title", "str"),
             ("lodgement.regular_capacity", "int"),
             ("lodgement.camping_mat_capacity", "int"),
             ("lodgement.notes", "str"),
             ("lodgement.group_id", "int"),
-            ("lodgement_group.moniker", "int"),
+            ("lodgement_group.title", "int"),
             # This will be augmented with additional fields in the fly.
         ]),
     "qview_core_user":  # query for a general user including past event infos
@@ -393,7 +394,7 @@ QUERY_SPECS = {
         ]),
     "qview_persona":  # query for a persona without past event infos
         collections.OrderedDict([
-            ("id", "id"),
+            ("personas.id", "id"),
             ("given_names", "str"),
             ("family_name", "str"),
             ("username", "str"),

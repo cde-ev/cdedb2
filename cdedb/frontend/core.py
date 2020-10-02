@@ -44,6 +44,13 @@ from cdedb.validation import (
 import cdedb.database.constants as const
 import cdedb.validation as validate
 
+# Name of each realm
+USER_REALM_NAMES = {
+    "cde": n_("CdE user / Member"),
+    "event": n_("Event user"),
+    "assembly": n_("Assembly user"),
+    "ml": n_("Mailinglist user"),
+}
 
 # Name of each realm's option in the genesis form
 GenesisRealmOptionName = collections.namedtuple(
@@ -243,11 +250,26 @@ class CoreFrontend(AbstractFrontend):
     # We don't check anti CSRF tokens here, since logging does not harm anyone.
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
-        """Invalidate session."""
-        self.coreproxy.logout(rs)
+        """Invalidate the current session."""
+        self.coreproxy.logout(rs, all_sessions=False)
         response = self.redirect(rs, "core/index")
         response.delete_cookie("sessionkey")
         return response
+
+    # Check for anti CSRF here, since this affects multiple sessions.
+    @access("persona", modi={"POST"})
+    def logout_all(self, rs: RequestState) -> Response:
+        """Invalidate all sessions for the current user."""
+        if rs.has_validation_errors():
+            return self.index(rs)
+        count = self.coreproxy.logout(rs, all_sessions=True)
+        rs.notify(
+            "success", n_("%(count)s session(s) terminated."), {'count': count})
+        # Unset persona_id so the notification is encoded correctly.
+        rs.user.persona_id = None
+        ret = self.redirect(rs, "core/index")
+        ret.delete_cookie("sessionkey")
+        return ret
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))
@@ -416,25 +438,24 @@ class CoreFrontend(AbstractFrontend):
         # This excludes users with relation "unsubscribed", because they are not
         # directly shown on the management sites.
         if ml_id:
-            is_admin = "ml_admin" in rs.user.roles
-            is_viewing_admin = (is_admin and
-                                "ml_moderator" in rs.user.admin_views)
+            # determinate if the user is relevant admin of this mailinglist
+            ml_type = self.mlproxy.get_ml_type(rs, ml_id)
+            is_admin = ml_type.is_relevant_admin(rs.user)
             is_moderator = ml_id in self.mlproxy.moderator_info(
                 rs, rs.user.persona_id)
+            # Admins who are also moderators can not disable this admin view
+            if is_admin and not is_moderator:
+                access_mode.add("moderator")
             relevant_stati = [s for s in const.SubscriptionStates
                               if s != const.SubscriptionStates.unsubscribed]
-            if is_admin or is_moderator:
+            if is_moderator or ml_type.has_moderator_view(rs.user):
                 subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)
-                is_subscriber = persona_id in subscriptions
-                if (is_moderator or is_viewing_admin) and is_subscriber:
+                if persona_id in subscriptions:
                     access_levels.add("ml")
                     # the moderator access level currently does nothing, but we
                     # add it anyway to be less confusing
                     access_levels.add("moderator")
-                # Admins who are also moderators can not disable this admin view
-                if is_admin and not is_moderator and is_subscriber:
-                    access_mode.add("moderator")
 
         # Retrieve data
         #
@@ -528,7 +549,7 @@ class CoreFrontend(AbstractFrontend):
             tmp: List[int] = []
             already_committed = False
             for x, y in pairwise(xsorted(history.keys())):
-                if history[x]['change_status'] == stati.committed:
+                if history[x]['code'] == stati.committed:
                     already_committed = True
                 # Somewhat involved determination of a field being constant.
                 #
@@ -536,7 +557,7 @@ class CoreFrontend(AbstractFrontend):
                 # don't want to mask a change that was rejected and then
                 # resubmitted and accepted.
                 is_constant = history[x][f] == history[y][f]
-                if (history[x]['change_status'] == stati.nacked
+                if (history[x]['code'] == stati.nacked
                         and not already_committed):
                     is_constant = False
                 if is_constant:
@@ -550,14 +571,14 @@ class CoreFrontend(AbstractFrontend):
                 total_const.extend(tmp)
             constants[f] = total_const
         pending = {i for i in history
-                   if history[i]['change_status'] == stati.pending}
+                   if history[i]['code'] == stati.pending}
         # Track the omitted information whether a new value finally got
         # committed or not.
         #
         # This is necessary since we only show those data points, where the
         # data (e.g. the name) changes. This does especially not detect
         # meta-data changes (e.g. the change-status).
-        eventual_status = {f: {gen: entry['change_status']
+        eventual_status = {f: {gen: entry['code']
                                for gen, entry in history.items()
                                if gen not in constants[f]}
                            for f in fields}
@@ -565,7 +586,7 @@ class CoreFrontend(AbstractFrontend):
             for gen in xsorted(history):
                 if gen in constants[f]:
                     anchor = max(g for g in eventual_status[f] if g < gen)
-                    this_status = history[gen]['change_status']
+                    this_status = history[gen]['code']
                     if this_status == stati.committed:
                         eventual_status[f][anchor] = stati.committed
                     if (this_status == stati.nacked
@@ -655,10 +676,13 @@ class CoreFrontend(AbstractFrontend):
         Allowed kinds:
 
         - ``admin_persona``: Search for users as core_admin
+        - ``cde_user``: Search for a cde user as cde_admin.
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
         - ``pure_assembly_user``: Search for an assembly only user as
           assembly_admin
+        - ``assembly_admin_user``: Search for an assembly user as
+            assembly_admin.
         - ``ml_admin_user``: Search for a mailinglist user as ml_admin
         - ``mod_ml_user``: Search for a mailinglist user as a moderator
         - ``event_admin_user``: Search an event user as event_admin (for
@@ -696,6 +720,11 @@ class CoreFrontend(AbstractFrontend):
         if kind == "admin_persona":
             if not {"core_admin", "cde_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        elif kind == "cde_user":
+            if not {"cde_admin"} & rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append(
+                ("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
             if "cde_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -708,6 +737,11 @@ class CoreFrontend(AbstractFrontend):
                 ("is_assembly_realm", QueryOperators.equal, True))
             search_additions.append(
                 ("is_member", QueryOperators.equal, False))
+        elif kind == "assembly_admin_user":
+            if "assembly_admin" not in rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append(
+                ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "ml_admin_user":
             if "ml_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -834,7 +868,7 @@ class CoreFrontend(AbstractFrontend):
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
             rs, rs.user.persona_id, (generation,)))
-        if data['change_status'] == const.MemberChangeStati.pending:
+        if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
@@ -914,6 +948,24 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "user_search", params)
 
     @access("core_admin")
+    def create_user_form(self, rs: RequestState) -> Response:
+        realms = USER_REALM_NAMES.copy()
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+            del realms["assembly"]
+            del realms["ml"]
+        return self.render(rs, "create_user", {'realms': realms})
+
+    @access("core_admin")
+    @REQUESTdata(("realm", "str"))
+    def create_user(self, rs: RequestState, realm: str) -> Response:
+        if realm not in USER_REALM_NAMES.keys():
+            rs.append_validation_error(("realm",
+                                        ValueError(n_("No valid realm."))))
+        if rs.has_validation_errors():
+            return self.create_user_form(rs)
+        return self.redirect(rs, realm + "/create_user")
+
+    @access("core_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def archived_user_search(self, rs: RequestState, download: Optional[str],
                              is_search: bool) -> Response:
@@ -987,7 +1039,7 @@ class CoreFrontend(AbstractFrontend):
             rs, persona_id, (generation,)))
         del data['change_note']
         merge_dicts(rs.values, data)
-        if data['change_status'] == const.MemberChangeStati.pending:
+        if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         shown_fields = get_persona_fields_by_realm(
             extract_roles(rs.ambience['persona']), restricted=False)
@@ -1032,7 +1084,7 @@ class CoreFrontend(AbstractFrontend):
             "core": self.coreproxy.list_admins(rs, "core"),
         }
 
-        display_realms = set(REALM_INHERITANCE) & rs.user.roles
+        display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
         if "cde" in display_realms:
             display_realms.add("finance")
         if "ml" in display_realms:
@@ -1494,7 +1546,7 @@ class CoreFrontend(AbstractFrontend):
                     check(rs, 'profilepic_or_None', foto, "foto"))
         if not foto and not delete:
             rs.append_validation_error(
-                ("foto", ValueError("Mustn't be empty.")))
+                ("foto", ValueError("Must not be empty.")))
         if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
         code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
@@ -1594,7 +1646,7 @@ class CoreFrontend(AbstractFrontend):
         exists = self.coreproxy.verify_existence(rs, email)
         if not exists:
             rs.append_validation_error(
-                ("email", ValueError(n_("Nonexistant user."))))
+                ("email", ValueError(n_("Nonexistent user."))))
             rs.ignore_validation_errors()
             return self.reset_password_form(rs)
         admin_exception = False
@@ -2251,12 +2303,12 @@ class CoreFrontend(AbstractFrontend):
         history = self.coreproxy.changelog_get_history(rs, persona_id,
                                                        generations=None)
         pending = history[max(history)]
-        if pending['change_status'] != const.MemberChangeStati.pending:
+        if pending['code'] != const.MemberChangeStati.pending:
             rs.notify("warning", n_("Persona has no pending change."))
             return self.list_pending_changes(rs)
         current = history[max(
             key for key in history
-            if (history[key]['change_status']
+            if (history[key]['code']
                 == const.MemberChangeStati.committed))]
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
@@ -2328,7 +2380,7 @@ class CoreFrontend(AbstractFrontend):
                  ("submitted_by", "cdedbid_or_None"),
                  ("reviewed_by", "cdedbid_or_None"),
                  ("persona_id", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2338,7 +2390,7 @@ class CoreFrontend(AbstractFrontend):
                             offset: Optional[int], length: Optional[int],
                             persona_id: Optional[int],
                             submitted_by: Optional[int],
-                            additional_info: Optional[str],
+                            change_note: Optional[str],
                             time_start: Optional[datetime.datetime],
                             time_stop: Optional[datetime.datetime],
                             reviewed_by: Optional[int]) -> Response:
@@ -2353,7 +2405,7 @@ class CoreFrontend(AbstractFrontend):
         rs.ignore_validation_errors()
         total, log = self.coreproxy.retrieve_changelog_meta(
             rs, stati, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -2370,7 +2422,7 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2378,7 +2430,7 @@ class CoreFrontend(AbstractFrontend):
     def view_log(self, rs: RequestState, codes: Collection[const.CoreLogCodes],
                  offset: Optional[int], length: Optional[int],
                  persona_id: Optional[int], submitted_by: Optional[int],
-                 additional_info: Optional[str],
+                 change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
                  time_stop: Optional[datetime.datetime]) -> Response:
         """View activity."""
@@ -2392,7 +2444,7 @@ class CoreFrontend(AbstractFrontend):
         rs.ignore_validation_errors()
         total, log = self.coreproxy.retrieve_log(
             rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -2444,6 +2496,7 @@ class CoreFrontend(AbstractFrontend):
             return self.send_json(rs, err)
 
         spec = {
+            "id": "id",
             "username": "str",
             "is_event_realm": "bool",
         }

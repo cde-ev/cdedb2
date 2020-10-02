@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
-sys.path.insert(0, "/cdedb2/")
 from cdedb.script import setup, make_backend
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -53,7 +51,7 @@ GRANT UPDATE ON assembly.attachments TO cdb_admin;"""
     for e in data:
         # Fourth try to find the original upload time from the log.
         ctime_query = ("SELECT ctime FROM assembly.log WHERE code = %s"
-                       " AND additional_info = %s ORDER BY ctime DESC LIMIT 1")
+                       " AND change_note = %s ORDER BY ctime DESC LIMIT 1")
         ctime = assembly.query_one(
             rs, ctime_query, (const.AssemblyLogCodes.attachment_added,
                               e['title']))

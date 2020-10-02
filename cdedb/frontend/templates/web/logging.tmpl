@@ -22,7 +22,7 @@
 
 {% macro table(log, keytitle='') %}
     {{ filterlink() }}
-    <table class="table table-condensed table-hover">
+    <table class="table table-condensed table-hover table-log">
         <thead>
         <tr>
             <th>{% trans %}Timestamp{% endtrans %}</th>
@@ -72,7 +72,7 @@
                 –
             {% endif %}
         </td>
-        <td>{{ entry['additional_info'] }}</td>
+        <td>{{ entry['change_note'] }}</td>
     </tr>
 {% endmacro %}
 
@@ -118,7 +118,7 @@
                     );
                 </script>
             {% endif %}
-            {{ util.form_input_text("additional_info", label=gettext("Additional Info"), small=True) }}
+            {{ util.form_input_text("change_note", label=gettext("Additional Info"), small=True) }}
             {{ util.form_input_text('length', label=gettext("Length"), type='number', small=True) }}
             {{ util.form_input_text('offset', label=gettext("Offset"), type='number', small=True) }}
             {{ util.form_input_from_to('time_start', 'time_stop', label=gettext("Timestamp"), type='datetime', small=True) }}
@@ -129,7 +129,7 @@
 
 {% macro navigation(endpoint, total, length, loglinks) %}
     <nav class="text-center" aria-label="{% trans %}Log page navigation{% endtrans %}">
-    <ul class="pagination pagination-lg", id="log-pagination">
+    <ul class="pagination", id="log-pagination">
         {# How can I properly automate the target? #}
         {% if loglinks["current"]["offset"] < 0 %}
             {% set page = 0 %}

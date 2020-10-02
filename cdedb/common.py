@@ -18,6 +18,7 @@ import re
 import string
 import sys
 import hashlib
+from secrets import choice
 
 from typing import (
     Any, TypeVar, Mapping, Optional, Dict, List, overload, Sequence, Tuple,
@@ -33,6 +34,8 @@ import werkzeug.routing
 
 import icu
 
+import cdedb.database.constants as const
+
 # The following imports are only for re-export. They are not used
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
@@ -45,7 +48,12 @@ from cdedb.database.connection import IrradiatedConnection
 _LOGGER = logging.getLogger(__name__)
 
 # Global unified collator to be used when sorting.
-COLLATOR = icu.Collator.createInstance(icu.Locale('de_DE.UTF-8@colNumeric=yes'))
+# The locale provided here must exist as collation in SQL for this to
+# work properly.
+# 'de_DE.UTF-8@colNumeric=yes' is an equivalent choice for LOCAL, but is less
+# compatible to use as a collation name in postgresql.
+LOCALE = 'de-u-kn-true'
+COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
@@ -105,7 +113,8 @@ class User:
                  roles: Set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
-                 moderator: Collection[int] = None) -> None:
+                 moderator: Collection[int] = None,
+                 presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
         self.roles = roles or {"anonymous"}
         self.username = username
@@ -114,6 +123,7 @@ class User:
         self.family_name = family_name
         self.orga: Set[int] = set(orga) if orga else set()
         self.moderator: Set[int] = set(moderator) if moderator else set()
+        self.presider: Set[int] = set(presider) if presider else set()
         self.admin_views: Set[AdminView] = set()
 
     @property
@@ -139,11 +149,12 @@ class RequestState:
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
                  values: Optional[werkzeug.MultiDict], lang: str,
-                 gettext: Callable, ngettext: Callable,
-                 coders: Optional[Mapping[str, Callable]],
+                 gettext: Callable[[str], str],
+                 ngettext: Callable[[str, str, int], str],
+                 coders: Optional[Mapping[str, Callable]],  # type: ignore
                  begin: datetime.datetime,
-                 default_gettext: Optional[Callable] = None,
-                 default_ngettext: Optional[Callable] = None):
+                 default_gettext: Callable[[str], str] = None,
+                 default_ngettext: Callable[[str, str, int], str] = None):
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
@@ -278,7 +289,7 @@ B = TypeVar("B", bound=AbstractBackend)
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def make_proxy(backend: B, internal=False) -> B:
+def make_proxy(backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -367,8 +378,11 @@ def glue(*args: str) -> str:
     return " ".join(args)
 
 
-def merge_dicts(targetdict: Union[MutableMapping, werkzeug.MultiDict],
-                *dicts: Mapping) -> None:
+S = TypeVar("S")
+
+
+def merge_dicts(targetdict: Union[MutableMapping[T, S], werkzeug.MultiDict],
+                *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
     This is basically the :py:meth:`dict.update` method, but existing
@@ -496,8 +510,8 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
                   reverse=reverse)
 
 
-Sortable = Tuple[Union[str, int, datetime.datetime], ...]
-Sortkey = Callable[[CdEDBObject], Sortable]
+Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
+KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 
 # noinspection PyRedundantParentheses
@@ -509,21 +523,21 @@ class EntitySorter:
     """
 
     @staticmethod
-    def given_names(persona: CdEDBObject) -> Sortable:
+    def given_names(persona: CdEDBObject) -> Sortkey:
         return (persona['given_names'].lower(),)
 
     @staticmethod
-    def family_name(persona: CdEDBObject) -> Sortable:
+    def family_name(persona: CdEDBObject) -> Sortkey:
         return (persona['family_name'].lower(),)
 
     @staticmethod
-    def given_names_first(persona: CdEDBObject) -> Sortable:
+    def given_names_first(persona: CdEDBObject) -> Sortkey:
         return (persona['given_names'].lower(),
                 persona['family_name'].lower(),
                 persona['id'])
 
     @staticmethod
-    def family_name_first(persona: CdEDBObject) -> Sortable:
+    def family_name_first(persona: CdEDBObject) -> Sortkey:
         return (persona['family_name'].lower(),
                 persona['given_names'].lower(),
                 persona['id'])
@@ -532,91 +546,95 @@ class EntitySorter:
     persona = family_name_first
 
     @staticmethod
-    def email(persona: CdEDBObject) -> Sortable:
-        return persona['username']
+    def email(persona: CdEDBObject) -> Sortkey:
+        return (str(persona['username']),)
 
     @staticmethod
-    def address(persona: CdEDBObject) -> Sortable:
+    def address(persona: CdEDBObject) -> Sortkey:
         postal_code = persona.get('postal_code', "") or ""
         location = persona.get('location', "") or ""
         address = persona.get('address', "") or ""
         return (postal_code, location, address)
 
     @staticmethod
-    def event(event: CdEDBObject) -> Sortable:
+    def event(event: CdEDBObject) -> Sortkey:
         return (event['begin'], event['end'], event['title'], event['id'])
 
     @staticmethod
-    def course(course: CdEDBObject) -> Sortable:
+    def course(course: CdEDBObject) -> Sortkey:
         return (course['nr'], course['shortname'], course['id'])
 
     @staticmethod
-    def lodgement(lodgement: CdEDBObject) -> Sortable:
-        return (lodgement['moniker'], lodgement['id'])
+    def lodgement(lodgement: CdEDBObject) -> Sortkey:
+        return (lodgement['title'], lodgement['id'])
 
     @staticmethod
-    def lodgement_group(lodgement_group: CdEDBObject) -> Sortable:
-        return (lodgement_group['moniker'], lodgement_group['id'])
+    def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
+        return (lodgement_group['title'], lodgement_group['id'])
 
     @staticmethod
-    def event_part(event_part: CdEDBObject) -> Sortable:
+    def event_part(event_part: CdEDBObject) -> Sortkey:
         return (event_part['part_begin'], event_part['part_end'],
                 event_part['shortname'], event_part['id'])
 
     @staticmethod
-    def course_track(course_track: CdEDBObject) -> Sortable:
+    def course_track(course_track: CdEDBObject) -> Sortkey:
         return (course_track['sortkey'], course_track['id'])
 
     @staticmethod
-    def event_field(event_field: CdEDBObject) -> Sortable:
+    def event_field(event_field: CdEDBObject) -> Sortkey:
         return (event_field['field_name'], event_field['id'])
 
     @staticmethod
-    def candidates(candidates: CdEDBObject) -> Sortable:
-        return (candidates['moniker'], candidates['id'])
+    def candidates(candidates: CdEDBObject) -> Sortkey:
+        return (candidates['shortname'], candidates['id'])
 
     @staticmethod
-    def assembly(assembly: CdEDBObject) -> Sortable:
+    def assembly(assembly: CdEDBObject) -> Sortkey:
         return (assembly['signup_end'], assembly['id'])
 
     @staticmethod
-    def ballot(ballot: CdEDBObject) -> Sortable:
+    def ballot(ballot: CdEDBObject) -> Sortkey:
         return (ballot['title'], ballot['id'])
 
     @staticmethod
-    def attachment(attachment: CdEDBObject) -> Sortable:
-        return (attachment['title'], attachment['id'])
+    def get_attachment_sorter(histories: CdEDBObject) -> KeyFunction:
+        def attachment(attachment: CdEDBObject) -> Sortkey:
+            attachment = histories[attachment['id']][attachment['current_version']]
+            return (attachment['title'], attachment['attachment_id'])
+
+        return attachment
 
     @staticmethod
-    def attachment_version(version: CdEDBObject) -> Sortable:
+    def attachment_version(version: CdEDBObject) -> Sortkey:
         return (version['attachment_id'], version['version'])
 
     @staticmethod
-    def past_event(past_event: CdEDBObject) -> Sortable:
+    def past_event(past_event: CdEDBObject) -> Sortkey:
         return (past_event['tempus'], past_event['id'])
 
     @staticmethod
-    def past_course(past_course: CdEDBObject) -> Sortable:
+    def past_course(past_course: CdEDBObject) -> Sortkey:
         return (past_course['nr'], past_course['title'], past_course['id'])
 
     @staticmethod
-    def institution(institution: CdEDBObject) -> Sortable:
-        return (institution['moniker'], institution['id'])
+    def institution(institution: CdEDBObject) -> Sortkey:
+        return (institution['shortname'], institution['id'])
 
     @staticmethod
-    def transaction(transaction: CdEDBObject) -> Sortable:
+    def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
 
     @staticmethod
-    def genesis_case(genesis_case: CdEDBObject) -> Sortable:
+    def genesis_case(genesis_case: CdEDBObject) -> Sortkey:
         return (genesis_case['ctime'], genesis_case['id'])
 
     @staticmethod
-    def changelog(changelog_entry: CdEDBObject) -> Sortable:
+    def changelog(changelog_entry: CdEDBObject) -> Sortkey:
         return (changelog_entry['ctime'], changelog_entry['id'])
 
     @staticmethod
-    def mailinglist(mailinglist: CdEDBObject) -> Sortable:
+    def mailinglist(mailinglist: CdEDBObject) -> Sortkey:
         return (mailinglist['title'], mailinglist['id'])
 
 
@@ -786,7 +804,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     This is used by the assembly realm to tally votes -- however this is
     pretty abstract, so we move it here.
 
-    Votes have the form ``3>0>1=2>4`` where the monikers between the
+    Votes have the form ``3>0>1=2>4`` where the shortnames between the
     relation signs are exactly those passed in the ``candidates`` parameter.
 
     The Schulze method is described in the pdf found in the ``related``
@@ -885,24 +903,23 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     return condensed, detailed
 
 
-#: Magic value of moniker of the ballot candidate representing the bar.
-ASSEMBLY_BAR_MONIKER = "_bar_"
+#: Magic value of shortname of the ballot candidate representing the bar.
+ASSEMBLY_BAR_SHORTNAME = "_bar_"
 
 
 @overload
-def unwrap(single_element_list: Union[AbstractSet[T], MutableSequence[T],
-                                      Tuple[T, ...]]) -> T: ...
+def unwrap(data: None) -> None: ...
 
 
 @overload
-def unwrap(single_element_list: Mapping[Any, T]) -> T: ...
+def unwrap(data: Mapping[Any, T]) -> T: ...
 
 
 @overload
-def unwrap(single_element_list: None) -> None: ...
+def unwrap(data: Collection[T]) -> T: ...
 
 
-def unwrap(single_element_list):
+def unwrap(data):
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -916,22 +933,34 @@ def unwrap(single_element_list):
     in that it uses the values instead of the keys. To unwrap the keys pass
     `data.keys()` instead.
     """
-    if single_element_list is None:
+    if data is None:
         return None
-    if (not isinstance(single_element_list, collections.abc.Iterable)
-            or (isinstance(single_element_list, collections.abc.Sized)
-                and len(single_element_list) != 1)):
-        raise RuntimeError(n_("Unable to unwrap!"))
-    if isinstance(single_element_list, collections.abc.Mapping):
-        single_element_list = single_element_list.values()
-    return next(i for i in single_element_list)
+    if isinstance(data, (str, bytes)):
+        raise TypeError(n_("Cannot unwrap str or bytes. Got %(data)s."),
+                        {'data': type(data)})
+    if not isinstance(data, collections.abc.Collection):
+        raise TypeError(
+            n_("Can only unwrap collections. Got %(data)s."),
+            {'data': type(data)})
+    if not len(data) == 1:
+        raise ValueError(
+            n_("Can only unwrap collections with one element."
+               " Got %(len)s elements."),
+            {'len': len(data)})
+    if isinstance(data, collections.abc.Mapping):
+        [value] = data.values()
+    elif isinstance(data, collections.abc.Collection):
+        [value] = data
+    else:
+        raise NotImplementedError
+    return value
 
 
 @enum.unique
 class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
     #: default sortkey (currently equal to EntitySorter.lodgement)
-    moniker = 1
+    title = 1
     #: regular_capacity which is used in this part
     used_regular = 10
     #: camping_mat_capacity which is used in this part
@@ -1719,11 +1748,25 @@ def roles_to_db_role(roles: Set[Role]) -> str:
 
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 
+#: every admin view with one admin role per row (except of genesis)
 ALL_ADMIN_VIEWS: Set[AdminView] = {
-    "meta_admin", "core_user", "core", "cde_user", "past_event", "finance",
-    "event_user", "event_mgmt", "event_orga", "ml_user", "ml_mgmt",
-    "ml_moderator", "assembly_user", "assembly_mgmt", "assembly_contents",
+    "meta_admin",
+    "core_user", "core",
+    "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
+    "finance",
+    "event_user", "event_mgmt", "event_orga", "ml_mgmt_event", "ml_mod_event",
+    "ml_user", "ml_mgmt", "ml_mod",
+    "ml_mgmt_cdelokal", "ml_mod_cdelokal",
+    "assembly_user", "assembly_mgmt", "assembly_presider", "ml_mgmt_assembly", "ml_mod_assembly",
     "genesis"}
+
+ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
+    "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
+    "ml_mod_assembly"}
+
+ALL_MGMT_ADMIN_VIEWS: Set[AdminView] = {
+    "ml_mgmt", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
+    "ml_mgmt_assembly"}
 
 
 def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
@@ -1732,21 +1775,22 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
-        result |= {"core_user", "core"}
+        result |= {"core", "core_user", "cde_user", "event_user",
+                   "assembly_user", "ml_user"}
     if "cde_admin" in roles:
-        result |= {"cde_user", "past_event", "ml_mgmt", "ml_moderator"}
+        result |= {"cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:
         result |= {"finance"}
     if "event_admin" in roles:
-        result |= {"event_user", "event_mgmt", "event_orga", "ml_mgmt",
-                   "ml_moderator"}
+        result |= {"event_user", "event_mgmt", "event_orga", "ml_mgmt_event",
+                   "ml_mod_event"}
     if "ml_admin" in roles:
-        result |= {"ml_user", "ml_mgmt", "ml_moderator"}
+        result |= {"ml_user", "ml_mgmt", "ml_mod"}
     if "cdelokal_admin" in roles:
-        result |= {"ml_mgmt", "ml_moderator"}
+        result |= {"ml_mgmt_cdelokal", "ml_mod_cdelokal"}
     if "assembly_admin" in roles:
-        result |= {"assembly_user", "assembly_mgmt", "assembly_contents",
-                   "ml_mgmt", "ml_moderator"}
+        result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
+                   "ml_mgmt_assembly", "ml_mod_assembly"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
@@ -1754,7 +1798,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     return result
 
 
-#: Deprecated, use EVENT_SCHEMA_VERSION instead.
+#: Deprecated, use EVENT_SCHEMA_VERSION instead. This should no longer be
+#: modified.
 #: TODO remove it
 CDEDB_EXPORT_EVENT_VERSION = 13
 
@@ -1763,7 +1808,7 @@ CDEDB_EXPORT_EVENT_VERSION = 13
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (13, 1)
+EVENT_SCHEMA_VERSION = (14, 1)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1920,7 +1965,7 @@ PRIVILEGE_CHANGE_FIELDS = (
     "is_assembly_admin", "is_cdelokal_admin", "notes", "reviewer")
 
 #: Fields for institutions of events
-INSTITUTION_FIELDS = ("id", "title", "moniker")
+INSTITUTION_FIELDS = ("id", "title", "shortname")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
@@ -1940,7 +1985,7 @@ EVENT_FIELDS = (
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
-                     "part_end", "fee")
+                     "part_end", "fee", "waitlist_field")
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
@@ -1978,10 +2023,10 @@ REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
                              "course_instructor")
 
 #: Fields of a lodgement group
-LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
+LODGEMENT_GROUP_FIELDS = ("id", "event_id", "title")
 
 #: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "moniker", "regular_capacity",
+LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
                     "camping_mat_capacity", "notes", "group_id", "fields")
 
 # Fields of a row in a questionnaire.
@@ -1995,6 +2040,16 @@ MAILINGLIST_FIELDS = (
     "mod_policy", "notes", "attachment_policy", "ml_type",
     "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")
+
+#: Fields of a mailinglist which may be changed by moderators
+MOD_ALLOWED_FIELDS = {
+    "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
+    "maxsize"}
+
+#: Fields of a mailinglist which need privileged moderators to be changed
+PRIVILEGED_MOD_ALLOWED_FIELDS = MOD_ALLOWED_FIELDS | {
+    'registration_stati'
+}
 
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
@@ -2034,6 +2089,16 @@ LASTSCHRIFT_FIELDS = (
 LASTSCHRIFT_TRANSACTION_FIELDS = (
     "id", "submitted_by", "lastschrift_id", "period_id", "status", "amount",
     "issued_at", "processed_at", "tally")
+
+#: Datatype and Association of special purpose event fields
+EVENT_FIELD_SPEC: Dict[
+    str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
+    'lodge': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
+    'camping_mat': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
+    'fee_modifier': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+}
 
 EPSILON = 10 ** (-6)  #:
 

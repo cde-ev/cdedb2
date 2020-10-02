@@ -84,7 +84,7 @@ import zxcvbn
 
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    ASSEMBLY_BAR_MONIKER,
+    ASSEMBLY_BAR_SHORTNAME,
     EPSILON,
     EVENT_SCHEMA_VERSION,
     INFINITE_ENUM_MAGIC_NUMBER,
@@ -417,7 +417,7 @@ def _None(
         if isinstance(val, str) and not val:
             val = None
     if val is not None:
-        raise ValidationSummary(ValueError(argname, n_("Must be None.")))
+        raise ValidationSummary(ValueError(argname, n_("Must be empty.")))
     return None
 
 
@@ -585,7 +585,7 @@ def _str(val: Any, argname: str = None, **kwargs) -> str:
     """
     val = _str_type(val, argname, **kwargs)
     if not val:
-        raise ValidationSummary(ValueError(argname, n_("Mustn’t be empty.")))
+        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     return val
 
 
@@ -734,11 +734,11 @@ def _printable_ascii(
     val: Any, argname: str = None, **kwargs
 ) -> PrintableASCII:
     """Like :py:func:`_printable_ascii_type` (parameters see there),
-    but mustn't be empty (whitespace doesn't count).
+    but must not be empty (whitespace doesn't count).
     """
     val = _printable_ascii_type(val, argname, **kwargs)
     if not val:  # TODO leave strip here?
-        raise ValidationSummary(ValueError(argname, n_("Mustn’t be empty.")))
+        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     return PrintableASCII(val)
 
 
@@ -1959,7 +1959,7 @@ def _meta_info(
 
 def _INSTITUTION_COMMON_FIELDS(): return {
     'title': str,
-    'moniker': str,
+    'shortname': str,
 }
 
 
@@ -2182,6 +2182,7 @@ _EVENT_PART_COMMON_FIELDS = {
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'fee': NonNegativeDecimal,
+    'waitlist_field': Optional[ID],
     'tracks': Mapping,
 }
 
@@ -2209,8 +2210,8 @@ def _event_part(
 
     errs = ValidationSummary()
     if ('part_begin' in val and 'part_end' in val and val['part_begin'] > val['part_end']):
-        errs.append(ValueError("part_end", n_(
-            "Must be later than part begin.")))
+        errs.append(ValueError("part_end", n_("Must be later than begin.")))
+
     if 'tracks' in val:
         newtracks = {}
         for anid, track in val['tracks'].items():
@@ -2696,7 +2697,7 @@ def _event_associated_fields(
 
 
 def _LODGEMENT_GROUP_FIELDS(): return {
-    'moniker': str,
+    'title': str,
 }
 
 
@@ -2726,7 +2727,7 @@ def _lodgement_group(
 
 
 def _LODGEMENT_COMMON_FIELDS(): return {
-    'moniker': str,
+    'title': str,
     'regular_capacity': NonNegativeInt,
     'camping_mat_capacity': NonNegativeInt,
     'notes': Optional[str],
@@ -2990,7 +2991,7 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'ctime': datetime.datetime, 'code': int,
                           'submitted_by': ID, 'event_id': Optional[ID],
                           'persona_id': Optional[ID],
-                          'additional_info': Optional[str], }),
+                          'change_note': Optional[str], }),
         'event.orgas': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'persona_id': ID}),
         'event.field_definitions': _augment_dict_validator(
@@ -3205,7 +3206,7 @@ def _partial_course(
 
 
 def _PARTIAL_LODGEMENT_GROUP_FIELDS(): return {
-    'moniker': str,
+    'title': str,
 }
 
 
@@ -3233,7 +3234,7 @@ def _partial_lodgement_group(
 
 
 def _PARTIAL_LODGEMENT_COMMON_FIELDS(): return {
-    'moniker': str,
+    'title': str,
     'regular_capacity': NonNegativeInt,
     'camping_mat_capacity': NonNegativeInt,
     'notes': Optional[str],
@@ -3458,10 +3459,12 @@ def _mailinglist(
     # TODO replace these with generic types
     mandatory_validation_fields = [('moderators', '[id]'), ]
     optional_validation_fields = [('whitelist', '[email]'), ]
-    if "ml_type" in val:
-        atype = ml_type.get_type(val["ml_type"])
-        mandatory_validation_fields.extend(atype.mandatory_validation_fields)
-        optional_validation_fields.extend(atype.optional_validation_fields)
+    if "ml_type" not in val:
+        raise ValidationSummary(ValueError("ml_type",
+            "Must provide ml_type for setting mailinglist."))
+    atype = ml_type.get_type(val["ml_type"])
+    mandatory_validation_fields.extend(atype.mandatory_validation_fields)
+    optional_validation_fields.extend(atype.optional_validation_fields)
     mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
     optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
 
@@ -3617,6 +3620,7 @@ def _ASSEMBLY_COMMON_FIELDS(): return {
 def _ASSEMBLY_OPTIONAL_FIELDS(): return {
     'is_active': bool,
     'mail_address': Optional[str],
+    'presiders': Iterable
 }
 
 
@@ -3638,6 +3642,22 @@ def _assembly(
         mandatory_fields = {'id': ID}
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
                                **_ASSEMBLY_OPTIONAL_FIELDS())
+
+    errs = ValidationSummary()
+
+    if 'presiders' in val:
+        presiders = set()
+        for anid in val['presiders']:
+            try:
+                presider = _id(anid, 'presiders', **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                presiders.add(presider)
+        val['presiders'] = presiders
+
+    if errs:
+        raise errs
 
     return Assembly(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
@@ -3743,8 +3763,8 @@ def _ballot(
 
 
 _BALLOT_CANDIDATE_COMMON_FIELDS = {
-    'description': str,
-    'moniker': Identifier,
+    'title': str,
+    'shortname': Identifier,
 }
 
 
@@ -3769,9 +3789,9 @@ def _ballot_candidate(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if val.get('moniker') == ASSEMBLY_BAR_MONIKER:
+    if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
         raise ValidationSummary(ValueError(
-            "moniker", n_("Mustn’t be the bar moniker.")))
+            "shortname", n_("Mustn’t be the bar shortname.")))
 
     return BallotCandidate(val)
 
@@ -3856,9 +3876,9 @@ def _vote(
     errs = ValidationSummary()
 
     entries = tuple(y for x in val.split('>') for y in x.split('='))
-    reference = set(e['moniker'] for e in ballot['candidates'].values())
+    reference = set(e['shortname'] for e in ballot['candidates'].values())
     if ballot['use_bar'] or ballot['votes']:
-        reference.add(ASSEMBLY_BAR_MONIKER)
+        reference.add(ASSEMBLY_BAR_SHORTNAME)
     if set(entries) - reference:
         errs.append(KeyError(argname, n_("Superfluous candidates.")))
     if reference - set(entries):
@@ -3874,8 +3894,8 @@ def _vote(
         if len(groups[0].split('=')) > ballot['votes']:
             errs.append(ValueError(argname, n_("Too many votes.")))
         first_group = groups[0].split('=')
-        if (ASSEMBLY_BAR_MONIKER in first_group
-                and first_group != [ASSEMBLY_BAR_MONIKER]):
+        if (ASSEMBLY_BAR_SHORTNAME in first_group
+                and first_group != [ASSEMBLY_BAR_SHORTNAME]):
             errs.append(ValueError(argname, n_("Misplaced bar.")))
         if errs:
             raise errs
@@ -4124,7 +4144,7 @@ def _query(
         except ValidationSummary as e:
             errs.extend(e)
     if not val.fields_of_interest:
-        errs.append(ValueError("fields_of_interest", n_("Mustn’t be empty.")))
+        errs.append(ValueError("fields_of_interest", n_("Must not be empty.")))
 
     # constraints
     for idx, x in enumerate(val.constraints):

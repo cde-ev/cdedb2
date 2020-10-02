@@ -7,6 +7,7 @@ import json
 import urllib.parse
 from test.common import USER_DICT, FrontendTest, as_users
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, get_hash
+from cdedb.frontend.core import USER_REALM_NAMES
 
 import cdedb.database.constants as const
 import webtest
@@ -188,11 +189,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn('activitytoggleform', self.response.forms)
         self.assertNotIn('sendpasswordresetform', self.response.forms)
 
-        # There should not be any admin toggle buttons for Vera in the assembly
-        # realm
-        self.traverse({'href': '/assembly'})
-        self.assertNotIn('adminviewstoggleform', self.response.forms)
-
     @as_users("vera")
     def test_adminshowuser(self, user):
         self.admin_view_profile('berta')
@@ -313,7 +309,7 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
-    @as_users("werner")
+    @as_users("viktor")
     def test_selectpersona_relative_assembly_admin(self, user):
         self.get('/core/persona/select'
                  '?kind=mod_ml_user&phrase=@exam&aux=11')
@@ -343,7 +339,7 @@ class TestCoreFrontend(FrontendTest):
                  status=403)
         self.assertTitle('403: Forbidden')
 
-    @as_users("berta", "garcia")
+    @as_users("berta", "werner")
     def test_selectpersona_ml_assembly(self, user):
         # Only assembly participants are shown
         self.get('/core/persona/select'
@@ -781,7 +777,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Neubauer", div='query-result')
         self.assertPresence("Olafson", div='query-result')
         self.assertPresence("Vera", div='query-result')
-        self.assertPresence("Werner", div='query-result')
+        self.assertPresence("Viktor", div='query-result')
 
     def test_privilege_change(self):
         # Grant new admin privileges.
@@ -1087,6 +1083,33 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Allgemeine Nutzerverwaltung")
         self.assertPresence("Ergebnis [13]", div='query-results')
         self.assertPresence("Jalapeño", div='query-result')
+
+    @as_users("vera")
+    def test_create_user(self, user):
+
+        def _traverse_to_realm(realm: str = None):
+            self.traverse({'description': 'Index'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Nutzer anlegen'})
+            self.assertTitle("Nutzer anlegen")
+            f = self.response.forms['selectrealmform']
+            if realm:
+                f['realm'] = realm
+            return f
+
+        self.submit(_traverse_to_realm('cde'))
+        self.assertTitle("Neues Mitglied anlegen")
+        self.submit(_traverse_to_realm('event'))
+        self.assertTitle("Neuen Veranstaltungsnutzer anlegen")
+        self.submit(_traverse_to_realm('assembly'))
+        self.assertTitle("Neuen Versammlungsnutzer anlegen")
+        self.submit(_traverse_to_realm('ml'))
+        self.assertTitle("Neuen Mailinglistennutzer anlegen ")
+        # There is no kind "Core user"
+        f = _traverse_to_realm()
+        f['realm'].force_value('core')
+        self.submit(f, check_notification=False)
+        self.assertValidationError('realm', "Kein gültiger Bereich.")
 
     @as_users("vera")
     def test_archived_user_search(self,  user):

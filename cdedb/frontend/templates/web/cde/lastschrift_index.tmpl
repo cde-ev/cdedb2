@@ -25,6 +25,11 @@
         });
     </script>
 
+    <div class="p">
+        {{ util.href(cdedblink('cde/lastschrift_create'), gettext("New Direct Debit Authorization"),
+                     readonly=is_locked, icon='plus', aclass='btn btn-success btn-sm') }}
+    </div>
+
     <h2>{% trans %}Open Direct Debit Authorizations{% endtrans %}</h2>
 
     <p>

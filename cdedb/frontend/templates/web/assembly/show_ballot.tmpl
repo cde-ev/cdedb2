@@ -29,7 +29,8 @@
 {% endblock %}
 
 {% block content %}
-    {% set edit_mode = "assembly_contents" in user.admin_views and now() < ambience['ballot']['vote_begin'] %}
+    {% set edit_mode = now() < ambience['ballot']['vote_begin'] and ("assembly_presider" in user.admin_views
+                                                                     or ambience['assembly']['id'] in user.presider) %}
     {% set classical = ambience['ballot']['votes'] %}
     {% set preferential = not ambience['ballot']['votes'] %}
 

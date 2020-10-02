@@ -24,8 +24,8 @@ import copy
 import decimal
 
 from typing import (
-    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set,
-    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection,
+    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set, Union,
+    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection, Iterable,
 )
 
 import pytz
@@ -44,7 +44,7 @@ from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, PrivilegeError, RequestState, n_,
     roles_to_db_role, unwrap, PathLike, CdEDBObject, CdEDBObjectMap, now,
 )
-from cdedb.config import BasicConfig, SecretsConfig
+from cdedb.config import BasicConfig, SecretsConfig, Config
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -52,6 +52,16 @@ from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()
+
+
+def check_test_setup() -> None:
+    """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
+    if pathlib.Path("/OFFLINEVM").exists():
+        raise RuntimeError("Cannot run tests in an Offline-VM.")
+    if pathlib.Path("/PRODUCTIONVM").exists():
+        raise RuntimeError("Cannot run tests in Production-VM.")
+    if not os.environ.get('CDEDB_TEST'):
+        raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
 
 
 class NearlyNow(datetime.datetime):
@@ -132,6 +142,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/test/ancillary_files/"
         for e in table_data:
             _id = e.get('id', _id)
             assert _id not in data
+            e['id'] = _id
             data[_id] = e
             _id += 1
         ret[table] = data
@@ -197,6 +208,9 @@ def make_backend_shim(backend: B, internal=False) -> B:
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(  # type: ignore
                 rs, rs.user.persona_id)
+        if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
+            rs.user.presider = backend.presider_info(  # type: ignore
+                rs, rs.user.persona_id)
         return rs
 
     class Proxy:
@@ -219,6 +233,9 @@ def make_backend_shim(backend: B, internal=False) -> B:
                 return attr(rs, *args, **kwargs)
 
             return wrapper
+
+        def __setattr__(self, key, value):
+            return setattr(backend, key, value)
 
     return cast(B, Proxy())
 
@@ -297,6 +314,7 @@ class CdEDBTest(unittest.TestCase):
     def setUpClass(cls):
         # Keep a clean copy of sample data that should not be messed with.
         cls._clean_sample_data = read_sample_data()
+        cls.conf = Config()
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),
@@ -305,8 +323,25 @@ class CdEDBTest(unittest.TestCase):
         # Provide a fresh copy of clean sample data.
         self.sample_data = copy.deepcopy(self._clean_sample_data)
 
-    def get_sample_data(self, table: str, ids: Collection[int],
-                        keys: Collection[str]) -> CdEDBObjectMap:
+    def get_sample_data(self, table: str, ids: Iterable[int],
+                        keys: Iterable[str]) -> CdEDBObjectMap:
+        """This mocks a select request against the sample data.
+
+        "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
+
+        For some fields of some tables we perform a type conversion. These
+        should be added as necessary to ease comparison against backend results.
+
+        :returns: The result of the above "query" mapping id to entry.
+        """
+        def parse_datetime(s: str) -> datetime.datetime:
+            # Magic placeholder that is replaced with the current time.
+            if s == "---now---":
+                return nearly_now()
+            return datetime.datetime.fromisoformat(s)
+
+        # Turn Iterator into Collection and ensure consistent order.
+        keys = tuple(keys)
         ret = {}
         for anid in ids:
             if keys:
@@ -318,6 +353,9 @@ class CdEDBTest(unittest.TestCase):
                             r[k] = decimal.Decimal(r[k])
                         if k == 'birthday':
                             r[k] = datetime.date.fromisoformat(r[k])
+                    elif table == 'core.changelog':
+                        if k == 'ctime':
+                            r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
                 ret[anid] = copy.deepcopy(self.sample_data[table][anid])
@@ -328,6 +366,8 @@ class BackendTest(CdEDBTest):
     """
     Base class for a TestCase that uses some backends. Needs to be subclassed.
     """
+    maxDiff = None
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -338,6 +378,8 @@ class BackendTest(CdEDBTest):
         cls.pastevent = cls.initialize_backend(PastEventBackend)
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
+        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(
+            rs.sessionkey, persona_id)
 
     def setUp(self):
         """Reset login state."""
@@ -347,7 +389,6 @@ class BackendTest(CdEDBTest):
     def login(self, user, ip="127.0.0.0"):
         if isinstance(user, str):
             user = USER_DICT[user]
-        # noinspection PyTypeChecker
         self.key = self.core.login(None, user['username'], user['password'], ip)
         return self.key
 
@@ -563,6 +604,15 @@ USER_DICT = {
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
     },
+    "viktor": {
+        'id': 48,
+        'DB-ID': "DB-48-5",
+        'username': "viktor@example.cde",
+        'password': "secret",
+        'display_name': "Viktor",
+        'given_names': "Viktor",
+        'family_name': "Versammlungsadmin",
+    },
     "akira": {
         'id': 100,
         'DB-ID': "DB-100-7",
@@ -596,6 +646,17 @@ def as_users(*users: str) -> Callable[[F], F]:
                     fun(self, *args, **kwargs)
         return cast(F, new_fun)
     return wrapper
+
+
+def admin_views(*views: str) -> Callable[[F], F]:
+    """Decorate a test to set different initial admin views."""
+    def decorator(fun: F) -> F:
+        @functools.wraps(fun)
+        def new_fun(self, *args, **kwargs):
+            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(views))
+            return fun(self, *args, **kwargs)
+        return cast(F, new_fun)
+    return decorator
 
 
 def prepsql(sql: AnyStr) -> Callable[[F], F]:
@@ -637,16 +698,17 @@ class FrontendTest(CdEDBTest):
     lang = "de"
     app: webtest.TestApp
     response: webtest.TestResponse
+    app_extra_environ = {
+        'REMOTE_ADDR': "127.0.0.0",
+        'SERVER_PROTOCOL': "HTTP/1.1",
+        'wsgi.url_scheme': 'https'}
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         app = Application()
         cls.gettext = app.translations[cls.lang].gettext
-        cls.app = webtest.TestApp(app, extra_environ={
-            'REMOTE_ADDR': "127.0.0.0",
-            'SERVER_PROTOCOL': "HTTP/1.1",
-            'wsgi.url_scheme': 'https'})
+        cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
         cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
@@ -670,7 +732,7 @@ class FrontendTest(CdEDBTest):
         self.app.reset()
         # Make sure all available admin views are enabled.
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
-        self.response: None  # type: ignore
+        self.response = None  # type: ignore
 
     def basic_validate(self, verbose=False):
         if self.response.content_type == "text/html":
@@ -704,7 +766,7 @@ class FrontendTest(CdEDBTest):
     def get(self, url: str, *args, verbose=False, **kwargs) -> None:
         """Navigate directly to a given URL using GET."""
         self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
-        # TODO: Is there a reason to not follow() here?
+        self.follow()
         self.basic_validate(verbose=verbose)
 
     def follow(self, **kwargs) -> None:
@@ -750,9 +812,12 @@ class FrontendTest(CdEDBTest):
                 raise AssertionError(
                     "Post request did not produce success notification.")
 
-    def traverse(self, *links: MutableMapping[str, Any], verbose: bool = False
-                 ) -> None:
+    def traverse(self, *links: Union[MutableMapping[str, Any], str],
+                 verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
+
+        A link can also be just a string, in which case that string is assumed
+        to be the `description` of the link.
 
         A link should usually contain some of the following descriptors:
 
@@ -768,6 +833,8 @@ class FrontendTest(CdEDBTest):
         :param verbose: If True, display additional debug information.
         """
         for link in links:
+            if isinstance(link, str):
+                link = {'description': link}
             if 'index' not in link:
                 link['index'] = 0
             try:
@@ -783,6 +850,8 @@ class FrontendTest(CdEDBTest):
 
         :param verbose: If True display additional debug information.
         """
+        if isinstance(user, str):
+            user = USER_DICT[user]
         self.get("/", verbose=verbose)
         f = self.response.forms['loginform']
         f['username'] = user['username']
@@ -831,7 +900,7 @@ class FrontendTest(CdEDBTest):
         self.traverse({'href': '/{}/$'.format(realm)},
                       {'href': '/{}/search/user'.format(realm)},
                       verbose=verbose)
-        id_field = 'personas.id' if realm in {'event', 'cde'} else 'id'
+        id_field = 'personas.id'
         f = self.response.forms['queryform']
         f['qsel_' + id_field].checked = True
         f['qop_' + id_field] = QueryOperators.equal.value
@@ -949,26 +1018,42 @@ class FrontendTest(CdEDBTest):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
 
-    def assertValidationError(self, fieldname: str, message: str = "") -> None:
+    def assertValidationError(self, fieldname: str, message: str = "",
+                              index: int = None) -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
         and a specific error message to be shown near the field.
 
         :param fieldname: The field's 'name' attribute
+        :param index: If more than one field with the given name exists,
+            specify which one should be checked.
         :param message: The expected error message
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
-        node = self.response.lxml.xpath(
+        nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
-        if len(node) != 1:
-            raise AssertionError("Input with name \"{}\" not found"
-                                 .format(fieldname))
+        f = fieldname
+        if index is None:
+            if len(nodes) == 1:
+                node = nodes[0]
+            elif len(nodes) == 0:
+                raise AssertionError(f"No input with name {f!r} found.")
+            else:
+                raise AssertionError(f"More than one input with name {f!r}"
+                                     f" found. Need to specify index.")
+        else:
+            try:
+                node = nodes[index]
+            except IndexError:
+                raise AssertionError(f"Input with name {f!r} and index {index}"
+                                     f" not found. {len(nodes)} inputs with"
+                                     f" name {f!r} found.") from None
+
         # From https://devhints.io/xpath#class-check
-        container = node[0].xpath(
+        container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
             "' has-error ')]")
-        f = fieldname
         if not container:
             raise AssertionError(
                 f"Input with name {f!r} is not contained in an .has-error box")
@@ -1028,6 +1113,10 @@ class FrontendTest(CdEDBTest):
         total = len(logs)
         self._log_subroutine(title, logs, start=1,
                              end=total if total < 50 else 50)
+        # check if the log page numbers are proper (no 0th page, no last+1 page)
+        self.assertNonPresence("", div="pagination-0", check_div=False)
+        self.assertNonPresence("", check_div=False,
+                               div=f"pagination-{str(total // 50 + 2)}")
 
         # check a combination of offset and length with 0th page
         length = total // 3
@@ -1171,6 +1260,62 @@ class FrontendTest(CdEDBTest):
         else:
             if fail:
                 self.fail(f"Form {form} not found after {count} reloads.")
+
+
+class MultiAppFrontendTest(FrontendTest):
+    """Subclass for testing multiple frontend instances simultaniously."""
+    n: int = 2  # The number of instances that should be created.
+    current_app: int  # Which instance is currently active 0 <= x < n
+    apps: List[webtest.TestApp]
+    responses: List[webtest.TestResponse]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Create n new apps, overwrite cls.app with a reference."""
+        super().setUpClass()
+        cls.apps = [webtest.TestApp(Application(),
+                                    extra_environ=cls.app_extra_environ)
+                    for _ in range(cls.n)]
+        # The super().setUpClass overwrites the property, so reset it here.
+        cls.app = property(fget=cls.get_app, fset=cls.set_app)
+        cls.responses = [None for _ in range(cls.n)]
+        cls.current_app = 0
+
+    def setUp(self) -> None:
+        """Reset all apps and responses and the current app index."""
+        self.responses = [None for _ in range(self.n)]  # type: ignore
+        super().setUp()
+        for app in self.apps:
+            app.reset()
+            app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+        self.current_app = 0
+
+    def get_response(self) -> webtest.TestResponse:
+        return self.responses[self.current_app]
+
+    def set_response(self, value: webtest.TestResponse) -> None:
+        self.responses[self.current_app] = value
+
+    response = property(fget=get_response, fset=set_response)
+
+    def get_app(self) -> webtest.TestApp:
+        return self.apps[self.current_app]
+
+    def set_app(self, value: webtest.TestApp) -> None:
+        self.apps[self.current_app] = value
+
+    app = property(fget=get_app, fset=set_app)
+
+    def switch_app(self, i: int) -> None:
+        """Switch to a different index.
+
+        Sets the app and response with the specified index as active.
+        All methods of the super class only interact with the active app and
+        response.
+        """
+        if not 0 <= i < self.n:
+            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")
+        self.current_app = i
 
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])

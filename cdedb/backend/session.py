@@ -70,8 +70,8 @@ class SessionBackend:
         data = None
         if (validate.is_printable_ascii(sessionkey)
                 and validate.is_printable_ascii(ip) and sessionkey):
-            query = glue("SELECT persona_id, ip, is_active, atime, ctime",
-                         "FROM core.sessions WHERE sessionkey = %s")
+            query = ("SELECT persona_id, ip, is_active, atime, ctime"
+                     " FROM core.sessions WHERE sessionkey = %s")
             with self.connpool["cdb_anonymous"] as conn:
                 with conn.cursor() as cur:
                     cur.execute(query, (sessionkey,))
@@ -94,22 +94,19 @@ class SessionBackend:
                             persona_id = data["persona_id"]
                         else:
                             deactivate = True
-                            self.logger.info("TTL exceeded for {}".format(
-                                sessionkey))
+                            self.logger.info(f"TTL exceeded for {sessionkey}")
                     else:
                         deactivate = True
-                        self.logger.info("Session timed out: {}".format(
-                            sessionkey))
+                        self.logger.info(f"Session timed out: {sessionkey}")
                 else:
                     deactivate = True
-                    self.logger.info("IP mismatch ({} vs {}) for {}".format(
-                        ip, data["ip"], sessionkey))
+                    self.logger.info(
+                        f"IP mismatch ({ip} vs {data['ip']}) for {sessionkey}")
             else:
-                self.logger.info("Got inactive session key '{}'.".format(
-                    sessionkey))
+                self.logger.info(f"Got inactive session key {sessionkey}.")
             if deactivate:
-                query = glue("UPDATE core.sessions SET is_active = False",
-                             "WHERE sessionkey = %s")
+                query = ("UPDATE core.sessions SET is_active = False"
+                         " WHERE sessionkey = %s")
                 with self.connpool["cdb_anonymous"] as conn:
                     with conn.cursor() as cur:
                         cur.execute(query, (sessionkey,))
@@ -117,12 +114,10 @@ class SessionBackend:
         if not persona_id:
             return User()
 
-        query = glue("UPDATE core.sessions SET atime = now()",
-                     "WHERE sessionkey = %s")
-        query2 = glue(
-            "SELECT id AS persona_id, display_name, given_names,",
-            "family_name, username, {} FROM core.personas",
-            "WHERE id = %s").format(', '.join(PERSONA_STATUS_FIELDS))
+        query = "UPDATE core.sessions SET atime = now() WHERE sessionkey = %s"
+        query2 = (f"SELECT id AS persona_id, display_name, given_names,"
+                  f" family_name, username, {', '.join(PERSONA_STATUS_FIELDS)}"
+                  f" FROM core.personas WHERE id = %s")
         with self.connpool["cdb_persona"] as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (sessionkey,))
@@ -133,12 +128,11 @@ class SessionBackend:
             # Short circuit in case of lockdown
             return User()
         if not data["is_active"]:
-            self.logger.warning("Found inactive user {}".format(persona_id))
+            self.logger.warning(f"Found inactive user {persona_id}")
             return User()
 
-        vals = {k: data[k]
-                for k in ('persona_id', 'username', 'given_names',
-                          'display_name', 'family_name')}
+        vals = {k: data[k] for k in ('persona_id', 'username', 'given_names',
+                                     'display_name', 'family_name')}
         return User(roles=extract_roles(data), **vals)
 
     def lookuptoken(self, apitoken: Optional[str], ip: str) -> User:

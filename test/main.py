@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-import os
 import unittest
 import sys
-from test.common import MyTextTestResult
+from test.common import MyTextTestResult, check_test_setup
 
 if __name__ == "__main__":
-    if not os.environ.get('CDEDB_TEST'):
-        raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
+    check_test_setup()
     loader = unittest.TestLoader()
     unittest.installHandler()
     testRunner = unittest.runner.TextTestRunner(

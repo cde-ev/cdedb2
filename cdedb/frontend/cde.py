@@ -183,10 +183,15 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
-    @access("searchable")
+    @access("persona")
     @REQUESTdata(("is_search", "bool"))
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for members."""
+        if "searchable" not in rs.user.roles:
+            # As this is linked externally, show a meaningful error message to
+            # unprivileged users.
+            rs.ignore_validation_errors()
+            return self.render(rs, "member_search")
         defaults = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
@@ -263,7 +268,7 @@ class CdEFrontend(AbstractUserFrontend):
             'cutoff': cutoff, 'count': count,
         })
 
-    @access("cde_admin")
+    @access("core_admin", "cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: str, is_search: bool
                     ) -> Response:
@@ -303,7 +308,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
 
-    @access("cde_admin")
+    @access("core_admin", "cde_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,
@@ -313,7 +318,7 @@ class CdEFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("cde_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdatadict(
         "title", "given_names", "family_name", "birth_name", "name_supplement",
         "display_name", "specialisation", "affiliation", "timeline",
@@ -1369,7 +1374,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
     def lastschrift_change(self, rs: RequestState, lastschrift_id: int,
-                           data: CdEDBObject):
+                           data: CdEDBObject) -> Response:
         """Modify one permit."""
         data['id'] = lastschrift_id
         data = check(rs, "lastschrift", data)
@@ -1381,12 +1386,13 @@ class CdEFrontend(AbstractUserFrontend):
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     @access("finance_admin")
-    def lastschrift_create_form(self, rs: RequestState, persona_id: int
+    def lastschrift_create_form(self, rs: RequestState, persona_id: int = None
                                 ) -> Response:
         """Render form."""
         return self.render(rs, "lastschrift_create")
 
     @access("finance_admin", modi={"POST"})
+    @REQUESTdata(('persona_id', 'cdedbid'))
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
     def lastschrift_create(self, rs: RequestState, persona_id: int,
@@ -1403,7 +1409,8 @@ class CdEFrontend(AbstractUserFrontend):
                 'persona_id': persona_id})
         new_id = self.cdeproxy.create_lastschrift(rs, data)
         self.notify_return_code(rs, new_id)
-        return self.redirect(rs, "cde/lastschrift_show")
+        return self.redirect(
+            rs, "cde/lastschrift_show", {'persona_id': persona_id})
 
     @access("finance_admin", modi={"POST"})
     def lastschrift_revoke(self, rs: RequestState, lastschrift_id: int
@@ -1652,7 +1659,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
     def lastschrift_skip(self, rs: RequestState, lastschrift_id: int,
-                         persona_id: Optional[int]):
+                         persona_id: Optional[int]) -> Response:
         """Do not do a direct debit transaction for this year.
 
         If persona_id is given return to the persona-specific
@@ -2241,7 +2248,7 @@ class CdEFrontend(AbstractUserFrontend):
     def institution_summary(self, rs: RequestState) -> Response:
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
-        spec = {'title': "str", 'moniker': "str"}
+        spec = {'title': "str", 'shortname': "str"}
         institutions = process_dynamic_input(rs, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
@@ -2582,30 +2589,38 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("pcourse_id", "id_or_None"), ("persona_id", "cdedbid"),
+    @REQUESTdata(("pcourse_id", "id_or_None"),
+                 ("persona_ids", "cdedbid_csv_list"),
                  ("is_instructor", "bool"), ("is_orga", "bool"))
-    def add_participant(self, rs: RequestState, pevent_id: int,
-                        pcourse_id: Optional[int], persona_id: int,
-                        is_instructor: bool, is_orga: bool) -> Response:
+    def add_participants(self, rs: RequestState, pevent_id: int,
+                         pcourse_id: Optional[int],
+                         persona_ids: Collection[int],
+                         is_instructor: bool, is_orga: bool) -> Response:
         """Add participant to concluded event."""
         if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
                 return self.show_past_event(rs, pevent_id)
-        if pcourse_id:
-            param = {'pcourse_id': pcourse_id}
-        else:
-            param = {'pevent_id': pevent_id}
-        participants = self.pasteventproxy.list_participants(rs, **param)
-        if persona_id in participants:
-            rs.notify("warning", n_("Participant already present."))
+
+        # Check presence of valid event users for the given ids
+        if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
+            rs.append_validation_error(("persona_ids",
+                ValueError(n_("Some of these users do not exist."))))
+        if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
+            rs.append_validation_error(("persona_ids",
+                ValueError(n_("Some of these users are not event users."))))
+        if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
                 return self.show_past_event(rs, pevent_id)
-        code = self.pasteventproxy.add_participant(
-            rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
+
+        code = 1
+        # TODO: Check if participants are already present.
+        for persona_id in persona_ids:
+            code *= self.pasteventproxy.add_participant(rs, pevent_id,
+                pcourse_id, persona_id, is_instructor, is_orga)
         self.notify_return_code(rs, code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course",
@@ -2641,7 +2656,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2650,7 +2665,7 @@ class CdEFrontend(AbstractUserFrontend):
                      codes: Collection[const.CdeLogCodes],
                      offset: Optional[int], length: Optional[int],
                      persona_id: Optional[int], submitted_by: Optional[int],
-                     additional_info: Optional[str],
+                     change_note: Optional[str],
                      time_start: Optional[datetime.datetime],
                      time_stop: Optional[datetime.datetime]) -> Response:
         """View general activity."""
@@ -2664,7 +2679,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.cdeproxy.retrieve_cde_log(
             rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -2679,7 +2694,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2688,7 +2703,7 @@ class CdEFrontend(AbstractUserFrontend):
                          codes: Optional[Collection[const.FinanceLogCodes]],
                          offset: Optional[int], length: Optional[int],
                          persona_id: Optional[int], submitted_by: Optional[int],
-                         additional_info: Optional[str],
+                         change_note: Optional[str],
                          time_start: Optional[datetime.datetime],
                          time_stop: Optional[datetime.datetime]) -> Response:
         """View financial activity."""
@@ -2702,7 +2717,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.cdeproxy.retrieve_finance_log(
             rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
@@ -2718,7 +2733,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
+                 ("change_note", "str_or_None"),
                  ("offset", "int_or_None"),
                  ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
@@ -2728,7 +2743,7 @@ class CdEFrontend(AbstractUserFrontend):
                       pevent_id: Optional[int], offset: Optional[int],
                       length: Optional[int], persona_id: Optional[int],
                       submitted_by: Optional[int],
-                      additional_info: Optional[str],
+                      change_note: Optional[str],
                       time_start: Optional[datetime.datetime],
                       time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning concluded events."""
@@ -2742,7 +2757,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.pasteventproxy.retrieve_past_log(
             rs, codes, pevent_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if

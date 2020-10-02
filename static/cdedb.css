@@ -38,8 +38,8 @@ body{
     background: url(dots.png);
 }
 .logo {
-    padding-bottom: 10px;
-    width: 80%;
+    display: inline-block;
+    padding-right: 1em;
 }
 .logo img {
     max-width: 100%;
@@ -79,6 +79,9 @@ body{
 }
 .table-layout-fixed {
     table-layout: fixed;
+}
+.table-log {
+    margin-bottom: 0;
 }
 .input-slim, .input-group>.input-slim {
     width: auto;
@@ -203,6 +206,10 @@ dd>*:first-child {
     margin-top: 0;
 }
 
+/* Proper summaries */
+summary {
+    display: list-item;
+}
 
 /* List group responsive tear down */
 @media (max-width: 991px) {
@@ -479,10 +486,6 @@ a.headerlink {
     opacity: 1;
 }
 
-.jshint {
-    margin-bottom: 10px;
-    text-align: right;
-}
 .btn-lang-change {
     border: none;
     background: none;

@@ -88,7 +88,7 @@ def populate_table(cur, table, data):
 
 
 def make_institution(cur, institution_id):
-    query = """INSERT INTO past_event.institutions (id, title, moniker)
+    query = """INSERT INTO past_event.institutions (id, title, shortname)
                VALUES (%s, %s, %s)"""
     params = (institution_id, 'Veranstaltungsservice', 'CdE')
     cur.execute(query, params)
@@ -116,7 +116,7 @@ def work(args):
     with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [13, 1]:
+    if data.get("EVENT_SCHEMA_VERSION") != [14, 1]:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -216,7 +216,7 @@ def work(args):
                 datum['submitted_by'] = persona['id']
                 datum['generation'] = 1
                 datum['change_note'] = 'Create surrogate changelog.'
-                datum['change_status'] = 2  # MemberChangeStati.committed
+                datum['code'] = 2  # MemberChangeStati.committed
                 datum['persona_id'] = persona['id']
                 keys = tuple(key for key in datum)
                 query = ("INSERT INTO core.changelog ({keys})"

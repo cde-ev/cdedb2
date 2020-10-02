@@ -117,7 +117,13 @@
                     {% trans %}Registration Status{% endtrans %}
                 {% endif %}
             </dt>
-            <dd>{{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}</dd>
+            <dd id="registration_status_part{{ part_id }}">
+                {{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}
+                {% if part['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
+                    ({% trans %}Placement{% endtrans %}{{ nbsp }}{{ waitlist_position[part_id] }})
+                {% endif %}
+            </dd>
+
         {% endfor %}
     </dl>
 

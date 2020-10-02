@@ -61,12 +61,11 @@ apt-get -y install                                                  \
     slapd ldap-utils                                                \
     postgresql-client postgresql postgresql-contrib pgbouncer       \
     texlive texlive-latex-extra texlive-lang-german texlive-luatex  \
-    cm-super                                                        \
     python3 python3-psycopg2 python3-dateutil python3-babel         \
     python3-icu python3-jinja2 python3-tz python3-sphinx            \
     python3-lxml python3-pil python3-webtest python3-werkzeug       \
     python3-ldap3 python3-passlib python3-bleach python3-magic      \
-    python3-guzzle-sphinx-theme python3-zxcvbn python3-markdown     \
+    python3-sphinx-rtd-theme python3-zxcvbn python3-markdown        \
     python3-mailmanclient python3-requests pylint3                  \
     python3-typing-extensions
 

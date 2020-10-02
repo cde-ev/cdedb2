@@ -156,7 +156,7 @@ class TestCoreBackend(BackendTest):
             'persona_id': persona_id,
             'code': const.CoreLogCodes.username_change,
             'submitted_by': user['id'],
-            'additional_info': newaddress,
+            'change_note': newaddress,
         }
         _, log_entry = self.core.retrieve_log(self.key)
         self.assertIn(expected_log, log_entry)
@@ -195,7 +195,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(new_pass, effective)
         with self.assertRaises(PrivilegeError):
             self.core.make_reset_cookie(self.key, "anton@example.cde")
-        ret, _ = self.core.make_reset_cookie(self.key, "nonexistant@example.cde")
+        ret, _ = self.core.make_reset_cookie(self.key, "nonexistent@example.cde")
         self.assertFalse(ret)
 
     @as_users("vera")
@@ -230,7 +230,7 @@ class TestCoreBackend(BackendTest):
                 'birthday': None,
                 'bub_search': None,
                 'change_note': 'Account erstellt.',
-                'change_status': 2,
+                'code': 2,
                 'country': None,
                 'country2': None,
                 'ctime': nearly_now(),
@@ -372,7 +372,7 @@ class TestCoreBackend(BackendTest):
         })
         self.assertEqual(data, new_data)
 
-    @as_users("vera", "werner")
+    @as_users("vera", "viktor")
     def test_create_assembly_user(self, user):
         data = copy.deepcopy(PERSONA_TEMPLATE)
         data['is_ml_realm'] = True
@@ -459,7 +459,7 @@ class TestCoreBackend(BackendTest):
             'code': const.CoreLogCodes.realm_change,
             'persona_id': persona_id,
             'submitted_by': user['id'],
-            'additional_info': 'Bereiche geändert.'
+            'change_note': 'Bereiche geändert.'
         }
         _, expected_log = self.core.retrieve_log(self.key)
         self.assertIn(log_entry, expected_log)
@@ -555,7 +555,7 @@ class TestCoreBackend(BackendTest):
         genesis_deleted = const.CoreLogCodes.genesis_deleted
         log_entry_expectation = {
             'id': 1004,
-            'additional_info': case_data['username'],
+            'change_note': case_data['username'],
             'code': genesis_deleted,
             'ctime': nearly_now(),
             'persona_id': None,
@@ -841,9 +841,19 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_verify_personas(self, user):
-        self.assertEqual(
-            {1, 2, 3, 4, 5, 6, 7, 9, 12},
-            set(self.core.verify_personas(self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), ("event",))))
+        self.assertFalse(self.core.verify_personas(
+            self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), {"event"}))
+        self.assertFalse(self.core.verify_persona(self.key, 1000))
+        self.assertFalse(self.core.verify_persona(self.key, 5, {"cde"}))
+        self.assertTrue(self.core.verify_persona(self.key, 5, {"event"}))
+        self.assertTrue(self.core.verify_persona(self.key, 2, {"cde"}))
+        self.assertTrue(self.core.verify_persona(self.key, 1, {"meta_admin"}))
+        self.assertTrue(self.core.verify_personas(
+            self.key, (1, 2, 3, 7, 9), {"cde", "member"}))
+        self.assertFalse(self.core.verify_personas(
+            self.key, (1, 2, 3, 7, 9), {"searchable"}))
+        self.assertTrue(self.core.verify_personas(
+            self.key, (1, 2, 9), {"searchable"}))
 
     @as_users("vera")
     def test_user_getters(self, user):
@@ -1037,7 +1047,7 @@ class TestCoreBackend(BackendTest):
             # Finalizing the privilege process.
             {
                 'id': 1001,
-                'additional_info': "Änderung der Admin-Privilegien angestoßen.",
+                'change_note': "Änderung der Admin-Privilegien angestoßen.",
                 'code': const.CoreLogCodes.privilege_change_pending.value,
                 'ctime': nearly_now(),
                 'persona_id': new_admin["id"],
@@ -1046,7 +1056,7 @@ class TestCoreBackend(BackendTest):
             # Starting the privilege change process.
             {
                 'id': 1002,
-                'additional_info': "Änderung der Admin-Privilegien bestätigt.",
+                'change_note': "Änderung der Admin-Privilegien bestätigt.",
                 'code': const.CoreLogCodes.privilege_change_approved.value,
                 'ctime': nearly_now(),
                 'persona_id': new_admin["id"],
@@ -1055,7 +1065,7 @@ class TestCoreBackend(BackendTest):
             # Password invalidation.
             {
                 'id': 1003,
-                'additional_info': None,
+                'change_note': None,
                 'code': const.CoreLogCodes.password_invalidated,
                 'ctime': nearly_now(),
                 'persona_id': new_admin['id'],
@@ -1065,12 +1075,13 @@ class TestCoreBackend(BackendTest):
         result = self.core.retrieve_log(self.key)
         self.assertEqual(core_log_expectation, result)
 
-        total = 31
-        changelog_expectation = (total, (
+        sample_entries = len(self.sample_data["core.changelog"])
+        changelog_expectation = (sample_entries + 1, (
             # Committing the changed admin bits.
             {
+                'id': 1001,
                 'change_note': data["notes"],
-                'change_status': const.MemberChangeStati.committed.value,
+                'code': const.MemberChangeStati.committed.value,
                 'ctime': nearly_now(),
                 'generation': 2,
                 'persona_id': new_admin["id"],
@@ -1079,7 +1090,8 @@ class TestCoreBackend(BackendTest):
             },
         ))
         # Set offset to avoid selecting the Init. changelog entries
-        result = self.core.retrieve_changelog_meta(self.key, offset=total-1)
+        result = self.core.retrieve_changelog_meta(
+            self.key, offset=sample_entries)
         self.assertEqual(changelog_expectation, result)
 
     @as_users("anton", "martin")
@@ -1150,25 +1162,25 @@ class TestCoreBackend(BackendTest):
 
         expectation = (4, (
             {'id': 1001,
-             'additional_info': None,
+             'change_note': None,
              'code': const.CoreLogCodes.persona_creation,
              'ctime': nearly_now(),
              'persona_id': 1001,
              'submitted_by': user['id']},
             {'id': 1002,
-             'additional_info': 'zeldax@example.cde',
+             'change_note': 'zeldax@example.cde',
              'code': const.CoreLogCodes.genesis_request,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': None},
             {'id': 1003,
-             'additional_info': 'zeldax@example.cde',
+             'change_note': 'zeldax@example.cde',
              'code': const.CoreLogCodes.genesis_approved,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': user['id']},
             {'id': 1004,
-             'additional_info': None,
+             'change_note': None,
              'code': const.CoreLogCodes.password_change,
              'ctime': nearly_now(),
              'persona_id': 22,
@@ -1179,218 +1191,9 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_changelog_meta(self, user):
-        expectation = (30, (
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 1,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 2,
-             'reviewed_by': None,
-             'submitted_by': 2},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 3,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 4,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 5,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 6,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 7,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 8,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 9,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 10,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 11,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 12,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 13,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 14,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 15,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Deaktiviert, weil er seine Admin-Privilegien missbraucht.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 15,
-             'reviewed_by': None,
-             'submitted_by': 6},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 22,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 23,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 27,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 32,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': const.MemberChangeStati.committed,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 100,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 16,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 17,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Init.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 1,
-             'persona_id': 100,
-             'persona_id': 18,
-             'reviewed_by': None,
-             'submitted_by': 1},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 22,
-             'reviewed_by': None,
-             'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 23,
-            'reviewed_by': None,
-            'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 27,
-             'reviewed_by': None,
-             'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft und Suchbarkeit entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 32,
-             'reviewed_by': None,
-             'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 13,
-             'reviewed_by': None,
-             'submitted_by': 100},
-            {'change_note': 'Zu Testzwecken Mitgliedschaft entzogen.',
-             'change_status': 2,
-             'ctime': nearly_now(),
-             'generation': 2,
-             'persona_id': 17,
-             'reviewed_by': None,
-             'submitted_by': 100}))
-
-        self.assertEqual(expectation,
+        expectation = self.get_sample_data(
+            "core.changelog", range(1, 32),
+            ("id", "submitted_by", "reviewed_by", "ctime", "generation",
+             "change_note", "code", "persona_id"))
+        self.assertEqual((len(expectation), tuple(expectation.values())),
                          self.core.retrieve_changelog_meta(self.key))

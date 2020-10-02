@@ -89,9 +89,9 @@ direkt HTML zu verwenden. Folgende `Extensions <https://www.markdownguide.org/ba
 - ``toc``
 
 Folgende HTML-Tags sind erlaubt: ``a``, ``abbr``, ``acronym``, ``b``, ``blockquote``, ``br``, ``code``, ``colgroup``,
-``col``, ``div``, ``dl``, ``dt``, ``dd``, ``em``, ``i``, ``li``, ``h1``, ``h2``, ``h3``, ``h4``, ``h5``, ``h6``, ``hr``,
-``ol``, ``p``, ``pre``, ``span``, ``strong``, ``sup``, ``sub``, ``ul``, ``table``, ``tbody``, ``td``, ``tr``, ``th``,
-``thead``, ``tt``, ``u``
+``col``, ``details``, ``div``, ``dl``, ``dt``, ``dd``, ``em``, ``i``, ``li``, ``h1``, ``h2``, ``h3``, ``h4``, ``h5``, ``h6``,
+``hr``, ``ol``, ``p``, ``pre``, ``span``, ``strong``, ``sub``, ``summary``. ``sup`, ``ul``,
+``table``, ``tbody``, ``td``, ``tr``, ``th``, ``thead``, ``tt``, ``u``
 
 Folgende Attribute dürfen verwendet werden::
 
@@ -100,6 +100,7 @@ Folgende Attribute dürfen verwendet werden::
     'abbr': ['title'],
     'acronym': ['title'],
     'col': ['width'],
+    'details': ['open'],
     'thead': ['valign'],
     'tbody': ['valign'],
     'table': ['border'],

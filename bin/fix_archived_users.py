@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # setup
 
-import sys
-
-sys.path.insert(0, "/cdedb2/")
 from cdedb.script import make_backend, setup, Script
 import cdedb.database.constants as const
 from cdedb.common import PERSONA_CORE_FIELDS

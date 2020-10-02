@@ -23,6 +23,7 @@ help:
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
 MYPYBIN ?= mypy
+TESTPREPARATION ?= automatic
 
 doc:
 	bin/create_email_template_list.sh .
@@ -33,7 +34,7 @@ reload:
 	sudo systemctl restart apache2
 
 i18n-refresh:
-	pybabel extract -F ./babel.cfg  -o ./i18n/cdedb.pot\
+	pybabel extract -F ./babel.cfg  --sort-by-file -o ./i18n/cdedb.pot\
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
 	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb
 	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb
@@ -201,10 +202,14 @@ lint:
 
 
 prepare-check:
+ifneq ($(TESTPREPARATION), manual)
 	$(MAKE) i18n-compile
 	$(MAKE) sample-data-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
 		|| true
+else
+	@echo "Omitting test preparation."
+endif
 
 check: export CDEDB_TEST=True
 check:
@@ -283,5 +288,14 @@ mypy-backend:
 mypy-frontend:
 	${MYPYBIN} cdedb/frontend/
 
+mypy-test:
+	${MYPYBIN} test/__init__.py test/common.py \
+		test/create_sample_data_json.py test/create_sample_data_sql.py \
+		test/main.py test/singular.py
+
 mypy:
-	${MYPYBIN} cdedb/
+	# Do not provide cdedb/validation.py on purpose.
+	${MYPYBIN} cdedb/backend/ cdedb/frontend cdedb/__init__.py \
+		cdedb/common.py cdedb/enums.py cdedb/i18n_additional.py \
+		cdedb/ml_subscription_aux.py cdedb/ml_type_aux.py cdedb/query.py \
+		cdedb/script.py cdedb/validationdata.py
