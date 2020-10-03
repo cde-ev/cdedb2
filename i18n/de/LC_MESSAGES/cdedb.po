@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
 "POT-Creation-Date: 2020-09-23 13:36+0200\n"
-"PO-Revision-Date: 2020-09-16 15:18+0200\n"
+"PO-Revision-Date: 2020-10-03 11:59+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -29,11 +29,11 @@ msgstr "Konnte keine Eintrag finden."
 
 #: cdedb/backend/assembly.py:259
 msgid "Must be admin to access global log."
-msgstr ""
+msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 
 #: cdedb/backend/assembly.py:263
 msgid "Must have privileged access to view assembly log."
-msgstr ""
+msgstr "Keine Zugriffsrechte auf Veranstaltungs-Log."
 
 #: cdedb/backend/assembly.py:294 cdedb/backend/cde.py:859
 #: cdedb/backend/core.py:2606 cdedb/backend/event.py:909
@@ -211,7 +211,7 @@ msgstr "Irgendetwas ist schiefgegangen."
 
 #: cdedb/backend/assembly.py:514
 msgid "Must have privileged access to change assembly."
-msgstr ""
+msgstr "Keine Zugriffsrechte zum Ändern der Versammlung."
 
 #: cdedb/backend/assembly.py:520 cdedb/backend/assembly.py:867
 #: cdedb/frontend/assembly.py:304 cdedb/frontend/assembly.py:586
@@ -224,7 +224,7 @@ msgstr "Die Versammlung ist bereits beendet."
 
 #: cdedb/backend/assembly.py:541
 msgid "Cannot alter assembly presiders after assembly has been concluded."
-msgstr ""
+msgstr "Die Wahlleitung kann nicht modifiziert werden, nachdem die Versammlung beendet wurde."
 
 #: cdedb/backend/assembly.py:544 cdedb/backend/ml.py:477
 #: cdedb/frontend/assembly.py:270 cdedb/frontend/event.py:1198
@@ -307,7 +307,7 @@ msgstr "Kaskadierung für %(blocker)s nicht möglich."
 
 #: cdedb/backend/assembly.py:802
 msgid "Must have privileged access to change ballot."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte zur Änderung der Abstimmung."
 
 #: cdedb/backend/assembly.py:805 cdedb/frontend/assembly.py:1201
 #: cdedb/frontend/assembly.py:1214 cdedb/backend/assembly.py:664
@@ -323,19 +323,19 @@ msgstr "Nicht-existente Option angegeben."
 
 #: cdedb/backend/assembly.py:862
 msgid "Must have privileged access to create ballot."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte zum Anlegen neuer Abstimmungen."
 
 #: cdedb/backend/assembly.py:922 cdedb/backend/assembly.py:980
 msgid "Must have privileged access to delete ballot."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte zum Löschen von Abstimmungen."
 
 #: cdedb/backend/assembly.py:985
 msgid "Cannot delete ballot that has started voting."
-msgstr ""
+msgstr "Die Abstimmung kann nach Beginn des Abstimmungszeitraums nicht mehr gelöscht werden."
 
 #: cdedb/backend/assembly.py:988
 msgid "Cannot delete ballot that has votes."
-msgstr ""
+msgstr "Die Abstimmung kann nicht gelöscht werden, da ihr Stimmen zugeordnet sind."
 
 #: cdedb/backend/assembly.py:1037 cdedb/backend/assembly.py:881
 #: cdedb/backend/assembly.py:883
@@ -352,7 +352,7 @@ msgstr "Der Anmeldezeitraum ist vorbei."
 
 #: cdedb/backend/assembly.py:1104
 msgid "Must have privileged access to add an external assembly participant."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte für das Hinzufügen externer Versammlungsnutzer."
 
 #: cdedb/backend/assembly.py:1109 cdedb/backend/assembly.py:949
 #: cdedb/backend/assembly.py:951
@@ -429,7 +429,7 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:1549
 msgid "Must have privileged access to add attachment."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte zum Anlegen eines Dateianhangs."
 
 #: cdedb/backend/assembly.py:1551 cdedb/backend/assembly.py:1603
 #: cdedb/backend/assembly.py:1762 cdedb/backend/assembly.py:1800
@@ -459,11 +459,11 @@ msgstr "Eine Datei kann nicht zu einer anderen Versammlung verschoben werden."
 
 #: cdedb/backend/assembly.py:1613
 msgid "Must have privileged access to change attachment link."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte zur Veränderung der Dateizuordnung."
 
 #: cdedb/backend/assembly.py:1651 cdedb/backend/assembly.py:1693
 msgid "Must have privileged access to delete attachment."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte zum Löschen eines Dateianhangs."
 
 #: cdedb/backend/assembly.py:1678 cdedb/backend/assembly.py:1505
 #: cdedb/backend/assembly.py:1509
@@ -476,15 +476,15 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:1777
 msgid "Must have privileged access to add attachment version."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte zum Hinzufügen einer neuen Dateiversion."
 
 #: cdedb/backend/assembly.py:1797
 msgid "Must have privileged access to change attachment version."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte zum Verändern einer Dateiversion."
 
 #: cdedb/backend/assembly.py:1822
 msgid "Must have privileged access to remove attachment version."
-msgstr ""
+msgstr "Fehlende Zugriffsrechte zum Löschen einer Dateiversion."
 
 #: cdedb/backend/assembly.py:1830 cdedb/frontend/assembly.py:922
 #: cdedb/frontend/assembly.py:935 cdedb/backend/assembly.py:1643
@@ -987,11 +987,11 @@ msgstr "Nur Orgas und Admins können das Minderjährigenformular aktualisieren."
 
 #: cdedb/backend/event.py:1545
 msgid "Some of these orgas do not exist or are archived."
-msgstr ""
+msgstr "Einige dieser Orgas existieren nicht oder sind archiviert."
 
 #: cdedb/backend/event.py:1548
 msgid "Some of these orgas are not event users."
-msgstr ""
+msgstr "Einige dieser Orgas sind keine Veranstaltungsnutzer."
 
 #: cdedb/backend/event.py:1636 cdedb/backend/event.py:1646
 #: cdedb/backend/event.py:1657 cdedb/backend/event.py:1724
@@ -1512,7 +1512,7 @@ msgstr "Der Anti-CSRF-Token is ungültig."
 
 #: cdedb/frontend/assembly.py:290
 msgid "This user is not a presider for this assembly."
-msgstr ""
+msgstr "Dieser Nutzer ist kein Wahlleiter für diese Versammlung."
 
 #: cdedb/frontend/assembly.py:351 cdedb/frontend/assembly.py:501
 #: cdedb/frontend/assembly.py:906 cdedb/frontend/assembly.py:1250
@@ -2145,7 +2145,7 @@ msgstr "Auf diese Seite können nur Administratoren zugreifen."
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
-msgstr ""
+msgstr "Diese Seite ist nur für die Wahlleitung und Administratoren zugänglich."
 
 #: cdedb/frontend/core.py:52 cdedb/frontend/core.py:59
 #: cdedb/frontend/core.py:51
@@ -4773,7 +4773,7 @@ msgstr "Versammlung anlegen"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:49
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:61
 msgid "Presiders"
-msgstr ""
+msgstr "Wahlleitung"
 
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:31
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:88
@@ -5011,15 +5011,15 @@ msgstr "Teilnehmen"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:70
 msgid "Remove Presider"
-msgstr ""
+msgstr "Wahlleiter entfernen"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:80
 msgid "Add Presiders"
-msgstr ""
+msgstr "Wahlleiter hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:82
 msgid "IDs of the new Presiders."
-msgstr ""
+msgstr "IDs der neuen Wahlleiter"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:141
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:80
