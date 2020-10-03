@@ -1911,13 +1911,14 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8, DB-33-7"
         self.submit(f, check_notification=False)
-        self.assertValidationError('persona_ids',
-            "Some of these users do not exist.")
+        self.assertValidationError(
+            'persona_ids', "Einige dieser Nutzer existieren nicht.")
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8, DB-10-8"
         self.submit(f, check_notification=False)
-        self.assertValidationError('persona_ids',
+        self.assertValidationError(
+            'persona_ids',
             "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1"
