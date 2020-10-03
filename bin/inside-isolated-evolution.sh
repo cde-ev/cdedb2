@@ -24,7 +24,7 @@ grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt \
 echo "" > /tmp/output-evolution.txt
 for evolution in $(cat /tmp/todoevolutions.txt); do
     echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
-    sudo -u postgres psql -U postgres -d cdb_test \
+    sudo -u postgres psql -U cdb -d cdb_test \
          -f cdedb/database/evolutions/$evolution \
          2>&1 | tee -a /tmp/output-evolution.txt
 done
