@@ -113,7 +113,8 @@ class User:
                  roles: Set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
-                 moderator: Collection[int] = None) -> None:
+                 moderator: Collection[int] = None,
+                 presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
         self.roles = roles or {"anonymous"}
         self.username = username
@@ -122,6 +123,7 @@ class User:
         self.family_name = family_name
         self.orga: Set[int] = set(orga) if orga else set()
         self.moderator: Set[int] = set(moderator) if moderator else set()
+        self.presider: Set[int] = set(presider) if presider else set()
         self.admin_views: Set[AdminView] = set()
 
     @property
@@ -564,11 +566,11 @@ class EntitySorter:
 
     @staticmethod
     def lodgement(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['moniker'], lodgement['id'])
+        return (lodgement['title'], lodgement['id'])
 
     @staticmethod
     def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
-        return (lodgement_group['moniker'], lodgement_group['id'])
+        return (lodgement_group['title'], lodgement_group['id'])
 
     @staticmethod
     def event_part(event_part: CdEDBObject) -> Sortkey:
@@ -585,7 +587,7 @@ class EntitySorter:
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
-        return (candidates['moniker'], candidates['id'])
+        return (candidates['shortname'], candidates['id'])
 
     @staticmethod
     def assembly(assembly: CdEDBObject) -> Sortkey:
@@ -596,8 +598,12 @@ class EntitySorter:
         return (ballot['title'], ballot['id'])
 
     @staticmethod
-    def attachment(attachment: CdEDBObject) -> Sortkey:
-        return (attachment['title'], attachment['id'])
+    def get_attachment_sorter(histories: CdEDBObject) -> KeyFunction:
+        def attachment(attachment: CdEDBObject) -> Sortkey:
+            attachment = histories[attachment['id']][attachment['current_version']]
+            return (attachment['title'], attachment['attachment_id'])
+
+        return attachment
 
     @staticmethod
     def attachment_version(version: CdEDBObject) -> Sortkey:
@@ -613,7 +619,7 @@ class EntitySorter:
 
     @staticmethod
     def institution(institution: CdEDBObject) -> Sortkey:
-        return (institution['moniker'], institution['id'])
+        return (institution['shortname'], institution['id'])
 
     @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
@@ -798,7 +804,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     This is used by the assembly realm to tally votes -- however this is
     pretty abstract, so we move it here.
 
-    Votes have the form ``3>0>1=2>4`` where the monikers between the
+    Votes have the form ``3>0>1=2>4`` where the shortnames between the
     relation signs are exactly those passed in the ``candidates`` parameter.
 
     The Schulze method is described in the pdf found in the ``related``
@@ -897,8 +903,8 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     return condensed, detailed
 
 
-#: Magic value of moniker of the ballot candidate representing the bar.
-ASSEMBLY_BAR_MONIKER = "_bar_"
+#: Magic value of shortname of the ballot candidate representing the bar.
+ASSEMBLY_BAR_SHORTNAME = "_bar_"
 
 
 @overload
@@ -954,7 +960,7 @@ def unwrap(data):
 class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
     #: default sortkey (currently equal to EntitySorter.lodgement)
-    moniker = 1
+    title = 1
     #: regular_capacity which is used in this part
     used_regular = 10
     #: camping_mat_capacity which is used in this part
@@ -1769,7 +1775,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
-        result |= {"core_user", "core"}
+        result |= {"core", "core_user", "cde_user", "event_user",
+                   "assembly_user", "ml_user"}
     if "cde_admin" in roles:
         result |= {"cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:
@@ -1801,7 +1808,7 @@ CDEDB_EXPORT_EVENT_VERSION = 13
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (13, 2)
+EVENT_SCHEMA_VERSION = (14, 1)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1958,7 +1965,7 @@ PRIVILEGE_CHANGE_FIELDS = (
     "is_assembly_admin", "is_cdelokal_admin", "notes", "reviewer")
 
 #: Fields for institutions of events
-INSTITUTION_FIELDS = ("id", "title", "moniker")
+INSTITUTION_FIELDS = ("id", "title", "shortname")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
@@ -2016,10 +2023,10 @@ REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
                              "course_instructor")
 
 #: Fields of a lodgement group
-LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
+LODGEMENT_GROUP_FIELDS = ("id", "event_id", "title")
 
 #: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "moniker", "regular_capacity",
+LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
                     "camping_mat_capacity", "notes", "group_id", "fields")
 
 # Fields of a row in a questionnaire.
@@ -2033,6 +2040,16 @@ MAILINGLIST_FIELDS = (
     "mod_policy", "notes", "attachment_policy", "ml_type",
     "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")
+
+#: Fields of a mailinglist which may be changed by moderators
+MOD_ALLOWED_FIELDS = {
+    "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
+    "maxsize"}
+
+#: Fields of a mailinglist which need privileged moderators to be changed
+PRIVILEGED_MOD_ALLOWED_FIELDS = MOD_ALLOWED_FIELDS | {
+    'registration_stati'
+}
 
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",

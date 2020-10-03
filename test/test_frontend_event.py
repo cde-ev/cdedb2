@@ -58,16 +58,20 @@ class TestEventFrontend(FrontendTest):
     def test_sidebar(self, user):
         self.traverse({'description': 'Veranstaltungen'})
         everyone = ["Veranstaltungen", "Übersicht"]
-        admin = ["Veranstaltungen verwalten", "Nutzer verwalten", "Log"]
+        admin = ["Veranstaltungen verwalten", "Log"]
 
         # not event admins (also orgas!)
-        if user in [USER_DICT['emilia'], USER_DICT['martin'], USER_DICT['vera'],
+        if user in [USER_DICT['emilia'], USER_DICT['martin'],
                     USER_DICT['werner']]:
             ins = everyone
+            out = admin + ["Nutzer verwalten"]
+        # core admins
+        elif user == USER_DICT['vera']:
+            ins = everyone+ ["Nutzer verwalten"]
             out = admin
         # event admins
         elif user == USER_DICT['annika']:
-            ins = everyone + admin
+            ins = everyone + admin + ["Nutzer verwalten"]
             out = []
         else:
             self.fail("Please adjust users for this test.")
@@ -113,7 +117,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Nein", div='account-active')
 
-    @as_users("annika", "ferdinand")
+    @as_users("annika", "vera")
     def test_user_search(self, user):
         self.traverse({'description': 'Veranstaltunge'},
                       {'description': 'Nutzer verwalten'})
@@ -129,7 +133,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
-    @as_users("annika", "ferdinand")
+    @as_users("annika", "ferdinand", "vera")
     def test_create_user(self, user):
         self.traverse({'description': 'Veranstaltunge'},
                       {'description': 'Nutzer verwalten'},
@@ -416,15 +420,27 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Bertålotta")
         if user["id"] in {27, 6}:
             f = self.response.forms['addorgaform']
-            f['orga_id'] = "DB-10-2"
+            # Try to add an invalid cdedbid.
+            f['orga_id'] = "DB-1-1"
             self.submit(f, check_notification=False)
             self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-            f = self.response.forms['addorgaform']
+            # Try to add a non event-user.
             f['orga_id'] = "DB-10-8"
             self.submit(f, check_notification=False)
-            self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-            self.assertPresence("Benutzer ist kein Veranstaltunsnutzer.")
-            f = self.response.forms['addorgaform']
+            self.assertValidationError(
+                'orga_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.", index=-1)
+            # Try to add an archived user.
+            f['orga_id'] = "DB-8-6"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
+                index=-1)
+            # Try to add a non-existent user.
+            f['orga_id'] = "DB-1000-6"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
+                index=-1)
             f['orga_id'] = "DB-2-7"
             self.submit(f)
             self.assertTitle("Universale Akademie")
@@ -1025,15 +1041,18 @@ etc;anything else""", f['entries_2'].value)
         f['institution'] = 1
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
+        f['part_begin'] = "2345-01-01"
+        f['part_end'] = "1345-6-7"
         f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
         self.submit(f, check_notification=False)
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-        self.assertPresence("Janis Jalapeño ist kein Veranstaltungsnutzer.")
+        self.assertValidationError('orga_ids', "Einige dieser Nutzer sind "
+                                               "keine Veranstaltungsnutzer.")
+        self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f = self.response.forms['createeventform']
+        f['part_end'] = "2345-6-7"
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
@@ -1060,8 +1079,8 @@ etc;anything else""", f['entries_2'].value)
         f['title'] = "Alternative Akademie"
         f['institution'] = 1
         f['shortname'] = "AltAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
+        f['part_begin'] = "2345-01-01"
+        f['part_end'] = "2345-6-7"
         f['nonmember_surcharge'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True
@@ -1958,10 +1977,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="lodgement2.title"]')[0].text.strip(),
             "Einzelzelle")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.title"]')[0].text.strip(),
             "")
 
     @as_users("annika")
@@ -2001,7 +2020,7 @@ etc;anything else""", f['entries_2'].value)
                 f[field].checked = True
         f['qop_part3.total_inhabitants'] = QueryOperators.greater.value
         f['qval_part3.total_inhabitants'] = 1
-        f['qord_primary'] = 'lodgement_group.moniker'
+        f['qord_primary'] = 'lodgement_group.title'
         self.submit(f)
         self.assertPresence("Ergebnis [2]", div="query-results")
         self.assertPresence("Kalte Kammer", div="result-container")
@@ -2127,6 +2146,19 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/add'})
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms['addregistrationform']
+        # Try to add an archived user.
+        f['persona.persona_id'] = "DB-8-6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('persona.persona_id', "Dieser Benutzer existiert nicht oder ist archiviert.")
+        # Try to add a non-existent user.
+        f['persona.persona_id'] = "DB-10000-5"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('persona.persona_id', "Dieser Benutzer existiert nicht oder ist archiviert.")
+        # Try to add a non-event user.
+        f['persona.persona_id'] = "DB-11-6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.")
+        # Now add an actually valid user.
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
         f['reg.mixed_lodging'].checked = False
@@ -2251,7 +2283,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Kellerverlies")
         self.traverse({'href': '/event/event/1/lodgement/create'})
         f = self.response.forms['createlodgementform']
-        f['moniker'] = "Zelte"
+        f['title'] = "Zelte"
         f['regular_capacity'] = 0
         f['camping_mat_capacity'] = 20
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
@@ -2303,19 +2335,19 @@ etc;anything else""", f['entries_2'].value)
 
         # First try with invalid (empty name)
         f = self.response.forms["lodgementgroupsummaryform"]
-        self.assertEqual(f['moniker_1'].value, "Haupthaus")
+        self.assertEqual(f['title_1'].value, "Haupthaus")
         f['create_-1'] = True
-        f['moniker_1'] = "Hauptgebäude"
+        f['title_1'] = "Hauptgebäude"
         f['delete_2'] = True
         self.submit(f, check_notification=False)
         self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
-        self.assertValidationError('moniker_-1', "Darf nicht leer sein.")
+        self.assertValidationError('title_-1', "Darf nicht leer sein.")
 
         # Now, it should work
         f = self.response.forms["lodgementgroupsummaryform"]
-        f['moniker_-1'] = "Zeltplatz"
+        f['title_-1'] = "Zeltplatz"
         f['create_-2'] = True
-        f['moniker_-2'] = "Altes Schloss"
+        f['title_-2'] = "Altes Schloss"
         self.submit(f)
 
         # Check (non-)existence of groups in lodgement overview
@@ -2981,7 +3013,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Mittelgroße Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
-    @as_users("annika")
+    @as_users("annika", "garcia")
     def test_partial_import_normal(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -3043,7 +3075,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Geheime Etage")
         self.assertPresence("Geheimkabinett")
 
-    @as_users("annika")
+    @as_users("annika", "garcia")
     def test_partial_import_interleaved(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},

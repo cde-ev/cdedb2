@@ -79,7 +79,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
     "notes": gettext("Notes"),
     }) %}
 {% do lodgement_titles.update({
-    "moniker": gettext("Moniker"),
+    "title": gettext("Title"),
     "regular_capacity": gettext("Regular Capacity"),
     "camping_mat_capacity": gettext("Camping Mat Capacity"),
     "notes": gettext("Notes"),
@@ -88,7 +88,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
 {% block content %}
     <p class="text-warning">
         {{ util.make_icon('exclamation-triangle') }}
-        {% trans manual=util.href(docurl('Handbuch_partieller_Import'), gettext('manual')) %}
+        {% trans manual=util.href(docurl('Handbuch_Orga_Partieller-Import'), gettext('manual')) %}
             Carefully check the summary below, as this tool has the potential to do irreversible damage
             to your event. (You read the {{ manual }}, right?)
         {% endtrans %}
@@ -318,8 +318,8 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                 <li>
                                     <details>
                                         <summary>
-                                            {{ lodgements[lodgement_id]['moniker'] }}{# -#}
-                                            {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
+                                            {{ lodgements[lodgement_id]['title'] }}{# -#}
+                                            {% if 'title' in lodgement_diff %}/{{ lodgement_diff['title'][1] }}{% endif %}
                                         </summary>
                                         {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
                                     </details>
@@ -350,7 +350,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim">
                             {% for lodgement_id in summary['new_lodgement_ids'] %}
                                 <li>
-                                    {{ delta['lodgements'][lodgement_id]['moniker'] }}
+                                    {{ delta['lodgements'][lodgement_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -366,7 +366,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim">
                             {% for lodgement_id in summary['real_deleted_lodgement_ids'] %}
                                 <li>
-                                    {{ lodgements[lodgement_id]['moniker'] }}
+                                    {{ lodgements[lodgement_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -386,7 +386,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim" id="list-new-lodgement-groups">
                             {% for lodgement_group_id in summary['new_lodgement_group_ids'] %}
                                 <li>
-                                    {{ delta['lodgement_groups'][lodgement_group_id]['moniker'] }}
+                                    {{ delta['lodgement_groups'][lodgement_group_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -398,8 +398,8 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim" id="list-changed-lodgement-groups">
                             {% for lodgement_group_id, lodgement_group_diff in summary['changed_lodgement_groups'].items() %}
                                 <li>
-                                    {{ lodgement_groups[lodgement_group_id]['moniker'] }}{# -#}
-                                    {% if 'moniker' in lodgement_group_diff %}/{{ lodgement_group_diff['moniker'][1] }}{% endif %}
+                                    {{ lodgement_groups[lodgement_group_id]['title'] }}{# -#}
+                                    {% if 'title' in lodgement_group_diff %}/{{ lodgement_group_diff['title'][1] }}{% endif %}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -411,7 +411,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim" id="list-deleted-lodgement-groups">
                             {% for lodgement_group_id in summary['real_deleted_lodgement_group_ids'] %}
                                 <li>
-                                    {{ lodgement_groups[lodgement_group_id]['moniker'] }}
+                                    {{ lodgement_groups[lodgement_group_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>

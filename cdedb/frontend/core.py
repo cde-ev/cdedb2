@@ -44,6 +44,13 @@ from cdedb.validation import (
 import cdedb.database.constants as const
 import cdedb.validation as validate
 
+# Name of each realm
+USER_REALM_NAMES = {
+    "cde": n_("CdE user / Member"),
+    "event": n_("Event user"),
+    "assembly": n_("Assembly user"),
+    "ml": n_("Mailinglist user"),
+}
 
 # Name of each realm's option in the genesis form
 GenesisRealmOptionName = collections.namedtuple(
@@ -674,6 +681,8 @@ class CoreFrontend(AbstractFrontend):
           event as cde_admin
         - ``pure_assembly_user``: Search for an assembly only user as
           assembly_admin
+        - ``assembly_admin_user``: Search for an assembly user as
+            assembly_admin.
         - ``ml_admin_user``: Search for a mailinglist user as ml_admin
         - ``mod_ml_user``: Search for a mailinglist user as a moderator
         - ``event_admin_user``: Search an event user as event_admin (for
@@ -728,6 +737,11 @@ class CoreFrontend(AbstractFrontend):
                 ("is_assembly_realm", QueryOperators.equal, True))
             search_additions.append(
                 ("is_member", QueryOperators.equal, False))
+        elif kind == "assembly_admin_user":
+            if "assembly_admin" not in rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append(
+                ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "ml_admin_user":
             if "ml_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -932,6 +946,24 @@ class CoreFrontend(AbstractFrontend):
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
+
+    @access("core_admin")
+    def create_user_form(self, rs: RequestState) -> Response:
+        realms = USER_REALM_NAMES.copy()
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+            del realms["assembly"]
+            del realms["ml"]
+        return self.render(rs, "create_user", {'realms': realms})
+
+    @access("core_admin")
+    @REQUESTdata(("realm", "str"))
+    def create_user(self, rs: RequestState, realm: str) -> Response:
+        if realm not in USER_REALM_NAMES.keys():
+            rs.append_validation_error(("realm",
+                                        ValueError(n_("No valid realm."))))
+        if rs.has_validation_errors():
+            return self.create_user_form(rs)
+        return self.redirect(rs, realm + "/create_user")
 
     @access("core_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
@@ -1514,7 +1546,7 @@ class CoreFrontend(AbstractFrontend):
                     check(rs, 'profilepic_or_None', foto, "foto"))
         if not foto and not delete:
             rs.append_validation_error(
-                ("foto", ValueError("Mustn't be empty.")))
+                ("foto", ValueError("Must not be empty.")))
         if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
         code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
@@ -1614,7 +1646,7 @@ class CoreFrontend(AbstractFrontend):
         exists = self.coreproxy.verify_existence(rs, email)
         if not exists:
             rs.append_validation_error(
-                ("email", ValueError(n_("Nonexistant user."))))
+                ("email", ValueError(n_("Nonexistent user."))))
             rs.ignore_validation_errors()
             return self.reset_password_form(rs)
         admin_exception = False

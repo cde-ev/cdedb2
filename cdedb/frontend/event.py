@@ -133,7 +133,7 @@ class EventFrontend(AbstractUserFrontend):
             'open_events': open_events, 'orga_events': orga_events,
             'other_events': other_events})
 
-    @access("event_admin")
+    @access("core_admin", "event_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': False,
@@ -142,7 +142,7 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("event_admin", modi={"POST"})
+    @access("core_admin", "event_admin", modi={"POST"})
     @REQUESTdatadict(
         "title", "given_names", "family_name", "name_supplement",
         "display_name", "gender", "birthday", "username", "telephone",
@@ -160,7 +160,7 @@ class EventFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data, ignore_warnings=ignore_warnings)
 
-    @access("event_admin")
+    @access("core_admin", "event_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
@@ -456,7 +456,7 @@ class EventFrontend(AbstractUserFrontend):
             bytes, check(rs, 'pdffile_or_None', minor_form, "minor_form"))
         if not minor_form and not delete:
             rs.append_validation_error(
-                ("minor_form", ValueError(n_("Mustn't be empty."))))
+                ("minor_form", ValueError(n_("Must not be empty."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.change_minor_form(rs, event_id, minor_form)
@@ -474,17 +474,17 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             # Shortcircuit if we have got no workable cdedbid
             return self.show_event(rs, event_id)
-        orga = self.coreproxy.get_persona(rs, orga_id)
-        if 'event' not in extract_roles(orga, introspection_only=True):
+        if not self.coreproxy.verify_id(rs, orga_id, is_archived=False):
             rs.append_validation_error(
-                ('orga_id', ValueError(n_("User is no event user."))))
+                ('orga_id',
+                 ValueError(n_("This user does not exist or is archived."))))
+        if not self.coreproxy.verify_persona(rs, orga_id, {"event"}):
+            rs.append_validation_error(
+                ('orga_id', ValueError(n_("This user is not an event user."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        new = {
-            'id': event_id,
-            'orgas': rs.ambience['event']['orgas'] | {orga_id}
-        }
-        code = self.eventproxy.set_event(rs, new)
+        new = rs.ambience['event']['orgas'] | {orga_id}
+        code = self.eventproxy.set_event_orgas(rs, event_id, new)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
@@ -493,17 +493,14 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def remove_orga(self, rs: RequestState, event_id: int, orga_id: int
                     ) -> Response:
-        """Demote a persona.
+        """Remove a persona as orga of an event.
 
-        This can drop your own orga role (but only if you're admin).
+        This is only available for admins. This can drop your own orga role.
         """
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        new = {
-            'id': event_id,
-            'orgas': rs.ambience['event']['orgas'] - {orga_id}
-        }
-        code = self.eventproxy.set_event(rs, new)
+        new = rs.ambience['event']['orgas'] - {orga_id}
+        code = self.eventproxy.set_event_orgas(rs, event_id, new)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
@@ -634,7 +631,7 @@ class EventFrontend(AbstractUserFrontend):
         def part_constraint_maker(part_id: int) -> List[RequestConstraint]:
             begin = f"part_begin_{part_id}"
             end = f"part_end_{part_id}"
-            msg = n_("Must be later than part begin.")
+            msg = n_("Must be later than begin.")
             ret: List[RequestConstraint]
             ret = [(lambda d: d[begin] <= d[end], (end, ValueError(msg)))]
 
@@ -1148,15 +1145,15 @@ class EventFrontend(AbstractUserFrontend):
                             'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
+    @REQUESTdata(("part_begin", "date"), ("part_end", "date"),
                  ("orga_ids", "cdedbid_csv_list"), ("create_track", "bool"),
                  ("create_orga_list", "bool"),
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "iban", "nonmember_surcharge", "notes")
-    def create_event(self, rs: RequestState, event_begin: datetime.date,
-                     event_end: datetime.date, orga_ids: Collection[int],
+    def create_event(self, rs: RequestState, part_begin: datetime.date,
+                     part_end: datetime.date, orga_ids: Collection[int],
                      create_track: bool, create_orga_list: bool,
                      create_participant_list: bool, data: CdEDBObject
                      ) -> Response:
@@ -1173,8 +1170,8 @@ class EventFrontend(AbstractUserFrontend):
             -1: {
                 'title': data['title'],
                 'shortname': data['shortname'],
-                'part_begin': event_begin,
-                'part_end': event_end,
+                'part_begin': part_begin,
+                'part_end': part_end,
                 'fee': decimal.Decimal(0),
                 'waitlist_field': None,
                 'tracks': ({-1: new_track} if create_track else {}),
@@ -1194,20 +1191,19 @@ class EventFrontend(AbstractUserFrontend):
             data['orga_address'] = None
 
         data = check(rs, "event", data, creation=True)
-        if rs.has_validation_errors():
-            return self.create_event_form(rs)
-        if data['orgas']:
-            orgas = self.coreproxy.get_personas(rs, orga_ids)
-            for orga in orgas.values():
-                if 'event' not in extract_roles(orga, introspection_only=True):
-                    rs.append_validation_error(
-                        ('orga_ids', ValueError(
-                            n_("%(given_names)s %(family_name)s is not"
-                               " an event user."),
-                            {
-                                'given_names': orga['given_names'],
-                                'family_name': orga['family_name']
-                            })))
+        if orga_ids:
+            if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
+                rs.append_validation_error(
+                    ('orga_ids', ValueError(
+                        n_("Some of these users do not exist or are archived.")
+                    ))
+                )
+            if not self.coreproxy.verify_personas(rs, orga_ids, {"event"}):
+                rs.append_validation_error(
+                    ('orga_ids', ValueError(
+                        n_("Some of these users are not event users.")
+                    ))
+                )
         if rs.has_validation_errors():
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)
@@ -2853,7 +2849,7 @@ class EventFrontend(AbstractUserFrontend):
              | {e.get('persona_id')
                 for e in data.get('registrations', {}).values() if e})
             - {None})
-        personas = self.coreproxy.get_event_users(rs, persona_ids, event_id)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
 
         # Second invoke partial import
         try:
@@ -3029,7 +3025,7 @@ class EventFrontend(AbstractUserFrontend):
         course_entries = {
             c["id"]: "{}. {}".format(c["nr"], c["shortname"])
             for c in courses.values()}
-        lodgement_entries = {l["id"]: l["moniker"]
+        lodgement_entries = {l["id"]: l["title"]
                              for l in lodgements.values()}
         reg_part_stati_entries =\
             dict(enum_entries_filter(const.RegistrationPartStati, rs.gettext))
@@ -4071,11 +4067,15 @@ class EventFrontend(AbstractUserFrontend):
         """
         persona_id = unwrap(
             request_extractor(rs, (("persona.persona_id", "cdedbid"),)))
-        if (persona_id is not None
-                and not self.coreproxy.verify_personas(
-                    rs, (persona_id,), required_roles=("event",))):
-            rs.append_validation_error(
-                ("persona.persona_id", ValueError(n_("Invalid persona."))))
+        if persona_id is not None:
+            if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+                rs.append_validation_error(
+                    ("persona.persona_id", ValueError(n_(
+                        "This user does not exist or is archived."))))
+            elif not self.coreproxy.verify_persona(rs, persona_id, {"event"}):
+                rs.append_validation_error(
+                    ("persona.persona_id", ValueError(n_(
+                        "This user is not an event user."))))
         if (not rs.has_validation_errors()
                 and self.eventproxy.list_registrations(rs, event_id,
                                                        persona_id=persona_id)):
@@ -4525,8 +4525,8 @@ class EventFrontend(AbstractUserFrontend):
                 primary_sort = (
                     regular if sortkey == LodgementsSortkeys.total_regular
                     else camping_mat,)
-            elif sortkey == LodgementsSortkeys.moniker:
-                primary_sort = (lodgement["moniker"])
+            elif sortkey == LodgementsSortkeys.title:
+                primary_sort = (lodgement["title"])
             else:
                 primary_sort = ()
             secondary_sort = EntitySorter.lodgement(lodgement)
@@ -4594,7 +4594,7 @@ class EventFrontend(AbstractUserFrontend):
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = process_dynamic_input(rs, group_ids.keys(), {'moniker': "str"},
+        groups = process_dynamic_input(rs, group_ids.keys(), {'title': "str"},
                                        {'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
@@ -4657,7 +4657,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity",
+    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "group_id", "notes")
     @event_guard(check_offline=True)
     def create_lodgement(self, rs: RequestState, event_id: int,
@@ -4695,7 +4695,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity",
+    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "notes", "group_id")
     @event_guard(check_offline=True)
     def change_lodgement(self, rs: RequestState, event_id: int,
@@ -5007,7 +5007,7 @@ class EventFrontend(AbstractUserFrontend):
             spec["part{0}.is_camping_mat".format(part_id)] = "bool"
             spec["part{0}.lodgement_id".format(part_id)] = "int"
             spec["lodgement{0}.id".format(part_id)] = "id"
-            spec["lodgement{0}.moniker".format(part_id)] = "str"
+            spec["lodgement{0}.title".format(part_id)] = "str"
             spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in xsorted(event['fields'].values(),
                              key=EntitySorter.event_field):
@@ -5049,7 +5049,7 @@ class EventFrontend(AbstractUserFrontend):
                           for part_id in event['parts'])] = "int"
             spec[",".join("lodgement{0}.id".format(part_id)
                           for part_id in event['parts'])] = "id"
-            spec[",".join("lodgement{0}.moniker".format(part_id)
+            spec[",".join("lodgement{0}.title".format(part_id)
                           for part_id in event['parts'])] = "str"
             spec[",".join("lodgement{0}.notes".format(part_id)
                           for part_id in event['parts'])] = "str"
@@ -5125,7 +5125,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = OrderedDict(
             (c_id, course_identifier(c))
             for c_id, c in keydictsort_filter(courses, EntitySorter.course))
-        lodge_identifier = lambda l: l["moniker"]
+        lodge_identifier = lambda l: l["title"]
         lodgement_choices = OrderedDict(
             (l_id, lodge_identifier(l))
             for l_id, l in keydictsort_filter(lodgements,
@@ -5343,8 +5343,8 @@ class EventFrontend(AbstractUserFrontend):
                     prefix + gettext("lodgement"),
                 "lodgement{0}.id".format(part_id):
                     prefix + gettext("lodgement ID"),
-                "lodgement{0}.moniker".format(part_id):
-                    prefix + gettext("lodgement moniker"),
+                "lodgement{0}.title".format(part_id):
+                    prefix + gettext("lodgement title"),
                 "lodgement{0}.notes".format(part_id):
                     prefix + gettext("lodgement notes"),
             })
@@ -5369,9 +5369,9 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("lodgement{0}.id".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement ID"),
-                ",".join("lodgement{0}.moniker".format(part_id)
+                ",".join("lodgement{0}.title".format(part_id)
                          for part_id in event['parts']):
-                    gettext("any part: lodgement moniker"),
+                    gettext("any part: lodgement title"),
                 ",".join("lodgement{0}.notes".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement notes"),
@@ -5643,12 +5643,12 @@ class EventFrontend(AbstractUserFrontend):
 
         # Construct choices.
         lodgement_choices = OrderedDict(
-            (l_id, l['moniker'])
+            (l_id, l['title'])
             for l_id, l in keydictsort_filter(lodgements,
                                               EntitySorter.lodgement))
         lodgement_group_choices = OrderedDict({-1: gettext(n_("--no group--"))})
         lodgement_group_choices.update(
-            [(lg_id, lg['moniker']) for lg_id, lg in keydictsort_filter(
+            [(lg_id, lg['title']) for lg_id, lg in keydictsort_filter(
                 lodgement_groups, EntitySorter.lodgement_group)])
         choices: Dict[str, Dict[int, str]] = {
             "lodgement.lodgement_id": lodgement_choices,
@@ -5670,14 +5670,14 @@ class EventFrontend(AbstractUserFrontend):
         titles: Dict[str, str] = {
             "lodgement.id": gettext(n_("Lodgement ID")),
             "lodgement.lodgement_id": gettext(n_("Lodgement")),
-            "lodgement.moniker": gettext(n_("Moniker")),
+            "lodgement.title": gettext(n_("Title")),
             "lodgement.regular_capacity": gettext(n_("Regular Capacity")),
             "lodgement.camping_mat_capacity":
                 gettext(n_("Camping Mat Capacity")),
             "lodgement.notes": gettext(n_("Lodgement Notes")),
             "lodgement.group_id": gettext(n_("Lodgement Group ID")),
             "lodgement_group.tmp_id": gettext(n_("Lodgement Group")),
-            "lodgement_group.moniker": gettext(n_("Lodgement Group Moniker")),
+            "lodgement_group.title": gettext(n_("Lodgement Group Title")),
             "lodgement_group.regular_capacity":
                 gettext(n_("Lodgement Group Regular Capacity")),
             "lodgement_group.camping_mat_capacity":
@@ -5736,7 +5736,7 @@ class EventFrontend(AbstractUserFrontend):
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
 
         parts = rs.ambience['event']['parts']
-        selection_default = ["lodgement.moniker"] + [
+        selection_default = ["lodgement.title"] + [
             f"lodgement_fields.xfield_{field['field_name']}"
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement]

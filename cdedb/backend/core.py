@@ -17,7 +17,7 @@ from secrets import token_hex
 from typing import (
     Optional, Collection, Dict, Tuple, Set, List, Any, cast, overload
 )
-from typing_extensions import Literal
+from typing_extensions import Protocol
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
@@ -567,7 +567,7 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
-                raise ValueError(n_("Nonexistant user."))
+                raise ValueError(n_("Nonexistent user."))
             current = unwrap(self.retrieve_personas(
                 rs, (data['id'],), columns=PERSONA_ALL_FIELDS))
             fulltext = self.create_fulltext(current)
@@ -1231,6 +1231,7 @@ class CoreBackend(AbstractBackend):
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,
+                'paper_expuls': True,
                 # 'foto' already adjusted
                 # 'fulltext' is set automatically
             }
@@ -1857,6 +1858,12 @@ class CoreBackend(AbstractBackend):
         num = unwrap(self.query_one(rs, query, params))
         return num == len(ids)
 
+    class VerifyID(Protocol):
+        def __call__(self, rs: RequestState, anid: int,
+                     is_archived: bool = None) -> bool: ...
+    verify_id: VerifyID
+    verify_id = singularize(verify_ids, "ids", "anid", passthrough=True)
+
     @internal
     @access("anonymous")
     def get_roles_multi(self, rs: RequestState, ids: Collection[int],
@@ -1886,20 +1893,28 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def verify_personas(self, rs: RequestState, ids: Collection[int],
                         required_roles: Collection[Role] = None,
-                        introspection_only: bool = True
-                        ) -> Set[Optional[int]]:
-        """Check wether certain ids map to actual (active) personas.
+                        introspection_only: bool = True) -> bool:
+        """Check whether certain ids map to actual (active) personas.
+
+        Note that this will return True for an empty set of ids.
 
         :param required_roles: If given check that all personas have
           these roles.
-        :returns: All ids which successfully validated.
         """
         ids = affirm_set("id", ids)
         required_roles = required_roles or tuple()
         required_roles = affirm_set("str", required_roles)
         roles = self.get_roles_multi(rs, ids, introspection_only)
-        return set(key for key, value in roles.items()
-                   if value >= required_roles)
+        return len(roles) == len(ids) and all(
+            value >= required_roles for value in roles.values())
+
+    class VerifyPersona(Protocol):
+        def __call__(self, rs: RequestState, anid: int,
+                     required_roles: Collection[Role] = None,
+                     introspection_only: bool = True) -> bool: ...
+    verify_persona: VerifyPersona
+    verify_persona = singularize(
+        verify_personas, "ids", "anid", passthrough=True)
 
     @access("anonymous")
     def genesis_set_attachment(self, rs: RequestState, attachment: bytes
@@ -2193,7 +2208,7 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select_one(rs, "core.personas", ("id", "is_active"),
                                    email, entity_key="username")
         if not data:
-            return False, n_("Nonexistant user.")
+            return False, n_("Nonexistent user.")
         if not data['is_active']:
             return False, n_("Inactive user.")
         ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
@@ -2215,7 +2230,7 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select_one(rs, "core.personas", ("id",), email,
                                    entity_key="username")
         if not data:
-            return False, n_("Nonexistant user.")
+            return False, n_("Nonexistent user.")
         if self.conf["LOCKDOWN"]:
             return False, n_("Lockdown active.")
         persona_id = unwrap(data)
@@ -2568,7 +2583,7 @@ class CoreBackend(AbstractBackend):
         If no entry exists, an empty dict ist returned.
         """
         ret = self.sql_select_one(rs, "core.cron_store", ("store",),
-                                  name, entity_key="moniker")
+                                  name, entity_key="title")
         return unwrap(ret) or {}
 
     @access("core_admin")
@@ -2576,12 +2591,12 @@ class CoreBackend(AbstractBackend):
                        data: CdEDBObject) -> DefaultReturnCode:
         """Update the store of a cron job."""
         update = {
-            'moniker': name,
+            'title': name,
             'store': PsycoJson(data),
         }
         with Atomizer(rs):
             ret = self.sql_update(rs, "core.cron_store", update,
-                                  entity_key='moniker')
+                                  entity_key='title')
             if not ret:
                 ret = self.sql_insert(rs, "core.cron_store", update)
             return ret

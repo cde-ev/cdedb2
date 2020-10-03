@@ -64,7 +64,7 @@ from typing import (
 
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
-    ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
+    ASSEMBLY_BAR_SHORTNAME, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
     REALM_SPECIFIC_GENESIS_FIELDS, EVENT_SCHEMA_VERSION,
     ValidationWarning, Error)
 from cdedb.database.constants import FieldDatatypes, FieldAssociations
@@ -245,7 +245,7 @@ def _None(val, argname=None, *, _convert=True, _ignore_warnings=False):
             val = None
     if val is None:
         return val, []
-    return None, [(argname, ValueError(n_("Must be None.")))]
+    return None, [(argname, ValueError(n_("Must be empty.")))]
 
 
 @_addvalidator
@@ -479,7 +479,7 @@ def _str(val, argname=None, *, zap='', sieve='', _convert=True,
     val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert,
                           _ignore_warnings=_ignore_warnings)
     if val is not None and not val:
-        errs.append((argname, ValueError(n_("Mustn’t be empty."))))
+        errs.append((argname, ValueError(n_("Must not be empty."))))
     return val, errs
 
 
@@ -683,7 +683,7 @@ def _printable_ascii_type(val, argname=None, *, _convert=True,
 def _printable_ascii(val, argname=None, *, _convert=True,
                      _ignore_warnings=False):
     """Like :py:func:`_printable_ascii_type` (parameters see there), but
-    mustn't be empty (whitespace doesn't count).
+    must not be empty (whitespace doesn't count).
 
     :type val: object
     :type argname: str or None
@@ -694,7 +694,7 @@ def _printable_ascii(val, argname=None, *, _convert=True,
     val, errs = _printable_ascii_type(val, argname, _convert=_convert,
                                       _ignore_warnings=_ignore_warnings)
     if val is not None and not val.strip():
-        errs.append((argname, ValueError(n_("Mustn’t be empty."))))
+        errs.append((argname, ValueError(n_("Must not be empty."))))
     return val, errs
 
 
@@ -2132,7 +2132,7 @@ def _meta_info(val, keys, argname=None, *, _convert=True,
 
 _INSTITUTION_COMMON_FIELDS = lambda: {
     'title': _str,
-    'moniker': _str,
+    'shortname': _str,
 }
 
 
@@ -2399,7 +2399,7 @@ def _event_part(val, argname=None, *, creation=False, _convert=True,
     if ('part_begin' in val and 'part_end' in val
             and val['part_begin'] > val['part_end']):
         errs.append(("part_end",
-                     ValueError(n_("Must be later than part begin."))))
+                     ValueError(n_("Must be later than begin."))))
     if 'tracks' in val:
         newtracks = {}
         for anid, track in val['tracks'].items():
@@ -2911,7 +2911,7 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
 
 
 _LODGEMENT_GROUP_FIELDS = lambda: {
-    'moniker': _str,
+    'title': _str,
 }
 
 
@@ -2946,7 +2946,7 @@ def _lodgement_group(val, argname=None, *, creation=False, _convert=True,
 
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
-    'moniker': _str,
+    'title': _str,
     'regular_capacity': _non_negative_int,
     'camping_mat_capacity': _non_negative_int,
     'notes': _str_or_None,
@@ -3461,7 +3461,7 @@ def _partial_course(val, argname=None, *, creation=False, _convert=True,
 
 
 _PARTIAL_LODGEMENT_GROUP_FIELDS = lambda: {
-    'moniker': _str,
+    'title': _str,
 }
 
 
@@ -3495,7 +3495,7 @@ def _partial_lodgement_group(val, argname=None, *, creation=False,
 
 
 _PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
-    'moniker': _str,
+    'title': _str,
     'regular_capacity': _non_negative_int,
     'camping_mat_capacity': _non_negative_int,
     'notes': _str_or_None,
@@ -3878,6 +3878,7 @@ _ASSEMBLY_COMMON_FIELDS = lambda: {
 _ASSEMBLY_OPTIONAL_FIELDS = lambda: {
     'is_active': _bool,
     'mail_address': _str_or_None,
+    'presiders': _iterable,
 }
 
 
@@ -3906,6 +3907,16 @@ def _assembly(val, argname=None, *, creation=False, _convert=True,
         mandatory_fields = {'id': _id}
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
                                **_ASSEMBLY_OPTIONAL_FIELDS())
+    if 'presiders' in val:
+        presiders = set()
+        for anid in val['presiders']:
+            v, e = _id(anid, 'presiders', _convert=_convert,
+                       _ignore_warnings=_ignore_warnings)
+            if e:
+                errs.extend(e)
+            else:
+                presiders.add(v)
+        val['presiders'] = presiders
     return _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)
@@ -4013,8 +4024,8 @@ def _ballot(val, argname=None, *, creation=False, _convert=True,
 
 
 _BALLOT_CANDIDATE_COMMON_FIELDS = {
-    'description': _str,
-    'moniker': _identifier,
+    'title': _str,
+    'shortname': _identifier,
 }
 
 
@@ -4047,8 +4058,8 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    if val.get('moniker') == ASSEMBLY_BAR_MONIKER:
-        errs.append(("moniker", ValueError(n_("Mustn’t be the bar moniker."))))
+    if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
+        errs.append(("shortname", ValueError(n_("Mustn’t be the bar shortname."))))
     return val, errs
 
 
@@ -4151,9 +4162,9 @@ def _vote(val, argname=None, ballot=None, *, _convert=True,
     if errs:
         return val, errs
     entries = tuple(y for x in val.split('>') for y in x.split('='))
-    reference = set(e['moniker'] for e in ballot['candidates'].values())
+    reference = set(e['shortname'] for e in ballot['candidates'].values())
     if ballot['use_bar'] or ballot['votes']:
-        reference.add(ASSEMBLY_BAR_MONIKER)
+        reference.add(ASSEMBLY_BAR_SHORTNAME)
     if set(entries) - reference:
         errs.append((argname, KeyError(n_("Superfluous candidates."))))
     if reference - set(entries):
@@ -4169,8 +4180,8 @@ def _vote(val, argname=None, ballot=None, *, _convert=True,
         if len(groups[0].split('=')) > ballot['votes']:
             errs.append((argname, ValueError(n_("Too many votes."))))
         first_group = groups[0].split('=')
-        if (ASSEMBLY_BAR_MONIKER in first_group
-                and first_group != [ASSEMBLY_BAR_MONIKER]):
+        if (ASSEMBLY_BAR_SHORTNAME in first_group
+                and first_group != [ASSEMBLY_BAR_SHORTNAME]):
             errs.append((argname, ValueError(n_("Misplaced bar."))))
         if errs:
             return None, errs
@@ -4395,7 +4406,7 @@ def _query(val, argname=None, *, _convert=None, _ignore_warnings=False):
                                _ignore_warnings=_ignore_warnings)
         errs.extend(e)
     if not val.fields_of_interest:
-        errs.append(("fields_of_interest", ValueError(n_("Mustn’t be empty."))))
+        errs.append(("fields_of_interest", ValueError(n_("Must not be empty."))))
     # constraints
     for idx, x in enumerate(val.constraints):
         try:

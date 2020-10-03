@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from test.common import BackendTest, as_users, USER_DICT, nearly_now
+from test.common import BackendTest, as_users, USER_DICT, nearly_now, prepsql
 from cdedb.query import QUERY_SPECS, QueryOperators
 from cdedb.common import (
     PrivilegeError, SubscriptionError, SubscriptionActions as SA)
@@ -93,7 +93,7 @@ class TestMlBackend(BackendTest):
                 'ml_type': const.MailinglistTypes.assembly_associated.value,
                 'ml_type_class': ml_type.AssemblyAssociatedMailinglist,
                 'mod_policy': const.ModerationPolicy.non_subscribers.value,
-                'moderators': {2, 7},
+                'moderators': {2, 23},
                 'registration_stati': [],
                 'subject_prefix': 'kampf',
                 'title': 'Sozialistischer Kampfbrief',
@@ -257,26 +257,85 @@ class TestMlBackend(BackendTest):
 
                 self.assertEqual(expectation, result)
 
-    @as_users("nina", "berta")
+    @as_users("nina", "berta", "janis")
+    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (60, 10)")
     def test_moderator_set_mailinglist(self, user):
-        mailinglist_id = 7
+        mailinglist_id = 60
 
-        mdata = {
+        admin_mdatas = [
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'title': 'Hallo Welt',
+            },
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'local_part': 'alternativ',
+            },
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'is_active': False,
+            },
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_associated,
+                'event_id': 1,
+                'registration_stati': [],
+            },
+            {
+                'id': mailinglist_id,
+                'ml_type': const.MailinglistTypes.event_orga,
+                'event_id': None,
+                'registration_stati': [],
+            },
+        ]
+
+        mod_mdata = {
             'id': mailinglist_id,
-            'ml_type': self.sample_data['ml.mailinglists'][mailinglist_id]['ml_type'],
-            'moderators': {2, 10, 1},
-            'whitelist': {'link@example.cde'},
+            'ml_type': const.MailinglistTypes.event_associated,
+            'description': "Nice one",
+            'notes': "Blabediblubblabla",
+            'mod_policy': const.ModerationPolicy.unmoderated,
+            'attachment_policy': const.AttachmentPolicy.allow,
+            'subject_prefix': 'Aufbruch',
+            'maxsize': 101,
         }
-        expectation = self.ml.get_mailinglist(self.key, mailinglist_id)
-        expectation.update(mdata)
 
-        if user['id'] in {2}:
+        privileged_mod_mdata = {
+            'id': mailinglist_id,
+            'ml_type': const.MailinglistTypes.event_associated,
+            'registration_stati': [const.RegistrationPartStati.applied],
+        }
+
+        expectation = self.ml.get_mailinglist(self.key, mailinglist_id)
+
+        for data in admin_mdatas:
+            # admins may change any attribute of a mailinglist
+            if user == USER_DICT['nina']:
+                expectation.update(data)
+                self.assertLess(0, self.ml.set_mailinglist(self.key, data))
+            else:
+                with self.assertRaises(PrivilegeError):
+                    self.ml.set_mailinglist(self.key, data)
+
+        # every moderator may change these attributes ...
+        expectation.update(mod_mdata)
+        self.assertLess(0, self.ml.set_mailinglist(self.key, mod_mdata))
+
+        # ... but only privileged moderators (here: orgas) may change these.
+        if user == USER_DICT['janis']:
             with self.assertRaises(PrivilegeError):
-                self.ml.set_mailinglist(self.key, mdata)
-            self.assertLess(0, self.ml.set_moderators(self.key, mdata['id'], mdata['moderators']))
-            self.assertLess(0, self.ml.set_whitelist(self.key, mdata['id'], mdata['whitelist']))
+                self.ml.set_mailinglist(self.key, privileged_mod_mdata)
         else:
-            self.assertLess(0, self.ml.set_mailinglist(self.key, mdata))
+            expectation.update(privileged_mod_mdata)
+            self.assertLess(0, self.ml.set_mailinglist(self.key,
+                                                       privileged_mod_mdata))
+
+        if user in [USER_DICT['nina']]:
+            # adjust address form changed local part
+            expectation['address'] = 'alternativ@aka.cde-ev.de'
 
         reality = self.ml.get_mailinglist(self.key, mailinglist_id)
         self.assertEqual(expectation, reality)
@@ -1512,7 +1571,7 @@ class TestMlBackend(BackendTest):
                          self.ml.get_subscription(
                              self.key, persona_id=9, mailinglist_id=4))
 
-    @as_users("annika", "werner", "quintus", "nina")
+    @as_users("annika", "viktor", "quintus", "nina")
     def test_relevant_admins(self, user):
         if user['display_name'] in {"Annika", "Nina"}:
             # Create a new event mailinglist.
@@ -1571,7 +1630,7 @@ class TestMlBackend(BackendTest):
                 self.key, new_id,
                 cascade=["moderators", "subscriptions", "log"]))
 
-        if user['display_name'] in {"Werner", "Nina"}:
+        if user['display_name'] in {"Viktor", "Nina"}:
             # Create a new assembly mailinglist.
             mldata = {
                 'local_part': "mgv-ag",

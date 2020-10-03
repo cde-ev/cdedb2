@@ -161,7 +161,7 @@
                             {% with lodgement_id = ambience['registration']['parts'][part_id]['lodgement_id'] %}
                                 {% if lodgement_id %}
                                     {{ util.href(cdedblink('event/show_lodgement', {'lodgement_id': lodgement_id}),
-                                                 lodgements[lodgement_id]['moniker']) }}
+                                                 lodgements[lodgement_id]['title']) }}
                                 {% else %}
                                     —
                                 {% endif %}

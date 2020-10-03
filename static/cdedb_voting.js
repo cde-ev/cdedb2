@@ -54,10 +54,10 @@ if (!String.prototype.format) {
      * These DOM objects are stored as jQuery wrappers in candidate_list.
      *
      * On opening the jsform tab, the event handler readPreferenceList() should be called. It creates some
-     * div.prefvote_stage and div.prefvote_spacer, also considering if a bar option is used (bar_moniker != null).
+     * div.prefvote_stage and div.prefvote_spacer, also considering if a bar option is used (bar_shortname != null).
      *
      * Candidates can be moved to stages and spacers using Drag'n'Drop or clicking ('activating') a candidate and then
-     * clicking the destination div. Drag'n'Drop is handled by storing the candidate's moniker in event.dataTransfer;
+     * clicking the destination div. Drag'n'Drop is handled by storing the candidate's shortname in event.dataTransfer;
      * 'activating' is done by adding a class to the span.prefvote_candidate and div.prefvote_container.
      *
      * Moving a candidate to a spacer is done by splitSpacer() and results in creating a new stage and a new spacer
@@ -65,8 +65,8 @@ if (!String.prototype.format) {
      * new) stage is done by moveCandidate() and does three actions: moving the candidate, deleting the source stage if
      * empty, calling updatePreferenceList() to create the text based preference list and update the voting form.
      */
-    var PrefVote = function($container, candidates, bar_moniker, $input_preferencelist, labels) {
-        /** Associative list of candidate jQuery DOM elements indexed by their moniker */
+    var PrefVote = function($container, candidates, bar_shortname, $input_preferencelist, labels) {
+        /** Associative list of candidate jQuery DOM elements indexed by their shortname */
         var candidate_list = {};
         
         /* ***************************** *
@@ -220,10 +220,10 @@ if (!String.prototype.format) {
             $container.children('.prefvote_stage').each(function(){
                 var stage_candidates = [];
                 $(this).children('.prefvote_candidate').each(function(){
-                    stage_candidates.push($(this).attr('data-moniker'));
+                    stage_candidates.push($(this).attr('data-shortname'));
                 });
                 if ($(this).hasClass('neutral'))
-                    stage_candidates.push(bar_moniker);
+                    stage_candidates.push(bar_shortname);
                 stages.push(stage_candidates.join('='));
             });
             var preflist = stages.join('>');
@@ -283,17 +283,17 @@ if (!String.prototype.format) {
          */
         function init() {
             for (var i = 0; i < candidates.length; i++) {
-                var moniker = candidates[i][1].moniker;
+                var shortname = candidates[i][1].shortname;
                 var $cand = $('<span></span>', {'class': 'prefvote_candidate',
                                                 'draggable': 'true',
                                                 'id': 'vote-cand_' + candidates[i][1].id,
-                                                'aria-label': 'Kandidat: ' + candidates[i][1].description,
-                                                'data-moniker': moniker,
+                                                'aria-label': 'Kandidat: ' + candidates[i][1].title,
+                                                'data-shortname': shortname,
                                                 'tabindex': '0'});
-                $cand.text(candidates[i][1].description);
-                candidate_list[moniker] = $cand;
+                $cand.text(candidates[i][1].title);
+                candidate_list[shortname] = $cand;
                 $cand.on('dragstart',function(e) {
-                    e.originalEvent.dataTransfer.setData('text', $(this).attr('data-moniker'));
+                    e.originalEvent.dataTransfer.setData('text', $(this).attr('data-shortname'));
                     $container.removeClass('active').find('.prefvote_candidate').removeClass('active');
                 });
                 $cand.click(candidate_click);
@@ -326,7 +326,7 @@ if (!String.prototype.format) {
             
             // Create first spacer
             var $sp = createSpacer().appendTo($container);
-            if (bar_moniker) {
+            if (bar_shortname) {
                 if (bar_option)
                     $sp.addClass('negative');
                 else 
@@ -344,14 +344,14 @@ if (!String.prototype.format) {
                     var $cand = candidate_list[stage_candidates[j]];
                     if ($cand) {
                         $stage.append($cand).append(' ');
-                    } else if (bar_moniker && stage_candidates[j] == bar_moniker) {
+                    } else if (bar_shortname && stage_candidates[j] == bar_shortname) {
                         bar_option = true;
                         is_neutral = true;
                         $stage.addClass('neutral');
                         $stage.append($('<div></div>', {'class': 'label'}).text(labels['bar_name']));
                     }
                 }
-                if (bar_moniker && !is_neutral) {
+                if (bar_shortname && !is_neutral) {
                     if (bar_option)
                         $stage.addClass('negative');
                     else 
@@ -359,7 +359,7 @@ if (!String.prototype.format) {
                 }
                 
                 var $sp = createSpacer().appendTo($container);
-                if (bar_moniker) {
+                if (bar_shortname) {
                     if (bar_option)
                         $sp.addClass('negative');
                     else 
@@ -374,9 +374,9 @@ if (!String.prototype.format) {
                     missing_candidates.push(candidate_list[i])
             }
             
-            if (missing_candidates.length > 0 || (bar_moniker && !bar_option)) {
+            if (missing_candidates.length > 0 || (bar_shortname && !bar_option)) {
                 // If use_bar and bar has been added yet, add missing_candidates to neutral stage
-                if (bar_moniker && bar_option) {
+                if (bar_shortname && bar_option) {
                     var $neutral_stage = $container.children('.prefvote_stage.neutral');
                     for (var i = 0; i < missing_candidates.length; i++)
                         $neutral_stage.append(missing_candidates[i]);
@@ -387,7 +387,7 @@ if (!String.prototype.format) {
                     for (var i = 0; i < missing_candidates.length; i++)
                         $stage.append(missing_candidates[i]).append(' ');
                     var $sp = createSpacer().appendTo($container);
-                    if (bar_moniker) {
+                    if (bar_shortname) {
                         $stage.addClass('neutral');
                         $stage.append($('<div></div>', {'class': 'label'}).text(labels['bar_name']));
                         $sp.addClass('negative');
@@ -412,18 +412,18 @@ if (!String.prototype.format) {
      * jQuery plugin for the fancy interactive preferential voting.
      *
      * parameters:
-     * candidates: List of all candidates in form: [ [id, {'id', 'moniker', 'description'}] ]
-     * bar_moniker: Moniker of bar option, null if bar is not used
+     * candidates: List of all candidates in form: [ [id, {'id', 'shortname', 'title'}] ]
+     * bar_shortname: shortname of bar option, null if bar is not used
      * bar_name: Label of bar option / neutral stage box
      * labels : Object mapping some strings to internationalized/translated strings. It should contain the following
      *          keys: bar_name, box, box_highest, box_lowest, spacer, spacer_highest, spacer_lowest
      * $input_preferencelist: jQuery object of text only voting form input field
      */
-    $.fn.cdedbPrefVote = function(candidates, bar_moniker, $input_preferencelist, labels) {
+    $.fn.cdedbPrefVote = function(candidates, bar_shortname, $input_preferencelist, labels) {
         if ($(this).data('cdedbPrefVote'))
             return;
 
-        var obj = new PrefVote($(this), candidates, bar_moniker, $input_preferencelist, labels);
+        var obj = new PrefVote($(this), candidates, bar_shortname, $input_preferencelist, labels);
         $(this).data('cdedbPrefVote',obj);
     }
 })(jQuery);

@@ -52,7 +52,7 @@ import werkzeug.wrappers
 from typing import (
     Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
     Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO,
+    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO, ItemsView,
 )
 from typing_extensions import Protocol
 
@@ -726,8 +726,20 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
 
 def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
                        reverse: bool = False) -> List[Tuple[T, S]]:
-    """Sort a dicts items by thei value."""
+    """Sort a dicts items by their value."""
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
+
+
+def map_dict_filter(d: Dict[str, str],
+                      processing: Callable[[Any], str]
+                      ) -> ItemsView[str, str]:
+    """
+    Processes the values of some string using processing function
+
+    :param processing: A function to be applied on the dict values
+    :return: The dict with its values replaced with the processed values
+    """
+    return {k: processing(v) for k, v in d.items()}.items()
 
 
 def enum_entries_filter(enum: EnumMeta, processing: Callable[[Any], str] = None,
@@ -825,6 +837,7 @@ JINJA_FILTERS = {
     'querytoparams': querytoparams_filter,
     'genus': genus_filter,
     'linebreaks': linebreaks_filter,
+    'map_dict': map_dict_filter,
     'md': md_filter,
     'enum': enum_filter,
     'sort': sort_filter,
@@ -2112,6 +2125,11 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
+                if not obj.mlproxy.may_manage(rs, **{argname: arg},
+                                              privileged=True):
+                    rs.notify("info", n_(
+                        "You have only restricted moderator access and may not "
+                        "change subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
@@ -2122,6 +2140,26 @@ def mailinglist_guard(argname: str = "mailinglist_id",
         return cast(F, new_fun)
 
     return wrap
+
+
+def assembly_guard(fun: F) -> F:
+    """This decorator checks that the user has privileged access to an assembly.
+    """
+
+    @functools.wraps(fun)
+    def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
+                **kwargs: Any) -> Any:
+        if "assembly_id" in kwargs:
+            assembly_id = kwargs["assembly_id"]
+        else:
+            assembly_id = args[0]
+        if not obj.assemblyproxy.is_presider(rs, assembly_id=assembly_id):
+            raise werkzeug.exceptions.Forbidden(rs.gettext(
+                "This page may only be accessed by the assembly's"
+                " presiders or assembly admins."))
+        return fun(obj, rs, *args, **kwargs)
+
+    return cast(F, new_fun)
 
 
 def check_validation(rs: RequestState, assertion: str, value: T,
@@ -2375,7 +2413,7 @@ def calculate_loglinks(rs: RequestState, total: int,
     # the first shown entry. This is done magically, if no offset has been
     # given.
     if offset is None:
-        trueoffset = length * ((total - 1) // length)
+        trueoffset = length * ((total - 1) // length) if total != 0 else 0
     else:
         trueoffset = offset
 
@@ -2389,15 +2427,13 @@ def calculate_loglinks(rs: RequestState, total: int,
         "last": new_md(),
     }
     pre = [new_md() for x in range(3) if trueoffset - x * length > 0]
-    post = [new_md() for x in range(3) if trueoffset + x * length < total]
+    post = [new_md() for x in range(3) if trueoffset + (x + 1) * length < total]
 
     # Fix the offset for each set of values.
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
     for x, _ in enumerate(pre):
-        pre[x]["offset"] = (
-                trueoffset - (len(pre) - x) * length
-        )
+        pre[x]["offset"] = (trueoffset - (len(pre) - x) * length)
     loglinks["previous"]["offset"] = trueoffset - length
     for x, _ in enumerate(post):
         post[x]["offset"] = trueoffset + (x + 1) * length

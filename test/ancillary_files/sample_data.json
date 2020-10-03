@@ -416,10 +416,10 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
-            "is_cde_realm": false,
-            "is_event_realm": false,
-            "is_ml_realm": false,
-            "is_assembly_realm": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
             "is_member": false,
             "is_searchable": false,
             "is_archived": true,
@@ -428,7 +428,7 @@
             "family_name": "Hell",
             "title": null,
             "name_supplement": null,
-            "gender": null,
+            "gender": 2,
             "birthday": "1977-11-10",
             "telephone": null,
             "mobile": null,
@@ -449,12 +449,12 @@
             "timeline": null,
             "interests": null,
             "free_form": null,
-            "balance": null,
+            "balance": 0,
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": null
+            "paper_expuls": true
         },
         {
             "id": 9,
@@ -1062,7 +1062,7 @@
             "is_finance_admin": false,
             "is_event_admin": false,
             "is_ml_admin": false,
-            "is_assembly_admin": true,
+            "is_assembly_admin": false,
             "is_cdelokal_admin": false,
             "is_cde_realm": true,
             "is_event_realm": true,
@@ -1213,6 +1213,60 @@
             "paper_expuls": true
         },
         {
+            "id": 48,
+            "username": "viktor@example.cde",
+            "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": true,
+            "is_cdelokal_admin": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Viktor",
+            "given_names": "Viktor",
+            "family_name": "Versammlungsadmin",
+            "title": null,
+            "name_supplement": null,
+            "gender": 2,
+            "birthday": "1966-04-17",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": "Irgendwo im Nirgendwo",
+            "postal_code": "98765",
+            "location": "Nirvana",
+            "country": null,
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "0.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
             "id": 100,
             "username": "akira@example.cde",
             "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
@@ -1269,7 +1323,6 @@
     ],
     "core.changelog": [
         {
-            "id": 1,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1329,7 +1382,6 @@
             "paper_expuls": true
         },
         {
-            "id": 2,
             "submitted_by": 2,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1389,7 +1441,6 @@
             "paper_expuls": true
         },
         {
-            "id": 3,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1449,7 +1500,6 @@
             "paper_expuls": true
         },
         {
-            "id": 4,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1509,7 +1559,6 @@
             "paper_expuls": true
         },
         {
-            "id": 5,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1569,7 +1618,6 @@
             "paper_expuls": null
         },
         {
-            "id": 6,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1629,7 +1677,6 @@
             "paper_expuls": true
         },
         {
-            "id": 7,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1689,7 +1736,6 @@
             "paper_expuls": true
         },
         {
-            "id": 8,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1708,10 +1754,10 @@
             "is_ml_admin": false,
             "is_assembly_admin": false,
             "is_cdelokal_admin": false,
-            "is_cde_realm": false,
-            "is_event_realm": false,
-            "is_ml_realm": false,
-            "is_assembly_realm": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
             "is_member": false,
             "is_searchable": false,
             "is_archived": true,
@@ -1720,7 +1766,7 @@
             "family_name": "Hell",
             "title": null,
             "name_supplement": null,
-            "gender": null,
+            "gender": 2,
             "birthday": "1977-11-10",
             "telephone": null,
             "mobile": null,
@@ -1741,15 +1787,14 @@
             "timeline": null,
             "interests": null,
             "free_form": null,
-            "balance": null,
+            "balance": 0,
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": null
+            "paper_expuls": true
         },
         {
-            "id": 9,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1809,7 +1854,6 @@
             "paper_expuls": true
         },
         {
-            "id": 10,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1869,7 +1913,6 @@
             "paper_expuls": null
         },
         {
-            "id": 11,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1929,7 +1972,6 @@
             "paper_expuls": null
         },
         {
-            "id": 12,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1989,7 +2031,6 @@
             "paper_expuls": true
         },
         {
-            "id": 13,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2049,7 +2090,6 @@
             "paper_expuls": true
         },
         {
-            "id": 14,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2109,7 +2149,6 @@
             "paper_expuls": null
         },
         {
-            "id": 15,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2169,7 +2208,6 @@
             "paper_expuls": true
         },
         {
-            "id": 16,
             "submitted_by": 6,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2229,7 +2267,6 @@
             "paper_expuls": true
         },
         {
-            "id": 17,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2289,7 +2326,6 @@
             "paper_expuls": true
         },
         {
-            "id": 18,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2306,7 +2342,7 @@
             "is_finance_admin": false,
             "is_event_admin": false,
             "is_ml_admin": false,
-            "is_assembly_admin": true,
+            "is_assembly_admin": false,
             "is_cdelokal_admin": false,
             "is_cde_realm": true,
             "is_event_realm": true,
@@ -2349,7 +2385,6 @@
             "paper_expuls": true
         },
         {
-            "id": 19,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2409,7 +2444,6 @@
             "paper_expuls": true
         },
         {
-            "id": 20,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2469,7 +2503,65 @@
             "paper_expuls": true
         },
         {
-            "id": 21,
+            "submitted_by": 1,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 1,
+            "change_note": "Init.",
+            "code": 2,
+            "persona_id": 48,
+            "username": "viktor@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": true,
+            "is_cdelokal_admin": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": false,
+            "is_searchable": false,
+            "is_archived": false,
+            "display_name": "Viktor",
+            "given_names": "Viktor",
+            "family_name": "Versammlungsadmin",
+            "title": null,
+            "name_supplement": null,
+            "gender": 2,
+            "birthday": "1966-04-17",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": "Irgendwo im Nirgendwo",
+            "postal_code": "98765",
+            "location": "Nirvana",
+            "country": null,
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "0.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2529,7 +2621,6 @@
             "paper_expuls": true
         },
         {
-            "id": 22,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2589,7 +2680,6 @@
             "paper_expuls": true
         },
         {
-            "id": 23,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2649,7 +2739,6 @@
             "paper_expuls": true
         },
         {
-            "id": 24,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2709,7 +2798,6 @@
             "paper_expuls": null
         },
         {
-            "id": 25,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2769,7 +2857,6 @@
             "paper_expuls": true
         },
         {
-            "id": 26,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2829,7 +2916,6 @@
             "paper_expuls": true
         },
         {
-            "id": 27,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2889,7 +2975,6 @@
             "paper_expuls": true
         },
         {
-            "id": 28,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2949,7 +3034,6 @@
             "paper_expuls": true
         },
         {
-            "id": 29,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3009,7 +3093,6 @@
             "paper_expuls": true
         },
         {
-            "id": 30,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3222,12 +3305,12 @@
         {
             "id": 1,
             "title": "Club der Ehemaligen",
-            "moniker": "CdE"
+            "shortname": "CdE"
         },
         {
             "id": 2,
             "title": "Disco des Ehemaligen",
-            "moniker": "DdE"
+            "shortname": "DdE"
         }
     ],
     "past_event.events": [
@@ -3798,19 +3881,19 @@
         {
             "id": 1,
             "event_id": 1,
-            "moniker": "Haupthaus"
+            "title": "Haupthaus"
         },
         {
             "id": 2,
             "event_id": 1,
-            "moniker": "Au\u00dfenWohnGruppe"
+            "title": "Au\u00dfenWohnGruppe"
         }
     ],
     "event.lodgements": [
         {
             "id": 1,
             "event_id": 1,
-            "moniker": "Warme Stube",
+            "title": "Warme Stube",
             "regular_capacity": 5,
             "camping_mat_capacity": 1,
             "notes": null,
@@ -3820,7 +3903,7 @@
         {
             "id": 2,
             "event_id": 1,
-            "moniker": "Kalte Kammer",
+            "title": "Kalte Kammer",
             "regular_capacity": 10,
             "camping_mat_capacity": 2,
             "notes": "Daf\u00fcr mit Frischluft.",
@@ -3830,7 +3913,7 @@
         {
             "id": 3,
             "event_id": 1,
-            "moniker": "Kellerverlies",
+            "title": "Kellerverlies",
             "regular_capacity": 0,
             "camping_mat_capacity": 100,
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
@@ -3840,7 +3923,7 @@
         {
             "id": 4,
             "event_id": 1,
-            "moniker": "Einzelzelle",
+            "title": "Einzelzelle",
             "regular_capacity": 1,
             "camping_mat_capacity": 0,
             "notes": null,
@@ -4534,6 +4617,16 @@
             "notes": null
         }
     ],
+    "assembly.presiders": [
+        {
+            "assembly_id": 1,
+            "persona_id": 23
+        },
+        {
+            "assembly_id": 3,
+            "persona_id": 23
+        }
+    ],
     "assembly.attendees": [
         {
             "id": 1,
@@ -4824,308 +4917,308 @@
         {
             "id": 2,
             "ballot_id": 1,
-            "description": "Ich",
-            "moniker": "1"
+            "title": "Ich",
+            "shortname": "1"
         },
         {
             "id": 3,
             "ballot_id": 1,
-            "description": "23",
-            "moniker": "2"
+            "title": "23",
+            "shortname": "2"
         },
         {
             "id": 4,
             "ballot_id": 1,
-            "description": "42",
-            "moniker": "3"
+            "title": "42",
+            "shortname": "3"
         },
         {
             "id": 5,
             "ballot_id": 1,
-            "description": "Philosophie",
-            "moniker": "4"
+            "title": "Philosophie",
+            "shortname": "4"
         },
         {
             "id": 6,
             "ballot_id": 2,
-            "description": "Rot",
-            "moniker": "rot"
+            "title": "Rot",
+            "shortname": "rot"
         },
         {
             "id": 7,
             "ballot_id": 2,
-            "description": "Gelb",
-            "moniker": "gelb"
+            "title": "Gelb",
+            "shortname": "gelb"
         },
         {
             "id": 8,
             "ballot_id": 2,
-            "description": "Gr\u00fcn",
-            "moniker": "gruen"
+            "title": "Gr\u00fcn",
+            "shortname": "gruen"
         },
         {
             "id": 9,
             "ballot_id": 2,
-            "description": "Blau",
-            "moniker": "blau"
+            "title": "Blau",
+            "shortname": "blau"
         },
         {
             "id": 10,
             "ballot_id": 3,
-            "description": "Lischert",
-            "moniker": "Li"
+            "title": "Lischert",
+            "shortname": "Li"
         },
         {
             "id": 11,
             "ballot_id": 3,
-            "description": "Steinsgebiss",
-            "moniker": "St"
+            "title": "Steinsgebiss",
+            "shortname": "St"
         },
         {
             "id": 12,
             "ballot_id": 3,
-            "description": "Fichte",
-            "moniker": "Fi"
+            "title": "Fichte",
+            "shortname": "Fi"
         },
         {
             "id": 13,
             "ballot_id": 3,
-            "description": "Buchwald",
-            "moniker": "Bu"
+            "title": "Buchwald",
+            "shortname": "Bu"
         },
         {
             "id": 14,
             "ballot_id": 3,
-            "description": "L\u00f6scher",
-            "moniker": "Lo"
+            "title": "L\u00f6scher",
+            "shortname": "Lo"
         },
         {
             "id": 15,
             "ballot_id": 3,
-            "description": "Goldborn",
-            "moniker": "Go"
+            "title": "Goldborn",
+            "shortname": "Go"
         },
         {
             "id": 17,
             "ballot_id": 4,
-            "description": "Wackelpudding",
-            "moniker": "W"
+            "title": "Wackelpudding",
+            "shortname": "W"
         },
         {
             "id": 18,
             "ballot_id": 4,
-            "description": "Salat",
-            "moniker": "S"
+            "title": "Salat",
+            "shortname": "S"
         },
         {
             "id": 19,
             "ballot_id": 4,
-            "description": "Eis",
-            "moniker": "E"
+            "title": "Eis",
+            "shortname": "E"
         },
         {
             "id": 20,
             "ballot_id": 4,
-            "description": "Joghurt",
-            "moniker": "J"
+            "title": "Joghurt",
+            "shortname": "J"
         },
         {
             "id": 21,
             "ballot_id": 4,
-            "description": "Nichts",
-            "moniker": "N"
+            "title": "Nichts",
+            "shortname": "N"
         },
         {
             "id": 23,
             "ballot_id": 5,
-            "description": "e",
-            "moniker": "e"
+            "title": "e",
+            "shortname": "e"
         },
         {
             "id": 24,
             "ballot_id": 5,
-            "description": "pi",
-            "moniker": "pi"
+            "title": "pi",
+            "shortname": "pi"
         },
         {
             "id": 25,
             "ballot_id": 5,
-            "description": "i",
-            "moniker": "i"
+            "title": "i",
+            "shortname": "i"
         },
         {
             "id": 26,
             "ballot_id": 5,
-            "description": "1",
-            "moniker": "1"
+            "title": "1",
+            "shortname": "1"
         },
         {
             "id": 27,
             "ballot_id": 5,
-            "description": "0",
-            "moniker": "0"
+            "title": "0",
+            "shortname": "0"
         },
         {
             "id": 28,
             "ballot_id": 11,
-            "description": "Ja",
-            "moniker": "Ja"
+            "title": "Ja",
+            "shortname": "Ja"
         },
         {
             "id": 29,
             "ballot_id": 11,
-            "description": "Nein",
-            "moniker": "Nein"
+            "title": "Nein",
+            "shortname": "Nein"
         },
         {
             "id": 30,
             "ballot_id": 12,
-            "description": "Löwe",
-            "moniker": "a"
+            "title": "Löwe",
+            "shortname": "a"
         },
         {
             "id": 31,
             "ballot_id": 12,
-            "description": "Adler",
-            "moniker": "b"
+            "title": "Adler",
+            "shortname": "b"
         },
         {
             "id": 32,
             "ballot_id": 12,
-            "description": "Dachs",
-            "moniker": "c"
+            "title": "Dachs",
+            "shortname": "c"
         },
         {
             "id": 33,
             "ballot_id": 12,
-            "description": "Schlange",
-            "moniker": "d"
+            "title": "Schlange",
+            "shortname": "d"
         },
         {
             "id": 34,
             "ballot_id": 13,
-            "description": "Anton A. Administrator",
-            "moniker": "Anton"
+            "title": "Anton A. Administrator",
+            "shortname": "Anton"
         },
         {
             "id": 35,
             "ballot_id": 13,
-            "description": "Bertalotta Beispiel",
-            "moniker": "Berta"
+            "title": "Bertalotta Beispiel",
+            "shortname": "Berta"
         },
         {
             "id": 36,
             "ballot_id": 13,
-            "description": "Akira Abukara",
-            "moniker": "Akira"
+            "title": "Akira Abukara",
+            "shortname": "Akira"
         },
         {
             "id": 37,
             "ballot_id": 14,
-            "description": "Durch eine erhobene Steuer auf Tee und Schokolade",
-            "moniker": "Steuern"
+            "title": "Durch eine erhobene Steuer auf Tee und Schokolade",
+            "shortname": "Steuern"
         },
         {
             "id": 38,
             "ballot_id": 14,
-            "description": "Durch Spendenbeiträge",
-            "moniker": "Spenden"
+            "title": "Durch Spendenbeiträge",
+            "shortname": "Spenden"
         },
         {
             "id": 39,
             "ballot_id": 14,
-            "description": "Durch Infiltration des BMBF",
-            "moniker": "BMBF"
+            "title": "Durch Infiltration des BMBF",
+            "shortname": "BMBF"
         },
         {
             "id": 40,
             "ballot_id": 15,
-            "description": "Sindarin (Elbisch, Herr der Ringe)",
-            "moniker": "Sindarin"
+            "title": "Sindarin (Elbisch, Herr der Ringe)",
+            "shortname": "Sindarin"
         },
         {
             "id": 41,
             "ballot_id": 15,
-            "description": "Khuzdul (Zwergisch, Herr der Ringe)",
-            "moniker": "Khuzdul"
+            "title": "Khuzdul (Zwergisch, Herr der Ringe)",
+            "shortname": "Khuzdul"
         },
         {
             "id": 42,
             "ballot_id": 15,
-            "description": "Esperanto (Kunstsprache, Erde)",
-            "moniker": "Esperanto"
+            "title": "Esperanto (Kunstsprache, Erde)",
+            "shortname": "Esperanto"
         },
         {
             "id": 43,
             "ballot_id": 15,
-            "description": "Klingonisch (Klingonen, Star Trek)",
-            "moniker": "Klingonisch"
+            "title": "Klingonisch (Klingonen, Star Trek)",
+            "shortname": "Klingonisch"
         },
         {
             "id": 44,
             "ballot_id": 7,
-            "description": "Ja",
-            "moniker": "Ja"
+            "title": "Ja",
+            "shortname": "Ja"
         },
         {
             "id": 45,
             "ballot_id": 7,
-            "description": "Nein",
-            "moniker": "Nein"
+            "title": "Nein",
+            "shortname": "Nein"
         },
         {
             "id": 46,
             "ballot_id": 8,
-            "description": "Eine Glühbirne mit Schriftzug",
-            "moniker": "Gluehbirne"
+            "title": "Eine Glühbirne mit Schriftzug",
+            "shortname": "Gluehbirne"
         },
         {
             "id": 47,
             "ballot_id": 8,
-            "description": "Die vier Wappentiere, die den Schriftzug CdE umringen",
-            "moniker": "Wappen"
+            "title": "Die vier Wappentiere, die den Schriftzug CdE umringen",
+            "shortname": "Wappen"
         },
         {
             "id": 48,
             "ballot_id": 8,
-            "description": "Ein Baum mit Blättern und Grün!",
-            "moniker": "Baum"
+            "title": "Ein Baum mit Blättern und Grün!",
+            "shortname": "Baum"
         },
         {
             "id": 49,
             "ballot_id": 9,
-            "description": "Farin Finanzvorstand",
-            "moniker": "Farin"
+            "title": "Farin Finanzvorstand",
+            "shortname": "Farin"
         },
         {
             "id": 50,
             "ballot_id": 9,
-            "description": "Inga Iota",
-            "moniker": "Inga"
+            "title": "Inga Iota",
+            "shortname": "Inga"
         },
         {
             "id": 51,
             "ballot_id": 9,
-            "description": "Olaf Olafson",
-            "moniker": "Olaf"
+            "title": "Olaf Olafson",
+            "shortname": "Olaf"
         },
         {
             "id": 52,
             "ballot_id": 10,
-            "description": "Investieren in Aktien und Fonds.",
-            "moniker": "Aktien"
+            "title": "Investieren in Aktien und Fonds.",
+            "shortname": "Aktien"
         },
         {
             "id": 53,
             "ballot_id": 10,
-            "description": "Wir kaufen den Eisenberg!",
-            "moniker": "Eisenberg"
+            "title": "Wir kaufen den Eisenberg!",
+            "shortname": "Eisenberg"
         },
         {
             "id": 54,
             "ballot_id": 10,
-            "description": "Kostenlose Akademien für alle.",
-            "moniker": "Akademien"
+            "title": "Kostenlose Akademien für alle.",
+            "shortname": "Akademien"
         }
     ],
     "assembly.attachments": [
@@ -6189,7 +6282,7 @@
         },
         {
             "mailinglist_id": 5,
-            "persona_id": 7
+            "persona_id": 23
         },
         {
             "mailinglist_id": 6,
@@ -6285,7 +6378,7 @@
         },
         {
             "mailinglist_id": 61,
-            "persona_id": 11
+            "persona_id": 23
         },
         {
             "mailinglist_id": 62,

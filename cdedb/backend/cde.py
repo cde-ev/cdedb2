@@ -810,7 +810,7 @@ class CdEBackend(AbstractBackend):
                              persona_id=None, change_note=msg)
             return ret
 
-    @access("searchable", "cde_admin")
+    @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around

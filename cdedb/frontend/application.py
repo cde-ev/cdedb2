@@ -17,7 +17,7 @@ import werkzeug.exceptions
 import werkzeug.wrappers
 
 from typing import (
-    Tuple, Dict, Callable, Optional, Set, Any
+    Dict, Callable, Optional, Set, Any
 )
 
 from cdedb.frontend.core import CoreFrontend
@@ -40,6 +40,7 @@ from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
+from cdedb.backend.assembly import AssemblyBackend
 
 
 class Application(BaseApp):
@@ -50,6 +51,7 @@ class Application(BaseApp):
         super().__init__(configpath)
         self.eventproxy = make_proxy(EventBackend(configpath))
         self.mlproxy = make_proxy(MlBackend(configpath))
+        self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
         # do not use a make_proxy since the only usage here is before the
         # RequestState exists
         self.sessionproxy = SessionBackend(configpath)
@@ -266,9 +268,16 @@ class Application(BaseApp):
                 moderator: Set[int] = set()
                 if "ml" in user.roles:
                     assert user.persona_id is not None
-                    moderator = self.mlproxy.moderator_info(rs, user.persona_id)
+                    moderator = self.mlproxy.moderator_info(
+                        rs, user.persona_id)
+                presider: Set[int] = set()
+                if "assembly" in user.roles:
+                    assert user.persona_id is not None
+                    presider = self.assemblyproxy.presider_info(
+                        rs, user.persona_id)
                 user.orga = orga
                 user.moderator = moderator
+                user.presider = presider
                 user.init_admin_views_from_cookie(
                     request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, ''))
 

@@ -6,7 +6,7 @@
     <ul id="classical-candidates">
         {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
             <li>
-                {{ candidate['description'] }}
+                {{ candidate['title'] }}
             </li>
         {% endfor %}
     </ul>
@@ -22,11 +22,11 @@
                                             format(votes=ambience['ballot']['votes']), small=True) }}
         {% endif %}
         {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
-                                      entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('moniker', 'description'),
+                                      entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('shortname', 'title'),
                                       radio=(ambience['ballot']['votes'] == 1), small=True) }}
         {% if ambience['ballot']['use_bar'] %}
             {{ util.form_input_checkboxes(
-                "vote", label="", entries=[(ASSEMBLY_BAR_MONIKER, gettext("Against all Candidates"))],
+                "vote", label="", entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("Against all Candidates"))],
                 small=True, radio=(ambience['ballot']['votes'] == 1),
                 info=gettext("With this option you reject all candidates. "
                              "If this gets a majority the board may take additional measures.")) }}
@@ -35,7 +35,7 @@
     </form>
     <script nonce="{{ csp_nonce }}">
         {% if ambience['ballot']['votes'] > 1 %}
-            $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_MONIKER }}');
+            $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_SHORTNAME }}');
         {% endif %}
         $('#voteform').cdedbProtectChanges();
     </script>
@@ -63,10 +63,10 @@
     <ul id="preferential-candidates">
         {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
             <li>
-                {{ candidate['description'] }}
+                {{ candidate['title'] }}
                 {% if attends %}
                     <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
-                        {{ candidate['moniker'] }}
+                        {{ candidate['shortname'] }}
                     </span>
                 {% endif %}
             </li>
@@ -94,7 +94,7 @@
         </p>
         {% if ambience['ballot']['use_bar'] %}
             <p>
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
                     Additionally you need to use the rejection bar {{ abm }} in your preferencelist.
                     Use it in your preferencelist like you would a candidate. Put all
                     candidates you deem suitable higher than {{ abm }} and all
@@ -124,21 +124,21 @@
                         You deem all candidates suitable, but you like Leia the best,
                         with no difference between the other candidates.
                     {% endtrans %}<br />
-                    <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}</code></li>
+                    <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_SHORTNAME }}</code></li>
                 <li>{% trans %}
                         You deem Leia and Obi-Wan (equally) suitable, you want to reject Luke
                         and you absolutely can’t stand Han Solo.
                     {% endtrans %}<br />
-                    <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}&gt;Luke&gt;Han</code></li>
+                    <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_SHORTNAME }}&gt;Luke&gt;Han</code></li>
                 <li>{% trans %}
                         You want to vote for Luke and if he doesn’t make it, you think Obi-Wan should.
                         You don’t have an opinion about the others.
                     {% endtrans %}<br />
-                    <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}=Han=Leia</code></li>
+                    <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_SHORTNAME }}=Han=Leia</code></li>
                 <li>{% trans %}
                         You want to completely abstain.
                     {% endtrans %}<br />
-                    <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER }}</code></li>
+                    <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_SHORTNAME }}</code></li>
             </ul>
         {% else %}
             <ul>
@@ -270,7 +270,7 @@
                 /* Initialize JS Fancy form */
                 $('#prefvote_container').cdedbPrefVote(
                     {{ ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|json|s }},
-                    {{ "'"|s+ASSEMBLY_BAR_MONIKER+"'"|s if ambience['ballot']['use_bar'] else "null" }},
+                    {{ "'"|s+ASSEMBLY_BAR_SHORTNAME+"'"|s if ambience['ballot']['use_bar'] else "null" }},
                     $('#input-preferencelist'),
                     {{ {'bar_name': gettext('neutral'),
                         'box': gettext('Box {0}'),
@@ -308,8 +308,8 @@
 {% macro add_candidate_form() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
 
-    {% set columns =  [dict(name="moniker", label="Shortname", func=util.input_text),
-                       dict(name="description", label="Description", func=util.input_text)] %}
+    {% set columns =  [dict(name="shortname", label="Shortname", func=util.input_text),
+                       dict(name="title", label="Title", func=util.input_text)] %}
 
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}

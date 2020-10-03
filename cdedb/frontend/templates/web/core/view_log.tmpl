@@ -20,6 +20,6 @@
         {% endfor %}
     {% endcall %}
 
-    {{ logging.filter('core/view_log', enums['CoreLogCodes'], 'admin_persona') }}
     {{ logging.navigation('core/view_log', total, length, loglinks) }}
+    {{ logging.filter('core/view_log', enums['CoreLogCodes'], 'admin_persona') }}
 {% endblock %}

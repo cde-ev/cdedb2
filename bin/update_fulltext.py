@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 # setup
 
-import sys
 import time
 
-sys.path.insert(0, "/cdedb2/")
 from cdedb.script import make_backend, setup
 from cdedb.database.connection import Atomizer
 from cdedb.common import PERSONA_ALL_FIELDS

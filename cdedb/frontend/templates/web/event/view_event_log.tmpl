@@ -55,6 +55,6 @@
         {% endfor %}
     {% endcall %}
 
-    {{ logging.filter('event/view_event_log', enums['EventLogCodes'], 'orga_event_user', aux=ambience['event']['id']) }}
     {{ logging.navigation('event/view_event_log', total, length, loglinks) }}
+    {{ logging.filter('event/view_event_log', enums['EventLogCodes'], 'orga_event_user', aux=ambience['event']['id']) }}
 {% endblock %}

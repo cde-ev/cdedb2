@@ -22,7 +22,7 @@
             {% endtrans %}
         </p>
         <p class="col-md-3">
-            {{ util.href(docurl('Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm", icon="question-circle") }}
+            {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm", icon="question-circle") }}
         </p>
     </div>
 
@@ -42,7 +42,8 @@
             {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"), small=True,
                                     aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
+            {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email",
+                                    attributes='autocomplete="email"'|s) }}
             {{ util.form_input_select(name="realm", small=True, entries=realm_options,
                                       label=gettext("Rationale"), anid="realm-select") }}
             {{ util.form_input_textarea(name="notes",

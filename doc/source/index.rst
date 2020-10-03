@@ -4,25 +4,16 @@ Welcome to CdEDB's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   Introduction
-   Architecture
-   Frontend
-   Backend
-   Database
-   Auxiliary
-   Workflows
-   Specification
-   Email_Templates
-   Paraphernalia
-   Migration
+   Development
+   Design
+   Realm
+   API
    Handbuch
+   Archive
 
 Indices and tables
 ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+.. todo:: Stichwortverzeichnis? Index?

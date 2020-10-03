@@ -212,7 +212,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence('weitere …')
         self.traverse({'href': '/cde/past/event/1/course/2/show'})
 
-        self._click_admin_view_button(re.compile(r"verg. Veranst. Administration"),
+        self._click_admin_view_button(re.compile(r"Verg.-Veranst.-Administration"),
                                       current_state=False)
         self.traverse({'href': '/cde/past/event/1/show'},
                       {'href': '/cde/past/event/1/change'},
@@ -415,7 +415,7 @@ class TestCdEFrontend(FrontendTest):
         f['qval_given_names,display_name'] = "Ant"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertNonPresence("Ergebnis")
+        self.assertPresence("Keine Mitglieder gefunden.")
 
         # len(entry) > 3 performs a wildcard search
         f['qval_given_names,display_name'] = "Anton"
@@ -431,7 +431,7 @@ class TestCdEFrontend(FrontendTest):
         f['qval_fulltext'] = "sta"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertNonPresence("Ergebnis")
+        self.assertPresence("Keine Mitglieder gefunden.")
 
         # len(word) > 3 can be just a part of a word
         f['qval_fulltext'] = "stadt"
@@ -462,10 +462,19 @@ class TestCdEFrontend(FrontendTest):
                             "Du die Datenschutzerklärung bestätigen.",
                             div='member-quick-search')
         self.assertNonPresence("CdE-Mitglied suchen")
-        with self.assertRaises(webtest.app.AppError) as exc:
-            self.get("/cde/search/member")
+        self.get("/cde/search/member")
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("Um die Mitgliedersuche verwenden zu können")
+        self.assertPresence("Datenschutzerklärung")
+        self.assertNonPresence("Suchmaske")
 
-        self.assertIn("Bad response: 403 FORBIDDEN", exc.exception.args[0])
+    @as_users("daniel", "janis")
+    def test_member_search_non_member(self, user):
+        self.get("/cde/search/member")
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("Um die Mitgliedersuche verwenden zu können")
+        self.assertNonPresence("Datenschutzerklärung")
+        self.assertNonPresence("Suchmaske")
 
     @as_users("inga")
     def test_member_profile_gender_privacy(self, user):
@@ -1536,7 +1545,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNotIn("title_3", f.fields)
         f['create_-1'].checked = True
         f['title_-1'] = "Bildung und Begabung"
-        f['moniker_-1'] = "BuB"
+        f['shortname_-1'] = "BuB"
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
@@ -1544,7 +1553,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
         self.assertEqual("Bildung und Begabung", f['title_1001'].value)
         f['title_1'] = "Monster Academy"
-        f['moniker_1'] = "MA"
+        f['shortname_1'] = "MA"
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
@@ -1900,12 +1909,27 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-7-8"
+        f['persona_ids'] = "DB-7-8, DB-33-7"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'persona_ids', "Einige dieser Nutzer existieren nicht.")
+        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        f = self.response.forms['addparticipantform']
+        f['persona_ids'] = "DB-7-8, DB-10-8"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'persona_ids',
+            "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
+        f = self.response.forms['addparticipantform']
+        f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1"
         f['is_orga'].checked = True
         f['is_instructor'].checked = True
         self.submit(f)
+
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertPresence("Garcia G. Generalis", div='list-participants')
+        self.assertPresence("Hades Hell", div='list-participants')
+
         f = self.response.forms['removeparticipantform7']
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
@@ -1916,7 +1940,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'PfingstAkademie 2014'})
         self.assertNonPresence("Garcia")
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-7-8"
+        f['persona_ids'] = "DB-7-8"
         f['is_orga'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
@@ -1937,7 +1961,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['institutionsummaryform']
         f['create_-1'].checked = True
         f['title_-1'] = "East India Company advanced"
-        f['moniker_-1'] = "EIC"
+        f['shortname_-1'] = "EIC"
         self.submit(f)
         logs.append({1001: const.PastEventLogCodes.institution_created})
 
@@ -1978,38 +2002,39 @@ class TestCdEFrontend(FrontendTest):
 
         # add participant (to course)
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-7-8"
+        f['persona_ids'] = "DB-7-8,DB-1-9"
         self.submit(f)
         logs.append({1006: const.PastEventLogCodes.participant_added})
+        logs.append({1007: const.PastEventLogCodes.participant_added})
 
         # delete participant (from course)
         f = self.response.forms['removeparticipantform7']
         self.submit(f)
-        logs.append({1007: const.PastEventLogCodes.participant_removed})
+        logs.append({1008: const.PastEventLogCodes.participant_removed})
 
         # delete course
         f = self.response.forms['deletecourseform']
         f['ack_delete'].checked = True
         self.submit(f)
-        logs.append({1008: const.PastEventLogCodes.course_deleted})
+        logs.append({1009: const.PastEventLogCodes.course_deleted})
 
         # add participant (to past event)
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-7-8"
+        f['persona_ids'] = "DB-7-8"
         self.submit(f)
-        logs.append({1009: const.PastEventLogCodes.participant_added})
+        logs.append({1010: const.PastEventLogCodes.participant_added})
 
         # delete participant (from past event)
         f = self.response.forms['removeparticipantform7']
         self.submit(f)
-        logs.append({1010: const.PastEventLogCodes.participant_removed})
+        logs.append({1011: const.PastEventLogCodes.participant_removed})
 
         # change past event
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changeeventform']
         f['description'] = "Leider ins Wasser gefallen..."
         self.submit(f)
-        logs.append({1011: const.PastEventLogCodes.event_changed})
+        logs.append({1012: const.PastEventLogCodes.event_changed})
 
         # delete past event
         # this deletes an other event, because deletion includes log codes
@@ -2018,14 +2043,14 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['deletepasteventform']
         f['ack_delete'].checked = True
         self.submit(f)
-        logs.append({1012: const.PastEventLogCodes.event_deleted})
+        logs.append({1013: const.PastEventLogCodes.event_deleted})
 
         # delete institution
         self.traverse({'description': 'Organisationen verwalten'})
         f = self.response.forms['institutionsummaryform']
         f['delete_1001'].checked = True
         self.submit(f)
-        logs.append({1013: const.PastEventLogCodes.institution_deleted})
+        logs.append({1014: const.PastEventLogCodes.institution_deleted})
 
         # Now check it
         self.traverse({'description': 'Verg.-Veranstaltungen-Log'})
@@ -2109,7 +2134,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_changelog_meta(self, user):
         self.traverse({'description': 'Nutzerdaten-Log'})
-        self.assertTitle("Nutzerdaten-Log [1–30 von 30]")
+        self.assertTitle("Nutzerdaten-Log [1–31 von 31]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)

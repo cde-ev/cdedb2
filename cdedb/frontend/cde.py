@@ -183,10 +183,15 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
-    @access("searchable")
+    @access("persona")
     @REQUESTdata(("is_search", "bool"))
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for members."""
+        if "searchable" not in rs.user.roles:
+            # As this is linked externally, show a meaningful error message to
+            # unprivileged users.
+            rs.ignore_validation_errors()
+            return self.render(rs, "member_search")
         defaults = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
@@ -263,7 +268,7 @@ class CdEFrontend(AbstractUserFrontend):
             'cutoff': cutoff, 'count': count,
         })
 
-    @access("cde_admin")
+    @access("core_admin", "cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: str, is_search: bool
                     ) -> Response:
@@ -303,7 +308,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
 
-    @access("cde_admin")
+    @access("core_admin", "cde_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,
@@ -313,7 +318,7 @@ class CdEFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("cde_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdatadict(
         "title", "given_names", "family_name", "birth_name", "name_supplement",
         "display_name", "specialisation", "affiliation", "timeline",
@@ -2243,7 +2248,7 @@ class CdEFrontend(AbstractUserFrontend):
     def institution_summary(self, rs: RequestState) -> Response:
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
-        spec = {'title': "str", 'moniker': "str"}
+        spec = {'title': "str", 'shortname': "str"}
         institutions = process_dynamic_input(rs, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
@@ -2584,30 +2589,38 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("pcourse_id", "id_or_None"), ("persona_id", "cdedbid"),
+    @REQUESTdata(("pcourse_id", "id_or_None"),
+                 ("persona_ids", "cdedbid_csv_list"),
                  ("is_instructor", "bool"), ("is_orga", "bool"))
-    def add_participant(self, rs: RequestState, pevent_id: int,
-                        pcourse_id: Optional[int], persona_id: int,
-                        is_instructor: bool, is_orga: bool) -> Response:
+    def add_participants(self, rs: RequestState, pevent_id: int,
+                         pcourse_id: Optional[int],
+                         persona_ids: Collection[int],
+                         is_instructor: bool, is_orga: bool) -> Response:
         """Add participant to concluded event."""
         if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
                 return self.show_past_event(rs, pevent_id)
-        if pcourse_id:
-            param = {'pcourse_id': pcourse_id}
-        else:
-            param = {'pevent_id': pevent_id}
-        participants = self.pasteventproxy.list_participants(rs, **param)
-        if persona_id in participants:
-            rs.notify("warning", n_("Participant already present."))
+
+        # Check presence of valid event users for the given ids
+        if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
+            rs.append_validation_error(("persona_ids",
+                ValueError(n_("Some of these users do not exist."))))
+        if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
+            rs.append_validation_error(("persona_ids",
+                ValueError(n_("Some of these users are not event users."))))
+        if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
                 return self.show_past_event(rs, pevent_id)
-        code = self.pasteventproxy.add_participant(
-            rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
+
+        code = 1
+        # TODO: Check if participants are already present.
+        for persona_id in persona_ids:
+            code *= self.pasteventproxy.add_participant(rs, pevent_id,
+                pcourse_id, persona_id, is_instructor, is_orga)
         self.notify_return_code(rs, code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course",

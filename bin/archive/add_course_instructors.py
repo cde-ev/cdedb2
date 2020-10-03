@@ -10,12 +10,9 @@ import psycopg2.extras
 import psycopg2.extensions
 
 import pytz
-import sys
 from pathlib import Path
 import shutil
 import time
-
-sys.path.insert(0, "/cdedb2/")
 
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend

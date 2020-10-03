@@ -20,7 +20,8 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
-    RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap)
+    RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap,
+    MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, PrivilegeError)
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
@@ -69,7 +70,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos})
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': False,
@@ -78,7 +79,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("ml_admin", modi={"POST"})
+    @access("core_admin", "ml_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes", "username")
     def create_user(self, rs: RequestState, data: Dict[str, Any],
@@ -93,7 +94,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data, ignore_warnings)
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs: RequestState, download: str,
                     is_search: bool) -> Response:
@@ -215,6 +216,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 'ml_type': ml_type,
                 'available_domains': available_domains,
                 'additional_fields': additional_fields,
+                'maxsize_default': atype.maxsize_default,
             })
 
     @access("ml", modi={"POST"})
@@ -238,7 +240,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
-                    "Some of these users are not ml-users."))))
+                    "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         # Check if mailinglist address is unique
@@ -381,17 +383,18 @@ class MlBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, rs.ambience['mailinglist'])
         if not self.mlproxy.is_relevant_admin(
                 rs, mailinglist=rs.ambience['mailinglist']):
-            rs.notify("info",
-                      n_("Only Admins may change mailinglist configuration."))
+            rs.notify("info", n_("Some fields may only be changed by admins."))
+        privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
             'available_domains': available_domains,
             'additional_fields': additional_fields,
+            'privileged': privileged,
         })
 
     @access("ml", modi={"POST"})
-    @mailinglist_guard(allow_moderators=False)
+    @mailinglist_guard()
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
@@ -400,13 +403,23 @@ class MlBaseFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
+
+        if self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
+            # admins may change everything except ml_type which got its own site
+            allowed = set(data) - {'ml_type'}
+        elif self.mlproxy.is_moderator(rs, mailinglist_id, privileged=True):
+            allowed = PRIVILEGED_MOD_ALLOWED_FIELDS
+        else:
+            allowed = MOD_ALLOWED_FIELDS
+
+        # we discard every entry of not allowed fields silently
+        for key in set(data) - allowed:
+            data[key] = rs.ambience['mailinglist'][key]
+
         data = check(rs, "mailinglist", data)
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
-        if data['ml_type'] != rs.ambience['mailinglist']['ml_type']:
-            rs.append_validation_error(
-                ("ml_type", ValueError(n_(
-                    "Mailinglist Type cannot be changed here."))))
+
         # Check if mailinglist address is unique
         try:
             self.mlproxy.validate_address(rs, data)
@@ -624,11 +637,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
                     "Some of these users do not exist or are archived."))))
-        verified = set(self.coreproxy.verify_personas(rs, moderators, {"ml"}))
-        if not verified == moderators:
+        if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
-                    "Some of these users are not ml-users."))))
+                    "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
@@ -701,6 +713,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
         except SubscriptionError as se:
             rs.notify(se.kind, se.msg)
+        except PrivilegeError as pe:
+            rs.notify("error", n_("Not privileged to change subscriptions."))
         else:
             self.notify_return_code(rs, code)
 
@@ -724,7 +738,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if len(persona_ids) == 1:
             self._subscription_action_handler(rs, action,
                 mailinglist_id=mailinglist_id, persona_id=unwrap(persona_ids))
-
+            return
         # Iterate over all subscriber_ids
         code = 0
         # This tracks whether every single action failed with
@@ -739,6 +753,10 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs.notify(se.multikind, se.msg)
                 if se.multikind != 'info':
                     infos_only = False
+            except PrivilegeError as pe:
+                infos_only = False
+                rs.notify("error",
+                          n_("Not privileged to change subscriptions."))
         if infos_only:
             self.notify_return_code(rs, -1, pending=n_("Action had no effect."))
         else:
