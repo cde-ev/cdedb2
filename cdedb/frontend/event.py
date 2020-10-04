@@ -5590,7 +5590,9 @@ class EventFrontend(AbstractUserFrontend):
         for col in ("is_offered", "takes_place", "attendees"):
             selection_default += list("track{}.{}".format(t_id, col)
                                       for t_id in tracks)
-        default_queries: List[Query] = []
+
+        default_queries = self.conf["DEFAULT_QUERIES_COURSE"](
+            rs.gettext, rs.ambience['event'], spec)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,

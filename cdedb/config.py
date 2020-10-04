@@ -84,14 +84,19 @@ def generate_event_registration_default_queries(gettext, event, spec):
     all_part_stati_column = ",".join(
         "part{0}.status".format(part_id) for part_id in event['parts'])
 
-    dokuteam_course_fields_of_interest = [
-        "persona.given_names", "persona.family_name", "persona.username"]
-    for part_id in event['parts']:
-        dokuteam_course_fields_of_interest.append(
-            "part{}.status".format(part_id))
+    dokuteam_course_picture_fields_of_interest = [
+        "persona.id", "persona.given_names", "persona.family_name"]
     for track_id in event['tracks']:
-        dokuteam_course_fields_of_interest.append(
-            "course{}.id".format(track_id))
+        dokuteam_course_picture_fields_of_interest.append(f"course{track_id}.nr")
+        dokuteam_course_picture_fields_of_interest.append(
+            f"track{track_id}.is_course_instructor")
+
+    dokuteam_dokuforge_fields_of_interest = [
+        "persona.id", "persona.given_names", "persona.family_name", "persona.username"]
+    for track_id in event['tracks']:
+        dokuteam_dokuforge_fields_of_interest.append(f"course{track_id}.nr")
+        dokuteam_dokuforge_fields_of_interest.append(
+            f"track{track_id}.is_course_instructor")
 
     dokuteam_address_fields_of_interest = [
         "persona.given_names", "persona.family_name", "persona.address",
@@ -166,16 +171,19 @@ def generate_event_registration_default_queries(gettext, event, spec):
              ("reg.parental_agreement", QueryOperators.equal, False)),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
-        n_("60_query_dokuteam_course_export"): Query(
-            "qview_registration", spec, dokuteam_course_fields_of_interest,
+        n_("62_query_dokuteam_course_picture"): Query(
+            "qview_registration", spec, dokuteam_course_picture_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),),
-            default_sort),
-        n_("62_query_dokuteam_address_export"): Query(
+              const.RegistrationPartStati.participant.value),), default_sort),
+        n_("63_query_dokuteam_dokuforge"): Query(
+            "qview_registration", spec, dokuteam_dokuforge_fields_of_interest,
+            ((all_part_stati_column, QueryOperators.equal,
+              const.RegistrationPartStati.participant.value),
+             ("reg.list_consent", QueryOperators.equal, True),), default_sort),
+        n_("64_query_dokuteam_address_export"): Query(
             "qview_registration", spec, dokuteam_address_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),),
-            default_sort),
+              const.RegistrationPartStati.participant.value),), default_sort),
     }
 
     def get_waitlist_order(part: CdEDBObject) -> str:
@@ -215,6 +223,33 @@ def generate_event_registration_default_queries(gettext, event, spec):
         for i, part in enumerate(xsorted(
             event['parts'].values(), key=EntitySorter.event_part))
     })
+
+    return queries
+
+
+
+def generate_event_course_default_queries(gettext, event, spec):
+    """
+    Generate default queries for course_queries.
+
+    Some of these contain dynamic information about the event's Parts,
+    Tracks, etc.
+
+    :param gettext: The translation function for the current locale.
+    :param event: The Event for which to generate the queries
+    :type event:
+    :param spec: The Query Spec, dynamically generated for the event
+    :type spec:
+    :return: Dict of default queries
+    """
+
+    queries = {
+        n_("00_query_dokuteam_courselist"): Query(
+            "qview_event_course", spec,
+            ("course.nr", "course.shortname", "course.title"),
+            tuple(),
+            (("course.nr", True),)),
+    }
 
     return queries
 
@@ -532,6 +567,9 @@ _DEFAULTS = {
 
     "DEFAULT_QUERIES_REGISTRATION":
         generate_event_registration_default_queries,
+
+    "DEFAULT_QUERIES_COURSE":
+        generate_event_course_default_queries,
 
 }
 
