@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-10-04 18:59+0200\n"
+"POT-Creation-Date: 2020-10-05 00:01+0200\n"
 "PO-Revision-Date: 2020-10-03 12:01+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -41,7 +41,7 @@ msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
 
 #: cdedb/backend/assembly.py:342 cdedb/backend/assembly.py:365
-#: cdedb/backend/assembly.py:1889 cdedb/backend/event.py:64
+#: cdedb/backend/assembly.py:1895 cdedb/backend/event.py:64
 #: cdedb/backend/event.py:95 cdedb/backend/past_event.py:541
 #: cdedb/frontend/common.py:1091
 msgid "No input specified."
@@ -51,7 +51,7 @@ msgstr "Keine Eingabe gemacht."
 msgid "Can only retrieve id for exactly one assembly."
 msgstr "Kann nur die ID von exact einer Versammlung bestimmen."
 
-#: cdedb/backend/assembly.py:367 cdedb/backend/assembly.py:1891
+#: cdedb/backend/assembly.py:367 cdedb/backend/assembly.py:1897
 #: cdedb/backend/event.py:66 cdedb/backend/event.py:84
 #: cdedb/backend/past_event.py:533
 msgid "Too many inputs specified."
@@ -64,8 +64,8 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/backend/assembly.py:436 cdedb/backend/assembly.py:484
 #: cdedb/backend/assembly.py:738 cdedb/backend/assembly.py:1304
 #: cdedb/backend/assembly.py:1520 cdedb/backend/assembly.py:1725
-#: cdedb/backend/assembly.py:1869 cdedb/backend/assembly.py:1896
-#: cdedb/backend/assembly.py:1954 cdedb/backend/cde.py:111
+#: cdedb/backend/assembly.py:1875 cdedb/backend/assembly.py:1902
+#: cdedb/backend/assembly.py:1960 cdedb/backend/cde.py:111
 #: cdedb/backend/cde.py:135 cdedb/backend/cde.py:282 cdedb/backend/core.py:497
 #: cdedb/backend/core.py:668 cdedb/backend/core.py:2409
 #: cdedb/backend/core.py:2412 cdedb/backend/core.py:2440
@@ -95,15 +95,14 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/frontend/assembly.py:569 cdedb/frontend/assembly.py:627
 #: cdedb/frontend/assembly.py:647 cdedb/frontend/assembly.py:978
 #: cdedb/frontend/assembly.py:1190 cdedb/frontend/assembly.py:1288
-#: cdedb/frontend/assembly.py:1342 cdedb/frontend/core.py:722
-#: cdedb/frontend/core.py:725 cdedb/frontend/core.py:730
-#: cdedb/frontend/core.py:735 cdedb/frontend/core.py:742
-#: cdedb/frontend/core.py:747 cdedb/frontend/core.py:753
-#: cdedb/frontend/core.py:758 cdedb/frontend/core.py:765
-#: cdedb/frontend/core.py:1530 cdedb/frontend/core.py:1544
-#: cdedb/frontend/core.py:2148 cdedb/frontend/core.py:2162
-#: cdedb/frontend/core.py:2193 cdedb/frontend/core.py:2217
-#: cdedb/frontend/event.py:6108
+#: cdedb/frontend/assembly.py:1342 cdedb/frontend/core.py:708
+#: cdedb/frontend/core.py:711 cdedb/frontend/core.py:716
+#: cdedb/frontend/core.py:722 cdedb/frontend/core.py:730
+#: cdedb/frontend/core.py:736 cdedb/frontend/core.py:744
+#: cdedb/frontend/core.py:751 cdedb/frontend/core.py:1512
+#: cdedb/frontend/core.py:1526 cdedb/frontend/core.py:2130
+#: cdedb/frontend/core.py:2144 cdedb/frontend/core.py:2175
+#: cdedb/frontend/core.py:2199 cdedb/frontend/event.py:6108
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -274,7 +273,7 @@ msgstr "Fehlende Zugriffsrechte zum Anlegen eines Dateianhangs."
 
 #: cdedb/backend/assembly.py:1550 cdedb/backend/assembly.py:1602
 #: cdedb/backend/assembly.py:1761 cdedb/backend/assembly.py:1799
-#: cdedb/backend/assembly.py:1824
+#: cdedb/backend/assembly.py:1829
 msgid ""
 "Unable to change attachment once voting has begun or the assembly has "
 "been concluded."
@@ -314,19 +313,19 @@ msgstr "Fehlende Zugriffsrechte zum Hinzufügen einer neuen Dateiversion."
 msgid "Must have privileged access to change attachment version."
 msgstr "Fehlende Zugriffsrechte zum Verändern einer Dateiversion."
 
-#: cdedb/backend/assembly.py:1821
+#: cdedb/backend/assembly.py:1826
 msgid "Must have privileged access to remove attachment version."
 msgstr "Fehlende Zugriffsrechte zum Löschen einer Dateiversion."
 
-#: cdedb/backend/assembly.py:1829 cdedb/frontend/assembly.py:935
+#: cdedb/backend/assembly.py:1834 cdedb/frontend/assembly.py:935
 msgid "This version does not exist."
 msgstr "Diese Version der Datei existiert nicht."
 
-#: cdedb/backend/assembly.py:1831 cdedb/frontend/assembly.py:938
+#: cdedb/backend/assembly.py:1836 cdedb/frontend/assembly.py:938
 msgid "This version has already been deleted."
 msgstr "Diese Version der Datei wurde beireits gelöscht."
 
-#: cdedb/backend/assembly.py:1834 cdedb/frontend/assembly.py:942
+#: cdedb/backend/assembly.py:1839 cdedb/frontend/assembly.py:942
 #: cdedb/frontend/templates/web/assembly/util.tmpl:109
 msgid "Cannot remove the last remaining version of an attachment."
 msgstr "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
@@ -466,7 +465,7 @@ msgid "Modification failed."
 msgstr "Modifikation fehlgeschlagen."
 
 #: cdedb/backend/core.py:570 cdedb/backend/core.py:2211
-#: cdedb/backend/core.py:2233 cdedb/frontend/core.py:1649
+#: cdedb/backend/core.py:2233 cdedb/frontend/core.py:1631
 msgid "Nonexistent user."
 msgstr "Nutzer existiert nicht."
 
@@ -524,7 +523,7 @@ msgid "Special change not committed."
 msgstr "Spezialänderung nicht vollzogen."
 
 #: cdedb/backend/core.py:806 cdedb/backend/core.py:882
-#: cdedb/frontend/core.py:1207 cdedb/frontend/core.py:1289
+#: cdedb/frontend/core.py:1189 cdedb/frontend/core.py:1271
 msgid "Cannot modify own meta admin privileges."
 msgstr "Die eigenen Meta-Admin-Privilegien können nicht bearbeitet werden."
 
@@ -543,7 +542,7 @@ msgstr ""
 msgid "Invalid privilege change state: %(status)s."
 msgstr "Ungültiger Status für Änderung der Admin-Privilegien: %(status)s."
 
-#: cdedb/backend/core.py:885 cdedb/frontend/core.py:1292
+#: cdedb/backend/core.py:885 cdedb/frontend/core.py:1274
 msgid "Only a different admin than the submitter may approve a privilege change."
 msgstr "Nur ein anderer Admin als der Antragsteller kann eine Änderung bestätigen."
 
@@ -608,12 +607,12 @@ msgstr "Kann nicht still geleert werden."
 msgid "Only admins may unset an email address."
 msgstr "Löschen von E-Mail-Adressen nur durch Admins."
 
-#: cdedb/backend/core.py:1459 cdedb/frontend/core.py:1796
+#: cdedb/backend/core.py:1459 cdedb/frontend/core.py:1778
 msgid "Name collision."
 msgstr "E-Mail-Adresse bereits vorhanden."
 
-#: cdedb/backend/core.py:1479 cdedb/frontend/core.py:1993
-#: cdedb/frontend/core.py:2233
+#: cdedb/backend/core.py:1479 cdedb/frontend/core.py:1975
+#: cdedb/frontend/core.py:2215
 msgid "Failed."
 msgstr "Aktion fehlgeschlagen."
 
@@ -1235,7 +1234,7 @@ msgstr "Dieser Nutzer ist kein Wahlleiter für diese Versammlung."
 #: cdedb/frontend/assembly.py:351 cdedb/frontend/assembly.py:514
 #: cdedb/frontend/assembly.py:919 cdedb/frontend/assembly.py:1263
 #: cdedb/frontend/cde.py:2524 cdedb/frontend/cde.py:2582
-#: cdedb/frontend/core.py:2337 cdedb/frontend/core.py:2370
+#: cdedb/frontend/core.py:2319 cdedb/frontend/core.py:2352
 #: cdedb/frontend/event.py:1364 cdedb/frontend/event.py:4112
 #: cdedb/frontend/event.py:4732 cdedb/frontend/event.py:6015
 #: cdedb/frontend/event.py:6047 cdedb/frontend/ml_base.py:477
@@ -1443,11 +1442,11 @@ msgid "No Member with ID %(p_id)s found."
 msgstr "Kein Account mit ID %(p_id)s gefunden."
 
 #: cdedb/frontend/cde.py:1090 cdedb/frontend/core.py:537
-#: cdedb/frontend/core.py:1033 cdedb/frontend/core.py:1112
-#: cdedb/frontend/core.py:1360 cdedb/frontend/core.py:1426
-#: cdedb/frontend/core.py:1483 cdedb/frontend/core.py:1508
-#: cdedb/frontend/core.py:1532 cdedb/frontend/core.py:1852
-#: cdedb/frontend/core.py:1888
+#: cdedb/frontend/core.py:1015 cdedb/frontend/core.py:1094
+#: cdedb/frontend/core.py:1342 cdedb/frontend/core.py:1408
+#: cdedb/frontend/core.py:1465 cdedb/frontend/core.py:1490
+#: cdedb/frontend/core.py:1514 cdedb/frontend/core.py:1834
+#: cdedb/frontend/core.py:1870
 msgid "Persona is archived."
 msgstr "Account ist archiviert."
 
@@ -1479,7 +1478,7 @@ msgstr ""
 msgid "Committed %(num)s transfers. There were %(new_members)s new members."
 msgstr "%(num)s Überweisungen gebucht. %(new_members)s neue Mitglieder."
 
-#: cdedb/frontend/cde.py:1429 cdedb/frontend/core.py:1474
+#: cdedb/frontend/cde.py:1429 cdedb/frontend/core.py:1456
 msgid "Permit revoked."
 msgstr "Lastschriftmandat widerrufen."
 
@@ -1655,13 +1654,13 @@ msgstr ""
 msgid "Stored email to hard drive at %(path)s"
 msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
-#: cdedb/frontend/common.py:1380 cdedb/frontend/core.py:1296
-#: cdedb/frontend/core.py:2326
+#: cdedb/frontend/common.py:1380 cdedb/frontend/core.py:1278
+#: cdedb/frontend/core.py:2308
 msgid "Change committed."
 msgstr "Die Änderung wurde übernommen."
 
-#: cdedb/frontend/common.py:1381 cdedb/frontend/core.py:872
-#: cdedb/frontend/core.py:1043
+#: cdedb/frontend/common.py:1381 cdedb/frontend/core.py:854
+#: cdedb/frontend/core.py:1025
 msgid "Change pending."
 msgstr "Die Änderung wartet auf Bestätigung."
 
@@ -1788,10 +1787,10 @@ msgstr "Zugriff auf archivierte Datensätze nur für Admins."
 msgid "Access to non-searchable member data."
 msgstr "Zugriff auf Mitgliedsdatensatz ohne Datenschutz-Einwilligung."
 
-#: cdedb/frontend/core.py:535 cdedb/frontend/core.py:1031
-#: cdedb/frontend/core.py:1061 cdedb/frontend/core.py:1699
-#: cdedb/frontend/core.py:1850 cdedb/frontend/core.py:1864
-#: cdedb/frontend/core.py:1883
+#: cdedb/frontend/core.py:535 cdedb/frontend/core.py:1013
+#: cdedb/frontend/core.py:1043 cdedb/frontend/core.py:1681
+#: cdedb/frontend/core.py:1832 cdedb/frontend/core.py:1846
+#: cdedb/frontend/core.py:1865
 msgid "Not a relative admin."
 msgstr "Nicht genug Adminprivilegien für diesen Account."
 
@@ -1799,15 +1798,15 @@ msgstr "Nicht genug Adminprivilegien für diesen Account."
 msgid "No account found."
 msgstr "Kein Account gefunden."
 
-#: cdedb/frontend/core.py:963
+#: cdedb/frontend/core.py:945
 msgid "No valid realm."
 msgstr "Kein gültiger Bereich."
 
-#: cdedb/frontend/core.py:1119 cdedb/frontend/core.py:1148
+#: cdedb/frontend/core.py:1101 cdedb/frontend/core.py:1130
 msgid "Resolve pending privilege change first."
 msgstr "Schließe erst die ausstehende Änderung der Admin-Privlilegien ab."
 
-#: cdedb/frontend/core.py:1178
+#: cdedb/frontend/core.py:1160
 msgid ""
 "Cannot grant meta, core, CdE or CdElokal admin privileges to non CdE "
 "users."
@@ -1815,11 +1814,11 @@ msgstr ""
 "Ein nicht-CdE-Nutzer kann keine Meta-, Core-, CdE- oder "
 "CdElokaladminrechte erhalten."
 
-#: cdedb/frontend/core.py:1186
+#: cdedb/frontend/core.py:1168
 msgid "Cannot grant finance admin privileges to non CdE admins."
 msgstr "Nur CdE Admins können Finanz Admin werden."
 
-#: cdedb/frontend/core.py:1191
+#: cdedb/frontend/core.py:1173
 msgid ""
 "Cannot grant mailinglist or CdElokal admin privileges to non mailinglist "
 "users."
@@ -1827,29 +1826,29 @@ msgstr ""
 "Ein Nutzer ohne Mailinglistenprivilegien kann nicht Malinglisten- oder "
 "CdElokaladmin sein."
 
-#: cdedb/frontend/core.py:1197
+#: cdedb/frontend/core.py:1179
 msgid "Cannot grant event admin privileges to non event users."
 msgstr "Nur Veranstaltungs Nutzer können Veranstaltungs Admin werden."
 
-#: cdedb/frontend/core.py:1202
+#: cdedb/frontend/core.py:1184
 msgid "Cannot grant assembly admin privileges to non assembly users."
 msgstr "Nur Versammlungs Nutzer können Versammlungs Admin werden."
 
-#: cdedb/frontend/core.py:1217
+#: cdedb/frontend/core.py:1199
 msgid "Privilege change waiting for approval by another Meta-Admin."
 msgstr ""
 "Änderung der Admin-Privilegien wartet auf Bestätigung durch einen anderen"
 " Meta-Admin."
 
-#: cdedb/frontend/core.py:1222
+#: cdedb/frontend/core.py:1204
 msgid "No changes were made."
 msgstr "Es wurden keine Änderungen gemacht."
 
-#: cdedb/frontend/core.py:1249 cdedb/frontend/core.py:1280
+#: cdedb/frontend/core.py:1231 cdedb/frontend/core.py:1262
 msgid "Privilege change not pending."
 msgstr "Änderung der Admin-Privilegien nicht ausstehend."
 
-#: cdedb/frontend/core.py:1255
+#: cdedb/frontend/core.py:1237
 msgid ""
 "This privilege change is affecting your Meta-Admin privileges, so it has "
 "to be approved by another Meta-Admin."
@@ -1857,7 +1856,7 @@ msgstr ""
 "Diese Änderung betrifft Deine Meta-Admin-Privilegien und muss daher von "
 "einem anderen Meta-Admin bestätigt werden."
 
-#: cdedb/frontend/core.py:1260
+#: cdedb/frontend/core.py:1242
 msgid ""
 "This privilege change was submitted by you, so it has to be approved by "
 "another Meta-Admin."
@@ -1865,136 +1864,136 @@ msgstr ""
 "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen und muss "
 "daher von einem anderen Meta-Admin bestätigt werden."
 
-#: cdedb/frontend/core.py:1296
+#: cdedb/frontend/core.py:1278
 msgid "Change rejected."
 msgstr "Änderung abgelehnt."
 
-#: cdedb/frontend/core.py:1297
+#: cdedb/frontend/core.py:1279
 msgid "Password reset issued for new admin."
 msgstr "Passwort eines neuen Admins ungültig gemacht."
 
-#: cdedb/frontend/core.py:1365
+#: cdedb/frontend/core.py:1347
 msgid "No promotion necessary."
 msgstr "Keine Änderung erforderlich."
 
-#: cdedb/frontend/core.py:1505
+#: cdedb/frontend/core.py:1487
 msgid "Nothing changed."
 msgstr "Keine Änderungen."
 
-#: cdedb/frontend/core.py:1553
+#: cdedb/frontend/core.py:1535
 msgid "Foto updated."
 msgstr "Bild aktualisiert."
 
-#: cdedb/frontend/core.py:1554
+#: cdedb/frontend/core.py:1536
 msgid "Foto removed."
 msgstr "Profilbild entfernt."
 
-#: cdedb/frontend/core.py:1565
+#: cdedb/frontend/core.py:1547
 msgid "Please provide the user's email address."
 msgstr "Bitte gib die Emailadresse des Nutzers an."
 
-#: cdedb/frontend/core.py:1571
+#: cdedb/frontend/core.py:1553
 msgid "Password invalidated."
 msgstr "Passwort ungültig gemacht."
 
-#: cdedb/frontend/core.py:1597 cdedb/frontend/core.py:1598
-#: cdedb/frontend/core.py:1600 cdedb/frontend/core.py:1755
-#: cdedb/frontend/core.py:1756 cdedb/frontend/core.py:1758
+#: cdedb/frontend/core.py:1579 cdedb/frontend/core.py:1580
+#: cdedb/frontend/core.py:1582 cdedb/frontend/core.py:1737
+#: cdedb/frontend/core.py:1738 cdedb/frontend/core.py:1740
 msgid "Passwords don’t match."
 msgstr "Passwörter stimmen nicht überein."
 
-#: cdedb/frontend/core.py:1615
+#: cdedb/frontend/core.py:1597
 msgid "Password changed."
 msgstr "Passwort geändert."
 
-#: cdedb/frontend/core.py:1619
+#: cdedb/frontend/core.py:1601
 msgid "Wrong password."
 msgstr "Passwort falsch."
 
-#: cdedb/frontend/core.py:1672 cdedb/frontend/core.py:1679
-#: cdedb/frontend/core.py:1720
+#: cdedb/frontend/core.py:1654 cdedb/frontend/core.py:1661
+#: cdedb/frontend/core.py:1702
 msgid "Email sent."
 msgstr "E-Mail abgeschickt."
 
-#: cdedb/frontend/core.py:1739
+#: cdedb/frontend/core.py:1721
 msgid "Please try again."
 msgstr "Bitte versuche es erneut."
 
-#: cdedb/frontend/core.py:1772
+#: cdedb/frontend/core.py:1754
 msgid "Password reset."
 msgstr "Passwort zurückgesetzt."
 
-#: cdedb/frontend/core.py:1791
+#: cdedb/frontend/core.py:1773
 msgid "Must be different from current email address."
 msgstr "Muss sich von der aktuellen E-Mail-Adresse unterscheiden."
 
-#: cdedb/frontend/core.py:1833 cdedb/frontend/core.py:1869
+#: cdedb/frontend/core.py:1815 cdedb/frontend/core.py:1851
 msgid "Email address changed."
 msgstr "E-Mail-Adresse geändert."
 
-#: cdedb/frontend/core.py:1952
+#: cdedb/frontend/core.py:1934
 msgid "It seems like you took too long and your previous upload was deleted."
 msgstr ""
 "Es scheint als hättest Du Dir zu viel Zeit gelassen und Deine Datei wurde"
 " mittlerweile wieder gelöscht."
 
-#: cdedb/frontend/core.py:1964
+#: cdedb/frontend/core.py:1946
 msgid "Rationale too long."
 msgstr "Begründung zu lang."
 
-#: cdedb/frontend/core.py:1970
+#: cdedb/frontend/core.py:1952
 #, python-format
 msgid "Must specify gender for %(realm)s realm."
 msgstr "Muss Geschlecht angeben für %(realm)s Bereich."
 
-#: cdedb/frontend/core.py:1983
+#: cdedb/frontend/core.py:1965
 msgid "Confirmation email has been resent."
 msgstr "Bestätigungsmail erneut versendet."
 
-#: cdedb/frontend/core.py:1987
+#: cdedb/frontend/core.py:1969
 msgid "Email address already in DB. Reset password."
 msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."
 
-#: cdedb/frontend/core.py:2012
+#: cdedb/frontend/core.py:1994
 msgid "Email sent. Please follow the link contained in the email."
 msgstr "E-Mail verschickt. Bitte den enthaltenen Link besuchen."
 
-#: cdedb/frontend/core.py:2028
+#: cdedb/frontend/core.py:2010
 msgid "Verification failed. Please contact the administrators."
 msgstr "Verifikation fehlgeschlagen. Bitte an die Verwaltung wenden."
 
-#: cdedb/frontend/core.py:2029
+#: cdedb/frontend/core.py:2011
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
 "E-Mail-Adresse verifiziert. Deine Anfrage wird bald bearbeitet und Du "
 "wirst dann per E-Mail informiert."
 
-#: cdedb/frontend/core.py:2031
+#: cdedb/frontend/core.py:2013
 msgid "This account request was already verified."
 msgstr "Diese Accountanfrage wurde bereits bestätigt."
 
-#: cdedb/frontend/core.py:2164 cdedb/frontend/core.py:2195
-#: cdedb/frontend/core.py:2219
+#: cdedb/frontend/core.py:2146 cdedb/frontend/core.py:2177
+#: cdedb/frontend/core.py:2201
 msgid "Case not to review."
 msgstr "Anfrage befindet sich nicht in der Begutachtung."
 
-#: cdedb/frontend/core.py:2251
+#: cdedb/frontend/core.py:2233
 msgid "Case approved."
 msgstr "Antrag genehmigt."
 
-#: cdedb/frontend/core.py:2258
+#: cdedb/frontend/core.py:2240
 msgid "Case rejected."
 msgstr "Anfrage abgewiesen."
 
-#: cdedb/frontend/core.py:2307
+#: cdedb/frontend/core.py:2289
 msgid "Persona has no pending change."
 msgstr "Account hat keine zu begutachtenden Änderungen."
 
-#: cdedb/frontend/core.py:2326
+#: cdedb/frontend/core.py:2308
 msgid "Change dropped."
 msgstr "Änderung unterdrückt."
 
-#: cdedb/frontend/core.py:2339
+#: cdedb/frontend/core.py:2321
 msgid "Must supply archival note."
 msgstr "Archivierungsnotiz muss angegeben werden."
 
@@ -3050,7 +3049,7 @@ msgid "Postal Code, City"
 msgstr "Postleitzahl, Stadt"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:4
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:154
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:153
 #: cdedb/frontend/templates/web/assembly/show_attachment.tmpl:54
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:127
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:176
@@ -3064,7 +3063,7 @@ msgid "Actions"
 msgstr "Aktionen"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:12
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:163
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:162
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:185
 #: cdedb/frontend/templates/web/assembly/util.tmpl:66
 #: cdedb/frontend/templates/web/assembly/util.tmpl:105
@@ -3233,7 +3232,7 @@ msgid "Until now, %(count)s attendees had given their vote for this ballot."
 msgstr "Bis jetzt haben %(count)s Teilnehmer über diesen Punkt abgestimmt."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:159
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:105
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:104
 msgid "Files"
 msgstr "Dateien"
 
@@ -3775,7 +3774,7 @@ msgstr "Version hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:23
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:53
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:124
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:123
 #: cdedb/frontend/templates/web/assembly/util.tmpl:218
 msgid "Add File"
 msgstr "Datei hinzufügen"
@@ -3833,7 +3832,7 @@ msgstr "Hochladen"
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:82
 #: cdedb/frontend/templates/web/ml/base.tmpl:8
 #: cdedb/frontend/templates/web/ml/base.tmpl:54
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:179
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:175
 msgid "Overview"
 msgstr "Übersicht"
 
@@ -4084,10 +4083,10 @@ msgid "Presiders"
 msgstr "Wahlleitung"
 
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:31
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:80
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:79
 #: cdedb/frontend/templates/web/event/show_event.tmpl:191
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:50
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:102
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:48
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:98
 msgid "ID, name, email"
 msgstr "ID, Name, E-Mail"
 
@@ -4170,7 +4169,7 @@ msgid "Attachment Overview (%(title)s)"
 msgstr "Datei-Übersicht (%(title)s)"
 
 #: cdedb/frontend/templates/web/assembly/list_attachments.tmpl:33
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:110
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:109
 #: cdedb/frontend/templates/web/assembly/util.tmpl:155
 msgid "General Files"
 msgstr "Allgemeine Dateien"
@@ -4295,31 +4294,32 @@ msgstr "Wahlleiter hinzufügen"
 msgid "IDs of the new Presiders."
 msgstr "IDs der neuen Wahlleiter"
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:133
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:132
 msgid "Ballot Files"
 msgstr "Dateien zu Abstimmungen"
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:161
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:160
 #: cdedb/frontend/templates/web/event/show_event.tmpl:382
 msgid "Archive"
 msgstr "Archivieren"
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:162
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:161
 msgid "Assembly still has open ballots."
 msgstr "Die Versammlung hat noch laufende Abstimmungen."
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:169
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:168
 msgid ""
-"Archives the assembly. The configuration cannot be changed after this. "
-"The private keys used to sign the votes will be deleted from the "
-"database. This should typically be done shortly after all ballots have "
-"been conlcuded."
+"Archives the assembly. The configuration and attachments cannot be "
+"changed after this. The private keys used to sign the votes will be "
+"deleted from the database. This should typically be done shortly after "
+"all ballots have been concluded and all files regarding the "
+"assembly have been uploaded correctly."
 msgstr ""
-"Archiviert die Versammlung. Die Konfiguration kann danach nicht mehr\n"
-"geändert werden. Die geheimen Schlüssel zum Signieren der Abstimmungen\n"
-"werden aus der Datenbank gelöscht. Dies sollte für gewöhnlich bald "
-"nachdem\n"
-"alle Abstimmungen beendet sind gemacht werden."
+"Archiviert die Versammlung. Die Konfiguration und die Dateien können danach nicht mehr "
+"geändert werden. Die geheimen Schlüssel zum Signieren der Abstimmungen "
+"werden aus der Datenbank gelöscht. Dies sollte gewöhnlich getan werden, "
+"nachdem alle Abstimmungen beendet wurden und alle die Versammlung betreffenden "
+"Dateien korrekt hochgeladen wurden."
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:191
 msgid ""
@@ -4521,6 +4521,8 @@ msgstr "Mitglieder"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:158
 #: cdedb/frontend/templates/web/event/base.tmpl:80
 #: cdedb/frontend/templates/web/event/base.tmpl:93
+#: cdedb/frontend/templates/web/event/index.tmpl:5
+#: cdedb/frontend/templates/web/event/index.tmpl:10
 #: cdedb/frontend/templates/web/generic.tmpl:149
 #: cdedb/frontend/templates/web/generic.tmpl:153
 #: cdedb/frontend/templates/web/generic.tmpl:216
@@ -5015,6 +5017,7 @@ msgstr "Verg. Veranstaltung anlegen"
 #: cdedb/frontend/templates/web/event/course_query.tmpl:21
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:12
 #: cdedb/frontend/templates/web/event/create_course.tmpl:14
+#: cdedb/frontend/templates/web/event/index.tmpl:103
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:14
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:214
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:105
@@ -5619,6 +5622,8 @@ msgid "Confirm"
 msgstr "Bestätigen"
 
 #: cdedb/frontend/templates/web/cde/list_past_events.tmpl:4
+#: cdedb/frontend/templates/web/event/index.tmpl:128
+#: cdedb/frontend/templates/web/event/index.tmpl:130
 msgid "Past Events (long)"
 msgstr "Vergangene Veranstaltungen"
 
@@ -6512,7 +6517,7 @@ msgstr "Genehmigen"
 
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:57
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:121
-#: cdedb/frontend/templates/web/ml/management.tmpl:119
+#: cdedb/frontend/templates/web/ml/management.tmpl:118
 msgid "Reject"
 msgstr "Ablehnen"
 
@@ -6755,6 +6760,7 @@ msgstr "(Anmeldung ab %(date)s)"
 #: cdedb/frontend/templates/web/event/downloads.tmpl:137
 #: cdedb/frontend/templates/web/event/field_set.tmpl:23
 #: cdedb/frontend/templates/web/event/field_set_select.tmpl:20
+#: cdedb/frontend/templates/web/event/index.tmpl:96
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:131
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:14
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:21
@@ -6764,6 +6770,7 @@ msgstr "Anmeldungen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:155
 #: cdedb/frontend/templates/web/event/base.tmpl:37
+#: cdedb/frontend/templates/web/event/index.tmpl:99
 #: cdedb/frontend/templates/web/event/stats.tmpl:12
 #: cdedb/frontend/templates/web/event/stats.tmpl:16
 msgid "Statistics"
@@ -6784,6 +6791,7 @@ msgstr[0] "%(count)s Anfrage"
 msgstr[1] "%(count)s Anfragen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:194
+#: cdedb/frontend/templates/web/event/index.tmpl:13
 #: cdedb/frontend/templates/web/event/list_db_events.tmpl:57
 msgid "Current Events"
 msgstr "Aktuelle Veranstaltungen"
@@ -6794,17 +6802,20 @@ msgid "(Already %(link)s)"
 msgstr "(Bereits %(link)s)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:206
+#: cdedb/frontend/templates/web/event/index.tmpl:45
 msgid "registered"
 msgstr "angemeldet"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:212
 #: cdedb/frontend/templates/web/event/additional_questionnaire.tmpl:25
 #: cdedb/frontend/templates/web/event/base.tmpl:19
+#: cdedb/frontend/templates/web/event/index.tmpl:51
 msgid "Questionnaire"
 msgstr "Fragebogen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:216
 #: cdedb/frontend/templates/web/event/base.tmpl:23
+#: cdedb/frontend/templates/web/event/index.tmpl:55
 #: cdedb/frontend/templates/web/event/register.tmpl:22
 #: cdedb/frontend/templates/web/event/register.tmpl:219
 msgid "Register"
@@ -7863,7 +7874,7 @@ msgstr "Unterkünfte"
 #: cdedb/frontend/templates/web/event/base.tmpl:48
 #: cdedb/frontend/templates/web/event/downloads.tmpl:12
 #: cdedb/frontend/templates/web/event/downloads.tmpl:16
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:175
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:171
 msgid "Downloads"
 msgstr "Downloads"
 
@@ -9098,14 +9109,74 @@ msgstr "Beschreibungstext"
 msgid "Create Event-User"
 msgstr "Veranstaltungsaccount anlegen"
 
+#: cdedb/frontend/templates/web/event/index.tmpl:22
+msgid "Registration in future."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:26
+msgid "Registration is open."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:30
+msgid "Late-Registration is open."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:34
+msgid "Event is happening."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:38
+msgid "Event is past."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:44
+#, python-format
+msgid "(already %(link)s)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:58
+#: cdedb/frontend/templates/web/event/index.tmpl:71
+#, python-format
+msgid "(until %(date)s)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:62
+#, python-format
+msgid "(late registrations until %(date)s)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:66
+msgid "(only late registrations possible)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:81
+msgid "There are currently no event registrations open."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:86
+msgid "Organized Events"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:112
+msgid "Other Events"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/index.tmpl:120
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:31
+msgid "is cancelled"
+msgstr "wurde abgesagt"
+
+#: cdedb/frontend/templates/web/event/index.tmpl:130
+#, python-format
+msgid ""
+"Previous CdE events, including their courses and participants, can be "
+"found at %(link)s – together with Junior- and SchülerAkademien."
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/list_db_events.tmpl:23
 #, python-format
 msgid "%(count)s Parts"
 msgstr "%(count)s Teile"
-
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:31
-msgid "is cancelled"
-msgstr "wurde abgesagt"
 
 #: cdedb/frontend/templates/web/event/list_db_events.tmpl:43
 #, python-format
@@ -11044,7 +11115,7 @@ msgstr "Suchbarkeit entschieden"
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:40
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:24
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:31
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:96
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:95
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:55
 #: cdedb/frontend/templates/web/core/show_history.tmpl:213
 #: cdedb/frontend/templates/web/core/show_user.tmpl:203
@@ -11458,8 +11529,8 @@ msgstr "Keine Auswahl entspricht allem."
 #: cdedb/frontend/templates/web/logging.tmpl:95
 #: cdedb/frontend/templates/web/logging.tmpl:117
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:87
-#: cdedb/frontend/templates/web/ml/management.tmpl:56
-#: cdedb/frontend/templates/web/ml/management.tmpl:163
+#: cdedb/frontend/templates/web/ml/management.tmpl:55
+#: cdedb/frontend/templates/web/ml/management.tmpl:162
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr "CdEDB-ID, Name oder E-Mail"
 
@@ -11791,40 +11862,40 @@ msgstr "Nur Nutzer können Moderatoren sein."
 msgid "IDs of the new moderators"
 msgstr "IDs der neuen Moderatoren"
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:78
+#: cdedb/frontend/templates/web/ml/management.tmpl:77
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as moderator"
 msgstr "%(given_names)s %(family_name)s als Moderator entfernen"
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:89
+#: cdedb/frontend/templates/web/ml/management.tmpl:88
 msgid "Subscription Requests"
 msgstr "Abonnement-Anfragen"
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:92
+#: cdedb/frontend/templates/web/ml/management.tmpl:91
 msgid "Subscription Requests of other users to this mailinglist."
 msgstr "Abonnement-Anfragen für diese Mailingliste."
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:110
+#: cdedb/frontend/templates/web/ml/management.tmpl:109
 msgid "Accept"
 msgstr "Genehmigen"
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:128
+#: cdedb/frontend/templates/web/ml/management.tmpl:127
 msgid "Block"
 msgstr "Blockieren"
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:136
+#: cdedb/frontend/templates/web/ml/management.tmpl:135
 msgid "There are currently no Subscription Requests pending."
 msgstr "Zur Zeit liegen keine Abonnement-Anfragen vor."
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:143
+#: cdedb/frontend/templates/web/ml/management.tmpl:142
 msgid "Subscribers"
 msgstr "Abonnenten"
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:146
+#: cdedb/frontend/templates/web/ml/management.tmpl:145
 msgid "advanced management"
 msgstr "Erweiterte Verwaltung"
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:146
+#: cdedb/frontend/templates/web/ml/management.tmpl:145
 #, python-format
 msgid ""
 "Forced subscribers cannot be unsubscribed; blocked subscribers cannot be "
@@ -11835,15 +11906,15 @@ msgstr ""
 "hinzugefügt werden. Nutze dafür die %(link)s. Nutzer, die bereits auf der"
 " Liste stehen, werden nicht zum Hinzufügen vorgeschlagen."
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:157
+#: cdedb/frontend/templates/web/ml/management.tmpl:156
 msgid "ID of the new Subscriber"
 msgstr "ID des neuen Abonnenten"
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:167
+#: cdedb/frontend/templates/web/ml/management.tmpl:166
 msgid "Add Subscriber"
 msgstr "Abonnent hinzufügen"
 
-#: cdedb/frontend/templates/web/ml/management.tmpl:189
+#: cdedb/frontend/templates/web/ml/management.tmpl:188
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as subscriber"
 msgstr "%(given_names)s %(family_name)s als Abonnent entfernen"
@@ -11984,16 +12055,16 @@ msgstr ""
 msgid "ID of the new forced subscriber"
 msgstr "ID des neuen fixierten Abonnenten"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:72
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:70
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as forced subscriber"
 msgstr "%(given_names)s %(family_name)s als fixierten Abonnent entfernen"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:83
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:81
 msgid "Blocked Users"
 msgstr "Geblockte Nutzer"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:86
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:84
 msgid ""
 "Users who are blocked from subscribing and requesting subscription. They "
 "can see that they are blocked."
@@ -12001,45 +12072,45 @@ msgstr ""
 "Nutzer, die nicht abonnieren oder Abonnement-Anfragen stellen dürfen. "
 "Nutzer können sehen, dass sie geblockt sind."
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:96
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:94
 msgid "ID of the new blocked subscriber"
 msgstr "ID des neuen geblockten Nutzers"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:124
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:120
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as blocked subscriber"
 msgstr "%(given_names)s %(family_name)s als geblockten Nutzer entfernen"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:134
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:130
 msgid "Whitelist"
 msgstr "Whitelist"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:137
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:133
 msgid "Sender addresses that are not moderated."
 msgstr "Absender Adressen, die nicht moderiert werden."
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:147
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:143
 msgid "Email Address to whitelist"
 msgstr "E-Mail-Adresse zum Whitelisten"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:149
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:145
 msgid "Add Entry"
 msgstr "Eintrag hinzufügen"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:167
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:163
 #, python-format
 msgid "Remove %s from Whitelist"
 msgstr "%s von der Whitelist entfernen."
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:184
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:180
 msgid "subscription state"
 msgstr "Subscription State"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:184
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:180
 msgid "Summary of subscription states"
 msgstr "Zusammenfassung der Subscription States"
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:184
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:180
 #, python-format
 msgid ""
 "A download csv file of all users associated with this mailinglist "
@@ -12100,7 +12171,7 @@ msgid "%s to"
 msgstr "%s bis"
 
 #: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:42
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:84
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:83
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:68
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:105
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:95
@@ -12110,9 +12181,9 @@ msgstr "%s bis"
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:104
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:146
 #: cdedb/frontend/templates/web/event/show_event.tmpl:195
-#: cdedb/frontend/templates/web/ml/management.tmpl:60
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:54
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:106
+#: cdedb/frontend/templates/web/ml/management.tmpl:59
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:52
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:102
 #: cdedb/frontend/templates/web/util.tmpl:636
 #: cdedb/frontend/templates/web/util.tmpl:823
 msgid "Add"
@@ -13659,8 +13730,8 @@ msgstr ""
 msgid "Must be comma separated identifiers."
 msgstr "Muss eine kommagetrennte Liste von zulässigen Bezeichnern sein."
 
-#: cdedb/backend/core.py:2086 cdedb/frontend/core.py:1611
-#: cdedb/frontend/core.py:1767 cdedb/validation.py:927
+#: cdedb/backend/core.py:2086 cdedb/frontend/core.py:1593
+#: cdedb/frontend/core.py:1749 cdedb/validation.py:927
 msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
@@ -16661,4 +16732,20 @@ msgstr "Muss vom Typ %(type)s sein."
 #~ "ihren Teilnehmern und Kursen findest Du"
 #~ " gemeinsam mit den Schüler- und "
 #~ "JuniorAkademien bei den %(link)s."
+
+#~ msgid ""
+#~ "Archives the assembly. The configuration "
+#~ "cannot be changed after this. The "
+#~ "private keys used to sign the "
+#~ "votes will be deleted from the "
+#~ "database. This should typically be done"
+#~ " shortly after all ballots have been"
+#~ " conlcuded."
+#~ msgstr ""
+#~ "Archiviert die Versammlung. Die Konfiguration kann danach nicht mehr\n"
+#~ "geändert werden. Die geheimen Schlüssel "
+#~ "zum Signieren der Abstimmungen\n"
+#~ "werden aus der Datenbank gelöscht. Dies"
+#~ " sollte für gewöhnlich bald nachdem\n"
+#~ "alle Abstimmungen beendet sind gemacht werden."
 
