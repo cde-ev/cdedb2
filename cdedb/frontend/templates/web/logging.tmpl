@@ -76,7 +76,7 @@
     </tr>
 {% endmacro %}
 
-{% macro filter(endpoint, enum, kind, filter_name=None, aux=None) %}
+{% macro filter(endpoint, enum, kind, filter_name=None) %}
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink(endpoint) }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
@@ -87,11 +87,11 @@
                         anid="input-persona_id") }}
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#input-submitted_by').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&phrase=%s'|s) }}', [],
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
                 $('#input-persona_id').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&phrase=%s'|s) }}', [],
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>

@@ -51,7 +51,7 @@
                                                            title=gettext("Short Markdown summary")))|s) }}
         <script nonce="{{ csp_nonce }}">
             $('#input-orgas').cdedbSearchPerson(
-                '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_admin_user&phrase=%s'|s) }}',
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_user&phrase=%s'|s) }}',
                 [],
                 false,
                 true,

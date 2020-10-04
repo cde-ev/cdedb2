@@ -80,7 +80,7 @@
             anid="input-moderators") }}
         <script nonce="{{ csp_nonce }}">
             $('#input-moderators').cdedbSearchPerson(
-                '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_admin_user&phrase=%s'|s) }}',
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}',
                 [],
                 false,
                 true,
