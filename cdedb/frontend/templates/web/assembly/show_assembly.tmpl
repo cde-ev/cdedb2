@@ -14,14 +14,6 @@
             active=True) }}
 {% endblock %}
 {% block content %}
-    <div class="p">
-        {% if ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
-                                                     or ambience['assembly']['id'] in user.presider) %}
-            {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
-                         icon="cog") }}
-        {% endif %}
-    </div>
-
     <div id="description">
         {{ ambience['assembly']['description']|md }}
     </div>
