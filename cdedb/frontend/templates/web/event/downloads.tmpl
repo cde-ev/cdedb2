@@ -149,6 +149,10 @@
                 <td>{% trans %}Courselist for exPuls{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_expuls'), gettext("TeX-Code"), icon='download') }}</td>
             </tr>
+            <tr>
+                <td>{% trans %}Dokuteam{% endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_dokuteam'), gettext("Shell-Snippet"), icon='download') }}</td>
+            </tr>
         </tbody>
     </table>
 {% endblock %}

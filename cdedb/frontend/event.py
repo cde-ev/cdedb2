@@ -2670,6 +2670,21 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
+    def download_dokuteam(self, rs: RequestState, event_id: int) -> Response:
+        """Create shell-script snippet for dokuteam."""
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        if not course_ids:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        data = self.fill_template(
+            rs, "other", "dokuteam_export", {'courses': courses})
+        return self.send_file(
+            rs, data=data, inline=False,
+            filename="{}_dokuteam.txt".format(rs.ambience['event']['shortname']))
+
+    @access("event")
+    @event_guard()
     def download_csv_courses(self, rs: RequestState, event_id: int) -> Response:
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)

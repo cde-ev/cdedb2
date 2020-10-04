@@ -938,7 +938,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
           * web,
           * mail,
-          * tex.
+          * tex,
+          * other.
         :param templatename: file name of template without extension
         """
 
