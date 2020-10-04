@@ -2,13 +2,23 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans %}
-    	Manage Events
-    {% endtrans %}
+    {% if is_admin %}
+        {% trans %}
+            Manage Events
+        {% endtrans %}
+   {% else %}
+        {% trans %}
+            Event List
+        {% endtrans %}
+   {% endif %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Manage Events"), active="True") }}
+    {{ super() }}
+    {% if is_admin %}
+        {{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Manage Events"), active="True") }}
+   {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Event List"), active="True") }}
+   {% endif %}
 {% endblock %}
 
 {% macro format_entry(event) %}
@@ -34,6 +44,7 @@
                 {%- endif %})
             {% endif %}
         </div>
+        {% if is_admin %}
         <div class="col-sm-3 small">
             <a href="{{ cdedblink('event/registration_query', {'event_id': event['id']}) }}">
                 {% trans count=event['registrations'] %}
@@ -46,13 +57,16 @@
                 {{ count }} Orgas
             {% endtrans %}
         </div>
+        {% endif %}
     </div>
 {% endmacro %}
 {% block content %}
+    {% if is_admin %}
     <div class="p">
         {{ util.href(cdedblink("event/create_event_form"), gettext("Create Event"), aclass="btn btn-success btn-sm",
                 icon="plus") }}
     </div>
+    {% endif %}
 
     <h3>{% trans %}Current Events{% endtrans %}</h3>
     <div class="list-group list-group-hover list-group-condensed" id="current-events">

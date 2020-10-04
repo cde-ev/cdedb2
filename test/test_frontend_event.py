@@ -174,7 +174,7 @@ class TestEventFrontend(FrontendTest):
 
         # Test Event Administration Admin View
         self.assertNoLink('/event/event/log')
-        self.assertNoLink('/event/event/list')
+        self.assertNoLink('/event/event/list', content="Veranstaltungen verwalten")
         self.traverse({'href': '/event/event/1/show'})
         self.assertNotIn('deleteeventform', self.response.forms)
         self.assertNotIn('addorgaform', self.response.forms)
@@ -241,6 +241,19 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertPresence("CdE-Party 2050", div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
+        self.assertPresence("Orgas")
+        self.assertPresence("Anmeldungen")
+
+    @as_users("garcia")
+    def test_list_events_unprivileged(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'href': '/event/event/list'})
+        self.assertTitle("Veranstaltungsliste")
+        self.assertPresence("Große Testakademie 2222", div='current-events')
+        self.assertPresence("CdE-Party 2050", div='current-events')
+        self.assertNonPresence("PfingstAkademie 2014")
+        self.assertNonPresence("Orgas")
+        self.assertNonPresence("Anmeldungen")
 
     @as_users("annika", "berta", "emilia")
     def test_show_event(self, user):
