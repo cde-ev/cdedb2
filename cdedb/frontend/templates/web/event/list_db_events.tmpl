@@ -34,7 +34,6 @@
                 {%- endif %})
             {% endif %}
         </div>
-        {% if is_admin %}
         <div class="col-sm-3 small">
             <a href="{{ cdedblink('event/registration_query', {'event_id': event['id']}) }}">
                 {% trans count=event['registrations'] %}
