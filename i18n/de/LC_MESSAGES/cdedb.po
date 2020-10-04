@@ -12292,15 +12292,15 @@ msgid "AssemblyLogCodes.attachment_removed"
 msgstr "Anhang entfernt"
 
 #: cdedb/i18n_additional.py:33
-msgid "AssemblyLogCodes.attachement_version_added"
+msgid "AssemblyLogCodes.attachment_version_added"
 msgstr "Anhangsversion hinzugefügt"
 
 #: cdedb/i18n_additional.py:34
-msgid "AssemblyLogCodes.attachement_version_removed"
+msgid "AssemblyLogCodes.attachment_version_removed"
 msgstr "Anhangsversion entfernt"
 
 #: cdedb/i18n_additional.py:35
-msgid "AssemblyLogCodes.attachement_version_changed"
+msgid "AssemblyLogCodes.attachment_version_changed"
 msgstr "Anhangsversion geändert"
 
 #: cdedb/i18n_additional.py:37

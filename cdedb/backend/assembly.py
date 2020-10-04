@@ -1776,7 +1776,7 @@ class AssemblyBackend(AbstractBackend):
                 raise PrivilegeError(n_("Must have privileged access to add"
                                         " attachment version."))
             self.assembly_log(
-                rs, const.AssemblyLogCodes.attachement_version_added,
+                rs, const.AssemblyLogCodes.attachment_version_added,
                 assembly_id, change_note=f"Version {version}")
         return ret
 
@@ -1856,7 +1856,7 @@ class AssemblyBackend(AbstractBackend):
                 assembly_id = self.get_assembly_id(
                     rs, attachment_id=attachment_id)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.attachement_version_removed,
+                    rs, const.AssemblyLogCodes.attachment_version_removed,
                     assembly_id, change_note=f"Version {version}")
             return ret
 
