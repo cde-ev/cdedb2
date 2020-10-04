@@ -19,7 +19,7 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 
 QEMUCACHING ?= writethrough
 
-DEBVERSION = 10.5.0
+DEBVERSION = 10.6.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
