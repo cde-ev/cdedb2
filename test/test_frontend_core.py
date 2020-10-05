@@ -450,7 +450,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence('Passwort geändert.')
         self.assertValidationError(
             "new_password", "Das ist ähnlich zu einem häufig genutzten Passwort.",
-            notif_regex="Passwort ist zu schwach.")
+            notification="Passwort ist zu schwach.")
         self.assertPresence(
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         # Password two: Repeating patterns
@@ -464,7 +464,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertValidationError("new_password",
                                    'Wiederholungen wie „abcabcabc“ sind nur geringfügig'
                                    ' schwieriger zu erraten als „abc“.',
-                                   notif_regex="Passwort ist zu schwach.")
+                                   notification="Passwort ist zu schwach.")
         self.assertPresence(
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         self.assertPresence(
@@ -480,7 +480,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertValidationError(
             "new_password",
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
-            notif_regex="Passwort ist zu schwach.")
+            notification="Passwort ist zu schwach.")
         self.assertPresence('Großschreibung hilft nicht wirklich.')
         # Password four: German umlauts
         new_password = 'überwährend'
@@ -492,7 +492,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertValidationError(
             "new_password",
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
-            notif_regex="Passwort ist zu schwach.")
+            notification="Passwort ist zu schwach.")
         # Password five: User-specific passwords
         new_password = (user['given_names'].replace('-', ' ').split()[0] +
                         user['family_name'].replace('-', ' ').split()[0])
@@ -503,7 +503,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertValidationError("new_password", "",
-                                   notif_regex="Passwort ist zu schwach.")
+                                   notification="Passwort ist zu schwach.")
         # Password six+seven: CdE-specific passwords
         new_password = "cdeakademie"
         f = self.response.forms['passwordchangeform']
@@ -513,7 +513,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertValidationError("new_password", "",
-                                   notif_regex="Passwort ist zu schwach.")
+                                   notification="Passwort ist zu schwach.")
         new_password = "duschorgie"
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
@@ -522,7 +522,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertValidationError("new_password", "",
-                                   notif_regex="Passwort ist zu schwach.")
+                                   notification="Passwort ist zu schwach.")
 
     @as_users("vera", "ferdinand")
     def test_change_password_zxcvbn_admin(self, user):
@@ -538,7 +538,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence('Passwort geändert.')
         self.assertValidationError(
             "new_password", "Passwort ist zu schwach für einen Admin-Account.",
-            notif_regex="Passwort ist zu schwach.")
+            notification="Passwort ist zu schwach.")
 
     @as_users("berta", "emilia")
     def test_change_password_zxcvbn_noadmin(self, user):
@@ -618,7 +618,7 @@ class TestCoreFrontend(FrontendTest):
                         self.assertValidationError(
                             "new_password",
                             "Das ist ähnlich zu einem häufig genutzten Passwort.",
-                            notif_regex="Passwort ist zu schwach.")
+                            notification="Passwort ist zu schwach.")
 
     def test_repeated_password_reset(self):
         new_password = "krce63koLe#$e"
@@ -1165,7 +1165,7 @@ class TestCoreFrontend(FrontendTest):
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
         self.assertValidationError("note", "Darf nicht leer sein",
-                                   notif_regex="Archivierungsnotiz muss angegeben werden.")
+                                   notification="Archivierungsnotiz muss angegeben werden.")
         self.assertTitle("Charly C. Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
