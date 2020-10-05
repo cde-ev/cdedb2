@@ -406,9 +406,9 @@
                         <h5>{% trans %}Changed{% endtrans %}</h5>
                         <ul class="slim" id="list-changed-lodgement-groups">
                             {% for lodgement_group_id, lodgement_group_diff
-                                in summary['changed_lodgement_groups'].items() %}
+                                    in summary['changed_lodgement_groups'].items() %}
                                 <li>
-                                    {{ lodgement_groups[lodgement_group_id]['moniker'] }}{# -#}
+                                    {{ lodgement_groups[lodgement_group_id]['moniker'] }}
                                     {%- if 'moniker' in lodgement_group_diff -%}
                                         /{{ lodgement_group_diff['moniker'][1] }}
                                     {%- endif -%}
@@ -433,12 +433,12 @@
         {% endcall %}
     {% endif %}
 
-    {% if (not summary['changed_registratios'] and not summary['new_registration_ids']
-           and not summary['real_deleted_registration_ids'] and not summary['changed_courses']
-           and not summary['new_course_ids'] and not summary['real_deleted_course_ids']
-           and not summary['changed_lodgements'] and not summary['new_lodgement_ids']
-           and not summary['real_deleted_lodgement_ids'] and not summary['changed_lodgement_groups']
-           and not summary['new_lodgement_group_ids'] and not summary['real_deleted_lodgement_group_ids']) %}
+    {% if not (summary['changed_registratios'] or summary['new_registration_ids']
+           or summary['real_deleted_registration_ids'] or summary['changed_courses']
+           or summary['new_course_ids'] or summary['real_deleted_course_ids']
+           or summary['changed_lodgements'] or summary['new_lodgement_ids']
+           or summary['real_deleted_lodgement_ids'] or summary['changed_lodgement_groups']
+           or summary['new_lodgement_group_ids'] or summary['real_deleted_lodgement_group_ids']) %}
         {% trans %}The input produced an empty diff. No changes are to be imported.{% endtrans %}
     {% endif %}
 

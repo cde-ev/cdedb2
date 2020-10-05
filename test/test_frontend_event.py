@@ -640,9 +640,9 @@ class TestEventFrontend(FrontendTest):
         f['track_sortkey_1001_-1'] = "1"
         f['track_create_1001_-1'].checked = True
         self.submit(f, check_notification=False)
-        self.assertValidationError('track_min_choices_1001_-1',
-                                   "Muss kleiner oder gleich der Gesamtzahl von "
-                                   "Kurswahlen sein.")
+        self.assertValidationError(
+            'track_min_choices_1001_-1',
+            "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein.")
         f['track_min_choices_1001_-1'] = "2"
         self.submit(f)
         f = self.response.forms['partsummaryform']
@@ -1043,8 +1043,8 @@ etc;anything else""", f['entries_2'].value)
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
         self.submit(f, check_notification=False)
-        self.assertValidationError('orga_ids', "Einige dieser Nutzer sind "
-                                               "keine Veranstaltungsnutzer.")
+        self.assertValidationError(
+            'orga_ids', "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
         self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f = self.response.forms['createeventform']
         f['part_end'] = "2345-6-7"
@@ -1225,8 +1225,8 @@ etc;anything else""", f['entries_2'].value)
         # Two equal choices given -> expecting error
         self.submit(f, check_notification=False)
         self.assertTitle("Anmeldung für Große Testakademie 2222")
-        self.assertValidationError('course_choice3_1', "Du kannst diesen Kurs nicht "
-                                                       "als 1. und 2 Wahl wählen.")
+        self.assertValidationError(
+            'course_choice3_1', "Du kannst diesen Kurs nicht als 1. und 2 Wahl wählen.")
         f['course_choice3_1'] = 4
         # Now, we did it right.
         self.submit(f)
@@ -1577,12 +1577,12 @@ etc;anything else""", f['entries_2'].value)
         f['fee_modifier_field_id_4_-1'] = 1001
         self.submit(f, check_notification=False)
         self.assertValidationError('fee_modifier_field_id_4_-1',
-                                   "Nicht mehr als ein Beitragsmodifikator pro "
-                                   "Veranstaltungsteil darf mit dem gleichen Feld "
-                                   "verbunden sein.")
+                                   "Nicht mehr als ein Beitragsmodifikator pro"
+                                   " Veranstaltungsteil darf mit dem gleichen Feld"
+                                   " verbunden sein.")
         self.assertValidationError('fee_modifier_modifier_name_4_-1',
-                                   "Nicht mehr als ein Beitragsmodifikator pro "
-                                   "Veranstaltungsteil darf den selben Bezeichner haben.")
+                                   "Nicht mehr als ein Beitragsmodifikator pro"
+                                   " Veranstaltungsteil darf den selben Bezeichner haben.")
         f['fee_modifier_modifier_name_4_-1'] = "is_child2"
         f['fee_modifier_field_id_4_-1'] = 1002
         self.submit(f)
@@ -1931,8 +1931,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/query'})
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/1/show'})
-        self.assertTitle("Anmeldung von Anton Armin A. Administrator "
-                         "(Große Testakademie 2222)")
+        self.assertTitle("Anmeldung von Anton Armin A. Administrator"
+                         " (Große Testakademie 2222)")
         self.assertPresence("Teilnehmerbeitrag ausstehend")
         self.assertPresence("Bereits bezahlter Betrag 573,98 €")
         self.traverse({'href': '/event/event/1/show'},
@@ -2297,8 +2297,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Unterkunft Zelte (Große Testakademie 2222)")
         self.traverse({'description': 'Bearbeiten'})
-        self.assertTitle("Unterkunft Zelte bearbeiten "
-                         "(Große Testakademie 2222)")
+        self.assertTitle("Unterkunft Zelte bearbeiten (Große Testakademie 2222)")
         self.assertPresence("some radiation")
         f = self.response.forms['changelodgementform']
         self.assertEqual('20', f['camping_mat_capacity'].value)

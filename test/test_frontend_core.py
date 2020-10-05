@@ -461,10 +461,10 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertValidationError(
-            "new_password", 'Wiederholungen wie „abcabcabc“ sind nur geringfügig '
-                            'schwieriger zu erraten als „abc“.',
-            notif_regex="Passwort ist zu schwach.")
+        self.assertValidationError("new_password",
+                                   'Wiederholungen wie „abcabcabc“ sind nur geringfügig'
+                                   ' schwieriger zu erraten als „abc“.',
+                                   notif_regex="Passwort ist zu schwach.")
         self.assertPresence(
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         self.assertPresence(
@@ -478,8 +478,8 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertValidationError(
-            "new_password", 'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter '
-                            'sind besser.',
+            "new_password",
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
             notif_regex="Passwort ist zu schwach.")
         self.assertPresence('Großschreibung hilft nicht wirklich.')
         # Password four: German umlauts
@@ -490,8 +490,8 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertValidationError(
-            "new_password", 'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter '
-                            'sind besser.',
+            "new_password",
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
             notif_regex="Passwort ist zu schwach.")
         # Password five: User-specific passwords
         new_password = (user['given_names'].replace('-', ' ').split()[0] +
@@ -616,8 +616,8 @@ class TestCoreFrontend(FrontendTest):
                         self.submit(f, check_notification=False)
                         self.assertNonPresence('Passwort zurückgesetzt.')
                         self.assertValidationError(
-                            "new_password", "Das ist ähnlich zu einem häufig "
-                                            "genutzten Passwort.",
+                            "new_password",
+                            "Das ist ähnlich zu einem häufig genutzten Passwort.",
                             notif_regex="Passwort ist zu schwach.")
 
     def test_repeated_password_reset(self):
@@ -704,8 +704,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['new_username'] = current_username
         self.submit(f, check_notification=False)
-        self.assertValidationError("new_username", "Muss sich von der aktuellen "
-                                                   "E-Mail-Adresse unterscheiden.")
+        self.assertValidationError(
+            "new_username", "Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
         self.assertNonPresence("E-Mail abgeschickt!", div="notifications")
         # Now with new username
         new_username = "zelda@example.cde"
