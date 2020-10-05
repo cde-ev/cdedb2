@@ -1,5 +1,5 @@
 -- This file specifies the tables in the database and has the users in
--- cdedb-users.sql as prerequisite, as well as cdedb-db and cdedb-aux
+-- cdedb-users.sql as prerequisite, as well as cdedb-db.sql .
 
 ---
 --- SCHEMA core

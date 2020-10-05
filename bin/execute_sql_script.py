@@ -1,12 +1,24 @@
 #!/usr/bin/env python3
 
 import argparse
-import sys
 from pathlib import Path
 
-sys.path.insert(0, "/cdedb2/")
-
 from cdedb.script import setup
+
+def execute_script(file: Path, *, dbuser: str, dbpassword: str, dbname: str):
+    with setup(
+        persona_id=-1,
+        dbuser=dbuser,
+        dbpassword=dbpassword,
+        dbname=dbname,
+        check_system_user=False,
+    )().conn as conn:
+        conn.set_session(autocommit=True)
+
+        with conn.cursor() as curr:
+            with file.open() as f:
+                curr.execute(f.read())
+
 
 
 if __name__ == "__main__":
@@ -15,20 +27,13 @@ if __name__ == "__main__":
     parser.add_argument("--dbuser", default="cdb")
     parser.add_argument("--dbpassword", default="987654321098765432109876543210")
     parser.add_argument("--dbname", default="cdb")
-    parser.add_argument("files", nargs="+", type=Path)
+    parser.add_argument("file", type=Path)
 
     args = parser.parse_args()
 
-    with setup(
-        persona_id=-1,
+    execute_script(
+        args.file,
         dbuser=args.dbuser,
         dbpassword=args.dbpassword,
-        dbname=args.dbname,
-        check_system_user=False,
-    )().conn as conn:
-        conn.set_session(autocommit=True)
-
-        with conn.cursor() as curr:
-            for file in args.files:
-                with file.open() as f:
-                    curr.execute(f.read())
+        dbname=args.dbname
+    )
