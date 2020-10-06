@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-10-05 00:01+0200\n"
+"POT-Creation-Date: 2020-10-06 16:44+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -4130,8 +4130,8 @@ msgid ""
 "Archives the assembly. The configuration and attachments cannot be "
 "changed after this. The private keys used to sign the votes will be "
 "deleted from the database. This should typically be done shortly after "
-"all ballots have been conlcuded and all transcripts regarding the "
-"assembly have been uploaded correctly."
+"all ballots have been concluded and all files regarding the assembly have"
+" been uploaded correctly."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:191
@@ -13454,156 +13454,4 @@ msgstr ""
 #, python-format
 msgid "Must be a %(type)s."
 msgstr ""
-
-#~ msgid "CoreLogCodes.password_invalidated"
-#~ msgstr "Password deleted"
-
-#~ msgid "EventLogCodes.lodgement_group_created"
-#~ msgstr "Lodgement group created"
-
-#~ msgid "EventLogCodes.lodgement_group_changed"
-#~ msgstr "Lodgement group changed"
-
-#~ msgid "EventLogCodes.lodgement_group_deleted"
-#~ msgstr "Lodgement group deleted"
-
-#~ msgid " MlLogCodes.request_blocked"
-#~ msgstr "Request blocked"
-
-#~ msgid "QueryOperators.similar"
-#~ msgstr "matches pattern"
-
-#~ msgid "QueryOperators.dissimilar"
-#~ msgstr "does not match pattern"
-
-#~ msgid "is_admin"
-#~ msgstr "Meta-Admin"
-
-#~ msgid "new_is_admin"
-#~ msgstr "Super-Admin"
-
-#~ msgid "new_is_core_admin"
-#~ msgstr "Core-Admin"
-
-#~ msgid "new_is_cde_admin"
-#~ msgstr "CdE-Admin"
-
-#~ msgid "new_is_event_admin"
-#~ msgstr "Event-Admin"
-
-#~ msgid "new_is_ml_admin"
-#~ msgstr "Mailinglist-Admin"
-
-#~ msgid "new_is_assembly_admin"
-#~ msgstr "Assembly-Admin"
-
-#~ msgid "new_is_finance_admin"
-#~ msgstr "Finance-Admin"
-
-#~ msgid "SubscriptionPolicy.mandatory"
-#~ msgstr "Mandatory"
-
-#~ msgid "SubscriptionPolicy.opt_out"
-#~ msgstr "Opt-Out"
-
-#~ msgid "SubscriptionPolicy.opt_in"
-#~ msgstr "Opt-In"
-
-#~ msgid "SubscriptionPolicy.moderated_opt_in"
-#~ msgstr "Moderated Opt-In"
-
-#~ msgid "SubscriptionPolicy.invitation_only"
-#~ msgstr "Invitation only"
-
-#~ msgid "MailinglistTypes.event_associated_legacy"
-#~ msgstr "Participants/Registrations (legacy)"
-
-#~ msgid "MailinglistTypes.event_orga_legacy"
-#~ msgstr "Orga (legacy)"
-
-#~ msgid "core_usermanagement"
-#~ msgstr "Usermanagement"
-
-#~ msgid "CoreLogCodes.password_generated"
-#~ msgstr "Password generated"
-
-#~ msgid "CdeLogCodes.advance_semester"
-#~ msgstr "Semester advanced"
-
-#~ msgid "CdeLogCodes.advance_expuls"
-#~ msgstr "exPuls-Semester advanced"
-
-#~ msgid "QuestionnaireUsages.questionnaire"
-#~ msgstr "Additional Questionnaire"
-
-#~ msgid "ballot_file_arialabel"
-#~ msgstr "belongs to ballot"
-
-#~ msgid "14_query_event_registration_waitlist"
-#~ msgstr "Waitlist"
-
-#~ msgid "Participant already present."
-#~ msgstr ""
-
-#~ msgid "Only Admins may change mailinglist configuration."
-#~ msgstr ""
-
-#~ msgid "Mailinglist Type cannot be changed here."
-#~ msgstr ""
-
-#~ msgid "General-User Management"
-#~ msgstr ""
-
-#~ msgid "Registration in future."
-#~ msgstr ""
-
-#~ msgid "Registration is open."
-#~ msgstr ""
-
-#~ msgid "Late-Registration is open."
-#~ msgstr ""
-
-#~ msgid "Event is happening."
-#~ msgstr ""
-
-#~ msgid "Event is past."
-#~ msgstr ""
-
-#~ msgid "(already %(link)s)"
-#~ msgstr ""
-
-#~ msgid "(until %(date)s)"
-#~ msgstr ""
-
-#~ msgid "(late registrations until %(date)s)"
-#~ msgstr ""
-
-#~ msgid "(only late registrations possible)"
-#~ msgstr ""
-
-#~ msgid "There are currently no event registrations open."
-#~ msgstr ""
-
-#~ msgid "Organized Events"
-#~ msgstr ""
-
-#~ msgid "Other Events"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Previous CdE events, including their "
-#~ "courses and participants, can be found"
-#~ " at %(link)s – together with Junior-"
-#~ " and SchülerAkademien."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Archives the assembly. The configuration "
-#~ "cannot be changed after this. The "
-#~ "private keys used to sign the "
-#~ "votes will be deleted from the "
-#~ "database. This should typically be done"
-#~ " shortly after all ballots have been"
-#~ " conlcuded."
-#~ msgstr ""
 
