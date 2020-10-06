@@ -1210,11 +1210,13 @@ class EventFrontend(AbstractUserFrontend):
                     ))
                 )
         else:
+            # we check orga_ml_data instead of create_orga_list here,
+            # because the former is falsy if an orga ml already exists
             if orga_ml_data or create_participant_list:
                 # mailinglists require moderators
                 rs.append_validation_error(
                     ("orga_ids", ValueError(
-                        n_("Must not be empty if a mailinglist should be created.")
+                        n_("Must not be empty in order to create a mailinglist.")
                     ))
                 )
         if rs.has_validation_errors():
