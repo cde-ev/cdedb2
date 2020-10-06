@@ -745,7 +745,10 @@ class CoreFrontend(AbstractFrontend):
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
         elif kind == "ml_subscriber":
-            # In this case, the return value depends on the respective mailinglist
+            if aux is None:
+                raise werkzeug.exceptions.BadRequest(n_(
+                    "Must provide id of the associated mailinglist to use this kind."))
+            # In this case, the return value depends on the respective mailinglist.
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
             if not self.mlproxy.may_manage(rs, aux, privileged=True):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))

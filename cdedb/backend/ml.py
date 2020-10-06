@@ -89,13 +89,14 @@ class MlBackend(AbstractBackend):
 
     @access("ml", "droid_rklist")
     def is_moderator(self, rs: RequestState, ml_id: int,
-                     privileged=False) -> bool:
+                     privileged: bool = False) -> bool:
         """Check for moderator privileges as specified in the ml.moderators
         table.
 
         This exceptionally promotes droid_rklist to moderator.
-        :param privileged: check if the moderator is in the pool of privileged
-            moderators, provided by ml_type_aux.is_privileged_moderator.
+        :param privileged: Whether or not to check if the moderator is in the
+            pool of privileged moderators. Delegated to
+            `MailinglistType.is_privileged_moderator`.
         """
         ml_id = affirm("id", ml_id)
 
@@ -110,10 +111,10 @@ class MlBackend(AbstractBackend):
 
     @access("ml", "droid_rklist")
     def may_manage(self, rs: RequestState, mailinglist_id: int,
-                   privileged=False) -> bool:
+                   privileged: bool = False) -> bool:
         """Check whether a user is allowed to manage a given mailinglist.
 
-        :param privileged: pass privileged option to is_moderator
+        :param privileged: See `MlBackend.is_moderator`.
         """
         mailinglist_id = affirm("id_or_None", mailinglist_id)
 
