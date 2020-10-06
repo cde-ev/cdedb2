@@ -34,8 +34,14 @@ reload:
 	sudo systemctl restart apache2
 
 i18n-refresh:
+	$(MAKE) i18n-extract
+	$(MAKE) i18n-update
+
+i18n-extract:
 	pybabel extract -F ./babel.cfg  --sort-by-file -o ./i18n/cdedb.pot\
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
+
+i18n-update:
 	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb --ignore-obsolete
 	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb --ignore-obsolete
 
