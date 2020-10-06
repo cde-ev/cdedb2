@@ -1209,6 +1209,14 @@ class EventFrontend(AbstractUserFrontend):
                         n_("Some of these users are not event users.")
                     ))
                 )
+        else:
+            if orga_ml_data or create_participant_list:
+                # mailinglists require moderators
+                rs.append_validation_error(
+                    ("orga_ids", ValueError(
+                        n_("Must not be empty if a mailinglist should be created.")
+                    ))
+                )
         if rs.has_validation_errors():
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)
