@@ -17,18 +17,18 @@ make sample-data-test &> /dev/null
 echo "Checkout $3"
 git checkout $3 &> /dev/null
 git pull &> /dev/null
-make -B test/ancillary_files/sample_data.sql &> /dev/null
 ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
 grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt \
      > /tmp/todoevolutions.txt
-echo "" > /tmp/output-evolution.txt
+truncate -s0 /tmp/output-evolution.txt
 for evolution in $(cat /tmp/todoevolutions.txt); do
     echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
-    sudo -u postgres psql -U postgres -d cdb_test \
+    sudo -u cdb psql -U cdb -d cdb_test \
          -f cdedb/database/evolutions/$evolution \
          2>&1 | tee -a /tmp/output-evolution.txt
 done
 make i18n-compile
+make -B test/ancillary_files/sample_data.sql &> /dev/null
 make sample-data-test-shallow
 
 # perform check

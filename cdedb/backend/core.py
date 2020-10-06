@@ -1231,6 +1231,7 @@ class CoreBackend(AbstractBackend):
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,
+                'paper_expuls': True,
                 # 'foto' already adjusted
                 # 'fulltext' is set automatically
             }
@@ -1893,7 +1894,7 @@ class CoreBackend(AbstractBackend):
     def verify_personas(self, rs: RequestState, ids: Collection[int],
                         required_roles: Collection[Role] = None,
                         introspection_only: bool = True) -> bool:
-        """Check wether certain ids map to actual (active) personas.
+        """Check whether certain ids map to actual (active) personas.
 
         Note that this will return True for an empty set of ids.
 
@@ -1926,6 +1927,18 @@ class CoreBackend(AbstractBackend):
             with open(path, 'wb') as f:
                 f.write(attachment)
         return myhash
+
+    @access("anonymous")
+    def genesis_check_attachment(self, rs: RequestState, attachment_hash: str
+                                 ) -> bool:
+        """Check whether a genesis attachment with the given hash is available.
+
+        Contrary to `genesis_get_attachment` this does not retrieve it's
+        content.
+        """
+        attachment_hash = affirm("str", attachment_hash)
+        path = self.genesis_attachment_dir / attachment_hash
+        return path.is_file()
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
@@ -2570,7 +2583,7 @@ class CoreBackend(AbstractBackend):
         If no entry exists, an empty dict ist returned.
         """
         ret = self.sql_select_one(rs, "core.cron_store", ("store",),
-                                  name, entity_key="moniker")
+                                  name, entity_key="title")
         return unwrap(ret) or {}
 
     @access("core_admin")
@@ -2578,12 +2591,12 @@ class CoreBackend(AbstractBackend):
                        data: CdEDBObject) -> DefaultReturnCode:
         """Update the store of a cron job."""
         update = {
-            'moniker': name,
+            'title': name,
             'store': PsycoJson(data),
         }
         with Atomizer(rs):
             ret = self.sql_update(rs, "core.cron_store", update,
-                                  entity_key='moniker')
+                                  entity_key='title')
             if not ret:
                 ret = self.sql_insert(rs, "core.cron_store", update)
             return ret

@@ -9,7 +9,7 @@ many event parts in which a lodgement may be involved depending on the event.
 
 We construct this view from the following main components:
 
-- The general ``event.lodgements`` table. Here lies general lodgement information like moniker, capacity and orga notes.
+- The general ``event.lodgements`` table. Here lies general lodgement information like title, capacity and orga notes.
 - The general ``event.lodgement_groups`` table. Every lodgement may belong to one lodgement group.
 - The custom lodgement related datafields. These are extracted from the JSON-column ``fields`` which is part of the
   ``event.lodgements`` table, but we have to do this on the fly to determine the appropriate fields for that event.
@@ -21,13 +21,13 @@ The final view will be constructed as follows (slightly simplified). ::
   (
       SELECT
           id, id as lodgement_id, event_id,
-          moniker, regular_capacity, camping_mat_capacity, notes, group_id
+          title, regular_capacity, camping_mat_capacity, notes, group_id
       FROM
           event.lodgements
   ) AS lodgement
   LEFT OUTER JOIN (
       SELECT
-          id, moniker, regular_capacity, camping_mat_capacity
+          id, title, regular_capacity, camping_mat_capacity
       FROM
           event.lodgement_groups
   ) AS lodgement_group ON lodgement.group_id = lodgement_group.id
@@ -50,12 +50,12 @@ The following columns will be available in this view:
 
 * ``lodgement.id``
 * ``lodgement.event_id``
-* ``lodgement.moniker``
+* ``lodgement.title``
 * ``lodgement.regular_capacity``
 * ``lodgement.notes``
 * ``lodgement.group_id``
 * ``lodgement.camping_mat_capacity``
-* ``lodgement_group.moniker``
+* ``lodgement_group.title``
 * ``lodgement_group.regular_capacity``
 * ``lodgement_group.camping_mat_capacity``
 * ``lodgement_fields.xfield_{field_name}`` *This is available for every custom data field with course association.*
@@ -94,7 +94,7 @@ We also need to create an artificial row for the ``event.ldogement_groups`` tabl
 
   (
       SELECT
-          id AS tmp_id, moniker
+          id AS tmp_id, title
       FROM
           event.lodgement_groups
   )
@@ -203,7 +203,7 @@ The Complete View
     (
         SELECT
             id, id as lodgement_id, event_id,
-            moniker, regular_capacity, camping_mat_capacity, notes, group_id
+            title, regular_capacity, camping_mat_capacity, notes, group_id
         FROM
             event.lodgements
     ) AS lodgement
@@ -227,12 +227,12 @@ The Complete View
     ) AS lodgement_fields ON lodgement.id = lodgement_fields.id
     LEFT OUTER JOIN (
         SELECT
-            tmp_id, moniker, regular_capacity, camping_mat_capacity
+            tmp_id, title, regular_capacity, camping_mat_capacity
         FROM (
             (
                 (
                     SELECT
-                        id AS tmp_id, moniker
+                        id AS tmp_id, title
                     FROM
                         event.lodgement_groups
                     WHERE

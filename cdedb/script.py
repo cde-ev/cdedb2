@@ -28,7 +28,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
-from cdedb.common import make_proxy, PathLike, ALL_ROLES
+from cdedb.common import make_proxy, PathLike, ALL_ROLES, RequestState
 from cdedb.database.connection import IrradiatedConnection, Atomizer
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
@@ -48,7 +48,7 @@ class User:
         self.family_name = None
 
 
-class RequestState:
+class MockRequestState:
     """Mock RequestState to allow backend usage."""
     def __init__(self, persona_id: int, conn: IrradiatedConnection):
         self.ambience = None
@@ -77,7 +77,7 @@ class RequestState:
 
 def setup(persona_id: int, dbuser: str, dbpassword: str,
           check_system_user: bool = True, dbname: str = 'cdb'
-          ) -> Callable[[int], RequestState]:
+          ) -> Callable[[int], MockRequestState]:
     """This sets up the database.
 
     :param persona_id: default ID for the owner of the generated request state
@@ -98,8 +98,8 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
                            cursor_factory=psycopg2.extras.RealDictCursor)
     cdb.set_client_encoding("UTF8")
 
-    def rs(pid: int = persona_id) -> RequestState:
-        return RequestState(pid, cdb)
+    def rs(pid: int = persona_id) -> MockRequestState:
+        return MockRequestState(pid, cdb)
 
     return rs
 
@@ -156,16 +156,16 @@ class Script(Atomizer):
     :param dry_run: If True, do not commit changes if script ran successfully,
         instead roll back.
     """
-    def __init__(self, rs: RequestState, *, dry_run: bool = True) -> None:
+    def __init__(self, rs: MockRequestState, *, dry_run: bool = True) -> None:
         self.dry_run = dry_run
-        super().__init__(rs)
+        super().__init__(cast(RequestState, rs))
 
     def __enter__(self) -> IrradiatedConnection:
         self.start_time = time.time()
         return super().__enter__()
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]],
-                 exc_val: Optional[BaseException],
+    def __exit__(self, exc_type: Optional[Type[Exception]],
+                 exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> bool:
         """Calculate time taken and provide success message.
 

@@ -24,7 +24,7 @@ import werkzeug.exceptions
 from werkzeug import Response
 from typing import (
     Sequence, Dict, Any, Collection, Mapping, List, Tuple, Callable, Optional,
-    Union, cast, Set, Iterable
+    Union, cast, Set, NamedTuple
 )
 
 from cdedb.frontend.common import (
@@ -52,6 +52,12 @@ from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
 import cdedb.ml_type_aux as ml_type
+
+
+LodgementProblem = NamedTuple(
+    "LodgementProblem", [("description", str), ("lodgement_id", int),
+                         ("part_id", int), ("reg_ids", Collection[int]),
+                         ("severeness", int)])
 
 
 class EventFrontend(AbstractUserFrontend):
@@ -168,11 +174,10 @@ class EventFrontend(AbstractUserFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_event_user'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query", spec=spec,
-                          allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
@@ -188,7 +193,7 @@ class EventFrontend(AbstractUserFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = "qview_event_user"
             result = self.eventproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -3025,7 +3030,7 @@ class EventFrontend(AbstractUserFrontend):
         course_entries = {
             c["id"]: "{}. {}".format(c["nr"], c["shortname"])
             for c in courses.values()}
-        lodgement_entries = {l["id"]: l["moniker"]
+        lodgement_entries = {l["id"]: l["title"]
                              for l in lodgements.values()}
         reg_part_stati_entries =\
             dict(enum_entries_filter(const.RegistrationPartStati, rs.gettext))
@@ -3660,7 +3665,8 @@ class EventFrontend(AbstractUserFrontend):
         readonly_key = lambda anid: f"readonly_{anid}"
         default_value_key = lambda anid: f"default_value_{anid}"
 
-        def duplicate_constraint(idx1, idx2):
+        def duplicate_constraint(idx1: int, idx2: int
+                                 ) -> Optional[RequestConstraint]:
             if idx1 == idx2:
                 return None
             key1 = field_key(idx1)
@@ -3669,12 +3675,12 @@ class EventFrontend(AbstractUserFrontend):
             return (lambda d: (not d[key1] or d[key1] != d[key2]),
                     (key1, ValueError(msg)))
 
-        def valid_field_constraint(idx):
+        def valid_field_constraint(idx: int) -> RequestConstraint:
             key = field_key(idx)
             return (lambda d: not d[key] or d[key] in reg_fields,
                     (key, ValueError(n_("Invalid field."))))
 
-        def fee_modifier_kind_constraint(idx):
+        def fee_modifier_kind_constraint(idx: int) -> RequestConstraint:
             key = field_key(idx)
             msg = n_("Fee modifier field may only be used in"
                      " registration questionnaire.")
@@ -3686,13 +3692,13 @@ class EventFrontend(AbstractUserFrontend):
                                    and kind not in valid_usages),
                     (key, ValueError(msg)))
 
-        def readonly_kind_constraint(idx):
+        def readonly_kind_constraint(idx: int) -> RequestConstraint:
             key = readonly_key(idx)
             msg = n_("Registration questionnaire rows may not be readonly.")
             return (lambda d: (not d[key] or kind.allow_readonly()),
                     (key, ValueError(msg)))
 
-        def duplicate_kind_constraint(idx):
+        def duplicate_kind_constraint(idx: int) -> RequestConstraint:
             key = field_key(idx)
             msg = n_("This field is already in use in another questionnaire.")
             return (lambda d: d[key] not in other_used_fields,
@@ -3910,7 +3916,8 @@ class EventFrontend(AbstractUserFrontend):
         :returns: registration data set
         """
 
-        def filter_parameters(params):
+        def filter_parameters(params: Collection[Tuple[str, str]]
+                              ) -> List[Tuple[str, str]]:
             """Helper function to filter parameters by `skip` list and `enabled`
             checkboxes"""
             params = [(key, kind) for key, kind in params if key not in skip]
@@ -3919,8 +3926,8 @@ class EventFrontend(AbstractUserFrontend):
             enable_params = tuple(("enable_{}".format(i), "bool")
                                   for i, t in params)
             enable = request_extractor(rs, enable_params)
-            return tuple((key, kind) for key, kind in params
-                         if enable["enable_{}".format(key)])
+            return list((key, kind) for key, kind in params
+                        if enable["enable_{}".format(key)])
 
         # Extract parameters from request
         tracks = event['tracks']
@@ -4313,7 +4320,7 @@ class EventFrontend(AbstractUserFrontend):
             event: CdEDBObject, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
             inhabitants: Dict[Tuple[int, int], Collection[int]]
-    ) -> List[Tuple[str, int, int, Collection[int], int]]:
+    ) -> List[LodgementProblem]:
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
 
@@ -4326,35 +4333,37 @@ class EventFrontend(AbstractUserFrontend):
         :returns: problems as five-tuples of (problem description, lodgement
           id, part id, affected registrations, severeness).
         """
-        ret: List[Tuple[str, int, int, Collection[int], int]] = []
+        ret: List[LodgementProblem] = []
 
         # first some un-inlined code pieces (otherwise nesting is a bitch)
-        def _mixed(group):
+        def _mixed(group: Collection[int]) -> bool:
             """Un-inlined check whether both genders are present."""
             return any({personas[registrations[a]['persona_id']]['gender'],
                         personas[registrations[b]['persona_id']]['gender']} ==
                        {const.Genders.male, const.Genders.female}
                        for a, b in itertools.combinations(group, 2))
 
-        def _mixing_problem(lodgement_id, part_id):
+        def _mixing_problem(lodgement_id: int, part_id: int
+                            ) -> LodgementProblem:
             """Un-inlined code to generate an entry for mixing problems."""
-            return (
+            return LodgementProblem(
                 n_("Mixed lodgement with non-mixing participants."),
                 lodgement_id, part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
                     if not registrations[reg_id]['mixed_lodging']),
                 3)
 
-        def _camping_mat(group, part_id):
+        def _camping_mat(group: Collection[int], part_id: int) -> int:
             """Un-inlined code to count the number of registrations assigned
             to a lodgement as camping_mat lodgers."""
             return sum(
                 registrations[reg_id]['parts'][part_id]['is_camping_mat']
                 for reg_id in group)
 
-        def _camping_mat_problem(lodgement_id, part_id):
+        def _camping_mat_problem(lodgement_id: int, part_id: int
+                                 ) -> LodgementProblem:
             """Un-inlined code to generate an entry for camping_mat problems."""
-            return (
+            return LodgementProblem(
                 n_("Too many camping mats used."), lodgement_id,
                 part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
@@ -4369,12 +4378,14 @@ class EventFrontend(AbstractUserFrontend):
                 num_camping_mat = _camping_mat(group, part_id)
                 if len(group) > (lodgement['regular_capacity'] +
                                  lodgement['camping_mat_capacity']):
-                    ret.append((n_("Overful lodgement."), lodgement_id, part_id,
-                                tuple(), 2))
+                    ret.append(LodgementProblem(
+                        n_("Overful lodgement."), lodgement_id, part_id,
+                        tuple(), 2))
                 elif lodgement['regular_capacity'] < (len(group) -
                                                       num_camping_mat):
-                    ret.append((n_("Too few camping mats used."),
-                                lodgement_id, part_id, tuple(), 2))
+                    ret.append(LodgementProblem(
+                        n_("Too few camping mats used."), lodgement_id,
+                        part_id, tuple(), 2))
                 if num_camping_mat > lodgement['camping_mat_capacity']:
                     ret.append(_camping_mat_problem(lodgement_id, part_id))
                 if _mixed(group) and any(
@@ -4382,13 +4393,13 @@ class EventFrontend(AbstractUserFrontend):
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
                 complex_gender_people = tuple(
-                    reg_id
-                    for reg_id in group
-                    if personas[registrations[reg_id]['persona_id']]['gender']
-                        in (const.Genders.other, const.Genders.not_specified))
+                    reg_id for reg_id in group
+                    if (personas[registrations[reg_id]['persona_id']]['gender']
+                        in (const.Genders.other, const.Genders.not_specified)))
                 if complex_gender_people:
-                    ret.append((n_("Non-Binary Participant."), lodgement_id,
-                                part_id, complex_gender_people, 1))
+                    ret.append(LodgementProblem(
+                        n_("Non-Binary Participant."), lodgement_id, part_id,
+                        complex_gender_people, 1))
         return ret
 
     @access("event")
@@ -4525,8 +4536,8 @@ class EventFrontend(AbstractUserFrontend):
                 primary_sort = (
                     regular if sortkey == LodgementsSortkeys.total_regular
                     else camping_mat,)
-            elif sortkey == LodgementsSortkeys.moniker:
-                primary_sort = (lodgement["moniker"])
+            elif sortkey == LodgementsSortkeys.title:
+                primary_sort = (lodgement["title"])
             else:
                 primary_sort = ()
             secondary_sort = EntitySorter.lodgement(lodgement)
@@ -4594,7 +4605,7 @@ class EventFrontend(AbstractUserFrontend):
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = process_dynamic_input(rs, group_ids.keys(), {'moniker': "str"},
+        groups = process_dynamic_input(rs, group_ids.keys(), {'title': "str"},
                                        {'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
@@ -4657,7 +4668,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity",
+    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "group_id", "notes")
     @event_guard(check_offline=True)
     def create_lodgement(self, rs: RequestState, event_id: int,
@@ -4695,7 +4706,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "regular_capacity", "camping_mat_capacity",
+    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "notes", "group_id")
     @event_guard(check_offline=True)
     def change_lodgement(self, rs: RequestState, event_id: int,
@@ -4757,7 +4768,8 @@ class EventFrontend(AbstractUserFrontend):
                 for registration_id in inhabitants[(lodgement_id, part_id)]
             })
 
-        def _check_without_lodgement(registration_id, part_id):
+        def _check_without_lodgement(registration_id: int, part_id: int
+                                     ) -> bool:
             """Un-inlined check for registration without lodgement."""
             part = registrations[registration_id]['parts'][part_id]
             return (const.RegistrationPartStati(part['status']).is_present()
@@ -4776,7 +4788,8 @@ class EventFrontend(AbstractUserFrontend):
 
         # Generate data to be encoded to json and used by the
         # cdedbSearchParticipant() javascript function
-        def _check_not_this_lodgement(registration_id, part_id):
+        def _check_not_this_lodgement(registration_id: int, part_id: int
+                                      ) -> bool:
             """Un-inlined check for registration with different lodgement."""
             part = registrations[registration_id]['parts'][part_id]
             return (const.RegistrationPartStati(part['status']).is_present()
@@ -5007,7 +5020,7 @@ class EventFrontend(AbstractUserFrontend):
             spec["part{0}.is_camping_mat".format(part_id)] = "bool"
             spec["part{0}.lodgement_id".format(part_id)] = "int"
             spec["lodgement{0}.id".format(part_id)] = "id"
-            spec["lodgement{0}.moniker".format(part_id)] = "str"
+            spec["lodgement{0}.title".format(part_id)] = "str"
             spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in xsorted(event['fields'].values(),
                              key=EntitySorter.event_field):
@@ -5049,7 +5062,7 @@ class EventFrontend(AbstractUserFrontend):
                           for part_id in event['parts'])] = "int"
             spec[",".join("lodgement{0}.id".format(part_id)
                           for part_id in event['parts'])] = "id"
-            spec[",".join("lodgement{0}.moniker".format(part_id)
+            spec[",".join("lodgement{0}.title".format(part_id)
                           for part_id in event['parts'])] = "str"
             spec[",".join("lodgement{0}.notes".format(part_id)
                           for part_id in event['parts'])] = "str"
@@ -5125,7 +5138,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = OrderedDict(
             (c_id, course_identifier(c))
             for c_id, c in keydictsort_filter(courses, EntitySorter.course))
-        lodge_identifier = lambda l: l["moniker"]
+        lodge_identifier = lambda l: l["title"]
         lodgement_choices = OrderedDict(
             (l_id, lodge_identifier(l))
             for l_id, l in keydictsort_filter(lodgements,
@@ -5343,8 +5356,8 @@ class EventFrontend(AbstractUserFrontend):
                     prefix + gettext("lodgement"),
                 "lodgement{0}.id".format(part_id):
                     prefix + gettext("lodgement ID"),
-                "lodgement{0}.moniker".format(part_id):
-                    prefix + gettext("lodgement moniker"),
+                "lodgement{0}.title".format(part_id):
+                    prefix + gettext("lodgement title"),
                 "lodgement{0}.notes".format(part_id):
                     prefix + gettext("lodgement notes"),
             })
@@ -5369,9 +5382,9 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("lodgement{0}.id".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement ID"),
-                ",".join("lodgement{0}.moniker".format(part_id)
+                ",".join("lodgement{0}.title".format(part_id)
                          for part_id in event['parts']):
-                    gettext("any part: lodgement moniker"),
+                    gettext("any part: lodgement title"),
                 ",".join("lodgement{0}.notes".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement notes"),
@@ -5399,11 +5412,10 @@ class EventFrontend(AbstractUserFrontend):
         spec = self.make_registration_query_spec(rs.ambience['event'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
 
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -5425,14 +5437,15 @@ class EventFrontend(AbstractUserFrontend):
         }
         # Tricky logic: In case of no validation errors we perform a query
         scope = "qview_registration"
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = scope
             params['result'] = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
+            return self._send_query_result(
+                rs, download, "registration_result", scope, query, params)
         else:
             rs.values['is_search'] = is_search = False
-        return self._send_query_result(rs, download, "registration_result",
-                                       scope, query, params)
+            return self.render(rs, "registration_query", params)
 
     @staticmethod
     def make_course_query_spec(event: CdEDBObject) -> Dict[str, str]:
@@ -5557,11 +5570,10 @@ class EventFrontend(AbstractUserFrontend):
 
         spec = self.make_course_query_spec(rs.ambience['event'])
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
 
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -5584,14 +5596,15 @@ class EventFrontend(AbstractUserFrontend):
         }
 
         scope = "qview_event_course"
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = scope
             params['result'] = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
+            return self._send_query_result(
+                rs, download, "course_result", scope, query, params)
         else:
             rs.values['is_search'] = is_search = False
-        return self._send_query_result(rs, download, "course_result", scope,
-                                       query, params)
+            return self.render(rs, "course_query", params)
 
     @staticmethod
     def make_lodgement_query_spec(event: CdEDBObject) -> Dict[str, str]:
@@ -5643,12 +5656,12 @@ class EventFrontend(AbstractUserFrontend):
 
         # Construct choices.
         lodgement_choices = OrderedDict(
-            (l_id, l['moniker'])
+            (l_id, l['title'])
             for l_id, l in keydictsort_filter(lodgements,
                                               EntitySorter.lodgement))
         lodgement_group_choices = OrderedDict({-1: gettext(n_("--no group--"))})
         lodgement_group_choices.update(
-            [(lg_id, lg['moniker']) for lg_id, lg in keydictsort_filter(
+            [(lg_id, lg['title']) for lg_id, lg in keydictsort_filter(
                 lodgement_groups, EntitySorter.lodgement_group)])
         choices: Dict[str, Dict[int, str]] = {
             "lodgement.lodgement_id": lodgement_choices,
@@ -5670,14 +5683,14 @@ class EventFrontend(AbstractUserFrontend):
         titles: Dict[str, str] = {
             "lodgement.id": gettext(n_("Lodgement ID")),
             "lodgement.lodgement_id": gettext(n_("Lodgement")),
-            "lodgement.moniker": gettext(n_("Moniker")),
+            "lodgement.title": gettext(n_("Title")),
             "lodgement.regular_capacity": gettext(n_("Regular Capacity")),
             "lodgement.camping_mat_capacity":
                 gettext(n_("Camping Mat Capacity")),
             "lodgement.notes": gettext(n_("Lodgement Notes")),
             "lodgement.group_id": gettext(n_("Lodgement Group ID")),
             "lodgement_group.tmp_id": gettext(n_("Lodgement Group")),
-            "lodgement_group.moniker": gettext(n_("Lodgement Group Moniker")),
+            "lodgement_group.title": gettext(n_("Lodgement Group Title")),
             "lodgement_group.regular_capacity":
                 gettext(n_("Lodgement Group Regular Capacity")),
             "lodgement_group.camping_mat_capacity":
@@ -5718,11 +5731,10 @@ class EventFrontend(AbstractUserFrontend):
 
         spec = self.make_lodgement_query_spec(rs.ambience['event'])
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
 
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -5736,7 +5748,7 @@ class EventFrontend(AbstractUserFrontend):
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
 
         parts = rs.ambience['event']['parts']
-        selection_default = ["lodgement.moniker"] + [
+        selection_default = ["lodgement.title"] + [
             f"lodgement_fields.xfield_{field['field_name']}"
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement]
@@ -5751,14 +5763,15 @@ class EventFrontend(AbstractUserFrontend):
         }
 
         scope = "qview_event_lodgement"
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = scope
             params['result'] = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
+            return self._send_query_result(
+                rs, download, "lodgement_result", scope, query, params)
         else:
             rs.values['is_search'] = is_search = False
-        return self._send_query_result(rs, download, "lodgement_result", scope,
-                                       query, params)
+            return self.render(rs, "lodgement_query", params)
 
     def _send_query_result(self, rs: RequestState, download: Optional[str],
                            filename: str, scope: str, query: Query,

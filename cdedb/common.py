@@ -566,11 +566,11 @@ class EntitySorter:
 
     @staticmethod
     def lodgement(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['moniker'], lodgement['id'])
+        return (lodgement['title'], lodgement['id'])
 
     @staticmethod
     def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
-        return (lodgement_group['moniker'], lodgement_group['id'])
+        return (lodgement_group['title'], lodgement_group['id'])
 
     @staticmethod
     def event_part(event_part: CdEDBObject) -> Sortkey:
@@ -587,7 +587,7 @@ class EntitySorter:
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
-        return (candidates['moniker'], candidates['id'])
+        return (candidates['shortname'], candidates['id'])
 
     @staticmethod
     def assembly(assembly: CdEDBObject) -> Sortkey:
@@ -619,7 +619,7 @@ class EntitySorter:
 
     @staticmethod
     def institution(institution: CdEDBObject) -> Sortkey:
-        return (institution['moniker'], institution['id'])
+        return (institution['shortname'], institution['id'])
 
     @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
@@ -731,7 +731,14 @@ def int_to_words(num: int, lang: str) -> str:
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
 
-    def default(self, obj):
+    @overload
+    def default(self, obj: Union[datetime.date, datetime.datetime,
+                                 decimal.Decimal]) -> str: ...
+
+    @overload
+    def default(self, obj: Set[T]) -> Tuple[T, ...]: ...
+
+    def default(self, obj: Any) -> Union[str, Tuple[Any, ...]]:
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
@@ -804,7 +811,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     This is used by the assembly realm to tally votes -- however this is
     pretty abstract, so we move it here.
 
-    Votes have the form ``3>0>1=2>4`` where the monikers between the
+    Votes have the form ``3>0>1=2>4`` where the shortnames between the
     relation signs are exactly those passed in the ``candidates`` parameter.
 
     The Schulze method is described in the pdf found in the ``related``
@@ -903,8 +910,8 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     return condensed, detailed
 
 
-#: Magic value of moniker of the ballot candidate representing the bar.
-ASSEMBLY_BAR_MONIKER = "_bar_"
+#: Magic value of shortname of the ballot candidate representing the bar.
+ASSEMBLY_BAR_SHORTNAME = "_bar_"
 
 
 @overload
@@ -919,7 +926,7 @@ def unwrap(data: Mapping[Any, T]) -> T: ...
 def unwrap(data: Collection[T]) -> T: ...
 
 
-def unwrap(data):
+def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -960,7 +967,7 @@ def unwrap(data):
 class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
     #: default sortkey (currently equal to EntitySorter.lodgement)
-    moniker = 1
+    title = 1
     #: regular_capacity which is used in this part
     used_regular = 10
     #: camping_mat_capacity which is used in this part
@@ -1072,7 +1079,7 @@ class LineResolutions(enum.IntEnum):
 INFINITE_ENUM_MAGIC_NUMBER = 0
 
 
-def infinite_enum(aclass):
+def infinite_enum(aclass: T) -> T:
     """Decorator to document infinite enums.
 
     This does nothing and is only for documentation purposes.
@@ -1098,29 +1105,29 @@ def infinite_enum(aclass):
 @functools.total_ordering
 class InfiniteEnum:
     # noinspection PyShadowingBuiltins
-    def __init__(self, enum, int):
+    def __init__(self, enum: enum.IntEnum, int_: int):
         self.enum = enum
-        self.int = int
+        self.int = int_
 
     @property
-    def value(self):
+    def value(self) -> int:
         if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
             return self.int
         return self.enum.value
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
             return "{}({})".format(self.enum, self.int)
         return str(self.enum)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, InfiniteEnum):
             return self.value == other.value
         if isinstance(other, int):
             return self.value == other
         return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         if isinstance(other, InfiniteEnum):
             return self.value < other.value
         if isinstance(other, int):
@@ -1808,7 +1815,7 @@ CDEDB_EXPORT_EVENT_VERSION = 13
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (13, 2)
+EVENT_SCHEMA_VERSION = (14, 1)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1965,7 +1972,7 @@ PRIVILEGE_CHANGE_FIELDS = (
     "is_assembly_admin", "is_cdelokal_admin", "notes", "reviewer")
 
 #: Fields for institutions of events
-INSTITUTION_FIELDS = ("id", "title", "moniker")
+INSTITUTION_FIELDS = ("id", "title", "shortname")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
@@ -2023,10 +2030,10 @@ REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
                              "course_instructor")
 
 #: Fields of a lodgement group
-LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
+LODGEMENT_GROUP_FIELDS = ("id", "event_id", "title")
 
 #: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "moniker", "regular_capacity",
+LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
                     "camping_mat_capacity", "notes", "group_id", "fields")
 
 # Fields of a row in a questionnaire.

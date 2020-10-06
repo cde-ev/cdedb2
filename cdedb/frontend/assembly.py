@@ -25,14 +25,14 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import Query, QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter,
+    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_SHORTNAME, EntitySorter,
     schulze_evaluate, xsorted, RequestState, get_hash, CdEDBObject,
     DefaultReturnCode, CdEDBObjectMap,
 )
 import cdedb.database.constants as const
 
 #: Magic value to signal abstention during voting. Used during the emulation
-#: of classical voting. This can not occur as a moniker since it contains
+#: of classical voting. This can not occur as a shortname since it contains
 #: forbidden characters.
 MAGIC_ABSTAIN = "special: abstain"
 
@@ -102,12 +102,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
-        query: Optional[Query]
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
@@ -499,7 +497,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         tex = self.fill_template(
             rs, "tex", "list_attendees", {'attendees': attendees})
         return self.send_file(
-            rs, data=tex, inline=False, filename="Anwesenheitsliste.tex")
+            rs, data=tex, inline=False, filename="Anwesenheitsliste-Export.tex")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("ack_conclude", "bool"))
@@ -1012,10 +1010,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                 # select voted options
                 rs.values.setlist('vote', split_vote[0])
 
-        candidates = {e['moniker']: e
+        candidates = {e['shortname']: e
                       for e in ballot['candidates'].values()}
         if ballot['use_bar']:
-            candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
+            candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
                 "bar (options below this are declined)")
         # this is used for the flux candidate table
         current = {
@@ -1044,7 +1042,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'attachment_histories': attachment_histories,
             'split_vote': split_vote, 'own_vote': own_vote, 'result': result,
             'candidates': candidates, 'attends': attends,
-            'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
+            'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
             'secret': secret, 'has_voted': has_voted,
         })
@@ -1110,14 +1108,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             winners: List[Collection[str]] = []
             losers: List[Collection[str]] = []
             tmp = winners
-            lookup = {e['moniker']: e['id']
+            lookup = {e['shortname']: e['id']
                       for e in ballot['candidates'].values()}
             for tier in tiers:
                 # Remove bar if present
                 ntier = tuple(lookup[x] for x in tier if x in lookup)
                 if ntier:
                     tmp.append(ntier)
-                if ASSEMBLY_BAR_MONIKER in tier:
+                if ASSEMBLY_BAR_SHORTNAME in tier:
                     tmp = losers
             result['winners'] = winners
             result['losers'] = losers
@@ -1126,10 +1124,10 @@ class AssemblyFrontend(AbstractUserFrontend):
             counts: Union[Dict[str, int],
                           List[Dict[str, Union[int, List[str]]]]]
             if ballot['votes']:
-                counts = {e['moniker']: 0
+                counts = {e['shortname']: 0
                           for e in ballot['candidates'].values()}
                 if ballot['use_bar']:
-                    counts[ASSEMBLY_BAR_MONIKER] = 0
+                    counts[ASSEMBLY_BAR_SHORTNAME] = 0
                 for vote in result['votes']:
                     raw = vote['vote']
                     if '>' in raw:
@@ -1142,7 +1140,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 votes = [e['vote'] for e in result['votes']]
                 candidates = [k for k, v in result['candidates'].items()]
                 if ballot['use_bar']:
-                    candidates += (ASSEMBLY_BAR_MONIKER,)
+                    candidates += (ASSEMBLY_BAR_SHORTNAME,)
                 condensed, counts = schulze_evaluate(votes, candidates)
 
             result['counts'] = counts
@@ -1202,7 +1200,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         result = {k: self.get_online_result(rs, v) for k, v in done.items()}
 
         return self.render(rs, "summary_ballots", {
-            'ballots': done, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
+            'ballots': done, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'result': result})
 
     @access("assembly")
@@ -1287,24 +1285,24 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
-        candidates = tuple(e['moniker']
+        candidates = tuple(e['shortname']
                            for e in ballot['candidates'].values())
         if ballot['votes']:
             voted = unwrap(
                 request_extractor(rs, (("vote", "[str]"),)))
             if rs.has_validation_errors():
                 return self.show_ballot(rs, assembly_id, ballot_id)
-            if voted == (ASSEMBLY_BAR_MONIKER,):
+            if voted == (ASSEMBLY_BAR_SHORTNAME,):
                 if not ballot['use_bar']:
                     raise ValueError(n_("Option not available."))
                 vote = "{}>{}".format(
-                    ASSEMBLY_BAR_MONIKER, "=".join(candidates))
+                    ASSEMBLY_BAR_SHORTNAME, "=".join(candidates))
             elif voted == (MAGIC_ABSTAIN,):
                 vote = "=".join(candidates)
                 # When abstaining, the bar is equal do all candidates. This is
                 # different from voting *for* all candidates.
-                vote += "={}".format(ASSEMBLY_BAR_MONIKER)
-            elif ASSEMBLY_BAR_MONIKER in voted and len(voted) > 1:
+                vote += "={}".format(ASSEMBLY_BAR_SHORTNAME)
+            elif ASSEMBLY_BAR_SHORTNAME in voted and len(voted) > 1:
                 rs.notify("error", n_("Rejection is exclusive."))
                 return self.show_ballot(rs, assembly_id, ballot_id)
             else:
@@ -1313,9 +1311,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                 # When voting for certain candidates, they are ranked higher
                 # than the bar (to distinguish the vote from abstaining)
                 if losers:
-                    losers += "={}".format(ASSEMBLY_BAR_MONIKER)
+                    losers += "={}".format(ASSEMBLY_BAR_SHORTNAME)
                 else:
-                    losers = ASSEMBLY_BAR_MONIKER
+                    losers = ASSEMBLY_BAR_SHORTNAME
                 if winners and losers:
                     vote = "{}>{}".format(winners, losers)
                 else:
@@ -1326,7 +1324,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             if not vote:
                 vote = "=".join(candidates)
                 if ballot['use_bar']:
-                    vote += "={}".format(ASSEMBLY_BAR_MONIKER)
+                    vote += "={}".format(ASSEMBLY_BAR_SHORTNAME)
         vote = check(rs, "vote", vote, "vote", ballot=ballot)
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
@@ -1359,22 +1357,22 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         candidates = process_dynamic_input(
             rs, rs.ambience['ballot']['candidates'].keys(),
-            {'moniker': "restrictive_identifier", 'description': "str"})
+            {'shortname': "restrictive_identifier", 'title': "str"})
 
-        monikers: Set[str] = set()
+        shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():
-            if candidate and candidate['moniker'] == ASSEMBLY_BAR_MONIKER:
+            if candidate and candidate['shortname'] == ASSEMBLY_BAR_SHORTNAME:
                 rs.append_validation_error(
-                    (f"moniker_{candidate_id}",
-                     ValueError(n_("Mustn’t be the bar moniker.")))
+                    (f"shortname_{candidate_id}",
+                     ValueError(n_("Mustn’t be the bar shortname.")))
                 )
-            if candidate and candidate['moniker'] in monikers:
+            if candidate and candidate['shortname'] in shortnames:
                 rs.append_validation_error(
-                    (f"moniker_{candidate_id}",
-                     ValueError(n_("Duplicate moniker.")))
+                    (f"shortname_{candidate_id}",
+                     ValueError(n_("Duplicate shortname.")))
                 )
             if candidate:
-                monikers.add(candidate['moniker'])
+                shortnames.add(candidate['shortname'])
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
 

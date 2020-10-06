@@ -660,10 +660,9 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
-                 ("variant", "non_negative_int_or_None"))
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
     def select_persona(self, rs: RequestState, phrase: str, kind: str,
-                       aux: Optional[int], variant: int = None) -> Response:
+                       aux: Optional[int]) -> Response:
         """Provide data for intelligent input fields.
 
         This searches for users by name so they can be easily selected
@@ -680,14 +679,12 @@ class CoreFrontend(AbstractFrontend):
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
         - ``pure_assembly_user``: Search for an assembly only user as
-          assembly_admin
-        - ``assembly_admin_user``: Search for an assembly user as
-            assembly_admin.
-        - ``ml_admin_user``: Search for a mailinglist user as ml_admin
-        - ``mod_ml_user``: Search for a mailinglist user as a moderator
-        - ``event_admin_user``: Search an event user as event_admin (for
-          creating events)
-        - ``orga_event_user``: Search for an event user as event orga
+          assembly_admin or presider. Needed for external_signup.
+        - ``assembly_user``: Search for an assembly user as assembly_admin or presider
+        - ``ml_user``: Search for a mailinglist user as ml_admin or moderator
+        - ``ml_subscriber``: Search for a mailinglist user for subscription purposes.
+          Needed for add_subscriber action only.
+        - ``event_user``: Search an event user as event_admin or orga
 
         The aux parameter allows to supply an additional id for example
         in the case of a moderator this would be the relevant
@@ -695,17 +692,7 @@ class CoreFrontend(AbstractFrontend):
 
         Required aux value based on the 'kind':
 
-        * ``mod_ml_user``: Id of the mailinglist you are moderator of
-        * ``orga_event_user``: Id of the event you are orga of
-
-        The variant parameter allows to supply an additional integer to
-        distinguish between different variants of a given search kind.
-        Usually, this will be an enum member marking the kind of action taken.
-
-        Possible variants based on the 'kind':
-
-        - ``mod_ml_user``: Which action you are going to execute on this user.
-          A member of the SubscriptionActions enum.
+        * ``ml_subscriber``: Id of the mailinglist for context
         """
         if rs.has_validation_errors():
             return self.send_json(rs, {})
@@ -713,7 +700,6 @@ class CoreFrontend(AbstractFrontend):
         spec_additions: Dict[str, str] = {}
         search_additions = []
         mailinglist = None
-        event = None
         num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
@@ -721,7 +707,7 @@ class CoreFrontend(AbstractFrontend):
             if not {"core_admin", "cde_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "cde_user":
-            if not {"cde_admin"} & rs.user.roles:
+            if "cde_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_cde_realm", QueryOperators.equal, True))
@@ -731,47 +717,49 @@ class CoreFrontend(AbstractFrontend):
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
-            if "assembly_admin" not in rs.user.roles:
+            # No check by assembly, as this behaves identical for each assembly.
+            if not rs.user.presider and "assembly_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_assembly_realm", QueryOperators.equal, True))
             search_additions.append(
                 ("is_member", QueryOperators.equal, False))
-        elif kind == "assembly_admin_user":
-            if "assembly_admin" not in rs.user.roles:
+        elif kind == "assembly_user":
+            # No check by assembly, as this behaves identical for each assembly.
+            if not rs.user.presider and "assembly_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_assembly_realm", QueryOperators.equal, True))
-        elif kind == "ml_admin_user":
-            if "ml_admin" not in rs.user.roles:
+        elif kind == "event_user":
+            # No check by event, as this behaves identical for each event.
+            if not rs.user.orga and "event_admin" not in rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append(
+                ("is_event_realm", QueryOperators.equal, True))
+        elif kind == "ml_user":
+            relevant_admin_roles = {"core_admin", "cde_admin", "event_admin",
+                                    "assembly_admin", "cdelokal_admin", "ml_admin"}
+            # No check by mailinglist, as this behaves identical for each list.
+            if not rs.user.moderator and not relevant_admin_roles & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
-        elif kind == "mod_ml_user" and aux:
+        elif kind == "ml_subscriber":
+            if aux is None:
+                raise werkzeug.exceptions.BadRequest(n_(
+                    "Must provide id of the associated mailinglist to use this kind."))
+            # In this case, the return value depends on the respective mailinglist.
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
-            if not self.mlproxy.may_manage(rs, aux):
+            if not self.mlproxy.may_manage(rs, aux, privileged=True):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
-        elif kind == "event_admin_user":
-            if "event_admin" not in rs.user.roles:
-                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(
-                ("is_event_realm", QueryOperators.equal, True))
-        elif kind == "orga_event_user" and aux:
-            event = self.eventproxy.get_event(rs, aux)
-            if "event_admin" not in rs.user.roles:
-                if rs.user.persona_id not in event['orgas']:
-                    raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(
-                ("is_event_realm", QueryOperators.equal, True))
         else:
             return self.send_json(rs, {})
 
         data: Optional[Tuple[CdEDBObject, ...]] = None
 
-        # Core admins and meta admins are allowed to search by raw ID or
-        # CDEDB-ID
+        # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
             anid, errs = validate.check_cdedbid(phrase, "phrase")
             if not errs:
@@ -813,24 +801,21 @@ class CoreFrontend(AbstractFrontend):
                      "display_name"), search, (("personas.id", True),))
                 data = self.coreproxy.submit_select_persona_query(rs, query)
 
-        # Filter result to get only valid audience, if mailinglist is given
+        # Filter result to get only users allowed to be a subscriber of a list,
+        # which potentially are no subscriber yet.
         if mailinglist:
             pol = const.MailinglistInteractionPolicy
-            action = check(rs, "enum_subscriptionactions_or_None", variant)
-            if rs.has_validation_errors():
-                return self.send_json(rs, {})
-            if action == SubscriptionActions.add_subscriber:
-                allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
-                                pol.invitation_only}
-                data = self.mlproxy.filter_personas_by_policy(
-                    rs, mailinglist, data, allowed_pols)
+            allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
+                            pol.invitation_only}
+            data = self.mlproxy.filter_personas_by_policy(
+                rs, mailinglist, data, allowed_pols)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
             data = tuple(xsorted(
                 data, key=lambda e: e['id'])[:num_preview_personas])
 
-        def name(x):
+        def name(x: CdEDBObject) -> str:
             return f"{x['given_names']} {x['family_name']}"
 
         # Check if name occurs multiple times to add email address in this case
@@ -923,8 +908,8 @@ class CoreFrontend(AbstractFrontend):
         elif is_search:
             # mangle the input, so we can prefill the form
             query_input = mangle_query_input(rs, spec)
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -977,11 +962,10 @@ class CoreFrontend(AbstractFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_archived_persona'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query", spec=spec,
-                          allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -995,7 +979,7 @@ class CoreFrontend(AbstractFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = "qview_archived_persona"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -1945,9 +1929,9 @@ class CoreFrontend(AbstractFrontend):
             rs.values['attachment_hash'] = myhash
             rs.values['attachment_filename'] = attachment_filename
         elif attachment_hash:
-            attachment_data = self.coreproxy.genesis_get_attachment(
+            attachment_stored = self.coreproxy.genesis_check_attachment(
                 rs, attachment_hash)
-            if not attachment_data:
+            if not attachment_stored:
                 data['attachment'] = None
                 e = ("attachment", ValueError(n_(
                     "It seems like you took too long and "
@@ -2003,7 +1987,7 @@ class CoreFrontend(AbstractFrontend):
                      {
                          'genesis_case_id': self.encode_parameter(
                              "core/genesis_verify", "genesis_case_id",
-                             case_id, persona_id=None),
+                             str(case_id), persona_id=None),
                          'given_names': data['given_names'],
                          'family_name': data['family_name'],
                      })

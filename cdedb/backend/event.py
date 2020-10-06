@@ -12,7 +12,7 @@ from pathlib import Path
 
 from typing import (
     Dict, Set, Collection, Callable, Tuple, Optional, List, Sequence, Any,
-    Mapping
+    Mapping, Iterable
 )
 
 from cdedb.backend.common import (
@@ -299,7 +299,7 @@ class EventBackend(AbstractBackend):
                 lodge_field_columns += ", "
             lodge_view = """SELECT
                 {lodge_field_columns}
-                moniker, notes, id
+                title, notes, id
             FROM
                 event.lodgements
             WHERE
@@ -537,7 +537,7 @@ class EventBackend(AbstractBackend):
             # Template for retrieving course information for one specific track.
             # We don't use the {base} table from below, because we need
             # the id to be distinct.
-            def track_table(track):
+            def track_table(track: CdEDBObject) -> str:
                 track_id = track['id']
                 choices = ""
                 if track['num_choices'] > 0:
@@ -737,7 +737,7 @@ class EventBackend(AbstractBackend):
             lodgement_table = """
             SELECT
                 id, id as lodgement_id, event_id,
-                moniker, regular_capacity, camping_mat_capacity, notes, group_id
+                title, regular_capacity, camping_mat_capacity, notes, group_id
             FROM
                 event.lodgements"""
 
@@ -770,12 +770,12 @@ class EventBackend(AbstractBackend):
             # Retrieve generic lodgemnt group information.
             lodgement_group_table = \
             """SELECT
-                tmp_id, moniker, regular_capacity, camping_mat_capacity
+                tmp_id, title, regular_capacity, camping_mat_capacity
             FROM (
                 (
                     (
                         SELECT
-                            id AS tmp_id, moniker
+                            id AS tmp_id, title
                         FROM
                             event.lodgement_groups
                         WHERE
@@ -824,7 +824,7 @@ class EventBackend(AbstractBackend):
                     ON base.tmp_group_id =
                     group_inhabitants_view{part_id}.tmp_group_id"""
 
-            def part_table(p_id):
+            def part_table(p_id: int) -> str:
                 ptable = part_table_template.format(
                     event_id=event_id, part_id=p_id,
                     inhabitants_view=inhabitants_view(p_id),
@@ -3243,9 +3243,9 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        data = self.sql_select(rs, "event.lodgement_groups", ("id", "moniker"),
+        data = self.sql_select(rs, "event.lodgement_groups", ("id", "title"),
                                (event_id,), entity_key="event_id")
-        return {e['id']: e['moniker'] for e in data}
+        return {e['id']: e['title'] for e in data}
 
     @access("event")
     def get_lodgement_groups(self, rs: RequestState,
@@ -3281,7 +3281,7 @@ class EventBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_lodgement_groups(rs, (data['id'],)))
-            event_id, moniker = current['event_id'], current['moniker']
+            event_id, title = current['event_id'], current['title']
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
@@ -3291,7 +3291,7 @@ class EventBackend(AbstractBackend):
             ret *= self.sql_update(rs, "event.lodgement_groups", data)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_group_changed, event_id,
-                change_note=moniker)
+                change_note=title)
 
         return ret
 
@@ -3309,7 +3309,7 @@ class EventBackend(AbstractBackend):
             new_id = self.sql_insert(rs, "event.lodgement_groups", data)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_group_created,
-                data['event_id'], change_note=data['moniker'])
+                data['event_id'], change_note=data['title'])
         return new_id
 
     @access("event")
@@ -3377,7 +3377,7 @@ class EventBackend(AbstractBackend):
                     rs, "event.lodgement_groups", group_id)
                 self.event_log(rs, const.EventLogCodes.lodgement_group_deleted,
                                event_id=group['event_id'],
-                               change_note=group['moniker'])
+                               change_note=group['title'])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -3394,9 +3394,9 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        data = self.sql_select(rs, "event.lodgements", ("id", "moniker"),
+        data = self.sql_select(rs, "event.lodgements", ("id", "title"),
                                (event_id,), entity_key="event_id")
-        return {e['id']: e['moniker'] for e in data}
+        return {e['id']: e['title'] for e in data}
 
     @access("event")
     def get_lodgements(self, rs: RequestState,
@@ -3434,10 +3434,10 @@ class EventBackend(AbstractBackend):
         data = affirm("lodgement", data)
         with Atomizer(rs):
             current = self.sql_select_one(
-                rs, "event.lodgements", ("event_id", "moniker"), data['id'])
+                rs, "event.lodgements", ("event_id", "title"), data['id'])
             if current is None:
                 raise ValueError(n_("Lodgement does not exist."))
-            event_id, moniker = current['event_id'], current['moniker']
+            event_id, title = current['event_id'], current['title']
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
@@ -3465,7 +3465,7 @@ class EventBackend(AbstractBackend):
                                                     fupdate)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_changed, event_id,
-                change_note=moniker)
+                change_note=title)
             return ret
 
     @access("event")
@@ -3488,7 +3488,7 @@ class EventBackend(AbstractBackend):
             new_id = self.sql_insert(rs, "event.lodgements", data)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_created, data['event_id'],
-                change_note=data['moniker'])
+                change_note=data['title'])
         return new_id
 
     @access("event")
@@ -3558,7 +3558,7 @@ class EventBackend(AbstractBackend):
             if not blockers:
                 ret *= self.sql_delete_one(rs, "event.lodgements", lodgement_id)
                 self.event_log(rs, const.EventLogCodes.lodgement_deleted,
-                               event_id, change_note=lodgement["moniker"])
+                               event_id, change_note=lodgement["title"])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -3676,11 +3676,11 @@ class EventBackend(AbstractBackend):
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
 
-        def list_to_dict(alist):
+        def list_to_dict(alist: Iterable[CdEDBObject]) -> CdEDBObjectMap:
             return {e['id']: e for e in alist}
 
         with Atomizer(rs):
-            ret = {
+            ret: CdEDBObject = {
                 'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
                 'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
                 'kind': "full",  # could also be "partial"

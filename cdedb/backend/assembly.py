@@ -33,7 +33,7 @@ from pathlib import Path
 from secrets import token_urlsafe
 
 from typing import (
-    Set, Dict, Tuple, Union, Callable, Collection, Optional
+    Any, Set, Dict, Tuple, Union, Callable, Collection, Optional
 )
 from typing_extensions import Protocol
 
@@ -43,7 +43,7 @@ from cdedb.backend.common import (
 from cdedb.common import (
     n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
-    PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
+    PrivilegeError, ASSEMBLY_BAR_SHORTNAME, json_serialize,
     implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
     get_hash, mixed_existence_sorter, CdEDBObject, CdEDBObjectMap,
     DefaultReturnCode, DeletionBlockers, CdEDBLog,
@@ -57,7 +57,7 @@ class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
     realm = "assembly"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.attachment_base_path: Path = (
                 self.conf['STORAGE_DIR'] / "assembly_attachment")
@@ -760,7 +760,7 @@ class AssemblyBackend(AbstractBackend):
             ret = {e['id']: e for e in data}
             data = self.sql_select(
                 rs, "assembly.candidates",
-                ("id", "ballot_id", "description", "moniker"), ids,
+                ("id", "ballot_id", "title", "shortname"), ids,
                 entity_key="ballot_id")
             for anid in ids:
                 candidates = {e['id']: e for e in data
@@ -827,7 +827,7 @@ class AssemblyBackend(AbstractBackend):
                     self.assembly_log(
                         rs, const.AssemblyLogCodes.candidate_added,
                         current['assembly_id'],
-                        change_note=data['candidates'][x]['moniker'])
+                        change_note=data['candidates'][x]['shortname'])
                 # updated
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(data['candidates'][x])
@@ -836,7 +836,7 @@ class AssemblyBackend(AbstractBackend):
                     self.assembly_log(
                         rs, const.AssemblyLogCodes.candidate_updated,
                         current['assembly_id'],
-                        change_note=current['candidates'][x]['moniker'])
+                        change_note=current['candidates'][x]['shortname'])
                 # deleted
                 if deleted:
                     ret *= self.sql_delete(rs, "assembly.candidates", deleted)
@@ -844,7 +844,7 @@ class AssemblyBackend(AbstractBackend):
                         self.assembly_log(
                             rs, const.AssemblyLogCodes.candidate_removed,
                             current['assembly_id'],
-                            change_note=current['candidates'][x]['moniker'])
+                            change_note=current['candidates'][x]['shortname'])
         return ret
 
     @access("assembly")
@@ -1319,12 +1319,12 @@ class AssemblyBackend(AbstractBackend):
             votes = self.sql_select(
                 rs, "assembly.votes", ("vote", "salt", "hash"), (ballot_id,),
                 entity_key="ballot_id")
-            monikers = tuple(
-                x['moniker'] for x in ballot['candidates'].values())
+            shortnames = tuple(
+                x['shortname'] for x in ballot['candidates'].values())
             if ballot['use_bar'] or ballot['votes']:
-                monikers += (ASSEMBLY_BAR_MONIKER,)
+                shortnames += (ASSEMBLY_BAR_SHORTNAME,)
             condensed, detailed = schulze_evaluate([e['vote'] for e in votes],
-                                                   monikers)
+                                                   shortnames)
             update = {
                 'id': ballot_id,
                 'is_tallied': True,
@@ -1336,13 +1336,12 @@ class AssemblyBackend(AbstractBackend):
                 ballot['assembly_id'], change_note=ballot['title'])
 
             # now generate the result file
-            esc = json_serialize
             assembly = unwrap(
                 self.get_assemblies(rs, (ballot['assembly_id'],)))
             candidates = {
-                c['moniker']: c['description']
+                c['shortname']: c['title']
                 for c in xsorted(ballot['candidates'].values(),
-                                 key=lambda x: x['moniker'])
+                                 key=EntitySorter.candidates)
             }
             query = glue("SELECT persona_id FROM assembly.voter_register",
                          "WHERE ballot_id = %s and has_voted = True")
@@ -1777,8 +1776,8 @@ class AssemblyBackend(AbstractBackend):
                 raise PrivilegeError(n_("Must have privileged access to add"
                                         " attachment version."))
             self.assembly_log(
-                rs, const.AssemblyLogCodes.attachement_version_added,
-                assembly_id, change_note=f"Version {version}")
+                rs, const.AssemblyLogCodes.attachment_version_added,
+                assembly_id, change_note=f"{data['title']}: Version {version}")
         return ret
 
     @access("assembly")
@@ -1805,7 +1804,12 @@ class AssemblyBackend(AbstractBackend):
             query = (f"UPDATE assembly.attachment_versions SET {setters}"
                      f" WHERE attachment_id = %s AND version = %s")
             params = tuple(data[k] for k in keys) + (attachment_id, version)
-            return self.query_exec(rs, query, params)
+            ret = self.query_exec(rs, query, params)
+            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+            self.assembly_log(
+                rs, const.AssemblyLogCodes.attachment_version_changed,
+                assembly_id, change_note=f"{data['title']}: Version {version}")
+            return ret
 
     @access("assembly")
     def remove_attachment_version(self, rs: RequestState, attachment_id: int,
@@ -1857,8 +1861,9 @@ class AssemblyBackend(AbstractBackend):
                 assembly_id = self.get_assembly_id(
                     rs, attachment_id=attachment_id)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.attachement_version_removed,
-                    assembly_id, change_note=f"Version {version}")
+                    rs, const.AssemblyLogCodes.attachment_version_removed,
+                    assembly_id, change_note=
+                    f"{history[version]['title']}: Version {version}")
             return ret
 
     @access("assembly")

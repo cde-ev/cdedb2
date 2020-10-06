@@ -364,7 +364,7 @@ GRANT DELETE ON core.changelog TO cdb_admin;
 CREATE TABLE core.cron_store
 (
         id                      serial PRIMARY KEY,
-        moniker                 varchar NOT NULL UNIQUE,
+        title                   varchar NOT NULL UNIQUE,
         store                   jsonb NOT NULL
 );
 GRANT SELECT, UPDATE ON core.cron_store_id_seq TO cdb_admin;
@@ -504,7 +504,7 @@ GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 CREATE TABLE past_event.institutions (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
-        moniker                 varchar NOT NULL
+        shortname               varchar NOT NULL
 );
 GRANT SELECT ON past_event.institutions TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
@@ -750,7 +750,7 @@ GRANT SELECT ON event.orgas TO cdb_anonymous;
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        moniker                 varchar NOT NULL
+        title                   varchar NOT NULL
 );
 CREATE INDEX ids_lodgement_groups_event_id ON event.lodgement_groups(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgement_groups TO cdb_persona;
@@ -759,7 +759,7 @@ GRANT SELECT, UPDATE ON event.lodgement_groups_id_seq TO cdb_persona;
 CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        moniker                 varchar NOT NULL,
+        title                   varchar NOT NULL,
         regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
         camping_mat_capacity    integer NOT NULL DEFAULT 0,
@@ -931,7 +931,7 @@ CREATE TABLE assembly.ballots (
         -- alternative title may be "reopen nominations".
         --
         -- It will not be listed in the assembly.candidates table, but added
-        -- on the fly. Its moniker will be "_bar_".
+        -- on the fly. Its shortname will be "_bar_".
         use_bar                 boolean NOT NULL,
         -- number of submitted votes necessary to not trigger extension
         quorum                  integer NOT NULL DEFAULT 0,
@@ -960,10 +960,10 @@ GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_member;
 CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
-        description             varchar NOT NULL,
-        moniker                 varchar NOT NULL
+        title                   varchar NOT NULL,
+        shortname               varchar NOT NULL
 );
-CREATE UNIQUE INDEX idx_moniker_constraint ON assembly.candidates(ballot_id, moniker);
+CREATE UNIQUE INDEX idx_shortname_constraint ON assembly.candidates(ballot_id, shortname);
 GRANT SELECT ON assembly.candidates TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_member;
@@ -995,7 +995,7 @@ CREATE TABLE assembly.votes (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         -- The vote is of the form '2>3=1>0>4' where the pieces between the
-        -- relation symbols are the corresponding monikers from
+        -- relation symbols are the corresponding shortnames from
         -- assembly.candidates.
         vote                    varchar NOT NULL,
         salt                    varchar NOT NULL,

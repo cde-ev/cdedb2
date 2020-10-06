@@ -26,8 +26,13 @@ I18N_STRINGS = (
     n_("AssemblyLogCodes.candidate_updated"),
     n_("AssemblyLogCodes.candidate_removed"),
     n_("AssemblyLogCodes.new_attendee"),
+    n_("AssemblyLogCodes.assembly_presider_added"),
+    n_("AssemblyLogCodes.assembly_presider_removed"),
     n_("AssemblyLogCodes.attachment_added"),
     n_("AssemblyLogCodes.attachment_removed"),
+    n_("AssemblyLogCodes.attachment_version_added"),
+    n_("AssemblyLogCodes.attachment_version_removed"),
+    n_("AssemblyLogCodes.attachment_version_changed"),
 
     n_("AttachmentPolicy.allow"),
     n_("AttachmentPolicy.pdf_only"),

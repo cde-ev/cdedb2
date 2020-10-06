@@ -185,7 +185,7 @@
                                            arialabel=gettext("ID of the new Orga")) }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-add-orga').cdedbSearchPerson(
-                                '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_admin_user&phrase=%s&aux='|s) +
+                                '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_user&phrase=%s&aux='|s) +
                                     (ambience['event']['id']|string|e) }}',
                                 {{ ambience['event']['orgas']|list|json|s }}, false, false,
                                 "{{ gettext("ID, name, email") }}"

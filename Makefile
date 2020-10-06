@@ -36,8 +36,8 @@ reload:
 i18n-refresh:
 	pybabel extract -F ./babel.cfg  --sort-by-file -o ./i18n/cdedb.pot\
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
-	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb
-	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb
+	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb --ignore-obsolete
+	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb --ignore-obsolete
 
 i18n-compile:
 	pybabel compile -d ./i18n/ -l de -D cdedb
