@@ -434,11 +434,11 @@
     {% endif %}
 
     {% if not (summary['changed_registratios'] or summary['new_registration_ids']
-           or summary['real_deleted_registration_ids'] or summary['changed_courses']
-           or summary['new_course_ids'] or summary['real_deleted_course_ids']
-           or summary['changed_lodgements'] or summary['new_lodgement_ids']
-           or summary['real_deleted_lodgement_ids'] or summary['changed_lodgement_groups']
-           or summary['new_lodgement_group_ids'] or summary['real_deleted_lodgement_group_ids']) %}
+               or summary['real_deleted_registration_ids'] or summary['changed_courses']
+               or summary['new_course_ids'] or summary['real_deleted_course_ids']
+               or summary['changed_lodgements'] or summary['new_lodgement_ids']
+               or summary['real_deleted_lodgement_ids'] or summary['changed_lodgement_groups']
+               or summary['new_lodgement_group_ids'] or summary['real_deleted_lodgement_group_ids']) %}
         {% trans %}The input produced an empty diff. No changes are to be imported.{% endtrans %}
     {% endif %}
 
