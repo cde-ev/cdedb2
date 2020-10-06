@@ -5,7 +5,7 @@ event and assembly realm in the form of specific mailing lists.
 """
 from datetime import datetime
 from typing import (Callable, Collection, Dict, List, Optional, Set,
-                    Tuple, overload, Any, TYPE_CHECKING)
+                    Tuple, overload, Any, cast)
 from typing_extensions import Protocol
 
 import cdedb.database.constants as const
@@ -43,7 +43,7 @@ class MlBackend(AbstractBackend):
             core=self.core, event=self.event, assembly=self.assembly)
 
     @classmethod
-    def is_admin(cls, rs):
+    def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
     @access("ml")
@@ -57,16 +57,16 @@ class MlBackend(AbstractBackend):
 
     @overload
     def is_relevant_admin(self, rs: RequestState, *,
-                          mailinglist: CdEDBObject) -> bool:
-        pass
+                          mailinglist: CdEDBObject) -> bool: ...
 
     @overload
     def is_relevant_admin(self, rs: RequestState, *,
-                          mailinglist_id: int) -> bool:
-        pass
+                          mailinglist_id: int) -> bool: ...
 
     @access("ml")
-    def is_relevant_admin(self, rs, *, mailinglist=None, mailinglist_id=None):
+    def is_relevant_admin(self, rs: RequestState, *,
+                          mailinglist: CdEDBObject = None,
+                          mailinglist_id: int = None) -> bool:
         """Check if the user is a relevant admin for a mailinglist.
 
         Exactly one of the inputs should be provided.
@@ -143,8 +143,9 @@ class MlBackend(AbstractBackend):
         pass
 
     @access("ml")
-    def get_interaction_policy(self, rs, persona_id, *, mailinglist=None,
-                               mailinglist_id=None):
+    def get_interaction_policy(self, rs: RequestState, persona_id: int, *,
+                               mailinglist: CdEDBObject = None,
+                               mailinglist_id: int = None) -> ml_type.MIPol:
         """What may the user do with a mailinglist. Be aware, that this does
         not take unsubscribe overrides into account.
 
@@ -167,7 +168,8 @@ class MlBackend(AbstractBackend):
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
         persona_id = affirm("id", persona_id)
-        ml = affirm("mailinglist", mailinglist, _allow_readonly=True)
+        ml = cast(CdEDBObject,
+                  affirm("mailinglist", mailinglist, _allow_readonly=True))
 
         if not (rs.user.persona_id == persona_id
                 or self.may_manage(rs, ml['id'], privileged=True)):
@@ -392,7 +394,7 @@ class MlBackend(AbstractBackend):
             return {k: v for k, v in ret.items()
                     if self.may_view(rs, mailinglists[k])}
 
-    def list_mailinglist_addresses(self, rs):
+    def list_mailinglist_addresses(self, rs: RequestState) -> Dict[int, str]:
         """List all mailinglist adresses
 
         This is for the purpose of preventing duplicate mail adresses,
@@ -687,7 +689,7 @@ class MlBackend(AbstractBackend):
         addresses = self.list_mailinglist_addresses(rs)
         # address can either be free or taken by the current mailinglist
         if (address in addresses.values()
-                and address != addresses.get(data.get('id'))):
+                and address != addresses.get(data.get('id', 0))):
             raise ValueError(n_("Non-unique mailinglist name"))
         return address
 
@@ -929,8 +931,11 @@ class MlBackend(AbstractBackend):
                 rs, persona_id, mailinglist_id=mailinglist_id,
                 states=set(const.SubscriptionStates))
             error_matrix = sa.error_matrix()
-            if error_matrix[action][old_state]:
-                raise error_matrix[action][old_state]
+
+            # TODO: `if exception := error_matrix[action][old_state]`.
+            exception = error_matrix[action][old_state]
+            if exception:
+                raise exception
 
             # 3: Do the transition
             new_state = action.get_target_state()

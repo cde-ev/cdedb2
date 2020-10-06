@@ -5,7 +5,7 @@
 import copy
 from datetime import datetime
 import collections
-from typing import Dict, Any, Optional, Collection
+from typing import Dict, Any, Optional, Collection, cast
 
 import mailmanclient
 import werkzeug
@@ -17,7 +17,7 @@ from cdedb.frontend.common import (
     cdedbid_filter as cdedbid, keydictsort_filter,
     calculate_db_logparams, calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, mangle_query_input
+from cdedb.query import QUERY_SPECS, mangle_query_input, Query
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
     RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap,
@@ -102,17 +102,16 @@ class MlBaseFrontend(AbstractUserFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_ml_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = "qview_persona"
             result = self.mlproxy.submit_general_query(rs, query)
             params['result'] = result

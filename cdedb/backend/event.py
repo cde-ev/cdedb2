@@ -12,7 +12,7 @@ from pathlib import Path
 
 from typing import (
     Dict, Set, Collection, Callable, Tuple, Optional, List, Sequence, Any,
-    Mapping
+    Mapping, Iterable
 )
 
 from cdedb.backend.common import (
@@ -537,7 +537,7 @@ class EventBackend(AbstractBackend):
             # Template for retrieving course information for one specific track.
             # We don't use the {base} table from below, because we need
             # the id to be distinct.
-            def track_table(track):
+            def track_table(track: CdEDBObject) -> str:
                 track_id = track['id']
                 choices = ""
                 if track['num_choices'] > 0:
@@ -824,7 +824,7 @@ class EventBackend(AbstractBackend):
                     ON base.tmp_group_id =
                     group_inhabitants_view{part_id}.tmp_group_id"""
 
-            def part_table(p_id):
+            def part_table(p_id: int) -> str:
                 ptable = part_table_template.format(
                     event_id=event_id, part_id=p_id,
                     inhabitants_view=inhabitants_view(p_id),
@@ -3676,11 +3676,11 @@ class EventBackend(AbstractBackend):
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
 
-        def list_to_dict(alist):
+        def list_to_dict(alist: Iterable[CdEDBObject]) -> CdEDBObjectMap:
             return {e['id']: e for e in alist}
 
         with Atomizer(rs):
-            ret = {
+            ret: CdEDBObject = {
                 'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
                 'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
                 'kind': "full",  # could also be "partial"

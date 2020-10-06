@@ -282,7 +282,7 @@ class ConfidenceLevel(enum.IntEnum):
     Full = 4
 
     @classmethod
-    def destroy(cls):
+    def destroy(cls) -> "ConfidenceLevel":
         return cls.Null
 
     def decrease(self, amount: int = 1) -> "ConfidenceLevel":
@@ -297,7 +297,7 @@ class ConfidenceLevel(enum.IntEnum):
         else:
             return self.__class__.Full
 
-    def __format__(self, format_spec):
+    def __format__(self, format_spec: str) -> str:
         return str(self)
 
 

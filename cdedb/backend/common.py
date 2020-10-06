@@ -15,10 +15,11 @@ import logging
 import datetime
 import psycopg2.extras
 import psycopg2.extensions
+from types import TracebackType
 from typing import (
     Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
     Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict,
-    ClassVar
+    ClassVar, Type
 )
 from typing_extensions import Literal
 
@@ -53,8 +54,10 @@ def singularize(function: Callable[..., T], array_param_name: str = "",
                 passthrough: Literal[True] = True) -> Callable[..., T]: ...
 
 
-def singularize(function, array_param_name="ids",
-                singular_param_name="anid", passthrough=False):
+def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
+                array_param_name: str = "ids",
+                singular_param_name: str = "anid",
+                passthrough: bool = False) -> Callable[..., T]:
     """This takes a function and returns a singularized version.
 
     The function has to accept an array as a parameter and return a dict
@@ -72,7 +75,7 @@ def singularize(function, array_param_name="ids",
 
     @functools.wraps(function)
     def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
-                     **kwargs: Any) -> Callable[..., T]:
+                     **kwargs: Any) -> T:
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
             kwargs[array_param_name] = (param,)
@@ -81,9 +84,9 @@ def singularize(function, array_param_name="ids",
             args = ((param,),) + args[1:]
         data = function(self, rs, *args, **kwargs)
         if passthrough:
-            return data
+            return cast(T, data)
         else:
-            return data[param]
+            return cast(Mapping[Any, T], data)[param]
 
     return singularized
 
@@ -239,7 +242,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                             ) -> CdEDBObject: ...
 
     @staticmethod
-    def _sanitize_db_output(output):
+    def _sanitize_db_output(output: Optional[psycopg2.extras.RealDictRow]
+                            ) -> Optional[CdEDBObject]:
         """Convert a :py:class:`psycopg2.extras.RealDictRow` into a normal
         :py:class:`dict`. We only use the outputs as dictionaries and
         the psycopg variant has some rough edges (e.g. it does not survive
@@ -276,7 +280,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     def _sanitize_db_input(obj: T) -> T: ...  # type: ignore
 
     @staticmethod
-    def _sanitize_db_input(obj):
+    def _sanitize_db_input(obj: Any) -> Any:
         """Mangle data to make psycopg happy.
 
         Convert :py:class:`tuple`s (and all other iterables, but not strings
@@ -767,10 +771,11 @@ class Silencer:
     def __init__(self, rs: RequestState):
         self.rs = rs
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.rs.is_quiet = True
 
-    def __exit__(self, atype, value, tb):
+    def __exit__(self, atype: Type[Exception], value: Exception,
+                 tb: TracebackType) -> None:
         self.rs.is_quiet = False
 
 
@@ -784,19 +789,21 @@ def affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
 # noinspection PyPep8Naming
 @overload
 def affirm_array_validation(assertion: str, values: None,
-                            allow_None: bool = False, **kwargs: Any
+                            allow_None: Literal[True], **kwargs: Any
                             ) -> None: ...
 
 
 # noinspection PyPep8Naming
 @overload
 def affirm_array_validation(assertion: str, values: Iterable[T],
-                            allow_None: bool = False, **kwargs: Any
+                            allow_None: Literal[False] = False, **kwargs: Any
                             ) -> Tuple[T, ...]: ...
 
 
 # noinspection PyPep8Naming
-def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
+def affirm_array_validation(assertion: str, values: Optional[Iterable[T]],
+                            allow_None: bool = False, **kwargs: Any
+                            ) -> Optional[Tuple[T, ...]]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
     :param allow_None: Since we don't have the luxury of an automatic
@@ -827,7 +834,9 @@ def affirm_set_validation(assertion: str, values: Iterable[T],
 
 
 # noinspection PyPep8Naming
-def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
+def affirm_set_validation(assertion: str, values: Optional[Iterable[T]],
+                          allow_None: bool = False, **kwargs: Any
+                          ) -> Optional[Set[T]]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
 
     :param allow_None: Since we don't have the luxury of an automatic
@@ -860,7 +869,7 @@ def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
         FieldDatatypes.bool: lambda x: x,
     }
 
-    def _do_cast(key, val):
+    def _do_cast(key: str, val: Any) -> Any:
         if val is None:
             return None
         if key in spec:
