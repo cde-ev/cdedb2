@@ -2,12 +2,10 @@
 
 import copy
 import re
-import json
 
 import urllib.parse
 from test.common import USER_DICT, FrontendTest, as_users
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, get_hash
-from cdedb.frontend.core import USER_REALM_NAMES
 
 import cdedb.database.constants as const
 import webtest
@@ -228,10 +226,10 @@ class TestCoreFrontend(FrontendTest):
                           'email': 'daniel@example.cde',
                           'id': 4,
                           'name': 'Daniel D. Dino'},
-                          {'display_name': 'Ferdinand',
-                           'email': 'ferdinand@example.cde',
-                           'id': 6,
-                           'name': 'Ferdinand F. Findus'}]}
+                         {'display_name': 'Ferdinand',
+                          'email': 'ferdinand@example.cde',
+                          'id': 6,
+                          'name': 'Ferdinand F. Findus'}]}
         self.assertEqual(expectation, self.response.json)
         self.get('/core/persona/select?kind=ml_user&phrase=@exam')
         expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
@@ -461,9 +459,9 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(
-            'Das ist ähnlich zu einem häufig genutzen Passwort.')
+        self.assertValidationError(
+            "new_password", "Das ist ähnlich zu einem häufig genutzten Passwort.",
+            notification="Passwort ist zu schwach.")
         self.assertPresence(
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         # Password two: Repeating patterns
@@ -474,9 +472,10 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(
-            ' Wiederholungen wie „abcabcabc“ sind nur geringfügig schwieriger zu erraten als „abc“.')
+        self.assertValidationError("new_password",
+                                   'Wiederholungen wie „abcabcabc“ sind nur geringfügig'
+                                   ' schwieriger zu erraten als „abc“.',
+                                   notification="Passwort ist zu schwach.")
         self.assertPresence(
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         self.assertPresence(
@@ -489,9 +488,10 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(
-            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertValidationError(
+            "new_password",
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
+            notification="Passwort ist zu schwach.")
         self.assertPresence('Großschreibung hilft nicht wirklich.')
         # Password four: German umlauts
         new_password = 'überwährend'
@@ -500,9 +500,10 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(
-            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertValidationError(
+            "new_password",
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
+            notification="Passwort ist zu schwach.")
         # Password five: User-specific passwords
         new_password = (user['given_names'].replace('-', ' ').split()[0] +
                         user['family_name'].replace('-', ' ').split()[0])
@@ -512,7 +513,8 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertValidationError("new_password", "",
+                                   notification="Passwort ist zu schwach.")
         # Password six+seven: CdE-specific passwords
         new_password = "cdeakademie"
         f = self.response.forms['passwordchangeform']
@@ -521,7 +523,8 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertValidationError("new_password", "",
+                                   notification="Passwort ist zu schwach.")
         new_password = "duschorgie"
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
@@ -529,7 +532,8 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertValidationError("new_password", "",
+                                   notification="Passwort ist zu schwach.")
 
     @as_users("vera", "ferdinand")
     def test_change_password_zxcvbn_admin(self, user):
@@ -543,7 +547,9 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach für einen Admin-Account.')
+        self.assertValidationError(
+            "new_password", "Passwort ist zu schwach für einen Admin-Account.",
+            notification="Passwort ist zu schwach.")
 
     @as_users("berta", "emilia")
     def test_change_password_zxcvbn_noadmin(self, user):
@@ -620,8 +626,10 @@ class TestCoreFrontend(FrontendTest):
                     elif key == 'bad':
                         self.submit(f, check_notification=False)
                         self.assertNonPresence('Passwort zurückgesetzt.')
-                        self.assertPresence('Passwort ist zu schwach.',
-                                            div="notifications")
+                        self.assertValidationError(
+                            "new_password",
+                            "Das ist ähnlich zu einem häufig genutzten Passwort.",
+                            notification="Passwort ist zu schwach.")
 
     def test_repeated_password_reset(self):
         new_password = "krce63koLe#$e"
@@ -707,8 +715,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['new_username'] = current_username
         self.submit(f, check_notification=False)
-        self.assertPresence(
-            "Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
+        self.assertValidationError(
+            "new_username", "Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
         self.assertNonPresence("E-Mail abgeschickt!", div="notifications")
         # Now with new username
         new_username = "zelda@example.cde"
@@ -1167,8 +1175,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Archivierungsnotiz muss angegeben werden.",
-                            div="notifications")
+        self.assertValidationError("note", "Darf nicht leer sein",
+                                   notification="Archivierungsnotiz muss angegeben werden.")
         self.assertTitle("Charly C. Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
@@ -1218,8 +1226,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['modifybalanceform']
         f['new_balance'] = 15.66
         self.submit(f, check_notification=False)
-        self.assertPresence("Validierung fehlgeschlagen", div="notifications")
         self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
+        self.assertValidationError("change_note", "Darf nicht leer sein.")
         # Test changing balance
         f = self.response.forms['modifybalanceform']
         f['new_balance'] = 15.66
@@ -1420,7 +1428,7 @@ class TestCoreFrontend(FrontendTest):
         # First check error handling by entering an invalid birthday
         f['birthday'] = "foobar"
         self.submit(f, check_notification=False)
-        self.assertPresence('Validierung ', div='notifications')
+        self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
         self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
         # Now, do it right
         f['birthday'] = "21.6.1977"
@@ -1629,7 +1637,7 @@ class TestCoreFrontend(FrontendTest):
         f['attachment'] = webtest.Upload(
             "my_participation_certificate.pdf", data, content_type="application/pdf")
         self.submit(f, check_notification=False)
-        self.assertPresence("Darf nicht leer sein.")
+        self.assertValidationError("notes", "Darf nicht leer sein.")
         self.assertPresence("Anhang my_participation_certificate.pdf")
         f = self.response.forms['genesisform']
         f['notes'] = "Gimme!"
@@ -1796,8 +1804,8 @@ class TestCoreFrontend(FrontendTest):
             f[field] = entry
         f['birthday'] = "2222-06-05"
         self.submit(f, check_notification=False)
-        self.assertPresence(
-            "Ein Geburtsdatum muss in der Vergangenheit liegen.")
+        self.assertValidationError(
+            "birthday", "Ein Geburtsdatum muss in der Vergangenheit liegen.")
 
     def test_genesis_missing_data(self):
         self.get('/')
@@ -1808,7 +1816,7 @@ class TestCoreFrontend(FrontendTest):
             f[field] = entry
         f['notes'] = ""
         self.submit(f, check_notification=False)
-        self.assertPresence("Notwendige Angabe fehlt.")
+        self.assertValidationError("notes", "Notwendige Angabe fehlt.")
 
     def test_genesis_modify(self):
         self._genesis_request(self.ML_GENESIS_DATA)

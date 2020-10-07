@@ -25,7 +25,7 @@ import decimal
 
 from typing import (
     TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set, Union,
-    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection, Iterable,
+    MutableMapping, Any, no_type_check, Iterable,
 )
 
 import pytz
@@ -1019,18 +1019,27 @@ class FrontendTest(CdEDBTest):
         self.assertEqual(name.strip(), span.text_content().strip())
 
     def assertValidationError(self, fieldname: str, message: str = "",
-                              index: int = None) -> None:
+                              index: int = None,
+                              notification: Optional[str] = "Validierung fehlgeschlagen") -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
-        and a specific error message to be shown near the field.
+        and a specific error message to be shown near the field. Also check that an
+        .alert-danger notification (with the given text) is indicating validation failure.
 
         :param fieldname: The field's 'name' attribute
         :param index: If more than one field with the given name exists,
             specify which one should be checked.
-        :param message: The expected error message
+        :param message: The expected error message displayed below the input
+        :param notification: The expected notification displayed at the top of the page
+            This can be a regex. If this is None, skip the notification check.
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
+        if notification is not None:
+            self.assertIn("alert alert-danger", self.response.text)
+            self.assertPresence(notification, div="notifications",
+                                regex=True)
+
         nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
         f = fieldname
