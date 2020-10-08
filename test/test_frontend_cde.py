@@ -234,7 +234,7 @@ class TestCdEFrontend(FrontendTest):
         f['birthday'] = "garbage"
         self.submit(f, check_notification=False)
         self.assertTitle("Bertålotta Beispiel bearbeiten")
-        self.assertIn("alert alert-danger", self.response.text)
+        self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
         f = self.response.forms['changedataform']
         self.assertEqual("Zelda", f['display_name'].value)
 
@@ -1389,7 +1389,7 @@ class TestCdEFrontend(FrontendTest):
         # Check error handling for balance
         self.submit(f, check_notification=False)
         self.assertPresence('Falscher Zeitpunkt für Guthabenaktualisierung',
-                            'notifications')
+                            div='notifications')
         self.assertTitle("Semesterverwaltung")
 
         f = self.response.forms['proceedform']
@@ -1401,7 +1401,7 @@ class TestCdEFrontend(FrontendTest):
         # Check error handling for proceed
         self.submit(f, check_notification=False)
         self.assertPresence('Falscher Zeitpunkt für Beendigung des Semesters',
-                            'notifications')
+                            div='notifications')
         self.assertTitle("Semesterverwaltung")
 
         # 2.1 Payment Request
@@ -1510,7 +1510,7 @@ class TestCdEFrontend(FrontendTest):
         # Check error handling for proceedexpuls
         self.submit(f, check_notification=False)
         self.assertPresence('Adressabfrage noch nicht erledigt',
-                            'notifications')
+                            div='notifications')
         self.assertTitle("Semesterverwaltung")
 
         # Verify Log
