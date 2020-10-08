@@ -53,14 +53,16 @@ class MailmanMixin(MlBaseFrontend):
             prefix = "[{}] ".format(db_list['subject_prefix'])
         desired_settings = {
             'send_welcome_message': False,
+            # Available only in mailman-3.3
+            # 'send_goodbye_message': False,
             # block the usage of the self-service facilities which should
             # not be used to prevent synchronisation issues
             'subscription_policy': 'moderate',
-            'unsubscription_policy': 'moderate',
+            # Available only in mailman-3.3
+            # 'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
-            'filter_content': True,
             'convert_html_to_plaintext': True,
-            'dmarc_mitigations': 'wrap_message',
+            'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
             'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
             'administrivia': True,
@@ -75,7 +77,11 @@ class MailmanMixin(MlBaseFrontend):
                 db_list['mod_policy']],
             'default_nonmember_action': POLICY_OTHER_CONVERT[
                 db_list['mod_policy']],
-            # TODO handle attachment_policy
+            # TODO handle attachment_policy, only available in mailman-3.3
+            # 'filter_content': True,
+            # 'filter_action': 'forward',
+            # 'pass_extensions': ['pdf'],
+            # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
         if not db_list['is_active']:
             desired_settings.update({
@@ -197,9 +203,9 @@ class MailmanMixin(MlBaseFrontend):
 
         This has an @periodic decorator in the frontend.
         """
-        if (self.conf["CDEDB_TEST"] or self.conf["CDEDB_DEV"]
-                or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]):
-            self.logger.debug("Skipping mailman sync in test/dev/offline mode.")
+        if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
+                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
+            self.logger.debug("Skipping mailman sync in dev/offline mode.")
             return store
         mailman = self.mailman_connect()
         # noinspection PyBroadException
