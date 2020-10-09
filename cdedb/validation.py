@@ -85,6 +85,8 @@ import zxcvbn
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME,
+    CdEDBObject,
+    CdEDBObjectMap,
     EPSILON,
     EVENT_SCHEMA_VERSION,
     INFINITE_ENUM_MAGIC_NUMBER,
@@ -128,6 +130,7 @@ _LOGGER = logging.getLogger(__name__)
 
 T = TypeVar('T')
 F = TypeVar('F', bound=Callable[..., Any])
+TypeMapping = Dict[str, Type[Any]]
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -142,14 +145,14 @@ class ValidationSummary(ValueError, Sequence[Exception]):
     def __getitem__(self, index):
         return self.args[index]
 
-    def extend(self, errors: Iterable[Exception]):
+    def extend(self, errors: Iterable[Exception]) -> None:
         self.args = self.args + tuple(errors)
 
-    def append(self, error: Exception):
+    def append(self, error: Exception) -> None:
         self.args = self.args + (error,)
 
 
-class ValidatorStorage(Dict[Type, Callable]):
+class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
     def __setitem__(self, type_: Type[T], validator: Callable[..., T]) -> None:
         super().__setitem__(type_, validator)
 
@@ -167,9 +170,9 @@ class ValidatorStorage(Dict[Type, Callable]):
 _ALL_TYPED = ValidatorStorage()
 
 
-def _create_assert_valid(fun: F):
+def _create_assert_valid(fun: Callable[..., T]) -> Callable[..., T]:
     @ functools.wraps(fun)
-    def assert_valid(*args, **kwargs):
+    def assert_valid(*args: Any, **kwargs: Any) -> T:
         try:
             val = fun(*args, **kwargs)
         except ValidationSummary as errs:
@@ -186,9 +189,9 @@ def _create_assert_valid(fun: F):
     return assert_valid
 
 
-def _create_is_valid(fun: F):
+def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
     @ functools.wraps(fun)
-    def is_valid(*args, **kwargs) -> bool:
+    def is_valid(*args: Any, **kwargs: Any) -> bool:
         kwargs['_convert'] = False
         try:
             fun(*args, **kwargs)
@@ -199,9 +202,10 @@ def _create_is_valid(fun: F):
     return is_valid
 
 
-def _create_check_valid(fun: F):
+def _create_check_valid(fun: Callable[..., T]
+                        ) -> Callable[..., Tuple[Optional[T], List[Error]]]:
     @ functools.wraps(fun)
-    def check_valid(*args, **kwargs):
+    def check_valid(*args: Any, **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
         try:
             val = fun(*args, **kwargs)
             return val, []
@@ -216,14 +220,14 @@ def _create_check_valid(fun: F):
     return check_valid
 
 
-def _allow_None(fun: F):
+def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     """Wrap a validator to allow ``None`` as valid input.
 
     This causes falsy values to be mapped to ``None`` if there is an error.
     """
 
     @ functools.wraps(fun)
-    def new_fun(val, *args, **kwargs):
+    def new_fun(val: Any, *args: Any, **kwargs: Any) -> Optional[T]:
         if val is None:
             return None
         else:
@@ -240,7 +244,7 @@ def _allow_None(fun: F):
     return new_fun
 
 
-def _create_validators(funs: Iterable[F]):
+def _create_validators(funs: Iterable[F]) -> None:
     """This instantiates the validators used in the rest of the code."""
     for fun in funs:
         setattr(current_module, "is{}".format(fun.__name__),
@@ -251,7 +255,7 @@ def _create_validators(funs: Iterable[F]):
                 _create_check_valid(fun))
 
 
-def _add_typed_validator(fun: F, return_type: Type = None) -> F:
+def _add_typed_validator(fun: F, return_type: Type[Any] = None) -> F:
     """Mark a typed function for processing into validators."""
     # TODO get rid of dynamic return types for enum
     if not return_type:
@@ -268,11 +272,11 @@ def _add_typed_validator(fun: F, return_type: Type = None) -> F:
 
 
 def _examine_dictionary_fields(
-    adict: Mapping,
-    mandatory_fields: Mapping[str, Type],
-    optional_fields: Mapping[str, Type] = None,
+    adict: Mapping[str, Any],
+    mandatory_fields: Mapping[str, Type[Any]],
+    optional_fields: Mapping[str, Type[Any]] = None,
     *,
-    allow_superfluous: bool = False, **kwargs
+    allow_superfluous: bool = False, **kwargs: Any
 ) -> Dict[str, Any]:
     """Check more complex dictionaries.
 
@@ -321,10 +325,10 @@ def _examine_dictionary_fields(
 
 
 def _augment_dict_validator(
-    validator: Callable,
-    augmentation: Mapping[str, Type],
+    validator: Callable[..., Any],
+    augmentation: Mapping[str, Type[Any]],
     strict: bool = True
-) -> Callable:
+) -> Callable[..., Any]:
     """Beef up a dict validator.
 
     This is for the case where you have two similar specs for a data set
@@ -339,7 +343,7 @@ def _augment_dict_validator(
 
     @functools.wraps(validator)
     def new_validator(
-        val: Any, argname: str = None, **kwargs
+        val: Any, argname: str = None, **kwargs: Any
     ) -> Dict[str, Any]:
         mandatory_fields = augmentation if strict else {}
         optional_fields = {} if strict else augmentation
@@ -407,7 +411,7 @@ def escaped_split(string: str, delim: str, escape: str = '\\') -> List[str]:
 
 @_add_typed_validator
 def _None(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> None:
     """Force a None.
 
@@ -423,7 +427,7 @@ def _None(
 
 @_add_typed_validator
 def _any(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> Any:
     """Dummy to allow arbitrary things.
 
@@ -435,7 +439,7 @@ def _any(
 
 @_add_typed_validator
 def _int(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> int:
     if _convert:
         if isinstance(val, str) or isinstance(val, bool):
@@ -457,7 +461,7 @@ def _int(
 
 @_add_typed_validator
 def _non_negative_int(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> NonNegativeInt:
     val = _int(val, argname, **kwargs)
     if val < 0:
@@ -468,7 +472,7 @@ def _non_negative_int(
 
 @_add_typed_validator
 def _positive_int(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> PositiveInt:
     val = _int(val, argname, **kwargs)
     if val <= 0:
@@ -478,7 +482,7 @@ def _positive_int(
 
 @_add_typed_validator
 def _id(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> ID:
     """A numeric ID as in a database key.
 
@@ -490,7 +494,7 @@ def _id(
 
 @_add_typed_validator
 def _partial_import_id(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> PartialImportID:
     """A numeric id or a negative int as a placeholder."""
     val = _int(val, argname, **kwargs)
@@ -501,7 +505,7 @@ def _partial_import_id(
 
 @_add_typed_validator
 def _float(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> float:
     if _convert:
         try:  # TODO why not test for string/bytes here like in _int
@@ -517,7 +521,7 @@ def _float(
 
 @_add_typed_validator
 def _decimal(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> decimal.Decimal:
     if _convert and isinstance(val, str):
         try:
@@ -533,7 +537,7 @@ def _decimal(
 
 @_add_typed_validator
 def _non_negative_decimal(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> NonNegativeDecimal:
     val = _decimal(val, argname, **kwargs)
     if val < 0:
@@ -544,7 +548,7 @@ def _non_negative_decimal(
 
 @_add_typed_validator
 def _positive_decimal(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> PositiveDecimal:
     val = _decimal(val, argname, **kwargs)
     if val <= 0:
@@ -556,7 +560,7 @@ def _positive_decimal(
 @_add_typed_validator
 def _str_type(
     val: Any, argname: str = None, *,
-    zap: str = '', sieve: str = '', _convert: bool = True, **kwargs
+    zap: str = '', sieve: str = '', _convert: bool = True, **kwargs: Any
 ) -> StringType:
     """
     :param zap: delete all characters in this from the result
@@ -579,7 +583,7 @@ def _str_type(
 
 
 @_add_typed_validator
-def _str(val: Any, argname: str = None, **kwargs) -> str:
+def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
     """ Like :py:class:`_str_type` (parameters see there),
     but mustn't be empty (whitespace doesn't count).
     """
@@ -592,7 +596,7 @@ def _str(val: Any, argname: str = None, **kwargs) -> str:
 @_add_typed_validator
 def _bytes(
     val: Any, argname: str = None, *,
-    _convert: bool = True, encoding: str = None, **kwargs
+    _convert: bool = True, encoding: str = None, **kwargs: Any
 ) -> bytes:
     if _convert:
         if isinstance(val, str):
@@ -614,8 +618,8 @@ def _bytes(
 
 @_add_typed_validator
 def _mapping(
-    val: Any, argname: str = None, **kwargs
-) -> Mapping:
+    val: Any, argname: str = None, **kwargs: Any
+) -> Mapping[Any, Any]:
     """
     :param _convert: is ignored since no useful default conversion is available
     """
@@ -626,8 +630,8 @@ def _mapping(
 
 @_add_typed_validator
 def _iterable(
-    val: Any, argname: str = None, **kwargs
-) -> Iterable:
+    val: Any, argname: str = None, **kwargs: Any
+) -> Iterable[Any]:
     """
     :param _convert: is ignored since no useful default conversion is available
     """
@@ -638,8 +642,8 @@ def _iterable(
 
 @_add_typed_validator
 def _sequence(
-    val: Any, argname: str = None, *, _convert=True, **kwargs
-) -> Sequence:
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
+) -> Sequence[Any]:
     if _convert:
         try:
             val = tuple(val)
@@ -653,7 +657,7 @@ def _sequence(
 
 @_add_typed_validator
 def _bool(
-    val: Any, argname: str = None, *, _convert=True, **kwargs
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> bool:
     # TODO why do we convert first if it may already be a subclass of bool?
     if _convert and val is not None:
@@ -672,7 +676,7 @@ def _bool(
 
 @_add_typed_validator
 def _empty_dict(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> EmptyDict:
     if val != {}:
         raise ValidationSummary(
@@ -682,7 +686,7 @@ def _empty_dict(
 
 @_add_typed_validator
 def _empty_list(
-    val: Any, argname: str = None, *, _convert=True, **kwargs
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> EmptyList:
     if _convert:  # TODO why do we convert here but not for _empty_dict?
         val = list(_iterable(val, argname, _convert=_convert, **kwargs))
@@ -694,7 +698,7 @@ def _empty_list(
 
 @_add_typed_validator  # TODO use Union of Literal
 def _realm(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> Realm:
     """A realm in the sense of the DB."""
     val = _str(val, argname, **kwargs)
@@ -705,7 +709,7 @@ def _realm(
 
 @_add_typed_validator
 def _cdedbid(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> CdedbID:
     val = _str(val, argname, **kwargs).strip()  # TODO is strip necessary here?
     match = re.search('^DB-(?P<value>[0-9]*)-(?P<checkdigit>[0-9X])$', val)
@@ -720,7 +724,7 @@ def _cdedbid(
 
 @_add_typed_validator
 def _printable_ascii_type(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> PrintableASCIIType:
     val = _str_type(val, argname, **kwargs)
     if re.search(r'^[ -~]*$', val) is None:
@@ -731,7 +735,7 @@ def _printable_ascii_type(
 
 @_add_typed_validator
 def _printable_ascii(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> PrintableASCII:
     """Like :py:func:`_printable_ascii_type` (parameters see there),
     but must not be empty (whitespace doesn't count).
@@ -744,7 +748,7 @@ def _printable_ascii(
 
 @_add_typed_validator
 def _alphanumeric(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> Alphanumeric:
     val = _printable_ascii(val, argname, **kwargs)
     if re.search(r'^[a-zA-Z0-9]+$', val) is None:
@@ -755,7 +759,7 @@ def _alphanumeric(
 
 @_add_typed_validator
 def _csv_alphanumeric(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> CSVAlphanumeric:
     val = _printable_ascii(val, argname, **kwargs)
     if re.search(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$', val) is None:
@@ -766,7 +770,7 @@ def _csv_alphanumeric(
 
 @_add_typed_validator
 def _identifier(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> Identifier:
     """Identifiers encompass everything from file names to short names for
     events.
@@ -781,7 +785,7 @@ def _identifier(
 
 @_add_typed_validator
 def _restrictive_identifier(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> RestrictiveIdentifier:
     """Restrictive identifiers are for situations, where normal identifiers
     are too lax.
@@ -798,7 +802,7 @@ def _restrictive_identifier(
 
 @_add_typed_validator
 def _csv_identifier(
-        val: Any, argname: str = None, **kwargs
+        val: Any, argname: str = None, **kwargs: Any
 ) -> CSVIdentifier:
     val = _printable_ascii(val, argname, **kwargs)
     if re.search(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$', val) is None:
@@ -812,7 +816,7 @@ def _csv_identifier(
 def _list_of(
     val: Any, type: Type[T],
     argname: str = None, *,
-    _convert: bool = True, _allow_empty: bool = True, **kwargs
+    _convert: bool = True, _allow_empty: bool = True, **kwargs: Any
 ) -> List[T]:
     """Apply another validator to all entries of of a list.
 
@@ -847,14 +851,14 @@ def _list_of(
 
 @_add_typed_validator
 def _int_csv_list(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> IntCSVList:
     return IntCSVList(_list_of(val, int, argname, **kwargs))
 
 
 @_add_typed_validator
 def _cdedbid_csv_list(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> CdedbIDList:
     """This deals with strings containing multiple cdedbids,
     like when they are returned from cdedbSearchPerson.
@@ -865,7 +869,7 @@ def _cdedbid_csv_list(
 @_add_typed_validator  # TODO split into Password and AdminPassword?
 def _password_strength(
     val: Any, argname: str = None, *,
-    admin: bool = False, inputs: List[str] = None, **kwargs
+    admin: bool = False, inputs: List[str] = None, **kwargs: Any
 ) -> PasswordStrength:
     """Implement a password policy.
 
@@ -908,7 +912,7 @@ def _password_strength(
 
 @_add_typed_validator
 def _email(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> Email:
     """We accept only a subset of valid email addresses since implementing the
     full standard is horrendous. Also we normalize emails to lower case.
@@ -925,7 +929,7 @@ def _email(
 
 @_add_typed_validator
 def _email_local_part(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> EmailLocalPart:
     """We accept only a subset of valid email addresses.
     Here we only care about the local part.
@@ -1098,7 +1102,7 @@ def _PERSONA_COMMON_FIELDS(): return {
 @_add_typed_validator
 def _persona(
     val: Any, argname: str = "persona", *,
-    creation: bool = False, transition: bool = False, **kwargs
+    creation: bool = False, transition: bool = False, **kwargs: Any
 ) -> Persona:
     """Check a persona data set.
 
@@ -1134,7 +1138,7 @@ def _persona(
             'is_cdelokal_admin': False,
         })
         roles = extract_roles(temp)
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
         mandatory_fields = copy.deepcopy(_PERSONA_BASE_CREATION())
         if "cde" in roles:
             mandatory_fields.update(_PERSONA_CDE_CREATION())
@@ -1199,7 +1203,7 @@ def parse_date(val: str) -> datetime.date:
 # TODO move this above _persona stuff?
 @_add_typed_validator
 def _date(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs
+    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> datetime.date:
     if _convert and isinstance(val, str) and len(val.strip()) >= 6:
         try:
@@ -1218,7 +1222,7 @@ def _date(
 
 
 @_add_typed_validator
-def _birthday(val: Any, argname: str = None, **kwargs) -> Birthday:
+def _birthday(val: Any, argname: str = None, **kwargs: Any) -> Birthday:
     val = _date(val, argname=argname, **kwargs)
     if now().date() < val:
         raise ValidationSummary(ValueError(
@@ -1272,7 +1276,7 @@ def parse_datetime(
 @_add_typed_validator
 def _datetime(
     val: Any, argname: str = None, *,
-    _convert: bool = True, default_date: datetime.date = None, **kwargs
+    _convert: bool = True, default_date: datetime.date = None, **kwargs: Any
 ) -> datetime.datetime:
     """
     :param default_date: If the user-supplied value specifies only a time, this
@@ -1293,7 +1297,7 @@ def _datetime(
 
 @_add_typed_validator
 def _single_digit_int(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> SingleDigitInt:
     """Like _int, but between +9 and -9."""
     val = _int(val, argname, **kwargs)
@@ -1305,7 +1309,7 @@ def _single_digit_int(
 
 @_add_typed_validator
 def _phone(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> Phone:
     val = _printable_ascii(val, argname, **kwargs)
     orig = val.strip()
@@ -1379,7 +1383,7 @@ def _phone(
 @_add_typed_validator
 def _german_postal_code(
     val: Any, argname: str = None, *,
-    aux: str = None, _ignore_warnings: bool = False, **kwargs
+    aux: str = None, _ignore_warnings: bool = False, **kwargs: Any
 ) -> GermanPostalCode:
     """
     :param aux: Additional information. In this case the country belonging
@@ -1431,7 +1435,7 @@ def _GENESIS_CASE_ADDITIONAL_FIELDS(): return {
 @_add_typed_validator
 def _genesis_case(
     val: Any, argname: str = "genesis_case", *,
-    creation=False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> GenesisCase:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -1439,7 +1443,7 @@ def _genesis_case(
     """
     val = _mapping(val, argname, **kwargs)
 
-    additional_fields = {}
+    additional_fields: TypeMapping = {}
     if 'realm' in val:
         if val['realm'] not in REALM_SPECIFIC_GENESIS_FIELDS:
             raise ValidationSummary(ValueError('realm', n_(
@@ -1454,7 +1458,7 @@ def _genesis_case(
     if creation:
         mandatory_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
                                 **additional_fields)
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
@@ -1495,7 +1499,7 @@ def _PRIVILEGE_CHANGE_OPTIONAL_FIELDS(): return {
 
 @_add_typed_validator
 def _privilege_change(
-    val: Any, argname: str = "privilege_change", **kwargs
+    val: Any, argname: str = "privilege_change", **kwargs: Any
 ) -> PrivilegeChange:
 
     val = _mapping(val, argname, **kwargs)
@@ -1510,7 +1514,7 @@ def _privilege_change(
 # TODO also move these up?
 @_add_typed_validator
 def _input_file(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> InputFile:
     if not isinstance(val, werkzeug.datastructures.FileStorage):
         raise ValidationSummary(TypeError(argname, n_("Not a FileStorage.")))
@@ -1525,7 +1529,7 @@ def _input_file(
 @_add_typed_validator
 def _csvfile(
     val: Any, argname: str = None, *,
-    encoding: str = "utf-8-sig", **kwargs
+    encoding: str = "utf-8-sig", **kwargs: Any
 ) -> CSVFile:
     """
     We default to 'utf-8-sig', since it behaves exactly like 'utf-8' if the
@@ -1543,7 +1547,7 @@ def _csvfile(
 @_add_typed_validator
 def _profilepic(
     val: Any, argname: str = None, *,
-    file_storage: bool = True, **kwargs
+    file_storage: bool = True, **kwargs: Any
 ) -> ProfilePicture:
     """
     Validate a file for usage as a profile picture.
@@ -1587,7 +1591,7 @@ def _profilepic(
 @_add_typed_validator
 def _pdffile(
     val: Any, argname: str = None, *,
-    file_storage: bool = True, **kwargs
+    file_storage: bool = True, **kwargs: Any
 ) -> PDFFile:
     """Validate a file as a pdf.
 
@@ -1616,7 +1620,7 @@ def _pdffile(
 
 @_add_typed_validator
 def _pair_of_int(
-    val: Any, argname: str = "pair", **kwargs
+    val: Any, argname: str = "pair", **kwargs: Any
 ) -> Tuple[int, int]:
     """Validate a pair of integers."""
 
@@ -1633,7 +1637,7 @@ def _pair_of_int(
 
 @_add_typed_validator
 def _period(
-    val: Any, argname: str = "period", **kwargs
+    val: Any, argname: str = "period", **kwargs: Any
 ) -> Period:
     val = _mapping(val, argname, **kwargs)
 
@@ -1658,7 +1662,7 @@ def _period(
 
 @_add_typed_validator
 def _expuls(
-        val: Any, argname: str = "expuls", **kwargs
+        val: Any, argname: str = "expuls", **kwargs: Any
 ) -> ExPuls:
     val = _mapping(val, argname, **kwargs)
 
@@ -1690,7 +1694,7 @@ def _LASTSCHRIFT_OPTIONAL_FIELDS(): return {
 @_add_typed_validator
 def _lastschrift(
     val: Any, argname: str = "lastschrift", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> Lastschrift:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -1712,7 +1716,7 @@ def _lastschrift(
 # TODO move above
 @_add_typed_validator
 def _iban(
-    val: Any, argname: str = "iban", **kwargs
+    val: Any, argname: str = "iban", **kwargs: Any
 ) -> IBAN:
     val = _str(val, argname, **kwargs).upper().replace(' ', '')
     errs = ValidationSummary()
@@ -1769,7 +1773,7 @@ def _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS(): return {
 @_add_typed_validator
 def _lastschrift_transaction(
     val: Any, argname: str = "lastschrift_transaction", *,
-    creation=False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> LastschriftTransaction:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -1814,7 +1818,7 @@ _SEPA_TRANSACTIONS_LIMITS = {
 # TODO make use of _list_of?
 @_add_typed_validator
 def _sepa_transactions(
-    val: Any, argname: str = "sepa_transactions", **kwargs
+    val: Any, argname: str = "sepa_transactions", **kwargs: Any
 ) -> SepaTransactions:
     val = _iterable(val, argname, **kwargs)
 
@@ -1881,7 +1885,7 @@ _SEPA_META_LIMITS = {
 
 @_add_typed_validator
 def _sepa_meta(
-    val: Any, argname: str = "sepa_meta", **kwargs
+    val: Any, argname: str = "sepa_meta", **kwargs: Any
 ) -> SepaMeta:
     val = _mapping(val, argname, **kwargs)
 
@@ -1926,7 +1930,7 @@ def _sepa_meta(
 
 @_add_typed_validator
 def _safe_str(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> SafeStr:
     """This allows alpha-numeric, whitespace and known good others."""
     ALLOWED = ".,-+()/"
@@ -1946,7 +1950,7 @@ def _safe_str(
 
 @_add_typed_validator
 def _meta_info(
-    val: Any, keys: List[str], argname: str = "meta_info", **kwargs
+    val: Any, keys: List[str], argname: str = "meta_info", **kwargs: Any
 ) -> MetaInfo:
     val = _mapping(val, argname, **kwargs)
 
@@ -1966,7 +1970,7 @@ def _INSTITUTION_COMMON_FIELDS(): return {
 @_add_typed_validator
 def _institution(
     val: Any, argname: str = "institution", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> Institution:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -1977,7 +1981,7 @@ def _institution(
 
     if creation:
         mandatory_fields = _INSTITUTION_COMMON_FIELDS()
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = _INSTITUTION_COMMON_FIELDS()
@@ -2002,7 +2006,7 @@ def _PAST_EVENT_OPTIONAL_FIELDS(): return {
 @_add_typed_validator
 def _past_event(
     val: Any, argname: str = "past_event", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> PastEvent:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2061,7 +2065,7 @@ def _EVENT_OPTIONAL_FIELDS(): return {
 @_add_typed_validator
 def _event(
     val: Any, argname: str = "event", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> Event:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2190,7 +2194,7 @@ _EVENT_PART_COMMON_FIELDS = {
 @_add_typed_validator
 def _event_part(
     val: Any, argname: str = "event_part", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> EventPart:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2200,7 +2204,7 @@ def _event_part(
 
     if creation:
         mandatory_fields = _EVENT_PART_COMMON_FIELDS
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {}
         optional_fields = _EVENT_PART_COMMON_FIELDS
@@ -2252,7 +2256,7 @@ _EVENT_TRACK_COMMON_FIELDS = {
 @_add_typed_validator
 def _event_track(
     val: Any, argname: str = "tracks", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> EventTrack:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2262,7 +2266,7 @@ def _event_track(
 
     if creation:
         mandatory_fields = _EVENT_TRACK_COMMON_FIELDS
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {}
         optional_fields = _EVENT_TRACK_COMMON_FIELDS
@@ -2287,7 +2291,7 @@ def _EVENT_FIELD_COMMON_FIELDS(extra_suffix): return {
 @_add_typed_validator
 def _event_field(
     val: Any, argname: str = "event_field", *,
-    creation: bool = False, extra_suffix: str = "", **kwargs
+    creation: bool = False, extra_suffix: str = "", **kwargs: Any
 ) -> EventField:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2302,7 +2306,7 @@ def _event_field(
         spec = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
         spec[field_name_key] = RestrictiveIdentifier
         mandatory_fields = spec
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {}
         optional_fields = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
@@ -2369,14 +2373,14 @@ def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix): return {
 @_add_typed_validator
 def _event_fee_modifier(
     val: Any, argname: str = "fee_modifiers", *,
-    creation: bool = False, extra_suffix='', **kwargs
+    creation: bool = False, extra_suffix: str = '', **kwargs: Any
 ) -> EventFeeModifier:
 
     val = _mapping(val, argname, **kwargs)
 
     if creation:
         mandatory_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
@@ -2397,7 +2401,7 @@ def _PAST_COURSE_COMMON_FIELDS(): return {
 @_add_typed_validator
 def _past_course(
     val: Any, argname: str = "past_course", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> PastCourse:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2409,7 +2413,7 @@ def _past_course(
 
     if creation:
         mandatory_fields = dict(_PAST_COURSE_COMMON_FIELDS(), pevent_id=ID)
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         # no pevent_id, since the associated event should be fixed
         mandatory_fields = {'id': ID}
@@ -2442,7 +2446,7 @@ _COURSE_OPTIONAL_FIELDS = {
 @_add_typed_validator
 def _course(
     val: Any, argname: str = "course", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> Course:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2524,7 +2528,7 @@ def _REGISTRATION_OPTIONAL_FIELDS(): return {
 @_add_typed_validator
 def _registration(
     val: Any, argname: str = "registration", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> Registration:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2584,7 +2588,7 @@ def _registration(
 
 @_add_typed_validator
 def _registration_part(
-    val: Any, argname: str = "registration_part", **kwargs
+    val: Any, argname: str = "registration_part", **kwargs: Any
 ) -> RegistrationPart:
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
@@ -2605,7 +2609,7 @@ def _registration_part(
 # TODO make type of kwargs to be bools only?
 @_add_typed_validator
 def _registration_track(
-        val: Any, argname: str = "registration_track", **kwargs
+        val: Any, argname: str = "registration_track", **kwargs: Any
 ) -> RegistrationTrack:
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
@@ -2645,7 +2649,7 @@ def _registration_track(
 @_add_typed_validator
 def _event_associated_fields(
     val: Any, argname: str = "fields", *,
-    fields: Dict[int, dict], association: FieldAssociations, **kwargs
+    fields: Dict[int, CdEDBObject], association: FieldAssociations, **kwargs: Any
 ) -> EventAssociatedFields:
     """Check fields associated to an event entity.
 
@@ -2661,12 +2665,12 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes: Dict[str, Type] = {}
+    datatypes: TypeMapping = {}
     for field in fields.values():
         if field['association'] == association:
             dt = _enum_fielddatatypes(  # type: ignore
                 field['kind'], field['field_name'], **kwargs)
-            datatypes[field['field_name']] = cast(Type, eval(
+            datatypes[field['field_name']] = cast(Type[Any], eval(
                 f"Optional[{dt.name}]",
                 {
                     'Optional': Optional,  # type: ignore
@@ -2705,7 +2709,7 @@ def _LODGEMENT_GROUP_FIELDS(): return {
 @_add_typed_validator
 def _lodgement_group(
     val: Any, argname: str = "lodgement group", *,
-    creation=False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> LodgementGroup:
     """
     :param creation: If ``True`` test the data set for fitness for creation
@@ -2716,7 +2720,7 @@ def _lodgement_group(
 
     if creation:
         mandatory_fields = dict(_LODGEMENT_GROUP_FIELDS(), event_id=ID)
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         # no event_id, since the associated event should be fixed.
         mandatory_fields = {'id': ID}
@@ -2743,7 +2747,7 @@ _LODGEMENT_OPTIONAL_FIELDS = {
 @_add_typed_validator
 def _lodgement(
     val: Any, argname: str = "lodgement", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> Lodgement:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2770,7 +2774,7 @@ def _lodgement(
 # TODO make argname non-optional
 @_add_typed_validator
 def _by_field_datatype(
-    val: Any, argname: str = None, *, kind: FieldDatatypes, **kwargs
+    val: Any, argname: str = None, *, kind: FieldDatatypes, **kwargs: Any
 ) -> ByFieldDatatype:
     """
     :type kind: FieldDatatypes or int
@@ -2791,9 +2795,9 @@ def _by_field_datatype(
 # TODO type fee_modifiers
 @_add_typed_validator
 def _questionnaire(
-    val: Any, field_definitions: Dict[int, Dict], fee_modifiers,
+    val: Any, field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
     argname: str = "questionnaire",
-    **kwargs
+    **kwargs: Any
 ) -> Questionnaire:
     """
     :type field_definitions: Dict[int, Dict]
@@ -2802,7 +2806,7 @@ def _questionnaire(
     val = _mapping(val, argname, **kwargs)
 
     errs = ValidationSummary()
-    ret: Dict[int, List] = {}
+    ret: Dict[int, List[CdEDBObject]] = {}
     fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
     for k, v in copy.deepcopy(val).items():
         try:
@@ -2883,7 +2887,7 @@ def _questionnaire(
 # TODO move above
 @_add_typed_validator
 def _json(
-    val: Any, argname: str = "json", *, _convert: bool = True, **kwargs
+    val: Any, argname: str = "json", *, _convert: bool = True, **kwargs: Any
 ) -> JSON:
     """Deserialize a JSON payload.
 
@@ -2913,7 +2917,7 @@ def _json(
 
 @_add_typed_validator
 def _serialized_event_upload(
-    val: Any, argname: str = "serialized_event_upload", **kwargs
+    val: Any, argname: str = "serialized_event_upload", **kwargs: Any
 ) -> SerializedEventUpload:
     """Check an event data set for import after offline usage."""
     # TODO provide docstrings in more validators
@@ -2927,7 +2931,7 @@ def _serialized_event_upload(
 
 @_add_typed_validator
 def _serialized_event(
-    val: Any, argname: str = "serialized_event", **kwargs
+    val: Any, argname: str = "serialized_event", **kwargs: Any
 ) -> SerializedEvent:
     """Check an event data set for import after offline usage."""
     # TODO why does this have the same docstring as the one above
@@ -3029,7 +3033,7 @@ def _serialized_event(
         for key, entry in val[table].items():
             try:
                 new_entry = validator(entry, table, **kwargs)  # type: ignore
-                # _convert=True to fix JSON key restriction
+                # _convert: bool = True to fix JSON key restriction
                 new_key = _int(key, table, **{**kwargs, '_convert': True})
             except ValidationSummary as e:
                 errs.extend(e)
@@ -3062,7 +3066,7 @@ def _serialized_event(
 
 @_add_typed_validator
 def _serialized_partial_event_upload(
-    val: Any, argname: str = "serialized_partial_event_upload", **kwargs
+    val: Any, argname: str = "serialized_partial_event_upload", **kwargs: Any
 ) -> SerializedPartialEventUpload:
     """Check an event data set for delta import."""
 
@@ -3076,7 +3080,7 @@ def _serialized_partial_event_upload(
 
 @_add_typed_validator
 def _serialized_partial_event(
-    val: Any, argname: str = "serialized_partial_event", **kwargs
+    val: Any, argname: str = "serialized_partial_event", **kwargs: Any
 ) -> SerializedPartialEvent:
     """Check an event data set for delta import."""
 
@@ -3164,7 +3168,7 @@ _PARTIAL_COURSE_OPTIONAL_FIELDS = {
 
 @_add_typed_validator
 def _partial_course(
-    val: Any, argname: str = "course", *, creation: bool = False, **kwargs
+    val: Any, argname: str = "course", *, creation: bool = False, **kwargs: Any
 ) -> PartialCourse:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -3214,7 +3218,7 @@ def _PARTIAL_LODGEMENT_GROUP_FIELDS(): return {
 @_add_typed_validator
 def _partial_lodgement_group(
     val: Any, argname: str = "lodgement_group", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> PartialLodgementGroup:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -3224,7 +3228,7 @@ def _partial_lodgement_group(
 
     if creation:
         mandatory_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {}
         optional_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
@@ -3250,7 +3254,7 @@ _PARTIAL_LODGEMENT_OPTIONAL_FIELDS = {
 @_add_typed_validator
 def _partial_lodgement(
     val: Any, argname: str = "lodgement", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> PartialLodgement:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -3296,7 +3300,7 @@ def _PARTIAL_REGISTRATION_OPTIONAL_FIELDS(): return {
 @_add_typed_validator
 def _partial_registration(
     val: Any, argname: str = "registration", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> PartialRegistration:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -3355,7 +3359,7 @@ def _partial_registration(
 
 @_add_typed_validator
 def _partial_registration_part(
-    val: Any, argname: str = "partial_registration_part", **kwargs
+    val: Any, argname: str = "partial_registration_part", **kwargs: Any
 ) -> PartialRegistrationPart:
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
@@ -3377,7 +3381,7 @@ def _partial_registration_part(
 
 @_add_typed_validator
 def _partial_registration_track(
-    val: Any, argname: str = "partial_registration_track", **kwargs
+    val: Any, argname: str = "partial_registration_track", **kwargs: Any
 ) -> PartialRegistrationTrack:
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
@@ -3447,7 +3451,7 @@ _MAILINGLIST_READONLY_FIELDS = {
 @_add_typed_validator
 def _mailinglist(
     val: Any, argname: str = "mailinglist", *,
-    creation=False, _allow_readonly=False, **kwargs
+    creation: bool = False, _allow_readonly: bool = False, **kwargs: Any
 ) -> Mailinglist:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -3530,7 +3534,7 @@ def _mailinglist(
     return Mailinglist(val)
 
 
-_SUBSCRIPTION_ID_FIELDS = {
+_SUBSCRIPTION_ID_FIELDS: TypeMapping = {
     'mailinglist_id': ID,
     'persona_id': ID,
 }
@@ -3556,7 +3560,7 @@ def _SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS(): return {
 # TODO argname with space?
 @_add_typed_validator
 def _subscription_identifier(
-    val: Any, argname: str = "subscription identifier", **kwargs
+    val: Any, argname: str = "subscription identifier", **kwargs: Any
 ) -> SubscriptionIdentifier:
     val = _mapping(val, argname, **kwargs)
 
@@ -3570,7 +3574,7 @@ def _subscription_identifier(
 
 @_add_typed_validator
 def _subscription_state(
-    val: Any, argname: str = "subscription state", **kwargs
+    val: Any, argname: str = "subscription state", **kwargs: Any
 ) -> SubscriptionState:
     val = _mapping(val, argname, **kwargs)
 
@@ -3585,11 +3589,11 @@ def _subscription_state(
 
 @_add_typed_validator
 def _subscription_address(
-    val: Any, argname: str = "subscription address", **kwargs
+    val: Any, argname: str = "subscription address", **kwargs: Any
 ) -> SubscriptionAddress:
     val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields: Dict[str, Type] = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
+    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
 
     return SubscriptionAddress(_examine_dictionary_fields(
@@ -3598,7 +3602,7 @@ def _subscription_address(
 
 @_add_typed_validator
 def _subscription_request_resolution(
-    val: Any, argname: str = "subscription request resolution", **kwargs
+    val: Any, argname: str = "subscription request resolution", **kwargs: Any
 ) -> SubscriptionRequestResolution:
     val = _mapping(val, argname, **kwargs)
 
@@ -3627,13 +3631,13 @@ def _ASSEMBLY_OPTIONAL_FIELDS(): return {
 @_add_typed_validator
 def _assembly(
     val: Any, argname: str = "assembly", *,
-    creation=False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> Assembly:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-    val = _mapping(val, argname, **kwargs)
+    val = dict(_mapping(val, argname, **kwargs))
 
     if creation:
         mandatory_fields = _ASSEMBLY_COMMON_FIELDS()
@@ -3686,7 +3690,7 @@ def _BALLOT_OPTIONAL_FIELDS(): return {
 @_add_typed_validator
 def _ballot(
     val: Any, argname: str = "ballot", *,
-    creation=False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> Ballot:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -3771,7 +3775,7 @@ _BALLOT_CANDIDATE_COMMON_FIELDS = {
 @_add_typed_validator
 def _ballot_candidate(
     val: Any, argname: str = "ballot_candidate", *,
-    creation=False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> BallotCandidate:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -3781,7 +3785,7 @@ def _ballot_candidate(
 
     if creation:
         mandatory_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
@@ -3812,7 +3816,7 @@ def _ASSEMBLY_ATTACHMENT_VERSION_FIELDS(): return {
 @_add_typed_validator
 def _assembly_attachment(
     val: Any, argname: str = "assembly_attachment", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> AssemblyAttachment:
     val = _mapping(val, argname, **kwargs)
 
@@ -3841,14 +3845,14 @@ def _assembly_attachment(
 @_add_typed_validator
 def _assembly_attachment_version(
     val: Any, argname: str = "assembly_attachment_version", *,
-    creation: bool = False, **kwargs
+    creation: bool = False, **kwargs: Any
 ) -> AssemblyAttachmentVersion:
     val = _mapping(val, argname, **kwargs)
 
     if creation:
         mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_VERSION_FIELDS(),
                                 attachment_id=ID)
-        optional_fields = {}
+        optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'attachment_id': ID, 'version': ID}
         optional_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
@@ -3862,8 +3866,8 @@ def _assembly_attachment_version(
 # TODO replace ballot with CdEDBObject
 @_add_typed_validator
 def _vote(
-    val: Any, argname: str = "vote", *args,
-    ballot: Mapping[str, Any], **kwargs
+    val: Any, argname: str = "vote",
+    ballot: Mapping[str, Any] = None, **kwargs: Any
 ) -> Vote:
     """Validate a single voters intent.
 
@@ -3874,6 +3878,9 @@ def _vote(
     """
     val = _str(val, argname, **kwargs)
     errs = ValidationSummary()
+    if not ballot:
+        errs.append(RuntimeError(n_("Must specify ballot in order to validate vote.")))
+        raise errs
 
     entries = tuple(y for x in val.split('>') for y in x.split('='))
     reference = set(e['shortname'] for e in ballot['candidates'].values())
@@ -3906,7 +3913,7 @@ def _vote(
 # TODO move above
 @_add_typed_validator
 def _regex(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> Regex:
     val = _str(val, argname, **kwargs)
     try:
@@ -3923,7 +3930,7 @@ def _regex(
 
 @_add_typed_validator
 def _non_regex(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> NonRegex:
     val = _str(val, argname, **kwargs)
     forbidden_chars = r'\*+?{}()[]|'
@@ -3939,7 +3946,7 @@ def _query_input(
     val: Any, argname: str = None, *,
     spec: Mapping[str, str], allow_empty: bool = False,
     separator: str = ',', escape: str = '\\',
-    **kwargs
+    **kwargs: Any
 ) -> QueryInput:
     """This is for the queries coming from the web.
 
@@ -4102,7 +4109,7 @@ def _query_input(
 # TODO ignore _ignore_warnings here too?
 @_add_typed_validator
 def _query(
-    val: Any, argname: str = None, **kwargs
+    val: Any, argname: str = None, **kwargs: Any
 ) -> Query:
     """Check query object for consistency.
 
@@ -4242,7 +4249,7 @@ def _enum_validator_maker(
 
     def the_validator(
         val: Any, argname: str = None, *,
-        _convert: bool = True, **kwargs
+        _convert: bool = True, **kwargs: Any
     ) -> E:
         if _convert and not isinstance(val, anenum):
             val = _int(val, argname=argname, _convert=_convert, **kwargs)
@@ -4273,7 +4280,7 @@ for oneenum in ALL_ENUMS:
     _enum_validator_maker(oneenum)
 
 
-def _infinite_enum_validator_maker(anenum: Type[E], name: str = None):
+def _infinite_enum_validator_maker(anenum: Type[E], name: str = None) -> None:
     """Automate validator creation for infinity enums.
 
     Since this is pretty generic we do this all in one go.
@@ -4289,7 +4296,7 @@ def _infinite_enum_validator_maker(anenum: Type[E], name: str = None):
 
     def the_validator(
         val: Any, argname: str = None, *,
-        _convert: bool = True, **kwargs
+        _convert: bool = True, **kwargs: Any
     ) -> E:
         val_int: Optional[int]
 

@@ -1,7 +1,8 @@
 import datetime
 import decimal
-from typing import Any, Iterable, List, Mapping, NewType, Optional
+from typing import Any, AnyStr, Dict, Iterable, List, Mapping, NewType, Optional, Union
 
+from cdedb.common import CdEDBObject
 from cdedb.query import Query
 
 # needs typing_extensions.TypedDict until 3.9 due to runtime inspection
@@ -19,8 +20,8 @@ CdedbID = NewType("CdedbID", int)
 NonNegativeDecimal = NewType("NonNegativeDecimal", decimal.Decimal)
 PositiveDecimal = NewType("PositiveDecimal", decimal.Decimal)
 
-EmptyDict = NewType("EmptyDict", dict)
-EmptyList = NewType("EmptyList", list)
+EmptyDict = NewType("EmptyDict", Dict[Any, Any])
+EmptyList = NewType("EmptyList", List[Any])
 
 Realm = NewType("Realm", str)
 StringType = NewType("StringType", str)
@@ -54,62 +55,62 @@ ProfilePicture = NewType("ProfilePicture", bytes)
 PDFFile = NewType("PDFFile", bytes)
 
 
-JSON = NewType("JSON", dict)  # TODO actually Any
+JSON = NewType("JSON", Any)  # TODO can we narrow this down?
 
 # TODO this probably requires custom logic...
 ByFieldDatatype = NewType("ByFieldDatatype", str)
 
 # COMPLEX/DICTIONARY TYPES
-# TODO replace dict with CdEDBObject = Dict[str, Any]
+# TODO some might be CdEObjectMap instead.
 # TODO some could be subtypes (e.g. serializedeventupload -> serializedevent)
 
-Persona = NewType("Persona", dict)
-GenesisCase = NewType("GenesisCase", dict)
-PrivilegeChange = NewType("PrivilegeChange", dict)
-Period = NewType("Period", dict)
-ExPuls = NewType("ExPuls", dict)
-Lastschrift = NewType("Lastschrift", dict)
-LastschriftTransaction = NewType("LastschriftTransaction", dict)
-SepaTransactions = NewType("SepaTransactions", List[dict])
-SepaMeta = NewType("SepaMeta", dict)
-MetaInfo = NewType("MetaInfo", dict)
-Institution = NewType("Institution", dict)
-PastEvent = NewType("PastEvent", dict)
-Event = NewType("Event", dict)
-EventPart = NewType("EventPart", dict)
-EventTrack = NewType("EventTrack", dict)
-EventField = NewType("EventField", dict)
-EventFeeModifier = NewType("EventFeeModifier", dict)
-PastCourse = NewType("PastCourse", dict)
-Course = NewType("Course", dict)
-Registration = NewType("Registration", dict)
-RegistrationPart = NewType("RegistrationPart", dict)
-RegistrationTrack = NewType("RegistrationTrack", dict)
-EventAssociatedFields = NewType("EventAssociatedFields", dict)
-LodgementGroup = NewType("LodgementGroup", dict)
-Lodgement = NewType("Lodgement", dict)
-Questionnaire = NewType("Questionnaire", dict)
+Persona = NewType("Persona", CdEDBObject)
+GenesisCase = NewType("GenesisCase", CdEDBObject)
+PrivilegeChange = NewType("PrivilegeChange", CdEDBObject)
+Period = NewType("Period", CdEDBObject)
+ExPuls = NewType("ExPuls", CdEDBObject)
+Lastschrift = NewType("Lastschrift", CdEDBObject)
+LastschriftTransaction = NewType("LastschriftTransaction", CdEDBObject)
+SepaTransactions = NewType("SepaTransactions", List[CdEDBObject])
+SepaMeta = NewType("SepaMeta", CdEDBObject)
+MetaInfo = NewType("MetaInfo", CdEDBObject)
+Institution = NewType("Institution", CdEDBObject)
+PastEvent = NewType("PastEvent", CdEDBObject)
+Event = NewType("Event", CdEDBObject)
+EventPart = NewType("EventPart", CdEDBObject)
+EventTrack = NewType("EventTrack", CdEDBObject)
+EventField = NewType("EventField", CdEDBObject)
+EventFeeModifier = NewType("EventFeeModifier", CdEDBObject)
+PastCourse = NewType("PastCourse", CdEDBObject)
+Course = NewType("Course", CdEDBObject)
+Registration = NewType("Registration", CdEDBObject)
+RegistrationPart = NewType("RegistrationPart", CdEDBObject)
+RegistrationTrack = NewType("RegistrationTrack", CdEDBObject)
+EventAssociatedFields = NewType("EventAssociatedFields", CdEDBObject)
+LodgementGroup = NewType("LodgementGroup", CdEDBObject)
+Lodgement = NewType("Lodgement", CdEDBObject)
+Questionnaire = NewType("Questionnaire", CdEDBObject)
 
-SerializedEventUpload = NewType("SerializedEventUpload", dict)
-SerializedEvent = NewType("SerializedEvent", dict)
-SerializedPartialEventUpload = NewType("SerializedPartialEventUpload", dict)
-SerializedPartialEvent = NewType("SerializedPartialEvent", dict)
+SerializedEventUpload = NewType("SerializedEventUpload", CdEDBObject)
+SerializedEvent = NewType("SerializedEvent", CdEDBObject)
+SerializedPartialEventUpload = NewType("SerializedPartialEventUpload", CdEDBObject)
+SerializedPartialEvent = NewType("SerializedPartialEvent", CdEDBObject)
 
-PartialCourse = NewType("PartialCourse", dict)
-PartialLodgementGroup = NewType("PartialLodgementGroup", dict)
-PartialLodgement = NewType("PartialLodgement", dict)
-PartialRegistration = NewType("PartialRegistration", dict)
-PartialRegistrationPart = NewType("PartialRegistrationPart", dict)
-PartialRegistrationTrack = NewType("PartialRegistrationTrack", dict)
+PartialCourse = NewType("PartialCourse", CdEDBObject)
+PartialLodgementGroup = NewType("PartialLodgementGroup", CdEDBObject)
+PartialLodgement = NewType("PartialLodgement", CdEDBObject)
+PartialRegistration = NewType("PartialRegistration", CdEDBObject)
+PartialRegistrationPart = NewType("PartialRegistrationPart", CdEDBObject)
+PartialRegistrationTrack = NewType("PartialRegistrationTrack", CdEDBObject)
 
-Mailinglist = NewType("Mailinglist", dict)
-SubscriptionIdentifier = NewType("SubscriptionIdentifier", dict)
-SubscriptionState = NewType("SubscriptionState", dict)
-SubscriptionAddress = NewType("SubscriptionAddress", dict)
-SubscriptionRequestResolution = NewType("SubscriptionRequestResolution", dict)
-Assembly = NewType("Assembly", dict)
-Ballot = NewType("Ballot", dict)
-BallotCandidate = NewType("BallotCandidate", dict)
-AssemblyAttachment = NewType("AssemblyAttachment", dict)
-AssemblyAttachmentVersion = NewType("AssemblyAttachmentVersion", dict)
+Mailinglist = NewType("Mailinglist", CdEDBObject)
+SubscriptionIdentifier = NewType("SubscriptionIdentifier", CdEDBObject)
+SubscriptionState = NewType("SubscriptionState", CdEDBObject)
+SubscriptionAddress = NewType("SubscriptionAddress", CdEDBObject)
+SubscriptionRequestResolution = NewType("SubscriptionRequestResolution", CdEDBObject)
+Assembly = NewType("Assembly", CdEDBObject)
+Ballot = NewType("Ballot", CdEDBObject)
+BallotCandidate = NewType("BallotCandidate", CdEDBObject)
+AssemblyAttachment = NewType("AssemblyAttachment", CdEDBObject)
+AssemblyAttachmentVersion = NewType("AssemblyAttachmentVersion", CdEDBObject)
 QueryInput = NewType("QueryInput", Query)
