@@ -276,7 +276,7 @@
 {% endmacro %}
 
 {% macro form_input_general(name='', label='', anid='', small=False, info='', displayerrors=True,
-        horizontal=True, labelid='', infolink='', addon='', differentiate_warnings=True) %}
+        horizontal=True, labelid='', addon='', differentiate_warnings=True) %}
     <div class="form-group {% if name in errors %}
                                {% if differentiate_warnings and is_warning(name) %}
                                    has-warning
@@ -301,7 +301,7 @@
             {{- caller() }}
         {% if addon %}<span class="input-group-addon">{{ addon }}</span></div>{% endif %}
             {{- output_errors(name, displayerrors, differentiate_warnings=differentiate_warnings) }}
-            {{- output_info(info, infolink) }}
+            {{- output_info(info) }}
         {%- if horizontal %}</div>{% endif %}
     </div>
 {%- endmacro %}
@@ -330,10 +330,10 @@
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-    maxlength=none, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', infolink='', addon='',
+    maxlength=none, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', addon='',
     differentiate_warnings=True) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink, addon=addon,
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
                 aclass="form-control " + aclass, attributes=attributes) }}
@@ -353,9 +353,9 @@
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
-        aclass="", small=False, horizontal=True, infolink='', differentiate_warnings=True) %}
+        aclass="", small=False, horizontal=True, differentiate_warnings=True) %}
     {%- set anid = anid or "input-file-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_file(name, readonly, defaultvalue, anid, accept=accept, aclass='form-control ' + aclass) }}
     {%- endcall %}
@@ -378,9 +378,9 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-        aclass='', small=False, maxlength=none, rows=3, horizontal=True, attributes='', infolink='', differentiate_warnings=True) %}
+        aclass='', small=False, maxlength=none, rows=3, horizontal=True, attributes='', differentiate_warnings=True) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
                           aclass='form-control '+aclass) }}
@@ -425,7 +425,7 @@
 {%- endmacro %}
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False, defaultvalue='',
-        anid='', horizontal=True, small=False, attributes='', infolink='', differentiate_warnings=True) %}
+        anid='', horizontal=True, small=False, attributes='', differentiate_warnings=True) %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
     <div class="form-group
@@ -438,7 +438,7 @@
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, anid, attributes=attributes) }}
             </div>
             {{- output_errors(name, displayerrors) }}
-            {{- output_info(info, infolink) }}
+            {{- output_info(info) }}
         </div>
     </div>
 {%- endmacro %}
@@ -446,9 +446,9 @@
 {#- This is the version for multiple checkboxes as opposed to input_checkbox().
     entries is of type [(str, str)]. #}
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-        small=False, radio=False, horizontal=True, aclass='', labelid='', infolink='', differentiate_warnings=True, sort=False) %}
+        small=False, radio=False, horizontal=True, aclass='', labelid='', differentiate_warnings=True, sort=False) %}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, infolink=infolink,
+    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass,
                 arialabeledby=labelid, sort=sort) }}
@@ -481,10 +481,10 @@
 {%- endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=none,
-        nulloption=none, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="", differentiate_warnings=True,
+        nulloption=none, anid='', small=False, horizontal=True, aclass="", attributes="", differentiate_warnings=True,
         sort=False) %}
     {%- set anid = anid or "input-select-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink,
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
@@ -496,9 +496,9 @@
 {%- endmacro %}
 
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True, aclass='',
-        infolink='', icon=none, differentiate_warnings=True) %}
+        icon=none, differentiate_warnings=True) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
-    {%- call form_input_general(none, label, anid, small, info, False, horizontal, infolink=infolink,
+    {%- call form_input_general(none, label, anid, small, info, False, horizontal,
                                 differentiate_warnings=differentiate_warnings) %}
         <div class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
             {{ make_icon(icon) if icon }}
@@ -548,7 +548,7 @@
  # ############################ #}
 
 {% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True,
-        horizontal=True, infolink='') %}
+        horizontal=True) %}
     <div class="form-group{{ " has-error" if name1 in errors or name2 in errors }}">
         <label class="control-label{% if horizontal %} {{ "col-sm-2" if small else "col-sm-4" }}{% endif %}">
             {{- label -}}
@@ -562,7 +562,7 @@
             </div>
             {{- output_errors(name1, displayerrors) }}
             {{- output_errors(name2, displayerrors) }}
-            {{- output_info(info, infolink) }}
+            {{- output_info(info) }}
         </div>
     </div>
 {% endmacro %}
@@ -598,12 +598,12 @@
 {%- endmacro %}
 
 {% macro form_event_field_input(fields, name='', label=none, info='', displayerrors=True, readonly=False,
-                                defaultvalue='', anid='', force_label=False, infolink='') %}
+                                defaultvalue='', anid='', force_label=False) %}
     {%- set name = name or "fields.{}".format(fields['field_name']) %}
     {%- set label = label or fields['field_name'] %}
     {%- set anid = anid or "event-input-{}".format(name) %}
     {%- call form_input_general(name, (none if fields['kind'] == enums['FieldDatatypes'].bool and not force_label else label), anid, False,
-                               info, displayerrors, True, infolink=infolink) %}
+                               info, displayerrors, True) %}
         {{- event_field_input(fields, name, readonly, defaultvalue, anid) }}
     {%- endcall %}
 {%- endmacro %}
