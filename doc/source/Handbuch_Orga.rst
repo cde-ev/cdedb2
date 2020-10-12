@@ -34,10 +34,8 @@ Sobald die Veranstaltung bereit ist, könnt ihr die Anmeldung
 starten. Beachtet, dass ohne ein konfiguriertes Minderjährigenformular eine
 Anmeldung nur für Volljährige möglich ist. Die Anmeldemaske fragt nur die
 minimal notwendigen Daten ab, alle zusätzlichen Informationen müsst (und
-könnt!) ihr selber über sogenannte Datenfelder mittels des sogenannten
-Fragebogens erfassen. Zuerst werden die Datenfelder über die entsperchende
-Konfigurationsseite der Veranstaltung angelegt und über die
-Fragebogen-Konfigurationsseite diesem hinzugefügt.
+könnt!) ihr selber über sogenannte Datenfelder erfassen, die ihr direkt bei der
+Anmeldung oder im Nachhinein per sogenanntem Fragebogen ausfüllen lassen könnt.
 
 Zur Verwaltung der Anmeldungen gibt es eine recht ausgefuchste Abfragemaske,
 mit der so ziemlich jede denkbare Anfrage zufriedenstellend beantwortet

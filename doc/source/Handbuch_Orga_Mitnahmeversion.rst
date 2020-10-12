@@ -16,8 +16,8 @@ könnt ihr auf der Übersichtsseite eurer Veranstaltung tun.
 
 .. attention:: Sperrt eure Veranstaltung, bevor ihr sie exportiert!
                Alle Änderungen, die nach dem Export von euch oder den TN
-               durchgeführt werden, gehen beim späteren re-import in die Online
-               Version verloren.
+               durchgeführt werden, gehen beim späteren Wiederimport in die
+               Online-Version verloren.
 
 Ihr könnt natürlich auch zu Testzwecken einen Export erstellen und eine
 Offline-Version aufsetzen, ohne die Veranstaltung zu sperren.
@@ -90,19 +90,13 @@ Solltet ihr in der Offline-VM neue Anmeldungen angelegt haben, so müsst ihr
 zunächst die oben beschriebenen Vorbereitungen treffen.
 
 Ist dies erledigt, könnt ihr die Daten aus der Offline-VM wieder in die Online
-Datenbank importieren. Dazu laded ihr (wie beim erstellen der offline VM) von
+Datenbank importieren. Dazu ladet ihr (wie beim erstellen der Offline-VM) von
 der Veranstaltungsübersichtsseite der **Offline-VM** den Export herunter.
 Diese JSON-Datei könnt ihr nun wieder in der **Online-Instanz** auf der
 Startseite eurer Veranstaltung hochladen.
 
-After the event you export the data from the offline instance the same way
-you exported the online instance, receiving a JSON-file with the data of the
-offline instance. This file you upload into the online instance thereby
-unlocking the event via the corresponding button on the event overview
-page. This overwrites all data of your event in the online instance with
-data from the offline VM (potentially deleting things).
-
-.. attention:: Das Hochladen des Offline-VM exports überschreibt alle Daten
+.. attention:: Das Hochladen des Offline-VM-Exports überschreibt alle Daten
                eurer Veranstaltung in der Online-Instanz. Dabei gehen alle
                Änderungen, die nach dem Export aus der Online-Instanz getätigt
-               wurden, verloren.
+               wurden, verloren (daher sollte die Online-Instanz vor dem Export
+               gesperrt werden).

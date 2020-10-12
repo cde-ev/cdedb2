@@ -31,7 +31,7 @@ A small overview where you can find help to which topic:
   access the CdEDB.
 * **Handbuch**: help for specific pages, workflows etc, divided by CdE-groups
   which will be using this application.
-* **Archive**: everything which is not important anymore, but keeping for
+* **Archive**: everything which is not important anymore, but kept for
   historical reasons or simply nostalgic ones.
 
 .. todo:: Stichwortverzeichnis? Index?

@@ -37,5 +37,5 @@ Seiten, die sich nicht in dieses Schema eingliedern lassen:
 * **Markdown**: Eine kurze Einführung in die Markup-Sprache
   `Markdown <https://daringfireball.net/projects/markdown/>`_, wie sie an vielen
   Stellen in der CdEDB (etwa in Benutzerprofilen) genutzt werden kann.
-* **Privacy Controle**: Ein Link auf eine Seite unter *Realm/Core*. Hier werden
+* **Privacy Control**: Ein Link auf eine Seite unter *Realm/Core*. Hier werden
   die Mechanismen zum Schutz personenbezogener Daten innerhalb der CdEDB erläutert.
