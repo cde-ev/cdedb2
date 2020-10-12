@@ -2670,7 +2670,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def download_dokuteam(self, rs: RequestState, event_id: int) -> Response:
+    def download_dokuteam_courselist(self, rs: RequestState, event_id: int) -> Response:
         """Create shell-script snippet for dokuteam."""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         if not course_ids:
@@ -2678,7 +2678,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/downloads")
         courses = self.eventproxy.get_courses(rs, course_ids)
         data = self.fill_template(
-            rs, "other", "dokuteam_export", {'courses': courses})
+            rs, "other", "dokuteam_courselist", {'courses': courses})
         return self.send_file(
             rs, data=data, inline=False,
             filename=f"{rs.ambience['event']['shortname']}_dokuteam_courselist.txt")

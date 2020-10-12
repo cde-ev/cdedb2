@@ -150,9 +150,14 @@
                 <td>{{ util.href(cdedblink('event/download_expuls'), gettext("TeX-Code"), icon='download') }}</td>
             </tr>
             <tr>
-                <td>{% trans %}Dokuteam{% endtrans %}</td>
-                <td>{{ util.href(cdedblink('event/download_dokuteam'), gettext("Shell-Snippet"), icon='download') }}</td>
+                <td>{% trans %}Dokuteam courselist{% endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_dokuteam_courselist'), gettext("Shell-Snippet"), icon='download') }}</td>
             </tr>
+            <tr>
+                <td>{% trans %}Dokuteam participant list{% endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_dokuteam_participant_list'), gettext("ZIP-Archive"), icon='download') }}</td>
+            </tr>
+
         </tbody>
     </table>
 {% endblock %}
