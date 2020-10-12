@@ -2681,7 +2681,48 @@ class EventFrontend(AbstractUserFrontend):
             rs, "other", "dokuteam_export", {'courses': courses})
         return self.send_file(
             rs, data=data, inline=False,
-            filename="{}_dokuteam.txt".format(rs.ambience['event']['shortname']))
+            filename=f"{rs.ambience['event']['shortname']}_dokuteam_courselist.txt")
+
+    @access("event")
+    @event_guard()
+    def download_dokuteam_participant_list(self, rs: RequestState,
+                                           event_id: int) -> Response:
+        """Create participant list per track for dokuteam."""
+        event = self.eventproxy.get_event(rs, event_id)
+        spec = self.make_registration_query_spec(event)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
+            work_dir.mkdir()
+
+            # create one list per track
+            for part in rs.ambience["event"]["parts"].values():
+                for track_id, track in part["tracks"].items:
+                    fields_of_interest = ["persona.given_names", "persona.family_name",
+                                          f"track{track_id}.course_id"]
+                    constrains = [(f"track{track_id}.course_id",
+                                   QueryOperators.nonempty, None)]
+                    order = [("persona.given_names", True)]
+                    query = Query("qview_registration", spec, fields_of_interest,
+                                  constrains, order)
+                    result = self.eventproxy.submit_general_query(rs, query, event_id)
+                    course_key = f"track{track_id}.course_id"
+                    data = self.fill_template(
+                        rs, "other", "dokuteam_participant_list",
+                        {'result': result, 'course_key': course_key})
+
+                    # save the result in one file per track
+                    file = pathlib.Path(work_dir / track["shortname"])
+                    file.touch()
+                    file.write_text(data)
+
+            # create a zip archive of all lists
+            zipname = f"{rs.ambience['event']['shortname']}_dokuteam_participant_list"
+            zippath = shutil.make_archive(zipname, 'zip', base_dir=work_dir,
+                                          root_dir=tmp_dir)
+
+            return self.send_file(rs, path=zippath, inline=False,
+                                  filename=f"{zipname}.zip")
 
     @access("event")
     @event_guard()
