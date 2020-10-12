@@ -1,4 +1,4 @@
-academy|{{- ambience['event']['shortname'] -}}|{{- ambience['event']['title'] -}}|cde
+academy|{{ ambience['event']['shortname'] }}|{{ ambience['event']['title'] }}|cde
 {%- for course_id, course in courses|keydictsort(EntitySorter.course) %}
-course|{{- course['nr'] -}}|kurs{{- course['nr'] -}}|{{- course['title'] -}}|{{- course['shortname'] }}
-{%- endfor %}
+course|{{ course['nr'] }}|kurs{{ course['nr'] }}|{{ course['title'] }}|{{ course['shortname'] }}
+{%- endfor -%}
