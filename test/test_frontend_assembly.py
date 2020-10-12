@@ -815,12 +815,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual("aqua", f['shortname_1001'].value)
         f['shortname_7'] = "rot"
         self.submit(f, check_notification=False)
+        self.assertValidationError("shortname_7", "Option doppelt gefunden")
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
         f['shortname_7'] = "gelb"
         f['shortname_8'] = "_bar_"
         self.submit(f, check_notification=False)
+        self.assertValidationError(
+            "shortname_8", "Darf nicht der Bezeichner der Ablehnungsoption sein")
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
@@ -1025,13 +1028,13 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
             "presider_ids",
             "Einige dieser Nutzer existieren nicht oder sind archiviert.")
         # Try archived user.
-        f['presider_ids'] = "DB-8-6"
+        f['presider_ids'] = USER_DICT["hades"]['DB-ID']
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "presider_ids",
             "Einige dieser Nutzer existieren nicht oder sind archiviert.")
         # Try non-assembly user.
-        f['presider_ids'] = "DB-5-1"
+        f['presider_ids'] = USER_DICT["emilia"]['DB-ID']
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "presider_ids",
