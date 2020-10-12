@@ -861,13 +861,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def __init__(self, configpath: PathLike = None, *args: Any,
                  **kwargs: Any) -> None:
         super().__init__(configpath, *args, **kwargs)
+        self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
+                                         "frontend", "templates")
         self.jinja_env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(
-                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
-            extensions=['jinja2.ext.i18n', 'jinja2.ext.do',
-                        'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True,
-            auto_reload=self.conf["CDEDB_DEV"])
+            loader=jinja2.FileSystemLoader(str(self.template_dir)),
+            extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
+            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -1053,8 +1052,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             raise NotImplementedError(n_("Requested modus does not exists: %(modus)s"),
                                       {'modus': modus})
-        t = jinja_env.get_template(str(pathlib.Path(
-            modus, self.realm, "{}.tmpl".format(templatename))))
+        tmpl = pathlib.Path(modus, self.realm, f"{templatename}.tmpl")
+        if not (self.template_dir / tmpl).is_file():
+            raise ValueError(n_("Template not found: %(file)s"), {'file': tmpl})
+        t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
 
     @staticmethod
