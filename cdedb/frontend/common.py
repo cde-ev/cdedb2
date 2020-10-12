@@ -935,7 +935,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                   jinjas default syntax is nasty for this.
 
         :param modus: Type of thing we want to generate; can be one of
-
           * web,
           * mail,
           * tex,
@@ -1014,8 +1013,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         errorsdict: Dict[Optional[str], List[Exception]] = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
-        # here come the always accessible things promised above
 
+        # here come the always accessible things promised above
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
@@ -1035,18 +1034,25 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'user': rs.user,
             'values': rs.values,
         }
+
         # check that default values are not overridden
         if set(data) & set(params):
             raise ValueError(
                 n_("Default values cannot be overridden: %(keys)s"),
                 {'keys': set(data) & set(params)})
         merge_dicts(data, params)
-        if modus == "tex":
-            jinja_env = self.jinja_env_tex
+
+        if modus == "web":
+            jinja_env = self.jinja_env
         elif modus == "mail":
             jinja_env = self.jinja_env_mail
-        else:
+        elif modus == "tex":
+            jinja_env = self.jinja_env_tex
+        elif modus == "other":
             jinja_env = self.jinja_env
+        else:
+            raise NotImplementedError(n_("Requested modus does not exists: %(modus)s"),
+                                      {'modus': modus})
         t = jinja_env.get_template(str(pathlib.Path(
             modus, self.realm, "{}.tmpl".format(templatename))))
         return t.render(**data)

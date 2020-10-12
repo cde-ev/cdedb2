@@ -227,7 +227,6 @@ def generate_event_registration_default_queries(gettext, event, spec):
     return queries
 
 
-
 def generate_event_course_default_queries(gettext, event, spec):
     """
     Generate default queries for course_queries.
@@ -236,15 +235,13 @@ def generate_event_course_default_queries(gettext, event, spec):
     Tracks, etc.
 
     :param gettext: The translation function for the current locale.
-    :param event: The Event for which to generate the queries
-    :type event:
+    :param event: The event for which to generate the queries
     :param spec: The Query Spec, dynamically generated for the event
-    :type spec:
     :return: Dict of default queries
     """
 
     queries = {
-        n_("00_query_dokuteam_courselist"): Query(
+        n_("50_query_dokuteam_courselist"): Query(
             "qview_event_course", spec,
             ("course.nr", "course.shortname", "course.title"),
             tuple(),
