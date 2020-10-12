@@ -1,16 +1,17 @@
 Workflows
 =========
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   Development_Workflows_Scripts
+   Development_Workflows_Test_Suite
+
 This page aims to provide descriptions on how to do things.
 
 .. todo:: Add information about PR&Issues (short with link to gitea), Test-Suite, Input validation,
           Autobuild ...
-
-.. toctree::
-   :maxdepth: 1
-
-   Development_Workflows_Scripts
-   Development_Workflows_Test_Suite
 
 Contributing
 ------------

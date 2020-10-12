@@ -1,15 +1,17 @@
 Using the VM image
 ==================
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   Development_Setup_Manual
+
 .. todo:: "unrelateten" Development Bezug verschieben?
 
 Here we describe how the VM image provided by the auto-build may be used for
 development and offline usage (i.e. at events).
 
-.. toctree::
-   :maxdepth: 1
-
-   Development_Setup_Manual
 
 Prerequisites
 -------------
