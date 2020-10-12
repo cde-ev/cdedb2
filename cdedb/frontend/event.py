@@ -46,7 +46,7 @@ from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
     LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
-    InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC
+    InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC, asciificator
 )
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -2692,12 +2692,13 @@ class EventFrontend(AbstractUserFrontend):
         spec = self.make_registration_query_spec(event)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_dir = pathlib.Path(tmp_dir)
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
 
             # create one list per track
             for part in rs.ambience["event"]["parts"].values():
-                for track_id, track in part["tracks"].items:
+                for track_id, track in part["tracks"].items():
                     fields_of_interest = ["persona.given_names", "persona.family_name",
                                           f"track{track_id}.course_id"]
                     constrains = [(f"track{track_id}.course_id",
@@ -2712,13 +2713,14 @@ class EventFrontend(AbstractUserFrontend):
                         {'result': result, 'course_key': course_key})
 
                     # save the result in one file per track
-                    file = pathlib.Path(work_dir / track["shortname"])
+                    filename = f"{asciificator(track['shortname'])}.txt"
+                    file = pathlib.Path(work_dir, filename)
                     file.touch()
                     file.write_text(data)
 
             # create a zip archive of all lists
             zipname = f"{rs.ambience['event']['shortname']}_dokuteam_participant_list"
-            zippath = shutil.make_archive(zipname, 'zip', base_dir=work_dir,
+            zippath = shutil.make_archive(tmp_dir / zipname, 'zip', base_dir=work_dir,
                                           root_dir=tmp_dir)
 
             return self.send_file(rs, path=zippath, inline=False,
