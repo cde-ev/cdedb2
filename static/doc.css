@@ -1,0 +1,6 @@
+/* This file contains additional css files to change the default look of the rtd theme*/
+
+/* from https://stackoverflow.com/a/7759284 */
+p + ul {
+    margin-top: -25px;
+}
