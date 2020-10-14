@@ -2689,6 +2689,8 @@ class EventFrontend(AbstractUserFrontend):
                                            event_id: int) -> Response:
         """Create participant list per track for dokuteam."""
         event = self.eventproxy.get_event(rs, event_id)
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids)
         spec = self.make_registration_query_spec(event)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -2708,12 +2710,20 @@ class EventFrontend(AbstractUserFrontend):
                                   constrains, order)
                     result = self.eventproxy.submit_general_query(rs, query, event_id)
                     course_key = f"track{track_id}.course_id"
+                    # we have to replace the course id with the course number
+                    result = (
+                        {
+                            k if k != course_key else 'course':
+                                v if k != course_key else courses[v]['nr']
+                            for k, v in entry.items()
+                        }
+                        for entry in result
+                    )
                     data = self.fill_template(
-                        rs, "other", "dokuteam_participant_list",
-                        {'result': result, 'course_key': course_key})
+                        rs, "other", "dokuteam_participant_list", {'result': result})
 
                     # save the result in one file per track
-                    filename = f"{asciificator(track['shortname'])}.txt"
+                    filename = f"{asciificator(track['shortname'])}.csv"
                     file = pathlib.Path(work_dir, filename)
                     file.touch()
                     file.write_text(data)
