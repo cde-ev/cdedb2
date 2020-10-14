@@ -171,16 +171,16 @@ def generate_event_registration_default_queries(gettext, event, spec):
              ("reg.parental_agreement", QueryOperators.equal, False)),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
-        n_("62_query_dokuteam_course_picture"): Query(
+        n_("60_query_dokuteam_course_picture"): Query(
             "qview_registration", spec, dokuteam_course_picture_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),), default_sort),
-        n_("63_query_dokuteam_dokuforge"): Query(
+        n_("61_query_dokuteam_dokuforge"): Query(
             "qview_registration", spec, dokuteam_dokuforge_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),
              ("reg.list_consent", QueryOperators.equal, True),), default_sort),
-        n_("64_query_dokuteam_address_export"): Query(
+        n_("62_query_dokuteam_address_export"): Query(
             "qview_registration", spec, dokuteam_address_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),), default_sort),
