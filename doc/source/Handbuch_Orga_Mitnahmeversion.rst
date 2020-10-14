@@ -2,14 +2,14 @@ Mitnahmeversion
 ===============
 
 Die Datenbank kann als Offline-Version mittels einer virtuellen Maschine
-genutzt werden. Die allgemeine Dokumentation zur Benutzung der virtuellen
-Maschine ist unter :doc:`Development_Setup` zu finden.
+genutzt werden. Dafür wird das gleiche Setup wie für die Entwicklungs-VM
+genutzt, beschrieben unter :doc:`Development_Setup_Setup`.
 
 Aufsetzen
 ---------
 
 Zunächst müsst ihr eine lokale Instanz der CdEDB aufsetzen. Folgt dazu den
-ersten sechs Abschnitten unter :doc:`Development_Setup`.
+Anweisungen unter :doc:`Development_Setup_Setup`.
 
 Als nächstes müsst ihr eure Veranstaltung aus der Datenbank exportieren. Dies
 könnt ihr auf der Übersichtsseite eurer Veranstaltung tun.
