@@ -1,7 +1,7 @@
 Dokuteam Exporte
 ================
 
-Das Dokuteam benötigt einige Informationen aus der Datenbank, um ihrer Arbeit
+Das Dokuteam benötigt einige Informationen aus der Datenbank, um seiner Arbeit
 nachgehen zu können. Um das Extrahieren dieser Informationen zu erleichtern,
 gibt es mehrere Downloads pro Veranstaltung, die dem Dokuteam zur Verfügung
 gestellt werden sollen.

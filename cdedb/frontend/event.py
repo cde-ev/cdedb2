@@ -2725,7 +2725,6 @@ class EventFrontend(AbstractUserFrontend):
                     # save the result in one file per track
                     filename = f"{asciificator(track['shortname'])}.csv"
                     file = pathlib.Path(work_dir, filename)
-                    file.touch()
                     file.write_text(data)
 
             # create a zip archive of all lists

@@ -1053,6 +1053,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             raise NotImplementedError(n_("Requested modus does not exists: %(modus)s"),
                                       {'modus': modus})
         tmpl = pathlib.Path(modus, self.realm, f"{templatename}.tmpl")
+        # sadly, jinja does not catch nicely if the template exists, so we do this here
         if not (self.template_dir / tmpl).is_file():
             raise ValueError(n_("Template not found: %(file)s"), {'file': tmpl})
         t = jinja_env.get_template(str(tmpl))
