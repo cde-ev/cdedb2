@@ -2750,13 +2750,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence('"title": "Langer Kurs",')
         # registrations
         self.response = save.click(href='/event/event/1/download/csv_registrations')
-        # self.assertPresence('reg.id;persona.id;persona.given_names;')
+        self.assertIn('reg.id;persona.id;persona.given_names;', self.response.text)
         # courselist
         self.response = save.click(href='/event/event/1/download/csv_courses')
-        # self.assertPresence('course.id;course.course_id;course.nr;')
+        self.assertIn('course.id;course.course_id;course.nr;', self.response.text)
         # lodgementlist
         self.response = save.click(href='/event/event/1/download/csv_lodgements')
-        # self.assertPresence('lodgement.id;lodgement.lodgement_id;lodgement.title;')
+        self.assertIn('lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
         # courselist for exPuls
         self.response = save.click(href='/event/event/1/download/expuls')
         self.assertPresence('\\kurs')
