@@ -1004,6 +1004,12 @@ class TestCoreBackend(BackendTest):
         self.core.change_persona(self.key, data, may_wait=False)
 
     @as_users("vera")
+    def test_archive_admin(self, user):
+        # Nina is mailinglist admin.
+        with self.assertRaises(ArchiveError):
+            self.core.archive_persona(self.key, 14, "Admins can not be archived.")
+
+    @as_users("vera")
     def test_purge(self, user):
         data = self.core.get_total_persona(self.key, 8)
         self.assertEqual("Hades", data['given_names'])

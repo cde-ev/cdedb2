@@ -33,7 +33,7 @@ from cdedb.common import (
     REALM_INHERITANCE, EntitySorter, REALM_SPECIFIC_GENESIS_FIELDS,
     ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, xsorted, RequestState,
     CdEDBObject, PathLike, Realm, DefaultReturnCode,
-    get_persona_fields_by_realm,
+    get_persona_fields_by_realm, ADMIN_KEYS,
 )
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
@@ -1141,12 +1141,7 @@ class CoreFrontend(AbstractFrontend):
             "notes": notes,
         }
 
-        # TODO: define these somewhere central?
-        admin_keys = {"is_meta_admin", "is_core_admin", "is_cde_admin",
-                      "is_finance_admin", "is_event_admin", "is_ml_admin",
-                      "is_assembly_admin", "is_cdelokal_admin"}
-
-        for key in admin_keys:
+        for key in ADMIN_KEYS:
             if locals()[key] != persona[key]:
                 data[key] = locals()[key]
 
@@ -1195,7 +1190,7 @@ class CoreFrontend(AbstractFrontend):
                 rs.notify("error", e)
             return self.change_privileges_form(rs, persona_id)
 
-        if admin_keys & data.keys():
+        if ADMIN_KEYS & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
             self.notify_return_code(
                 rs, code, success=n_("Privilege change waiting for approval by "
