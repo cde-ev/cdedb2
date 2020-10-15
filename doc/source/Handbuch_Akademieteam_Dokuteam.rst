@@ -1,10 +1,8 @@
 Dokuteam Exporte
 ================
 
-.. todo:: Wann braucht das Dokuteam den Shell-Snippet Export?
-
-Das Doku-Team benötigt einige Informationen aus der Datenbank, um ihrer Arbeit
-nachgehen zu können. Um das extrahieren dieser Informationen zu erleichtern,
+Das Dokuteam benötigt einige Informationen aus der Datenbank, um ihrer Arbeit
+nachgehen zu können. Um das Extrahieren dieser Informationen zu erleichtern,
 gibt es mehrere Downloads pro Veranstaltung, die dem Dokuteam zur Verfügung
 gestellt werden sollen.
 
@@ -30,6 +28,12 @@ Teilnehmerliste
     Dokuteam eine Liste mit den Kursen jedes Teilnehmers.
 
     Unter ``Veranstaltung/Downloads`` die ``Dokuteam Teilnehmerliste`` Datei
+
+Skriptinput Kursliste
+    Um verschiedene Listen kurz vor der Akademie zu erstellen, benötigt das
+    Dokuteam diese Input Datei.
+
+    Unter ``Veranstaltung/Downloads`` die ``Dokuteam Kursliste`` Datei
 
 Auf der Akademie
 ----------------

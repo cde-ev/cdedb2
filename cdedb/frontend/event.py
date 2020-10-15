@@ -2671,7 +2671,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard()
     def download_dokuteam_courselist(self, rs: RequestState, event_id: int) -> Response:
-        """Create shell-script snippet for dokuteam."""
+        """A pipe-seperated courselist for the dokuteam aca-generator script."""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         if not course_ids:
             rs.notify("info", n_("Empty File."))
