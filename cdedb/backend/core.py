@@ -627,9 +627,7 @@ class CoreBackend(AbstractBackend):
         if (set(data) & ADMIN_KEYS
                 and ("meta_admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
-            # Allow unsetting adminbits during archival.
-            if (any(data[key] for key in ADMIN_KEYS)
-                    or "archive" not in allow_specials):
+            if any(data[key] for key in ADMIN_KEYS):
                 raise PrivilegeError(
                     n_("Admin privilege modification prevented."))
         if ("is_member" in data
@@ -1145,8 +1143,8 @@ class CoreBackend(AbstractBackend):
             if persona['is_archived']:
                 return 0
 
-            # Disallow archival of meta admins to ensure there always remain
-            # atleast two.
+            # Disallow archival of admins. Admin privileges should be unset
+            # by two meta admins before.
             if any(persona[key] for key in ADMIN_KEYS):
                 raise ArchiveError(n_("Cannot archive admins."))
 
