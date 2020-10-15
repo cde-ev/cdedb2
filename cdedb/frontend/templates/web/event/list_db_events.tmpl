@@ -2,23 +2,13 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% if is_admin %}
-        {% trans %}
-            Manage Events
-        {% endtrans %}
-   {% else %}
-        {% trans %}
-            Event List
-        {% endtrans %}
-   {% endif %}
+    {% trans %}
+        All Events
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {% if is_admin %}
-        {{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Manage Events"), active="True") }}
-   {% else %}
-        {{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Event List"), active="True") }}
-   {% endif %}
+    {{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("All Events"), active="True") }}
 {% endblock %}
 
 {% macro format_entry(event) %}
@@ -44,7 +34,7 @@
                 {%- endif %})
             {% endif %}
         </div>
-        {% if is_admin %}
+        {% if "event_mgmt" in user.admin_views %}
         <div class="col-sm-3 small">
             <a href="{{ cdedblink('event/registration_query', {'event_id': event['id']}) }}">
                 {% trans count=event['registrations'] %}
@@ -61,7 +51,7 @@
     </div>
 {% endmacro %}
 {% block content %}
-    {% if is_admin %}
+    {% if "event_mgmt" in user.admin_views %}
     <div class="p">
         {{ util.href(cdedblink("event/create_event_form"), gettext("Create Event"), aclass="btn btn-success btn-sm",
                 icon="plus") }}

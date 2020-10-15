@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-10-04 23:13+0200\n"
+"POT-Creation-Date: 2020-10-15 03:58+0200\n"
 "PO-Revision-Date: 2020-10-03 12:01+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -6716,7 +6716,7 @@ msgid "Orga-Events"
 msgstr "Orga-Veranstaltungen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:117
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:50
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:40
 #, python-format
 msgid "%(count)s Registrations"
 msgstr "%(count)s Anmeldungen"
@@ -6791,7 +6791,7 @@ msgstr[1] "%(count)s Anfragen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:194
 #: cdedb/frontend/templates/web/event/index.tmpl:13
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:71
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:61
 msgid "Current Events"
 msgstr "Aktuelle Veranstaltungen"
 
@@ -7919,8 +7919,6 @@ msgstr "Veranstaltungsübersicht"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:98
 #: cdedb/frontend/templates/web/event/create_event.tmpl:13
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:6
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:18
 msgid "Manage Events"
 msgstr "Veranstaltungen verwalten"
 
@@ -8794,7 +8792,7 @@ msgstr "Kurs hinzufügen (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:7
 #: cdedb/frontend/templates/web/event/create_event.tmpl:14
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:66
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:56
 msgid "Create Event"
 msgstr "Veranstaltung anlegen"
 
@@ -9161,7 +9159,7 @@ msgid "Other Events"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/index.tmpl:120
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:41
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:31
 msgid "is cancelled"
 msgstr "wurde abgesagt"
 
@@ -9171,13 +9169,12 @@ msgid ""
 "Previous CdE events, including their courses and participants, can be "
 "found at %(link)s – together with Junior- and SchülerAkademien. "
 "Furthermore, there is a %(list)s of all events which have not been "
-"deleted yet."
+"cleansed yet."
 msgstr ""
-"Die früheren CdE-Veranstaltungen mit ihren Teilnehmern und Kursen findest Du "
-"gemeinsam mit den Schüler- und JuniorAkademien unter %(link)s. "
-"Darüber hinaus gibt es eine %(list)s aller Veranstaltungen, die noch nicht "
-"gelöscht wurden."
-
+"Die früheren CdE-Veranstaltungen mit ihren Teilnehmern und Kursen findest"
+" Du gemeinsam mit den Schüler- und JuniorAkademien unter %(link)s. "
+"Darüber hinaus gibt es eine %(list)s aller Veranstaltungen, die noch "
+"nicht von persönlichen Daten bereinigt und gelöscht wurden."
 
 #: cdedb/frontend/templates/web/event/index.tmpl:130
 #: cdedb/frontend/templates/web/event/index.tmpl:135
@@ -9189,31 +9186,31 @@ msgstr "Liste"
 msgid ""
 "Previous CdE events are accessible to members only – together with "
 "Junior- and SchülerAkademien. However, there is a %(list)s of all events "
-"which have not been deleted yet."
+"which have not been cleansed yet."
 msgstr ""
 "Die früheren CdE-Veranstaltungen gemeinsam mit den Schüler- und "
-"JuniorAkademien sind nur Mitgliedern zugänglich. "
-"Allerdings gibt es eine %(list)s aller Veranstaltungen, die noch nicht "
-"gelöscht wurden."
+"JuniorAkademien sind nur Mitgliedern zugänglich. Allerdings gibt es eine "
+"%(list)s aller Veranstaltungen, die noch nicht von persönlichen Daten "
+"bereinigt und gelöscht wurden."
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:10
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:20
-msgid "Event List"
-msgstr "Veranstaltungsliste"
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:5
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:11
+msgid "All Events"
+msgstr "Alle Veranstaltungen"
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:33
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:23
 #, python-format
 msgid "%(count)s Parts"
 msgstr "%(count)s Teile"
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:54
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:44
 #, python-format
 msgid "%(count)s Orga"
 msgid_plural "%(count)s Orgas"
 msgstr[0] "%(count)s Orga"
 msgstr[1] "%(count)s Orgas"
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:80
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:70
 msgid "Archived Events"
 msgstr "Archivierte Veranstaltungen"
 
@@ -16760,4 +16757,7 @@ msgstr "Muss vom Typ %(type)s sein."
 #~ "ihren Teilnehmern und Kursen findest Du"
 #~ " gemeinsam mit den Schüler- und "
 #~ "JuniorAkademien bei den %(link)s."
+
+#~ msgid "Event List"
+#~ msgstr "Veranstaltungsliste"
 

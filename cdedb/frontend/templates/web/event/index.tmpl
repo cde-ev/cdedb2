@@ -129,12 +129,12 @@
                 {% trans link=util.href(cdedblink('cde/list_past_events'), gettext('Past Events (long)'))|s,
                          list=util.href(cdedblink('event/list_db_events'), gettext('list'))|s %}
                     Previous CdE events, including their courses and participants, can be found at {{ link }} – together with Junior- and SchülerAkademien.
-                    Furthermore, there is a {{ list }} of all events which have not been deleted yet.
+                    Furthermore, there is a {{ list }} of all events which have not been cleansed yet.
                 {% endtrans %}
             {% else %}
                 {% trans list=util.href(cdedblink('event/list_db_events'), gettext('list'))|s %}
                     Previous CdE events are accessible to members only – together with Junior- and SchülerAkademien.
-                    However, there is a {{ list }} of all events which have not been deleted yet.
+                    However, there is a {{ list }} of all events which have not been cleansed yet.
                 {% endtrans %}
             {% endif %}
         </p>

@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Manage Events")) }}
+{{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("All Events")) }}
 {{ util.breadcrumb_link(cdedblink("event/create_event"), gettext("Create Event"), active=True) }}
 {% endblock %}
 {% block content %}

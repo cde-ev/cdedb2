@@ -58,7 +58,7 @@ class TestEventFrontend(FrontendTest):
     def test_sidebar(self, user):
         self.traverse({'description': 'Veranstaltungen'})
         everyone = ["Veranstaltungen", "Übersicht"]
-        admin = ["Veranstaltungen verwalten", "Log"]
+        admin = ["Alle Veranstaltungen", "Log"]
 
         # not event admins (also orgas!)
         if user in [USER_DICT['emilia'], USER_DICT['martin'],
@@ -174,7 +174,7 @@ class TestEventFrontend(FrontendTest):
 
         # Test Event Administration Admin View
         self.assertNoLink('/event/event/log')
-        self.assertNoLink('/event/event/list', content="Veranstaltungen verwalten")
+        self.assertNoLink('/event/event/list', content="Alle Veranstaltungen")
         self.traverse({'href': '/event/event/1/show'})
         self.assertNotIn('deleteeventform', self.response.forms)
         self.assertNotIn('addorgaform', self.response.forms)
@@ -236,8 +236,8 @@ class TestEventFrontend(FrontendTest):
     @as_users("annika")
     def test_list_events(self, user):
         self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Veranstaltungen verwalten'})
-        self.assertTitle("Veranstaltungen verwalten")
+                      {'description': 'Alle Veranstaltungen'})
+        self.assertTitle("Alle Veranstaltungen")
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertPresence("CdE-Party 2050", div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
@@ -248,7 +248,7 @@ class TestEventFrontend(FrontendTest):
     def test_list_events_unprivileged(self, user):
         self.traverse({'description': 'Veranstaltungen'},
                       {'href': '/event/event/list'})
-        self.assertTitle("Veranstaltungsliste")
+        self.assertTitle("Alle Veranstaltungen")
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertPresence("CdE-Party 2050", div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
@@ -494,7 +494,7 @@ class TestEventFrontend(FrontendTest):
         # week in the future.
         self.login(USER_DICT['annika'])
         self.traverse({'href': '/event/$'},
-                      {'description': 'Veranstaltungen verwalten'},
+                      {'description': 'Alle Veranstaltungen'},
                       {'description': 'CdE-Party 2050'},
                       {'description': 'Veranstaltungsteile'})
         f = self.response.forms['partsummaryform']
@@ -536,7 +536,7 @@ class TestEventFrontend(FrontendTest):
         self.logout()
         self.login(USER_DICT['annika'])
         self.traverse({'href': '/event/$'},
-                      {'description': 'Veranstaltungen verwalten'},
+                      {'description': 'Alle Veranstaltungen'},
                       {'description': 'CdE-Party 2050'},
                       {'description': 'Konfiguration'})
         f = self.response.forms['changeeventform']
@@ -611,7 +611,7 @@ class TestEventFrontend(FrontendTest):
     @as_users("annika")
     def test_part_summary_complex(self, user):
         self.traverse({'href': '/event/$'},
-                      {'description': 'Veranstaltungen verwalten'},
+                      {'description': 'Alle Veranstaltungen'},
                       {'description': 'CdE-Party 2050'},
                       {'description': 'Veranstaltungsteile'})
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
@@ -1396,7 +1396,7 @@ etc;anything else""", f['entries_2'].value)
             self.assertNotIn(field_name, f.fields)
 
         self.traverse({'description': "Veranstaltungen"},
-                      {'description': "Veranstaltungen verwalten"},
+                      {'description': "Alle Veranstaltungen"},
                       {'description': "CdE-Party 2050"})
         # Create new boolean registration fields.
         self.traverse({'description': "Datenfelder konfigurieren"})
@@ -1540,7 +1540,7 @@ etc;anything else""", f['entries_2'].value)
     @as_users("annika")
     def test_fee_modifiers(self, user):
         self.traverse({'description': "Veranstaltungen"},
-                      {'description': "Veranstaltungen verwalten"},
+                      {'description': "Alle Veranstaltungen"},
                       {'description': "CdE-Party 2050"})
         self._create_event_field({
             "field_name": "is_child",
@@ -3319,7 +3319,7 @@ etc;anything else""", f['entries_2'].value)
     @as_users("annika")
     def test_one_track_no_courses(self, user):
         self.traverse({'href': '/event/$'},
-                      {'description': 'Veranstaltungen verwalten'},
+                      {'description': 'Alle Veranstaltungen'},
                       {'description': 'CdE-Party 2050'})
         # Check if course list is present (though we have no course track)
         self.assertNonPresence('/event/event/2/course/list', div="sidebar")

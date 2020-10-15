@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-10-04 23:13+0200\n"
+"POT-Creation-Date: 2020-10-15 03:58+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -6366,7 +6366,7 @@ msgid "Orga-Events"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:117
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:50
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:40
 #, python-format
 msgid "%(count)s Registrations"
 msgstr ""
@@ -6441,7 +6441,7 @@ msgstr[1] ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:194
 #: cdedb/frontend/templates/web/event/index.tmpl:13
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:71
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:61
 msgid "Current Events"
 msgstr ""
 
@@ -7475,8 +7475,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:98
 #: cdedb/frontend/templates/web/event/create_event.tmpl:13
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:6
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:18
 msgid "Manage Events"
 msgstr ""
 
@@ -8279,7 +8277,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:7
 #: cdedb/frontend/templates/web/event/create_event.tmpl:14
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:66
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:56
 msgid "Create Event"
 msgstr ""
 
@@ -8626,7 +8624,7 @@ msgid "Other Events"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/index.tmpl:120
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:41
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:31
 msgid "is cancelled"
 msgstr ""
 
@@ -8636,7 +8634,7 @@ msgid ""
 "Previous CdE events, including their courses and participants, can be "
 "found at %(link)s – together with Junior- and SchülerAkademien. "
 "Furthermore, there is a %(list)s of all events which have not been "
-"deleted yet."
+"cleansed yet."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/index.tmpl:130
@@ -8649,27 +8647,27 @@ msgstr ""
 msgid ""
 "Previous CdE events are accessible to members only – together with "
 "Junior- and SchülerAkademien. However, there is a %(list)s of all events "
-"which have not been deleted yet."
+"which have not been cleansed yet."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:10
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:20
-msgid "Event List"
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:5
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:11
+msgid "All Events"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:33
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:23
 #, python-format
 msgid "%(count)s Parts"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:54
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:44
 #, python-format
 msgid "%(count)s Orga"
 msgid_plural "%(count)s Orgas"
 msgstr[0] ""
 msgstr[1] ""
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:80
+#: cdedb/frontend/templates/web/event/list_db_events.tmpl:70
 msgid "Archived Events"
 msgstr ""
 
@@ -13614,5 +13612,25 @@ msgstr ""
 #~ "courses and participants, can be found"
 #~ " at %(link)s – together with Junior-"
 #~ " and SchülerAkademien."
+#~ msgstr ""
+
+#~ msgid "Event List"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Previous CdE events, including their "
+#~ "courses and participants, can be found"
+#~ " at %(link)s – together with Junior-"
+#~ " and SchülerAkademien. Furthermore, there "
+#~ "is a %(list)s of all events which"
+#~ " have not been deleted yet."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Previous CdE events are accessible to"
+#~ " members only – together with Junior-"
+#~ " and SchülerAkademien. However, there is"
+#~ " a %(list)s of all events which "
+#~ "have not been deleted yet."
 #~ msgstr ""
 
