@@ -937,7 +937,8 @@ CREATE TABLE assembly.ballots (
         -- on the fly. Its shortname will be "_bar_".
         use_bar                 boolean NOT NULL,
         -- number of submitted votes necessary to not trigger extension
-        quorum                  integer NOT NULL DEFAULT 0,
+        abs_quorum              integer NOT NULL DEFAULT 0,
+        rel_quorum              integer NOT NULL DEFAULT 0,
         -- number of votes per ballot
         --
         -- NULL means arbitrary preference list

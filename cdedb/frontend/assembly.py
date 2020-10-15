@@ -605,8 +605,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "quorum", "votes", "notes",
-                     "use_bar")
+                     "vote_extension_end", "abs_quorum", "rel_quorum", "votes",
+                     "notes", "use_bar")
     def create_ballot(self, rs: RequestState, assembly_id: int,
                       data: Dict[str, Any]) -> Response:
         """Make a new ballot."""
@@ -1067,7 +1067,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # check for extension
         if ballot['extended'] is None and timestamp > ballot['vote_end']:
-            self.assemblyproxy.check_voting_priod_extension(rs, ballot['id'])
+            self.assemblyproxy.check_voting_period_extension(rs, ballot['id'])
             return -1
 
         finished = (
@@ -1221,8 +1221,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "use_bar", "quorum", "votes",
-                     "notes")
+                     "vote_extension_end", "use_bar", "abs_quorum", "rel_quorum",
+                     "votes", "notes")
     def change_ballot(self, rs: RequestState, assembly_id: int,
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""

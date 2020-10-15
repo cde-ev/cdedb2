@@ -21,7 +21,8 @@
                                 placeholder="YYYY-MM-DD hh:ii:ss") }}
         {{ util.form_input_text(name="vote_end", label=gettext("End of voting period"), type="datetime-local",
                                 placeholder="YYYY-MM-DD hh:ii:ss") }}
-        {{ util.form_input_text(name="quorum", label=gettext("Quorum"), type="number", defaultvalue="0") }}
+        {{ util.form_input_text(name="abs_quorum", label=gettext("Absolute Quorum"), type="number", defaultvalue="0") }}
+        {{ util.form_input_text(name="rel_quorum", label=gettext("Relative Quorum"), type="number", defaultvalue="0", addon="%") }}
         {{ util.form_input_text(name="vote_extension_end", label=gettext("End of extension"), type="datetime-local",
                                 placeholder="YYYY-MM-DD hh:ii:ss") }}
         {{ util.form_input_text(name="votes", label=gettext("Number of votes"), type="number",

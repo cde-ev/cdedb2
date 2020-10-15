@@ -380,7 +380,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(None, self.assembly.get_ballot(self.key, new_id)['extended'])
         self.login(USER_DICT['kalif'])
         time.sleep(1)
-        self.assertEqual(True, self.assembly.check_voting_priod_extension(self.key, new_id))
+        self.assertEqual(True, self.assembly.check_voting_period_extension(self.key, new_id))
         self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
 
     @as_users("charly")
@@ -461,7 +461,7 @@ class TestAssemblyBackend(BackendTest):
             'votes': None}
         ballot_id = self.assembly.create_ballot(self.key, data)
         time.sleep(1)
-        self.assembly.check_voting_priod_extension(self.key, ballot_id)
+        self.assembly.check_voting_period_extension(self.key, ballot_id)
         self.assertTrue(self.assembly.tally_ballot(self.key, ballot_id))
         self.assembly.external_signup(self.key, new_id,
                                       persona_id=USER_DICT['kalif']['id'])

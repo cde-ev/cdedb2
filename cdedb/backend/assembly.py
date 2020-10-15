@@ -757,7 +757,22 @@ class AssemblyBackend(AbstractBackend):
 
         with Atomizer(rs):
             data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ids)
-            ret = {e['id']: e for e in data}
+            ret = {}
+            for e in data:
+                if "quorum" in e:
+                    raise RuntimeError
+                if e["abs_quorum"]:
+                    e["quorum"] = e["abs_quorum"]
+                elif e["rel_quorum"]:
+                    attendees = self.list_attendees(rs, e["assembly_id"])
+                    query = ("SELECT COUNT(id) FROM core.personas"
+                             " WHERE is_member = TRUE AND id != ANY(%s)")
+                    member_count = unwrap(self.query_one(rs, query, (attendees,)))
+                    total_count = member_count + len(attendees)
+                    e["quorum"] = int(total_count * e["rel_quorum"] / 100 + 1)
+                else:
+                    e["quorum"] = 0
+                ret[e['id']] = e
             data = self.sql_select(
                 rs, "assembly.candidates",
                 ("id", "ballot_id", "title", "shortname"), ids,
@@ -1014,8 +1029,7 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    def check_voting_priod_extension(self, rs: RequestState,
-                                     ballot_id: int) -> bool:
+    def check_voting_period_extension(self, rs: RequestState, ballot_id: int) -> bool:
         """Update extension status w.r.t. quorum.
 
         After the normal voting period has ended an extension is enacted
@@ -1862,8 +1876,8 @@ class AssemblyBackend(AbstractBackend):
                     rs, attachment_id=attachment_id)
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_version_removed,
-                    assembly_id, change_note=
-                    f"{history[version]['title']}: Version {version}")
+                    assembly_id, change_note=f"{history[version]['title']}:"
+                                             f" Version {version}")
             return ret
 
     @access("assembly")

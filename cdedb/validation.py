@@ -3932,7 +3932,8 @@ _BALLOT_COMMON_FIELDS = lambda: {
 _BALLOT_OPTIONAL_FIELDS = lambda: {
     'extended': _bool_or_None,
     'vote_extension_end': _datetime_or_None,
-    'quorum': _int,
+    'abs_quorum': _int,
+    'rel_quorum': _int,
     'votes': _int_or_None,
     'use_bar': _bool,
     'is_tallied': _bool,
@@ -4004,22 +4005,29 @@ def _ballot(val, argname=None, *, creation=False, _convert=True,
                 else:
                     newcandidates[anid] = candidate
         val['candidates'] = newcandidates
-    if ('quorum' in val) != ('vote_extension_end' in val):
+    quorum = None
+    if val.get('abs_quorum') and val.get('rel_quorum'):
+        msg = ValueError(n_("Must not specify both absolute and relative quorum."))
+        errs.append(('abs_quorum', msg))
+        errs.append(('rel_quorum', msg))
+    elif val.get('abs_quorum') or val.get('rel_quorum'):
+        quorum = val.get('abs_quorum')
+        if not quorum:
+            quorum = val.get('rel_quorum')
+    quorum_specified = {'abs_quorum', 'rel_quorum'} & val.keys()
+    if bool(quorum_specified) != ('vote_extension_end' in val):
+        quorum_msg = ValueError(n_(
+            "Must specify a quorum if vote extension end is given."))
         errs.extend(
             [("vote_extension_end",
               ValueError(n_("Must be specified if quorum is given."))),
-             ("quorum", ValueError(
-                 n_("Must be specified if vote extension end is given.")))]
+             ("abs_quorum", quorum_msg),
+             ("rel_quorum", quorum_msg)]
         )
-    if 'quorum' in val and 'vote_extension_end' in val:
-        if not ((val['quorum'] != 0 and val['vote_extension_end'] is not None)
-                or (val['quorum'] == 0 and val['vote_extension_end'] is None)):
-            errs.extend(
-                [("vote_extension_end",
-                  ValueError(n_("Inconsitent with quorum."))),
-                 ("quorum", ValueError(
-                     n_("Inconsitent with vote extension end.")))]
-            )
+    elif quorum_specified and 'vote_extension_end' in val:
+        if (quorum == 0) == (val['vote_extension_end'] is not None):
+            errs.append(("vote_extension_end",
+                         ValueError(n_("Inconsistent with quorum."))))
     return val, errs
 
 
