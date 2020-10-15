@@ -2707,6 +2707,8 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/expuls')
         self.assertPresence('\\kurs')
         self.assertPresence('Planetenretten für Anfänger')
+        self.response = save.click(href='/event/event/1/download/dokuteam_course')
+        self.assertPresence('|cde')
         self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0',
                                    index=0)
         self.assertPresence('documentclass')
