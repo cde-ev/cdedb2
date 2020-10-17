@@ -300,6 +300,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': "Abstimmungen"})
         self.assertPresence("Es wurden noch keine Abstimmungen angelegt.")
         self.traverse({'description': r"\sÜbersicht"})
+        # Make sure assemblies with attendees can be deleted
+        f = self.response.forms['signupform']
+        self.submit(f)
         f = self.response.forms['deleteassemblyform']
         f['ack_delete'].checked = True
         self.submit(f)

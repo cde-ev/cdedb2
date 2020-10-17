@@ -977,6 +977,7 @@ CREATE TABLE assembly.attendees (
 CREATE UNIQUE INDEX idx_attendee_constraint ON assembly.attendees(persona_id, assembly_id);
 GRANT SELECT, INSERT ON assembly.attendees TO cdb_member;
 GRANT UPDATE (secret) ON assembly.attendees TO cdb_admin;
+GRANT DELETE ON assembly.attendees TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_member;
 
 -- register who did already vote for what
