@@ -2684,62 +2684,99 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("garcia")
     def test_downloads(self, user):
+        magic_bytes = {
+            'pdf': b"%PDF",
+            'targz': b"\x1f\x8b",
+            'zip': b"PK\x03\x04",
+        }
+
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/download'},)
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         save = self.response
-        self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=0')
-        self.assertPresence('documentclass')
-        self.assertPresence('Planetenretten für Anfänger')
-        self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=2')
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertLess(1000, len(self.response.body))
-        self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=0')
-        self.assertPresence('documentclass')
-        self.assertPresence('Kalte Kammer')
-        self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=2')
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertLess(1000, len(self.response.body))
-        self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=0')
-        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.assertLess(1000, len(self.response.body))
-        self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=2')
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertLess(1000, len(self.response.body))
-        self.response = save.click(href='/event/event/1/download/courselists\\?runs=0')
-        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.assertLess(1000, len(self.response.body))
-        self.response = save.click(href='/event/event/1/download/courselists\\?runs=2')
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertLess(1000, len(self.response.body))
-        self.response = save.click(href='/event/event/1/download/expuls')
-        self.assertPresence('\\kurs')
-        self.assertPresence('Planetenretten für Anfänger')
-        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0',
-                                   index=0)
-        self.assertPresence('documentclass')
-        self.assertPresence('Heldentum')
-        self.assertPresence('Emilia E.')
-        self.assertNonPresence('Garcia G.')
-        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0&orgas_only=True',
-                                   index=0)
-        self.assertPresence('documentclass')
-        self.assertPresence('Heldentum')
-        self.assertPresence('Emilia E.')
-        self.assertPresence('Garcia G.')
-        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=2',
-                                   index=0)
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertLess(1000, len(self.response.body))
+
+        ## printables
+        # nametags
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=0')
-        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
+        self.assertTrue(self.response.body.startswith(magic_bytes['targz']))
         self.assertLess(1000, len(self.response.body))
         with open("/tmp/output.tar.gz", 'wb') as f:
             f.write(self.response.body)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=2')
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
         self.assertLess(1000, len(self.response.body))
+        # course attendee list
+        self.response = save.click(href='/event/event/1/download/courselists\\?runs=0')
+        self.assertTrue(self.response.body.startswith(magic_bytes['targz']))
+        self.assertLess(1000, len(self.response.body))
+        self.response = save.click(href='/event/event/1/download/courselists\\?runs=2')
+        self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
+        self.assertLess(1000, len(self.response.body))
+        # lodgement inhabitant list
+        self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=0')
+        self.assertTrue(self.response.body.startswith(magic_bytes['targz']))
+        self.assertLess(1000, len(self.response.body))
+        self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=2')
+        self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
+        self.assertLess(1000, len(self.response.body))
+        # course puzzle
+        self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=0')
+        self.assertPresence('documentclass')
+        self.assertPresence('Planetenretten für Anfänger')
+        self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=2')
+        self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
+        self.assertLess(1000, len(self.response.body))
+        # lodgement puzzle
+        self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=0')
+        self.assertPresence('documentclass')
+        self.assertPresence('Kalte Kammer')
+        self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=2')
+        self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
+        self.assertLess(1000, len(self.response.body))
+
+        ## participant lists
+        # public list
+        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0', index=0)
+        self.assertPresence('documentclass')
+        self.assertPresence('Heldentum')
+        self.assertPresence('Emilia E.')
+        self.assertNonPresence('Garcia G.')
+        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=2', index=0)
+        self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
+        self.assertLess(1000, len(self.response.body))
+        # orga list
+        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0&orgas_only=True', index=0)
+        self.assertPresence('documentclass')
+        self.assertPresence('Heldentum')
+        self.assertPresence('Emilia E.')
+        self.assertPresence('Garcia G.')
+
+        ## export
+        # partial event export
+        self.response = save.click(href='/event/event/1/download/partial')
+        self.assertPresence('"kind": "partial",')
+        self.assertPresence('"title": "Langer Kurs",')
+        # registrations
+        self.response = save.click(href='/event/event/1/download/csv_registrations')
+        self.assertIn('reg.id;persona.id;persona.given_names;', self.response.text)
+        # courselist
+        self.response = save.click(href='/event/event/1/download/csv_courses')
+        self.assertIn('course.id;course.course_id;course.nr;', self.response.text)
+        # lodgementlist
+        self.response = save.click(href='/event/event/1/download/csv_lodgements')
+        self.assertIn('lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
+        # courselist for exPuls
+        self.response = save.click(href='/event/event/1/download/expuls')
+        self.assertPresence('\\kurs')
+        self.assertPresence('Planetenretten für Anfänger')
+        # dokuteam courselist
+        self.response = save.click(href='/event/event/1/download/dokuteam_course')
+        self.assertPresence('|cde')
+        # dokuteam participant list
+        self.response = save.click(href='event/event/1/download/dokuteam_participant')
+        self.assertTrue(self.response.body.startswith(magic_bytes['zip']))
+        self.assertLess(500, len(self.response.body))
 
     @as_users("garcia")
     def test_download_export(self, user):

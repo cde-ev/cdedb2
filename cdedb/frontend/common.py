@@ -860,13 +860,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def __init__(self, configpath: PathLike = None, *args: Any,
                  **kwargs: Any) -> None:
         super().__init__(configpath, *args, **kwargs)
+        self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
+                                         "frontend", "templates")
         self.jinja_env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(
-                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
-            extensions=['jinja2.ext.i18n', 'jinja2.ext.do',
-                        'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True,
-            auto_reload=self.conf["CDEDB_DEV"])
+            loader=jinja2.FileSystemLoader(str(self.template_dir)),
+            extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
+            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -934,10 +933,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                   jinjas default syntax is nasty for this.
 
         :param modus: Type of thing we want to generate; can be one of
-
           * web,
           * mail,
-          * tex.
+          * tex,
+          * other.
         :param templatename: file name of template without extension
         """
 
@@ -1012,8 +1011,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         errorsdict: Dict[Optional[str], List[Exception]] = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
-        # here come the always accessible things promised above
 
+        # here come the always accessible things promised above
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
@@ -1033,20 +1032,30 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'user': rs.user,
             'values': rs.values,
         }
+
         # check that default values are not overridden
         if set(data) & set(params):
             raise ValueError(
                 n_("Default values cannot be overridden: %(keys)s"),
                 {'keys': set(data) & set(params)})
         merge_dicts(data, params)
-        if modus == "tex":
-            jinja_env = self.jinja_env_tex
+
+        if modus == "web":
+            jinja_env = self.jinja_env
         elif modus == "mail":
             jinja_env = self.jinja_env_mail
-        else:
+        elif modus == "tex":
+            jinja_env = self.jinja_env_tex
+        elif modus == "other":
             jinja_env = self.jinja_env
-        t = jinja_env.get_template(str(pathlib.Path(
-            modus, self.realm, "{}.tmpl".format(templatename))))
+        else:
+            raise NotImplementedError(n_("Requested modus does not exists: %(modus)s"),
+                                      {'modus': modus})
+        tmpl = pathlib.Path(modus, self.realm, f"{templatename}.tmpl")
+        # sadly, jinja does not catch nicely if the template exists, so we do this here
+        if not (self.template_dir / tmpl).is_file():
+            raise ValueError(n_("Template not found: %(file)s"), {'file': tmpl})
+        t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
 
     @staticmethod
