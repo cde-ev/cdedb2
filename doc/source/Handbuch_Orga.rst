@@ -41,3 +41,8 @@ Zur Verwaltung der Anmeldungen gibt es eine recht ausgefuchste Abfragemaske,
 mit der so ziemlich jede denkbare Anfrage zufriedenstellend beantwortet
 werden können sollte. Ähnliche Seiten gibt es auch für alles rund um Kurse
 und Unterkünfte.
+
+Beachtet, das das **Dokuteam** euch vor, nach und vor allem während eurer
+Veranstaltung kontaktieren wird, um Daten aus der Datenbank zu erhalten, die
+für die Erstellung der Doku benötigt werden.
+Genaueres hierzu findet ihr unter :doc:`Handbuch_Akademieteam_Dokuteam`.
