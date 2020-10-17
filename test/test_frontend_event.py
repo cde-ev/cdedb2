@@ -244,7 +244,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Orgas")
         self.assertPresence("Anmeldungen")
 
-    @as_users("garcia")
+    @as_users("anonymous", "garcia")
     def test_list_events_unprivileged(self, user):
         self.traverse({'description': 'Veranstaltungen'},
                       {'href': '/event/event/list'})
