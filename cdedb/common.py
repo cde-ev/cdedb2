@@ -1715,7 +1715,7 @@ else:
     role_map_type = collections.OrderedDict
 
 #: List of all roles we consider admin roles. Changes in these roles must be
-#: approved by to meta admins in total.
+#: approved by two meta admins in total.
 ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
               "is_finance_admin", "is_event_admin", "is_ml_admin",
               "is_assembly_admin", "is_cdelokal_admin"}
