@@ -46,7 +46,7 @@ from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
     LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
-    InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC
+    InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC, asciificator
 )
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -2682,6 +2682,73 @@ class EventFrontend(AbstractUserFrontend):
         return self.send_file(
             rs, data=tex, inline=False,
             filename="{}_expuls.tex".format(rs.ambience['event']['shortname']))
+
+    @access("event")
+    @event_guard()
+    def download_dokuteam_courselist(self, rs: RequestState, event_id: int) -> Response:
+        """A pipe-seperated courselist for the dokuteam aca-generator script."""
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        if not course_ids:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        data = self.fill_template(
+            rs, "other", "dokuteam_courselist", {'courses': courses})
+        return self.send_file(
+            rs, data=data, inline=False,
+            filename=f"{rs.ambience['event']['shortname']}_dokuteam_courselist.txt")
+
+    @access("event")
+    @event_guard()
+    def download_dokuteam_participant_list(self, rs: RequestState,
+                                           event_id: int) -> Response:
+        """Create participant list per track for dokuteam."""
+        event = self.eventproxy.get_event(rs, event_id)
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        spec = self.make_registration_query_spec(event)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_dir = pathlib.Path(tmp_dir)
+            work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
+            work_dir.mkdir()
+
+            # create one list per track
+            for part in rs.ambience["event"]["parts"].values():
+                for track_id, track in part["tracks"].items():
+                    fields_of_interest = ["persona.given_names", "persona.family_name",
+                                          f"track{track_id}.course_id"]
+                    constrains = [(f"track{track_id}.course_id",
+                                   QueryOperators.nonempty, None)]
+                    order = [("persona.given_names", True)]
+                    query = Query("qview_registration", spec, fields_of_interest,
+                                  constrains, order)
+                    result = self.eventproxy.submit_general_query(rs, query, event_id)
+                    course_key = f"track{track_id}.course_id"
+                    # we have to replace the course id with the course number
+                    result = (
+                        {
+                            k if k != course_key else 'course':
+                                v if k != course_key else courses[v]['nr']
+                            for k, v in entry.items()
+                        }
+                        for entry in result
+                    )
+                    data = self.fill_template(
+                        rs, "other", "dokuteam_participant_list", {'result': result})
+
+                    # save the result in one file per track
+                    filename = f"{asciificator(track['shortname'])}.csv"
+                    file = pathlib.Path(work_dir, filename)
+                    file.write_text(data)
+
+            # create a zip archive of all lists
+            zipname = f"{rs.ambience['event']['shortname']}_dokuteam_participant_list"
+            zippath = shutil.make_archive(tmp_dir / zipname, 'zip', base_dir=work_dir,
+                                          root_dir=tmp_dir)
+
+            return self.send_file(rs, path=zippath, inline=False,
+                                  filename=f"{zipname}.zip")
 
     @access("event")
     @event_guard()
@@ -5597,7 +5664,9 @@ class EventFrontend(AbstractUserFrontend):
         for col in ("is_offered", "takes_place", "attendees"):
             selection_default += list("track{}.{}".format(t_id, col)
                                       for t_id in tracks)
-        default_queries: List[Query] = []
+
+        default_queries = self.conf["DEFAULT_QUERIES_COURSE"](
+            rs.gettext, rs.ambience['event'], spec)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,

@@ -56,7 +56,7 @@ The following fields are avalable in the dynamic tables:
 * ``lodgement{part_id}.notes``
 * ``track{track_id}.course_id``
 * ``track{track_id}.course_instructor``
-* ``track{track_id}.course_is_course_instructor``
+* ``track{track_id}.is_course_instructor``
 * ``course{track_id}.xfield_{field_name}`` *For every track and every custom course datafield.*
 * ``course{track_id}.nr``
 * ``course{track_id}.title``
