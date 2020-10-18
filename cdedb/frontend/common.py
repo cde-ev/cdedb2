@@ -1913,7 +1913,7 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
     if html:
-        link = f'<a href="{staticurl(path, version=version)}"> {label} </a>'
+        link = safe_filter(f'<a href="{staticurl(path, version=version)}"> {label} </a>')
     else:
         host = rs.urls.get_host("")
         link = f"https://{host}{staticurl(path, version=version)}"
@@ -1936,7 +1936,7 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
     if html:
-        link = f'<a href="{docurl(topic, anchor=anchor)}"> {label} </a>'
+        link = safe_filter(f'<a href="{docurl(topic, anchor=anchor)}"> {label} </a>')
     else:
         host = rs.urls.get_host("")
         link = f"https://{host}{docurl(topic, anchor=anchor)}"
