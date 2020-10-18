@@ -9034,7 +9034,7 @@ msgid "Field for Waitlist"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:160
-msgid "Field to store the waitlist ranking of this part. Fieldtype: Integer"
+msgid "Field to store the %(link)s ranking of this part. Fieldtype: Integer"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:168

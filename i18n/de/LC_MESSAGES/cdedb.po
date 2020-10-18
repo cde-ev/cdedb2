@@ -11123,8 +11123,11 @@ msgid "Field for Waitlist"
 msgstr "Wartelistenfeld"
 
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:160
-msgid "Field to store the waitlist ranking of this part. Fieldtype: Integer"
-msgstr "Feld für die Warteliste dieses Veranstaltungsteils. Datentyp: Ganzzahl"
+msgid "Field to store the %(link)s ranking of this part. Fieldtype: Integer"
+msgstr "Feld für die %(link)s dieses Veranstaltungsteils. Datentyp: Ganzzahl"
+
+msgid "Waitlist"
+msgstr "Warteliste"
 
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:168
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:167
