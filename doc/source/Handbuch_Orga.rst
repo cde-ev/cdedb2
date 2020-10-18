@@ -7,6 +7,7 @@ Orgas
 
    Handbuch_Orga_Datenfelder
    Handbuch_Orga_Beitragsmodifikator
+   Handbuch_Orga_Warteliste
    Handbuch_Orga_Mitnahmeversion
    Handbuch_Orga_Template-Renderer
    Handbuch_Orga_Partieller-Import
