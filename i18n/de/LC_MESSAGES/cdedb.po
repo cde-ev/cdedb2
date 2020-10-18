@@ -2421,13 +2421,14 @@ msgstr "Diese Veranstaltung ist für die Offline-Nutzung gesperrt."
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
 
-#: cdedb/frontend/common.py:2129 cdedb/frontend/common.py:2130
-#: cdedb/frontend/common.py:2138
-msgid ""
-"You have only restricted moderator access and may not change subscriptions."
-msgstr ""
-"Du hast nur eingeschränkte Moderator Rechte und kannst keine Abonnements "
-"ändern"
+#: cdedb/frontend/common.py:2191
+msgid "Privileged Moderator"
+msgstr "Priviligierter Moderator"
+
+#: cdedb/frontend/common.py:2194
+#, python-format
+msgid "You have not %(link)s access and may not change subscriptions."
+msgstr "Du hast keine %(link)s Rechte und kannst keine Abonnements ändern"
 
 #: cdedb/frontend/common.py:2134 cdedb/frontend/common.py:2117
 #: cdedb/frontend/common.py:2073 cdedb/frontend/common.py:2135
