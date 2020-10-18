@@ -6,7 +6,7 @@ Mailinglisten Interface der Datenbank bearbeiten. Große Ausnahmen hiervon sind
 die dsa-Liste und Lokalgruppenmailinglisten (aktuell wird am Umzug letzterer
 in die DB gearbeitet).
 
-Abbonennten verwalten
+Abonennten verwalten
 ---------------------
 
 Alle Notwendigen Informationen hierzu findet ihr direkt auf den Seiten

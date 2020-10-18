@@ -48,7 +48,7 @@ Dies hat mehrere Vorteile:
 * Nach dem Nachrücken einer Anmeldung von der Warteliste muss der Inhalt des
   Datenfeldes dieser Anmeldung nicht geändert werden.
 
-Es gibt für jeden Veranstaltungsteil eine Standartabfrage zur Wartelistensortierung,
+Es gibt für jeden Veranstaltungsteil eine Standardabfrage zur Wartelistensortierung,
 diese findet ihr auf der **Anmeldungen** Seite.
 Ist kein Wartelistenfeld für einen Veranstaltungsteil gesetzt, sortiert diese
 Abfrage die Warteliste nach Anmeldezeitpunkt.

@@ -56,9 +56,13 @@ Es gibt verschiedene Möglichkeiten, um Datenfelder zu benutzen:
 **Anmeldung & Fragebogen**
 
     Die Datenbank bietet euch auch die Möglichkeit, Datenfelder vom Typ ``Anmeldung``
-    entweder sofort bei Anmeldung oder später im sogenannten *Fragebogen* von
-    euren Teilnehmern selbst ausfüllen zu lassen. So könntet ihr etwa erfassen,
-    wer Akademiekleidung bestellen möchte oder einen hohen Schlafbedarf hat.
+    entweder sofort bei der Anmeldung oder später im sogenannten *Fragebogen* von
+    euren Teilnehmern selbst ausfüllen zu lassen.
+    Entscheidender Unterschied ist, dass Datenfelder in der Anmeldung
+    **obligatorisch** und im Fragebogen **fakultativ** sind.
+    So könntet ihr etwa erfassen, wer Akademiekleidung bestellen möchte oder
+    einen hohen Schlafbedarf hat.
+
 
 **Datenbank interne Tools**
 

@@ -15,7 +15,7 @@ repository in the VM into your local file system.
 Download
 --------
 
-The vm-images can be downloaded from `the CdE server
+The VM-images can be downloaded from `the CdE server
 <https://ssl.cde-ev.de/cdedb2/images/>`_. The access credentials can be
 found on `the tracker
 <https://tracker.cde-ev.de/gitea/cdedb/cdedb2/wiki/Home>`_.

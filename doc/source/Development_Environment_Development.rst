@@ -17,7 +17,7 @@ working with test data.
 * Replace ``cache=writethrough`` by ``cache=writeback`` or even
   ``cache=unsafe`` when running the VM.
 
-* In the file `/etc/postgresql/11/main/postgresql.conf` in the VM set the
+* In the file `/etc/postgresql/12/main/postgresql.conf` in the VM set the
   following options in the ``WRITE AHEAD LOG`` section::
 
     fsync = off
