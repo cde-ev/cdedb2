@@ -2188,7 +2188,7 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                         "moderators."))
                 if not obj.mlproxy.may_manage(rs, mailinglist_id=arg,
                                               privileged=True):
-                    link = doclink(rs, label=n_("Privileged Moderator"),
+                    link = doclink(rs, label=rs.gettext("Privileged Moderator"),
                                    topic="Handbuch_Moderator",
                                    anchor="privilegierte-moderatoren")
                     rs.notify("info", n_(
