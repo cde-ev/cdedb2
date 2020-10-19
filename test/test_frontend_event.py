@@ -2382,7 +2382,7 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("garcia")
     def test_field_set(self, user):
-        self.get('/event/event/1/field/setselect?reg_ids=1,2')
+        self.get('/event/event/1/field/setselect?ids=1,2')
         self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
         self.assertNonPresence("Inga")
         f = self.response.forms['selectfieldform']

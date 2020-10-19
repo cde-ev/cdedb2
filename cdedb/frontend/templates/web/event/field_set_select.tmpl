@@ -23,16 +23,16 @@
 {% block content %}
     <form action="{{ cdedblink('event/field_set_select') }}" method="GET" id="selectfieldform" class="form-horizontal">
         {{ util.form_input_select("field_id", label=gettext("Field"), entries=fields, small=True) }}
-        {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
+        {{ util.input_hidden(name="ids") }}
         {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink('event/registration_query'), icon="pen", small=True) }}
     </form>
 
-    {% if reg_ids %}
+    {% if entities %}
         <h4 class="mosp">{% trans %}Participants/Registrations to be changed{% endtrans %}</h4>
         <ul>
-            {% for reg_id, registration in registrations.items() %}
-                <li>{{ personas[registration['persona_id']]['given_names'] }}
-                    {{ personas[registration['persona_id']]['family_name'] }}</li>
+            {% for anid, entity in entities.items() %}
+                <li>{{ full_entities[entity['persona_id']]['given_names'] }}
+                    {{ full_entities[entity['persona_id']]['family_name'] }}</li>
             {% endfor %}
         </ul>
     {% endif %}

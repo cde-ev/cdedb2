@@ -29,15 +29,15 @@
     {% if ordered %}
         <form action="{{ cdedblink('event/field_set') }}" method="POST" id="fieldform" class="form-horizontal">
             {{ util.anti_csrf_token('event/field_set') }}
-            {% for registration_id in ordered %}
+            {% for anid in ordered %}
                 {{ util.form_event_field_input(
-                    ambience['event']['fields'][values['field_id']|int], name="input{}".format(registration_id),
-                    label="{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
-                                         personas[registrations[registration_id]['persona_id']]['family_name']),
+                    ambience['event']['fields'][values['field_id']|int], name="input{}".format(anid),
+                    label="{} {}".format(full_entities[entities[anid]['persona_id']]['given_names'],
+                                         full_entities[entities[anid]['persona_id']]['family_name']),
                     force_label=True) }}
             {% endfor %}
             {{ util.input_hidden(name="field_id") }}
-            {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',') if reg_ids else "") }}
+            {{ util.input_hidden(name="ids") }}
             {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/registration_query')) }}
         </form>
     {% else %}

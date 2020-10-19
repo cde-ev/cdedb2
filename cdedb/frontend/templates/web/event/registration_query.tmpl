@@ -124,7 +124,7 @@
                     if (list.length == 0)
                         return;
                     location.href =
-                        "{{ cdedblink('event/field_set_select', magic_placeholders=['reg_ids']) }}"
+                        "{{ cdedblink('event/field_set_select', magic_placeholders=['ids']) }}"
                             .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
                 });
                 $('#btn-edit').click(function(){
