@@ -5935,32 +5935,26 @@ class EventFrontend(AbstractUserFrontend):
         """Select a field for manipulation across all registrations."""
         if rs.has_validation_errors():
             return self.render(rs, "field_set_select")
-        if field_id is None:
-            registrations = self.eventproxy.get_registrations(rs, reg_ids)
-            personas = self.coreproxy.get_personas(
-                rs, tuple(e['persona_id'] for e in registrations.values()))
-            reg_order = xsorted(
-                registrations.keys(),
-                key=lambda anid: EntitySorter.persona(
-                    personas[registrations[anid]['persona_id']]))
-            registrations = OrderedDict(
-                (reg_id, registrations[reg_id]) for reg_id in reg_order)
-            return self.render(rs, "field_set_select",
-                               {'reg_ids': reg_ids,
-                                'registrations': registrations,
-                                'personas': personas})
-        else:
-            if field_id not in rs.ambience['event']['fields']:
-                raise werkzeug.exceptions.NotFound(
-                    n_("Wrong associated event."))
-            field = rs.ambience['event']['fields'][field_id]
-            if field['association'] != const.FieldAssociations.registration:
-                raise werkzeug.exceptions.NotFound(
-                    n_("Wrong associated field."))
-            return self.redirect(rs, "event/field_set_form",
-                                 {'field_id': field_id,
-                                  'reg_ids': (','.join(str(i) for i in reg_ids)
-                                              if reg_ids else None)})
+        if field_id:
+            return self.redirect(
+                rs, "event/field_set_form", {
+                    'reg_ids': reg_ids, 'field_id': field_id})
+        registrations = self.eventproxy.get_registrations(rs, reg_ids)
+        personas = self.coreproxy.get_personas(
+            rs, tuple(e['persona_id'] for e in registrations.values()))
+        reg_order = xsorted(
+            registrations.keys(), key=lambda anid: EntitySorter.persona(
+                personas[registrations[anid]['persona_id']]))
+        registrations = OrderedDict((reg_id, registrations[reg_id])
+                                    for reg_id in reg_order)
+        fields = [(field['id'], field['field_name'])
+                  for field in xsorted(rs.ambience['event']['fields'].values(),
+                                       key=EntitySorter.event_field)
+                  if field['association'] == const.FieldAssociations.registration]
+        return self.render(
+            rs, "field_set_select", {
+                'reg_ids': reg_ids, 'registrations': registrations,
+                'personas': personas, 'fields': fields})
 
     @access("event")
     @REQUESTdata(("field_id", "id"),
@@ -5993,13 +5987,11 @@ class EventFrontend(AbstractUserFrontend):
             key=lambda anid: EntitySorter.persona(
                 personas[registrations[anid]['persona_id']]))
         values = {
-            "input{}".format(registration_id):
-                registration['fields'].get(field['field_name'])
+            f"input{registration_id}": registration['fields'].get(field['field_name'])
             for registration_id, registration in registrations.items()}
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
-            'registrations': registrations, 'personas': personas,
-            'ordered': ordered,
+            'registrations': registrations, 'personas': personas, 'ordered': ordered,
             'reg_ids': reg_ids})
 
     @access("event", modi={"POST"})
@@ -6015,8 +6007,8 @@ class EventFrontend(AbstractUserFrontend):
         if field['association'] != const.FieldAssociations.registration:
             raise werkzeug.exceptions.NotFound(n_("Wrong associated field."))
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        kind = "{}_or_None".format(const.FieldDatatypes(field['kind']).name)
-        data_params = tuple(("input{}".format(registration_id), kind)
+        kind = f"{const.FieldDatatypes(field['kind']).name}_or_None"
+        data_params = tuple((f"input{registration_id}", kind)
                             for registration_id in registration_ids)
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
@@ -6030,15 +6022,11 @@ class EventFrontend(AbstractUserFrontend):
 
         registrations = self.eventproxy.get_registrations(rs, reg_ids)
         code = 1
-        for registration_id, registration in registrations.items():
-            if (data["input{}".format(registration_id)]
-                    != registration['fields'].get(field['field_name'])):
+        for reg_id, reg in registrations.items():
+            if data[f"input{reg_id}"] != reg['fields'].get(field['field_name']):
                 new = {
-                    'id': registration_id,
-                    'fields': {
-                        field['field_name']:
-                            data["input{}".format(registration_id)]
-                    }
+                    'id': reg_id,
+                    'fields': {field['field_name']: data[f"input{reg_id}"]}
                 }
                 code *= self.eventproxy.set_registration(rs, new)
         self.notify_return_code(rs, code)
@@ -6048,12 +6036,11 @@ class EventFrontend(AbstractUserFrontend):
             "qview_registration",
             self.make_registration_query_spec(rs.ambience['event']),
             ("persona.given_names", "persona.family_name", "persona.username",
-             "reg.id", "reg_fields.xfield_{}".format(field["field_name"])),
+             "reg.id", f"reg_fields.xfield_{field['field_name']}"),
             (("reg.id", QueryOperators.oneof, registration_ids),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )
-        return self.redirect(rs, "event/registration_query",
-                             querytoparams_filter(query))
+        return self.redirect(rs, "event/registration_query", querytoparams_filter(query))
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)

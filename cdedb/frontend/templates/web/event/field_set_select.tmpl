@@ -21,15 +21,8 @@
 {{ util.breadcrumb_link(cdedblink("event/field_set_select"), gettext("Set Field"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/field_set_select') }}" method="GET" id="selectfieldform"
-          class="form-horizontal">
-        {#- jinja does not support list comprehension ... #}
-        {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
-                if field['association'] == enums['FieldAssociations'].registration %}
-            {%- do myentries.append((field_id, field['field_name'])) -%}
-        {%- endfor %}
-        {{ util.form_input_select("field_id", label=gettext("Field"), entries=myentries, small=True) }}
+    <form action="{{ cdedblink('event/field_set_select') }}" method="GET" id="selectfieldform" class="form-horizontal">
+        {{ util.form_input_select("field_id", label=gettext("Field"), entries=fields, small=True) }}
         {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
         {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink('event/registration_query'), icon="pen", small=True) }}
     </form>
