@@ -32,8 +32,7 @@
             {% for anid in ordered %}
                 {{ util.form_event_field_input(
                     ambience['event']['fields'][values['field_id']|int], name="input{}".format(anid),
-                    label="{} {}".format(full_entities[entities[anid]['persona_id']]['given_names'],
-                                         full_entities[entities[anid]['persona_id']]['family_name']),
+                    label=labels[anid],
                     force_label=True) }}
             {% endfor %}
             {{ util.input_hidden(name="field_id") }}

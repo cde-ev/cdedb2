@@ -5926,22 +5926,35 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, 'event/checkin')
 
-    def field_aux(self, rs: RequestState, event_id: int, ids: Collection[int],
-                  kind: str):
+    def field_aux(self, rs: RequestState, event_id: int, field_id: Optional[int],
+                  ids: Collection[int], kind: str):
         if kind == "registration":
             field_type = const.FieldAssociations.registration
             if not ids:
                 ids = self.eventproxy.list_registrations(rs, event_id)
             entities = self.eventproxy.get_registrations(rs, ids)
-            full_entities = self.coreproxy.get_personas(
+            personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in entities.values()))
+            labels = {
+                reg_id: (f"{personas[entity['persona_id']]['given_names']}"
+                         f" {personas[entity['persona_id']]['given_names']}")
+                for reg_id, entity in entities.items()}
             ordered_entities = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.persona(
-                    full_entities[entities[anid]['persona_id']]))
+                    personas[entities[anid]['persona_id']]))
         else:
             raise NotImplementedError
 
-        return entities, full_entities, ordered_entities, field_type
+        if field_id:
+            if field_id not in rs.ambience['event']['fields']:
+                raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
+            field = rs.ambience['event']['fields'][field_id]
+            if field['association'] != field_type:
+                raise werkzeug.exceptions.NotFound(n_("Wrong associated field."))
+        else:
+            field = None
+
+        return entities, ordered_entities, labels, field_type, field
 
     @access("event")
     @REQUESTdata(("field_id", "id_or_None"),
@@ -5958,9 +5971,8 @@ class EventFrontend(AbstractUserFrontend):
                 rs, "event/field_set_form", {
                     'ids': (','.join(str(i) for i in ids) if ids else None),
                     'field_id': field_id})
-        entities, full_entities, ordered_entities, field_type = self.field_aux(
-            rs, event_id, ids, kind)
-        entities = OrderedDict((anid, entities[anid]) for anid in ordered_entities)
+        _, ordered_entities, labels, field_type, _ = self.field_aux(
+            rs, event_id, field_id, ids, kind)
         fields = [(field['id'], field['field_name'])
                   for field in xsorted(rs.ambience['event']['fields'].values(),
                                        key=EntitySorter.event_field)
@@ -5968,7 +5980,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(
             rs, "field_set_select", {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
-                'entities': entities, 'full_entities': full_entities, 'fields': fields})
+                'ordered': ordered_entities, 'labels': labels, 'fields': fields})
 
     @access("event")
     @REQUESTdata(("field_id", "id"),
@@ -5985,21 +5997,15 @@ class EventFrontend(AbstractUserFrontend):
         kind = "registration"
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, "event/registration_query")
-        entities, full_entities, ordered_entities, field_type = self.field_aux(
-            rs, event_id, ids, kind)
-        if field_id not in rs.ambience['event']['fields']:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
-        field = rs.ambience['event']['fields'][field_id]
-        if field['association'] != field_type:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated field."))
+        entities, ordered_entities, labels, field_type, field = self.field_aux(
+            rs, event_id, field_id, ids, kind)
 
         values = {f"input{anid}": entity['fields'].get(field['field_name'])
                   for anid, entity in entities.items()}
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
             'ids': (','.join(str(i) for i in ids) if ids else None),
-            'entities': entities, 'full_entities': full_entities,
-            'ordered': ordered_entities})
+            'entities': entities, 'labels': labels, 'ordered': ordered_entities})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("field_id", "id"),
@@ -6012,13 +6018,9 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
                 rs, event_id, internal=True)
-        entities, full_entities, ordered_entities, field_type = self.field_aux(
-            rs, event_id, ids, kind)
-        if field_id not in rs.ambience['event']['fields']:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
-        field = rs.ambience['event']['fields'][field_id]
-        if field['association'] != field_type:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated field."))
+        entities, ordered_entities, _, field_type, field = self.field_aux(
+            rs, event_id, field_id, ids, kind)
+
         field_kind = f"{const.FieldDatatypes(field['kind']).name}_or_None"
         data_params = tuple((f"input{anid}", field_kind) for anid in entities)
         data = request_extractor(rs, data_params)
