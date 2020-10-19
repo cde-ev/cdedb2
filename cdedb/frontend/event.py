@@ -5942,6 +5942,23 @@ class EventFrontend(AbstractUserFrontend):
             ordered_entities = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.persona(
                     personas[entities[anid]['persona_id']]))
+        elif kind == "course":
+            field_type = const.FieldAssociations.course
+            if not ids:
+                ids = self.eventproxy.list_db_courses(rs, event_id)
+            entities = self.eventproxy.get_courses(rs, ids)
+            labels = {course_id: f"{course['nr']} {course['shortname']}"
+                      for course_id, course in entities.items()}
+            ordered_entities = xsorted(
+                entities.keys(), key=lambda anid: EntitySorter.course(entities[anid]))
+        elif kind == "lodgement":
+            field_type = const.FieldAssociations.lodgement
+            if not ids:
+                ids = self.eventproxy.list_lodgements(rs, event_id)
+            entities = self.eventproxy.get_lodgements(rs, ids)
+            labels = {lodg_id: f"ka" for lodg_id, lodg in entities.items()}
+            ordered_entities = xsorted(
+                entities.keys(), key=lambda anid: EntitySorter.lodgement(entities[anid]))
         else:
             raise NotImplementedError
 
@@ -6038,6 +6055,20 @@ class EventFrontend(AbstractUserFrontend):
             entity_name = "reg"
             query_order = ("persona.family_name", True), ("persona.given_names", True)
             query_foi = "persona.given_names", "persona.family_name", "persona.username"
+        elif kind == "course":
+            entity_setter = self.eventproxy.set_course
+            entity_query_spec = self.make_course_query_spec
+            qview = "qview_event_course"
+            entity_name = "course"
+            query_order = ("course.nr", True), ("course.shortname", True)
+            query_foi = "course.nr", "course.shortname", "course.title"
+        elif kind == "lodgement":
+            entity_setter = self.eventproxy.set_lodgement
+            entity_query_spec = self.make_lodgement_query_spec
+            qview = "qview_event_lodgement"
+            entity_name = "lodgement"
+            query_order = ("lodgement.title", True), ("lodgement.id", True)
+            query_foi = "lodgement.title", "lodgement_group.title"
         else:
             raise NotImplementedError
         for anid, entity in entities.items():
