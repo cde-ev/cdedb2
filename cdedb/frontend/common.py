@@ -1913,7 +1913,7 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
     if html:
-        link = safe_filter(f'<a href="{staticurl(path, version=version)}"> {label} </a>')
+        link = safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
         host = rs.urls.get_host("")
         link = f"https://{host}{staticurl(path, version=version)}"
@@ -1936,7 +1936,7 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
     if html:
-        link = safe_filter(f'<a href="{docurl(topic, anchor=anchor)}"> {label} </a>')
+        link = safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
         host = rs.urls.get_host("")
         link = f"https://{host}{docurl(topic, anchor=anchor)}"
@@ -2188,11 +2188,11 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                         "moderators."))
                 if not obj.mlproxy.may_manage(rs, mailinglist_id=arg,
                                               privileged=True):
-                    link = doclink(rs, label=rs.gettext("Privileged Moderator"),
+                    link = doclink(rs, label=rs.gettext("privileged moderator"),
                                    topic="Handbuch_Moderator",
                                    anchor="privilegierte-moderatoren")
                     rs.notify("info", n_(
-                        "You have not %(link)s access and may not change "
+                        "You do not have %(link)s access and may not change "
                         "subscriptions."), {'link': link})
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):

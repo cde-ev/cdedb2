@@ -2422,12 +2422,12 @@ msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
 
 #: cdedb/frontend/common.py:2191
-msgid "Privileged Moderator"
-msgstr "Priviligierter Moderator"
+msgid "privileged moderator"
+msgstr "priviligierter Moderator"
 
 #: cdedb/frontend/common.py:2194
 #, python-format
-msgid "You have not %(link)s access and may not change subscriptions."
+msgid "You do not have %(link)s access and may not change subscriptions."
 msgstr "Du hast keine %(link)s Rechte und kannst keine Abonnements ändern"
 
 #: cdedb/frontend/common.py:2134 cdedb/frontend/common.py:2117
