@@ -5958,19 +5958,19 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("field_id", "id_or_None"),
-                 ("ids", "int_csv_list_or_None"))
+                 ("ids", "int_csv_list_or_None"),
+                 ("kind", "str"))
     @event_guard(check_offline=True)
     def field_set_select(self, rs: RequestState, event_id: int, field_id: int,
-                         ids: Collection[int]) -> Response:
+                         ids: Collection[int], kind: str) -> Response:
         """Select a field for manipulation across all registrations."""
-        kind = "registration"
         if rs.has_validation_errors():
             return self.render(rs, "field_set_select")
         if field_id:
             return self.redirect(
                 rs, "event/field_set_form", {
                     'ids': (','.join(str(i) for i in ids) if ids else None),
-                    'field_id': field_id})
+                    'field_id': field_id, 'kind': kind})
         _, ordered_entities, labels, field_type, _ = self.field_aux(
             rs, event_id, field_id, ids, kind)
         fields = [(field['id'], field['field_name'])
@@ -5980,23 +5980,24 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(
             rs, "field_set_select", {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
-                'ordered': ordered_entities, 'labels': labels, 'fields': fields})
+                'ordered': ordered_entities, 'labels': labels, 'fields': fields,
+                'kind': kind})
 
     @access("event")
     @REQUESTdata(("field_id", "id"),
-                 ("ids", "int_csv_list_or_None"))
+                 ("ids", "int_csv_list_or_None"),
+                 ("kind", "str"))
     @event_guard(check_offline=True)
     def field_set_form(self, rs: RequestState, event_id: int, field_id: int,
-                       ids: Collection[int], internal: bool = False
+                       ids: Collection[int], kind: str, internal: bool = False
                        ) -> Response:
         """Render form.
 
         The internal flag is used if the call comes from another frontend
         function to disable further redirection on validation errors.
         """
-        kind = "registration"
         if rs.has_validation_errors() and not internal:
-            return self.redirect(rs, "event/registration_query")
+            return self.redirect(rs, f"event/{kind}_query")
         entities, ordered_entities, labels, field_type, field = self.field_aux(
             rs, event_id, field_id, ids, kind)
 
@@ -6005,19 +6006,20 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
             'ids': (','.join(str(i) for i in ids) if ids else None),
-            'entities': entities, 'labels': labels, 'ordered': ordered_entities})
+            'entities': entities, 'labels': labels, 'ordered': ordered_entities,
+            'kind': kind})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("field_id", "id"),
-                 ("ids", "int_csv_list_or_None"))
+                 ("ids", "int_csv_list_or_None"),
+                 ("kind", "str"))
     @event_guard(check_offline=True)
     def field_set(self, rs: RequestState, event_id: int, field_id: int,
-                  ids: Collection[int]) -> Response:
+                  ids: Collection[int], kind: str) -> Response:
         """Modify a specific field on all registrations."""
-        kind = "registration"
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
-                rs, event_id, internal=True)
+                rs, event_id, kind=kind, internal=True)
         entities, ordered_entities, _, field_type, field = self.field_aux(
             rs, event_id, field_id, ids, kind)
 
@@ -6026,7 +6028,7 @@ class EventFrontend(AbstractUserFrontend):
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
-                rs, event_id, internal=True)
+                rs, event_id, kind=kind, internal=True)
 
         code = 1
         if kind == "registration":

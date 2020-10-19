@@ -24,6 +24,7 @@
     <form action="{{ cdedblink('event/field_set_select') }}" method="GET" id="selectfieldform" class="form-horizontal">
         {{ util.form_input_select("field_id", label=gettext("Field"), entries=fields, small=True) }}
         {{ util.input_hidden(name="ids") }}
+        {{ util.input_hidden(name="kind") }}
         {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink('event/registration_query'), icon="pen", small=True) }}
     </form>
 
