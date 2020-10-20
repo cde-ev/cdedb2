@@ -751,7 +751,14 @@
             <div id="questionnaire_field_result_{{ FIELD['field_name'] }}">
                 <dt>{{ entry['title'] }}</dt>
                 <dd>
-                    {% if FIELD['kind'] == enums['FieldDatatypes'].bool %}
+                    {% if FIELD['entries'] %}
+                        {% set chosen = registration['fields'].get(FIELD['field_name'])|string %}
+                        {% for option, display_name in FIELD['entries'] %}
+                            {% if chosen == option %}
+                                {{ display_name }}
+                            {% endif %}
+                         {% endfor %}
+                    {% elif FIELD['kind'] == enums['FieldDatatypes'].bool %}
                         {{ deko_checkbox(
                             checked=registration['fields'].get(FIELD['field_name'])) }}
                     {% elif FIELD['kind'] == enums['FieldDatatypes'].date %}
