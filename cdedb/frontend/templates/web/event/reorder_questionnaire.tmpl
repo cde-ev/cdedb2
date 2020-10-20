@@ -90,7 +90,7 @@
         </div>
         {{ util.form_input_text(name="order", anid="input-roworder",
                                 label=gettext("Order"), placeholder=gettext("Nr,Nr,Nr,…"),
-                                defaultvalue=range(0, entries|length)|join(','), small=True) }}
+                                defaultvalue=range(0, questionnaire|length)|join(','), small=True) }}
         {{ util.form_input_submit(value=gettext("Reorder"), small=True, cancellink=cdedblink('event/configure_additional_questionnaire')) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">

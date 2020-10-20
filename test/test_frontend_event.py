@@ -2944,6 +2944,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/questionnaire/config'},
                       {'href': '/event/event/1/questionnaire/reorder'})
         f = self.response.forms['reorderquestionnaireform']
+        self.assertEqual(f['order'].value, "0,1,2,3,4,5")
         f['order'] = '5,3,1,0,2,4'
         self.submit(f)
         self.assertTitle("Fragebogen umordnen (Große Testakademie 2222)")
