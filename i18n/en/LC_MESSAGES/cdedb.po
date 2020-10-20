@@ -7539,7 +7539,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:64
 #: cdedb/frontend/templates/web/event/register.tmpl:169
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:190
-msgid "I want to be lodged seperated by gender."
+msgid "I want to be lodged separated by gender."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:67
@@ -9522,7 +9522,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:196
 #, python-format
 msgid ""
-"I %(consent)sagree that my data, including my name, address and my email, "
+"I %(consent)s agree that my data, including my name, address and my email, "
 "may be sent to other participants of this event beforehand."
 msgstr ""
 
