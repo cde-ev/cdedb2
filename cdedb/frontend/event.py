@@ -3835,8 +3835,8 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             kind = const.QuestionnaireUsages.additional
             rs.notify(
-                "error", n_("Unknown questionnaire kind. Defaulted to {kind}."),
-                {'kind': kind})
+                "error", n_("Unknown questionnaire kind. Defaulted to %(kind)s."),
+                {'kind': repr(kind)})
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         redirects = {
@@ -3875,7 +3875,8 @@ class EventFrontend(AbstractUserFrontend):
         code = self.eventproxy.set_questionnaire(
             rs, event_id, new_questionnaire)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/reorder_questionnaire_form")
+        return self.redirect(rs, "event/reorder_questionnaire_form",
+                             {'kind': kind.value})
 
     @access("event")
     @event_guard()
