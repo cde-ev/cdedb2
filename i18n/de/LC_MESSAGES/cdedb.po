@@ -54,6 +54,7 @@ msgstr "Unzulässiger Bereich."
 #: cdedb/backend/past_event.py:540 cdedb/frontend/common.py:1088
 #: cdedb/backend/assembly.py:294 cdedb/backend/assembly.py:317
 #: cdedb/backend/assembly.py:1710 cdedb/frontend/common.py:1091
+#: cdedb/backend/assembly.py:1889 cdedb/frontend/common.py:1099
 msgid "No input specified."
 msgstr "Keine Eingabe gemacht."
 
@@ -67,7 +68,7 @@ msgstr "Kann nur die ID von exact einer Versammlung bestimmen."
 #: cdedb/backend/past_event.py:533 cdedb/backend/assembly.py:1892
 #: cdedb/backend/assembly.py:317 cdedb/backend/assembly.py:1705
 #: cdedb/backend/past_event.py:532 cdedb/backend/assembly.py:319
-#: cdedb/backend/assembly.py:1712
+#: cdedb/backend/assembly.py:1712 cdedb/backend/assembly.py:1891
 msgid "Too many inputs specified."
 msgstr "Zu viele Eingaben gemacht."
 
@@ -227,6 +228,11 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/backend/ml.py:1203 cdedb/backend/ml.py:1340
 #: cdedb/frontend/core.py:1526 cdedb/frontend/core.py:2144
 #: cdedb/frontend/core.py:2175 cdedb/frontend/core.py:2199
+#: cdedb/backend/assembly.py:1869 cdedb/backend/assembly.py:1896
+#: cdedb/backend/assembly.py:1954 cdedb/frontend/core.py:1530
+#: cdedb/frontend/core.py:1544 cdedb/frontend/core.py:2148
+#: cdedb/frontend/core.py:2162 cdedb/frontend/core.py:2193
+#: cdedb/frontend/core.py:2217 cdedb/frontend/event.py:6168
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -489,6 +495,7 @@ msgstr "Fehlende Zugriffsrechte zum Anlegen eines Dateianhangs."
 #: cdedb/backend/assembly.py:1638 cdedb/backend/assembly.py:1389
 #: cdedb/backend/assembly.py:1441 cdedb/backend/assembly.py:1591
 #: cdedb/backend/assembly.py:1623 cdedb/backend/assembly.py:1645
+#: cdedb/backend/assembly.py:1824
 msgid ""
 "Unable to change attachment once voting has begun or the assembly has been "
 "concluded."
@@ -533,7 +540,7 @@ msgstr "Fehlende Zugriffsrechte zum Hinzufügen einer neuen Dateiversion."
 msgid "Must have privileged access to change attachment version."
 msgstr "Fehlende Zugriffsrechte zum Verändern einer Dateiversion."
 
-#: cdedb/backend/assembly.py:1826
+#: cdedb/backend/assembly.py:1826 cdedb/backend/assembly.py:1821
 msgid "Must have privileged access to remove attachment version."
 msgstr "Fehlende Zugriffsrechte zum Löschen einer Dateiversion."
 
@@ -541,7 +548,7 @@ msgstr "Fehlende Zugriffsrechte zum Löschen einer Dateiversion."
 #: cdedb/backend/assembly.py:1830 cdedb/frontend/assembly.py:922
 #: cdedb/frontend/assembly.py:935 cdedb/backend/assembly.py:1643
 #: cdedb/frontend/assembly.py:868 cdedb/backend/assembly.py:1650
-#: cdedb/frontend/assembly.py:867
+#: cdedb/frontend/assembly.py:867 cdedb/backend/assembly.py:1829
 msgid "This version does not exist."
 msgstr "Diese Version der Datei existiert nicht."
 
@@ -549,7 +556,7 @@ msgstr "Diese Version der Datei existiert nicht."
 #: cdedb/backend/assembly.py:1832 cdedb/frontend/assembly.py:925
 #: cdedb/frontend/assembly.py:938 cdedb/backend/assembly.py:1645
 #: cdedb/frontend/assembly.py:871 cdedb/backend/assembly.py:1652
-#: cdedb/frontend/assembly.py:870
+#: cdedb/frontend/assembly.py:870 cdedb/backend/assembly.py:1831
 msgid "This version has already been deleted."
 msgstr "Diese Version der Datei wurde beireits gelöscht."
 
@@ -558,7 +565,7 @@ msgstr "Diese Version der Datei wurde beireits gelöscht."
 #: cdedb/backend/assembly.py:1835 cdedb/frontend/assembly.py:929
 #: cdedb/frontend/assembly.py:942 cdedb/backend/assembly.py:1648
 #: cdedb/frontend/assembly.py:875 cdedb/backend/assembly.py:1655
-#: cdedb/frontend/assembly.py:874
+#: cdedb/frontend/assembly.py:874 cdedb/backend/assembly.py:1834
 msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
@@ -602,7 +609,7 @@ msgstr "Kein Saldo für fehlgeschlagene Transaktion angegeben."
 #: cdedb/backend/common.py:588 cdedb/database/constants.py:315
 #: cdedb/database/constants.py:333 cdedb/frontend/cde.py:567
 #: cdedb/frontend/cde.py:732 cdedb/frontend/common.py:1346
-#: cdedb/frontend/common.py:1401
+#: cdedb/frontend/common.py:1401 cdedb/frontend/common.py:1409
 msgid "Impossible."
 msgstr "Unmöglich."
 
@@ -724,7 +731,7 @@ msgstr "Modifikation fehlgeschlagen."
 #: cdedb/frontend/core.py:1624 cdedb/frontend/core.py:1648
 #: cdedb/backend/core.py:625 cdedb/backend/core.py:2147
 #: cdedb/backend/core.py:2169 cdedb/frontend/core.py:1610
-#: cdedb/frontend/core.py:1631
+#: cdedb/frontend/core.py:1631 cdedb/frontend/core.py:1649
 msgid "Nonexistent user."
 msgstr "Nutzer existiert nicht."
 
@@ -794,6 +801,7 @@ msgstr "Spezialänderung nicht vollzogen."
 #: cdedb/frontend/core.py:1173 cdedb/frontend/core.py:1255
 #: cdedb/frontend/core.py:1175 cdedb/frontend/core.py:1257
 #: cdedb/frontend/core.py:1189 cdedb/frontend/core.py:1271
+#: cdedb/frontend/core.py:1207 cdedb/frontend/core.py:1289
 msgid "Cannot modify own meta admin privileges."
 msgstr "Die eigenen Meta-Admin-Privilegien können nicht bearbeitet werden."
 
@@ -815,6 +823,7 @@ msgstr "Ungültiger Status für Änderung der Admin-Privilegien: %(status)s."
 #: cdedb/frontend/core.py:1267 cdedb/frontend/core.py:1291
 #: cdedb/backend/core.py:940 cdedb/frontend/core.py:1258
 #: cdedb/frontend/core.py:1260 cdedb/frontend/core.py:1274
+#: cdedb/frontend/core.py:1292
 msgid ""
 "Only a different admin than the submitter may approve a privilege change."
 msgstr ""
@@ -895,7 +904,7 @@ msgstr "Löschen von E-Mail-Adressen nur durch Admins."
 #: cdedb/backend/core.py:1458 cdedb/frontend/core.py:1771
 #: cdedb/frontend/core.py:1795 cdedb/backend/core.py:1509
 #: cdedb/frontend/core.py:1755 cdedb/frontend/core.py:1764
-#: cdedb/frontend/core.py:1778
+#: cdedb/frontend/core.py:1778 cdedb/frontend/core.py:1796
 msgid "Name collision."
 msgstr "E-Mail-Adresse bereits vorhanden."
 
@@ -906,7 +915,8 @@ msgstr "E-Mail-Adresse bereits vorhanden."
 #: cdedb/backend/core.py:1529 cdedb/frontend/core.py:1953
 #: cdedb/frontend/core.py:2198 cdedb/frontend/core.py:1961
 #: cdedb/frontend/core.py:2201 cdedb/frontend/core.py:1975
-#: cdedb/frontend/core.py:2215
+#: cdedb/frontend/core.py:2215 cdedb/frontend/core.py:1993
+#: cdedb/frontend/core.py:2233
 msgid "Failed."
 msgstr "Aktion fehlgeschlagen."
 
@@ -972,6 +982,7 @@ msgstr "Zurücksetzen von Admin-Account verhindert."
 #: cdedb/backend/core.py:2029 cdedb/frontend/common.py:1917
 #: cdedb/backend/core.py:1978 cdedb/frontend/common.py:1876
 #: cdedb/backend/core.py:2015 cdedb/frontend/common.py:1930
+#: cdedb/frontend/common.py:1938
 msgid "Link expired."
 msgstr "Link abgelaufen."
 
@@ -1014,7 +1025,7 @@ msgstr "Kein neues Password angegeben."
 #: cdedb/frontend/cde.py:1218 cdedb/backend/core.py:2079
 #: cdedb/frontend/cde.py:1198 cdedb/frontend/event.py:2194
 #: cdedb/backend/core.py:2116 cdedb/frontend/event.py:2287
-#: cdedb/frontend/common.py:1314
+#: cdedb/frontend/common.py:1314 cdedb/frontend/common.py:1322
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
 
@@ -1227,13 +1238,13 @@ msgstr "Dies ist nicht unterstützt."
 #: cdedb/backend/event.py:2981 cdedb/frontend/assembly.py:456
 #: cdedb/frontend/event.py:485 cdedb/frontend/event.py:4090
 #: cdedb/frontend/event.py:480 cdedb/frontend/event.py:4073
-#: cdedb/frontend/assembly.py:458
+#: cdedb/frontend/assembly.py:458 cdedb/frontend/event.py:4131
 msgid "This user does not exist or is archived."
 msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
 
 #: cdedb/backend/event.py:2983 cdedb/frontend/event.py:488
 #: cdedb/frontend/event.py:4094 cdedb/frontend/event.py:483
-#: cdedb/frontend/event.py:4077
+#: cdedb/frontend/event.py:4077 cdedb/frontend/event.py:4135
 msgid "This user is not an event user."
 msgstr "Dieser Nutzer ist kein Veranstaltungsnutzer."
 
@@ -1449,57 +1460,57 @@ msgid "Failed to locate repository"
 msgstr "Konnte das Repository nicht finden."
 
 #: cdedb/config.py:104 cdedb/config.py:102 cdedb/config.py:89
-#: cdedb/config.py:93
+#: cdedb/config.py:93 cdedb/config.py:107
 msgid "00_query_event_registration_all"
 msgstr "Alle Anmeldungen"
 
 #: cdedb/config.py:109 cdedb/config.py:107 cdedb/config.py:94
-#: cdedb/config.py:98
+#: cdedb/config.py:98 cdedb/config.py:112
 msgid "02_query_event_registration_orgas"
 msgstr "Orgas"
 
 #: cdedb/config.py:114 cdedb/config.py:112 cdedb/config.py:99
-#: cdedb/config.py:103
+#: cdedb/config.py:103 cdedb/config.py:117
 msgid "10_query_event_registration_not_paid"
 msgstr "Noch nicht bezahlt"
 
 #: cdedb/config.py:119 cdedb/config.py:117 cdedb/config.py:104
-#: cdedb/config.py:108
+#: cdedb/config.py:108 cdedb/config.py:122
 msgid "12_query_event_registration_paid"
 msgstr "Bezahlt"
 
 #: cdedb/config.py:125 cdedb/config.py:123 cdedb/config.py:110
-#: cdedb/config.py:114
+#: cdedb/config.py:114 cdedb/config.py:128
 msgid "14_query_event_registration_participants"
 msgstr "Alle Teilnehmer"
 
 #: cdedb/config.py:132 cdedb/config.py:130 cdedb/config.py:125
-#: cdedb/config.py:121
+#: cdedb/config.py:121 cdedb/config.py:135
 msgid "20_query_event_registration_non_members"
 msgstr "Nicht-Mitglieder"
 
 #: cdedb/config.py:137 cdedb/config.py:135 cdedb/config.py:130
-#: cdedb/config.py:126
+#: cdedb/config.py:126 cdedb/config.py:140
 msgid "30_query_event_registration_orga_notes"
 msgstr "Orga-Notizen"
 
 #: cdedb/config.py:142 cdedb/config.py:140 cdedb/config.py:135
-#: cdedb/config.py:131
+#: cdedb/config.py:131 cdedb/config.py:145
 msgid "40_query_event_registration_u18"
 msgstr "U18"
 
 #: cdedb/config.py:149 cdedb/config.py:147 cdedb/config.py:142
-#: cdedb/config.py:138
+#: cdedb/config.py:138 cdedb/config.py:152
 msgid "42_query_event_registration_u16"
 msgstr "U16"
 
 #: cdedb/config.py:156 cdedb/config.py:154 cdedb/config.py:149
-#: cdedb/config.py:145
+#: cdedb/config.py:145 cdedb/config.py:159
 msgid "44_query_event_registration_u14"
 msgstr "U14"
 
 #: cdedb/config.py:163 cdedb/config.py:161 cdedb/config.py:156
-#: cdedb/config.py:152
+#: cdedb/config.py:152 cdedb/config.py:166
 msgid "50_query_event_registration_minors_no_consent"
 msgstr "U18 ohne Einverständniserklärung"
 
@@ -1509,76 +1520,78 @@ msgid "60_query_dokuteam_course_export"
 msgstr "Kursexport Dokuteam"
 
 #: cdedb/config.py:176 cdedb/config.py:174 cdedb/config.py:169
-#: cdedb/config.py:165
+#: cdedb/config.py:165 cdedb/config.py:183
 msgid "62_query_dokuteam_address_export"
 msgstr "Adressexport Dokuteam"
 
 #: cdedb/config.py:190 cdedb/config.py:208 cdedb/config.py:188
 #: cdedb/config.py:206 cdedb/config.py:179 cdedb/config.py:197
+#: cdedb/config.py:196 cdedb/config.py:214
 msgid "17_query_event_registration_waitlist"
 msgstr "Warteliste"
 
 #: cdedb/config.py:197 cdedb/config.py:195 cdedb/config.py:186
+#: cdedb/config.py:203
 msgid "16_query_event_registration_waitlist"
 msgstr "Warteliste"
 
 #: cdedb/config.py:439 cdedb/config.py:437 cdedb/config.py:391
-#: cdedb/config.py:428
+#: cdedb/config.py:428 cdedb/config.py:469
 msgid "00_query_cde_user_all"
 msgstr "Alle Nutzer"
 
 #: cdedb/config.py:445 cdedb/config.py:443 cdedb/config.py:397
-#: cdedb/config.py:434
+#: cdedb/config.py:434 cdedb/config.py:475
 msgid "10_query_cde_user_trial_members"
 msgstr "Probemitglieder"
 
 #: cdedb/config.py:451 cdedb/config.py:449 cdedb/config.py:403
-#: cdedb/config.py:440
+#: cdedb/config.py:440 cdedb/config.py:481
 msgid "20_query_cde_user_expuls"
 msgstr "Adressexport exPuls"
 
 #: cdedb/config.py:461 cdedb/config.py:459 cdedb/config.py:413
-#: cdedb/config.py:450
+#: cdedb/config.py:450 cdedb/config.py:491
 msgid "00_query_archived_persona_all"
 msgstr "Alle archivierten Nutzer"
 
 #: cdedb/config.py:470 cdedb/config.py:468 cdedb/config.py:422
-#: cdedb/config.py:459
+#: cdedb/config.py:459 cdedb/config.py:500
 msgid "00_query_event_user_all"
 msgstr "Alle Nutzer"
 
 #: cdedb/config.py:476 cdedb/config.py:474 cdedb/config.py:428
-#: cdedb/config.py:465
+#: cdedb/config.py:465 cdedb/config.py:506
 msgid "10_query_event_user_minors"
 msgstr "Minderjährige"
 
 #: cdedb/config.py:486 cdedb/config.py:484 cdedb/config.py:438
-#: cdedb/config.py:475
+#: cdedb/config.py:475 cdedb/config.py:516
 msgid "00_query_core_user_all"
 msgstr "Alle Nutzer"
 
 #: cdedb/config.py:492 cdedb/config.py:490 cdedb/config.py:444
-#: cdedb/config.py:481
+#: cdedb/config.py:481 cdedb/config.py:522
 msgid "10_query_core_any_admin"
 msgstr "Alle Admins"
 
 #: cdedb/config.py:504 cdedb/config.py:502 cdedb/config.py:456
-#: cdedb/config.py:493
+#: cdedb/config.py:493 cdedb/config.py:534
 msgid "00_query_assembly_user_all"
 msgstr "Alle Nutzer"
 
 #: cdedb/config.py:510 cdedb/config.py:508 cdedb/config.py:462
-#: cdedb/config.py:499
+#: cdedb/config.py:499 cdedb/config.py:540
 msgid "02_query_assembly_user_admin"
 msgstr "Admins"
 
 #: cdedb/config.py:519 cdedb/config.py:517 cdedb/config.py:471
-#: cdedb/config.py:508
+#: cdedb/config.py:508 cdedb/config.py:549
 msgid "00_query_ml_user_all"
 msgstr "Alle Nutzer"
 
 #: cdedb/config.py:525 cdedb/config.py:523 cdedb/config.py:477
-#: cdedb/config.py:514
+#: cdedb/config.py:514 cdedb/config.py:555
 msgid "02_query_ml_user_admin"
 msgstr "Admins"
 
@@ -1696,6 +1709,9 @@ msgstr "Dieser Nutzer ist kein Wahlleiter für diese Versammlung."
 #: cdedb/frontend/core.py:2338 cdedb/frontend/event.py:1368
 #: cdedb/frontend/ml_base.py:464 cdedb/frontend/core.py:2319
 #: cdedb/frontend/core.py:2352 cdedb/frontend/ml_base.py:477
+#: cdedb/frontend/core.py:2337 cdedb/frontend/core.py:2370
+#: cdedb/frontend/event.py:4170 cdedb/frontend/event.py:4790
+#: cdedb/frontend/event.py:6075 cdedb/frontend/event.py:6107
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
@@ -1739,6 +1755,9 @@ msgstr "Mitglieder müssen sich selbst anmelden."
 #: cdedb/frontend/event.py:2712 cdedb/frontend/event.py:2737
 #: cdedb/frontend/event.py:2760 cdedb/frontend/event.py:2774
 #: cdedb/frontend/ml_base.py:580 cdedb/frontend/ml_base.py:593
+#: cdedb/frontend/event.py:2677 cdedb/frontend/event.py:2743
+#: cdedb/frontend/event.py:2766 cdedb/frontend/event.py:2791
+#: cdedb/frontend/event.py:2814 cdedb/frontend/event.py:2828
 msgid "Empty File."
 msgstr "Leere Datei."
 
@@ -2023,7 +2042,11 @@ msgstr "Kein Account mit ID %(p_id)s gefunden."
 #: cdedb/frontend/core.py:1342 cdedb/frontend/core.py:1408
 #: cdedb/frontend/core.py:1465 cdedb/frontend/core.py:1490
 #: cdedb/frontend/core.py:1514 cdedb/frontend/core.py:1834
-#: cdedb/frontend/core.py:1870
+#: cdedb/frontend/core.py:1870 cdedb/frontend/core.py:1033
+#: cdedb/frontend/core.py:1112 cdedb/frontend/core.py:1360
+#: cdedb/frontend/core.py:1426 cdedb/frontend/core.py:1508
+#: cdedb/frontend/core.py:1532 cdedb/frontend/core.py:1852
+#: cdedb/frontend/core.py:1888
 msgid "Persona is archived."
 msgstr "Account ist archiviert."
 
@@ -2072,6 +2095,7 @@ msgstr "%(num)s Überweisungen gebucht. %(new_members)s neue Mitglieder."
 #: cdedb/frontend/cde.py:1424 cdedb/frontend/core.py:1473
 #: cdedb/frontend/cde.py:1404 cdedb/frontend/core.py:1439
 #: cdedb/frontend/core.py:1442 cdedb/frontend/core.py:1456
+#: cdedb/frontend/core.py:1474
 msgid "Permit revoked."
 msgstr "Lastschriftmandat widerrufen."
 
@@ -2239,7 +2263,7 @@ msgstr "*Hier gibt es noch nichts.*"
 #: cdedb/frontend/common.py:185 cdedb/frontend/common.py:1191
 #: cdedb/frontend/common.py:182 cdedb/frontend/common.py:1179
 #: cdedb/frontend/common.py:180 cdedb/frontend/common.py:1146
-#: cdedb/frontend/common.py:1192
+#: cdedb/frontend/common.py:1192 cdedb/frontend/common.py:1200
 msgid "Failed validation."
 msgstr "Validierung fehlgeschlagen."
 
@@ -2256,32 +2280,34 @@ msgstr "Standardwerte können nicht überschrieben werden: %(keys)s"
 
 #: cdedb/frontend/common.py:1092 cdedb/frontend/common.py:1080
 #: cdedb/frontend/common.py:1090 cdedb/frontend/common.py:1093
+#: cdedb/frontend/common.py:1101
 msgid "Ambiguous input."
 msgstr "Uneindeutige Eingabe."
 
 #: cdedb/frontend/common.py:1108 cdedb/frontend/common.py:1096
-#: cdedb/frontend/common.py:1109
+#: cdedb/frontend/common.py:1109 cdedb/frontend/common.py:1117
 msgid "Invalid datatype read from file."
 msgstr "Ungültiger Datentyp aus Datei eingelesen."
 
 #: cdedb/frontend/common.py:1115 cdedb/frontend/common.py:1103
-#: cdedb/frontend/common.py:1116
+#: cdedb/frontend/common.py:1116 cdedb/frontend/common.py:1124
 msgid "Invalid input type."
 msgstr "Ungültiger Eingabetyp."
 
 #: cdedb/frontend/common.py:1154 cdedb/frontend/common.py:1142
-#: cdedb/frontend/common.py:1155
+#: cdedb/frontend/common.py:1155 cdedb/frontend/common.py:1163
 msgid "Cannot download query result without fields of interest."
 msgstr ""
 "Download eines Abfrageergebnis nicht möglich ohne selektierte Ausgabefelder."
 
 #: cdedb/frontend/common.py:1169 cdedb/frontend/common.py:1157
-#: cdedb/frontend/common.py:1170
+#: cdedb/frontend/common.py:1170 cdedb/frontend/common.py:1178
 msgid "Unknown download kind {kind}."
 msgstr "Unbekannte Downloadart {kind}."
 
 #: cdedb/frontend/common.py:1193 cdedb/frontend/common.py:1181
 #: cdedb/frontend/common.py:1148 cdedb/frontend/common.py:1194
+#: cdedb/frontend/common.py:1202
 msgid "The database currently undergoes maintenance and is unavailable."
 msgstr ""
 "Es werden derzeit Wartungsarbeiten an der Datenbank vorgenommen und diese "
@@ -2289,6 +2315,7 @@ msgstr ""
 
 #: cdedb/frontend/common.py:1248 cdedb/frontend/common.py:1236
 #: cdedb/frontend/common.py:1200 cdedb/frontend/common.py:1249
+#: cdedb/frontend/common.py:1257
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
@@ -2301,6 +2328,8 @@ msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 #: cdedb/frontend/core.py:2289 cdedb/frontend/core.py:1264
 #: cdedb/frontend/core.py:2294 cdedb/frontend/common.py:1380
 #: cdedb/frontend/core.py:1278 cdedb/frontend/core.py:2308
+#: cdedb/frontend/common.py:1388 cdedb/frontend/core.py:1296
+#: cdedb/frontend/core.py:2326
 msgid "Change committed."
 msgstr "Die Änderung wurde übernommen."
 
@@ -2311,17 +2340,20 @@ msgstr "Die Änderung wurde übernommen."
 #: cdedb/frontend/common.py:1326 cdedb/frontend/core.py:834
 #: cdedb/frontend/core.py:1007 cdedb/frontend/core.py:858
 #: cdedb/frontend/core.py:1011 cdedb/frontend/common.py:1381
-#: cdedb/frontend/core.py:1025
+#: cdedb/frontend/core.py:1025 cdedb/frontend/common.py:1389
+#: cdedb/frontend/core.py:1043
 msgid "Change pending."
 msgstr "Die Änderung wartet auf Bestätigung."
 
 #: cdedb/frontend/common.py:1381 cdedb/frontend/common.py:1369
 #: cdedb/frontend/common.py:1327 cdedb/frontend/common.py:1382
+#: cdedb/frontend/common.py:1390
 msgid "Change failed."
 msgstr "Änderung fehlgeschlagen."
 
 #: cdedb/frontend/common.py:1440 cdedb/frontend/common.py:1428
 #: cdedb/frontend/common.py:1387 cdedb/frontend/common.py:1441
+#: cdedb/frontend/common.py:1449
 msgid ""
 "LaTeX compilation failed. Try downloading the source files and compiling "
 "them manually."
@@ -2331,55 +2363,66 @@ msgstr ""
 
 #: cdedb/frontend/common.py:1631 cdedb/frontend/common.py:1619
 #: cdedb/frontend/common.py:1579 cdedb/frontend/common.py:1632
+#: cdedb/frontend/common.py:1640
 msgid "Inconsistent request."
 msgstr "Inkonsistente Anfrage."
 
 #: cdedb/frontend/common.py:1709 cdedb/frontend/common.py:1697
 #: cdedb/frontend/common.py:1657 cdedb/frontend/common.py:1710
+#: cdedb/frontend/common.py:1718
 msgid "Object {param}={value} not found"
 msgstr "Objekt {param}={value} wurde nicht gefunden."
 
 #: cdedb/frontend/common.py:1755 cdedb/frontend/common.py:1743
 #: cdedb/frontend/common.py:1705 cdedb/frontend/common.py:1756
+#: cdedb/frontend/common.py:1764
 msgid "You must login."
 msgstr "Login benötigt."
 
 #: cdedb/frontend/common.py:1759 cdedb/frontend/common.py:1747
 #: cdedb/frontend/common.py:1709 cdedb/frontend/common.py:1760
+#: cdedb/frontend/common.py:1768
 msgid "Access denied to {realm}/{endpoint}."
 msgstr "Zugriff auf {realm}/{endpoint} verweigert."
 
 #: cdedb/frontend/common.py:1846 cdedb/frontend/common.py:1834
 #: cdedb/frontend/common.py:1795 cdedb/frontend/common.py:1847
+#: cdedb/frontend/common.py:1855
 msgid "Magic URL parameter replacement failed."
 msgstr "Ersetzung magischer URL-Parameter fehlgeschlagen."
 
 #: cdedb/frontend/common.py:1931 cdedb/frontend/common.py:1919
 #: cdedb/frontend/common.py:1878 cdedb/frontend/common.py:1932
+#: cdedb/frontend/common.py:1940
 msgid "Link invalid."
 msgstr "Link ungültig."
 
 #: cdedb/frontend/common.py:1975 cdedb/frontend/common.py:1963
 #: cdedb/frontend/common.py:1922 cdedb/frontend/common.py:1976
+#: cdedb/frontend/common.py:1984
 msgid "Invalid argtype {t} found."
 msgstr "Ungültiger Argumenttyp {t}."
 
 #: cdedb/frontend/common.py:2088 cdedb/frontend/common.py:2076
 #: cdedb/frontend/common.py:2032 cdedb/frontend/common.py:2089
+#: cdedb/frontend/common.py:2097
 msgid "This page can only be accessed by orgas."
 msgstr "Auf diese Seite können nur Orgas zugreifen."
 
 #: cdedb/frontend/common.py:2093 cdedb/frontend/common.py:2081
 #: cdedb/frontend/common.py:2037 cdedb/frontend/common.py:2094
+#: cdedb/frontend/common.py:2102
 msgid "This event is locked for offline usage."
 msgstr "Diese Veranstaltung ist für die Offline-Nutzung gesperrt."
 
 #: cdedb/frontend/common.py:2124 cdedb/frontend/common.py:2112
 #: cdedb/frontend/common.py:2068 cdedb/frontend/common.py:2125
+#: cdedb/frontend/common.py:2133
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
 
 #: cdedb/frontend/common.py:2129 cdedb/frontend/common.py:2130
+#: cdedb/frontend/common.py:2138
 msgid ""
 "You have only restricted moderator access and may not change subscriptions."
 msgstr ""
@@ -2388,10 +2431,12 @@ msgstr ""
 
 #: cdedb/frontend/common.py:2134 cdedb/frontend/common.py:2117
 #: cdedb/frontend/common.py:2073 cdedb/frontend/common.py:2135
+#: cdedb/frontend/common.py:2143
 msgid "This page can only be accessed by appropriate admins."
 msgstr "Auf diese Seite können nur Administratoren zugreifen."
 
 #: cdedb/frontend/common.py:2156 cdedb/frontend/common.py:2157
+#: cdedb/frontend/common.py:2165
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
@@ -2478,6 +2523,9 @@ msgstr "Zugriff auf Mitgliedsdatensatz ohne Datenschutz-Einwilligung."
 #: cdedb/frontend/core.py:1851 cdedb/frontend/core.py:1013
 #: cdedb/frontend/core.py:1043 cdedb/frontend/core.py:1681
 #: cdedb/frontend/core.py:1846 cdedb/frontend/core.py:1865
+#: cdedb/frontend/core.py:1031 cdedb/frontend/core.py:1061
+#: cdedb/frontend/core.py:1699 cdedb/frontend/core.py:1850
+#: cdedb/frontend/core.py:1883
 msgid "Not a relative admin."
 msgstr "Nicht genug Adminprivilegien für diesen Account."
 
@@ -2487,6 +2535,7 @@ msgid "No account found."
 msgstr "Kein Account gefunden."
 
 #: cdedb/frontend/core.py:945 cdedb/frontend/core.py:962
+#: cdedb/frontend/core.py:963
 msgid "No valid realm."
 msgstr "Kein gültiger Bereich."
 
@@ -2496,12 +2545,14 @@ msgstr "Kein gültiger Bereich."
 #: cdedb/frontend/core.py:1085 cdedb/frontend/core.py:1114
 #: cdedb/frontend/core.py:1087 cdedb/frontend/core.py:1116
 #: cdedb/frontend/core.py:1101 cdedb/frontend/core.py:1130
+#: cdedb/frontend/core.py:1119 cdedb/frontend/core.py:1148
 msgid "Resolve pending privilege change first."
 msgstr "Schließe erst die ausstehende Änderung der Admin-Privlilegien ab."
 
 #: cdedb/frontend/core.py:1159 cdedb/frontend/core.py:1153
 #: cdedb/frontend/core.py:1177 cdedb/frontend/core.py:1144
 #: cdedb/frontend/core.py:1146 cdedb/frontend/core.py:1160
+#: cdedb/frontend/core.py:1178
 msgid ""
 "Cannot grant meta, core, CdE or CdElokal admin privileges to non CdE users."
 msgstr ""
@@ -2511,12 +2562,14 @@ msgstr ""
 #: cdedb/frontend/core.py:1167 cdedb/frontend/core.py:1161
 #: cdedb/frontend/core.py:1185 cdedb/frontend/core.py:1152
 #: cdedb/frontend/core.py:1154 cdedb/frontend/core.py:1168
+#: cdedb/frontend/core.py:1186
 msgid "Cannot grant finance admin privileges to non CdE admins."
 msgstr "Nur CdE Admins können Finanz Admin werden."
 
 #: cdedb/frontend/core.py:1172 cdedb/frontend/core.py:1166
 #: cdedb/frontend/core.py:1190 cdedb/frontend/core.py:1157
 #: cdedb/frontend/core.py:1159 cdedb/frontend/core.py:1173
+#: cdedb/frontend/core.py:1191
 msgid ""
 "Cannot grant mailinglist or CdElokal admin privileges to non mailinglist "
 "users."
@@ -2527,18 +2580,21 @@ msgstr ""
 #: cdedb/frontend/core.py:1178 cdedb/frontend/core.py:1172
 #: cdedb/frontend/core.py:1196 cdedb/frontend/core.py:1163
 #: cdedb/frontend/core.py:1165 cdedb/frontend/core.py:1179
+#: cdedb/frontend/core.py:1197
 msgid "Cannot grant event admin privileges to non event users."
 msgstr "Nur Veranstaltungs Nutzer können Veranstaltungs Admin werden."
 
 #: cdedb/frontend/core.py:1183 cdedb/frontend/core.py:1177
 #: cdedb/frontend/core.py:1201 cdedb/frontend/core.py:1168
 #: cdedb/frontend/core.py:1170 cdedb/frontend/core.py:1184
+#: cdedb/frontend/core.py:1202
 msgid "Cannot grant assembly admin privileges to non assembly users."
 msgstr "Nur Versammlungs Nutzer können Versammlungs Admin werden."
 
 #: cdedb/frontend/core.py:1198 cdedb/frontend/core.py:1192
 #: cdedb/frontend/core.py:1216 cdedb/frontend/core.py:1183
 #: cdedb/frontend/core.py:1185 cdedb/frontend/core.py:1199
+#: cdedb/frontend/core.py:1217
 msgid "Privilege change waiting for approval by another Meta-Admin."
 msgstr ""
 "Änderung der Admin-Privilegien wartet auf Bestätigung durch einen anderen "
@@ -2547,6 +2603,7 @@ msgstr ""
 #: cdedb/frontend/core.py:1203 cdedb/frontend/core.py:1197
 #: cdedb/frontend/core.py:1221 cdedb/frontend/core.py:1188
 #: cdedb/frontend/core.py:1190 cdedb/frontend/core.py:1204
+#: cdedb/frontend/core.py:1222
 msgid "No changes were made."
 msgstr "Es wurden keine Änderungen gemacht."
 
@@ -2555,13 +2612,15 @@ msgstr "Es wurden keine Änderungen gemacht."
 #: cdedb/frontend/core.py:1248 cdedb/frontend/core.py:1279
 #: cdedb/frontend/core.py:1215 cdedb/frontend/core.py:1246
 #: cdedb/frontend/core.py:1217 cdedb/frontend/core.py:1231
-#: cdedb/frontend/core.py:1262
+#: cdedb/frontend/core.py:1262 cdedb/frontend/core.py:1249
+#: cdedb/frontend/core.py:1280
 msgid "Privilege change not pending."
 msgstr "Änderung der Admin-Privilegien nicht ausstehend."
 
 #: cdedb/frontend/core.py:1236 cdedb/frontend/core.py:1230
 #: cdedb/frontend/core.py:1254 cdedb/frontend/core.py:1221
 #: cdedb/frontend/core.py:1223 cdedb/frontend/core.py:1237
+#: cdedb/frontend/core.py:1255
 msgid ""
 "This privilege change is affecting your Meta-Admin privileges, so it has to "
 "be approved by another Meta-Admin."
@@ -2572,6 +2631,7 @@ msgstr ""
 #: cdedb/frontend/core.py:1241 cdedb/frontend/core.py:1235
 #: cdedb/frontend/core.py:1259 cdedb/frontend/core.py:1226
 #: cdedb/frontend/core.py:1228 cdedb/frontend/core.py:1242
+#: cdedb/frontend/core.py:1260
 msgid ""
 "This privilege change was submitted by you, so it has to be approved by "
 "another Meta-Admin."
@@ -2582,48 +2642,56 @@ msgstr ""
 #: cdedb/frontend/core.py:1277 cdedb/frontend/core.py:1271
 #: cdedb/frontend/core.py:1295 cdedb/frontend/core.py:1262
 #: cdedb/frontend/core.py:1264 cdedb/frontend/core.py:1278
+#: cdedb/frontend/core.py:1296
 msgid "Change rejected."
 msgstr "Änderung abgelehnt."
 
 #: cdedb/frontend/core.py:1278 cdedb/frontend/core.py:1272
 #: cdedb/frontend/core.py:1296 cdedb/frontend/core.py:1263
 #: cdedb/frontend/core.py:1265 cdedb/frontend/core.py:1279
+#: cdedb/frontend/core.py:1297
 msgid "Password reset issued for new admin."
 msgstr "Passwort eines neuen Admins ungültig gemacht."
 
 #: cdedb/frontend/core.py:1346 cdedb/frontend/core.py:1340
 #: cdedb/frontend/core.py:1364 cdedb/frontend/core.py:1331
 #: cdedb/frontend/core.py:1333 cdedb/frontend/core.py:1347
+#: cdedb/frontend/core.py:1365
 msgid "No promotion necessary."
 msgstr "Keine Änderung erforderlich."
 
 #: cdedb/frontend/core.py:1486 cdedb/frontend/core.py:1480
 #: cdedb/frontend/core.py:1504 cdedb/frontend/core.py:1470
 #: cdedb/frontend/core.py:1473 cdedb/frontend/core.py:1487
+#: cdedb/frontend/core.py:1505
 msgid "Nothing changed."
 msgstr "Keine Änderungen."
 
 #: cdedb/frontend/core.py:1534 cdedb/frontend/core.py:1528
 #: cdedb/frontend/core.py:1552 cdedb/frontend/core.py:1517
 #: cdedb/frontend/core.py:1521 cdedb/frontend/core.py:1535
+#: cdedb/frontend/core.py:1553
 msgid "Foto updated."
 msgstr "Bild aktualisiert."
 
 #: cdedb/frontend/core.py:1535 cdedb/frontend/core.py:1529
 #: cdedb/frontend/core.py:1553 cdedb/frontend/core.py:1518
 #: cdedb/frontend/core.py:1522 cdedb/frontend/core.py:1536
+#: cdedb/frontend/core.py:1554
 msgid "Foto removed."
 msgstr "Profilbild entfernt."
 
 #: cdedb/frontend/core.py:1546 cdedb/frontend/core.py:1540
 #: cdedb/frontend/core.py:1564 cdedb/frontend/core.py:1529
 #: cdedb/frontend/core.py:1533 cdedb/frontend/core.py:1547
+#: cdedb/frontend/core.py:1565
 msgid "Please provide the user's email address."
 msgstr "Bitte gib die Emailadresse des Nutzers an."
 
 #: cdedb/frontend/core.py:1552 cdedb/frontend/core.py:1546
 #: cdedb/frontend/core.py:1570 cdedb/frontend/core.py:1534
 #: cdedb/frontend/core.py:1539 cdedb/frontend/core.py:1553
+#: cdedb/frontend/core.py:1571
 msgid "Password invalidated."
 msgstr "Passwort ungültig gemacht."
 
@@ -2644,18 +2712,22 @@ msgstr "Passwort ungültig gemacht."
 #: cdedb/frontend/core.py:1724 cdedb/frontend/core.py:1726
 #: cdedb/frontend/core.py:1580 cdedb/frontend/core.py:1582
 #: cdedb/frontend/core.py:1738 cdedb/frontend/core.py:1740
+#: cdedb/frontend/core.py:1598 cdedb/frontend/core.py:1600
+#: cdedb/frontend/core.py:1756 cdedb/frontend/core.py:1758
 msgid "Passwords don’t match."
 msgstr "Passwörter stimmen nicht überein."
 
 #: cdedb/frontend/core.py:1596 cdedb/frontend/core.py:1590
 #: cdedb/frontend/core.py:1614 cdedb/frontend/core.py:1576
 #: cdedb/frontend/core.py:1583 cdedb/frontend/core.py:1597
+#: cdedb/frontend/core.py:1615
 msgid "Password changed."
 msgstr "Passwort geändert."
 
 #: cdedb/frontend/core.py:1600 cdedb/frontend/core.py:1594
 #: cdedb/frontend/core.py:1618 cdedb/frontend/core.py:1580
 #: cdedb/frontend/core.py:1587 cdedb/frontend/core.py:1601
+#: cdedb/frontend/core.py:1619
 msgid "Wrong password."
 msgstr "Passwort falsch."
 
@@ -2667,24 +2739,28 @@ msgstr "Passwort falsch."
 #: cdedb/frontend/core.py:1639 cdedb/frontend/core.py:1679
 #: cdedb/frontend/core.py:1640 cdedb/frontend/core.py:1688
 #: cdedb/frontend/core.py:1661 cdedb/frontend/core.py:1702
+#: cdedb/frontend/core.py:1672 cdedb/frontend/core.py:1720
 msgid "Email sent."
 msgstr "E-Mail abgeschickt."
 
 #: cdedb/frontend/core.py:1720 cdedb/frontend/core.py:1714
 #: cdedb/frontend/core.py:1738 cdedb/frontend/core.py:1698
 #: cdedb/frontend/core.py:1707 cdedb/frontend/core.py:1721
+#: cdedb/frontend/core.py:1739
 msgid "Please try again."
 msgstr "Bitte versuche es erneut."
 
 #: cdedb/frontend/core.py:1753 cdedb/frontend/core.py:1747
 #: cdedb/frontend/core.py:1771 cdedb/frontend/core.py:1731
 #: cdedb/frontend/core.py:1740 cdedb/frontend/core.py:1754
+#: cdedb/frontend/core.py:1772
 msgid "Password reset."
 msgstr "Passwort zurückgesetzt."
 
 #: cdedb/frontend/core.py:1772 cdedb/frontend/core.py:1766
 #: cdedb/frontend/core.py:1790 cdedb/frontend/core.py:1750
 #: cdedb/frontend/core.py:1759 cdedb/frontend/core.py:1773
+#: cdedb/frontend/core.py:1791
 msgid "Must be different from current email address."
 msgstr "Muss sich von der aktuellen E-Mail-Adresse unterscheiden."
 
@@ -2694,12 +2770,14 @@ msgstr "Muss sich von der aktuellen E-Mail-Adresse unterscheiden."
 #: cdedb/frontend/core.py:1791 cdedb/frontend/core.py:1827
 #: cdedb/frontend/core.py:1801 cdedb/frontend/core.py:1837
 #: cdedb/frontend/core.py:1815 cdedb/frontend/core.py:1851
+#: cdedb/frontend/core.py:1833 cdedb/frontend/core.py:1869
 msgid "Email address changed."
 msgstr "E-Mail-Adresse geändert."
 
 #: cdedb/frontend/core.py:1933 cdedb/frontend/core.py:1927
 #: cdedb/frontend/core.py:1951 cdedb/frontend/core.py:1912
 #: cdedb/frontend/core.py:1920 cdedb/frontend/core.py:1934
+#: cdedb/frontend/core.py:1952
 msgid "It seems like you took too long and your previous upload was deleted."
 msgstr ""
 "Es scheint als hättest Du Dir zu viel Zeit gelassen und Deine Datei wurde "
@@ -2708,12 +2786,14 @@ msgstr ""
 #: cdedb/frontend/core.py:1945 cdedb/frontend/core.py:1939
 #: cdedb/frontend/core.py:1963 cdedb/frontend/core.py:1924
 #: cdedb/frontend/core.py:1932 cdedb/frontend/core.py:1946
+#: cdedb/frontend/core.py:1964
 msgid "Rationale too long."
 msgstr "Begründung zu lang."
 
 #: cdedb/frontend/core.py:1951 cdedb/frontend/core.py:1945
 #: cdedb/frontend/core.py:1969 cdedb/frontend/core.py:1930
 #: cdedb/frontend/core.py:1938 cdedb/frontend/core.py:1952
+#: cdedb/frontend/core.py:1970
 #, python-format
 msgid "Must specify gender for %(realm)s realm."
 msgstr "Muss Geschlecht angeben für %(realm)s Bereich."
@@ -2721,30 +2801,35 @@ msgstr "Muss Geschlecht angeben für %(realm)s Bereich."
 #: cdedb/frontend/core.py:1964 cdedb/frontend/core.py:1958
 #: cdedb/frontend/core.py:1982 cdedb/frontend/core.py:1943
 #: cdedb/frontend/core.py:1951 cdedb/frontend/core.py:1965
+#: cdedb/frontend/core.py:1983
 msgid "Confirmation email has been resent."
 msgstr "Bestätigungsmail erneut versendet."
 
 #: cdedb/frontend/core.py:1968 cdedb/frontend/core.py:1962
 #: cdedb/frontend/core.py:1986 cdedb/frontend/core.py:1947
 #: cdedb/frontend/core.py:1955 cdedb/frontend/core.py:1969
+#: cdedb/frontend/core.py:1987
 msgid "Email address already in DB. Reset password."
 msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."
 
 #: cdedb/frontend/core.py:1993 cdedb/frontend/core.py:1987
 #: cdedb/frontend/core.py:2011 cdedb/frontend/core.py:1972
 #: cdedb/frontend/core.py:1980 cdedb/frontend/core.py:1994
+#: cdedb/frontend/core.py:2012
 msgid "Email sent. Please follow the link contained in the email."
 msgstr "E-Mail verschickt. Bitte den enthaltenen Link besuchen."
 
 #: cdedb/frontend/core.py:2009 cdedb/frontend/core.py:2003
 #: cdedb/frontend/core.py:2027 cdedb/frontend/core.py:1988
 #: cdedb/frontend/core.py:1996 cdedb/frontend/core.py:2010
+#: cdedb/frontend/core.py:2028
 msgid "Verification failed. Please contact the administrators."
 msgstr "Verifikation fehlgeschlagen. Bitte an die Verwaltung wenden."
 
 #: cdedb/frontend/core.py:2010 cdedb/frontend/core.py:2004
 #: cdedb/frontend/core.py:2028 cdedb/frontend/core.py:1989
 #: cdedb/frontend/core.py:1997 cdedb/frontend/core.py:2011
+#: cdedb/frontend/core.py:2029
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
 "E-Mail-Adresse verifiziert. Deine Anfrage wird bald bearbeitet und Du wirst "
@@ -2753,6 +2838,7 @@ msgstr ""
 #: cdedb/frontend/core.py:2012 cdedb/frontend/core.py:2006
 #: cdedb/frontend/core.py:2030 cdedb/frontend/core.py:1991
 #: cdedb/frontend/core.py:1999 cdedb/frontend/core.py:2013
+#: cdedb/frontend/core.py:2031
 msgid "This account request was already verified."
 msgstr "Diese Accountanfrage wurde bereits bestätigt."
 
@@ -2764,36 +2850,43 @@ msgstr "Diese Accountanfrage wurde bereits bestätigt."
 #: cdedb/frontend/core.py:2184 cdedb/frontend/core.py:2132
 #: cdedb/frontend/core.py:2187 cdedb/frontend/core.py:2146
 #: cdedb/frontend/core.py:2177 cdedb/frontend/core.py:2201
+#: cdedb/frontend/core.py:2164 cdedb/frontend/core.py:2195
+#: cdedb/frontend/core.py:2219
 msgid "Case not to review."
 msgstr "Anfrage befindet sich nicht in der Begutachtung."
 
 #: cdedb/frontend/core.py:2232 cdedb/frontend/core.py:2226
 #: cdedb/frontend/core.py:2250 cdedb/frontend/core.py:2214
 #: cdedb/frontend/core.py:2219 cdedb/frontend/core.py:2233
+#: cdedb/frontend/core.py:2251
 msgid "Case approved."
 msgstr "Antrag genehmigt."
 
 #: cdedb/frontend/core.py:2239 cdedb/frontend/core.py:2233
 #: cdedb/frontend/core.py:2257 cdedb/frontend/core.py:2221
 #: cdedb/frontend/core.py:2226 cdedb/frontend/core.py:2240
+#: cdedb/frontend/core.py:2258
 msgid "Case rejected."
 msgstr "Anfrage abgewiesen."
 
 #: cdedb/frontend/core.py:2288 cdedb/frontend/core.py:2282
 #: cdedb/frontend/core.py:2306 cdedb/frontend/core.py:2270
 #: cdedb/frontend/core.py:2275 cdedb/frontend/core.py:2289
+#: cdedb/frontend/core.py:2307
 msgid "Persona has no pending change."
 msgstr "Account hat keine zu begutachtenden Änderungen."
 
 #: cdedb/frontend/core.py:2307 cdedb/frontend/core.py:2301
 #: cdedb/frontend/core.py:2325 cdedb/frontend/core.py:2289
 #: cdedb/frontend/core.py:2294 cdedb/frontend/core.py:2308
+#: cdedb/frontend/core.py:2326
 msgid "Change dropped."
 msgstr "Änderung unterdrückt."
 
 #: cdedb/frontend/core.py:2320 cdedb/frontend/core.py:2314
 #: cdedb/frontend/core.py:2338 cdedb/frontend/core.py:2302
 #: cdedb/frontend/core.py:2307 cdedb/frontend/core.py:2321
+#: cdedb/frontend/core.py:2339
 msgid "Must supply archival note."
 msgstr "Archivierungsnotiz muss angegeben werden."
 
@@ -2834,7 +2927,9 @@ msgstr "Die Kursliste ist noch nicht öffentlich."
 #: cdedb/frontend/event.py:3454 cdedb/frontend/event.py:3486
 #: cdedb/frontend/event.py:3312 cdedb/frontend/event.py:3352
 #: cdedb/frontend/event.py:3413 cdedb/frontend/event.py:3562
-#: cdedb/frontend/event.py:3595
+#: cdedb/frontend/event.py:3595 cdedb/frontend/event.py:3366
+#: cdedb/frontend/event.py:3406 cdedb/frontend/event.py:3467
+#: cdedb/frontend/event.py:3616 cdedb/frontend/event.py:3649
 msgid "Not registered for event."
 msgstr "Nicht für Veranstaltung angemeldet."
 
@@ -2846,6 +2941,7 @@ msgstr "Die Teilnehmer Liste ist noch nicht veröffentlicht."
 #: cdedb/frontend/event.py:317 cdedb/frontend/event.py:4534
 #: cdedb/frontend/event.py:312 cdedb/frontend/event.py:4513
 #: cdedb/frontend/event.py:325 cdedb/frontend/event.py:4384
+#: cdedb/frontend/event.py:4571
 msgid "Invalid part id."
 msgstr "Nicht-existenter Veranstaltungsteil."
 
@@ -3047,7 +3143,7 @@ msgstr "Zu viel Geld."
 #: cdedb/frontend/event.py:2183 cdedb/frontend/event.py:6294
 #: cdedb/frontend/event.py:2168 cdedb/frontend/event.py:6271
 #: cdedb/frontend/event.py:2085 cdedb/frontend/event.py:6118
-#: cdedb/frontend/event.py:2172
+#: cdedb/frontend/event.py:2172 cdedb/frontend/event.py:6331
 msgid "No registration found."
 msgstr "Keine Anmeldung gefunden."
 
@@ -3081,6 +3177,7 @@ msgstr "Leeres PDF."
 
 #: cdedb/frontend/event.py:2766 cdedb/frontend/event.py:2751
 #: cdedb/frontend/event.py:2687 cdedb/frontend/event.py:2755
+#: cdedb/frontend/event.py:2809
 msgid "Please confirm to download a full export of an unlocked event."
 msgstr ""
 "Bestätige, das du einen Export herunterladen willst, obwohl die "
@@ -3089,22 +3186,26 @@ msgstr ""
 #: cdedb/frontend/event.py:2847 cdedb/frontend/event.py:6008
 #: cdedb/frontend/event.py:2832 cdedb/frontend/event.py:5985
 #: cdedb/frontend/event.py:2765 cdedb/frontend/event.py:5835
-#: cdedb/frontend/event.py:2836
+#: cdedb/frontend/event.py:2836 cdedb/frontend/event.py:2890
+#: cdedb/frontend/event.py:6045
 msgid "Data from wrong event."
 msgstr "Daten passen nicht zur Veranstaltung."
 
 #: cdedb/frontend/event.py:2875 cdedb/frontend/event.py:2860
 #: cdedb/frontend/event.py:2791 cdedb/frontend/event.py:2864
+#: cdedb/frontend/event.py:2918
 msgid "The data changed, please review the difference."
 msgstr "Es gab konkurrierende Eingaben, bitte kontrolliere die Änderungen."
 
 #: cdedb/frontend/event.py:2882 cdedb/frontend/event.py:2867
 #: cdedb/frontend/event.py:2798 cdedb/frontend/event.py:2871
+#: cdedb/frontend/event.py:2925
 msgid "Changes applied."
 msgstr "Änderungen angewendet."
 
 #: cdedb/frontend/event.py:3048 cdedb/frontend/event.py:3033
 #: cdedb/frontend/event.py:2957 cdedb/frontend/event.py:3037
+#: cdedb/frontend/event.py:3091
 msgid "not offered"
 msgstr "nicht angeboten"
 
@@ -3112,14 +3213,15 @@ msgstr "nicht angeboten"
 #: cdedb/frontend/templates/web/event/course_list.tmpl:91
 #: cdedb/frontend/templates/web/event/course_list.tmpl:99
 #: cdedb/frontend/event.py:3034 cdedb/frontend/event.py:2958
-#: cdedb/frontend/event.py:3038
+#: cdedb/frontend/event.py:3038 cdedb/frontend/event.py:3092
 msgid "cancelled"
 msgstr "fällt aus"
 
 #: cdedb/frontend/event.py:3050 cdedb/frontend/event.py:5558
 #: cdedb/frontend/event.py:3035 cdedb/frontend/event.py:5535
 #: cdedb/frontend/event.py:2959 cdedb/frontend/event.py:5393
-#: cdedb/frontend/event.py:3039
+#: cdedb/frontend/event.py:3039 cdedb/frontend/event.py:3093
+#: cdedb/frontend/event.py:5593
 msgid "takes place"
 msgstr "findet statt"
 
@@ -3136,6 +3238,7 @@ msgstr "findet statt"
 #: cdedb/frontend/event.py:3045
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:64
 #: cdedb/frontend/event.py:2968 cdedb/frontend/event.py:3049
+#: cdedb/frontend/event.py:3103
 msgid "Course"
 msgstr "Kurs"
 
@@ -3150,6 +3253,7 @@ msgstr "Kurs"
 #: cdedb/frontend/event.py:3048
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:58
 #: cdedb/frontend/event.py:2970 cdedb/frontend/event.py:3052
+#: cdedb/frontend/event.py:3106
 msgid "Instructor"
 msgstr "Kursleiter"
 
@@ -3164,7 +3268,7 @@ msgstr "Kursleiter"
 #: cdedb/frontend/event.py:3051 cdedb/frontend/event.py:2972
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:199
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:188
-#: cdedb/frontend/event.py:3055
+#: cdedb/frontend/event.py:3055 cdedb/frontend/event.py:3109
 msgid "Course Choices"
 msgstr "Kurswahlen"
 
@@ -3187,6 +3291,7 @@ msgstr "Kurswahlen"
 #: cdedb/frontend/event.py:3054 cdedb/frontend/event.py:3075
 #: cdedb/frontend/event.py:2974 cdedb/frontend/event.py:2993
 #: cdedb/frontend/event.py:3058 cdedb/frontend/event.py:3079
+#: cdedb/frontend/event.py:3112 cdedb/frontend/event.py:3133
 msgid "Status"
 msgstr "Status"
 
@@ -3201,7 +3306,8 @@ msgstr "Status"
 #: cdedb/frontend/event.py:3078 cdedb/frontend/event.py:5672
 #: cdedb/frontend/event.py:2995 cdedb/frontend/event.py:5520
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:156
-#: cdedb/frontend/event.py:3082
+#: cdedb/frontend/event.py:3082 cdedb/frontend/event.py:3136
+#: cdedb/frontend/event.py:5732
 msgid "Lodgement"
 msgstr "Unterkunft"
 
@@ -3210,14 +3316,15 @@ msgstr "Unterkunft"
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:44
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:131
 #: cdedb/frontend/event.py:3081 cdedb/frontend/event.py:2997
-#: cdedb/frontend/event.py:3085
+#: cdedb/frontend/event.py:3085 cdedb/frontend/event.py:3139
 msgid "Camping Mat"
 msgstr "Isomatte"
 
 #: cdedb/frontend/event.py:3118 cdedb/frontend/event.py:4101
 #: cdedb/frontend/event.py:3103 cdedb/frontend/event.py:4084
 #: cdedb/frontend/event.py:3017 cdedb/frontend/event.py:3965
-#: cdedb/frontend/event.py:3107
+#: cdedb/frontend/event.py:3107 cdedb/frontend/event.py:3161
+#: cdedb/frontend/event.py:4142
 msgid "Already registered."
 msgstr "Bereits angemeldet."
 
@@ -3225,6 +3332,7 @@ msgstr "Bereits angemeldet."
 #: cdedb/frontend/event.py:3106 cdedb/frontend/event.py:3253
 #: cdedb/frontend/event.py:3020 cdedb/frontend/event.py:3166
 #: cdedb/frontend/event.py:3110 cdedb/frontend/event.py:3257
+#: cdedb/frontend/event.py:3164 cdedb/frontend/event.py:3311
 msgid "Registration not open."
 msgstr "Anmeldung noch nicht eröffnet."
 
@@ -3240,6 +3348,9 @@ msgstr "Anmeldung noch nicht eröffnet."
 #: cdedb/frontend/event.py:3113 cdedb/frontend/event.py:3260
 #: cdedb/frontend/event.py:3364 cdedb/frontend/event.py:3423
 #: cdedb/frontend/event.py:3570 cdedb/frontend/event.py:3602
+#: cdedb/frontend/event.py:3167 cdedb/frontend/event.py:3314
+#: cdedb/frontend/event.py:3418 cdedb/frontend/event.py:3477
+#: cdedb/frontend/event.py:3624 cdedb/frontend/event.py:3656
 msgid "Event locked."
 msgstr "Veranstaltungssperre aktiviert."
 
@@ -3252,7 +3363,9 @@ msgstr "Veranstaltungssperre aktiviert."
 #: cdedb/frontend/event.py:3323 cdedb/frontend/event.py:3496
 #: cdedb/frontend/event.py:3116 cdedb/frontend/event.py:3263
 #: cdedb/frontend/event.py:3355 cdedb/frontend/event.py:3420
-#: cdedb/frontend/event.py:3605
+#: cdedb/frontend/event.py:3605 cdedb/frontend/event.py:3170
+#: cdedb/frontend/event.py:3317 cdedb/frontend/event.py:3409
+#: cdedb/frontend/event.py:3474 cdedb/frontend/event.py:3659
 msgid "Event is already archived."
 msgstr "Veranstaltung ist bereits archiviert."
 
@@ -3260,6 +3373,7 @@ msgstr "Veranstaltung ist bereits archiviert."
 #: cdedb/frontend/event.py:3115 cdedb/frontend/event.py:3277
 #: cdedb/frontend/event.py:3029 cdedb/frontend/event.py:3190
 #: cdedb/frontend/event.py:3119 cdedb/frontend/event.py:3281
+#: cdedb/frontend/event.py:3173 cdedb/frontend/event.py:3335
 msgid "No minors may register. Please contact the Orgateam."
 msgstr ""
 "Minderjährige können sich nicht anmelden. Kontaktiere bitte das Orgateam."
@@ -3268,38 +3382,45 @@ msgstr ""
 #: cdedb/frontend/event.py:3121 cdedb/frontend/event.py:3571
 #: cdedb/frontend/event.py:3035 cdedb/frontend/event.py:3467
 #: cdedb/frontend/event.py:3125 cdedb/frontend/event.py:3575
+#: cdedb/frontend/event.py:3179 cdedb/frontend/event.py:3629
 msgid "Must be Orga to use preview."
 msgstr "Du musst Orga sein, um die Fragebogen-Vorschau zu nutzen."
 
 #: cdedb/frontend/event.py:3199 cdedb/frontend/event.py:3184
 #: cdedb/frontend/event.py:3101 cdedb/frontend/event.py:3188
+#: cdedb/frontend/event.py:3242
 msgid "Must select at least one part."
 msgstr "Mindestens ein Teil muss ausgewählt werden."
 
 #: cdedb/frontend/event.py:3209 cdedb/frontend/event.py:3194
 #: cdedb/frontend/event.py:3110 cdedb/frontend/event.py:3198
+#: cdedb/frontend/event.py:3252
 #, python-format
 msgid "You cannot have the same course as %(i)s. and %(j)s. choice"
 msgstr "Du kannst diesen Kurs nicht als %(i)s. und %(j)s Wahl wählen."
 
 #: cdedb/frontend/event.py:3219 cdedb/frontend/event.py:3204
 #: cdedb/frontend/event.py:3118 cdedb/frontend/event.py:3208
+#: cdedb/frontend/event.py:3262
 #, python-format
 msgid "You must chose at least %(min_choices)s courses."
 msgstr "Du musst mindestens %(min_choices)s Kurse wählen."
 
 #: cdedb/frontend/event.py:3314 cdedb/frontend/event.py:3299
 #: cdedb/frontend/event.py:3212 cdedb/frontend/event.py:3303
+#: cdedb/frontend/event.py:3357
 msgid "Registered for event."
 msgstr "Für Veranstaltung angemeldet."
 
 #: cdedb/frontend/event.py:3372 cdedb/frontend/event.py:3357
 #: cdedb/frontend/event.py:3265 cdedb/frontend/event.py:3361
+#: cdedb/frontend/event.py:3415
 msgid "Registration closed, no changes possible."
 msgstr "Anmeldung vorbei; es sind keine Änderungen mehr möglich."
 
 #: cdedb/frontend/event.py:3428 cdedb/frontend/event.py:3413
 #: cdedb/frontend/event.py:3320 cdedb/frontend/event.py:3417
+#: cdedb/frontend/event.py:3471
 msgid "No changes allowed anymore."
 msgstr "Keine Änderungen mehr möglich."
 
@@ -3307,156 +3428,169 @@ msgstr "Keine Änderungen mehr möglich."
 #: cdedb/frontend/event.py:3563 cdedb/frontend/event.py:3595
 #: cdedb/frontend/event.py:3459 cdedb/frontend/event.py:3490
 #: cdedb/frontend/event.py:3567 cdedb/frontend/event.py:3599
+#: cdedb/frontend/event.py:3621 cdedb/frontend/event.py:3653
 msgid "Questionnaire disabled."
 msgstr "Fragebogen nicht aktiviert."
 
 #: cdedb/frontend/event.py:3588 cdedb/frontend/event.py:3573
 #: cdedb/frontend/event.py:3469 cdedb/frontend/event.py:3577
+#: cdedb/frontend/event.py:3631
 msgid "Questionnaire is not enabled yet."
 msgstr "Der Fragebogen ist noch nicht für die Teilnehmer freigeschaltet."
 
 #: cdedb/frontend/event.py:3695 cdedb/frontend/event.py:3679
 #: cdedb/frontend/event.py:3573 cdedb/frontend/event.py:3683
+#: cdedb/frontend/event.py:3737
 msgid "Fee modifier field may only be used in registration questionnaire."
 msgstr ""
 "Beitragsmodifikator-Feld kann nur im Anmeldungsfragebogen verwendet werden."
 
 #: cdedb/frontend/event.py:3713 cdedb/frontend/event.py:3697
 #: cdedb/frontend/event.py:3591 cdedb/frontend/event.py:3701
+#: cdedb/frontend/event.py:3755
 msgid "This field is already in use in another questionnaire."
 msgstr "Dieses Feld wird bereits in einem anderen Fragebogen verwendet."
 
 #: cdedb/frontend/event.py:3771 cdedb/frontend/event.py:3755
 #: cdedb/frontend/event.py:3648 cdedb/frontend/event.py:3759
+#: cdedb/frontend/event.py:3813
 msgid "Unknown questionnaire kind. Defaulted to {kind}."
 msgstr "Unbekannte Fragebogen-Art. Auf {kind} zurpckgefallen."
 
 #: cdedb/frontend/event.py:3782 cdedb/frontend/event.py:3766
 #: cdedb/frontend/event.py:3659 cdedb/frontend/event.py:3770
+#: cdedb/frontend/event.py:3824
 msgid "No questionnaire rows of this kind found."
 msgstr "Für diese Fragebogen-Art gibt es bisher keine Einträge."
 
 #: cdedb/frontend/event.py:4010 cdedb/frontend/event.py:3993
 #: cdedb/frontend/event.py:3881 cdedb/frontend/event.py:3997
+#: cdedb/frontend/event.py:4051
 msgid "Must choose different courses."
 msgstr "Bitte verschiedene Kurse wählen."
 
 #: cdedb/frontend/event.py:4110 cdedb/frontend/event.py:4093
-#: cdedb/frontend/event.py:3974
+#: cdedb/frontend/event.py:3974 cdedb/frontend/event.py:4151
 msgid "Rate-limit reached."
 msgstr "Limit erreicht."
 
 #: cdedb/frontend/event.py:4161 cdedb/frontend/event.py:4144
-#: cdedb/frontend/event.py:4023
+#: cdedb/frontend/event.py:4023 cdedb/frontend/event.py:4202
 msgid "No participants found to edit."
 msgstr "Keine Teilnehmer zur Bearbeitung ausgewählt."
 
 #: cdedb/frontend/event.py:4289 cdedb/frontend/event.py:4272
+#: cdedb/frontend/event.py:4330
 msgid "Invalid key. Expected 'course_id' or 'event_id"
 msgstr "Ungültiger Schlüssel. Mögliche Werte sind 'course_id' und 'event_id'."
 
 #: cdedb/frontend/event.py:4360 cdedb/frontend/event.py:4342
-#: cdedb/frontend/event.py:4218
+#: cdedb/frontend/event.py:4218 cdedb/frontend/event.py:4400
 msgid "Mixed lodgement with non-mixing participants."
 msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmern."
 
 #: cdedb/frontend/event.py:4377 cdedb/frontend/event.py:4358
-#: cdedb/frontend/event.py:4234
+#: cdedb/frontend/event.py:4234 cdedb/frontend/event.py:4416
 msgid "Too many camping mats used."
 msgstr "Zu viele Isomattenplätze genutzt."
 
 #: cdedb/frontend/event.py:4392 cdedb/frontend/event.py:4372
-#: cdedb/frontend/event.py:4248
+#: cdedb/frontend/event.py:4248 cdedb/frontend/event.py:4430
 msgid "Overful lodgement."
 msgstr "Überfüllte Unterkunft"
 
 #: cdedb/frontend/event.py:4397 cdedb/frontend/event.py:4376
-#: cdedb/frontend/event.py:4252
+#: cdedb/frontend/event.py:4252 cdedb/frontend/event.py:4434
 msgid "Too few camping mats used."
 msgstr "Zu wenige Isomattenplätze genutzt."
 
 #: cdedb/frontend/event.py:4411 cdedb/frontend/event.py:4390
-#: cdedb/frontend/event.py:4266
+#: cdedb/frontend/event.py:4266 cdedb/frontend/event.py:4448
 msgid "Non-Binary Participant."
 msgstr "nicht-binärer Teilnehmer"
 
 #: cdedb/frontend/event.py:5246 cdedb/frontend/event.py:5223
-#: cdedb/frontend/event.py:5081
+#: cdedb/frontend/event.py:5081 cdedb/frontend/event.py:5281
 msgid "instructs their course"
 msgstr "Hält seinen/ihren Kurs"
 
 #: cdedb/frontend/event.py:5248 cdedb/frontend/event.py:5536
 #: cdedb/frontend/event.py:5225 cdedb/frontend/event.py:5513
 #: cdedb/frontend/event.py:5083 cdedb/frontend/event.py:5371
+#: cdedb/frontend/event.py:5283 cdedb/frontend/event.py:5571
 msgid "course"
 msgstr "Kurs"
 
 #: cdedb/frontend/event.py:5250 cdedb/frontend/event.py:5227
-#: cdedb/frontend/event.py:5085
+#: cdedb/frontend/event.py:5085 cdedb/frontend/event.py:5285
 msgid "instructed course"
 msgstr "geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5252 cdedb/frontend/event.py:5229
-#: cdedb/frontend/event.py:5087
+#: cdedb/frontend/event.py:5087 cdedb/frontend/event.py:5287
 msgid "course ID"
 msgstr "Kurs-ID"
 
 #: cdedb/frontend/event.py:5254 cdedb/frontend/event.py:5537
 #: cdedb/frontend/event.py:5231 cdedb/frontend/event.py:5514
 #: cdedb/frontend/event.py:5089 cdedb/frontend/event.py:5372
+#: cdedb/frontend/event.py:5289 cdedb/frontend/event.py:5572
 msgid "course nr"
 msgstr "Kursnummer"
 
 #: cdedb/frontend/event.py:5256 cdedb/frontend/event.py:5538
 #: cdedb/frontend/event.py:5233 cdedb/frontend/event.py:5515
 #: cdedb/frontend/event.py:5091 cdedb/frontend/event.py:5373
+#: cdedb/frontend/event.py:5291 cdedb/frontend/event.py:5573
 msgid "course title"
 msgstr "Kurstitel"
 
 #: cdedb/frontend/event.py:5258 cdedb/frontend/event.py:5540
 #: cdedb/frontend/event.py:5235 cdedb/frontend/event.py:5517
 #: cdedb/frontend/event.py:5093 cdedb/frontend/event.py:5375
+#: cdedb/frontend/event.py:5293 cdedb/frontend/event.py:5575
 msgid "course shortname"
 msgstr "Kurzname"
 
 #: cdedb/frontend/event.py:5260 cdedb/frontend/event.py:5544
 #: cdedb/frontend/event.py:5237 cdedb/frontend/event.py:5521
 #: cdedb/frontend/event.py:5095 cdedb/frontend/event.py:5379
+#: cdedb/frontend/event.py:5295 cdedb/frontend/event.py:5579
 msgid "course notes"
 msgstr "Kursnotizen"
 
 #: cdedb/frontend/event.py:5262 cdedb/frontend/event.py:5239
-#: cdedb/frontend/event.py:5097
+#: cdedb/frontend/event.py:5097 cdedb/frontend/event.py:5297
 msgid "instructed course ID"
 msgstr "ID geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5264 cdedb/frontend/event.py:5241
-#: cdedb/frontend/event.py:5099
+#: cdedb/frontend/event.py:5099 cdedb/frontend/event.py:5299
 msgid "instructed course nr"
 msgstr "Nummer geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5266 cdedb/frontend/event.py:5243
-#: cdedb/frontend/event.py:5101
+#: cdedb/frontend/event.py:5101 cdedb/frontend/event.py:5301
 msgid "instructed course title"
 msgstr "Titel geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5268 cdedb/frontend/event.py:5245
-#: cdedb/frontend/event.py:5103
+#: cdedb/frontend/event.py:5103 cdedb/frontend/event.py:5303
 msgid "instructed course shortname"
 msgstr "Kurzname geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5270 cdedb/frontend/event.py:5247
-#: cdedb/frontend/event.py:5105
+#: cdedb/frontend/event.py:5105 cdedb/frontend/event.py:5305
 msgid "instructed courese notes"
 msgstr "Notizen geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5275 cdedb/frontend/event.py:5252
-#: cdedb/frontend/event.py:5110
+#: cdedb/frontend/event.py:5110 cdedb/frontend/event.py:5310
 msgid "course {field}"
 msgstr "Kurs {field}"
 
 #: cdedb/frontend/event.py:5282 cdedb/frontend/event.py:5259
-#: cdedb/frontend/event.py:5117
+#: cdedb/frontend/event.py:5117 cdedb/frontend/event.py:5317
 msgid "instructed course {field}"
 msgstr "{field} geleiteter Kurs"
 
@@ -3468,215 +3602,218 @@ msgstr "{field} geleiteter Kurs"
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:211
 #: cdedb/frontend/event.py:5265 cdedb/frontend/event.py:5123
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:208
+#: cdedb/frontend/event.py:5323
 #, python-format
 msgid "%s. Choice"
 msgstr "%s. Wahl"
 
 #: cdedb/frontend/event.py:5292 cdedb/frontend/event.py:5269
-#: cdedb/frontend/event.py:5127
+#: cdedb/frontend/event.py:5127 cdedb/frontend/event.py:5327
 msgid "Any Choice"
 msgstr "Beliebige Kurswahl"
 
 #: cdedb/frontend/event.py:5297 cdedb/frontend/event.py:5274
-#: cdedb/frontend/event.py:5132
+#: cdedb/frontend/event.py:5132 cdedb/frontend/event.py:5332
 msgid "any track: instructs their course"
 msgstr "Bel. Schiene: Hält seinen/ihren Kurs"
 
 #: cdedb/frontend/event.py:5300 cdedb/frontend/event.py:5277
-#: cdedb/frontend/event.py:5135
+#: cdedb/frontend/event.py:5135 cdedb/frontend/event.py:5335
 msgid "any track: course"
 msgstr "Bel. Schiene: Kurs"
 
 #: cdedb/frontend/event.py:5303 cdedb/frontend/event.py:5280
-#: cdedb/frontend/event.py:5138
+#: cdedb/frontend/event.py:5138 cdedb/frontend/event.py:5338
 msgid "any track: instructed course"
 msgstr "Bel. Schiene: geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5306 cdedb/frontend/event.py:5283
-#: cdedb/frontend/event.py:5141
+#: cdedb/frontend/event.py:5141 cdedb/frontend/event.py:5341
 msgid "any track: course ID"
 msgstr "Bel. Schiene: Kurs-ID"
 
 #: cdedb/frontend/event.py:5309 cdedb/frontend/event.py:5286
-#: cdedb/frontend/event.py:5144
+#: cdedb/frontend/event.py:5144 cdedb/frontend/event.py:5344
 msgid "any track: course nr"
 msgstr "Bel. Schiene: Kursnummer"
 
 #: cdedb/frontend/event.py:5312 cdedb/frontend/event.py:5289
-#: cdedb/frontend/event.py:5147
+#: cdedb/frontend/event.py:5147 cdedb/frontend/event.py:5347
 msgid "any track: course title"
 msgstr "Bel. Schiene: Kurstitel"
 
 #: cdedb/frontend/event.py:5315 cdedb/frontend/event.py:5292
-#: cdedb/frontend/event.py:5150
+#: cdedb/frontend/event.py:5150 cdedb/frontend/event.py:5350
 msgid "any track: course shortname"
 msgstr "Bel. Schiene: Kurskurzname"
 
 #: cdedb/frontend/event.py:5318 cdedb/frontend/event.py:5295
-#: cdedb/frontend/event.py:5153
+#: cdedb/frontend/event.py:5153 cdedb/frontend/event.py:5353
 msgid "any track: course notes"
 msgstr "Bel. Schiene: Kursnotizen"
 
 #: cdedb/frontend/event.py:5321 cdedb/frontend/event.py:5298
-#: cdedb/frontend/event.py:5156
+#: cdedb/frontend/event.py:5156 cdedb/frontend/event.py:5356
 msgid "any track: instructed course ID"
 msgstr "Bel. Schiene: ID geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5324 cdedb/frontend/event.py:5301
-#: cdedb/frontend/event.py:5159
+#: cdedb/frontend/event.py:5159 cdedb/frontend/event.py:5359
 msgid "any track: instructed course nr"
 msgstr "Bel. Schiene: Nummer geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5327 cdedb/frontend/event.py:5304
-#: cdedb/frontend/event.py:5162
+#: cdedb/frontend/event.py:5162 cdedb/frontend/event.py:5362
 msgid "any track: instructed course title"
 msgstr "Bel. Schiene: Titel geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5330 cdedb/frontend/event.py:5307
-#: cdedb/frontend/event.py:5165
+#: cdedb/frontend/event.py:5165 cdedb/frontend/event.py:5365
 msgid "any track: instructed course shortname"
 msgstr "Bel. Schiene: Kurzname geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5333 cdedb/frontend/event.py:5310
-#: cdedb/frontend/event.py:5168
+#: cdedb/frontend/event.py:5168 cdedb/frontend/event.py:5368
 msgid "any track: instructed course notes"
 msgstr "Bel. Schiene: Notizen geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5339 cdedb/frontend/event.py:5316
-#: cdedb/frontend/event.py:5174
+#: cdedb/frontend/event.py:5174 cdedb/frontend/event.py:5374
 msgid "any track: course {field}"
 msgstr "Bel. Schiene: Kurs {field}"
 
 #: cdedb/frontend/event.py:5347 cdedb/frontend/event.py:5324
-#: cdedb/frontend/event.py:5182
+#: cdedb/frontend/event.py:5182 cdedb/frontend/event.py:5382
 msgid "any track: instructed course {field}"
 msgstr "Bel. Schiene: {field} geleiteter Kurs"
 
 #: cdedb/frontend/event.py:5354 cdedb/frontend/event.py:5331
-#: cdedb/frontend/event.py:5189
+#: cdedb/frontend/event.py:5189 cdedb/frontend/event.py:5389
 msgid "any track: Any Choice"
 msgstr "Bel. Schiene: Beliebige Kurswahl"
 
 #: cdedb/frontend/event.py:5362 cdedb/frontend/event.py:5339
-#: cdedb/frontend/event.py:5197
+#: cdedb/frontend/event.py:5197 cdedb/frontend/event.py:5397
 msgid "registration status"
 msgstr "Status"
 
 #: cdedb/frontend/event.py:5364 cdedb/frontend/event.py:5341
-#: cdedb/frontend/event.py:5199
+#: cdedb/frontend/event.py:5199 cdedb/frontend/event.py:5399
 msgid "camping mat user"
 msgstr "Isomattenschläfer"
 
 #: cdedb/frontend/event.py:5366 cdedb/frontend/event.py:5343
-#: cdedb/frontend/event.py:5201
+#: cdedb/frontend/event.py:5201 cdedb/frontend/event.py:5401
 msgid "lodgement"
 msgstr "Unterkunft"
 
 #: cdedb/frontend/event.py:5368 cdedb/frontend/event.py:5345
-#: cdedb/frontend/event.py:5203
+#: cdedb/frontend/event.py:5203 cdedb/frontend/event.py:5403
 msgid "lodgement ID"
 msgstr "Unterkunfts-ID"
 
 #: cdedb/frontend/event.py:5370 cdedb/frontend/event.py:5347
+#: cdedb/frontend/event.py:5405
 msgid "lodgement title"
 msgstr "Unterkunftskurzname"
 
 #: cdedb/frontend/event.py:5372 cdedb/frontend/event.py:5349
-#: cdedb/frontend/event.py:5207
+#: cdedb/frontend/event.py:5207 cdedb/frontend/event.py:5407
 msgid "lodgement notes"
 msgstr "Unterkunftsnotizen"
 
 #: cdedb/frontend/event.py:5377 cdedb/frontend/event.py:5354
-#: cdedb/frontend/event.py:5212
+#: cdedb/frontend/event.py:5212 cdedb/frontend/event.py:5412
 msgid "lodgement {field}"
 msgstr "Unterkunft {field}"
 
 #: cdedb/frontend/event.py:5385 cdedb/frontend/event.py:5362
-#: cdedb/frontend/event.py:5220
+#: cdedb/frontend/event.py:5220 cdedb/frontend/event.py:5420
 msgid "any part: registration status"
 msgstr "Bel. Teil: Status"
 
 #: cdedb/frontend/event.py:5388 cdedb/frontend/event.py:5365
-#: cdedb/frontend/event.py:5223
+#: cdedb/frontend/event.py:5223 cdedb/frontend/event.py:5423
 msgid "any part: camping mat user"
 msgstr "Bel. Teil: Isomattenschläfer"
 
 #: cdedb/frontend/event.py:5391 cdedb/frontend/event.py:5368
-#: cdedb/frontend/event.py:5226
+#: cdedb/frontend/event.py:5226 cdedb/frontend/event.py:5426
 msgid "any part: lodgement"
 msgstr "Bel. Teil: Unterkunft"
 
 #: cdedb/frontend/event.py:5394 cdedb/frontend/event.py:5371
-#: cdedb/frontend/event.py:5229
+#: cdedb/frontend/event.py:5229 cdedb/frontend/event.py:5429
 msgid "any part: lodgement ID"
 msgstr "Bel. Teil: Unterkunfts-ID"
 
 #: cdedb/frontend/event.py:5397 cdedb/frontend/event.py:5374
+#: cdedb/frontend/event.py:5432
 msgid "any part: lodgement title"
 msgstr "Bel. Teil: Unterkunftskurzname"
 
 #: cdedb/frontend/event.py:5400 cdedb/frontend/event.py:5377
-#: cdedb/frontend/event.py:5235
+#: cdedb/frontend/event.py:5235 cdedb/frontend/event.py:5435
 msgid "any part: lodgement notes"
 msgstr "Bel. Teil: Unterkunftsnotizen"
 
 #: cdedb/frontend/event.py:5406 cdedb/frontend/event.py:5383
-#: cdedb/frontend/event.py:5241
+#: cdedb/frontend/event.py:5241 cdedb/frontend/event.py:5441
 msgid "any part: lodgement {field}"
 msgstr "Bel. Teil: Unterkunft {field}"
 
 #: cdedb/frontend/event.py:5535 cdedb/frontend/event.py:5512
-#: cdedb/frontend/event.py:5370
+#: cdedb/frontend/event.py:5370 cdedb/frontend/event.py:5570
 msgid "course id"
 msgstr "Kurs ID"
 
 #: cdedb/frontend/event.py:5539 cdedb/frontend/event.py:5516
-#: cdedb/frontend/event.py:5374
+#: cdedb/frontend/event.py:5374 cdedb/frontend/event.py:5574
 msgid "course description"
 msgstr "Kursbeschreibung"
 
 #: cdedb/frontend/event.py:5541 cdedb/frontend/event.py:5518
-#: cdedb/frontend/event.py:5376
+#: cdedb/frontend/event.py:5376 cdedb/frontend/event.py:5576
 msgid "course instructors"
 msgstr "Kursleiter"
 
 #: cdedb/frontend/event.py:5542 cdedb/frontend/event.py:5519
-#: cdedb/frontend/event.py:5377
+#: cdedb/frontend/event.py:5377 cdedb/frontend/event.py:5577
 msgid "course min size"
 msgstr "Minimalgröße"
 
 #: cdedb/frontend/event.py:5543 cdedb/frontend/event.py:5520
-#: cdedb/frontend/event.py:5378
+#: cdedb/frontend/event.py:5378 cdedb/frontend/event.py:5578
 msgid "course max size"
 msgstr "Maximalgröße"
 
 #: cdedb/frontend/event.py:5560 cdedb/frontend/event.py:5537
-#: cdedb/frontend/event.py:5395
+#: cdedb/frontend/event.py:5395 cdedb/frontend/event.py:5595
 msgid "is offered"
 msgstr "wird angeboten"
 
 #: cdedb/frontend/event.py:5562 cdedb/frontend/event.py:5539
-#: cdedb/frontend/event.py:5397
+#: cdedb/frontend/event.py:5397 cdedb/frontend/event.py:5597
 msgid "attendees"
 msgstr "Teilnehmer"
 
 #: cdedb/frontend/event.py:5564 cdedb/frontend/event.py:5541
-#: cdedb/frontend/event.py:5399
+#: cdedb/frontend/event.py:5399 cdedb/frontend/event.py:5599
 msgid "instructors"
 msgstr "Kursleiter"
 
 #: cdedb/frontend/event.py:5569 cdedb/frontend/event.py:5546
-#: cdedb/frontend/event.py:5404
+#: cdedb/frontend/event.py:5404 cdedb/frontend/event.py:5604
 msgid "{}. choices"
 msgstr "{}. Wahlen"
 
 #: cdedb/frontend/event.py:5672 cdedb/frontend/event.py:5649
-#: cdedb/frontend/event.py:5497
+#: cdedb/frontend/event.py:5497 cdedb/frontend/event.py:5709
 msgid "--no group--"
 msgstr "--Keine Unterkunftsgruppe--"
 
 #: cdedb/frontend/event.py:5694 cdedb/frontend/event.py:5671
-#: cdedb/frontend/event.py:5519
+#: cdedb/frontend/event.py:5519 cdedb/frontend/event.py:5731
 msgid "Lodgement ID"
 msgstr "Unterkunfts-ID"
 
@@ -3713,6 +3850,7 @@ msgstr "Unterkunfts-ID"
 #: cdedb/frontend/templates/web/event/change_event.tmpl:29
 #: cdedb/frontend/templates/web/util.tmpl:770
 #: cdedb/frontend/templates/web/util.tmpl:779 cdedb/frontend/event.py:5673
+#: cdedb/frontend/event.py:5733
 msgid "Title"
 msgstr "Bezeichnung"
 
@@ -3722,6 +3860,7 @@ msgstr "Bezeichnung"
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:83
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:35
 #: cdedb/frontend/event.py:5674 cdedb/frontend/event.py:5522
+#: cdedb/frontend/event.py:5734
 msgid "Regular Capacity"
 msgstr "Reguläre Kapazität"
 
@@ -3731,16 +3870,17 @@ msgstr "Reguläre Kapazität"
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:84
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:37
 #: cdedb/frontend/event.py:5676 cdedb/frontend/event.py:5523
+#: cdedb/frontend/event.py:5736
 msgid "Camping Mat Capacity"
 msgstr "Isomattenplätze"
 
 #: cdedb/frontend/event.py:5700 cdedb/frontend/event.py:5677
-#: cdedb/frontend/event.py:5524
+#: cdedb/frontend/event.py:5524 cdedb/frontend/event.py:5737
 msgid "Lodgement Notes"
 msgstr "Unterkunftsnotizen"
 
 #: cdedb/frontend/event.py:5701 cdedb/frontend/event.py:5678
-#: cdedb/frontend/event.py:5525
+#: cdedb/frontend/event.py:5525 cdedb/frontend/event.py:5738
 msgid "Lodgement Group ID"
 msgstr "Unterkunftsgrupp: ID"
 
@@ -3749,55 +3889,57 @@ msgstr "Unterkunftsgrupp: ID"
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:32
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:39
 #: cdedb/frontend/event.py:5679 cdedb/frontend/event.py:5526
+#: cdedb/frontend/event.py:5739
 msgid "Lodgement Group"
 msgstr "Unterkunftgruppe"
 
 #: cdedb/frontend/event.py:5703 cdedb/frontend/event.py:5680
+#: cdedb/frontend/event.py:5740
 msgid "Lodgement Group Title"
 msgstr "Unterkunftsgruppe: Bezeichner"
 
 #: cdedb/frontend/event.py:5705 cdedb/frontend/event.py:5682
-#: cdedb/frontend/event.py:5529
+#: cdedb/frontend/event.py:5529 cdedb/frontend/event.py:5742
 msgid "Lodgement Group Regular Capacity"
 msgstr "Unterkunftsgruppe: Reguläre Kapazität"
 
 #: cdedb/frontend/event.py:5707 cdedb/frontend/event.py:5684
-#: cdedb/frontend/event.py:5531
+#: cdedb/frontend/event.py:5531 cdedb/frontend/event.py:5744
 msgid "Lodgement Group Camping Mat Capacity"
 msgstr "Unterkunftsgruppe: Isomatten-Kapazität"
 
 #: cdedb/frontend/event.py:5721 cdedb/frontend/event.py:5698
-#: cdedb/frontend/event.py:5545
+#: cdedb/frontend/event.py:5545 cdedb/frontend/event.py:5758
 msgid "Regular Inhabitants"
 msgstr "Reguläre Bewohner"
 
 #: cdedb/frontend/event.py:5723 cdedb/frontend/event.py:5700
-#: cdedb/frontend/event.py:5547
+#: cdedb/frontend/event.py:5547 cdedb/frontend/event.py:5760
 msgid "Reserve Inhabitants"
 msgstr "Isomattenschläfer"
 
 #: cdedb/frontend/event.py:5725 cdedb/frontend/event.py:5702
-#: cdedb/frontend/event.py:5549
+#: cdedb/frontend/event.py:5549 cdedb/frontend/event.py:5762
 msgid "Total Inhabitants"
 msgstr "Gesamtbewohner"
 
 #: cdedb/frontend/event.py:5727 cdedb/frontend/event.py:5704
-#: cdedb/frontend/event.py:5551
+#: cdedb/frontend/event.py:5551 cdedb/frontend/event.py:5764
 msgid "Group Regular Inhabitants"
 msgstr "Unterkunftsgruppe: Reguläre Bewohner"
 
 #: cdedb/frontend/event.py:5729 cdedb/frontend/event.py:5706
-#: cdedb/frontend/event.py:5553
+#: cdedb/frontend/event.py:5553 cdedb/frontend/event.py:5766
 msgid "Group Reserve Inhabitants"
 msgstr "Unterkufntsgruppe: Isomattenschläfer"
 
 #: cdedb/frontend/event.py:5731 cdedb/frontend/event.py:5708
-#: cdedb/frontend/event.py:5555
+#: cdedb/frontend/event.py:5555 cdedb/frontend/event.py:5768
 msgid "Group Total Inhabitants"
 msgstr "Unterkunftsgruppe: Gesamtbewohner"
 
 #: cdedb/frontend/event.py:5803 cdedb/frontend/event.py:5780
-#: cdedb/frontend/event.py:5635
+#: cdedb/frontend/event.py:5635 cdedb/frontend/event.py:5840
 msgid "Unknown query scope."
 msgstr "Unbekanntes Abfragen-Ziel."
 
@@ -3807,11 +3949,13 @@ msgstr "Unbekanntes Abfragen-Ziel."
 #: cdedb/frontend/event.py:5888 cdedb/frontend/event.py:5921
 #: cdedb/frontend/event.py:5678 cdedb/frontend/event.py:5716
 #: cdedb/frontend/event.py:5739 cdedb/frontend/event.py:5771
+#: cdedb/frontend/event.py:5884 cdedb/frontend/event.py:5923
+#: cdedb/frontend/event.py:5948 cdedb/frontend/event.py:5981
 msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
 
 #: cdedb/frontend/event.py:5849 cdedb/frontend/event.py:5826
-#: cdedb/frontend/event.py:5680
+#: cdedb/frontend/event.py:5680 cdedb/frontend/event.py:5886
 msgid "Already checked in."
 msgstr "Bereits eingecheckt."
 
@@ -3819,17 +3963,18 @@ msgstr "Bereits eingecheckt."
 #: cdedb/frontend/event.py:5947 cdedb/frontend/event.py:5867
 #: cdedb/frontend/event.py:5891 cdedb/frontend/event.py:5924
 #: cdedb/frontend/event.py:5720 cdedb/frontend/event.py:5742
-#: cdedb/frontend/event.py:5774
+#: cdedb/frontend/event.py:5774 cdedb/frontend/event.py:5927
+#: cdedb/frontend/event.py:5951 cdedb/frontend/event.py:5984
 msgid "Wrong associated field."
 msgstr "Feld einer anderen Veranstaltung angegeben."
 
 #: cdedb/frontend/event.py:6015 cdedb/frontend/event.py:5992
-#: cdedb/frontend/event.py:5842
+#: cdedb/frontend/event.py:5842 cdedb/frontend/event.py:6052
 msgid "There exist unmigrated personas."
 msgstr "Unmigrierte Accounts gefunden."
 
 #: cdedb/frontend/event.py:6034 cdedb/frontend/event.py:6011
-#: cdedb/frontend/event.py:5860
+#: cdedb/frontend/event.py:5860 cdedb/frontend/event.py:6071
 msgid "Event already archived."
 msgstr "Veranstaltung bereits archiviert."
 
@@ -3840,31 +3985,32 @@ msgstr "Veranstaltung bereits archiviert."
 #: cdedb/frontend/event.py:5869 cdedb/frontend/event.py:5900
 #: cdedb/frontend/templates/web/event/show_event.tmpl:383
 #: cdedb/frontend/templates/web/event/show_event.tmpl:412
+#: cdedb/frontend/event.py:6080 cdedb/frontend/event.py:6112
 msgid "Event is not concluded yet."
 msgstr "Veranstaltung ist noch nicht abgeschlossen."
 
 #: cdedb/frontend/event.py:6051 cdedb/frontend/event.py:6028
-#: cdedb/frontend/event.py:5877
+#: cdedb/frontend/event.py:5877 cdedb/frontend/event.py:6088
 msgid "Event archived."
 msgstr "Veranstaltung archiviert."
 
 #: cdedb/frontend/event.py:6055 cdedb/frontend/event.py:6032
-#: cdedb/frontend/event.py:5881
+#: cdedb/frontend/event.py:5881 cdedb/frontend/event.py:6092
 msgid "Created past event."
 msgstr "Vergangene Veranstaltung erstellt."
 
 #: cdedb/frontend/event.py:6059 cdedb/frontend/event.py:6036
-#: cdedb/frontend/event.py:5885
+#: cdedb/frontend/event.py:5885 cdedb/frontend/event.py:6096
 msgid "Created multiple past events."
 msgstr "Mehrere vergangene Veranstaltungen erstellt."
 
 #: cdedb/frontend/event.py:6087 cdedb/frontend/event.py:6064
-#: cdedb/frontend/event.py:5912
+#: cdedb/frontend/event.py:5912 cdedb/frontend/event.py:6124
 msgid "Event deleted."
 msgstr "Veranstaltung gelöscht."
 
 #: cdedb/frontend/event.py:6246 cdedb/frontend/event.py:6223
-#: cdedb/frontend/event.py:6070
+#: cdedb/frontend/event.py:6070 cdedb/frontend/event.py:6283
 msgid "Active characters found in search."
 msgstr "Aktive Zeichen in der Eingabe gefunden."
 
@@ -4155,6 +4301,7 @@ msgstr "Postleitzahl, Stadt"
 #: cdedb/frontend/templates/web/event/show_event.tmpl:329
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:276
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:102
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:154
 msgid "Actions"
 msgstr "Aktionen"
 
@@ -4188,6 +4335,7 @@ msgstr "Aktionen"
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:285
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:111
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:133
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:163
 msgid "Are you sure?"
 msgstr "sicher?"
 
@@ -4348,6 +4496,7 @@ msgstr "Bis jetzt haben %(count)s Teilnehmer über diesen Punkt abgestimmt."
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:104
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:113
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:55
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:105
 msgid "Files"
 msgstr "Dateien"
 
@@ -4941,6 +5090,7 @@ msgstr "Version hinzufügen"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:132
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:71
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:72
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:124
 msgid "Add File"
 msgstr "Datei hinzufügen"
 
@@ -5293,6 +5443,7 @@ msgstr "Wahlleitung"
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:102
 #: cdedb/frontend/templates/web/event/show_event.tmpl:190
 #: cdedb/frontend/templates/web/ml/management.tmpl:56
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:80
 msgid "ID, name, email"
 msgstr "ID, Name, E-Mail"
 
@@ -5389,6 +5540,7 @@ msgstr "Datei-Übersicht (%(title)s)"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:118
 #: cdedb/frontend/templates/web/assembly/list_attachments.tmpl:32
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:59
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:110
 msgid "General Files"
 msgstr "Allgemeine Dateien"
 
@@ -5542,6 +5694,7 @@ msgstr "IDs der neuen Wahlleiter"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:141
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:80
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:81
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:133
 msgid "Ballot Files"
 msgstr "Dateien zu Abstimmungen"
 
@@ -5551,6 +5704,7 @@ msgstr "Dateien zu Abstimmungen"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:108
 #: cdedb/frontend/templates/web/event/show_event.tmpl:381
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:109
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:161
 msgid "Archive"
 msgstr "Archivieren"
 
@@ -5558,6 +5712,7 @@ msgstr "Archivieren"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:170
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:109
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:110
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:162
 msgid "Assembly still has open ballots."
 msgstr "Die Versammlung hat noch laufende Abstimmungen."
 
@@ -12832,6 +12987,7 @@ msgstr "Suchbarkeit entschieden"
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:21
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:47
 #: cdedb/frontend/templates/web/core/show_user.tmpl:196
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:96
 msgid "Admin-Notes"
 msgstr "Admin-Notizen"
 
@@ -14020,6 +14176,7 @@ msgstr "%s bis"
 #: cdedb/frontend/templates/web/util.tmpl:811
 #: cdedb/frontend/templates/web/util.tmpl:633
 #: cdedb/frontend/templates/web/util.tmpl:820
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:84
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -15677,7 +15834,8 @@ msgstr "Muss eine kommagetrennte Liste von zulässigen Bezeichnern sein."
 #: cdedb/frontend/core.py:1572 cdedb/frontend/core.py:1726
 #: cdedb/backend/core.py:2059 cdedb/frontend/core.py:1579
 #: cdedb/frontend/core.py:1735 cdedb/frontend/core.py:1593
-#: cdedb/frontend/core.py:1749
+#: cdedb/frontend/core.py:1749 cdedb/frontend/core.py:1611
+#: cdedb/frontend/core.py:1767
 msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
@@ -15915,12 +16073,14 @@ msgstr "Unpassende Art von Fragebogen für Beitragsmodifikator-Feld."
 #: cdedb/frontend/event.py:3707 cdedb/validation.py:3096
 #: cdedb/frontend/event.py:3691 cdedb/frontend/event.py:3585
 #: cdedb/validation.py:3095 cdedb/frontend/event.py:3695
+#: cdedb/frontend/event.py:3749
 msgid "Registration questionnaire rows may not be readonly."
 msgstr "Anmeldungs-Fragebogen darf nicht schreibgeschützt sein."
 
 #: cdedb/frontend/event.py:3684 cdedb/validation.py:3103
 #: cdedb/frontend/event.py:3668 cdedb/frontend/event.py:3562
 #: cdedb/validation.py:3102 cdedb/frontend/event.py:3672
+#: cdedb/frontend/event.py:3726
 msgid "Must not duplicate field."
 msgstr "Felder dürfen nicht doppelt auftreten."
 
@@ -16073,7 +16233,7 @@ msgstr "Ungültige Einschränkung bei Index %(index)s."
 #: cdedb/frontend/event.py:3691 cdedb/validation.py:4422
 #: cdedb/frontend/event.py:3675 cdedb/frontend/event.py:3569
 #: cdedb/validation.py:4408 cdedb/frontend/event.py:3679
-#: cdedb/validation.py:4411
+#: cdedb/validation.py:4411 cdedb/frontend/event.py:3733
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
@@ -16154,6 +16314,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:177
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:116
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:117
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:169
 msgid ""
 "Archives the assembly. The configuration cannot be changed after this. The "
 "private keys used to sign the votes will be deleted from the database. This "
@@ -16254,3 +16415,1961 @@ msgstr "Muss später als Beginn sein."
 #, python-format
 msgid "%(given_names)s %(family_name)s is not an event user."
 msgstr "%(given_names)s %(family_name)s ist kein Veranstaltungsnutzer."
+
+#: cdedb/frontend/templates/web/event/amend_registration.tmpl:64
+#: cdedb/frontend/templates/web/event/register.tmpl:169
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:190
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:184
+msgid "I want to be lodged separated by gender."
+msgstr "Ich möchte geschlechtergetrennt untergebracht werden."
+
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:196
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:190
+#, python-format
+msgid ""
+"I %(consent)s agree that my data, including my name, address and my email, "
+"may be sent to other participants of this event beforehand."
+msgstr ""
+"Ich stimme %(consent)s zu, dass meine Daten, insbesondere mein Name, meine "
+"Adresse und meine E-Mail, im Vorfeld der Veranstaltung an andere Teilnehmer "
+"weitergegeben werden dürfen."
+
+#: cdedb/config.py:174
+msgid "60_query_dokuteam_course_picture"
+msgstr "Dokuteam Kursfoto"
+
+#: cdedb/config.py:178
+msgid "61_query_dokuteam_dokuforge"
+msgstr "Dokuteam Dokuforge"
+
+#: cdedb/config.py:244
+msgid "50_query_dokuteam_courselist"
+msgstr "Dokuteam Kursliste"
+
+#: cdedb/frontend/common.py:1053
+#, python-format
+msgid "Requested modus does not exists: %(modus)s"
+msgstr "Angefordeter modus existiert nicht: %(modus)s"
+
+#: cdedb/frontend/common.py:1057
+#, python-format
+msgid "Template not found: %(file)s"
+msgstr "Template nicht gefunden: %(file)s"
+
+#: cdedb/frontend/templates/web/event/downloads.tmpl:153
+msgid "Dokuteam courselist"
+msgstr "Dokuteam Kursliste"
+
+#: cdedb/frontend/templates/web/event/downloads.tmpl:154
+msgid "Shell-Snippet"
+msgstr "Shell-Schnipsel"
+
+#: cdedb/frontend/templates/web/event/downloads.tmpl:157
+msgid "Dokuteam participant list"
+msgstr "Dokuteam Teilnehmerliste"
+
+#: cdedb/frontend/templates/web/event/downloads.tmpl:158
+msgid "ZIP-Archive"
+msgstr "ZIP-Archiv"
+
+#: cdedb/frontend/event.py:3771 cdedb/frontend/event.py:3755
+#: cdedb/frontend/event.py:3648 cdedb/frontend/event.py:3759
+msgid "Unknown questionnaire kind. Defaulted to %(kind)s."
+msgstr "Unbekannte Fragebogen-Art. Auf %(kind)s zurückgefallen."
+
+#~ msgid "SubscriptionPolicy.mandatory"
+#~ msgstr "Alternativlos"
+
+#~ msgid "SubscriptionPolicy.opt_out"
+#~ msgstr "Opt-Out"
+
+#~ msgid "SubscriptionPolicy.opt_in"
+#~ msgstr "Opt-In"
+
+#~ msgid "SubscriptionPolicy.moderated_opt_in"
+#~ msgstr "Moderiertes Opt-In"
+
+#~ msgid "SubscriptionPolicy.invitation_only"
+#~ msgstr "Nur durch Moderatoren"
+
+#~ msgid "Only one allowed of gateway, event_id and assembly_id."
+#~ msgstr ""
+#~ "Nur eine der folgenden Optionen kann gleichzeitig aktiv sein: "
+#~ "Zugangsvererbung, verknüpfte Veranstaltung, verknüpfte Versammlung."
+
+#~ msgid "Only admin may set opt out policies."
+#~ msgstr "Opt-Out Listen nur durch Admins möglich."
+
+#~ msgid "Must be moderator."
+#~ msgstr "Nur für Moderatoren."
+
+#~ msgid "Subscription request awaits moderation."
+#~ msgstr "Abonnement wird durch einen Moderator geprüft."
+
+#~ msgid "Malinglist-Account Requests [%(count)s]"
+#~ msgstr "Mailinglisten-Accountanfragen [%(count)s]"
+
+#~ msgid "Active Malinglists"
+#~ msgstr "Aktive Mailinglisten"
+
+#~ msgid "Gateway"
+#~ msgstr "Zugangsvererbung"
+
+#~ msgid "Subscribers of this list can always subscribe. (Opt-In)"
+#~ msgstr "Die Abonnenten dieser Liste können sich immer eintragen. (Opt-In)"
+
+#~ msgid "%(title)s – Consistency-Check"
+#~ msgstr "%(title)s – Konsistenzcheck"
+
+#~ msgid "Consistency-Check"
+#~ msgstr "Konsistenzcheck"
+
+#~ msgid "Problematic Subscribers"
+#~ msgstr "Problematische Abonnenten"
+
+#~ msgid "All subscribers belong to the configured audience."
+#~ msgstr "Alle Abonnenten gehören zur konfigurierten Zielgruppe."
+
+#~ msgid "The following subscribers do not belong to the configured audience."
+#~ msgstr ""
+#~ "Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe."
+
+#~ msgid "Mark %(given_names)s %(family_name)s as an exception."
+#~ msgstr "%(given_names)s %(family_name)s als Ausnahme markieren."
+
+#~ msgid "Remove All"
+#~ msgstr "Alle entfernen"
+
+#~ msgid "Remove all the above as subscribers."
+#~ msgstr "Alle obigen Abonnements entfernen."
+
+#~ msgid "All problematic subscribers will be removed."
+#~ msgstr "Alle problematischen Abonnenten werden entfernt."
+
+#~ msgid "Exceptions"
+#~ msgstr "Ausnahmen"
+
+#~ msgid ""
+#~ "The following subscribers do not belong to the configured audience, but "
+#~ "were marked as exceptions."
+#~ msgstr ""
+#~ "Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe, "
+#~ "wurden aber explizit markiert."
+
+#~ msgid "Global Consistency-Check"
+#~ msgstr "Globaler Konsistenzcheck"
+
+#~ msgid "or %(link)s (Opt-In)"
+#~ msgstr "oder %(link)s (Opt-In)"
+
+#~ msgid "%(title)s – Manage"
+#~ msgstr "%(title)s – Verwalten"
+
+#~ msgid ""
+#~ "Note that only DB-Accounts can be moderators and subscribers.\n"
+#~ "            Any email address can be added to the whitelist though."
+#~ msgstr ""
+#~ "Beachte, dass als Moderatoren und Abonnenten nur DB-Accounts und keine "
+#~ "beliebigen E-Mail-Adressen eingetragen werden können. Bei der Whitelist "
+#~ "können hingegen beliebige E-Mail-Adressen eingetragen werden."
+
+#~ msgid ""
+#~ "Users outside of the configured audience can only be added by entering "
+#~ "their ID."
+#~ msgstr ""
+#~ "Benutzer außerhalb des konfigurierten Empfängerkreises können nur durch "
+#~ "Eingabe ihrer ID hinzugefügt werden."
+
+#~ msgid "Available for subscribers of %(link)s"
+#~ msgstr "Zugänglich für Abonnenten von %(link)s"
+
+#~ msgid ""
+#~ "You cannot subscribe to this mailinglist, because you are not\n"
+#~ "                                part of the configured audience."
+#~ msgstr ""
+#~ "Du kannst diese Mailingliste nicht abonnieren, da Du nicht Teil ihres "
+#~ "Empfängerkreises bist."
+
+#~ msgid "Admin privelege modification prevented."
+#~ msgstr "Änderung der Admin-Privilegien verhindert."
+
+#~ msgid "Unknown Part."
+#~ msgstr "Unbekannter Veranstaltungsteil."
+
+#~ msgid "No minors may register. Please contact the Orgateam"
+#~ msgstr ""
+#~ "Minderjährige können sich nicht anmelden. Kontaktiere ggf. bitt das "
+#~ "Orgateam."
+
+#~ msgid "Super"
+#~ msgstr "Super"
+
+#~ msgid "You did not vote or you entered an invalid secret."
+#~ msgstr "Du hast nicht abgestimmt oder ein ungüliges Geheimnis angegeben."
+
+#~ msgid ""
+#~ "Deletes the event, including description, courses and participant "
+#~ "information"
+#~ msgstr ""
+#~ "Löscht die Veranstaltung inklusive Beschreibung, Kursen und Teilnehmern."
+
+#~ msgid "Super-Admin"
+#~ msgstr "Super-Admin"
+
+#~ msgid "There are currently %(count)s %(link)s to review."
+#~ msgstr "Derzeit sind %(count)s %(link)s zu bearbeiten."
+
+#~ msgid "%(count)s Requests"
+#~ msgstr "%(count)s Anfragen"
+
+#~ msgid "ID of the new moderator"
+#~ msgstr "ID des neuen Moderators"
+
+#~ msgid "Refusing to start in debug mode."
+#~ msgstr "Start im Entwicklungsmodus ist unzulässig."
+
+#~ msgid "Unknown part."
+#~ msgstr "Unbekannter Veranstaltungsteil."
+
+#~ msgid "Already paid."
+#~ msgstr "Schon bezahlt."
+
+#~ msgid ""
+#~ "This vote was a preferential vote. Voters arranged the candidates "
+#~ "according to their preference.\n"
+#~ "                        The preferences of all participants were "
+#~ "evaluated using the %(link)s,\n"
+#~ "                        to determine the winner."
+#~ msgstr ""
+#~ "Diese Abstimmung war eine Präferenzwahl. Alle Teilnehmer konnten die "
+#~ "Kandidaten in eine persönliche Rangfolge bringen. Diese Präferenzlisten "
+#~ "wurden dann mit der %(link)s ausgewertet, um den Wahlsieger zu bestimmen."
+
+#~ msgid ""
+#~ "The summary shows the combined preference list of all participant.\n"
+#~ "                        The greater-than character %(gt)s means that the "
+#~ "candidate, represented by their\n"
+#~ "                        shortname, on the left has higher overall "
+#~ "preference than the one on the right.\n"
+#~ "                        The equals character %(eq)s means that two or "
+#~ "more candidates have the same overall\n"
+#~ "                        preference across all participants."
+#~ msgstr ""
+#~ "Die Zusammenfassung zeigt die kombinierte Präferenzliste aller "
+#~ "Teilnehmer. Das Größer-als-Zeichen %(gt)s gibt an, dass der Kandidat auf "
+#~ "der linken Seite des Zeichens insgesamt mit höherer Präferenz eingestuft "
+#~ "wurde als der Kandidate auf der rechten Seite. Das Gleichheits-Zeichen "
+#~ "%(eq)s gibt an, dass zwei oder mehr Kandidaten die gleiche gesamte "
+#~ "Präferenz haben."
+
+#~ msgid ""
+#~ "Additionally the shortname %(abm)s shows where in the rejection bar was "
+#~ "ranked in the\n"
+#~ "                            overall preference list.\n"
+#~ "                            Should no candidate have won against the bar, "
+#~ "the board may take additional measures."
+#~ msgstr ""
+#~ "Außerdem gibt %(abm)s an, wo in der gesamten Präferenzliste die "
+#~ "Ablehnungsgrenze eingeordnet wurde. Sollte in der Auszählung kein "
+#~ "Kandidat gegen die Ablehnungsgrenze gewonnen haben, so kann der Vorstand "
+#~ "ggf. weitere Maßnahmen ergreifen."
+
+#~ msgid ""
+#~ "This vote is a preferential vote. You can arrange the candidates in the "
+#~ "field above\n"
+#~ "                                    according to your personal "
+#~ "preference. The preferences of all participants will be\n"
+#~ "                                    evaluated using the %(link)s, to "
+#~ "determine the winner."
+#~ msgstr ""
+#~ "Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige "
+#~ "Feld eine Präferenzliste eintragen, um die Kandidaten in eine persönliche "
+#~ "Rangfolge zu bringen. Später werden die Präferenzlisten aller Teilnehmer "
+#~ "mit der %(link)s ausgewertet, um die Wahlsieger zu bestimmen."
+
+#~ msgid ""
+#~ "To enter your preferencelist, use the shortnames given in the list of "
+#~ "candidates and the\n"
+#~ "                                    %(gt)s and %(eq)s characters. Use the "
+#~ "greater-than character %(gt)s\n"
+#~ "                                    to give the candidates left of the "
+#~ "character higher preference than those on the right.\n"
+#~ "                                    Use the equals character to give two "
+#~ "candidates the same preference. You need to have all\n"
+#~ "                                    candidates in your preferencelist."
+#~ msgstr ""
+#~ "Um die Präferenzliste einzugeben, verwende bitte die in der "
+#~ "Kandidatenliste angegebenen Kurzbezeichnungen der Kandidaten und die "
+#~ "Zeichen %(gt)s und %(eq)s. Mit dem Größer-als-Zeichen %(gt)s bevorzugst "
+#~ "Du die Kandidaten links des Zeichens gegenüber denen auf der rechten "
+#~ "Seite. Mit dem Gleichheitszeichen %(eq)s bewertest Du zwei Kandidaten "
+#~ "gleich. In der Präferenzliste müssen alle Kandidaten genannt werden."
+
+#~ msgid ""
+#~ "Additionally you need to use the rejection bar %(abm)s in your "
+#~ "preferencelist.\n"
+#~ "                                        Use it in your preferencelist "
+#~ "like you would a candidate. Put all\n"
+#~ "                                        candidates you deem suitable "
+#~ "higher than %(abm)s and all\n"
+#~ "                                        candidates you reject lower, i. "
+#~ "e. to the right of %(abm)s.\n"
+#~ "                                        Should no candidate win against "
+#~ "the bar, the board may take additional measures."
+#~ msgstr ""
+#~ "Zusätzlich musst Du die Ablehnungsgrenze %(abm)s in der Präferenzliste "
+#~ "verwenden. Diese wird wie ein Kandidat in der Liste aufgeführt und gibt "
+#~ "an, welche Kandidaten Du ablehnst. Kandidaten, die Du für geeignet "
+#~ "hältst, solltest Du höher als %(abm)s bewerten, Kandidaten, die Du "
+#~ "ablehnst, niedriger, d. h. rechts von %(abm)s. Sollte in der Auszählung "
+#~ "kein Kandidat gegen die Ablehnungsgrenze gewinnen, so kann der Vorstand "
+#~ "ggf. weitere Maßnahmen ergreifen."
+
+#~ msgid ""
+#~ "You deem all candidates suitable, but you like Leia the best,\n"
+#~ "                                            with no difference between "
+#~ "the other candidates."
+#~ msgstr ""
+#~ "Du hältst alle Kandidaten für geeignet, aber Leia für die Beste, die "
+#~ "anderen Kandidaten für gleichwertig."
+
+#~ msgid ""
+#~ "You deem Leia and Obi-Wan (equally) suitable, you want to reject Luke\n"
+#~ "                                            and you absolutely can’t "
+#~ "stand Han Solo."
+#~ msgstr ""
+#~ "Du hältst nur Leia und Obi-Wan für (gleich) geeignet, Luke lehnst Du ab, "
+#~ "Han Solo geht echt gar nicht."
+
+#~ msgid ""
+#~ "You want to vote for Luke and if he doesn’t make it, you think Obi-Wan "
+#~ "should.\n"
+#~ "                                            You don’t have an opinion "
+#~ "about the others."
+#~ msgstr ""
+#~ "Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. "
+#~ "Zu den anderen hast Du keine Meinung."
+
+#~ msgid ""
+#~ "This is the interactive voting form. It is inconvenient to used with a "
+#~ "keyboard only.\n"
+#~ "                                Use the link above to switch to the text-"
+#~ "based form."
+#~ msgstr ""
+#~ "Hier folgt das interaktive Abstimmungs-Formular. Dieses ist mit der "
+#~ "Tastatur nur mäßig gut zu bedienen. Verwende den obigen Link, um zum "
+#~ "textbasierten Formular zu wechseln."
+
+#~ msgid ""
+#~ "To arrange the candidates, move them into one of the shaded boxes. The "
+#~ "higher up the box,\n"
+#~ "                                    the higher your preference for that "
+#~ "candidate. Candidates within the same box will be\n"
+#~ "                                    evaluated with the same preference. "
+#~ "Move a candidate between two boxes to create a new box."
+#~ msgstr ""
+#~ "Um die Kandidaten anzuordnen, bewege sie in eine der schattierten Boxen. "
+#~ "Eine Einordnung in einer höheren Box drückt eine höhere Präferenz dieses "
+#~ "Kandidaten aus. Kandidaten, die sich in der gleichen Box befinden, werden "
+#~ "mit gleicher Präferenz gewertet. Bewegst Du einen Kandidaten in den "
+#~ "Zwischenraum ober- und unterhalb der Boxen, entsteht dort eine neue Box."
+
+#~ msgid ""
+#~ "There are three ways of moving candidates: Drag’n’Drop them into a "
+#~ "different box or\n"
+#~ "                                    click on a candidate and then on a "
+#~ "box. Or you can select a candidate with %(tab)s,\n"
+#~ "                                    confirm it with %(enter)s or "
+#~ "%(space)s, then select a box with %(tab)s\n"
+#~ "                                    and confirm the selection with "
+#~ "%(enter)s or %(space)s."
+#~ msgstr ""
+#~ "Zum Bewegen der Kandidaten hast du drei Möglichkeiten: Verschiebe sie mit "
+#~ "Drag’n’Drop in eine andere Box oder klicke zuerst den Kandidaten, dann "
+#~ "die gewünschte Box an. Mit der Tastatur kannst Du Kandidaten und Boxen "
+#~ "mit %(tab)s fokussieren und so zunächst den Kandidaten und dann die Ziel-"
+#~ "Box mit %(enter)s oder %(space)s auswählen."
+
+#~ msgid ""
+#~ "One of the boxes is marked as “Neutral”. Please place candidates cou deem "
+#~ "suitable\n"
+#~ "                                        above this box (they will be "
+#~ "highlighted in green) and candidates you want to reject\n"
+#~ "                                        below this box (they will be "
+#~ "highlighted in red). Should all candidates be rejected,\n"
+#~ "                                        the board may take additional "
+#~ "measures."
+#~ msgstr ""
+#~ "Eine der Boxen ist stets als „Neutral“ gekennzeichnet. Bitte ordne "
+#~ "Kandidaten, die Du für geeignet hältst, oberhalb dieser Box an (Boxen "
+#~ "werden grün hinterlegt) und Kandidaten die Du ablehnst unterhalb (Boxen "
+#~ "werden rot hinterlegt). Sollten in der Auszählung alle Kandidaten "
+#~ "abgelehnt werden, so kann der Vorstand ggf. weitere Maßnahmen ergreifen."
+
+#~ msgid "Minimum Size (incl. instr.)"
+#~ msgstr "Mindestgröße (inkl. KL)"
+
+#~ msgid "Maximum Size (incl. instr.)"
+#~ msgstr "Maximalgröße (inkl. KL)"
+
+#~ msgid "All numbers include course instructors."
+#~ msgstr "Alle Zahlen beinhalten die Kursleiter."
+
+#~ msgid ""
+#~ "All data except Event-Parts can be changed until the registration "
+#~ "ends(%(date)s)."
+#~ msgstr ""
+#~ "Alle Angaben bis auf die Veranstaltungsteile können bis zum "
+#~ "Anmeldeschluss(%(date)s) geändert werden."
+
+#~ msgid "Couldn’t find the requested page"
+#~ msgstr "Konnte die angeforderte Seite nicht finden"
+
+#~ msgid "New balance identical to old balance."
+#~ msgstr "Neues Guthaben identisch zu altem Guthaben."
+
+#~ msgid "Other Mailinglists"
+#~ msgstr "Andere Mailinglisten"
+
+#~ msgid "Access to CdE data sets inhibited."
+#~ msgstr "Zugriff auf CdE-Datensätze verhindert."
+
+#~ msgid "CdE not supported for genesis."
+#~ msgstr "Der CdE-Bereich wird vom genesis-Prozess nicht unterstützt."
+
+#~ msgid "Assembly not supported for genesis."
+#~ msgstr ""
+#~ "Der Veranstaltungs-Bereich wird vom genesis-Prozess nicht unterstützt."
+
+#~ msgid "Invalid target realm."
+#~ msgstr "Zielbereich ist nicht zulässig."
+
+#~ msgid ""
+#~ "This vote is a preferential vote. You can arrange the candidates in the "
+#~ "field above\n"
+#~ "                            according to your personal preference. The "
+#~ "preferences of all participants will be\n"
+#~ "                            evaluated using the %(link)s, to determine "
+#~ "the winner."
+#~ msgstr ""
+#~ "Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige "
+#~ "Feld eine Präferenzliste eintragen, um die Kandidaten in eine persönliche "
+#~ "Rangfolge zu bringen. Später werden die Präferenzlisten aller Teilnehmer "
+#~ "mit der %(link)s ausgewertet, um die Wahlsieger zu bestimmen."
+
+#~ msgid ""
+#~ "To enter your preferencelist, use the shortnames given in the list of "
+#~ "candidates and the\n"
+#~ "                            %(gt)s and %(eq)s characters. Use the greater-"
+#~ "than character %(gt)s\n"
+#~ "                            to give the candidates left of the character "
+#~ "higher preference than those on the right.\n"
+#~ "                            Use the equals character to give two "
+#~ "candidates the same preference. You need to have all\n"
+#~ "                            candidates in your preferencelist."
+#~ msgstr ""
+#~ "Um die Präferenzliste einzugeben, verwende bitte die in der "
+#~ "Kandidatenliste angegebenen Kurzbezeichnungen der Kandidaten und die "
+#~ "Zeichen %(gt)s und %(eq)s. Mit dem Größer-als-Zeichen %(gt)s bevorzugst "
+#~ "Du die Kandidaten links des Zeichens gegenüber denen auf der rechten "
+#~ "Seite. Mit dem Gleichheitszeichen %(eq)s bewertest Du zwei Kandidaten "
+#~ "gleich. In der Präferenzliste müssen alle Kandidaten genannt werden."
+
+#~ msgid ""
+#~ "Additionally you need to use the rejection bar %(abm)s in your "
+#~ "preferencelist.\n"
+#~ "                                Use it in your preferencelist like you "
+#~ "would a candidate. Put all\n"
+#~ "                                candidates you deem suitable higher than "
+#~ "%(abm)s and all\n"
+#~ "                                candidates you reject lower, i. e. to the "
+#~ "right of %(abm)s.\n"
+#~ "                                Should no candidate win against the bar, "
+#~ "the board may take additional measures."
+#~ msgstr ""
+#~ "Zusätzlich musst Du die Ablehnungsgrenze %(abm)s in der Präferenzliste "
+#~ "verwenden. Diese wird wie ein Kandidat in der Liste aufgeführt und gibt "
+#~ "an, welche Kandidaten Du ablehnst. Kandidaten, die Du für geeignet "
+#~ "hältst, solltest Du höher als %(abm)s bewerten, Kandidaten, die Du "
+#~ "ablehnst, niedriger, d. h. rechts von %(abm)s. Sollte in der Auszählung "
+#~ "kein Kandidat gegen die Ablehnungsgrenze gewinnen, so kann der Vorstand "
+#~ "ggf. weitere Maßnahmen ergreifen."
+
+#~ msgid ""
+#~ "You deem all candidates suitable, but you like Leia the best,\n"
+#~ "                                    with no difference between the other "
+#~ "candidates."
+#~ msgstr ""
+#~ "Du hältst alle Kandidaten für geeignet, aber Leia für die Beste, die "
+#~ "anderen Kandidaten für gleichwertig."
+
+#~ msgid ""
+#~ "You deem Leia and Obi-Wan (equally) suitable, you want to reject Luke\n"
+#~ "                                    and you absolutely can’t stand Han "
+#~ "Solo."
+#~ msgstr ""
+#~ "Du hältst nur Leia und Obi-Wan für (gleich) geeignet, Luke lehnst Du ab, "
+#~ "Han Solo geht echt gar nicht."
+
+#~ msgid ""
+#~ "You want to vote for Luke and if he doesn’t make it, you think Obi-Wan "
+#~ "should.\n"
+#~ "                                    You don’t have an opinion about the "
+#~ "others."
+#~ msgstr ""
+#~ "Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. "
+#~ "Zu den anderen hast Du keine Meinung."
+
+#~ msgid ""
+#~ "This is the interactive voting form. It is inconvenient to used with a "
+#~ "keyboard only.\n"
+#~ "                        Use the link above to switch to the text-based "
+#~ "form."
+#~ msgstr ""
+#~ "Hier folgt das interaktive Abstimmungs-Formular. Dieses ist mit der "
+#~ "Tastatur nur mäßig gut zu bedienen. Verwende den obigen Link, um zum "
+#~ "textbasierten Formular zu wechseln."
+
+#~ msgid ""
+#~ "To arrange the candidates, move them into one of the shaded boxes. The "
+#~ "higher up the box,\n"
+#~ "                            the higher your preference for that "
+#~ "candidate. Candidates within the same box will be\n"
+#~ "                            evaluated with the same preference. Move a "
+#~ "candidate between two boxes to create a new box."
+#~ msgstr ""
+#~ "Um die Kandidaten anzuordnen, bewege sie in eine der schattierten Boxen. "
+#~ "Eine Einordnung in einer höheren Box drückt eine höhere Präferenz dieses "
+#~ "Kandidaten aus. Kandidaten, die sich in der gleichen Box befinden, werden "
+#~ "mit gleicher Präferenz gewertet. Bewegst Du einen Kandidaten in den "
+#~ "Zwischenraum ober- und unterhalb der Boxen, entsteht dort eine neue Box."
+
+#~ msgid ""
+#~ "There are three ways of moving candidates: Drag’n’Drop them into a "
+#~ "different box or\n"
+#~ "                            click on a candidate and then on a box. Or "
+#~ "you can select a candidate with %(tab)s,\n"
+#~ "                            confirm it with %(enter)s or %(space)s, then "
+#~ "select a box with %(tab)s\n"
+#~ "                            and confirm the selection with %(enter)s or "
+#~ "%(space)s."
+#~ msgstr ""
+#~ "Zum Bewegen der Kandidaten hast du drei Möglichkeiten: Verschiebe sie mit "
+#~ "Drag’n’Drop in eine andere Box oder klicke zuerst den Kandidaten, dann "
+#~ "die gewünschte Box an. Mit der Tastatur kannst Du Kandidaten und Boxen "
+#~ "mit %(tab)s fokussieren und so zunächst den Kandidaten und dann die Ziel-"
+#~ "Box mit %(enter)s oder %(space)s auswählen."
+
+#~ msgid ""
+#~ "This vote was a preferential vote. Voters arranged the candidates "
+#~ "according to their preference.\n"
+#~ "                    The preferences of all participants were evaluated "
+#~ "using the %(link)s,\n"
+#~ "                    to determine the winner."
+#~ msgstr ""
+#~ "Diese Abstimmung war eine Präferenzwahl. Alle Teilnehmer konnten die "
+#~ "Kandidaten in eine persönliche Rangfolge bringen. Diese Präferenzlisten "
+#~ "wurden dann mit der %(link)s ausgewertet, um den Wahlsieger zu bestimmen."
+
+#~ msgid ""
+#~ "The summary shows the combined preference list of all participant.\n"
+#~ "                    The greater-than character %(gt)s means that the "
+#~ "candidate, represented by their\n"
+#~ "                    shortname, on the left has higher overall preference "
+#~ "than the one on the right.\n"
+#~ "                    The equals character %(eq)s means that two or more "
+#~ "candidates have the same overall\n"
+#~ "                    preference across all participants."
+#~ msgstr ""
+#~ "Die Zusammenfassung zeigt die kombinierte Präferenzliste aller "
+#~ "Teilnehmer. Das Größer-als-Zeichen %(gt)s gibt an, dass der Kandidat auf "
+#~ "der linken Seite des Zeichens insgesamt mit höherer Präferenz eingestuft "
+#~ "wurde als der Kandidate auf der rechten Seite. Das Gleichheits-Zeichen "
+#~ "%(eq)s gibt an, dass zwei oder mehr Kandidaten die gleiche gesamte "
+#~ "Präferenz haben."
+
+#~ msgid ""
+#~ "Additionally the shortname %(abm)s shows where in the rejection bar was "
+#~ "ranked in the\n"
+#~ "                        overall preference list.\n"
+#~ "                        Should no candidate have won against the bar, the "
+#~ "board may take additional measures."
+#~ msgstr ""
+#~ "Außerdem gibt %(abm)s an, wo in der gesamten Präferenzliste die "
+#~ "Ablehnungsgrenze eingeordnet wurde. Sollte in der Auszählung kein "
+#~ "Kandidat gegen die Ablehnungsgrenze gewonnen haben, so kann der Vorstand "
+#~ "ggf. weitere Maßnahmen ergreifen."
+
+#~ msgid "MailinglistTypes.event_associated_legacy"
+#~ msgstr "Teilnehmer/Anmeldungen (veraltet)"
+
+#~ msgid "MailinglistTypes.event_orga_legacy"
+#~ msgstr "Orga (veraltet)"
+
+#~ msgid "Only one allowed of event_id and assembly_id."
+#~ msgstr ""
+#~ "Nur eine der folgenden Optionen kann gleichzeitig aktiv sein: verknüpfte "
+#~ "Veranstaltung, verknüpfte Versammlung."
+
+#~ msgid "Linked assembly requires assembly audience."
+#~ msgstr "Versammlungsverknüpfung benötigt Versammlungsnutzer."
+
+#~ msgid "Linked event requires event audience."
+#~ msgstr "Veranstaltungsverknüpfung benötigt Veranstaltungsnutzer."
+
+#~ msgid "Can not change subscription."
+#~ msgstr "Abonnent kann nicht geändert werden."
+
+#~ msgid "Can not change subscription"
+#~ msgstr "Abonnemont kann nicht verändert werden"
+
+#~ msgid "Mailinglist is linked to more than one entitiy."
+#~ msgstr "Mailingliste ist mit mehr als einer Entität verknüpft."
+
+#~ msgid ""
+#~ "If you think this is an error, please contact the %(team)s at %(mail)s "
+#~ "with the error message\n"
+#~ "                displayed above, the current time (%(time)s) and a "
+#~ "detailed description of your actions: What were you\n"
+#~ "                about to do? Which links and buttons did you click to get "
+#~ "here? Have you changed any settings before the\n"
+#~ "                error occurred?"
+#~ msgstr ""
+#~ "Wenn Du das für einen Fehler hältst, wende Dich bitte mit der oben "
+#~ "angezeigten Fehlermeldung, der aktuellen Zeit (%(time)s) und einer "
+#~ "detaillierten Beschreibung Deines Vorgehens an das %(team)s unter "
+#~ "%(mail)s: Was wolltest Du tun? Welche Links und Buttons hast du "
+#~ "angeklickt, um hierhin zu gelangen? Hast du irgendwelche Einstellungen "
+#~ "geändert, bevor der Fehler aufgetreten ist?"
+
+#~ msgid ""
+#~ "If you reached this page via an internal link of the CdE-Datenbank, "
+#~ "please contact the %(team)s at\n"
+#~ "                %(mail)s and describe how you got here."
+#~ msgstr ""
+#~ "Wenn Du diese Seite über einen internen Link in der CdE-Datenbank "
+#~ "erreicht hast, kontaktiere bitte das %(team)s unter %(mail)s and "
+#~ "beschreibe, wie Du hierhin gelangt bist."
+
+#~ msgid ""
+#~ "Use the navigation buttons of your browser to get back to the previous "
+#~ "page or go to the\n"
+#~ "                %(frontpage_link)s of the CdE-Datenbank."
+#~ msgstr ""
+#~ "Verwende die Navigations-Schaltflächen Deines Browsers, um zurück zur "
+#~ "vorherigen Seite zu gelangen, oder öffne die %(frontpage_link)s der CdE-"
+#~ "Datenbank."
+
+#~ msgid ""
+#~ "If the error persists, you probably found a bug, hidden in our code.\n"
+#~ "                Please contact the %(team)s at %(mail)s with the error "
+#~ "message displayed above, the current time\n"
+#~ "                (%(time)s) and a detailed description of your actions: "
+#~ "What were you about to do? Which links and\n"
+#~ "                buttons did you click to get here? Have you changed any "
+#~ "settings before the error occurred?"
+#~ msgstr ""
+#~ "Wenn der Fehler hartnäckig bleibt, hast Du vermutlich einen Bug entdeckt, "
+#~ "der sich in unserem Code versteckt. Bitte wende Dich mit der oben "
+#~ "angezeigten Fehlermeldung, der aktuellen Zeit (%(time)s) und einer "
+#~ "detaillierten Beschreibung Deines Vorgehens an das %(team)s unter "
+#~ "%(mail)s: Was wolltest Du tun? Welche Links und Buttons hast du "
+#~ "angeklickt, um hierhin zu gelangen? Hast du irgendwelche Einstellungen "
+#~ "geändert, bevor der Fehler aufgetreten ist?"
+
+#~ msgid ""
+#~ "All CdE-Members and external assembly participants can already\n"
+#~ "                        see this ballot and all associated information."
+#~ msgstr ""
+#~ "Alle CdE-Mitglieder und externe Teilnehmer der Versammlung können die "
+#~ "Abstimmung und alle Details jedoch bereits jetzt sehen, um sich zu "
+#~ "informieren."
+
+#~ msgid ""
+#~ "You can check your vote below and change it\n"
+#~ "                            before the end of the voting period."
+#~ msgstr ""
+#~ "Du kannst Deine Auswahl unten überprüfen und bis zum Ende des "
+#~ "Abstimmungszeitraums noch eine Auswahl treffen."
+
+#~ msgid ""
+#~ "This vote was a preferential vote. Voters arranged the candidates "
+#~ "according to their preference.\n"
+#~ "                The preferences of all participants were evaluated using "
+#~ "the %(link)s,\n"
+#~ "                to determine the winner."
+#~ msgstr ""
+#~ "Diese Abstimmung war eine Präferenzwahl. Alle Teilnehmer konnten die "
+#~ "Kandidaten in eine persönliche Rangfolge bringen. Diese Präferenzlisten "
+#~ "wurden dann mit der %(link)s ausgewertet, um den Wahlsieger zu bestimmen."
+
+#~ msgid ""
+#~ "The summary shows the combined preference list of all participant.\n"
+#~ "                The greater-than character %(gt)s means that the "
+#~ "candidate, represented by their\n"
+#~ "                shortname, on the left has higher overall preference than "
+#~ "the one on the right.\n"
+#~ "                The equals character %(eq)s means that two or more "
+#~ "candidates have the same overall\n"
+#~ "                preference across all participants."
+#~ msgstr ""
+#~ "Die Zusammenfassung zeigt die kombinierte Präferenzliste aller "
+#~ "Teilnehmer. Das Größer-als-Zeichen %(gt)s gibt an, dass der Kandidat auf "
+#~ "der linken Seite des Zeichens insgesamt mit höherer Präferenz eingestuft "
+#~ "wurde als der Kandidate auf der rechten Seite. Das Gleichheits-Zeichen "
+#~ "%(eq)s gibt an, dass zwei oder mehr Kandidaten die gleiche gesamte "
+#~ "Präferenz haben."
+
+#~ msgid ""
+#~ "Additionally the shortname %(abm)s shows where in the rejection bar was "
+#~ "ranked in the\n"
+#~ "                    overall preference list.\n"
+#~ "                    Should no candidate have won against the bar, the "
+#~ "board may take additional measures."
+#~ msgstr ""
+#~ "Außerdem gibt %(abm)s an, wo in der gesamten Präferenzliste die\n"
+#~ "Ablehnungsgrenze eingeordnet wurde. Sollte in der Auszählung kein "
+#~ "Kandidat\n"
+#~ "gegen die Ablehnungsgrenze gewonnen haben, so kann der Vorstand ggf. "
+#~ "weitere\n"
+#~ "Maßnahmen ergreifen."
+
+#~ msgid ""
+#~ "This vote is a preferential vote. You can arrange the candidates in the "
+#~ "field above\n"
+#~ "                according to your personal preference. The preferences of "
+#~ "all participants will be\n"
+#~ "                evaluated using the %(link)s, to determine the winner."
+#~ msgstr ""
+#~ "Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige "
+#~ "Feld eine Präferenzliste eintragen, um die Kandidaten in eine persönliche "
+#~ "Rangfolge zu bringen. Später werden die Präferenzlisten aller Teilnehmer "
+#~ "mit der %(link)s ausgewertet, um die Wahlsieger zu bestimmen."
+
+#~ msgid ""
+#~ "To enter your preferencelist, use the shortnames given in the list of "
+#~ "candidates and the\n"
+#~ "                %(gt)s and %(eq)s characters. Use the greater-than "
+#~ "character %(gt)s\n"
+#~ "                to give the candidates left of the character higher "
+#~ "preference than those on the right.\n"
+#~ "                Use the equals character to give two candidates the same "
+#~ "preference. You need to have all\n"
+#~ "                candidates in your preferencelist."
+#~ msgstr ""
+#~ "Um die Präferenzliste einzugeben, verwende bitte die in der "
+#~ "Kandidatenliste angegebenen Kurzbezeichnungen der Kandidaten und die "
+#~ "Zeichen %(gt)s und %(eq)s. Mit dem Größer-als-Zeichen %(gt)s bevorzugst "
+#~ "Du die Kandidaten links des Zeichens gegenüber denen auf der rechten "
+#~ "Seite. Mit dem Gleichheitszeichen %(eq)s bewertest Du zwei Kandidaten "
+#~ "gleich. In der Präferenzliste müssen alle Kandidaten genannt werden."
+
+#~ msgid ""
+#~ "Additionally you need to use the rejection bar %(abm)s in your "
+#~ "preferencelist.\n"
+#~ "                    Use it in your preferencelist like you would a "
+#~ "candidate. Put all\n"
+#~ "                    candidates you deem suitable higher than %(abm)s and "
+#~ "all\n"
+#~ "                    candidates you reject lower, i. e. to the right of "
+#~ "%(abm)s.\n"
+#~ "                    Should no candidate win against the bar, the board "
+#~ "may take additional measures."
+#~ msgstr ""
+#~ "Zusätzlich musst Du die Ablehnungsgrenze %(abm)s in der Präferenzliste "
+#~ "verwenden. Diese wird wie ein Kandidat in der Liste aufgeführt und gibt "
+#~ "an, welche Kandidaten Du ablehnst. Kandidaten, die Du für geeignet "
+#~ "hältst, solltest Du höher als %(abm)s bewerten, Kandidaten, die Du "
+#~ "ablehnst, niedriger, d. h. rechts von %(abm)s. Sollte in der Auszählung "
+#~ "kein Kandidat gegen die Ablehnungsgrenze gewinnen, so kann der Vorstand "
+#~ "ggf. weitere Maßnahmen ergreifen."
+
+#~ msgid ""
+#~ "You deem all candidates suitable, but you like Leia the best,\n"
+#~ "                        with no difference between the other candidates."
+#~ msgstr ""
+#~ "Du hältst alle Kandidaten für geeignet, aber Leia für die Beste, die "
+#~ "anderen Kandidaten für gleichwertig."
+
+#~ msgid ""
+#~ "You deem Leia and Obi-Wan (equally) suitable, you want to reject Luke\n"
+#~ "                        and you absolutely can’t stand Han Solo."
+#~ msgstr ""
+#~ "Du hältst nur Leia und Obi-Wan für (gleich) geeignet, Luke lehnst Du ab, "
+#~ "Han Solo geht echt gar nicht."
+
+#~ msgid ""
+#~ "You want to vote for Luke and if he doesn’t make it, you think Obi-Wan "
+#~ "should.\n"
+#~ "                        You don’t have an opinion about the others."
+#~ msgstr ""
+#~ "Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. "
+#~ "Zu den anderen hast Du keine Meinung."
+
+#~ msgid ""
+#~ "To arrange the candidates, move them into one of the shaded boxes. The "
+#~ "higher up the box,\n"
+#~ "                the higher your preference for that candidate. Candidates "
+#~ "within the same box will be\n"
+#~ "                evaluated with the same preference. Move a candidate "
+#~ "between two boxes to create a new box."
+#~ msgstr ""
+#~ "Um die Kandidaten anzuordnen, bewege sie in eine der schattierten Boxen. "
+#~ "Eine Einordnung in einer höheren Box drückt eine höhere Präferenz dieses "
+#~ "Kandidaten aus. Kandidaten, die sich in der gleichen Box befinden, werden "
+#~ "mit gleicher Präferenz gewertet. Bewegst Du einen Kandidaten in den "
+#~ "Zwischenraum ober- und unterhalb der Boxen, entsteht dort eine neue Box."
+
+#~ msgid ""
+#~ "There are three ways of moving candidates: Drag’n’Drop them into a "
+#~ "different box or\n"
+#~ "                click on a candidate and then on a box. Or you can select "
+#~ "a candidate with %(tab)s,\n"
+#~ "                confirm it with %(enter)s or %(space)s, then select a box "
+#~ "with %(tab)s\n"
+#~ "                and confirm the selection with %(enter)s or %(space)s."
+#~ msgstr ""
+#~ "Um die Kandidaten anzuordnen, bewege sie in eine der schattierten Boxen. "
+#~ "Eine Einordnung in einer höheren Box drückt eine höhere Präferenz dieses "
+#~ "Kandidaten aus. Kandidaten, die sich in der gleichen Box befinden, werden "
+#~ "mit gleicher Präferenz gewertet. Bewegst Du einen Kandidaten in den "
+#~ "Zwischenraum ober- und unterhalb der Boxen, entsteht dort eine neue Box."
+
+#~ msgid ""
+#~ "One of the boxes is marked as “Neutral”. Please place candidates cou deem "
+#~ "suitable\n"
+#~ "                    above this box (they will be highlighted in green) "
+#~ "and candidates you want to reject\n"
+#~ "                    below this box (they will be highlighted in red). "
+#~ "Should all candidates be rejected,\n"
+#~ "                    the board may take additional measures."
+#~ msgstr ""
+#~ "Eine der Boxen ist stets als „Neutral“ gekennzeichnet. Bitte ordne\n"
+#~ "Kandidaten, die Du für geeignet hältst, oberhalb dieser Box an (Boxen "
+#~ "werden\n"
+#~ "grün hinterlegt) und Kandidaten die Du ablehnst unterhalb (Boxen werden "
+#~ "rot\n"
+#~ "hinterlegt). Sollten in der Auszählung alle Kandidaten abgelehnt werden, "
+#~ "so\n"
+#~ "kann der Vorstand ggf. weitere Maßnahmen ergreifen."
+
+#~ msgid ""
+#~ "This is the interactive voting form. It is inconvenient to used with a "
+#~ "keyboard only.\n"
+#~ "                    Use the link above to switch to the text-based form."
+#~ msgstr ""
+#~ "Hier folgt das interaktive Abstimmungs- Formular. Dieses ist mit der\n"
+#~ "Tastatur nur mäßig gut zu bedienen. Verwende den obigen Link, um zum\n"
+#~ "textbasierten Formular zu wechseln."
+
+#~ msgid ""
+#~ "Archives the assembly. The configuration cannot be changed after this.\n"
+#~ "                                    The private keys used to sign the "
+#~ "votes will be deleted from the database.\n"
+#~ "                                    This should typically be done shortly "
+#~ "after all ballots have been conlcuded."
+#~ msgstr ""
+#~ "Archiviert die Versammlung. Die Konfiguration kann danach nicht mehr\n"
+#~ "geändert werden. Die geheimen Schlüssel zum Signieren der Abstimmungen\n"
+#~ "werden aus der Datenbank gelöscht. Dies sollte für gewöhnlich bald "
+#~ "nachdem\n"
+#~ "alle Abstimmungen beendet sind gemacht werden."
+
+#~ msgid ""
+#~ "Permanently deletes the assembly including all ballots and attendee "
+#~ "information.\n"
+#~ "                                    This is only possible while no "
+#~ "ballots have begun voting."
+#~ msgstr ""
+#~ "Löscht die Verrsammlung inklusive aller Abstimmungen und Teilnehmer\n"
+#~ "irreversibel.Das ist nur möglich, solange noch keine Abstimmung begonnen\n"
+#~ "hat."
+
+#~ msgid ""
+#~ "The CdE-Datenbank provides several capabilities, one of which is\n"
+#~ "            an electronical member index."
+#~ msgstr ""
+#~ "Die CdE-Datenbank stellt verschiedene Möglichkeiten bereit. Eine davon "
+#~ "ist ein elektronisches Mitgliederverzeichnis."
+
+#~ msgid ""
+#~ "The CdE-Datenbank relies on the principle of mutuality:\n"
+#~ "            Only if you consent to the following, others can access your "
+#~ "data\n"
+#~ "            and you can search for and access others."
+#~ msgstr ""
+#~ "Die CdE-Datenbank beruht auf dem Prinzip der Gegenseitigkeit: Nur wenn Du "
+#~ "die folgende Einwilligung erteilst, können andere Deine Daten aufrufen "
+#~ "und Du die Daten anderer suchen und aufrufen."
+
+#~ msgid ""
+#~ "I accept that my personal information can be accessed by other CdE-"
+#~ "Members via the internet.\n"
+#~ "                (All data is encrypted and password-protected. The CdE "
+#~ "can only contact you per E-Mail to give\n"
+#~ "                you important information and to remind you about "
+#~ "outstanding fees, if you consent to the\n"
+#~ "                storage of your data.)"
+#~ msgstr ""
+#~ "Ich erkläre mich damit einverstanden, dass meine persönlichen Daten auch "
+#~ "im Internet von anderen CdElern eingesehen werden können. (Die Daten sind "
+#~ "passwortgeschützt und werden verschlüsselt übertragen. Nur bei "
+#~ "Einverständnis mit der Speicherung kann Dir der CdE Mails mit wichtigen "
+#~ "Informationen und Erinnerungen an zu zahlende Beiträge schicken.)"
+
+#~ msgid ""
+#~ "I hereby declare that I will not pass the data of CdE-Members to third "
+#~ "parties\n"
+#~ "                and that I will will not use it for any purpose, that is "
+#~ "not in the sense and purpose of the CdE."
+#~ msgstr ""
+#~ "Ich erkläre, dass ich Daten anderer CdEler nicht an Dritte weitergeben "
+#~ "oder zu Zwecken benutzen werde, die nicht Sinn und Aufgabe des CdE sind."
+
+#~ msgid ""
+#~ "If you give the authorization, the CdE will withdraw %(amount)s\n"
+#~ "            or more annually via Direct Debit."
+#~ msgstr ""
+#~ "Sofern Du die Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich "
+#~ "%(amount)s oder einen beliebigen höheren Betrag als Lastschrift von "
+#~ "Deinem Konto ein: 25+ eben."
+
+#~ msgid ""
+#~ "These %(amount)s will be used to pay the annual membership fee\n"
+#~ "            currently in force, currently %(fee)s. The remainder is a "
+#~ "donation\n"
+#~ "            to the CdE. The CdE will make sure that about 40 to 50 "
+#~ "percent of\n"
+#~ "            this is given to %(dsa)s or otherwise used to support the "
+#~ "“%(idea)s”."
+#~ msgstr ""
+#~ "Mit diesen mindestens %(amount)s wird zunächst der – jeweils aktuelle – "
+#~ "Mitgliedsbeitrag für ein Jahr verrechnet, derzeit also %(fee)s. Der "
+#~ "Restbetrag kommt dem CdE als Spende zugute. Im Rahmen der Vereinsarbeit "
+#~ "soll darauf geachtet werden, dass in etwa 40 bis 50 Prozent davon der "
+#~ "%(dsa)s gespendet oder für eine sonstige Unterstützung der „%(idea)s“ "
+#~ "verwendet werden."
+
+#~ msgid ""
+#~ "The Pfingst-, Sommer, Winter- and Multinationale Akademie are subsidised\n"
+#~ "            with donations. This way the participation fees can be "
+#~ "lowered which benefits\n"
+#~ "            all participants. Since 2013 we also subsidise some smaller "
+#~ "events, such as\n"
+#~ "            the CdE-Seminar, the FamilienAkademie and the "
+#~ "Studieninformationswochenende."
+#~ msgstr ""
+#~ "Die Pfingst-, Sommer-, Winter- und Multinationale Akademie werden durch "
+#~ "Spenden bezuschusst. Dadurch sinken ihre Teilnehmerbeiträge, was allen "
+#~ "Teilnehmern zugute kommt. Seit 2013 unterstützen wir auch einige kleinere "
+#~ "Veranstaltungen mit einem Teil der eingegangenen Spenden, etwa das CdE-"
+#~ "Seminar, die FamilienAkademie und das Studieninformationswochenende."
+
+#~ msgid ""
+#~ "The %(initiative)s implements a decision of the General Assembly 2008\n"
+#~ "            to support the “%(idea)s“ financially. To this end, the CdE "
+#~ "may give a\n"
+#~ "            portion of the donations received this way to %(bub)s or use "
+#~ "them to support\n"
+#~ "            SchülerAkademien in some other way."
+#~ msgstr ""
+#~ "Mit der %(initiative)s soll auch ein Beschluss der Mitgliederversammlung "
+#~ "2008 umgesetzt werden. Dazu darf der CdE einen Teil der auf diesem Weg "
+#~ "erhaltenen Spenden an %(bub)s weiterreichen oder aber auf anderem Wege "
+#~ "die „%(idea)s“ fördern."
+
+#~ msgid ""
+#~ "For legal reasons, we need the Direct Debit Authorization Form in written "
+#~ "form.\n"
+#~ "            Please fill %(link)s and send it to us by mail (not E-Mail)."
+#~ msgstr ""
+#~ "Aus rechtlichen Gründen benötigen wir die Lastschriftermächtigung in "
+#~ "Schriftform. Fülle dazu bitte %(link)s aus und schicke es uns zu."
+
+#~ msgid ""
+#~ "To use the Member Search, You need to be a CdE-Member.\n"
+#~ "                                You can find more Information about "
+#~ "Membership below."
+#~ msgstr ""
+#~ "Um die Mitgliedersuche verwenden zu können, musst Du CdE-Mitglied sein. "
+#~ "Weitere Informationen dazu findest Du weiter unten."
+
+#~ msgid ""
+#~ "With the Initiative 25+ you can support the CdE and the “%(idea)s” "
+#~ "financially,\n"
+#~ "                            via Direct Debit of %(amount)s or more "
+#~ "annually. %(link)s"
+#~ msgstr ""
+#~ "Mit der Initiative 25+ unterstützt Du den CdE und die „%(idea)s“ "
+#~ "finanziell durch einen Lastschrifteinzug von jährlich %(amount)s oder "
+#~ "mehr. %(link)s"
+
+#~ msgid ""
+#~ "You want to support the CdE and the “%(idea)s“ financially?\n"
+#~ "                            You can give authorization for the CdE to "
+#~ "withdraw %(amount)s or more annually via Direct Debit."
+#~ msgstr ""
+#~ "Du möchtest den CdE und die „%(idea)s“ finanziell unterstützen? Sofern Du "
+#~ "die Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich %(amount)s "
+#~ "oder einen beliebigen höheren Betrag als Lastschrift von Deinem Konto "
+#~ "ein: 25+ eben."
+
+#~ msgid ""
+#~ "You are currently <u>not a Member</u>.\n"
+#~ "                        To become a Member again, You just have to "
+#~ "replenish Your Account Balance."
+#~ msgstr ""
+#~ "Du bist derzeit <u>kein Mitglied</u>. Um wieder Mitglied zu werden, musst "
+#~ "Du lediglich Dein Guthaben auffüllen."
+
+#~ msgid ""
+#~ "During the Semester – as early as possible, but not before the Payment "
+#~ "Reqeusts/Information are sent – the\n"
+#~ "            following Direct Debits have to be executed.\n"
+#~ "            To do this, generate a cdd-file and import it into the online "
+#~ "banking software.\n"
+#~ "            Directly afterwards activate the Direct Debits in the DB by "
+#~ "clicking “Perform Direct Debit”.\n"
+#~ "            This sends a notification to the members informing them about "
+#~ "the transaction."
+#~ msgstr ""
+#~ "Im Laufe des Semesters – und dabei möglichst früh, aber erst nach der "
+#~ "Zahlungsinformation – sind noch folgende Lastschriften auszuführen. Dazu "
+#~ "eine cdd-Datei generieren und in die Online-Banking-Software importieren. "
+#~ "Direkt anschließend die Lastschriften in der Datenbank initialisieren per "
+#~ "Klick auf „Bankeinzug ausführen“. Dies versendet eine Benachrichtigung an "
+#~ "die Mitglieder über den bevorstehenden Lastschrifteinzug."
+
+#~ msgid ""
+#~ "The following Direct Debits are pending. As soon as they are executed, "
+#~ "enter whether they were\n"
+#~ "                executed successfully, were not executed at all or failed "
+#~ "to execute. In the latter case, the\n"
+#~ "                authorization will be considered revoked."
+#~ msgstr ""
+#~ "Folgende Einzüge befinden sich derzeit in der Schwebe. Sobald die "
+#~ "ausgeführt wurden, bitte hier eintragen, ob diese erfolgreich ausgeführt "
+#~ "wurden, gar nicht ausgeführt wurden oder geplatzt sind. Im letzteren "
+#~ "Falle wird die Ermächtigung ans Widerrufen angesehen."
+
+#~ msgid ""
+#~ "As you are no participant of this past event, you can only\n"
+#~ "                    see this link because you are admin."
+#~ msgstr ""
+#~ "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und kannst "
+#~ "diesen Link nur in Deiner Eigenschaft als Admin sehen."
+
+#~ msgid ""
+#~ "The actions on this site affect all Members, therefore they are\n"
+#~ "            basically irreversibel. Only use them, if You are absolutely "
+#~ "sure\n"
+#~ "            what You are doing."
+#~ msgstr ""
+#~ "Die auf dieser Seite enthaltenen Aktionen betreffen alle Mitglieder. Aus "
+#~ "diesem Grund sind sie praktisch nicht rückgängig zu machen. Führe diese "
+#~ "Aktionen bitte nur aus, wenn Du Dir sicher bist, was Du tust."
+
+#~ msgid ""
+#~ "%(low_count)s members have insufficient balance right now\n"
+#~ "                                    (from this %(low_last_count)s with "
+#~ "lastschrift). Additionally\n"
+#~ "                                    we have %(trial_count)s trial members."
+#~ msgstr ""
+#~ "Derzeit haben %(low_count)s Mitglieder ein zu niedriges Guthaben (davon "
+#~ "%(low_last_count)s mit einer Einzugsermächtigung). Zusätzlich gibt es "
+#~ "%(trial_count)s Probemitglieder."
+
+#~ msgid ""
+#~ "The Semesterstate influences the display of Balances. This button should "
+#~ "be pressed at the\n"
+#~ "                            target date (give or take three weeks)."
+#~ msgstr ""
+#~ "Der Semesterzustand beeinflusst die Anzeige der Guthaben. Dieser Knopf "
+#~ "sollte also zum Zielzeitpunkt (plus/minus drei Wochen) gedrückt werden."
+
+#~ msgid ""
+#~ "There are no hard criteria for your new password, as we are using the "
+#~ "zxcvbn library to evaluate the\n"
+#~ "            actual strength of password. Numerals, Uppercase letters, and "
+#~ "Special characters aren’t required.\n"
+#~ "            For example, you can use a randomized string of 8 characters, "
+#~ "but it is also fine to use two words that\n"
+#~ "            aren’t too common. This form will provide feedback to help "
+#~ "you chose a better password if your new password\n"
+#~ "            is too weak."
+#~ msgstr ""
+#~ "Es gibt keine harten Kriterien für das neue Passwort, da wir die zxcvbn-"
+#~ "Bibliothek verwenden, um die tatsächliche Stärke des Passworts zu "
+#~ "ermitteln. Ziffern, Großbuchstaben und Sonderzeichen sind nicht "
+#~ "erforderlich. Beispielsweise ist es möglich, eine zufallsgenerierte "
+#~ "Zeichenkette von 8 Zeichen Länge zu verwenden, aber es ist auch in "
+#~ "Ordnung, zwei nicht zu häufige Wörter aneinanderzuhängen. Dieses Formular "
+#~ "wird Feedback geben, um das Passwort zu verbessern, sollte Dein neues "
+#~ "Passwort zu schwach sein."
+
+#~ msgid ""
+#~ "This address is meant to be a “backup”,, should the primary address not "
+#~ "work. Please give an address where\n"
+#~ "                you can be reached long-term, e.g. your parents' address."
+#~ msgstr ""
+#~ "Diese Adresse ist dazu gedacht, eine „Notfalladresse“ zu haben, falls die "
+#~ "erste Anschrift nicht mehr funktionieren sollte. Gib hier bitte eine "
+#~ "Adresse an, unter der Du längerfristig erreichbar sein wirst, z. B. die "
+#~ "Heimatanschrift bei den Eltern."
+
+#~ msgid ""
+#~ "To change Your email address, You will have to confirm Your new email "
+#~ "address by clicking a link in the\n"
+#~ "            verification mail sent to the new E-Mail."
+#~ msgstr ""
+#~ "Um Deine E-Mail-Adresse zu ändern wird zuerst eine E-Mail an die neue "
+#~ "Adresse geschickt, um diese zu verifizieren. In der E-Mail findest Du "
+#~ "einen Link, mit dem Du den Vorgang abschließen kannst."
+
+#~ msgid ""
+#~ "Enter Your Password and click “Confirm” to change Your E-Mail-Address to "
+#~ "<code>%(email)s</code>.\n"
+#~ "            Aftwerwards you need to user Your new email address to login."
+#~ msgstr ""
+#~ "Gib Dein Passwort ein und klicke den Bestätigungsknopf um Deine E-Mail-"
+#~ "Adresse zu <code>%(email)s</code> zu ändern. Nachdem Du die Änderung "
+#~ "durchgeführt hast musst Du bei der Anmeldung Deine neue E-Mail-Adresse "
+#~ "angeben."
+
+#~ msgid "Event-Account Requests [%(count)s]"
+#~ msgstr "Veranstaltungs-Accountanfragen [%(count)s]"
+
+#~ msgid "There are currently no Event-Account Requests pending."
+#~ msgstr "Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor."
+
+#~ msgid "Mailinglist-Account Requests [%(count)s]"
+#~ msgstr "Mailinglisten-Accountanfragen [%(count)s]"
+
+#~ msgid "There are currently no Mailinglist-Account Requests pending."
+#~ msgstr "Zur Zeit liegen keine Mailinglisten-Accountanfragen vor."
+
+#~ msgid "CdE-Event"
+#~ msgstr "CdE-Veranstaltung"
+
+#~ msgid "CdE-Mailinglist"
+#~ msgstr "CdE-Mailingliste"
+
+#~ msgid ""
+#~ "With the following Form You can request an Account for the CdE-DB.\n"
+#~ "            Please give a short Rationale, what You want to use the "
+#~ "Account for\n"
+#~ "            (for example for which Event You want to register)."
+#~ msgstr ""
+#~ "Mit dem folgenden Formular kannst Du einen Account für die CdE-Datenbank "
+#~ "beantragen. Gib dazu bitte kurz an, zu welchem Zweck Du den Account "
+#~ "benötigst (bspw. für welche Veranstaltung Du Dich anmelden möchtest). "
+
+#~ msgid ""
+#~ "After You have filled out this Form, You will be sent an E-Mail "
+#~ "containing a verification link.\n"
+#~ "            You need to open this link to confirm Your Request. Only then "
+#~ "Your Request will be reviewed by an Admin.\n"
+#~ "            You will be notified, when Your Account has been created."
+#~ msgstr ""
+#~ " Nachdem Du das Formular abgeschickt hast, wird eine E-Mail an die "
+#~ "angegebene Adresse verschickt, die einen Verifikations-Link enthält. "
+#~ "Diesen musst Du öffnen, um Deine Anfrage zu bestätigen. Erst danach wird "
+#~ "die Anfrage von einem Admin überprüft und gegebenenfalls ein Account "
+#~ "erstellt, worüber Du dann per E-Mail benachrichtigt wirst."
+
+#~ msgid ""
+#~ "With this Form You can add the User to new Realms in the CdEDB.\n"
+#~ "                    They will gain access to the respective Sites and "
+#~ "they may gain additional User-Attributes."
+#~ msgstr ""
+#~ "Mit diesem Formular kann der Benutzer zu weiteren Bereichen der CdE-"
+#~ "Datenbank hinzugefügt werden. Damit erhält er Zugriff auf die "
+#~ "entsprechenden Seiten und erhält ggf. neue Nutzer-Attribute."
+
+#~ msgid ""
+#~ "If You have forgotten Your Password, You can request an E-Mail to reset "
+#~ "it.\n"
+#~ "            To do this, just enter the email address You would use to "
+#~ "login."
+#~ msgstr ""
+#~ "Wenn Du Dein Passwort vergessen hast, kannst Du hier eine E-Mail "
+#~ "anfordern, um Dein Passwort zurückzusetzen. Gib dazu einfach die E-Mail-"
+#~ "Adresse, die in der Datenbank hinterlegt ist, ein."
+
+#~ msgid ""
+#~ "Sends an email to this user, which contains a password reset link. This "
+#~ "is\n"
+#~ "                                        basically the same as any non-"
+#~ "admin user can achieve using the “Reset Password”\n"
+#~ "                                        form on the login page."
+#~ msgstr ""
+#~ "Sendet eine E-Mail mit einem Passwort-Rücksetz-Link an den Benutzer. Das "
+#~ "kommt aufs Gleiche hinaus, wie wenn der Benutzer das „Passwort "
+#~ "zurücksetzen“-Formular auf der Login-Seite nutzt."
+
+#~ msgid ""
+#~ "Deactivates the account, so the user can no longer log in.\n"
+#~ "                                        This is intended for exceptional "
+#~ "circumstances, e.g. if the\n"
+#~ "                                        account was compromised.\n"
+#~ "                                        This can be reversed at any time."
+#~ msgstr ""
+#~ "Deaktiviert den Account, sodass der Benutzer sich nicht mehr anmelden "
+#~ "kann. Dies ist als Notfallmaßnahme gedacht, beispielsweise falls ein "
+#~ "Account kompromitiert wurde. Dies kann jederzeit rückgängig gemacht "
+#~ "werden."
+
+#~ msgid ""
+#~ "Reactivates the account, so the user can log in again.\n"
+#~ "                                        Make sure that the cause of the "
+#~ "deactivation was removed."
+#~ msgstr ""
+#~ "Reaktiviere den Account, sodass der Benutzer sich wieder anmelden kann. "
+#~ "Stelle sicher, dass die Ursache der Deaktivierung beseitigt wurde."
+
+#~ msgid ""
+#~ "Archives the Account. The User can no longer login and most Information "
+#~ "is deleted.\n"
+#~ "                                    Only Information necessary to restore "
+#~ "Membership will be retained\n"
+#~ "                                    (i. e. Name and Past Events "
+#~ "attendance).\n"
+#~ "                                    Other Users can no longer see the "
+#~ "Account."
+#~ msgstr ""
+#~ "Archiviert den Account. Dabei wird der Account bis auf Weiteres "
+#~ "unbenutzbar und die meisten Informationen werden gelöscht. Nur "
+#~ "Informationen, die für eine Wiederaufnahme der CdE-Mitgliedschaft von "
+#~ "Bedeutung sind (z. B. Name und Akademieteilnahme), bleiben bestehen. "
+#~ "Andere Benutzer können den Account nicht mehr finden."
+
+#~ msgid ""
+#~ "Deletes all remaining Information associated with the Account.\n"
+#~ "                                    The Name will be lost as well. It "
+#~ "will no longer be possible to restore the Account."
+#~ msgstr ""
+#~ "Löscht alle verbleibenden Informationen aus dem Account. Auch der Name "
+#~ "geht dabei verloren. Es ist anschließend nicht mehr möglich, den Account "
+#~ "wiederherzustellen."
+
+#~ msgid ""
+#~ "Meta-Admins may modify admin privileges of other users based on a\n"
+#~ "            four-eye principle. One Meta-Admin may initiate a change, "
+#~ "another has to\n"
+#~ "            approve that change."
+#~ msgstr ""
+#~ "Meta-Admins können Adminprivilegien anderer Nutzer nach einem Vier-Augen-"
+#~ "Prinzip bearbeiten. Ein Meta-Admin kann eine Änderung anstoßen, ein "
+#~ "anderer muss sie bestätigen."
+
+#~ msgid ""
+#~ "Core-Admins may view and edit any other user account.\n"
+#~ "            They may also approve account requests for all realms and "
+#~ "they may\n"
+#~ "            approve pending changes of data fields needing review "
+#~ "(address, birthday and name)."
+#~ msgstr ""
+#~ "Core-Admins können alle anderen Nutzer einsehen und bearbeiten. Sie "
+#~ "können Accountanfragen für alle Arten von Accounts bearbeiten und sie "
+#~ "können ausstehende Änderungen von Daten, die eine Prüfung benötigen "
+#~ "(Addresse, Geburtsdatum und Name), bestätigen."
+
+#~ msgid ""
+#~ "CdE-Admins may create, view and edit CdE-Users.\n"
+#~ "                They may also manage past events that are displayed on "
+#~ "profiles."
+#~ msgstr ""
+#~ "CdE-Admins können CdE-Nutzer einsehen, anlegen und verwalten. Außerdem "
+#~ "verwalten sie die vergangenen Veranstaltungen, die auf den Nutzerprofilen "
+#~ "angezeigt werden."
+
+#~ msgid ""
+#~ "Finance-Admins may manage direct debit authorizations and membershipfee "
+#~ "transactions.\n"
+#~ "                They also handle semestermanagement, i.e. the sending of "
+#~ "payment notifications, as well\n"
+#~ "                as the removal of inactive members and the updating of "
+#~ "balances."
+#~ msgstr ""
+#~ "Finanz-Admins verwalten Einzugsberechtigungen und Überweisungen von "
+#~ "Mitgliedsbeiträgen. Außerdem kümmern sie sich um die Semesterverwaltung, "
+#~ "d.h. das Versenden von Zahlungsaufforderungen, das Streichen von "
+#~ "inaktiven Mitgliedern, sowie das Aktualisieren der Mitgliedsguthaben."
+
+#~ msgid ""
+#~ "Event-Admins may create DB-organized events and add and remove orgas to "
+#~ "these events.\n"
+#~ "                They can also access the configuration as well as all "
+#~ "registration data of these events.\n"
+#~ "                Event-Admins may create and manage Event-Users, i.e. "
+#~ "users with access to the event realm but not the CdE realm.\n"
+#~ "                This includes the approval of account requests.\n"
+#~ "                They may manage and create event related mailinglists."
+#~ msgstr ""
+#~ "Veranstaltungs-Admins legen Veranstaltungen in der Datenbank an und "
+#~ "können Orgas zu diesen hinzufügen, bzw. entfernen. Sie haben außerdem "
+#~ "Zugriff auf alle Konfigurations- und Teilnehmerdaten von diesen "
+#~ "Veranstaltungen. Veranstaltungs-Admins erstellen und verwalten reine "
+#~ "Veranstaltungsnutzer und können entsprechende Accountanfragen bearbeiten. "
+#~ "Sie können Veranstaltungsbezogene Mailinglisten anlegen und verwalten."
+
+#~ msgid ""
+#~ "Mailinglist-Admins may manage and create all types of mailinglists.\n"
+#~ "                They may create, manage and approve requests for "
+#~ "Mailinglist-Users, i.e. users that may only access mailinglists."
+#~ msgstr ""
+#~ "Mailinglisten-Admins können alle Arten von Mailinglisten anlegen und "
+#~ "bearbeiten. Außerdem können sie reine Mailinglistennutzer anlegen und "
+#~ "verwalten, sowie entsprechende Accountanfragen bearbeiten."
+
+#~ msgid ""
+#~ "Assembly-Admins may create and manage assemblies and ballots.\n"
+#~ "                They may create and manage Assembly-Users, i.e. users "
+#~ "with access to assemblies, that are not CdE members.\n"
+#~ "                They may also add these users as participants of "
+#~ "assemblies."
+#~ msgstr ""
+#~ "Versammlungs-Admins können Versammlungen und Abstimmungen anlegen und "
+#~ "bearbeiten. Sie können reine Versammlungsnutzer anlegen und bearbeiten, "
+#~ "sowie diese zu Versammlungen hinzufügen."
+
+#~ msgid ""
+#~ "The registered people are able to see their current registration status, "
+#~ "the payment status and – for\n"
+#~ "                minors – the status of the parental consent at "
+#~ "“%(my_registration)s”."
+#~ msgstr ""
+#~ "Die Teilnehmer und Angemeldeten können unter „%(my_registration)s“ ihren "
+#~ "aktuellen Teilnahme-Status, den Status des Teilnehmerbeitrags und – bei "
+#~ "Minderjährigen – den Status der Einverständniserklärung einsehen."
+
+#~ msgid ""
+#~ "Cancelled courses are only marked for orgas. Other users can currently "
+#~ "only see in which course\n"
+#~ "                    tracks the course was originally offered."
+#~ msgstr ""
+#~ "Ausfallende Kurse werden nur für Orgas hier markiert. Andere Benutzer "
+#~ "können zur Zeit nur sehen, in welchen Kursschienen der Kurs ursprünglich "
+#~ "angeboten wurde."
+
+#~ msgid ""
+#~ "The course statistics, shown below, include only approved\n"
+#~ "                participants."
+#~ msgstr ""
+#~ "Die untenstehenden Kursstatistiken enthalten nur Anmeldungen mit Status "
+#~ "“Teilnehmer”."
+
+#~ msgid ""
+#~ "The course attendee and choice statistics include all active\n"
+#~ "                    registrations (registration status “Participant”, "
+#~ "“Guest”,\n"
+#~ "                    “Waitlist” and “Applied”)."
+#~ msgstr ""
+#~ "Die Kursteilnehmer- und Kurswahl-Statistiken enthalten alle aktiven "
+#~ "Anmeldungen (Anmeldestatus “Teilnehmer”, “Gast”, “Warteliste” und "
+#~ "“Offen”)."
+
+#~ msgid ""
+#~ "Numbers of course choices include course instructors of other courses. "
+#~ "Limits do not include course\n"
+#~ "            instructors."
+#~ msgstr ""
+#~ "Die Kurswahl-Anzahlen beinhalten Kursleiter anderer Kurse. Die Grenzen "
+#~ "beinhalten nicht die Kursleiter."
+
+#~ msgid ""
+#~ "Deleting a field includes deletion of all data, which is stored\n"
+#~ "            in this field in any registration/course/lodgement. Changing\n"
+#~ "            the datatype of a field deletes all data that cannot be "
+#~ "casted\n"
+#~ "            to the new type, upon saving."
+#~ msgstr ""
+#~ "Beim Löschen eines Feldes werden auch alle Daten gelöscht, die in einer "
+#~ "Anmeldung/einem Kurs/einer Unterkunft in diesem Feld gespeichert sind. "
+#~ "Das Ändern des Datentyps führt beim Speichern zur Löschung aller Daten, "
+#~ "die nicht in den neuen Datentyp konvertiert werden können."
+
+#~ msgid ""
+#~ "Enter Options in the following format:\n"
+#~ "            %(format)s\n"
+#~ "            Setting Options will create a selection box when using this "
+#~ "field.\n"
+#~ "            The description text will be displayed in the selection box,\n"
+#~ "            the value will be saved to the database upon selection.\n"
+#~ "            The value must be compatible to the selected datatype.\n"
+#~ "            Empty Options will be displayed as a free text/number/date "
+#~ "field."
+#~ msgstr ""
+#~ "Das Eingabeformat für die Optionen ist:\n"
+#~ "%(format)s\n"
+#~ "Der Beschreibungstext wird im Auswahlfeld angezeigt; der Wert wird bei "
+#~ "Auswahl der Option in der Datenbank abgespeichert. Er muss kompatibel zum "
+#~ "eingestellten Datentyp sein. Ein leeres Optionen-Feld führt zu einem "
+#~ "Freitext/Zahl/Datum-Feld."
+
+#~ msgid ""
+#~ "Event parts and course tracks can only be created or deleted if no\n"
+#~ "            registrations are present yet. Course tracks can only be "
+#~ "deleted, if\n"
+#~ "            there are no courses associated with them."
+#~ msgstr ""
+#~ "Veranstaltungsteile und Kursschienen können nur erstelltoder gelöscht "
+#~ "werden, falls noch keine Anmeldungen vorliegen. Kursschienen können nur "
+#~ "gelöscht werden, falls ihnen keine Kurse zugeordnet sind."
+
+#~ msgid ""
+#~ "Your upload contained errors and was not processed.\n"
+#~ "                    The following is a list of the observed violations."
+#~ msgstr ""
+#~ "Deine Datei enthielt Fehler und konnte nicht verarbeitet werden. Es folgt "
+#~ "eine Liste der beobachteten Abweichungen."
+
+#~ msgid ""
+#~ "Update of event data with prefabricated changesets (e.g. known\n"
+#~ "            list of lodgements) or external programms. In the latter "
+#~ "case,\n"
+#~ "            please read the documentation first."
+#~ msgstr ""
+#~ "Aktualisierung oder Ergänzung der Veranstaltung-Daten mit vorgefertigten\n"
+#~ "Daten (z.B. bekannte Liste von Unterkünften) oder externen Programmen. "
+#~ "Für\n"
+#~ "letzteres lies bitte zuerst die Dokumentation."
+
+#~ msgid ""
+#~ "After the upload a summary of the changes will be displayed and\n"
+#~ "            the import must be approved."
+#~ msgstr ""
+#~ "Nach dem Upload wird eine Übersicht der Änderungen gezeigt und der "
+#~ "Import\n"
+#~ "muss bestätigt werden."
+
+#~ msgid ""
+#~ "Carefully check the summary below, as this tool has the potential to do "
+#~ "irreversible damage\n"
+#~ "            to your event. (You read the %(manual)s, right?)"
+#~ msgstr ""
+#~ "Prüfe die angezeigten Änderungen genau – dieses Werkzeug hat das "
+#~ "Potential Deiner Veranstaltung irreversiblen Schaden zuzufügen. (Du hast "
+#~ "die %(manual)s gelesen, oder?)"
+
+#~ msgid ""
+#~ "You can not access the Participant List as you have not agreed to have "
+#~ "your own data\n"
+#~ "                    sent to other participants before the event."
+#~ msgstr ""
+#~ "Du kannst die Teilnehmerliste nicht sehen, da du nicht zugestimmt hast, "
+#~ "deine Daten auf der Teilnehmerliste zur Verfügung zu stellen."
+
+#~ msgid ""
+#~ "In the context of this event, photos and recordings will be made to be "
+#~ "used for the\n"
+#~ "                    event-documentation and a CdE-internal, password "
+#~ "protected media collection. Individual photos and\n"
+#~ "                    recordings can be excluded from this by request."
+#~ msgstr ""
+#~ "Im Rahmen dieser Veranstaltung werden Fotos und Aufnahmen entstehen, die "
+#~ "für die Veranstaltungsdokumentation und eine CdE-interne, "
+#~ "passwortgeschützte Mediensammlung verwendet werden. Einzelne Fotos und "
+#~ "Aufnahmen können auf gesonderten Wunsch hin davon ausgenommen werden."
+
+#~ msgid ""
+#~ "After registration, you will find the ‘Questionnaire’ with further "
+#~ "questions of the orga team in\n"
+#~ "                        the navigation. There you can give more detailed "
+#~ "information."
+#~ msgstr ""
+#~ "Nach Deiner Anmeldung findest Du in der Navigation den ‚Fragebogen‘ mit "
+#~ "weiteren Fragen des Orgateams. Dort kannst du weitere Informationen "
+#~ "angeben."
+
+#~ msgid ""
+#~ "Please keep in mind that your Registration will only be complete, once\n"
+#~ "                you pay your participation fee. Please transfer %(fee)s "
+#~ "to the following\n"
+#~ "                Account. Please make sure, the recipient does not have to "
+#~ "pay any fees,\n"
+#~ "                especially when paying internationally."
+#~ msgstr ""
+#~ "Beachte bitte, dass Deine Anmeldung erst mit Überweisung des "
+#~ "Teilnehmerbeitrags gültig wird. Überweise dazu %(fee)s auf folgendes "
+#~ "Konto. Achte bitte bei internationalen Überweisungen darauf, dass der "
+#~ "Empfänger keine Gebühren zahlen muss."
+
+#~ msgid ""
+#~ "Registration has ended, therefore no more changes are possible.\n"
+#~ "                Please contact the Orgas per E-Mail, if you need to "
+#~ "change something about your registration."
+#~ msgstr ""
+#~ "Da der Anmeldeschluss vorbei ist, sind keine Änderungen mehr möglich. "
+#~ "Wende dich bitte per Mail an die Orgas, falls du etwas ändern musst."
+
+#~ msgid ""
+#~ "I %(consent)sagree that my data, including my name, address and my email, "
+#~ "may be sent\n"
+#~ "                to other participants of this event beforehand."
+#~ msgstr ""
+#~ "Ich stimme %(consent)szu, dass meine Daten, insbesondere mein Name, meine "
+#~ "Adresse und meine E-Mail, im Vorfeld der Veranstaltung an andere "
+#~ "Teilnehmer weitergegeben werden dürfen."
+
+#~ msgid ""
+#~ "To unlock it, run the offline initialization script inside the VM with\n"
+#~ "                                    the event data you would like to use."
+#~ msgstr ""
+#~ "Zum Entsperren führe das Initialisierungsskript für den Offline-Modus "
+#~ "innerhalb der VM mit dem gewünschten Datensatz aus."
+
+#~ msgid ""
+#~ "This way the event can be imported from here into another\n"
+#~ "                                    offline instance without causing "
+#~ "conflicts. Be aware that\n"
+#~ "                                    unlocking can not be done here, but "
+#~ "must be done by running the\n"
+#~ "                                    offline initialization script."
+#~ msgstr ""
+#~ "Dadurch can die Veranstaltung in einer weitere Offline-Instanz genutzt "
+#~ "werden ohne, dass es zu Konflikten kommt. Beachte, dass eine Entsperrung "
+#~ "per Webinterface nicht möglich ist (stattdessen muss das "
+#~ "Initialisierungsskript für die Offline-Instanz benutzt werden)."
+
+#~ msgid ""
+#~ "This way the event can be managed in offline mode without\n"
+#~ "                                    causing conflicts."
+#~ msgstr ""
+#~ "Somit kann die Veranstaltung im Offline-Modus benutzt werden ohne "
+#~ "Konflikte zu verursachen."
+
+#~ msgid ""
+#~ "Archives the event. This creates a new “Past Event” in the CdE-Realm and "
+#~ "transfers\n"
+#~ "                                course and participant information there."
+#~ msgstr ""
+#~ "Archiviert die Veranstaltung. Dabei wird eine neue „Vergangene "
+#~ "Veranstaltung“ im CdE-Bereich erstellt und die Kurse und Teilnehmer "
+#~ "dieser Veranstaltung dorthin übertragen."
+
+#~ msgid ""
+#~ "Deletes the event, including all course and participant information.\n"
+#~ "                            This should usually not be done before the "
+#~ "event has been archived and fully concluded."
+#~ msgstr ""
+#~ "Löscht die Veranstaltung inklusive aller Kurse und Teilnehmer "
+#~ "irreversibel.Das sollte nicht geschehen, bevor die Veranstaltung nicht "
+#~ "archiviert wurde und vollständig abgeschlossen ist."
+
+#~ msgid ""
+#~ "Deletes the Lodgement with all assosiated information\n"
+#~ "                        and leaves the inhabitants without lodgement."
+#~ msgstr ""
+#~ "Löscht die Unterkunft mit allen Informationen und lässt die aktuellen "
+#~ "Bewohner ohne Unterkunft zurück."
+
+#~ msgid "Audience"
+#~ msgstr "Empfängerkreis"
+
+#~ msgid "Subscription"
+#~ msgstr "Einschreibung"
+
+#~ msgid "Visible to Everybody"
+#~ msgstr "Sichtbar für alle"
+
+#~ msgid "Visible to Assembly-Users"
+#~ msgstr "Sichtbar für Versammlungsnutzer"
+
+#~ msgid "Visible to Event-Users"
+#~ msgstr "Sichtbar für Veranstaltungsnutzer"
+
+#~ msgid "Visible to CdE-Users"
+#~ msgstr "Sichtbar für CdE-Nutzer"
+
+#~ msgid "Visible to CdE-Members"
+#~ msgstr "Sichtbar für CdE-Mitglieder"
+
+#~ msgid "mandatory"
+#~ msgstr "obligatorisch"
+
+#~ msgid "Opt-Out"
+#~ msgstr "Opt-Out"
+
+#~ msgid "Opt-In"
+#~ msgstr "Opt-In"
+
+#~ msgid "moderated Opt-In"
+#~ msgstr "moderiertes Opt-In"
+
+#~ msgid "Invitation only"
+#~ msgstr "durch Moderator"
+
+#~ msgid "or %(link)s (Opt-Out)"
+#~ msgstr "oder %(link)s (Opt-Out)"
+
+#~ msgid "General Mailinglists"
+#~ msgstr "Allgemeine Mailinglisten"
+
+#~ msgid "Event Mailinglists"
+#~ msgstr "Veranstaltungsmailinglisten"
+
+#~ msgid "Assembly Mailinglists"
+#~ msgstr "Versammlungsmailinglisten"
+
+#~ msgid ""
+#~ "Forced subscribers cannot be unsubscribed; blocked subscribers cannot be "
+#~ "subscribed here.\n"
+#~ "                Use the %(link)s site instead. People who are already "
+#~ "subscribed are not proposed for adding."
+#~ msgstr ""
+#~ "Fixierte Abonnenten können hier nicht entfernt, geblockte Nutzer nicht\n"
+#~ "hinzugefügt werden. Nutze dafür die %(link)s. Nutzer, die bereits auf "
+#~ "der\n"
+#~ "Liste stehen, werden nicht zum Hinzufügen vorgeschlagen."
+
+#~ msgid ""
+#~ "To recieve mails from this mailinglist with a different email address,\n"
+#~ "                                enter the new address in this form. You "
+#~ "will recieve a confirmation mail."
+#~ msgstr ""
+#~ "Um Mails dieser Mailingliste an eine andere E-Mail-Adresse zu erhalten, "
+#~ "trage die neue Adresse ins folgende Formular ein. Nach dem Absenden "
+#~ "erhältst Du eine E-Mail an diese Adresse, mit der Du Deinen Besitz der "
+#~ "Adresse bestätigen kannst. "
+
+#~ msgid ""
+#~ "This mailinglist is mandatory. Therefor you are always subscribed to this "
+#~ "list\n"
+#~ "                                with your primary email address. To "
+#~ "change this address go to the\n"
+#~ "                                %(link)s in your Account-Settings."
+#~ msgstr ""
+#~ "Diese Mailingliste ist obligatorisch. Daher bist Du stets mit Deiner "
+#~ "primären E-Mail-Adresse eingeschrieben. Um diese zu ändern, besuche die "
+#~ "%(link)s in Deinen Account-Einstellungen."
+
+#~ msgid ""
+#~ "Because you are not a CdE-Member, you will have to pay an additional fee "
+#~ "of %(fee)s (already included in the above figure)."
+#~ msgstr ""
+#~ "Da Du kein Mitglied des CdE bist, musst Du eine Zusatzgebühr in Höhe von "
+#~ "%(fee)s bezahlen (diese ist bereits in obigem Betrag enthalten)."
+
+#~ msgid "CdE-Usermanagement"
+#~ msgstr "CdE-Nutzerverwaltung"
+
+#~ msgid "core_usermanagement"
+#~ msgstr "Allgemeine Nutzerverwaltung"
+
+#~ msgid "Event-User Search"
+#~ msgstr "Veranstaltungsnutzersuche"
+
+#~ msgid "Must specify gender for event realm."
+#~ msgstr "Angabe des Geschlechts notwendig für den Veranstaltungsbereich."
+
+#~ msgid "%(count)s entries."
+#~ msgstr "%(count)s Einträge."
+
+#~ msgid "Download %s.csv "
+#~ msgstr "%s.csv herunterladen"
+
+#~ msgid "%(count)s Transactions found for %(key)s."
+#~ msgstr "%(count)s Transaktionen für %(key)s gefunden."
+
+#~ msgid "Problems:"
+#~ msgstr "Probleme:"
+
+#~ msgid "Logo has been removed."
+#~ msgstr "Logo wurde entfernt."
+
+#~ msgid "Logo has been updated."
+#~ msgstr "Logo wurde aktualisiert."
+
+#~ msgid ""
+#~ "This functionality is deprecated and will be removed soon. Do not use it "
+#~ "anymore."
+#~ msgstr ""
+#~ "Diese Funktionalität wird demnächst entfernt -- nicht mehr benutzen."
+
+#~ msgid "Assets"
+#~ msgstr "Logos"
+
+#~ msgid "collection of all course logos and event logo"
+#~ msgstr "Sammlung aller Kurslogos und des Veranstaltungslogos"
+
+#~ msgid "TAR-GZ-File"
+#~ msgstr "TAR-GZ-Archiv"
+
+#~ msgid "Course Logo"
+#~ msgstr "Kurslogo"
+
+#~ msgid "Remove Logo"
+#~ msgstr "Logo entfernen"
+
+#~ msgid "The course logo will be permanently deleted."
+#~ msgstr "Das Kurslogo wird irreversibel gelöscht."
+
+#~ msgid "No logo set."
+#~ msgstr "Kein Logo."
+
+#~ msgid "Event Logo"
+#~ msgstr "Veranstaltungslogo"
+
+#~ msgid "The event logo will be permanently deleted."
+#~ msgstr "Das Veranstaltungslogo wird irreversibel gelöscht."
+
+#~ msgid "number of {}. choices"
+#~ msgstr "Anzahl an {}. Wahlen"
+
+#~ msgid "Courses (%(title)s)"
+#~ msgstr "Kurse (%(title)s)"
+
+#~ msgid "Until now, %(count)s attendes had given their vote for this ballot."
+#~ msgstr "Bis jetzt haben %(count)s Teilnehmer über diesen Punkt abgestimmt."
+
+#~ msgid "(%(count)s votes)"
+#~ msgstr "(%(count)s Stimmen)"
+
+#~ msgid ""
+#~ "The following candidates have less votes than the %(against_all)s choice."
+#~ msgstr ""
+#~ "Die folgenden Kandidaten haben weniger Stimmen erhalten als die "
+#~ "%(against_all)s-Option."
+
+#~ msgid "The maximum allowed filesize is 8 MB."
+#~ msgstr "Die maximale Dateigröße ist 8 MB."
+
+#~ msgid "Not in access list."
+#~ msgstr "Nicht in der Liste der Zugriffsberechtigten enthalten."
+
+#~ msgid "Cannot determine full address for %s."
+#~ msgstr "Kann keine vollständige Mailadresse für %s bestimmen."
+
+#~ msgid "Must be sequence."
+#~ msgstr "Muss eine Liste sein."
+
+#~ msgid "Must contain integers."
+#~ msgstr "Darf nur Ganzzahlen enthalten."
+
+#~ msgid "Not authorized."
+#~ msgstr "Nicht authorisiert."
+
+#~ msgid "Invalid parameters."
+#~ msgstr "Ungültige Parameter."
+
+#~ msgid "The bar option %(abm)s."
+#~ msgstr "Die Ablehnungsgrenze %(abm)s."
+
+#~ msgid ""
+#~ "The following candidates have less votes than the \"Against all Candidates"
+#~ "\" (%(abm)s) choice."
+#~ msgstr ""
+#~ "Die folgenden Kandidaten haben weniger Stimmen, als die \"Gegen alle "
+#~ "Kandidaten\"-Option (%(abm)s)."
+
+#~ msgid "CdeLogCodes.advance_semester"
+#~ msgstr "Nächstes Semester"
+
+#~ msgid "CdeLogCodes.advance_expuls"
+#~ msgstr "Nächster exPuls"
+
+#~ msgid "CoreLogCodes.password_generated"
+#~ msgstr "Passwort generiert"
+
+#~ msgid "Must be ml_admin."
+#~ msgstr "Benötigt Administratorrechte für Mailinglisten."
+
+#~ msgid "Previous Ballot"
+#~ msgstr "Vorherige Abstimmung"
+
+#~ msgid "Next Ballot"
+#~ msgstr "Nächste Abstimmung"
+
+#~ msgid "The following candidates lost against the bar (%(abm)s)."
+#~ msgstr ""
+#~ "Die folgenden Kandidaten haben gegen die Ablehnungsgrenze (%(abm)s) "
+#~ "verloren."
+
+#~ msgid ""
+#~ "Additionally the shortname %(abm)s shows where in the rejection bar was "
+#~ "ranked in the overall preference list. Should no candidate have won "
+#~ "against the bar, the board may take additional measures."
+#~ msgstr ""
+#~ "Außerdem gibt %(abm)s an, wo in der gesamten Präferenzliste die\n"
+#~ "Ablehnungsgrenze eingeordnet wurde. Sollte in der Auszählung kein "
+#~ "Kandidat\n"
+#~ "gegen die Ablehnungsgrenze gewonnen haben, so kann der Vorstand ggf. "
+#~ "weitere\n"
+#~ "Maßnahmen ergreifen."
+
+#~ msgid "Remove Candidate"
+#~ msgstr "Kandidaten löschen"
+
+#~ msgid "The candidate will be removed."
+#~ msgstr "Der Kandidat wird gelöscht."
+
+#~ msgid "Add Candidate"
+#~ msgstr "Kandidaten hinzufügen"
+
+#~ msgid "Add Institution"
+#~ msgstr "Organisation hinzufügen"
+
+#~ msgid "Provide the users's email address for confirmation."
+#~ msgstr "Zur Bestätigung Emailadresse des Nutzers eingeben."
+
+#~ msgid "Please enter your own password to confirm this action."
+#~ msgstr "Um die Aktion zu bestätigen gib bitte Dein Passwort ein."
+
+#~ msgid "Add Lodgement Group"
+#~ msgstr "Unterkunftgruppe hinzufügen"
+
+#~ msgid "No selection results in an orga-list."
+#~ msgstr "Keine Auswahl entspricht einer Orgaliste."
+
+#~ msgid "Events Log"
+#~ msgstr "Veranstaltungs-Logsbuch"
+
+#~ msgid "For sorting and preferential vote."
+#~ msgstr "Zur Sortierung und Präferenzwahl."
+
+#~ msgid ", is cancelled."
+#~ msgstr ", wurde abgesagt."
+
+#~ msgid "The instructors for each course are only visible to logged in users."
+#~ msgstr "Die Kursleiter sind nur für eingeloggte Nutzer sichtbar."
+
+#~ msgid "Not all orgas {} given are event users."
+#~ msgstr "Nicht alle angegebenen Orgas {} sind Veranstaltungsnutzer."
+
+#~ msgid ""
+#~ "<a href='https://en.wikipedia.org/w/index.php? "
+#~ "title=Schulze_method&oldid=904460701'>Schulze method</a>"
+#~ msgstr ""
+#~ "<a href='https://de.wikipedia.org/w/index.php?title=Schulze-"
+#~ "Methode&oldid=188508194'>Schulze-Methode</a>"
+
+#~ msgid ""
+#~ "Supports %(infolink)s. Link to photo gallery (e. g. <https://user: "
+#~ "pwd@example.cde>) with http authentification information encoded."
+#~ msgstr ""
+#~ "Unterstützt %(infolink)s. Link zur Fotogallerie (z. B.\n"
+#~ "<https://user:pwd@example.cde> mit eingebetteter Authentifizierung)."
+
+#~ msgid ""
+#~ "Mailinglist-Admins may manage and create all types of mailinglists. They "
+#~ "may create, manage and approve requests for Mailinglist- Users, i.e. "
+#~ "users that may only access mailinglists."
+#~ msgstr ""
+#~ "Mailinglisten-Admins können alle Arten von Mailinglisten anlegen und "
+#~ "bearbeiten. Außerdem können sie reine Mailinglistennutzer anlegen und "
+#~ "verwalten, sowie entsprechende Accountanfragen bearbeiten."
+
+#~ msgid ""
+#~ "Attention: Activating this before Registration Soft Limit, will force "
+#~ "people to change their course choices for cancelled courses, when "
+#~ "updating their registration."
+#~ msgstr ""
+#~ " Achtung: Wird dies vor dem Anmeldungschluss aktiviert, werden "
+#~ "potentielle Teilnehmer beim Aktualisieren ihrer Anmeldung gezwungen, ihre "
+#~ "Kurswahl für ausfallende Kurse zu ändern."
+
+#~ msgid ""
+#~ "The participants of this event will be subscribers of this mailinglist. "
+#~ "(Opt- Out)"
+#~ msgstr ""
+#~ "Die Teilnehmer dieser Veranstaltung werden der Liste hinzugefügt. (Opt-"
+#~ "Out)"
+
+#~ msgid ""
+#~ "%(low_count)s members have insufficient balance (total of %(low_total)s)\n"
+#~ "                                    right now (from this "
+#~ "%(low_last_count)s with lastschrift). Additionally\n"
+#~ "                                    we have %(trial_count)s trial members."
+#~ msgstr ""
+#~ "Derzeit haben %(low_count)s Mitglieder ein zu niedriges Guthaben "
+#~ "(insgesamt %(low_total)s, davon %(low_last_count)s Mitglieder mit einer "
+#~ "Einzugsermächtigung). Zusätzlich gibt es %(trial_count)s Probemitglieder."
+
+#~ msgid ""
+#~ "%total_count)s Members total, %(trial_count)s of which have a Trial-"
+#~ "Membership right now."
+#~ msgstr ""
+#~ "Derzeit insgesamt %(total_count)S Mitglieder, davon haben %(trial_count)s "
+#~ "Mitglieder eine Probemitgliedschaft."
+
+#~ msgid "Cannot grant meta, core or CdE admin privileges to non CdE users."
+#~ msgstr "Nur CdE-Nutzer können Meta, Core oder CdE Admin werden."
+
+#~ msgid "Cannot grant mailinglist admin privileges to non mailinglist users."
+#~ msgstr "Nur Mailinglisten Nutzer können Mailinglisten Admin werden."
+
+#~ msgid "MailinglistGroup.orga"
+#~ msgstr "Orgamailinglisten"
+
+#~ msgid "MailinglistGroup.event_associated"
+#~ msgstr "Veranstaltungslisten"
+
+#~ msgid "Anti CSRF token is no valid user id."
+#~ msgstr "Der Anti-CSRF-Token enthält keine gültige Benutzer-ID."
+
+#~ msgid "Street"
+#~ msgstr "Straße"
+
+#~ msgid "Account"
+#~ msgstr "Account"
+
+#~ msgid "Entries"
+#~ msgstr "Einträge"
+
+#~ msgid "Delete File"
+#~ msgstr "Datei löschen"
+
+#~ msgid "Attach File"
+#~ msgstr "Datei anhängen"
+
+#~ msgid "Attach File (%(title_assembly)s/%(title_ballot)s)"
+#~ msgstr "Datei anhängen (%(title_assembly)s/%(title_ballot)s)"
+
+#~ msgid "Attach File (%(title)s)"
+#~ msgstr "Datei anhängen (%(title)s)"
+
+#~ msgid "Assembly Configuration"
+#~ msgstr "Versammlungs-Konfig."
+
+#~ msgid "Assembly Management"
+#~ msgstr "Versammlungs-Verwaltung"
+
+#~ msgid "%(title)s – Ballots"
+#~ msgstr "%(title)s – Abstimmungen"
+
+#~ msgid "ballot_file_arialabel"
+#~ msgstr "Zu Abstimmung"
+
+#~ msgid "Past Event Management"
+#~ msgstr "Verwaltung verg. Veranst."
+
+#~ msgid "Done on the %(date)s."
+#~ msgstr "Erledigt am %(date)s."
+
+#~ msgid "Done up until %(state)s."
+#~ msgstr "Bereits bis ID %(state)s abgearbeitet."
+
+#~ msgid ""
+#~ "%(low_count)s members have insufficient balance right now (from this "
+#~ "%(low_last_count)s with lastschrift). Additionally we have "
+#~ "%(trial_count)s trial members."
+#~ msgstr ""
+#~ "Derzeit haben %(low_count)s Mitglieder ein zu niedriges Guthaben (davon "
+#~ "%(low_last_count)s mit einer Einzugsermächtigung). Zusätzlich gibt es "
+#~ "%(trial_count)s Probemitglieder."
+
+#~ msgid "%(count)s Members have a Trial-Membership right now."
+#~ msgstr "Derzeit haben %(count)s Mitglieder eine Probemitgliedschaft."
+
+#~ msgid "Event Management"
+#~ msgstr "Veranst.-Verwaltung"
+
+#~ msgid "Mailinglist Management"
+#~ msgstr "Mailinglisten-Verwaltung"
+
+#~ msgid "Complete Mailinglist-Overview"
+#~ msgstr "Mailinglisten Komplettübersicht"
+
+#~ msgid "Not all orgas given are event users."
+#~ msgstr "Nicht alle angegebenen Orgas sind Veranstaltungsnutzer."
