@@ -205,14 +205,15 @@ class EventFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
 
-    @access("event_admin")
+    @access("anonymous")
     def list_db_events(self, rs: RequestState) -> Response:
         """List all events organized via DB."""
         events = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, events.keys())
-        for event in events.values():
-            regs = self.eventproxy.list_registrations(rs, event['id'])
-            event['registrations'] = len(regs)
+        if self.is_admin(rs):
+            for event in events.values():
+                regs = self.eventproxy.list_registrations(rs, event['id'])
+                event['registrations'] = len(regs)
         return self.render(rs, "list_db_events", {'events': events})
 
     @access("anonymous")
