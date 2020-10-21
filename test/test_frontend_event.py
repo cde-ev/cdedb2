@@ -555,7 +555,7 @@ class TestEventFrontend(FrontendTest):
         self.get('/event/event/2/course/list')
         self.follow()
         self.assertPresence("Die Kursliste ist noch nicht öffentlich",
-                            'notifications')
+                            div='notifications')
 
     def test_course_state_visibility(self):
         self.login(USER_DICT['charly'])
@@ -1480,15 +1480,15 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': "Anmelden"})
         self.assertTitle("Anmeldung für CdE-Party 2050")
         f = self.response.forms['registerform']
-        self.assertPresence("Ich bin unter 13 Jahre alt.", "registrationquestionnaire")
+        self.assertPresence("Ich bin unter 13 Jahre alt.", div="registrationquestionnaire")
         f['is_child'].checked = True
-        self.assertPresence("Ich bringe noch jemanden mit.", "registrationquestionnaire")
+        self.assertPresence("Ich bringe noch jemanden mit.", div="registrationquestionnaire")
         f['plus_one'].checked = True
-        self.assertPresence("Name des Partners", "registrationquestionnaire")
+        self.assertPresence("Name des Partners", div="registrationquestionnaire")
         f['partner'] = ""
-        self.assertPresence("Essgewohnheiten", "registrationquestionnaire")
+        self.assertPresence("Essgewohnheiten", div="registrationquestionnaire")
         f['eats_meats'] = "vegan"
-        self.assertPresence("Dein Lieblingstag", "registrationquestionnaire")
+        self.assertPresence("Dein Lieblingstag", div="registrationquestionnaire")
         # f['favorite_day'] = now().date().isoformat()
         self.submit(f, check_notification=False)
         f = self.response.forms['registerform']
@@ -1498,7 +1498,7 @@ etc;anything else""", f['entries_2'].value)
         f['favorite_day'] = now().date().isoformat()
         self.submit(f)
         self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
-        self.assertPresence("21,99 €", "registrationsummary")
+        self.assertPresence("21,99 €", div="registrationsummary")
 
     @as_users("garcia")
     def test_questionnaire(self, user):
@@ -1646,7 +1646,7 @@ etc;anything else""", f['entries_2'].value)
                          str(QueryOperators.equal.value))
         self.assertEqual(f['qval_part1.status'].value,
                          str(const.RegistrationPartStati.waitlist.value))
-        self.assertPresence("Emilia E.", "result-container")
+        self.assertPresence("Emilia E.", div="result-container")
         # 5. Check that participants can see their wailist position.
         self.logout()
         self.login(USER_DICT["emilia"])
@@ -1778,7 +1778,7 @@ etc;anything else""", f['entries_2'].value)
     def _sort_appearance(self, userlist):
         row = 1
         for user in userlist:
-            self.assertPresence(user['given_names'], "row-" + str(row))
+            self.assertPresence(user['given_names'], div="row-" + str(row))
             row += 1
 
     @as_users("garcia")
@@ -2336,7 +2336,7 @@ etc;anything else""", f['entries_2'].value)
         }
 
         for k, v in expectations.items():
-            self.assertPresence(v, k)
+            self.assertPresence(v, div=k)
 
         self.traverse({'href': '/event/event/1/lodgement/1/change'})
         f = self.response.forms['changelodgementform']
@@ -2344,8 +2344,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.traverse({'href': '/event/event/1/lodgement/overview'})
 
-        self.assertPresence("42", "group_regular_capacity_2")
-        self.assertPresence("53", "total_regular")
+        self.assertPresence("42", div="group_regular_capacity_2")
+        self.assertPresence("53", div="total_regular")
 
     @as_users("garcia")
     def test_lodgement_groups(self, user):
@@ -2668,9 +2668,9 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/course/checks'},)
         self.assertTitle("Kurseinteilungsprüfung (Große Testakademie 2222)")
         self.assertPresence("Ausfallende Kurse mit Teilnehmern")
-        self.assertPresence("Kabarett", 'problem_cancelled_with_p')
+        self.assertPresence("Kabarett", div='problem_cancelled_with_p')
         self.assertPresence("Teilnehmer ohne Kurs")
-        self.assertPresence("Anton", 'problem_no_course')
+        self.assertPresence("Anton", div='problem_no_course')
 
         # Assigning Garcia to "Backup" in "Kaffekränzchen" fixes 'cancelled'
         # problem, but raises 'unchosen' problem
@@ -2689,11 +2689,11 @@ etc;anything else""", f['entries_2'].value)
 
         self.traverse({'href': '/event/event/1/course/checks'})
         self.assertPresence("Teilnehmer in einem ungewählten Kurs")
-        self.assertPresence("Garcia", 'problem_unchosen')
+        self.assertPresence("Garcia", div='problem_unchosen')
         self.assertPresence("Kursleiter im falschen Kurs")
-        self.assertPresence("Emilia", 'problem_instructor_wrong_course')
-        self.assertPresence("α", 'problem_instructor_wrong_course')
-        self.assertPresence("δ", 'problem_instructor_wrong_course')
+        self.assertPresence("Emilia", div='problem_instructor_wrong_course')
+        self.assertPresence("α", div='problem_instructor_wrong_course')
+        self.assertPresence("δ", div='problem_instructor_wrong_course')
 
     @as_users("garcia")
     def test_downloads(self, user):
@@ -3088,41 +3088,41 @@ etc;anything else""", f['entries_2'].value)
         # Check diff
         self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
         # Registrations
-        self.assertPresence("Emilia", "box-changed-registrations")
-        self.assertPresence("2.H.: Unterkunft", "box-changed-registrations")
-        self.assertPresence("Warme Stube", "box-changed-registrations")
-        self.assertPresence("brings_balls", "box-changed-registration-fields")
-        self.assertPresence("Notizen", "box-changed-registration-fields")
+        self.assertPresence("Emilia", div="box-changed-registrations")
+        self.assertPresence("2.H.: Unterkunft", div="box-changed-registrations")
+        self.assertPresence("Warme Stube", div="box-changed-registrations")
+        self.assertPresence("brings_balls", div="box-changed-registration-fields")
+        self.assertPresence("Notizen", div="box-changed-registration-fields")
         self.assertPresence("2.H.: Unterkunft",
-                            "box-changed-registration-fields")
+                            div="box-changed-registration-fields")
         self.assertPresence("Morgenkreis: Kurswahlen",
-                            "box-changed-registration-fields")
-        self.assertNonPresence("Sitzung: Kursleiter", "box-changed-registration-fields")
-        self.assertNonPresence("Inga", "box-changed-registrations")
-        self.assertPresence("Charly", "box-new-registrations")
-        self.assertPresence("Inga", "box-deleted-registrations")
+                            div="box-changed-registration-fields")
+        self.assertNonPresence("Sitzung: Kursleiter", div="box-changed-registration-fields")
+        self.assertNonPresence("Inga", div="box-changed-registrations")
+        self.assertPresence("Charly", div="box-new-registrations")
+        self.assertPresence("Inga", div="box-deleted-registrations")
         # Courses
-        self.assertPresence("α.", "box-changed-courses")
-        self.assertPresence("GanzKurz", "box-changed-courses")
-        self.assertPresence("Kaffee: Status", "box-changed-courses")
-        self.assertPresence("nicht angeboten", "box-changed-courses")
-        self.assertPresence("fällt aus", "box-changed-courses")
-        self.assertPresence("room", "box-changed-courses")
-        self.assertPresence("room", "box-changed-course-fields")
-        self.assertPresence("Sitzung: Status", "box-changed-courses")
-        self.assertPresence("Max.-Größe", "box-changed-course-fields")
-        self.assertPresence("ζ.", "box-new-courses")
-        self.assertPresence("γ.", "box-deleted-courses")
+        self.assertPresence("α.", div="box-changed-courses")
+        self.assertPresence("GanzKurz", div="box-changed-courses")
+        self.assertPresence("Kaffee: Status", div="box-changed-courses")
+        self.assertPresence("nicht angeboten", div="box-changed-courses")
+        self.assertPresence("fällt aus", div="box-changed-courses")
+        self.assertPresence("room", div="box-changed-courses")
+        self.assertPresence("room", div="box-changed-course-fields")
+        self.assertPresence("Sitzung: Status", div="box-changed-courses")
+        self.assertPresence("Max.-Größe", div="box-changed-course-fields")
+        self.assertPresence("ζ.", div="box-new-courses")
+        self.assertPresence("γ.", div="box-deleted-courses")
         # Lodgements
-        self.assertPresence("Kalte Kammer", "box-changed-lodgements")
-        self.assertPresence("contamination", "box-changed-lodgements")
-        self.assertPresence("Bezeichnung", "box-changed-lodgement-fields")
-        self.assertPresence("Wirklich eng.", "box-changed-lodgements")
-        self.assertPresence("Dafür mit Frischluft.", "box-changed-lodgements")
-        self.assertPresence("Geheimkabinett", "box-new-lodgements")
-        self.assertPresence("Kellerverlies", "box-deleted-lodgements")
+        self.assertPresence("Kalte Kammer", div="box-changed-lodgements")
+        self.assertPresence("contamination", div="box-changed-lodgements")
+        self.assertPresence("Bezeichnung", div="box-changed-lodgement-fields")
+        self.assertPresence("Wirklich eng.", div="box-changed-lodgements")
+        self.assertPresence("Dafür mit Frischluft.", div="box-changed-lodgements")
+        self.assertPresence("Geheimkabinett", div="box-new-lodgements")
+        self.assertPresence("Kellerverlies", div="box-deleted-lodgements")
         # Lodgement Groups
-        self.assertPresence("Geheime Etage", "list-new-lodgement-groups")
+        self.assertPresence("Geheime Etage", div="list-new-lodgement-groups")
 
         # Do import
         f = self.response.forms["importexecuteform"]

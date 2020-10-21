@@ -975,7 +975,7 @@ class FrontendTest(CdEDBTest):
             raise ValueError("Id doesnt belong to a checkbox", anid)
         self.assertEqual(str(status), checkbox['data-checked'])
 
-    def assertPresence(self, s: str, div: str = "content", regex: bool = False,
+    def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False) -> None:
         """Assert that a string is present in the element with the given id.
 
@@ -993,7 +993,7 @@ class FrontendTest(CdEDBTest):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s: str, div: str = "content",
+    def assertNonPresence(self, s: str, *, div: str = "content",
                           check_div: bool = True) -> None:
         """Assert that a string is not present in the element with the given id.
 
