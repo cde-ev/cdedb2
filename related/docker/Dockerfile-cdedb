@@ -75,31 +75,30 @@ RUN mkdir /var/lib/cdedb \
     \
     && useradd --system cdedb
 
-COPY ./related/auto-build/files/stage3 /tmp
+COPY ./related/auto-build/files/stage3 /tmp/autobuild
 
 RUN a2enmod ssl wsgi headers \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
-    && cp /tmp/cdedb-site.conf /etc/apache2/sites-available \
+    && cp /tmp/autobuild/cdedb-site.conf /etc/apache2/sites-available \
     && a2ensite cdedb-site \
-    && cp /tmp/index.html /var/www/html/ \
+    && cp /tmp/autobuild/index.html /var/www/html/ \
     \
-    && cp /tmp/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
+    && cp /tmp/autobuild/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
-    && chmod 640 /etc/cdedb-mailman-htpasswd
+    && chmod 640 /etc/cdedb-mailman-htpasswd \
+    \
+    && rm -rf /tmp/autobuild
 
 EXPOSE 443
+
+COPY ./related/auto-build/files/stage3/localconfig.py /etc/cdedb-application-config.py
+
+RUN sed --in-place -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' /etc/cdedb-application-config.py
 
 WORKDIR /cdedb2
 
 COPY . ./
-
-RUN cp ./related/auto-build/files/stage3/localconfig.py ./cdedb/ \
-    && chown cdedb:cdedb ./cdedb/localconfig.py \
-    && chmod 644 ./cdedb/localconfig.py \
-    && sed --in-place \
-        -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
-        cdedb/localconfig.py
 
 RUN make doc && make i18n-compile
 
