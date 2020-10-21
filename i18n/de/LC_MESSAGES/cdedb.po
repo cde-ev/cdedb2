@@ -10730,6 +10730,12 @@ msgstr "Feld"
 msgid "Participants/Registrations to be changed"
 msgstr "Zu ändernde Teilnehmer/Anmeldungen"
 
+msgid "Courses to be changed"
+msgstr "Zu ändernde Kurse"
+
+msgid "Lodgements to be changed"
+msgstr "Zu ändernde Unterkünfte"
+
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:7
 #, python-format
 msgid "Configure Custom Fields (%(title)s)"

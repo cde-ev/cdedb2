@@ -48,7 +48,15 @@
     </form>
 
     {% if ordered %}
-        <h4 class="mosp">{% trans %}Participants/Registrations to be changed{% endtrans %}</h4>
+        <h4 class="mosp">
+            {% if kind == enums['FieldAssociations'].registration.value %}
+                {% trans %}Participants/Registrations to be changed{% endtrans %}
+            {% elif kind == enums['FieldAssociations'].course.value %}
+                {% trans %}Courses to be changed{% endtrans %}
+            {% elif kind == enums['FieldAssociations'].lodgement.value %}
+                {% trans %}Lodgements to be changed{% endtrans %}
+            {% endif %}
+        </h4>
         <ul>
             {% for anid in ordered %}
                 <li>{{ labels[anid] }}</li>
