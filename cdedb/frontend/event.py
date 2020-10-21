@@ -5934,7 +5934,14 @@ class EventFrontend(AbstractUserFrontend):
 
     def field_set_aux(self, rs: RequestState, event_id: int, field_id: Optional[int],
                       ids: Collection[int], kind: const.FieldAssociations):
+        """Process field set inputs.
 
+        This function retrieves the data dependent on the given kind and returns it in
+        a standardized way to be used in the generic field_set_* functions.
+
+        :param ids: ids of the entities where the field should be modified.
+        :param kind: specifies the entity: registration, course or lodgement
+        """
         if kind == const.FieldAssociations.registration:
             if not ids:
                 ids = self.eventproxy.list_registrations(rs, event_id)
@@ -5985,7 +5992,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def field_set_select(self, rs: RequestState, event_id: int, field_id: int,
                          ids: Collection[int], kind: const.FieldAssociations) -> Response:
-        """Select a field for manipulation across all registrations."""
+        """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
             return self.render(rs, "field_set_select")
         if field_id:
@@ -6039,7 +6046,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def field_set(self, rs: RequestState, event_id: int, field_id: int,
                   ids: Collection[int], kind: const.FieldAssociations) -> Response:
-        """Modify a specific field on all registrations."""
+        """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
                 rs, event_id, kind=kind.value, internal=True)
@@ -6077,7 +6084,7 @@ class EventFrontend(AbstractUserFrontend):
             query_foi = "lodgement.title", "lodgement_group.title"
         else:
             # this can not happen, since kind was validated successfully
-            raise NotImplementedError(n_(f"Unkown kind {kind}."))
+            raise NotImplementedError(f"Unkown kind {kind}.")
         for anid, entity in entities.items():
             if data[f"input{anid}"] != entity['fields'].get(field['field_name']):
                 new = {
