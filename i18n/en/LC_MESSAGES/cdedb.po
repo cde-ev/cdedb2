@@ -1793,7 +1793,7 @@ msgid "Must not be used in web templates."
 msgstr ""
 
 #: cdedb/frontend/common.py:1029 cdedb/frontend/common.py:1010
-#: cdedb/frontend/common.py:1011
+#: cdedb/frontend/common.py:1011 cdedb/frontend/common.py:1009
 msgid "Given method is not callable."
 msgstr ""
 
@@ -1804,6 +1804,7 @@ msgid "Default values cannot be overridden: %(keys)s"
 msgstr ""
 
 #: cdedb/frontend/common.py:1074 cdedb/frontend/common.py:1053
+#: cdedb/frontend/common.py:1052
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
 msgstr ""
@@ -14491,6 +14492,12 @@ msgstr ""
 msgid ""
 "I %(consent)sagree that my data, including my name, address and my email, "
 "may be sent to other participants of this event beforehand."
+msgstr ""
+
+#: cdedb/frontend/common.py:2138
+msgid ""
+"You have only restricted moderator access and may not change subscriptions. "
+"Take a look into our documentation."
 msgstr ""
 
 #~ msgid "CoreLogCodes.password_invalidated"

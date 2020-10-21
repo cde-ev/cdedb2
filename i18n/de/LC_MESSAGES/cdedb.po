@@ -2377,6 +2377,7 @@ msgstr ""
 
 #: cdedb/frontend/common.py:1029 cdedb/frontend/common.py:1010
 #: cdedb/frontend/common.py:998 cdedb/frontend/common.py:1011
+#: cdedb/frontend/common.py:1009
 msgid "Given method is not callable."
 msgstr "Die fragliche Methode ist nicht aufrufbar."
 
@@ -2387,6 +2388,7 @@ msgid "Default values cannot be overridden: %(keys)s"
 msgstr "Standardwerte können nicht überschrieben werden: %(keys)s"
 
 #: cdedb/frontend/common.py:1074 cdedb/frontend/common.py:1053
+#: cdedb/frontend/common.py:1052
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
 msgstr "Angefordeter modus existiert nicht: %(modus)s"
@@ -2665,6 +2667,8 @@ msgstr "Kein Account gefunden."
 #: cdedb/frontend/core.py:749
 msgid "Must provide id of the associated mailinglist to use this kind."
 msgstr ""
+"Um diese Art Anfrage zu benutzen musst die zugehörige Mailinglisten-ID "
+"angegeben werden."
 
 #: cdedb/frontend/core.py:948 cdedb/frontend/core.py:945
 #: cdedb/frontend/core.py:962 cdedb/frontend/core.py:963
@@ -17046,6 +17050,12 @@ msgstr ""
 "Ich stimme %(consent)szu, dass meine Daten, insbesondere mein Name, meine "
 "Adresse und meine E-Mail, im Vorfeld der Veranstaltung an andere Teilnehmer "
 "weitergegeben werden dürfen."
+
+#: cdedb/frontend/common.py:2138
+msgid ""
+"You have only restricted moderator access and may not change subscriptions. "
+"Take a look into our documentation."
+msgstr ""
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
