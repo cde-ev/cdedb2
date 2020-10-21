@@ -57,7 +57,7 @@ echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' |
 
 apt-get -y install                                                  \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
-    translation-toolkit apache2 libapache2-mod-wsgi-py3 fail2ban    \
+    apache2 libapache2-mod-wsgi-py3 fail2ban                        \
     slapd ldap-utils                                                \
     postgresql-client postgresql postgresql-contrib pgbouncer       \
     texlive texlive-latex-extra texlive-lang-german texlive-luatex  \

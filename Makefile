@@ -50,9 +50,8 @@ i18n-compile:
 	pybabel compile -d ./i18n/ -l en -D cdedb
 
 i18n-check:
-	pocount ./i18n/de/LC_MESSAGES/cdedb.po ./i18n/en/LC_MESSAGES/cdedb.po
-	msgfmt -c ./i18n/de/LC_MESSAGES/cdedb.po
-	msgfmt -c ./i18n/en/LC_MESSAGES/cdedb.po
+	msgfmt -c ./i18n/de/LC_MESSAGES/cdedb.po --statistics
+	msgfmt -c ./i18n/en/LC_MESSAGES/cdedb.po --statistics
 
 sample-data:
 	$(MAKE) storage > /dev/null
