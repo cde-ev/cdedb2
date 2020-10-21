@@ -1235,21 +1235,21 @@ class TestMlFrontend(FrontendTest):
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Hogwarts"})
         admin_note = self.sample_data['ml.mailinglists'][65]['notes']
-        self.assertPresence(admin_note, "adminnotes")
+        self.assertPresence(admin_note, div="adminnotes")
         self.traverse({"description": "Verwaltung"})
         f = self.response.forms['addmoderatorform']
         f['moderators'] = user['DB-ID']
         self.submit(f)
-        self.assertPresence(user['given_names'], "moderator_list")
+        self.assertPresence(user['given_names'], div="moderator_list")
         f = self.response.forms[f"removemoderatorform{user['id']}"]
         self.submit(f)
-        self.assertNonPresence(user['given_names'], "moderator_list")
+        self.assertNonPresence(user['given_names'], div="moderator_list")
         self.traverse({"description": "Konfiguration"})
         f = self.response.forms['changelistform']
         new_notes = "Free Butterbeer for everyone!"
         f['notes'] = new_notes
         self.submit(f)
-        self.assertPresence(new_notes, "adminnotes")
+        self.assertPresence(new_notes, div="adminnotes")
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Mailingliste anlegen"})
         f = self.response.forms['selectmltypeform']
@@ -1270,7 +1270,7 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)
         self.assertTitle("Little Whinging")
-        self.assertPresence(moderator['given_names'], "moderator_list")
+        self.assertPresence(moderator['given_names'], div="moderator_list")
 
     @as_users("anton")
     def test_1342(self, user):

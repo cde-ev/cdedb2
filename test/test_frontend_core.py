@@ -1395,8 +1395,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
         self.assertCheckbox(True, "paper_expuls_checkbox")
-        self.assertNonPresence("CdE-Mitglied", "cde-membership")
-        self.assertNonPresence("Probemitgliedschaft", "cde-membership")
+        self.assertNonPresence("CdE-Mitglied", div="cde-membership")
+        self.assertNonPresence("Probemitgliedschaft", div="cde-membership")
 
         # Do another promotion, this time granting trial membership.
         self.admin_view_profile('nina')

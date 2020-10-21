@@ -70,7 +70,7 @@ class TestApplication(FrontendTest):
         f['postal_code2'] = "22337"
         self.submit(f, check_notification=False)
         self.assertPresence("Dieses Formular benötigt einen Anti-CSRF-Token.",
-                            'notifications')
+                            div='notifications')
         self.get("/core/self/show")
         self.follow()
         self.assertNonPresence("22337")
@@ -82,11 +82,11 @@ class TestApplication(FrontendTest):
         f['postal_code2'] = "abcd"
         self.submit(f, check_notification=False)
         self.assertPresence("Der Anti-CSRF-Token wurde gefälscht.",
-                            'notifications')
+                            div='notifications')
         # Try re-submitting with valid anti CSRF token, but validation errors
         f = self.response.forms['changedataform']
         self.submit(f, check_notification=False)
-        self.assertPresence("Validierung fehlgeschlagen.", 'notifications')
+        self.assertPresence("Validierung fehlgeschlagen.", div='notifications')
         f = self.response.forms['changedataform']
         f['postal_code2'] = "22337"
         self.submit(f)
