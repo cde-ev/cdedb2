@@ -951,7 +951,7 @@ class TestCoreFrontend(FrontendTest):
         f["note"] = "Archived for testing."
         f["ack_delete"].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Meta-Admins können nicht archiviert werden.",
+        self.assertPresence("Admins können nicht archiviert werden.",
                             div="notifications")
         self.assertNonPresence("Benutzer ist archiviert", div="notifications")
         self.assertPresence(USER_DICT["martin"]["username"])
