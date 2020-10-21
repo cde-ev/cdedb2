@@ -6,6 +6,6 @@ CREATE DATABASE :cdb_database_name WITH OWNER = cdb TEMPLATE = template0 ENCODIN
 
 ALTER DATABASE :cdb_database_name SET datestyle TO 'ISO, YMD';
 
-\connect :cdb_database_name
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+\connect :cde_database_name
+CREATE EXTENSION pg_trgm;
 CREATE COLLATION "de-u-kn-true" (provider = icu, locale = 'de-u-kn-true');
