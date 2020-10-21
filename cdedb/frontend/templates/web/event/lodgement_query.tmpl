@@ -18,7 +18,7 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements"), icon="home") }}
+{{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
 {{ util.breadcrumb_link(cdedblink("event/lodgement_query"), gettext("Lodgement Query"), active=True) }}
 {% endblock %}
 {% block content %}
