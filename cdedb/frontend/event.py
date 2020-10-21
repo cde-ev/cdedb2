@@ -5967,7 +5967,14 @@ class EventFrontend(AbstractUserFrontend):
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)
             entities = self.eventproxy.get_lodgements(rs, ids)
-            labels = {lodg_id: f"ka" for lodg_id, lodg in entities.items()}
+            group_ids = {lodgement['group_id'] for lodgement in entities.values()
+                         if lodgement['group_id'] is not None}
+            groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+            labels = {
+                lodg_id: f"{lodg['title']}" if lodg['group_id'] is None
+                         else safe_filter(f"{lodg['title']}, "
+                                          f"<em>{groups[lodg['group_id']]['title']}</em>")
+                for lodg_id, lodg in entities.items()}
             ordered_entities = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.lodgement(entities[anid]))
         else:
