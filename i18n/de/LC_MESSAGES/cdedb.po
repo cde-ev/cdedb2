@@ -16880,6 +16880,13 @@ msgstr "Admins können nicht archiviert werden."
 msgid "Must provide id of the associated mailinglist to use this kind."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:160
+msgid "Field to store the %(link)s ranking of this part. Fieldtype: Integer"
+msgstr "Feld für die %(link)s dieses Veranstaltungsteils. Datentyp: Ganzzahl"
+
+msgid "Waitlist"
+msgstr "Warteliste"
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 

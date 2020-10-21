@@ -2137,7 +2137,7 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                                               privileged=True):
                     rs.notify("info", n_(
                         "You have only restricted moderator access and may not "
-                        "change subscriptions."))
+                        "change subscriptions. Take a look into our documentation."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(

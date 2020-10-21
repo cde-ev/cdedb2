@@ -14182,6 +14182,10 @@ msgstr ""
 msgid "Must provide id of the associated mailinglist to use this kind."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:160
+msgid "Field to store the %(link)s ranking of this part. Fieldtype: Integer"
+msgstr ""
+
 #~ msgid "CoreLogCodes.password_invalidated"
 #~ msgstr "Password deleted"
 
