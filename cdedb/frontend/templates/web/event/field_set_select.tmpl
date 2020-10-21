@@ -1,11 +1,20 @@
-{% set sidenav_active='event_registration' %}
+{% if kind == enums['FieldAssociations'].registration.value %}
+    {% set sidenav_active='event_registration' %}
+{% elif kind == enums['FieldAssociations'].course.value %}
+    {% set sidenav_active='event_course_stats' %}
+{% elif kind == enums['FieldAssociations'].lodgement.value %}
+    {% set sidenav_active='event_lodgements' %}
+{% endif %}
+
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+
 {% block title %}
     {% trans title=ambience['event']['title'] %}
         Select Field ({{ title }})
     {% endtrans %}
 {% endblock %}
+
 {% block heading %}
     <h1 class="title">
         {% trans %}
@@ -14,12 +23,22 @@
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
+
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-{{ util.breadcrumb_link(cdedblink("event/field_set_select"), gettext("Set Field"), active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {% if kind == enums['FieldAssociations'].registration.value %}
+        {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+    {% elif kind == enums['FieldAssociations'].course.value %}
+        {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
+        {{ util.breadcrumb_link(cdedblink("event/course_query"), gettext("Course Query")) }}
+    {% elif kind == enums['FieldAssociations'].lodgement.value %}
+        {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
+        {{ util.breadcrumb_link(cdedblink("event/lodgement_query"), gettext("Lodgement Query")) }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("event/field_set_select", {'kind': kind}), gettext("Set Field"), active=True) }}
 {% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('event/field_set_select') }}" method="GET" id="selectfieldform" class="form-horizontal">
         {{ util.form_input_select("field_id", label=gettext("Field"), entries=fields, small=True) }}
