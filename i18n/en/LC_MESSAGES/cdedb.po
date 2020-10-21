@@ -13415,7 +13415,7 @@ msgstr "Banner after Login"
 
 #: cdedb/i18n_additional.py:343 cdedb/i18n_additional.py:338
 msgid "banner_genesis"
-msgstr ""
+msgstr "Banner at account request"
 
 #: cdedb/i18n_additional.py:344 cdedb/i18n_additional.py:339
 msgid "cde_misc"
