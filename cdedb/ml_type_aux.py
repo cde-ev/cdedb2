@@ -312,6 +312,8 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
+    # Disallow management by cde admins.
+    relevant_admins: Set[str] = set()
 
 
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):

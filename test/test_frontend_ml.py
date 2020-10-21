@@ -1334,7 +1334,7 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['vera'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
-        self.assertTitle("Mailinglisten-Log [1–9 von 9]")
+        self.assertTitle("Mailinglisten-Log [1–6 von 6]")
         self.assertPresence("Aktivenforum 2001")
         self.assertNonPresence("CdE-Party")
         self.logout()

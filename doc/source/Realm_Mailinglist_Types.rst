@@ -16,7 +16,7 @@ Member Mailinglists (implicit)
     default. Other users are not allowed to subscribe.
 
     * visible to: CdE members
-    * additional admins: None
+    * additional admins: None for Mandatory, cde for Opt-out
     * sortkey: cde
 
     The following subtypes are supported:
