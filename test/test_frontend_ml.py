@@ -1218,7 +1218,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Sozialistischer Kampfbrief"},
                       {"description": "Erweiterte Verwaltung"})
-        self.assertPresence("Du hast nur eingeschränkte Moderator Rechte",
+        self.assertPresence("Du hast keine priviligierter Moderator Rechte",
                             div="notifications")
         # they can not add ...
         f = self.response.forms['addmodsubscriberform']
@@ -1228,8 +1228,7 @@ class TestMlFrontend(FrontendTest):
         # ... nor remove subscriptions.
         f = self.response.forms['removemodsubscriberform100']
         self.submit(f, check_notification=False)
-        self.assertPresence("Darf Abonnements nicht ändern.",
-                            div="notifications")
+        self.assertPresence("Darf Abonnements nicht ändern.", div="notifications")
 
     @as_users("inga")
     def test_cdelokal_admin(self, user):

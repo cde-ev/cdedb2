@@ -16887,6 +16887,15 @@ msgstr "Feld für die %(link)s dieses Veranstaltungsteils. Datentyp: Ganzzahl"
 msgid "Waitlist"
 msgstr "Warteliste"
 
+#: cdedb/frontend/common.py:2191
+msgid "privileged moderator"
+msgstr "priviligierter Moderator"
+
+#: cdedb/frontend/common.py:2194
+#, python-format
+msgid "You do not have %(link)s access and may not change subscriptions."
+msgstr "Du hast keine %(link)s Rechte und kannst keine Abonnements ändern"
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 
