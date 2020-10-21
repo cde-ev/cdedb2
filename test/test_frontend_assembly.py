@@ -354,24 +354,29 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['addattendeeform']
         f['persona_id'] = "DB-5-1"
         self.submit(f, check_notification=False)
-        self.assertValidationError("persona_id",
-            "Dieser Nutzer ist kein Versammlungsnutzer.")
+        self.assertValidationError(
+            "persona_id", "Dieser Nutzer ist kein Versammlungsnutzer.")
         # TODO: add a check for a non-existant user and an invalid DB-ID.
 
-    @as_users("kalif")
+    @as_users("werner", "viktor", "kalif")
     def test_list_attendees(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Teilnehmer'})
         self.assertTitle("Anwesenheitsliste (Internationaler Kongress)")
-        self.assertPresence("Anton", div='attendees-list')
-        self.assertPresence("Akira", div='attendees-list')
-        self.assertPresence("Bertålotta", div='attendees-list')
-        self.assertPresence("Kalif", div='attendees-list')
-        self.assertPresence("Inga", div='attendees-list')
-        self.assertPresence("Werner", div='attendees-list')
-        self.assertPresence("Insgesamt 6 Anwesende.", div='attendees-count')
+        attendees = ["Anton", "Akira", "Bertålotta", "Kalif", "Inga", "Werner"]
+        for attendee in attendees:
+            self.assertPresence(attendee, div='attendees-list')
+        self.assertPresence(
+            f"Insgesamt {len(attendees)} Anwesende.", div='attendees-count')
         self.assertNonPresence("Charly")
+        if user['id'] in {USER_DICT['kalif']['id']}:
+            self.assertNonPresence("Download")
+        elif user['id'] in {USER_DICT['viktor']['id'], USER_DICT['werner']['id']}:
+            self.assertPresence("Download")
+            self.traverse("TeX-Liste")
+            for attendee in attendees:
+                self.assertIn(attendee, self.response.text)
 
     @as_users("rowena")
     def test_summary_ballots(self, user):
