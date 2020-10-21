@@ -28,7 +28,7 @@
                 {{ util.href(cdedblink("event/create_lodgement"), gettext("Create Lodgement"),
                              readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
             {% if ambience['event']['fields'] %}
-                {{ util.href(cdedblink("event/field_set_select", {'kind': "lodgement"}), gettext("Set Field"),
+                {{ util.href(cdedblink("event/field_set_select", {'kind': enums['FieldAssociations'].lodgement.value}), gettext("Set Field"),
                               readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
             {% endif %}
             </div>
