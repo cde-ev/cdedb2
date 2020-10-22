@@ -22,9 +22,13 @@
                         {% trans %}
                             (already attending)
                         {% endtrans %}
-                    {% else %}
+                    {% elif assembly['signup_end'] >= now() %}
                         {% trans date=assembly['signup_end']|datetime(lang=lang) %}
                             (registration possible until {{ date }})
+                        {% endtrans %}
+                    {% else %}
+                        {% trans %}
+                            (registration no longer possible)
                         {% endtrans %}
                     {% endif %}
                 </li>

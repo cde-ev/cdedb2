@@ -292,6 +292,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Häretiker", div='description')
 
+    @as_users("werner")
+    def test_past_assembly(self, user):
+        self.traverse({'description': 'Versammlungen'},
+                      {'description': 'Archiv-Sammlung'},
+                      {'description': 'Konfiguration'}, )
+        f = self.response.forms['changeassemblyform']
+        f['signup_end'] = '2000-02-22T01:00:00'
+        self.submit(f)
+        self.assertPresence("22.02.2000, 01:00:00")
+        self.traverse({'description': 'Versammlungen'})
+        self.assertNonPresence("22.02.2000, 01:00:00")
+        self.assertPresence("(Anmeldung nicht mehr möglich)")
+
     @as_users("ferdinand")
     def test_create_delete_assembly(self, user):
         self._create_assembly()
