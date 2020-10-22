@@ -246,7 +246,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         self._click_admin_view_button(re.compile(r"Versammlungs-Administration"),
                                       current_state=True)
-        self._click_admin_view_button(re.compile(r"Wahlleitung-Schaltflächen"),
+        self._click_admin_view_button(re.compile(r"Versammlungsleitung-Schaltflächen"),
                                       current_state=False)
         self.traverse({'href': '/assembly/assembly/1/show'},
                       {'href': '/assembly/assembly/1/attachment/add'},

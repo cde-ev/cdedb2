@@ -122,7 +122,7 @@ msgstr "Die Versammlung ist bereits beendet."
 #: cdedb/backend/assembly.py:541
 msgid "Cannot alter assembly presiders after assembly has been concluded."
 msgstr ""
-"Die Wahlleitung kann nicht modifiziert werden, nachdem die Versammlung "
+"Die Versammlungsleitung kann nicht modifiziert werden, nachdem die Versammlung "
 "beendet wurde."
 
 #: cdedb/backend/assembly.py:544 cdedb/backend/ml.py:485
@@ -1755,7 +1755,7 @@ msgstr "Auf diese Seite können nur Administratoren zugreifen."
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
-msgstr "Diese Seite ist nur für die Wahlleitung und Administratoren zugänglich."
+msgstr "Diese Seite ist nur für die Versammlungsleitung und Administratoren zugänglich."
 
 #: cdedb/frontend/core.py:49
 msgid "CdE user / Member"
@@ -3946,7 +3946,7 @@ msgstr "Versammlungs-Administration"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:74
 msgid "Presider Controls"
-msgstr "Wahlleitung-Schaltflächen"
+msgstr "Versammlungsleitung-Schaltflächen"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:76
 #: cdedb/frontend/templates/web/cde/base.tmpl:68
@@ -4114,7 +4114,7 @@ msgstr "Versammlung anlegen"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:41
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:53
 msgid "Presiders"
-msgstr "Wahlleitung"
+msgstr "Versammlungsleitung"
 
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:31
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:79
