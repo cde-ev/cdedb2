@@ -306,12 +306,8 @@ class MyTextTestResult(unittest.TextTestResult):
         self._subTestSkips.append(reason)
 
 
-class BackendTest(unittest.TestCase):
-    """Provide some basic useful test functionalities. Needs to be subclassed.
-
-    For all test cases, this provides some backends to allow for additional data
-    to be queried if required.
-    """
+class CdEDBTest(unittest.TestCase):
+    """Provide some basic useful test functionalities."""
     testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
 
     @classmethod
@@ -320,25 +316,12 @@ class BackendTest(unittest.TestCase):
         cls._clean_sample_data = read_sample_data()
         cls.conf = Config()
 
-        # Initialize all backends. In frontend tests, they should only be used
-        # if the corresponding frontend functionality is tested elsewhere.
-        cls.session = cls.initialize_raw_backend(SessionBackend)
-        cls.core = cls.initialize_backend(CoreBackend)
-        cls.cde = cls.initialize_backend(CdEBackend)
-        cls.event = cls.initialize_backend(EventBackend)
-        cls.pastevent = cls.initialize_backend(PastEventBackend)
-        cls.ml = cls.initialize_backend(MlBackend)
-        cls.assembly = cls.initialize_backend(AssemblyBackend)
-        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(
-            rs.sessionkey, persona_id)
-
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
         # Provide a fresh copy of clean sample data.
         self.sample_data = copy.deepcopy(self._clean_sample_data)
-        self.key = None
 
     def get_sample_data(self, table: str, ids: Iterable[int],
                         keys: Iterable[str]) -> CdEDBObjectMap:
@@ -378,14 +361,30 @@ class BackendTest(unittest.TestCase):
                 ret[anid] = copy.deepcopy(self.sample_data[table][anid])
         return ret
 
-    @staticmethod
-    def initialize_raw_backend(backendcls: Type[SessionBackend]
-                               ) -> SessionBackend:
-        return backendcls()
+
+class BackendTest(CdEDBTest):
+    """
+    Base class for a TestCase that uses some backends. Needs to be subclassed.
+    """
+    maxDiff = None
 
     @classmethod
-    def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return make_backend_shim(backendcls(), internal=True)
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.session = cls.initialize_raw_backend(SessionBackend)
+        cls.core = cls.initialize_backend(CoreBackend)
+        cls.cde = cls.initialize_backend(CdEBackend)
+        cls.event = cls.initialize_backend(EventBackend)
+        cls.pastevent = cls.initialize_backend(PastEventBackend)
+        cls.ml = cls.initialize_backend(MlBackend)
+        cls.assembly = cls.initialize_backend(AssemblyBackend)
+        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(
+            rs.sessionkey, persona_id)
+
+    def setUp(self):
+        """Reset login state."""
+        super().setUp()
+        self.key = None
 
     def loginBackend(self, user, ip="127.0.0.0"):
         if isinstance(user, str):
@@ -395,6 +394,15 @@ class BackendTest(unittest.TestCase):
 
     def login(self, user, ip="127.0.0.0"):
         return self.loginBackend(user, ip)
+
+    @staticmethod
+    def initialize_raw_backend(backendcls: Type[SessionBackend]
+                               ) -> SessionBackend:
+        return backendcls()
+
+    @classmethod
+    def initialize_backend(cls, backendcls: Type[B]) -> B:
+        return make_backend_shim(backendcls(), internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
@@ -680,7 +688,7 @@ def execsql(sql: AnyStr) -> None:
     subprocess.check_call(psql + (str(path),), stdout=null)
 
 
-class FrontendTest(BackendTest):
+class PureFrontendTest(CdEDBTest):
     """
     Base class for frontend tests.
 
@@ -853,17 +861,14 @@ class FrontendTest(BackendTest):
         f['password'] = user['password']
         self.submit(f, check_notification=False, verbose=verbose)
 
-    def login(self, user, ip="127.0.0.0"):
-        """Spin up frontend and backend session in parallel."""
-        self.loginBackend(user, ip)
-        self.loginFrontend(user, ip)
+    def login(self, user: CdEDBObject, verbose: bool = False) -> None:
+        self.loginFrontend(user, verbose)
 
     def logout(self, verbose: bool = False) -> None:
         """Log out. Raises a KeyError if not currently logged in.
 
         :param verbose: If True display additional debug information.
         """
-        self.key = None
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False, verbose=verbose)
 
@@ -1258,8 +1263,22 @@ class FrontendTest(BackendTest):
             if fail:
                 self.fail(f"Form {form} not found after {count} reloads.")
 
+class FrontendTest(PureFrontendTest, BackendTest):
+    """This is a frontend which additionally has access to all backends.
 
-class MultiAppFrontendTest(FrontendTest):
+    Since this creates additional sessions, it is to be avoided for some tests."""
+
+    def login(self, user, verbose: bool = False):
+        """Spin up frontend and backend session in parallel."""
+        self.loginBackend(user, ip="127.0.0.0")
+        self.loginFrontend(user, verbose)
+
+    def logout(self, verbose: bool = False):
+        super().logout(verbose=verbose)
+        self.key = False
+
+
+class MultiAppFrontendTest(PureFrontendTest):
     """Subclass for testing multiple frontend instances simultaniously."""
     n: int = 2  # The number of instances that should be created.
     current_app: int  # Which instance is currently active 0 <= x < n
