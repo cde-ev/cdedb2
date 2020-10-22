@@ -1823,14 +1823,19 @@ class CoreBackend(AbstractBackend):
         return sessionkey
 
     @access("persona")
-    def logout(self, rs: RequestState, all_sessions: bool = False
-               ) -> DefaultReturnCode:
+    def logout(self, rs: RequestState, this_session: bool = True,
+               other_sessions: bool = False) -> DefaultReturnCode:
         """Invalidate the current session."""
         query = "UPDATE core.sessions SET is_active = False, atime = now()"
         constraints = ["persona_id = %s", "is_active = True"]
         params: List[Any] = [rs.user.persona_id]
-        if not all_sessions:
+        if not this_session and not other_sessions:
+            return 0
+        elif not other_sessions:
             constraints.append("sessionkey = %s")
+            params.append(rs.sessionkey)
+        elif not this_session:
+            constraints.append("sessionkey != %s")
             params.append(rs.sessionkey)
         query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)

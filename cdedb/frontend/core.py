@@ -251,7 +251,7 @@ class CoreFrontend(AbstractFrontend):
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
         """Invalidate the current session."""
-        self.coreproxy.logout(rs, all_sessions=False)
+        self.coreproxy.logout(rs, other_sessions=False)
         response = self.redirect(rs, "core/index")
         response.delete_cookie("sessionkey")
         return response
@@ -262,7 +262,7 @@ class CoreFrontend(AbstractFrontend):
         """Invalidate all sessions for the current user."""
         if rs.has_validation_errors():
             return self.index(rs)
-        count = self.coreproxy.logout(rs, all_sessions=True)
+        count = self.coreproxy.logout(rs, other_sessions=True)
         rs.notify(
             "success", n_("%(count)s session(s) terminated."), {'count': count})
         # Unset persona_id so the notification is encoded correctly.
@@ -1607,6 +1607,9 @@ class CoreFrontend(AbstractFrontend):
                     rs.user.persona_id))
             return self.change_password_form(rs)
         else:
+            count = self.coreproxy.logout(rs, other_sessions=True, this_session=False)
+            rs.notify(
+                "success", n_("%(count)s session(s) terminated."), {'count': count})
             return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("anonymous")
