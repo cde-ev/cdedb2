@@ -6753,7 +6753,7 @@ msgid "Orga-Events"
 msgstr "Orga-Veranstaltungen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:117
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:40
+#: cdedb/frontend/templates/web/event/list_events.tmpl:40
 #, python-format
 msgid "%(count)s Registrations"
 msgstr "%(count)s Anmeldungen"
@@ -6828,7 +6828,7 @@ msgstr[1] "%(count)s Anfragen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:194
 #: cdedb/frontend/templates/web/event/index.tmpl:13
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:61
+#: cdedb/frontend/templates/web/event/list_events.tmpl:61
 msgid "Current Events"
 msgstr "Aktuelle Veranstaltungen"
 
@@ -7960,8 +7960,8 @@ msgstr "Veranstaltungsübersicht"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:98
 #: cdedb/frontend/templates/web/event/create_event.tmpl:13
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:5
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:11
+#: cdedb/frontend/templates/web/event/list_events.tmpl:5
+#: cdedb/frontend/templates/web/event/list_events.tmpl:11
 msgid "All Events"
 msgstr "Alle Veranstaltungen"
 
@@ -8835,7 +8835,7 @@ msgstr "Kurs hinzufügen (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:7
 #: cdedb/frontend/templates/web/event/create_event.tmpl:14
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:56
+#: cdedb/frontend/templates/web/event/list_events.tmpl:56
 msgid "Create Event"
 msgstr "Veranstaltung anlegen"
 
@@ -9218,7 +9218,7 @@ msgid "Other Events"
 msgstr "Weitere Veranstaltungen"
 
 #: cdedb/frontend/templates/web/event/index.tmpl:120
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:31
+#: cdedb/frontend/templates/web/event/list_events.tmpl:31
 msgid "is cancelled"
 msgstr "wurde abgesagt"
 
@@ -9252,19 +9252,19 @@ msgstr ""
 "%(list)s aller Veranstaltungen, die noch nicht von persönlichen Daten "
 "bereinigt und gelöscht wurden."
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:23
+#: cdedb/frontend/templates/web/event/list_events.tmpl:23
 #, python-format
 msgid "%(count)s Parts"
 msgstr "%(count)s Teile"
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:44
+#: cdedb/frontend/templates/web/event/list_events.tmpl:44
 #, python-format
 msgid "%(count)s Orga"
 msgid_plural "%(count)s Orgas"
 msgstr[0] "%(count)s Orga"
 msgstr[1] "%(count)s Orgas"
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:70
+#: cdedb/frontend/templates/web/event/list_events.tmpl:70
 msgid "Archived Events"
 msgstr "Archivierte Veranstaltungen"
 

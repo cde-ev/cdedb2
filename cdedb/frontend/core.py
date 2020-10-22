@@ -150,7 +150,7 @@ class CoreFrontend(AbstractFrontend):
                                           if v['is_active']}
             # visible and open events
             if "event" in rs.user.roles:
-                event_ids = self.eventproxy.list_db_events(
+                event_ids = self.eventproxy.list_events(
                     rs, visible=True, current=True, archived=False)
                 events = self.eventproxy.get_events(rs, event_ids.keys())
                 final = {}

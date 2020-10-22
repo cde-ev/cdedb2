@@ -8,7 +8,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("All Events"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("event/list_events"), gettext("All Events"), active="True") }}
 {% endblock %}
 
 {% macro format_entry(event) %}

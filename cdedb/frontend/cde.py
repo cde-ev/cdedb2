@@ -806,7 +806,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         data = data or {}
         merge_dicts(rs.values, data)
-        event_ids = self.eventproxy.list_db_events(rs)
+        event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
             [(event['id'] , event['title']) for event in events.values()],
@@ -897,7 +897,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.parse_statement_form(rs)
         statementlines = statement_file.splitlines()
 
-        event_list = self.eventproxy.list_db_events(rs)
+        event_list = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_list)
 
         get_persona = lambda p_id: self.coreproxy.get_persona(rs, p_id)
@@ -2234,7 +2234,7 @@ class CdEFrontend(AbstractUserFrontend):
             for key, value in institution.items() if key != 'id'}
         merge_dicts(rs.values, current)
         is_referenced = set()
-        event_ids = self.eventproxy.list_db_events(rs)
+        event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids.keys())
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids.keys())

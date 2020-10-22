@@ -156,7 +156,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             group_id = self.mlproxy.get_ml_type(rs, ml_id).sortkey
             grouped[group_id][ml_id] = {
                 'title': mailinglist_infos[ml_id]['title'], 'id': ml_id}
-        event_ids = self.eventproxy.list_db_events(rs)
+        event_ids = self.eventproxy.list_events(rs)
         events = {}
         for event_id in event_ids:
             event = self.eventproxy.get_event(rs, event_id)
@@ -203,7 +203,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             available_domains = atype.domains
             additional_fields = [f for f, _ in atype.get_additional_fields()]
             if "event_id" in additional_fields:
-                event_ids = self.eventproxy.list_db_events(rs)
+                event_ids = self.eventproxy.list_events(rs)
                 events = self.eventproxy.get_events(rs, event_ids)
             else:
                 events = {}
@@ -366,7 +366,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         available_domains = atype.domains
         additional_fields = [f for f, _ in atype.get_additional_fields()]
         if "event_id" in additional_fields:
-            event_ids = self.eventproxy.list_db_events(rs)
+            event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
             sorted_events = keydictsort_filter(events, EntitySorter.event)
             event_entries = [(k, v['title']) for k, v in sorted_events]
@@ -437,7 +437,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                             mailinglist_id: int) -> Response:
         """Render form."""
         available_types = self.mlproxy.get_available_types(rs)
-        event_ids = self.eventproxy.list_db_events(rs)
+        event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         merge_dicts(rs.values, rs.ambience['mailinglist'])

@@ -120,9 +120,9 @@ class EventFrontend(AbstractUserFrontend):
     @access("anonymous")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
-        open_event_list = self.eventproxy.list_db_events(
+        open_event_list = self.eventproxy.list_events(
             rs, visible=True, current=True, archived=False)
-        other_event_list = self.eventproxy.list_db_events(
+        other_event_list = self.eventproxy.list_events(
             rs, visible=True, current=False, archived=False)
         open_events = self.eventproxy.get_events(rs, open_event_list)
         other_events = self.eventproxy.get_events(
@@ -206,15 +206,15 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "user_search", params)
 
     @access("anonymous")
-    def list_db_events(self, rs: RequestState) -> Response:
+    def list_events(self, rs: RequestState) -> Response:
         """List all events organized via DB."""
-        events = self.eventproxy.list_db_events(rs)
+        events = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, events.keys())
         if self.is_admin(rs):
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event['id'])
                 event['registrations'] = len(regs)
-        return self.render(rs, "list_db_events", {'events': events})
+        return self.render(rs, "list_events", {'events': events})
 
     @access("anonymous")
     def show_event(self, rs: RequestState, event_id: int) -> Response:
@@ -246,7 +246,7 @@ class EventFrontend(AbstractUserFrontend):
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = None
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -307,7 +307,7 @@ class EventFrontend(AbstractUserFrontend):
 
         This is un-inlined so download_participant_list can use this
         as well."""
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
@@ -559,7 +559,7 @@ class EventFrontend(AbstractUserFrontend):
         referenced_parts: Set[int] = set()
         referenced_tracks: Set[int] = set()
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():
             referenced_tracks.update(course['segments'])
@@ -1398,7 +1398,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = rs.ambience['event']['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
@@ -1677,7 +1677,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = rs.ambience['event']['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
@@ -1809,7 +1809,7 @@ class EventFrontend(AbstractUserFrontend):
         This allows flexible filtering of the displayed registrations.
         """
         tracks = rs.ambience['event']['tracks']
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         all_reg_ids = self.eventproxy.list_registrations(rs, event_id)
         all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
@@ -1939,7 +1939,7 @@ class EventFrontend(AbstractUserFrontend):
             reg['persona_id'] for reg in registrations.values()), event_id)
         courses = None
         if assign_action.enum == CourseChoiceToolActions.assign_auto:
-            course_ids = self.eventproxy.list_db_courses(rs, event_id)
+            course_ids = self.eventproxy.list_courses(rs, event_id)
             courses = self.eventproxy.get_courses(rs, course_ids)
 
         num_committed = 0
@@ -2048,7 +2048,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = event['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         choice_counts = {
             course_id: {
@@ -2378,7 +2378,7 @@ class EventFrontend(AbstractUserFrontend):
                 personas[registrations[anid]['persona_id']]))
         registrations = OrderedDict(
             (reg_id, registrations[reg_id]) for reg_id in reg_order)
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "nametags", {
             'lodgements': lodgements, 'registrations': registrations,
@@ -2426,7 +2426,7 @@ class EventFrontend(AbstractUserFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
             reg['persona_id'] for reg in registrations.values()))
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         counts = {
             course_id: {
@@ -2536,7 +2536,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = rs.ambience['event']['tracks']
         tracks_sorted = [e['id'] for e in xsorted(tracks.values(),
                                                   key=EntitySorter.course_track)]
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
@@ -2670,7 +2670,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def download_expuls(self, rs: RequestState, event_id: int) -> Response:
         """Create TeX-snippet for announcement in the exPuls."""
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         if not course_ids:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
@@ -2688,7 +2688,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def download_dokuteam_courselist(self, rs: RequestState, event_id: int) -> Response:
         """A pipe-seperated courselist for the dokuteam aca-generator script."""
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         if not course_ids:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
@@ -2705,7 +2705,7 @@ class EventFrontend(AbstractUserFrontend):
                                            event_id: int) -> Response:
         """Create participant list per track for dokuteam."""
         event = self.eventproxy.get_event(rs, event_id)
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         spec = self.make_registration_query_spec(event)
 
@@ -2755,7 +2755,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def download_csv_courses(self, rs: RequestState, event_id: int) -> Response:
         """Create CSV file with all courses"""
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
 
         spec = self.make_course_query_spec(rs.ambience['event'])
@@ -2800,7 +2800,7 @@ class EventFrontend(AbstractUserFrontend):
                                    ) -> Response:
         """Create CSV file with all registrations"""
         # Get data
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -2871,7 +2871,7 @@ class EventFrontend(AbstractUserFrontend):
         if not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             ret['message'] = "Not in offline mode."
             return self.send_json(rs, ret)
-        events = self.eventproxy.list_db_events(rs)
+        events = self.eventproxy.list_events(rs)
         if len(events) != 1:
             ret['message'] = "Exactly one event must exist."
             return self.send_json(rs, ret)
@@ -2925,7 +2925,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, event_id)
         lodgement_groups = self.eventproxy.get_lodgement_groups(
             rs, lodgement_group_ids)
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         persona_ids = (
             ({e['persona_id'] for e in registrations.values()}
@@ -3202,7 +3202,7 @@ class EventFrontend(AbstractUserFrontend):
             if event_id not in rs.user.orga and not self.is_admin(rs):
                 raise werkzeug.exceptions.Forbidden(
                     n_("Must be Orga to use preview."))
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
             track_id: [course_id
@@ -3341,7 +3341,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.ambience['event']['is_archived']:
             rs.notify("warning", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
@@ -3396,7 +3396,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_event_fee_reference(persona, rs.ambience['event'])
@@ -3446,7 +3446,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
             track_id: [course_id
@@ -3501,7 +3501,7 @@ class EventFrontend(AbstractUserFrontend):
         if self.is_locked(rs.ambience['event']):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         stored = self.eventproxy.get_registration(rs, registration_id)
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
@@ -3888,7 +3888,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['registration']['persona_id'], event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -3926,7 +3926,7 @@ class EventFrontend(AbstractUserFrontend):
         registration = rs.ambience['registration']
         persona = self.coreproxy.get_event_user(rs, registration['persona_id'],
                                                 event_id)
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
             track_id: [course_id
@@ -4121,7 +4121,7 @@ class EventFrontend(AbstractUserFrontend):
                               ) -> Response:
         """Render form."""
         tracks = rs.ambience['event']['tracks']
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         registrations = self.eventproxy.list_registrations(rs, event_id)
         course_choices = {
@@ -4234,7 +4234,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, [r['persona_id'] for r in registrations.values()], event_id)
         for reg_id, reg in registrations.items():
             reg['gender'] = personas[reg['persona_id']]['gender']
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
             track_id: [course_id
@@ -5022,7 +5022,7 @@ class EventFrontend(AbstractUserFrontend):
             )
             for track_id in tracks
         }
-        courses = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.list_courses(rs, event_id)
         course_names = {
             course['id']: "{}. {}".format(course['nr'], course['shortname'])
             for course_id, course
@@ -5496,7 +5496,7 @@ class EventFrontend(AbstractUserFrontend):
             query = cast(Query, check(rs, "query_input", query_input, "query",
                                       spec=spec, allow_empty=False))
 
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -5654,7 +5654,7 @@ class EventFrontend(AbstractUserFrontend):
             query = cast(Query, check(rs, "query_input", query_input, "query",
                                       spec=spec, allow_empty=False))
 
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         choices, titles = self.make_course_query_aux(
             rs, rs.ambience['event'], courses,
@@ -6401,7 +6401,7 @@ class EventFrontend(AbstractUserFrontend):
         event_ids = {entry['event_id'] for entry in log if entry['event_id']}
         registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         events = self.eventproxy.get_events(rs, event_ids)
-        all_events = self.eventproxy.list_db_events(rs)
+        all_events = self.eventproxy.list_events(rs)
         loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
             'log': log, 'total': total, 'length': _length,

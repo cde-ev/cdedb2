@@ -653,7 +653,7 @@ class PastEventBackend(AbstractBackend):
             pevent['shortname'] += " ({})".format(part['shortname'])
         del pevent['id']
         new_id = self.create_past_event(rs, pevent)
-        course_ids = self.event.list_db_courses(rs, event['id'])
+        course_ids = self.event.list_courses(rs, event['id'])
         courses = self.event.get_courses(rs, list(course_ids.keys()))
         course_map = {}
         for course_id, course in courses.items():

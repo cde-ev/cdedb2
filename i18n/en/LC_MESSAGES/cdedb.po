@@ -6405,7 +6405,7 @@ msgid "Orga-Events"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:117
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:40
+#: cdedb/frontend/templates/web/event/list_events.tmpl:40
 #, python-format
 msgid "%(count)s Registrations"
 msgstr ""
@@ -6480,7 +6480,7 @@ msgstr[1] ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:194
 #: cdedb/frontend/templates/web/event/index.tmpl:13
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:61
+#: cdedb/frontend/templates/web/event/list_events.tmpl:61
 msgid "Current Events"
 msgstr ""
 
@@ -7518,8 +7518,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:98
 #: cdedb/frontend/templates/web/event/create_event.tmpl:13
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:5
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:11
+#: cdedb/frontend/templates/web/event/list_events.tmpl:5
+#: cdedb/frontend/templates/web/event/list_events.tmpl:11
 msgid "All Events"
 msgstr ""
 
@@ -8322,7 +8322,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:7
 #: cdedb/frontend/templates/web/event/create_event.tmpl:14
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:56
+#: cdedb/frontend/templates/web/event/list_events.tmpl:56
 msgid "Create Event"
 msgstr ""
 
@@ -8685,7 +8685,7 @@ msgid "Other Events"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/index.tmpl:120
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:31
+#: cdedb/frontend/templates/web/event/list_events.tmpl:31
 msgid "is cancelled"
 msgstr ""
 
@@ -8711,19 +8711,19 @@ msgid ""
 "which have not been cleansed yet."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:23
+#: cdedb/frontend/templates/web/event/list_events.tmpl:23
 #, python-format
 msgid "%(count)s Parts"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:44
+#: cdedb/frontend/templates/web/event/list_events.tmpl:44
 #, python-format
 msgid "%(count)s Orga"
 msgid_plural "%(count)s Orgas"
 msgstr[0] ""
 msgstr[1] ""
 
-#: cdedb/frontend/templates/web/event/list_db_events.tmpl:70
+#: cdedb/frontend/templates/web/event/list_events.tmpl:70
 msgid "Archived Events"
 msgstr ""
 
