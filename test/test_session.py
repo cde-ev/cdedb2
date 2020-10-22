@@ -1,6 +1,32 @@
 #!/usr/bin/env python3
-from cdedb.common import User
-from test.common import BackendTest, USER_DICT, MultiAppFrontendTest
+import datetime
+import secrets
+from typing import Sequence, NamedTuple
+
+from cdedb.common import User, now
+from test.common import BackendTest, USER_DICT, MultiAppFrontendTest, prepsql, execsql
+
+SessionEntry = NamedTuple(
+    "SessionEntry", [("persona_id", int), ("is_active", bool), ("ip", str),
+                     ("sessionkey", str), ("ctime", datetime.datetime),
+                     ("atime", datetime.datetime)])
+
+
+def make_session_entry(persona_id: int, is_active: bool = True, ip: str = "127.0.0.1",
+                       sessionkey: str = None, ctime: datetime.datetime = None,
+                       atime: datetime.datetime = None) -> SessionEntry:
+    if sessionkey is None:
+        sessionkey = secrets.token_hex()
+    return SessionEntry(persona_id, is_active, ip, sessionkey, ctime, atime)
+
+
+def insert_sessions_template(data: Sequence[SessionEntry]) -> str:
+    values = ', '.join(
+        f"({e.persona_id}, {e.is_active}, '{e.ip}', '{e.sessionkey}',"
+        f" '{e.ctime if e.ctime else 'now()'}', '{e.atime if e.atime else 'now()'}')"
+        for e in data)
+    return (f"INSERT INTO core.sessions"
+            f" (persona_id, is_active, ip, sessionkey, ctime, atime) VALUES {values}")
 
 
 class TestSessionBackend(BackendTest):
@@ -110,6 +136,33 @@ class TestSessionBackend(BackendTest):
                 else:
                     self.assertEqual(user.persona_id, USER_DICT[u]["id"])
                     self.assertLess({"anonymous"}, user.roles)
+
+    def test_old_sessions(self):
+        old_time = now() - datetime.timedelta(days=50)
+        delta = datetime.timedelta(minutes=1)
+        entries = [
+            make_session_entry(1, ctime=old_time, atime=old_time),
+            make_session_entry(1, ctime=old_time + delta, atime=old_time + delta),
+            make_session_entry(1, ctime=old_time + 2*delta, atime=old_time + 2*delta),
+            make_session_entry(2, ctime=old_time, atime=old_time),
+            make_session_entry(2, ctime=old_time + delta, atime=old_time + delta),
+            make_session_entry(3, ctime=old_time, atime=old_time),
+            make_session_entry(3, ctime=old_time + delta, atime=old_time + delta)]
+        unique_personas = len(set(e.persona_id for e in entries))
+        execsql(insert_sessions_template(entries))
+
+        user = USER_DICT["anton"]
+        key = self.login(user)
+        self.login("vera")
+        self.assertEqual(len(entries) - unique_personas,
+                         self.core.deactivate_old_sessions(self.key))
+        self.assertEqual(0, self.core.deactivate_old_sessions(self.key))
+        self.assertEqual(len(entries) - unique_personas,
+                         self.core.clean_session_log(self.key))
+        self.assertEqual(0, self.core.clean_session_log(self.key))
+
+        u = self.session.lookupsession(key, "127.0.0.0")
+        self.assertEqual(u.persona_id, user["id"])
 
 
 class TestMultiSessionFrontend(MultiAppFrontendTest):
