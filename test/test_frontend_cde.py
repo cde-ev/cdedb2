@@ -11,7 +11,7 @@ from test.common import USER_DICT, FrontendTest, as_users
 
 import cdedb.database.constants as const
 import webtest
-from cdedb.common import now, ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common import now, extract_roles, ADMIN_VIEWS_COOKIE_NAME
 from cdedb.query import QueryOperators
 
 class TestCdEFrontend(FrontendTest):
@@ -99,8 +99,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'})
         everyone = ["Mitglieder", "Übersicht"]
         past_event = ["Verg. Veranstaltungen"]
-        member = ["Sonstiges"]
-        not_searchable = ["Datenschutzerklärung"]
+        member = ["Sonstiges", "Datenschutzerklärung"]
         searchable = ["CdE-Mitglied suchen"]
         cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
                      "Verg.-Veranstaltungen-Log"]
@@ -111,24 +110,23 @@ class TestCdEFrontend(FrontendTest):
         # non-members
         if user in [USER_DICT['annika'], USER_DICT['werner'], USER_DICT['martin']]:
             ins = everyone
-            out = (past_event + member + not_searchable + searchable + cde_admin
-                   + finance_admin)
+            out = past_event + member + searchable + cde_admin + finance_admin
         # searchable member
         elif user == USER_DICT['berta']:
             ins = everyone + past_event + member + searchable
-            out = not_searchable + cde_admin + finance_admin
+            out = cde_admin + finance_admin
         # not-searchable member
         elif user == USER_DICT['charly']:
-            ins = everyone + past_event + member + not_searchable
+            ins = everyone + past_event + member
             out = searchable + cde_admin + finance_admin
         # cde but not finance admin (vera is no member)
         elif user == USER_DICT['vera']:
             ins = everyone + past_event + cde_admin
-            out = member + not_searchable + searchable + finance_admin
+            out = member + searchable + finance_admin
         # cde and finance admin (farin is no member)
         elif user == USER_DICT['farin']:
             ins = everyone + past_event + cde_admin + finance_admin
-            out = member + not_searchable + searchable
+            out = member + searchable
         else:
             self.fail("Please adjust users for this test.")
 
@@ -238,9 +236,8 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['changedataform']
         self.assertEqual("Zelda", f['display_name'].value)
 
-    def test_consent(self):
-        user = USER_DICT["garcia"]
-        self.login(user)
+    @as_users("garcia")
+    def test_consent(self, user):
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         self.traverse({'description': 'Index'})
         self.assertTitle("CdE-Datenbank")
@@ -253,8 +250,49 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability', exact=True)
 
+    @as_users("garcia")
+    def test_consent_decline(self, user):
+
+        def _roles(user):
+            return extract_roles(self.core.get_persona(self.key, user['id']))
+
+        # First, do not change anything
+        self.assertTitle("Einwilligung zur Mitgliedersuche")
+        self.traverse({'description': 'Später entscheiden'})
+        self.logout()
+        # Now, decline consent and check searchability
+        self.login(USER_DICT["garcia"])
+        f = self.response.forms['nackconsentform']
+        self.submit(f)
+        self.assertNotIn("searchable", _roles(user))
+        self.logout()
+        # Now check, that you are not redirected to form, and search is not shown
+        self.login(USER_DICT["garcia"])
+        self.assertTitle("CdE-Datenbank")
+        self.traverse({'description': 'Mitglieder'})
+        self.assertPresence("Um die Mitgliedersuche verwenden zu können")
+        # And do not change anything.
+        self.traverse({'description': 'Datenschutzerklärung'})
+        self.assertTitle("Einwilligung zur Mitgliedersuche")
+        self.traverse({'description': 'Nichts ändern'})
+        self.assertNotIn("searchable", _roles(user))
+        # Now, finally agree to consent
+        self.traverse({'description': 'Datenschutzerklärung'})
+        self.assertTitle("Einwilligung zur Mitgliedersuche")
+        f = self.response.forms['ackconsentform']
+        self.submit(f)
+        self.assertIn("searchable", _roles(user))
+
+    @as_users("berta")
+    def test_consent_noop(self, user):
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Datenschutzerklärung'})
+        self.assertTitle("Einwilligung zur Mitgliedersuche")
+        self.assertNotIn('ackconsentform', self.response.forms)
+        self.assertNotIn('nackconsentform', self.response.forms)
+
     def test_consent_change(self):
-        # Remove consent decision of Bertalotta Beispiel
+        # Remove searchability of Bertalotta Beispiel
         self.login(USER_DICT["vera"])
         self.admin_view_profile('berta')
         self.traverse({'description': 'Bearbeiten'})
