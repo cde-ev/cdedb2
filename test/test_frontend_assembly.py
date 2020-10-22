@@ -104,7 +104,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertPresence("0 Teilnehmer")
         else:
             self.assertNonPresence("Geleitete Versammlungen")
-            self.assertNonPresence("Telnehmer")
+            self.assertNonPresence("Teilnehmer")
         self.assertPresence("Inaktive Versammlungen")
 
     @as_users("annika", "martin", "vera", "werner", "anton")

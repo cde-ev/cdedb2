@@ -68,11 +68,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         for assembly_id, assembly in assemblies.items():
             assembly['does_attend'] = self.assemblyproxy.does_attend(
                 rs, assembly_id=assembly_id)
-        count = dict()
+        attendees_count = dict()
         for assembly_id in rs.user.presider:
-            count[assembly_id] = len(
+            attendees_count[assembly_id] = len(
                 self.assemblyproxy.list_attendees(rs, assembly_id))
-        return self.render(rs, "index", {'assemblies': assemblies, 'count': count})
+        return self.render(rs, "index", {'assemblies': assemblies,
+                                         'attendees_count': attendees_count})
 
     @access("core_admin", "assembly_admin")
     def create_user_form(self, rs: RequestState) -> Response:

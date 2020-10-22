@@ -39,12 +39,12 @@
     {% if user.presider %}
     <h3>{{ gettext("Presided Assemblies") }}</h3>
     <ul class="spaced" id="presided-assemblies">
-        {% for assembly_id, assembly in assemblies|keydictsort(EntitySorter.assembly, reverse=True) %}
+        {% for assembly_id, assembly in assemblies|keydictsort(EntitySorter.assembly) %}
             {% if assembly_id in user.presider %}
                 <li>
                     {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': assembly_id}), assembly['title']) }}
                     <br />
-                    {{ gettext("%(count)s participants")|format(count=count[assembly_id]) }}
+                    {{ gettext("%(count)s participants")|format(count=attendees_count[assembly_id]) }}
                     <br />
                     <span class="small">
                         {{ util.href(cdedblink('assembly/list_ballots', {'assembly_id': assembly_id}),
