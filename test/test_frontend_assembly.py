@@ -83,6 +83,29 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("werner", "berta", "kalif")
     def test_index(self, user):
         self.traverse({'href': '/assembly/'})
+        self.assertPresence("Internationaler Kongress", div='active-assemblies')
+        self.assertPresence("(bereits angemeldet)", div='active-assemblies')
+        # Werner and Kalif can only see assemblies he is signed up to
+        if user['id'] == USER_DICT["kalif"]['id']:
+            self.assertNonPresence("Archiv-Sammlung")
+        else:
+            self.assertPresence("Archiv-Sammlung", div='active-assemblies')
+        if user['id'] == USER_DICT["berta"]['id']:
+            self.assertPresence("Kanonische Beispielversammlung",
+                                div='inactive-assemblies')
+        else:
+            self.assertNonPresence("Kanonische Beispielversammlung")
+        # Only Werner is presider
+        if user['id'] == USER_DICT["werner"]['id']:
+            self.assertPresence("Geleitete Versammlungen")
+            self.assertPresence("Archiv-Sammlung", div='presided-assemblies')
+            self.assertPresence("Internationaler Kongress", div='presided-assemblies')
+            self.assertPresence("6 Teilnehmer")
+            self.assertPresence("0 Teilnehmer")
+        else:
+            self.assertNonPresence("Geleitete Versammlungen")
+            self.assertNonPresence("Telnehmer")
+        self.assertPresence("Inaktive Versammlungen")
 
     @as_users("annika", "martin", "vera", "werner", "anton")
     def test_sidebar(self, user):
