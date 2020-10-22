@@ -47,7 +47,7 @@
         {% endif %}
     </dl>
 
-    {% if "assembly_mgmt" in user.admin_views %}
+    {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['is_active'] %}
         <div class="row">
         <div class="col-md-6" id="manage-presiders">
             {% call util.bootstrap_panel(title=gettext("Presiders"), icon='user-friends') %}

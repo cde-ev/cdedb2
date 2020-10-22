@@ -456,6 +456,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['ack_conclude'].checked = True
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
+        # Presiders can no longer be changed
+        self.assertNotIn("addpresidersform", self.response.forms)
+        self.assertNotIn("removepresiderform1", self.response.forms)
 
     @as_users("anton")
     def test_preferential_vote_result(self, user):
