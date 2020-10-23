@@ -146,6 +146,9 @@ endif
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
 		test/ancillary_files/sample_data.sql
 
+# This does not recurse to sql-schema, so in the very rare circumstance that
+# you want to completely reset the test database it has to be executed
+# explicitly. This is due to the restrictions of the docker environment.
 sql-test:
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
 		cdedb/database/cdedb-tables.sql
