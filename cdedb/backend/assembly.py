@@ -770,6 +770,8 @@ class AssemblyBackend(AbstractBackend):
                         member_count = unwrap(self.query_one(rs, query, (attendees,)))
                         total_count = member_count + len(attendees)
                         e["quorum"] = -(-total_count * e["rel_quorum"] // 100)
+                    else:
+                        e["quorum"] = 0
                 ret[e['id']] = e
             data = self.sql_select(
                 rs, "assembly.candidates",
