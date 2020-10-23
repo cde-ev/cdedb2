@@ -4005,29 +4005,40 @@ def _ballot(val, argname=None, *, creation=False, _convert=True,
                 else:
                     newcandidates[anid] = candidate
         val['candidates'] = newcandidates
-    quorum = None
+
     if val.get('abs_quorum') and val.get('rel_quorum'):
         msg = ValueError(n_("Must not specify both absolute and relative quorum."))
         errs.append(('abs_quorum', msg))
         errs.append(('rel_quorum', msg))
-    elif val.get('abs_quorum') or val.get('rel_quorum'):
-        quorum = val.get('abs_quorum')
-        if not quorum:
-            quorum = val.get('rel_quorum')
-    quorum_specified = {'abs_quorum', 'rel_quorum'} & val.keys()
-    if bool(quorum_specified) != ('vote_extension_end' in val):
-        quorum_msg = ValueError(n_(
-            "Must specify a quorum if vote extension end is given."))
-        errs.extend(
-            [("vote_extension_end",
-              ValueError(n_("Must be specified if quorum is given."))),
-             ("abs_quorum", quorum_msg),
-             ("rel_quorum", quorum_msg)]
-        )
-    elif quorum_specified and 'vote_extension_end' in val:
-        if (quorum == 0) == (val['vote_extension_end'] is not None):
-            errs.append(("vote_extension_end",
-                         ValueError(n_("Inconsistent with quorum."))))
+
+    quorum = None
+    if 'abs_quorum' in val:
+        quorum = val['abs_quorum']
+    if 'rel_quorum' in val and not quorum:
+        quorum = val['rel_quorum']
+
+    quorum_msg = ValueError(n_("Must specify a quorum if vote extension end is given."))
+    quorum_error_list = [
+        ("vote_extension_end", ValueError(n_("Must be specified if quorum is given."))),
+        ("abs_quorum", quorum_msg),
+        ("rel_quorum", quorum_msg),
+    ]
+
+    if (quorum is None) == ('vote_extension_end' in val):
+        # Only one of quorum and extension end is given.
+        errs.extend(quorum_error_list)
+        # Skip the last validation step.
+        return val, errs
+
+    if 'vote_extension_end' in val:
+        # quorum can not be None at this point.
+        if val['vote_extension_end'] is None and quorum:
+            # No extension end, but quorum.
+            errs.extend(quorum_error_list)
+        elif val['vote_extension_end'] and not quorum:
+            # No quorum, but extension end.
+            errs.extend(quorum_error_list)
+
     return val, errs
 
 
