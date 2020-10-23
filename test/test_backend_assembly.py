@@ -359,6 +359,47 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assembly.set_ballot(self.key, data)
 
+    @as_users("viktor")
+    def test_relative_quorum(self, user):
+        delta = 0.1
+        future = now() + datetime.timedelta(seconds=delta)
+
+        assembly_data = {
+            'description': None,
+            'notes': None,
+            'signup_end': datetime.datetime(2222, 2, 22),
+            'title': "MGV 2222",
+        }
+        assembly_id = self.assembly.create_assembly(self.key, assembly_data)
+        data = {
+            'assembly_id': assembly_id,
+            'use_bar': False,
+            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
+                           -2: {'title': 'Nein', 'shortname': 'n'},},
+            'description': 'Sind sie sich sicher?',
+            'notes': None,
+            'rel_quorum': 100,
+            'title': 'Verstehen wir Spaß',
+            'vote_begin': future,
+            'vote_end': future + datetime.timedelta(seconds=delta),
+            'vote_extension_end': future + 2 * datetime.timedelta(seconds=delta),
+        }
+        ballot_id = self.assembly.create_ballot(self.key, data)
+
+        # Initial quorum should be number of members.
+        self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+
+        # Adding a non-member attendee increases the quorum.
+        self.assembly.external_signup(self.key, assembly_id, 4)
+        self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+
+        # Conclude the ballot.
+        time.sleep(2 * delta)
+        self.assembly.check_voting_period_extension(self.key, ballot_id)
+        # Now adding an attendee does not change the quorum.
+        self.assembly.external_signup(self.key, assembly_id, 11)
+        self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+
     def test_extension(self):
         self.login(USER_DICT['werner'])
         future = now() + datetime.timedelta(seconds=.5)

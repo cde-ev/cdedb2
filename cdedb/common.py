@@ -2071,8 +2071,8 @@ ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
 #: Fields of a ballot
 BALLOT_FIELDS = (
     "id", "assembly_id", "title", "description", "vote_begin", "vote_end",
-    "vote_extension_end", "extended", "use_bar", "abs_quorum", "rel_quorum", "votes",
-    "is_tallied", "notes")
+    "vote_extension_end", "extended", "use_bar", "abs_quorum", "rel_quorum", "quorum",
+    "votes", "is_tallied", "notes")
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)

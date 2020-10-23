@@ -749,9 +749,10 @@ class AssemblyBackend(AbstractBackend):
         additional field 'candidates' listing the available candidates for
         this ballot.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
+        If the regular voting period has not yet passed the stored value for `quorum`
+        will be `None` and the correct value will be calculated on the fly here.
+        Once regular voting ends, the quorum value at that point will be stored and
+        afterwards this specific value will be used from there on.
         """
         ids = affirm_set("id", ids)
 
@@ -759,19 +760,16 @@ class AssemblyBackend(AbstractBackend):
             data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ids)
             ret = {}
             for e in data:
-                if "quorum" in e:
-                    raise RuntimeError
-                if e["abs_quorum"]:
-                    e["quorum"] = e["abs_quorum"]
-                elif e["rel_quorum"]:
-                    attendees = self.list_attendees(rs, e["assembly_id"])
-                    query = ("SELECT COUNT(id) FROM core.personas"
-                             " WHERE is_member = TRUE AND id != ANY(%s)")
-                    member_count = unwrap(self.query_one(rs, query, (attendees,)))
-                    total_count = member_count + len(attendees)
-                    e["quorum"] = int(total_count * e["rel_quorum"] / 100 + 1)
-                else:
-                    e["quorum"] = 0
+                if e["quorum"] is None:
+                    if e["abs_quorum"]:
+                        e["quorum"] = e["abs_quorum"]
+                    elif e["rel_quorum"]:
+                        attendees = self.list_attendees(rs, e["assembly_id"])
+                        query = ("SELECT COUNT(id) FROM core.personas"
+                                 " WHERE is_member = TRUE AND NOT(id = ANY(%s))")
+                        member_count = unwrap(self.query_one(rs, query, (attendees,)))
+                        total_count = member_count + len(attendees)
+                        e["quorum"] = -(-total_count * e["rel_quorum"] // 100)
                 ret[e['id']] = e
             data = self.sql_select(
                 rs, "assembly.candidates",
@@ -1054,6 +1052,7 @@ class AssemblyBackend(AbstractBackend):
             update = {
                 'id': ballot_id,
                 'extended': len(votes) < ballot['quorum'],
+                'quorum': ballot['quorum'],
             }
             # do not use set_ballot since it would throw an error
             self.sql_update(rs, "assembly.ballots", update)
