@@ -356,6 +356,19 @@ def _partial_import_id(val, argname=None, *, _convert=True,
 
 
 @_addvalidator
+def _percentage(val, argname: str = None, *, _convert: bool = True,
+                _ignore_warnings: bool = False) -> int:
+    """An integer between 0 and 100 to be used as a percentage."""
+    val, errs = _int(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
+
+    if not errs:
+        if not 0 <= val <= 100:
+            val = None
+            errs.append((argname, ValueError(n_("Must be between 0 and 100."))))
+    return val, errs
+
+@_addvalidator
 def _float(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
@@ -3933,7 +3946,7 @@ _BALLOT_OPTIONAL_FIELDS = lambda: {
     'extended': _bool_or_None,
     'vote_extension_end': _datetime_or_None,
     'abs_quorum': _int,
-    'rel_quorum': _int,
+    'rel_quorum': _percentage,
     'votes': _int_or_None,
     'use_bar': _bool,
     'is_tallied': _bool,

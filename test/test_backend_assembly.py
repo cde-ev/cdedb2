@@ -381,7 +381,7 @@ class TestAssemblyBackend(BackendTest):
             'title': "MGV 2222",
         }
         assembly_id = self.assembly.create_assembly(self.key, assembly_data)
-        data = {
+        ballot_data = {
             'assembly_id': assembly_id,
             'use_bar': False,
             'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
@@ -394,7 +394,20 @@ class TestAssemblyBackend(BackendTest):
             'vote_end': future + datetime.timedelta(seconds=delta),
             'vote_extension_end': future + 2 * datetime.timedelta(seconds=delta),
         }
-        ballot_id = self.assembly.create_ballot(self.key, data)
+        ballot_id = self.assembly.create_ballot(self.key, ballot_data)
+
+        ballot_data['rel_quorum'] = 3.141
+        with self.assertRaises(ValueError) as cm:
+            self.assembly.create_ballot(self.key, ballot_data)
+        self.assertIn("Precision loss.", cm.exception.args[0])
+        ballot_data['rel_quorum'] = -5
+        with self.assertRaises(ValueError) as cm:
+            self.assembly.create_ballot(self.key, ballot_data)
+        self.assertIn("Must be between 0 and 100.", cm.exception.args[0])
+        ballot_data['rel_quorum'] = 168
+        with self.assertRaises(ValueError) as cm:
+            self.assembly.create_ballot(self.key, ballot_data)
+        self.assertIn("Must be between 0 and 100.", cm.exception.args[0])
 
         # Initial quorum should be number of members.
         self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
@@ -409,6 +422,7 @@ class TestAssemblyBackend(BackendTest):
         # Now adding an attendee does not change the quorum.
         self.assembly.external_signup(self.key, assembly_id, 11)
         self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+
 
     def test_extension(self):
         self.login(USER_DICT['werner'])
