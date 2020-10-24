@@ -72,7 +72,6 @@ sudo -u postgres psql -U postgres -d cdb_test \
      -f bin/describe_database.sql > /tmp/evolved-description.txt
 bin/normalize_database_description.py /tmp/evolved-description.txt
 
-# new db
 make i18n-compile
 make -B test/ancillary_files/sample_data.sql &> /dev/null
 if [[ "$ISOLATED" == true ]]; then
@@ -80,6 +79,7 @@ if [[ "$ISOLATED" == true ]]; then
     ./bin/check.sh 2> >(tee -a /tmp/output-check.txt >&2)
 fi
 
+# new db
 echo "Resetting and creating database description again."
 make sql-test &> /dev/null
 sudo -u postgres psql -U postgres -d cdb_test \
