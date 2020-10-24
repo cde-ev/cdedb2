@@ -1202,9 +1202,12 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
-        self.assertPresence("Name N. N.", div='personal-information',
-                            exact=True)
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Name N. N. Geburtsdatum 01.01.1",
+                            div='personal-information', exact=True)
+        self.assertNonPresence("archiviert")
+        self.assertPresence("Der Benutzer wurde geleert.", div='purged')
+        self.assertNotIn('dearchivepersonaform', self.response.forms)
+        self.assertNotIn('purgepersonaform', self.response.forms)
 
     @as_users("farin")
     def test_modify_balance(self, user):

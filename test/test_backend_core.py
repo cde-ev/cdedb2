@@ -215,6 +215,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -259,6 +260,7 @@ class TestCoreBackend(BackendTest):
                 'is_ml_admin': False,
                 'is_ml_realm': False,
                 'is_cdelokal_admin': False,
+                'is_purged': False,
                 'is_searchable': False,
                 'location': None,
                 'location2': None,
@@ -332,6 +334,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -368,6 +371,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -391,6 +395,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -428,6 +433,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -623,6 +629,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
@@ -696,6 +703,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
@@ -771,6 +779,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': True,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
@@ -879,6 +888,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_ml_realm': True,
             'is_cdelokal_admin': False,
+            'is_purged': False,
             'is_searchable': True,
             'username': 'berta@example.cde'}
         self.assertEqual(expectation, self.core.get_persona(self.key, 2))
