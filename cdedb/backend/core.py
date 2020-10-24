@@ -1837,6 +1837,7 @@ class CoreBackend(AbstractBackend):
     def clean_session_log(self, rs: RequestState) -> DefaultReturnCode:
         """Delete old entries from the sessionlog."""
         query = ("DELETE FROM core.sessions WHERE is_active = False"
+                 " AND atime < now() - INTERVAL '30 days'"
                  " AND (persona_id, atime) NOT IN"
                  " (SELECT persona_id, MAX(atime) AS atime FROM core.sessions"
                  "  WHERE is_active = False GROUP BY persona_id)")
