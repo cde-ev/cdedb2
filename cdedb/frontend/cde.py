@@ -74,6 +74,23 @@ MEMBERSEARCH_DEFAULTS = {
     'qord_primary_ascending': True,
 }
 
+COURSESEARCH_DEFAULTS = {
+    'qop_courses.fulltext': QueryOperators.containsall,
+    'qsel_courses.title': True,
+    'qop_courses.title': QueryOperators.match,
+    'qsel_courses.pevent_id': True,
+    'qop_events.title': QueryOperators.match,
+    'qsel_events.title': True,
+    'qop_courses.pevent_id': QueryOperators.equal,
+    'qop_courses.nr': QueryOperators.match,
+    'qop_courses.description': QueryOperators.match,
+    'qsel_events.tempus': True,
+    'qord_primary': 'courses.title',
+    'qord_primary_ascending': True,
+    'qord_secondary': 'events.tempus',
+    'qord_secondary_ascending': False
+}
+
 
 class CdEFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
@@ -255,6 +272,7 @@ class CdEFrontend(AbstractUserFrontend):
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
+            # TODO: Query should be sorted already
             result = xsorted(result, key=EntitySorter.persona)
             count = len(result)
             if count == 1:
@@ -268,6 +286,43 @@ class CdEFrontend(AbstractUserFrontend):
             'spec': spec, 'choices': choices, 'result': result,
             'cutoff': cutoff, 'count': count,
         })
+
+    @access("member")
+    @REQUESTdata(("is_search", "bool"))
+    def course_search(self, rs: RequestState, is_search: bool) -> Response:
+        """Search for members."""
+        defaults = copy.deepcopy(COURSESEARCH_DEFAULTS)
+        spec = copy.deepcopy(QUERY_SPECS['qview_pevent_course'])
+        query = cast(Query, check(
+            rs, "query_input", mangle_query_input(rs, spec, defaults),
+            "query", spec=spec, allow_empty=not is_search, separator=" "))
+
+        events = self.pasteventproxy.list_past_events(rs)
+        result: Optional[Sequence[CdEDBObject]] = None
+        count = 0
+
+        if rs.has_validation_errors():
+            # A little hack to fix displaying of errors: The form uses
+            # 'qval_<field>' as input name, the validation only returns the
+            # field's name
+            current = tuple(rs.retrieve_validation_errors())
+            rs.retrieve_validation_errors().clear()
+            rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
+            rs.ignore_validation_errors()
+        elif is_search and not query.constraints:
+            rs.notify("error", n_("You have to specify some filters."))
+        elif is_search:
+            query.scope = "qview_pevent_course"
+            query.fields_of_interest.append('courses.id')
+            result = self.pasteventproxy.submit_general_query(rs, query)
+            count = len(result)
+            if count == 1:
+                return self.redirect(rs, "cde/show_past_course", {
+                    'pevent_id': result[0]['courses.pevent_id'],
+                    'pcourse_id': result[0]['courses.id']})
+
+        return self.render(rs, "course_search", {
+            'spec': spec, 'pevents': events, 'result': result, 'count': count})
 
     @access("core_admin", "cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))

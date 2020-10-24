@@ -1,0 +1,81 @@
+{% set sidenav_active='cde_course_search' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans %}CdE Course Search{% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/course_search"), gettext("CdE Course Search"), active="True") }}
+{% endblock %}
+{% block content %}
+    {% if values['is_search'] %}
+        {% if result %}
+            <div class="p">
+                {{ util.href("#coursesearchform", gettext("Go to Search."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
+            </div>
+            <h2 id="result-count">
+                {% trans %}Result{% endtrans %}
+                <small>
+                {% trans count=count %}
+                    {{ count }} Course found
+                {%- pluralize count -%}
+                    {{ count }} Courses found
+                {% endtrans %}
+                </small>
+            </h2>
+            <ul id="result">
+                {% for dataset in result %}
+                    <li>
+                        {{ util.href(cdedblink('cde/show_past_course',
+                                               {'pcourse_id' : dataset['courses.id'], 'pevent_id' : dataset['courses.pevent_id']}),
+                                               dataset['courses.title']) }}
+                        ({{ util.href(cdedblink('cde/show_past_event',
+                                                {'pevent_id' : dataset['courses.pevent_id']}), dataset['events.title']) }})
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <h2 id="result-count">
+                {% trans %}Result{% endtrans %}
+            </h2>
+            <p class="text-muted">
+                {% trans %}
+                    No courses found.
+                {% endtrans %}
+            </p>
+        {% endif %}
+    {% endif %}
+
+    <form action="{{ cdedblink('cde/course_search') }}" method="GET" id="coursesearchform" class="form-horizontal">
+        {{ util.input_hidden(name="is_search", value=True) }}
+        <div class="panel panel-primary mosp">
+            <div class="panel-heading">
+                <h2 class="panel-title">{{ util.make_icon('search') }} {% trans %}Search Mask{% endtrans %}</h2>
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        {{ util.form_input_text(name="qval_courses.fulltext", label=gettext("Fulltext"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_courses.title", label=gettext("Title"),
+                                aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_courses.nr", label=gettext("Nr"),
+                                aclass="input-sm") }}
+                    </div>
+                    <div class="col-sm-6">
+                        {{ util.form_input_text(
+                                name="qval_courses.description", label=gettext("Description"), aclass="input-sm") }}
+                        {{ util.form_input_select(name="qval_courses.pevent_id", entries=pevents.items(),
+                                                  nulloption=nbsp, label=gettext("Academy"), aclass="input-sm",
+                                                  sort=True) }}
+                        {{ util.form_input_text(name="qval_instructors", label=gettext("Instructors"),
+                                                aclass="input-sm") }}
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer text-right">
+                {{ util.input_submit(gettext("Search"), icon='search') }}
+            </div>
+        </div>
+    </form>
+{% endblock %}

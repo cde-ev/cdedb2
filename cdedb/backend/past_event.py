@@ -22,6 +22,7 @@ from cdedb.common import (
 )
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
+from cdedb.query import Query
 
 
 class PastEventBackend(AbstractBackend):
@@ -746,3 +747,20 @@ class PastEventBackend(AbstractBackend):
                 new_ids = tuple(self.archive_one_part(rs, event, part_id)
                                 for part_id in xsorted(event['parts']))
         return new_ids, None
+
+    @access("member")
+    def submit_general_query(self, rs: RequestState,
+                             query: Query) -> Tuple[CdEDBObject, ...]:
+        """Realm specific wrapper around
+        :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type query: :py:class:`cdedb.query.Query`
+        :rtype: [{str: object}]
+        """
+        query = affirm("query", query)
+        if query.scope == "qview_pevent_course":
+           pass
+        else:
+            raise RuntimeError(n_("Bad scope."))
+        return self.general_query(rs, query)
