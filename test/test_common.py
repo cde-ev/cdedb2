@@ -268,6 +268,6 @@ class TestCommon(unittest.TestCase):
                                     capture_output=True)
         except subprocess.CalledProcessError:
             self.fail("Translation check failed.")
-        if " 0 unübersetze Meldungen" not in result.stderr.decode().split("\n")[0]:
+        if "unübersetzte Meldung" in result.stderr.decode().split("\n")[0]:
             self.fail("There are some untranslated strings. Run `make i18n-check`"
                       " for more details.")
