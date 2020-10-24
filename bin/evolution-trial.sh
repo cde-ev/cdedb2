@@ -7,9 +7,8 @@ EXENAME=$(basename $0)
 #   (i) as a pseudo CI isolated command inside a one time use container
 #   (ii) as an interactive diagnostic
 #
-# The main differences are that (i) is much more thorough and that (ii) is a
-# bit more careful to do only the necessary things and not destroy any data
-# on the instance it's run on.
+# The main differences are that (i) is much more thorough and that (ii) is
+# more careful to not destroy data on the instance it's run on.
 
 if [[ "$EXENAME" == inside-isolated-evolution.sh ]]; then
     ISOLATED=true
@@ -24,6 +23,10 @@ if [[ "$ISOLATED" == true ]]; then
     OLDREVISION=$2
     NEWREVISION=$3
 else
+    if [[ $# -ne 2 ]]; then
+        echo "Usage: $(basename $0) old-revision new-revision"
+        exit
+    fi
     OLDREVISION=$1
     NEWREVISION=$2
 fi
