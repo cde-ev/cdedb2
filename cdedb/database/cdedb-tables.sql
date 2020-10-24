@@ -5,7 +5,7 @@
 --- SCHEMA core
 ---
 
-DROP SCHEMA IF EXISTS core;
+DROP SCHEMA IF EXISTS core CASCADE;
 CREATE SCHEMA core;
 GRANT USAGE ON SCHEMA core TO cdb_anonymous;
 
@@ -373,7 +373,7 @@ GRANT INSERT, SELECT, UPDATE ON core.cron_store TO cdb_admin;
 ---
 --- SCHEMA cde
 ---
-DROP SCHEMA IF EXISTS cde;
+DROP SCHEMA IF EXISTS cde CASCADE;
 CREATE SCHEMA cde;
 GRANT USAGE ON SCHEMA cde TO cdb_member;
 
@@ -497,7 +497,7 @@ GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_admin;
 --- This is a variation of the schema event (to be found below) which
 --- concerns itself with concluded events.
 ---
-DROP SCHEMA IF EXISTS past_event;
+DROP SCHEMA IF EXISTS past_event CASCADE;
 CREATE SCHEMA past_event;
 GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 
@@ -579,7 +579,7 @@ GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_admin;
 ---
 --- Later on you will find the schema past_event for concluded events.
 ---
-DROP SCHEMA IF EXISTS event;
+DROP SCHEMA IF EXISTS event CASCADE;
 CREATE SCHEMA event;
 GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous;
 
@@ -881,7 +881,7 @@ GRANT DELETE ON event.log TO cdb_admin;
 ---
 --- SCHEMA assembly
 ---
-DROP SCHEMA IF EXISTS assembly;
+DROP SCHEMA IF EXISTS assembly CASCADE;
 CREATE SCHEMA assembly;
 GRANT USAGE ON SCHEMA assembly TO cdb_persona;
 
@@ -1056,7 +1056,7 @@ GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 ---
 --- SCHEMA ml
 ---
-DROP SCHEMA IF EXISTS ml;
+DROP SCHEMA IF EXISTS ml CASCADE;
 CREATE SCHEMA ml;
 GRANT USAGE ON SCHEMA ml TO cdb_persona;
 

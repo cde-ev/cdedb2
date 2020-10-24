@@ -2,15 +2,15 @@ Variable Teilnehmerbeiträge (Beitragsmodifikatoren)
 ===================================================
 
 Für Situationen in denen die Teilnehmer unterschiedlich hohe Teilnehmerbeiträge
-bezahlen sollen, gibt es die sog. "Betragsmodifikatoren".
+bezahlen sollen, gibt es die sog. **Betragsmodifikatoren**.
 
 Jeder Beitragsmodifikator ist mit einem Veranstaltungsteil verbunden, gibt es
 mehrere Veranstaltungsteile, müssen ggf. mehrere Beitragsmodifikatoren angelegt
 werden.
 
-Ein Beitragsmodifikator wird abhängig von einem Ja/Nein-Anmeldungsdatenfeld
-automatisch auf den zu zahlenden Teilnahmebeitrag addiert. Er kann sowohl positiv
-als auch negativ sein.
+Ein Beitragsmodifikator wird abhängig von einem Datenfeld mit Typ ``Anmeldungsfeld``
+und Datentyp ``Ja/Nein`` automatisch auf den zu zahlenden Teilnahmebeitrag addiert.
+Er kann sowohl positiv als auch negativ sein.
 
 Das Einstellen von Beitragsmodifikatoren sei hier anhand von zwei Beispielen
 erläutert:
@@ -24,8 +24,8 @@ Kinder unter 13 Jahren kosten beim Feriendorf weniger, daher müssen sie
 Möglichkeit bekommen, mit einem "Solidarzusatzbeitrag" in Höhe von 9 Euro den
 Verein und zukünftige Veranstaltungen zu unterstützen.
 
-Zunächst müssen dafür unter "Datenfelder konfigurieren" zwei neue
-**Anmeldungsfelder** angelegt werden:
+Zunächst müssen dafür zwei :doc:`Handbuch_Orga_Datenfelder` vom Typ
+``Anmeldungsfeld`` angelegt werden:
 
 1. * Feldname: "is_child"
    * Datentyp: "Ja/Nein"
@@ -82,8 +82,8 @@ geben einen "Solidarzusatzbeitrag" von 8 Euro zu bezahlen. Außerdem können
 Teilnehmer der zweiten Hälfte für einen Zusatzbeitrag von 40 Euro als
 Silvestergast einen Tag früher anreisen.
 
-Zunächst werden wieder unter "Datenfelder konfigurieren"
-**zwei Anmeldungsfelder** angelegt.
+Zunächst müssen dafür wieder zwei :doc:`Handbuch_Orga_Datenfelder` vom Typ
+``Anmeldungsfeld`` angelegt werden:
 
 1. * Feldname: "solidarity"
    * Datentyp: "Ja/Nein"

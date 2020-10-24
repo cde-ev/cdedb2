@@ -957,6 +957,26 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             force_external=(modus != "web"),
                             magic_placeholders=magic_placeholders)
 
+        def _doclink(topic: str, anchor: str = "") -> str:
+            """Create link to documentation in non-web templates.
+
+            This should be used to avoid hardcoded links in our templates. To create
+            links in web-templates, use docurl in combination with util.href instead.
+            """
+            if modus == "web":
+                raise RuntimeError(n_("Must not be used in web templates."))
+            return doclink(rs, label="", topic=topic, anchor=anchor, html=False)
+
+        def _staticlink(path: str, version: str = ""):
+            """Create link to static files in non-web templates.
+
+            This should be used to avoid hardcoded links in our templates. To create
+            links in web-templates, use staticurl in combination with util.href instead.
+            """
+            if modus == "web":
+                raise RuntimeError(n_("Must not be used in web templates."))
+            return staticlink(rs, label="", path=path, version=version, html=False)
+
         def _show_user_link(user: User, persona_id: int, quote_me: bool = None,
                             event_id: int = None, ml_id: int = None) -> str:
             """Convenience method to create link to user data page.
@@ -1016,6 +1036,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
+            'doclink': _doclink,
+            'staticlink': _staticlink,
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
             'gettext': rs.gettext,
@@ -1868,9 +1890,9 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
 
 
 def staticurl(path: str, version: str = "") -> str:
-    """Construct an HTTP URL to a static resource (to be found in the static
-    directory). We encapsulate this here so moving the directory around
-    causes no pain.
+    """Construct an HTTP URL to a static resource (to be found in the static directory).
+
+    We encapsulate this here so moving the directory around causes no pain.
 
     :param version: If not None, this string is appended to the URL as an URL
         parameter. This can be used to force Browsers to flush their caches on
@@ -1882,12 +1904,43 @@ def staticurl(path: str, version: str = "") -> str:
     return ret
 
 
+def staticlink(rs: RequestState, label: str, path: str, version: str = "",
+               html: bool = True) -> str:
+    """Create a link to a static resource.
+
+    This can either create a basic html link or a fully qualified, static https link.
+
+    .. note:: This will be overridden by _staticlink in templates, see fill_template.
+    """
+    if html:
+        link = safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
+    else:
+        host = rs.urls.get_host("")
+        link = f"https://{host}{staticurl(path, version=version)}"
+    return link
+
+
 def docurl(topic: str, anchor: str = "") -> str:
     """Construct an HTTP URL to a doc page."""
     ret = str(pathlib.PurePosixPath("/doc", topic + ".html"))
     if anchor:
         ret += "#" + anchor
     return ret
+
+
+def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
+            html: bool = True) -> str:
+    """Create a link to our documentation.
+
+    This can either create a basic html link or a fully qualified, static https link.
+    .. note:: This will be overridden by _doclink in templates, see fill_template.
+    """
+    if html:
+        link = safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
+    else:
+        host = rs.urls.get_host("")
+        link = f"https://{host}{docurl(topic, anchor=anchor)}"
+    return link
 
 
 # noinspection PyPep8Naming
@@ -2135,9 +2188,12 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                         "moderators."))
                 if not obj.mlproxy.may_manage(rs, mailinglist_id=arg,
                                               privileged=True):
+                    link = doclink(rs, label=rs.gettext("privileged moderator"),
+                                   topic="Handbuch_Moderator",
+                                   anchor="privilegierte-moderatoren")
                     rs.notify("info", n_(
-                        "You have only restricted moderator access and may not "
-                        "change subscriptions."))
+                        "You do not have %(link)s access and may not change "
+                        "subscriptions."), {'link': link})
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(

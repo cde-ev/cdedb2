@@ -32,7 +32,7 @@ from cdedb.common import (
     ArchiveError, extract_realms, implied_realms, encode_parameter,
     decode_parameter, GENESIS_REALM_OVERRIDE, xsorted, Role, Realm, Error,
     CdEDBObject, CdEDBObjectMap, CdEDBLog, DefaultReturnCode, RequestState,
-    DeletionBlockers, get_hash
+    DeletionBlockers, get_hash, ADMIN_KEYS
 )
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -624,15 +624,10 @@ class CoreBackend(AbstractBackend):
             if (any(data[key] for key in realm_keys)
                     or "archive" not in allow_specials):
                 raise PrivilegeError(n_("Realm modification prevented."))
-        admin_keys = {'is_cde_admin', 'is_finance_admin', 'is_event_admin',
-                      'is_ml_admin', 'is_assembly_admin', 'is_core_admin',
-                      'is_meta_admin', 'is_cdelokal_admin'}
-        if (set(data) & admin_keys
+        if (set(data) & ADMIN_KEYS
                 and ("meta_admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
-            # Allow unsetting adminbits during archival.
-            if (any(data[key] for key in admin_keys)
-                    or "archive" not in allow_specials):
+            if any(data[key] for key in ADMIN_KEYS):
                 raise PrivilegeError(
                     n_("Admin privilege modification prevented."))
         if ("is_member" in data
@@ -661,7 +656,7 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError(n_("Own activation prevented."))
 
         # check for permission to edit
-        allow_meta_admin = data.keys() <= admin_keys | {"id"}
+        allow_meta_admin = data.keys() <= ADMIN_KEYS | {"id"}
         if (rs.user.persona_id != data['id']
                 and not self.is_relative_admin(rs, data['id'],
                                                allow_meta_admin)):
@@ -896,11 +891,7 @@ class CoreBackend(AbstractBackend):
                 data = {
                     "id": case["persona_id"]
                 }
-                admin_keys = {"is_meta_admin", "is_core_admin", "is_cde_admin",
-                              "is_finance_admin", "is_event_admin",
-                              "is_ml_admin", "is_assembly_admin",
-                              "is_cdelokal_admin"}
-                for key in admin_keys:
+                for key in ADMIN_KEYS:
                     if case[key] is not None:
                         data[key] = case[key]
 
@@ -912,8 +903,8 @@ class CoreBackend(AbstractBackend):
                     change_note=note, allow_specials=("admins",))
 
                 # Force password reset if non-admin has gained admin privileges.
-                if (not any(old[key] for key in admin_keys)
-                        and any(data.get(key) for key in admin_keys)):
+                if (not any(old[key] for key in ADMIN_KEYS)
+                        and any(data.get(key) for key in ADMIN_KEYS)):
                     ret *= self.invalidate_password(rs, case["persona_id"])
                     ret *= -1
 
@@ -1152,10 +1143,10 @@ class CoreBackend(AbstractBackend):
             if persona['is_archived']:
                 return 0
 
-            # Disallow archival of meta admins to ensure there always remain
-            # atleast two.
-            if persona['is_meta_admin']:
-                raise ArchiveError(n_("Cannot archive meta admins."))
+            # Disallow archival of admins. Admin privileges should be unset
+            # by two meta admins before.
+            if any(persona[key] for key in ADMIN_KEYS):
+                raise ArchiveError(n_("Cannot archive admins."))
 
             #
             # 2. Remove complicated attributes (membership, foto and password)
@@ -1823,14 +1814,19 @@ class CoreBackend(AbstractBackend):
         return sessionkey
 
     @access("persona")
-    def logout(self, rs: RequestState, all_sessions: bool = False
-               ) -> DefaultReturnCode:
-        """Invalidate the current session."""
+    def logout(self, rs: RequestState, this_session: bool = True,
+               other_sessions: bool = False) -> DefaultReturnCode:
+        """Invalidate some sessions, depending on the parameters."""
         query = "UPDATE core.sessions SET is_active = False, atime = now()"
         constraints = ["persona_id = %s", "is_active = True"]
         params: List[Any] = [rs.user.persona_id]
-        if not all_sessions:
+        if not this_session and not other_sessions:
+            return 0
+        elif not other_sessions:
             constraints.append("sessionkey = %s")
+            params.append(rs.sessionkey)
+        elif not this_session:
+            constraints.append("sessionkey != %s")
             params.append(rs.sessionkey)
         query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)

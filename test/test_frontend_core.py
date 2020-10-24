@@ -951,7 +951,7 @@ class TestCoreFrontend(FrontendTest):
         f["note"] = "Archived for testing."
         f["ack_delete"].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Meta-Admins können nicht archiviert werden.",
+        self.assertPresence("Admins können nicht archiviert werden.",
                             div="notifications")
         self.assertNonPresence("Benutzer ist archiviert", div="notifications")
         self.assertPresence(USER_DICT["martin"]["username"])
@@ -1395,8 +1395,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
         self.assertCheckbox(True, "paper_expuls_checkbox")
-        self.assertNonPresence("CdE-Mitglied", "cde-membership")
-        self.assertNonPresence("Probemitgliedschaft", "cde-membership")
+        self.assertNonPresence("CdE-Mitglied", div="cde-membership")
+        self.assertNonPresence("Probemitgliedschaft", div="cde-membership")
 
         # Do another promotion, this time granting trial membership.
         self.admin_view_profile('nina')

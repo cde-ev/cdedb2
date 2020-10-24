@@ -33,7 +33,7 @@ from cdedb.common import (
     REALM_INHERITANCE, EntitySorter, REALM_SPECIFIC_GENESIS_FIELDS,
     ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, xsorted, RequestState,
     CdEDBObject, PathLike, Realm, DefaultReturnCode,
-    get_persona_fields_by_realm,
+    get_persona_fields_by_realm, ADMIN_KEYS,
 )
 from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
@@ -150,7 +150,7 @@ class CoreFrontend(AbstractFrontend):
                                           if v['is_active']}
             # visible and open events
             if "event" in rs.user.roles:
-                event_ids = self.eventproxy.list_db_events(
+                event_ids = self.eventproxy.list_events(
                     rs, visible=True, current=True, archived=False)
                 events = self.eventproxy.get_events(rs, event_ids.keys())
                 final = {}
@@ -235,7 +235,7 @@ class CoreFrontend(AbstractFrontend):
 
         if wants:
             response = basic_redirect(rs, wants)
-        elif "member" in rs.user.roles and "searchable" not in rs.user.roles:
+        elif "member" in rs.user.roles:
             data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             if not data['decided_search']:
                 response = self.redirect(rs, "cde/consent_decision_form")
@@ -251,7 +251,7 @@ class CoreFrontend(AbstractFrontend):
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
         """Invalidate the current session."""
-        self.coreproxy.logout(rs, all_sessions=False)
+        self.coreproxy.logout(rs)
         response = self.redirect(rs, "core/index")
         response.delete_cookie("sessionkey")
         return response
@@ -262,7 +262,7 @@ class CoreFrontend(AbstractFrontend):
         """Invalidate all sessions for the current user."""
         if rs.has_validation_errors():
             return self.index(rs)
-        count = self.coreproxy.logout(rs, all_sessions=True)
+        count = self.coreproxy.logout(rs, other_sessions=True)
         rs.notify(
             "success", n_("%(count)s session(s) terminated."), {'count': count})
         # Unset persona_id so the notification is encoded correctly.
@@ -1141,12 +1141,7 @@ class CoreFrontend(AbstractFrontend):
             "notes": notes,
         }
 
-        # TODO: define these somewhere central?
-        admin_keys = {"is_meta_admin", "is_core_admin", "is_cde_admin",
-                      "is_finance_admin", "is_event_admin", "is_ml_admin",
-                      "is_assembly_admin", "is_cdelokal_admin"}
-
-        for key in admin_keys:
+        for key in ADMIN_KEYS:
             if locals()[key] != persona[key]:
                 data[key] = locals()[key]
 
@@ -1195,7 +1190,7 @@ class CoreFrontend(AbstractFrontend):
                 rs.notify("error", e)
             return self.change_privileges_form(rs, persona_id)
 
-        if admin_keys & data.keys():
+        if ADMIN_KEYS & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
             self.notify_return_code(
                 rs, code, success=n_("Privilege change waiting for approval by "
@@ -1607,6 +1602,9 @@ class CoreFrontend(AbstractFrontend):
                     rs.user.persona_id))
             return self.change_password_form(rs)
         else:
+            count = self.coreproxy.logout(rs, other_sessions=True, this_session=False)
+            rs.notify(
+                "success", n_("%(count)s session(s) terminated."), {'count': count})
             return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("anonymous")

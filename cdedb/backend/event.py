@@ -174,7 +174,7 @@ class EventBackend(AbstractBackend):
             time_stop=time_stop)
 
     @access("anonymous")
-    def list_db_events(self, rs: RequestState, visible: bool = None,
+    def list_events(self, rs: RequestState, visible: bool = None,
                        current: bool = None,
                        archived: bool = None) -> CdEDBObjectMap:
         """List all events organized via DB.
@@ -211,7 +211,7 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def list_db_courses(self, rs: RequestState,
+    def list_courses(self, rs: RequestState,
                         event_id: int) -> CdEDBObjectMap:
         """List all courses organized via DB.
 

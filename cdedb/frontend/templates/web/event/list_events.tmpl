@@ -3,12 +3,12 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans %}
-    	Manage Events
+        All Events
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Manage Events"), active="True") }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/list_events"), gettext("All Events"), active="True") }}
 {% endblock %}
 
 {% macro format_entry(event) %}
@@ -34,6 +34,7 @@
                 {%- endif %})
             {% endif %}
         </div>
+        {% if "event_mgmt" in user.admin_views %}
         <div class="col-sm-3 small">
             <a href="{{ cdedblink('event/registration_query', {'event_id': event['id']}) }}">
                 {% trans count=event['registrations'] %}
@@ -46,13 +47,16 @@
                 {{ count }} Orgas
             {% endtrans %}
         </div>
+        {% endif %}
     </div>
 {% endmacro %}
 {% block content %}
+    {% if "event_mgmt" in user.admin_views %}
     <div class="p">
         {{ util.href(cdedblink("event/create_event_form"), gettext("Create Event"), aclass="btn btn-success btn-sm",
                 icon="plus") }}
     </div>
+    {% endif %}
 
     <h3>{% trans %}Current Events{% endtrans %}</h3>
     <div class="list-group list-group-hover list-group-condensed" id="current-events">

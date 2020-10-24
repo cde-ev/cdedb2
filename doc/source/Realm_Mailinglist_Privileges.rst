@@ -43,3 +43,9 @@ Privileged Moderators
 
     However, unprivileged moderators can still moderate their mailinglists and
     modify its whitelist and moderators, as well as most of its configuration.
+
+    Currently, we have the following cases:
+
+    * **event associated lists**: needs to be orga of the event or event admin
+    * **assembly associated lists**: needs to be participant of the assembly,
+      member or assembly admin

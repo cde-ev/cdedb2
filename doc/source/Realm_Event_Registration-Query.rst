@@ -112,7 +112,7 @@ The first tables contains information from ``event.registration_tracks``, mainly
   FROM
       event.registration_tracks
   WHERE
-      track_id = {track_id}
+      track_id = X
 
 After that we have two views on the ``event.courses`` table for both the assigned and instrcuted course. All columns will be None, if no course is assigned/instructed: ::
 
@@ -122,7 +122,7 @@ After that we have two views on the ``event.courses`` table for both the assigne
   FROM
       event.courses
   WHERE
-      event_id = {event_id}
+      event_id = X
 
 The Complete View
 -----------------

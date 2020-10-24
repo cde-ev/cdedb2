@@ -386,11 +386,14 @@ class BackendTest(CdEDBTest):
         super().setUp()
         self.key = None
 
-    def login(self, user, ip="127.0.0.0"):
+    def loginBackend(self, user, ip="127.0.0.0"):
         if isinstance(user, str):
             user = USER_DICT[user]
         self.key = self.core.login(None, user['username'], user['password'], ip)
         return self.key
+
+    def login(self, user, ip="127.0.0.0"):
+        return self.loginBackend(user, ip)
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
@@ -685,7 +688,7 @@ def execsql(sql: AnyStr) -> None:
     subprocess.check_call(psql + (str(path),), stdout=null)
 
 
-class FrontendTest(CdEDBTest):
+class PureFrontendTest(CdEDBTest):
     """
     Base class for frontend tests.
 
@@ -845,7 +848,7 @@ class FrontendTest(CdEDBTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user: CdEDBObject, verbose: bool = False) -> None:
+    def loginFrontend(self, user: CdEDBObject, verbose: bool = False) -> None:
         """Log in as the given user.
 
         :param verbose: If True display additional debug information.
@@ -857,6 +860,9 @@ class FrontendTest(CdEDBTest):
         f['username'] = user['username']
         f['password'] = user['password']
         self.submit(f, check_notification=False, verbose=verbose)
+
+    def login(self, user: CdEDBObject, verbose: bool = False) -> None:
+        self.loginFrontend(user, verbose)
 
     def logout(self, verbose: bool = False) -> None:
         """Log out. Raises a KeyError if not currently logged in.
@@ -975,7 +981,7 @@ class FrontendTest(CdEDBTest):
             raise ValueError("Id doesnt belong to a checkbox", anid)
         self.assertEqual(str(status), checkbox['data-checked'])
 
-    def assertPresence(self, s: str, div: str = "content", regex: bool = False,
+    def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False) -> None:
         """Assert that a string is present in the element with the given id.
 
@@ -993,7 +999,7 @@ class FrontendTest(CdEDBTest):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s: str, div: str = "content",
+    def assertNonPresence(self, s: str, *, div: str = "content",
                           check_div: bool = True) -> None:
         """Assert that a string is not present in the element with the given id.
 
@@ -1270,8 +1276,22 @@ class FrontendTest(CdEDBTest):
             if fail:
                 self.fail(f"Form {form} not found after {count} reloads.")
 
+class FrontendTest(PureFrontendTest, BackendTest):
+    """This is a frontend which additionally has access to all backends.
 
-class MultiAppFrontendTest(FrontendTest):
+    Since this creates additional sessions, it is to be avoided for some tests."""
+
+    def login(self, user, verbose: bool = False):
+        """Spin up frontend and backend session in parallel."""
+        self.loginBackend(user, ip="127.0.0.0")
+        self.loginFrontend(user, verbose)
+
+    def logout(self, verbose: bool = False):
+        super().logout(verbose=verbose)
+        self.key = False
+
+
+class MultiAppFrontendTest(PureFrontendTest):
     """Subclass for testing multiple frontend instances simultaniously."""
     n: int = 2  # The number of instances that should be created.
     current_app: int  # Which instance is currently active 0 <= x < n

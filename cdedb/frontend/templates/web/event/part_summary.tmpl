@@ -183,8 +183,12 @@
                                             addon='€') }}
                     {{ util.form_input_select(name="waitlist_field_{}".format(part_id), entries=waitlist_fields,
                                               label=gettext("Field for Waitlist"),nulloption=nbsp,
-                                              info=gettext("Field to store the waitlist ranking of this part."
-                                                           " Fieldtype: Integer")) }}
+                                              info=gettext("Field to store the %(link)s ranking of this part."
+                                                           " Fieldtype: Integer")|format(
+                                                           link=util.href(docurl("Handbuch_Orga_Warteliste"),
+                                                                          gettext("Waitlist")))|s
+                                              ) }}
+
                 </div>
             </div>
                 <hr />

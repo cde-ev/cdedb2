@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Manage Events")) }}
+{{ util.breadcrumb_link(cdedblink("event/list_events"), gettext("All Events")) }}
 {{ util.breadcrumb_link(cdedblink("event/create_event"), gettext("Create Event"), active=True) }}
 {% endblock %}
 {% block content %}
@@ -62,7 +62,7 @@
         {{ util.form_input_checkbox(name="create_orga_list", label=gettext("Create Orga Mailinglist")) }}
         {{ util.form_input_checkbox(name="create_participant_list", label=gettext("Create Participant Mailinglist")) }}
 
-        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_db_events")) }}
+        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_events")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#createeventform').cdedbProtectChanges();

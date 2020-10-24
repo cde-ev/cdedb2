@@ -118,7 +118,7 @@ storage-test:
 		/tmp/cdedb-store/assembly_attachment/3_v1
 	cp -t /tmp/cdedb-store/testfiles/ test/ancillary_files/{$(TESTFILES)}
 
-sql: test/ancillary_files/sample_data.sql
+sql-schema:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
@@ -133,24 +133,33 @@ endif
 		-v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data.sql
 	sudo systemctl start pgbouncer
 
+sql: test/ancillary_files/sample_data.sql
+ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
+	$(error Refusing to touch live instance)
+endif
+ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+	$(error Refusing to touch orga instance)
+endif
+	$(MAKE) sql-schema
+	$(PYTHONBIN) bin/execute_sql_script.py test/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
+		test/ancillary_files/sample_data.sql
+
+# This does not recurse to sql-schema, so in the very rare circumstance that
+# you want to completely reset the test database it has to be executed
+# explicitly. This is due to the restrictions of the docker environment.
 sql-test:
-	sudo systemctl stop pgbouncer
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb_test
-	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
+		cdedb/database/cdedb-tables.sql
 	$(MAKE) sql-test-shallow
-	sudo systemctl start pgbouncer
 
 sql-test-shallow: test/ancillary_files/sample_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/clean_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
+		test/ancillary_files/clean_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
+		test/ancillary_files/sample_data.sql
 
 sql-xss:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -159,19 +168,11 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-	sudo systemctl stop pgbouncer
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb_test
-	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb \
-		-f test/ancillary_files/sample_data_escaping.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data_escaping.sql
-	sudo systemctl start pgbouncer
+	$(MAKE) sql-schema
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		test/ancillary_files/sample_data_escaping.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
+		test/ancillary_files/sample_data_escaping.sql
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
