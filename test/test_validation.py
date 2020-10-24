@@ -564,3 +564,18 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(msg, msg.encode('utf-8').decode('utf-8-sig'))
         self.assertEqual("\ufeff" + msg, msg.encode('utf-8-sig').decode('utf-8'))
         self.assertEqual(msg, msg.encode('utf-8-sig').decode('utf-8-sig'))
+
+    def test_percentage(self):
+        self.do_validator_test("_percentage", (
+            ("23", 23, None, False),
+            (0.11, 11, None, False),
+            (19, 19, None, True),
+            (97.0, None, ValueError, False),
+            (0.2311, 23, None, False),
+            (1997, None, ValueError, False),
+            ("abc", None, ValueError, False),
+            (1, 1, None, True),
+            (1.0, 100, None, False),
+            ("1", 1, None, False),
+            ("1.0", None, ValueError, False),
+        ))
