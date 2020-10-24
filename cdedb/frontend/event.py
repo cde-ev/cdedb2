@@ -5956,7 +5956,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, tuple(e['persona_id'] for e in entities.values()))
             labels = {
                 reg_id: (f"{personas[entity['persona_id']]['given_names']}"
-                         f" {personas[entity['persona_id']]['given_names']}")
+                         f" {personas[entity['persona_id']]['family_name']}")
                 for reg_id, entity in entities.items()}
             ordered_ids = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.persona(
