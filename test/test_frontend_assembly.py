@@ -948,10 +948,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'description': 'Archiv-Sammlung'},
                       {'description': 'Abstimmungen'},
                       {'description': 'Maximale Länge der Verfassung'})
-        self.assertPresence("Die Versammlung wurde beendet und die "
-                            "Stimmen sind nun verschlüsselt.")
-        self.assertNonPresence(
-            "Du hast für die folgenden Kandidaten gestimmt:")
+        s = ("Die Versammlung wurde beendet. Das Abstimmungsverhalten einzelner"
+             " Nutzer ist nicht mehr aus der Datenbank auslesbar.")
+        self.assertPresence(s)
+        self.assertNonPresence("Du hast für die folgenden Kandidaten gestimmt:")
 
         # Provide the secret to retrieve the vote.
         f = self.response.forms['showoldvoteform']

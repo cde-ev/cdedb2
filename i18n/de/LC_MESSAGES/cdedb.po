@@ -3636,8 +3636,12 @@ msgid "You did not vote."
 msgstr "Du hast nicht abgestimmt."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:294
-msgid "The assembly concluded and the votes got encrypted."
-msgstr "Die Versammlung wurde beendet und die Stimmen sind nun verschlüsselt."
+msgid ""
+"The assembly concluded. The votes of specific users can "
+"no longer be extracted from the database in any way."
+msgstr ""
+"Die Versammlung wurde beendet. Das Abstimmungsverhalten "
+"einzelner Nutzer ist nicht mehr aus der Datenbank auslesbar."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:295
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:301
