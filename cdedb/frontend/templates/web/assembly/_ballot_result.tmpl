@@ -89,37 +89,13 @@
                 </td>
                 <td class="text-info">
                     {% if is_classical_vote %}
-                        {% if short %}
-                            {% trans %}
-                                Against all Candidates.
-                            {% endtrans %}
-                        {% else %}
-                            {% if result['losers'] %}
-                                {% trans %}
-                                    The following candidates have less votes than the "Against all Candidates" choice.
-                                {% endtrans %}
-                            {% else %}
-                                {% trans %}
-                                    No candidate has less votes than the "Against all Candidates" choice.
-                                {% endtrans %}
-                            {% endif %}
-                        {% endif %}
+                        {% trans %}
+                            Against all Candidates.
+                        {% endtrans %}
                     {% else %}
-                        {% if short %}
-                            {% trans %}
-                                Rejection limit.
-                            {% endtrans %}
-                        {% else %}
-                            {% if result['losers'] %}
-                                {% trans %}
-                                    The following candidates lost against the rejection limit.
-                                {% endtrans %}
-                            {% else %}
-                                {% trans %}
-                                    No candidate lost against the rejection limit.
-                                {% endtrans %}
-                            {% endif %}
-                        {% endif %}
+                        {% trans %}
+                            Rejection limit.
+                        {% endtrans %}
                     {% endif %}
                 </td>
             {% if is_classical_vote %}
