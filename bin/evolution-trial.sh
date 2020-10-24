@@ -1,78 +1,104 @@
 #!/bin/bash
 
+
+EXENAME=$(basename $0)
+
+# This command has two operation modes:
+#   (i) as a pseudo CI isolated command inside a one time use container
+#   (ii) as an interactive diagnostic
+#
+# The main differences are that (i) is much more thorough and that (ii) is a
+# bit more careful to do only the necessary things and not destroy any data
+# on the instance it's run on.
+
+if [[ "$EXENAME" == inside-isolated-evolution.sh ]]; then
+    ISOLATED=true
+elif [[ "$EXENAME" == evolution-trial.sh ]]; then
+    ISOLATED=false
+else
+    echo "Unknown command"
+    exit
+fi
+
+if [[ "$ISOLATED" == true ]]; then
+    OLDREVISION=$2
+    NEWREVISION=$3
+else
+    OLDREVISION=$1
+    NEWREVISION=$2
+fi
+
+
 export TESTPREPARATION=manual
 cd /cdedb2
-git pull &> /dev/null
+if [[ "$ISOLATED" == true ]]; then
+    git pull &> /dev/null
+fi
 
 # old revision
-echo "Checkout $2"
-git checkout $2 &> /dev/null
+echo "Checkout $OLDREVISION"
+git checkout $OLDREVISION &> /dev/null
 git pull &> /dev/null
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 make -B test/ancillary_files/sample_data.sql &> /dev/null
-make sample-data &> /dev/null
-make sample-data-test &> /dev/null
+if [[ "$ISOLATED" == true ]]; then
+    make sample-data &> /dev/null
+    make sample-data-test &> /dev/null
+else
+    make sql-test &> /dev/null
+fi
 
 # new revision
-echo "Checkout $3"
-git checkout $3 &> /dev/null
+echo "Checkout $NEWREVISION"
+git checkout $NEWREVISION &> /dev/null
 git pull &> /dev/null
-make -B test/ancillary_files/sample_data.sql &> /dev/null
 ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
 grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt \
      > /tmp/todoevolutions.txt
-echo "" > /tmp/output-evolution.txt
+truncate -s0 /tmp/output-evolution.txt
 for evolution in $(cat /tmp/todoevolutions.txt); do
     echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
-    sudo -u postgres psql -U postgres -d cdb_test \
+    sudo -u cdb psql -U cdb -d cdb_test \
          -f cdedb/database/evolutions/$evolution \
          2>&1 | tee -a /tmp/output-evolution.txt
 done
+
 # evolved db
+echo "Creating database description."
 sudo -u postgres psql -U postgres -d cdb_test \
-     -c "SELECT (table_schema || '.' || table_name) AS full_name
-         FROM information_schema.tables
-         WHERE table_schema != 'information_schema'
-               AND table_schema != 'pg_catalog'
-         ORDER BY table_schema, table_name" \
-    | sort > /tmp/alltables.txt
-for table in $(cat /tmp/alltables.txt)
-do
-    sudo -u postgres psql -U postgres -d cdb_test -c "\d $table" \
-        | sort > /tmp/spec-evolved-$table.txt
-done;
+     -f bin/describe_database.sql > /tmp/evolved-description.txt
+bin/normalize_database_description.py /tmp/evolved-description.txt
+
 # new db
 make i18n-compile
-make sample-data-test-shallow
-sudo -u postgres psql -U postgres -d cdb_test \
-     -c "SELECT (table_schema || '.' || table_name) AS full_name
-         FROM information_schema.tables
-         WHERE table_schema != 'information_schema'
-               AND table_schema != 'pg_catalog'
-         ORDER BY table_schema, table_name" \
-    | sort > /tmp/alltables.txt
-for table in $(cat /tmp/alltables.txt)
-do
-    sudo -u postgres psql -U postgres -d cdb_test -c "\d $table" \
-        | sort > /tmp/spec-new-$table.txt
-done;
+make -B test/ancillary_files/sample_data.sql &> /dev/null
+if [[ "$ISOLATED" == true ]]; then
+    make sample-data-test-shallow
+    ./bin/check.sh 2> >(tee -a /tmp/output-check.txt >&2)
+fi
 
+echo "Resetting and creating database description again."
+make sql-test &> /dev/null
+sudo -u postgres psql -U postgres -d cdb_test \
+     -f bin/describe_database.sql > /tmp/pristine-description.txt
+bin/normalize_database_description.py /tmp/pristine-description.txt
 
 # perform check
-./bin/check.sh 2> >(tee -a /tmp/output-check.txt >&2)
 echo ""
-echo "DATABASE COMPARISON:"
-for table in $(cat /tmp/alltables.txt)
-do
-    echo "Comparing spec for $table"
-    diff -u /tmp/spec-evolved-$table.txt /tmp/spec-new-$table.txt
-done;
+echo "DATABASE COMPARISON (this should be empty):"
+comm -3 <(sort /tmp/evolved-description.txt) \
+     <(sort /tmp/pristine-description.txt)
 echo ""
-echo "CONDENSED REPORT:"
-grep -E '^(ERROR|FAIL):' /tmp/output-check.txt
-echo ""
-echo "EVOLUTIONS:"
+if [[ "$ISOLATED" == true ]]; then
+    echo "CONDENSED REPORT:"
+    grep -E '^(ERROR|FAIL):' /tmp/output-check.txt
+    echo ""
+fi
+echo "EVOLUTION OUTPUT:"
 cat /tmp/output-evolution.txt
 echo ""
-echo "OLD: $2 NEW: $3"
-sudo shutdown -h now
+echo "OLD: $OLDREVISION NEW: $NEWREVISION"
+
+if [[ "$ISOLATED" == true ]]; then
+    sudo shutdown -h now
+fi
