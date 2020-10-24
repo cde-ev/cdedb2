@@ -349,6 +349,11 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('write_subscription_states')
 
+    def test_clean_session_log(self):
+        # We just want to test that no exception is raised.
+        self.execute('deactivate_old_sessions', check_stores=False)
+        self.execute('clean_session_log', check_stores=False)
+
     @unittest.mock.patch("mailmanclient.Client")
     def test_mailman_sync(self, client_class):
         self._run_periodics.add('mailman_sync')
