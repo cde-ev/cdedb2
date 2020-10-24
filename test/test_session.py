@@ -86,7 +86,7 @@ class TestSessionBackend(BackendTest):
         ip = "1.2.3.4."
 
         # Create some sessions for some different users.
-        keys = {u: self.login(u, ip) for u in USER_DICT
+        keys = {u: self.login(u, ip=ip) for u in USER_DICT
                 if u not in {"hades", "lisa", "olaf"}}
         for u, key in keys.items():
             with self.subTest(user=u, key=key):
@@ -97,7 +97,7 @@ class TestSessionBackend(BackendTest):
         # Create a new session and do a "logout everywhere" with it.
         logout_user = "anton"
         # This will only work with this specific ip:
-        key = self.login(logout_user, "127.0.0.0")
+        key = self.login(logout_user, ip="127.0.0.0")
         self.core.logout(key, other_sessions=True)
 
         # Check that the other sessions (from other users) are still active.
@@ -187,7 +187,6 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
                 self.get("/core/self/show")
                 self.assertTitle("CdE-Datenbank")
                 self.assertIn('loginform', self.response.forms)
-
 
     def test_basics(self):
         self.login(USER_DICT["anton"])
