@@ -251,7 +251,7 @@ class CoreFrontend(AbstractFrontend):
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
         """Invalidate the current session."""
-        self.coreproxy.logout(rs, other_sessions=False)
+        self.coreproxy.logout(rs)
         response = self.redirect(rs, "core/index")
         response.delete_cookie("sessionkey")
         return response
