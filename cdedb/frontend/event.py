@@ -6022,7 +6022,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, "field_set_select", {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
                 'ordered': ordered_ids, 'labels': labels, 'fields': fields,
-                'kind': kind.value})
+                'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event")
     @REQUESTdata(("field_id", "id"),
@@ -6049,7 +6049,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "field_set", {
             'ids': (','.join(str(i) for i in ids) if ids else None),
             'entities': entities, 'labels': labels, 'ordered': ordered_ids,
-            'kind': kind.value})
+            'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("field_id", "id"),
