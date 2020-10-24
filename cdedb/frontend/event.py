@@ -2710,7 +2710,6 @@ class EventFrontend(AbstractUserFrontend):
         spec = self.make_registration_query_spec(event)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_dir = pathlib.Path(tmp_dir)
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
 
@@ -2727,7 +2726,7 @@ class EventFrontend(AbstractUserFrontend):
                     result = self.eventproxy.submit_general_query(rs, query, event_id)
                     course_key = f"track{track_id}.course_id"
                     # we have to replace the course id with the course number
-                    result = (
+                    result = tuple(
                         {
                             k if k != course_key else 'course':
                                 v if k != course_key else courses[v]['nr']
@@ -2745,8 +2744,8 @@ class EventFrontend(AbstractUserFrontend):
 
             # create a zip archive of all lists
             zipname = f"{rs.ambience['event']['shortname']}_dokuteam_participant_list"
-            zippath = shutil.make_archive(tmp_dir / zipname, 'zip', base_dir=work_dir,
-                                          root_dir=tmp_dir)
+            zippath = shutil.make_archive(str(pathlib.Path(tmp_dir, zipname)), 'zip',
+                                          base_dir=work_dir, root_dir=tmp_dir)
 
             return self.send_file(rs, path=zippath, inline=False,
                                   filename=f"{zipname}.zip")
