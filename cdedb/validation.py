@@ -4030,16 +4030,21 @@ def _ballot(val, argname=None, *, creation=False, _convert=True,
     if 'rel_quorum' in val and not quorum:
         quorum = val['rel_quorum']
 
-    quorum_msg = ValueError(n_("Must specify a quorum if vote extension end is given."))
-    quorum_error_list = [
+    vote_extension_errors = [
         ("vote_extension_end", ValueError(n_("Must be specified if quorum is given."))),
+    ]
+    quorum_msg = ValueError(n_("Must specify a quorum if vote extension end is given."))
+    quorum_errors = [
         ("abs_quorum", quorum_msg),
         ("rel_quorum", quorum_msg),
     ]
 
     if (quorum is None) == ('vote_extension_end' in val):
         # Only one of quorum and extension end is given.
-        errs.extend(quorum_error_list)
+        if quorum is None:
+            errs.extend(quorum_errors)
+        else:
+            errs.extend(vote_extension_errors)
         # Skip the last validation step.
         return val, errs
 
@@ -4047,10 +4052,10 @@ def _ballot(val, argname=None, *, creation=False, _convert=True,
         # quorum can not be None at this point.
         if val['vote_extension_end'] is None and quorum:
             # No extension end, but quorum.
-            errs.extend(quorum_error_list)
+            errs.extend(vote_extension_errors)
         elif val['vote_extension_end'] and not quorum:
             # No quorum, but extension end.
-            errs.extend(quorum_error_list)
+            errs.extend(quorum_errors)
 
     return val, errs
 
