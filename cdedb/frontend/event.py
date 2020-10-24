@@ -5941,6 +5941,12 @@ class EventFrontend(AbstractUserFrontend):
 
         :param ids: ids of the entities where the field should be modified.
         :param kind: specifies the entity: registration, course or lodgement
+
+        :returns: A tuple of values, containing
+            * entities: corresponding to the given ids (registrations, courses, lodgements)
+            * ordered_ids: given ids, sorted by the corresponding EntitySorter
+            * labels: name of the entities which will be displayed in the template
+            * field: the event field which will be changed, None if no field_id was given
         """
         if kind == const.FieldAssociations.registration:
             if not ids:
@@ -5952,7 +5958,7 @@ class EventFrontend(AbstractUserFrontend):
                 reg_id: (f"{personas[entity['persona_id']]['given_names']}"
                          f" {personas[entity['persona_id']]['given_names']}")
                 for reg_id, entity in entities.items()}
-            ordered_entities = xsorted(
+            ordered_ids = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.persona(
                     personas[entities[anid]['persona_id']]))
         elif kind == const.FieldAssociations.course:
@@ -5961,7 +5967,7 @@ class EventFrontend(AbstractUserFrontend):
             entities = self.eventproxy.get_courses(rs, ids)
             labels = {course_id: f"{course['nr']} {course['shortname']}"
                       for course_id, course in entities.items()}
-            ordered_entities = xsorted(
+            ordered_ids = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.course(entities[anid]))
         elif kind == const.FieldAssociations.lodgement:
             if not ids:
@@ -5975,7 +5981,7 @@ class EventFrontend(AbstractUserFrontend):
                          else safe_filter(f"{lodg['title']}, "
                                           f"<em>{groups[lodg['group_id']]['title']}</em>")
                 for lodg_id, lodg in entities.items()}
-            ordered_entities = xsorted(
+            ordered_ids = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.lodgement(entities[anid]))
         else:
             # this should not happen, since we check before for validation errors
@@ -5990,7 +5996,7 @@ class EventFrontend(AbstractUserFrontend):
         else:
             field = None
 
-        return entities, ordered_entities, labels, field
+        return entities, ordered_ids, labels, field
 
     @access("event")
     @REQUESTdata(("field_id", "id_or_None"),
@@ -6007,8 +6013,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, "event/field_set_form", {
                     'ids': (','.join(str(i) for i in ids) if ids else None),
                     'field_id': field_id, 'kind': kind.value})
-        _, ordered_entities, labels, _ = self.field_set_aux(
-            rs, event_id, field_id, ids, kind)
+        _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids, kind)
         fields = [(field['id'], field['field_name'])
                   for field in xsorted(rs.ambience['event']['fields'].values(),
                                        key=EntitySorter.event_field)
@@ -6016,7 +6021,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(
             rs, "field_set_select", {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
-                'ordered': ordered_entities, 'labels': labels, 'fields': fields,
+                'ordered': ordered_ids, 'labels': labels, 'fields': fields,
                 'kind': kind.value})
 
     @access("event")
@@ -6035,7 +6040,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors() and not internal:
             redirect = self.FIELD_REDIRECT.get(kind, "event/show_event")
             return self.redirect(rs, redirect)
-        entities, ordered_entities, labels, field = self.field_set_aux(
+        entities, ordered_ids, labels, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
 
         values = {f"input{anid}": entity['fields'].get(field['field_name'])
@@ -6043,7 +6048,7 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
             'ids': (','.join(str(i) for i in ids) if ids else None),
-            'entities': entities, 'labels': labels, 'ordered': ordered_entities,
+            'entities': entities, 'labels': labels, 'ordered': ordered_ids,
             'kind': kind.value})
 
     @access("event", modi={"POST"})
@@ -6057,7 +6062,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
                 rs, event_id, kind=kind.value, internal=True)
-        entities, ordered_entities, _, field = self.field_set_aux(
+        entities, ordered_ids, _, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
 
         field_kind = f"{const.FieldDatatypes(field['kind']).name}_or_None"
@@ -6067,31 +6072,17 @@ class EventFrontend(AbstractUserFrontend):
             return self.field_set_form(  # type: ignore
                 rs, event_id, kind=kind.value, internal=True)
 
-        code = 1
         if kind == const.FieldAssociations.registration:
             entity_setter = self.eventproxy.set_registration
-            entity_query_spec = self.make_registration_query_spec
-            qview = "qview_registration"
-            entity_name = "reg"
-            query_order = ("persona.family_name", True), ("persona.given_names", True)
-            query_foi = "persona.given_names", "persona.family_name", "persona.username"
         elif kind == const.FieldAssociations.course:
             entity_setter = self.eventproxy.set_course
-            entity_query_spec = self.make_course_query_spec
-            qview = "qview_event_course"
-            entity_name = "course"
-            query_order = ("course.nr", True), ("course.shortname", True)
-            query_foi = "course.nr", "course.shortname", "course.title"
         elif kind == const.FieldAssociations.lodgement:
             entity_setter = self.eventproxy.set_lodgement
-            entity_query_spec = self.make_lodgement_query_spec
-            qview = "qview_event_lodgement"
-            entity_name = "lodgement"
-            query_order = ("lodgement.title", True), ("lodgement.id", True)
-            query_foi = "lodgement.title", "lodgement_group.title"
         else:
             # this can not happen, since kind was validated successfully
-            raise NotImplementedError(f"Unkown kind {kind}.")
+            raise NotImplementedError(f"Unknown kind {kind}.")
+
+        code = 1
         for anid, entity in entities.items():
             if data[f"input{anid}"] != entity['fields'].get(field['field_name']):
                 new = {
@@ -6101,15 +6092,37 @@ class EventFrontend(AbstractUserFrontend):
                 code *= entity_setter(rs, new)
         self.notify_return_code(rs, code)
 
-        # redirect to query filtered by registration_ids
-        query = Query(
-            qview,
-            entity_query_spec(rs.ambience['event']),
-            (*query_foi, f"{entity_name}.id",
-             f"{entity_name}_fields.xfield_{field['field_name']}"),
-            ((f"{entity_name}.id", QueryOperators.oneof, entities),),
-            query_order
-        )
+        if kind == const.FieldAssociations.registration:
+            query = Query(
+                "qview_registration",
+                self.make_registration_query_spec(rs.ambience['event']),
+                ("persona.given_names", "persona.family_name", "persona.username",
+                 "reg.id", f"reg_fields.xfield_{field['field_name']}"),
+                (("reg.id", QueryOperators.oneof, entities),),
+                (("persona.family_name", True), ("persona.given_names", True))
+            )
+        elif kind == const.FieldAssociations.course:
+            query = Query(
+                "qview_event_course",
+                self.make_course_query_spec(rs.ambience['event']),
+                ("course.nr", "course.shortname", "course.title", "course.id",
+                 f"course_fields.xfield_{field['field_name']}"),
+                (("course.id", QueryOperators.oneof, entities),),
+                (("course.nr", True), ("course.shortname", True))
+            )
+        elif kind == const.FieldAssociations.lodgement:
+            query = Query(
+                "qview_event_lodgement",
+                self.make_lodgement_query_spec(rs.ambience['event']),
+                ("lodgement.title", "lodgement_group.title", "lodgement.id",
+                 f"lodgement_fields.xfield_{field['field_name']}"),
+                (("lodgement.id", QueryOperators.oneof, entities),),
+                (("lodgement.title", True), ("lodgement.id", True))
+            )
+        else:
+            # this can not happen, since kind was validated successfully
+            raise NotImplementedError(f"Unknown kind {kind}.")
+
         redirect = self.FIELD_REDIRECT[kind]
         return self.redirect(rs, redirect, querytoparams_filter(query))
 
