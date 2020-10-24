@@ -43,6 +43,11 @@
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
+        <!-- Additional buttons for the course_query -->
+
+        <div class="p pull-right">
+            {{ generic.query_button_field_set(enums['FieldAssociations'].course) }}
+        </div>
 
         {{ generic.display_query_result(result, query, titles, choices) }}
 

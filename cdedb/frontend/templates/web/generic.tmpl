@@ -637,3 +637,22 @@
         </div>
     {% endif %}
 {% endmacro %}
+
+{% macro query_button_field_set(field_association) %}
+    <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
+        {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
+    </button>
+    <script nonce="{{ csp_nonce }}">
+        $('#btn-set-field').click(function(){
+            var list = [];
+            $('#query-result').find('.ls-selected').each(function(){
+                list.push($(this).attr('data-id'));
+            });
+            if (list.length === 0)
+                return;
+            location.href =
+                "{{ cdedblink("event/field_set_select", {'kind': field_association.value}, magic_placeholders=['ids'])|safe }}"
+                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+        });
+    </script>
+{% endmacro %}

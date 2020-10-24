@@ -98,9 +98,7 @@
             <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
                 {{ util.make_icon('crosshairs') }} {% trans %}Course Assignment{% endtrans %}
             </button>
-            <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
-                {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
-            </button>
+            {{ generic.query_button_field_set(enums['FieldAssociations'].registration) }}
             <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
                 {{ util.make_icon('pen') }} {% trans %}Edit{% endtrans %}
             </button>
@@ -114,17 +112,6 @@
                         return;
                     location.href =
                         "{{ cdedblink('event/course_choices_form', {'include_active': True}, magic_placeholders=['ids'])|safe }}"
-                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-                });
-                $('#btn-set-field').click(function(){
-                    var list = [];
-                    $('#query-result').find('.ls-selected').each(function(){
-                        list.push($(this).attr('data-id'));
-                    });
-                    if (list.length == 0)
-                        return;
-                    location.href =
-                        "{{ cdedblink('event/field_set_select', magic_placeholders=['ids']) }}"
                             .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
                 });
                 $('#btn-edit').click(function(){
