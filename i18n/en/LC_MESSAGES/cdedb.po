@@ -4691,11 +4691,9 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:38
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:29
-#, python-format
 msgid ""
-"Supports %(infolink)s. Link to photo gallery (e. g. "
-"<https://user:pwd@example.cde>) with http authentification information "
-"encoded."
+"Link to photo gallery (e.g. <https://user:pwd@example.cde>) with http "
+"authentification information encoded."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:5
@@ -5870,8 +5868,7 @@ msgid "Edit Userdata"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:56
-#, python-format
-msgid "Visible to all Admins, supports %(infolink)s with auto linebreaks."
+msgid "Visible to all Admins."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:73
@@ -7611,10 +7608,9 @@ msgid "Event Meta Data"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:34
-#, python-format
 msgid ""
-"Supports %(infolink)s. This description is visible publicly (without "
-"login), if “Visibility of the Event” is set."
+"This description is visible publicly (without login), if “Visibility of "
+"the Event” is set."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:39

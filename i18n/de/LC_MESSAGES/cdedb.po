@@ -6220,13 +6220,12 @@ msgstr "Mediensammlung"
 
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:38
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:29
-#, python-format
 msgid ""
-"Supports %(infolink)s. Link to photo gallery (e. g. <https://user:"
-"pwd@example.cde>) with http authentification information encoded."
+"Link to photo gallery (e.g. <https://user:pwd@example.cde>) with http "
+"authentification information encoded"
 msgstr ""
-"Unterstützt %(infolink)s. Link zur Fotogallerie (z. B. <https://user:"
-"pwd@example.cde> mit eingebetteter Authentifizierung)."
+"Link zur Fotogalerie (z. B. <https://user:pwd@example.cde>) mit "
+"eingebetteter Authentifizierung"
 
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:5
 msgid "Consent to Member Search"
@@ -7575,10 +7574,8 @@ msgid "Edit Userdata"
 msgstr "Nutzerdaten bearbeiten"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:56
-#, python-format
-msgid "Visible to all Admins, supports %(infolink)s with auto linebreaks."
-msgstr ""
-"Für alle Admins sichtbar, unterstützt %(infolink)s mit Zeilenumbrüchen."
+msgid "Visible to all Admins."
+msgstr "Für alle Admins sichtbar."
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:73
 #: cdedb/frontend/templates/web/core/change_user.tmpl:62
@@ -9559,13 +9556,12 @@ msgstr "Veranstaltungs-Metadaten"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:34
 #: cdedb/frontend/templates/web/event/change_event.tmpl:31
-#, python-format
 msgid ""
-"Supports %(infolink)s. This description is visible publicly (without login), "
-"if “Visibility of the Event” is set."
+"This description is visible publicly (without login), if “Visibility of "
+"the Event” is set."
 msgstr ""
-"Unterstützt %(infolink)s. Die Beschreibung ist öffentlich (ohne Login) "
-"sichtbar, sofern „Sichtbarkeit der Veranstaltung“ aktiviert ist."
+"Die Beschreibung ist öffentlich (ohne Login) sichtbar, sofern „Sichtbarkeit "
+"der Veranstaltung“ aktiviert ist."
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:39
 #: cdedb/frontend/templates/web/event/show_event.tmpl:77
