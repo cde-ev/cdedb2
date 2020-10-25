@@ -2709,8 +2709,8 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         spec = self.make_registration_query_spec(event)
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_dir = pathlib.Path(tmp_dir)
+        with tempfile.TemporaryDirectory() as tmp_dir_name:
+            tmp_dir = pathlib.Path(tmp_dir_name)
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
 
@@ -2724,7 +2724,7 @@ class EventFrontend(AbstractUserFrontend):
                     order = [("persona.given_names", True)]
                     query = Query("qview_registration", spec, fields_of_interest,
                                   constrains, order)
-                    result = self.eventproxy.submit_general_query(rs, query, event_id)
+                    query_res = self.eventproxy.submit_general_query(rs, query, event_id)
                     course_key = f"track{track_id}.course_id"
                     # we have to replace the course id with the course number
                     result = (
@@ -2733,7 +2733,7 @@ class EventFrontend(AbstractUserFrontend):
                                 v if k != course_key else courses[v]['nr']
                             for k, v in entry.items()
                         }
-                        for entry in result
+                        for entry in query_res
                     )
                     data = self.fill_template(
                         rs, "other", "dokuteam_participant_list", {'result': result})
@@ -2745,8 +2745,8 @@ class EventFrontend(AbstractUserFrontend):
 
             # create a zip archive of all lists
             zipname = f"{rs.ambience['event']['shortname']}_dokuteam_participant_list"
-            zippath = shutil.make_archive(tmp_dir / zipname, 'zip', base_dir=work_dir,
-                                          root_dir=tmp_dir)
+            zippath = shutil.make_archive(str(tmp_dir / zipname), 'zip',
+                                          base_dir=work_dir, root_dir=tmp_dir)
 
             return self.send_file(rs, path=zippath, inline=False,
                                   filename=f"{zipname}.zip")
@@ -5935,7 +5935,8 @@ class EventFrontend(AbstractUserFrontend):
     }
 
     def field_set_aux(self, rs: RequestState, event_id: int, field_id: Optional[int],
-                      ids: Collection[int], kind: const.FieldAssociations):
+                      ids: Collection[int], kind: const.FieldAssociations) \
+            -> Tuple[CdEDBObjectMap, List[int], Dict[int, str], Optional[CdEDBObject]]:
         """Process field set inputs.
 
         This function retrieves the data dependent on the given kind and returns it in
@@ -5965,7 +5966,7 @@ class EventFrontend(AbstractUserFrontend):
                     personas[entities[anid]['persona_id']]))
         elif kind == const.FieldAssociations.course:
             if not ids:
-                ids = self.eventproxy.list_db_courses(rs, event_id)
+                ids = self.eventproxy.list_courses(rs, event_id)
             entities = self.eventproxy.get_courses(rs, ids)
             labels = {course_id: f"{course['nr']} {course['shortname']}"
                       for course_id, course in entities.items()}
@@ -6044,6 +6045,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, redirect)
         entities, ordered_ids, labels, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
+        assert field is not None  # to make mypy happy
 
         values = {f"input{anid}": entity['fields'].get(field['field_name'])
                   for anid, entity in entities.items()}
@@ -6066,6 +6068,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, event_id, kind=kind.value, internal=True)
         entities, ordered_ids, _, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
+        assert field is not None  # to make mypy happy
 
         field_kind = f"{const.FieldDatatypes(field['kind']).name}_or_None"
         data_params = tuple((f"input{anid}", field_kind) for anid in entities)

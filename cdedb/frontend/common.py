@@ -967,7 +967,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 raise RuntimeError(n_("Must not be used in web templates."))
             return doclink(rs, label="", topic=topic, anchor=anchor, html=False)
 
-        def _staticlink(path: str, version: str = ""):
+        def _staticlink(path: str, version: str = "") -> str:
             """Create link to static files in non-web templates.
 
             This should be used to avoid hardcoded links in our templates. To create
@@ -1905,13 +1905,14 @@ def staticurl(path: str, version: str = "") -> str:
 
 
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: bool = True) -> str:
+               html: bool = True) -> Union[jinja2.Markup, str]:
     """Create a link to a static resource.
 
     This can either create a basic html link or a fully qualified, static https link.
 
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
+    link: Union[jinja2.Markup, str]
     if html:
         link = safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
@@ -1929,12 +1930,13 @@ def docurl(topic: str, anchor: str = "") -> str:
 
 
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: bool = True) -> str:
+            html: bool = True) -> Union[jinja2.Markup, str]:
     """Create a link to our documentation.
 
     This can either create a basic html link or a fully qualified, static https link.
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
+    link: Union[jinja2.Markup, str]
     if html:
         link = safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
