@@ -1309,6 +1309,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
         self.assertTitle("Mailinglisten-Log [1–9 von 9]")
+        self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4

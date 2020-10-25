@@ -1132,6 +1132,8 @@ class PureFrontendTest(CdEDBTest):
         self.assertNonPresence("", div="pagination-0", check_div=False)
         self.assertNonPresence("", check_div=False,
                                div=f"pagination-{str(total // 50 + 2)}")
+        # check translations
+        self.assertNonPresence("LogCodes")
 
         # check a combination of offset and length with 0th page
         length = total // 3

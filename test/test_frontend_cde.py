@@ -2168,6 +2168,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/finances'})
         self.assertTitle("Finanz-Log [1–2 von 2]")
+        self.assertNonPresence("LogCodes")
 
     @as_users("vera")
     def test_changelog_meta(self, user):

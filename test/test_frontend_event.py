@@ -3563,6 +3563,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
         self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
+        self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1

@@ -1007,6 +1007,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Log'})
         self.assertTitle("Versammlungs-Log [1–17 von 17]")
+        self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         codes = [const.AssemblyLogCodes.assembly_created.value,
                  const.AssemblyLogCodes.assembly_changed.value,
