@@ -1239,7 +1239,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertTitle("Anmeldung für Große Testakademie 2222")
         self.assertValidationError(
-            'course_choice3_1', "Du kannst diesen Kurs nicht als 1. und 2 Wahl wählen.")
+            'course_choice3_1', "Du kannst diesen Kurs nicht als 1. und 2. Wahl wählen.")
         f['course_choice3_1'] = 4
         # Now, we did it right.
         self.submit(f)

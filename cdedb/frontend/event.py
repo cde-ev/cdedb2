@@ -3284,7 +3284,7 @@ class EventFrontend(AbstractUserFrontend):
                 # Check for unfilled mandatory course choices
                 rs.extend_validation_errors(
                     ("course_choice{}_{}".format(track_id, i),
-                     ValueError(n_("You must chose at least %(min_choices)s"
+                     ValueError(n_("You must choose at least %(min_choices)s"
                                    " courses."),
                                 {'min_choices': track['min_choices']}))
                     for i in range(track['min_choices'])

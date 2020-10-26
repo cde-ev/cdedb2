@@ -2310,7 +2310,7 @@ msgstr ""
 
 #: cdedb/frontend/event.py:3287
 #, python-format
-msgid "You must chose at least %(min_choices)s courses."
+msgid "You must choose at least %(min_choices)s courses."
 msgstr ""
 
 #: cdedb/frontend/event.py:3382

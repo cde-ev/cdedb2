@@ -2367,11 +2367,11 @@ msgstr "Mindestens ein Teil muss ausgewählt werden."
 #: cdedb/frontend/event.py:3277
 #, python-format
 msgid "You cannot have the same course as %(i)s. and %(j)s. choice"
-msgstr "Du kannst diesen Kurs nicht als %(i)s. und %(j)s Wahl wählen."
+msgstr "Du kannst diesen Kurs nicht als %(i)s. und %(j)s. Wahl wählen."
 
 #: cdedb/frontend/event.py:3287
 #, python-format
-msgid "You must chose at least %(min_choices)s courses."
+msgid "You must choose at least %(min_choices)s courses."
 msgstr "Du musst mindestens %(min_choices)s Kurse wählen."
 
 #: cdedb/frontend/event.py:3382
