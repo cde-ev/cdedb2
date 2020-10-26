@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-10-25 14:22+0100\n"
+"POT-Creation-Date: 2020-10-26 20:20+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -2625,6 +2625,7 @@ msgid "Lodgement ID"
 msgstr ""
 
 #: cdedb/frontend/event.py:5767
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:312
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:26
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:26
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:18
@@ -3599,6 +3600,23 @@ msgstr ""
 msgid "Below box with lowest priority"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:311
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:29
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:22
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:17
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:30
+#: cdedb/frontend/templates/web/event/change_course.tmpl:33
+#: cdedb/frontend/templates/web/event/change_event.tmpl:38
+#: cdedb/frontend/templates/web/event/create_course.tmpl:30
+#: cdedb/frontend/templates/web/event/create_event.tmpl:25
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:91
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:155
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:232
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:74
+#: cdedb/frontend/templates/web/event/show_event.tmpl:93
+msgid "Shortname"
+msgstr ""
+
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:324
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:29
 #: cdedb/frontend/templates/web/event/lodgement_group_summary.tmpl:38
@@ -4272,6 +4290,12 @@ msgstr ""
 msgid "deleted %(dtime)s"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/util.tmpl:146
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:85
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:91
+msgid "Attachment"
+msgstr ""
+
 #: cdedb/frontend/templates/web/assembly/util.tmpl:172
 msgid "This ballot does not have any attachments."
 msgstr ""
@@ -4689,21 +4713,6 @@ msgstr ""
 msgid "Edit %(pevent)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:29
-#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:22
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:30
-#: cdedb/frontend/templates/web/event/change_course.tmpl:33
-#: cdedb/frontend/templates/web/event/change_event.tmpl:38
-#: cdedb/frontend/templates/web/event/create_course.tmpl:30
-#: cdedb/frontend/templates/web/event/create_event.tmpl:25
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:91
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:155
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:232
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:74
-#: cdedb/frontend/templates/web/event/show_event.tmpl:93
-msgid "Shortname"
-msgstr ""
-
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:30
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:23
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:33
@@ -5098,6 +5107,15 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:9
 msgid "Manage Institutions of past Events"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:16
+#: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:57
+#: cdedb/frontend/templates/web/core/show_history.tmpl:110
+#: cdedb/frontend/templates/web/core/show_user.tmpl:115
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:186
+#: cdedb/frontend/templates/web/event/lodgement_group_summary.tmpl:26
+msgid "Name"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:5
@@ -6310,11 +6328,6 @@ msgstr ""
 msgid "The file must be a PDF. The maximum allowed filesize is 8 MB."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:85
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:91
-msgid "Attachment"
-msgstr ""
-
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:86
 msgid ""
 "We already saved your uploaded file, but you can provide a different file"
@@ -6357,13 +6370,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:55
 msgid "Persona Information"
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:57
-#: cdedb/frontend/templates/web/core/show_history.tmpl:110
-#: cdedb/frontend/templates/web/core/show_user.tmpl:115
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:186
-msgid "Name"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:105
@@ -7311,6 +7317,7 @@ msgid "Parental Consent"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:49
+#: cdedb/frontend/templates/web/event/change_registration.tmpl:63
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:124
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:110
 #: cdedb/frontend/templates/web/event/stats.tmpl:30
@@ -8161,6 +8168,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:126
 msgid "Assignment Method"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:128
+msgid "Assign to Course"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:152
@@ -10114,6 +10125,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:26
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:43
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:103
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:60
 #: cdedb/frontend/templates/web/core/change_user.tmpl:48
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:27
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:45
@@ -11023,6 +11035,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:21
 #: cdedb/frontend/templates/web/event/base.tmpl:89
 #: cdedb/frontend/templates/web/event/change_course.tmpl:23
+#: cdedb/frontend/templates/web/event/manage_attendees.tmpl:23
+#: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:23
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:35
 #: cdedb/frontend/templates/web/logging.tmpl:103
 #: cdedb/frontend/templates/web/logging.tmpl:106
@@ -11033,6 +11047,9 @@ msgid "Event"
 msgstr ""
 
 #: cdedb/frontend/templates/web/logging.tmpl:109
+#: cdedb/frontend/templates/web/ml/base.tmpl:44
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:23
+#: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:24
 msgid "Mailinglist"
 msgstr ""
 

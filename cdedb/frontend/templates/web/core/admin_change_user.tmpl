@@ -57,7 +57,7 @@
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
-        {{ util.form_input_static(label="E-Mail", value=values['username']) }}
+        {{ util.form_input_static(label=gettext("E-Mail"), value=values['username']) }}
         {% if ("telephone" in shown_fields or "mobile" in shown_fields) and 'event' in admin_bits %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
