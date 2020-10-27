@@ -53,8 +53,7 @@
             {% endif %}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="7",
-                                    info=gettext("Visible to all Admins, supports %(infolink)s with auto linebreaks.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                    info=util.markdownhint + " " + gettext("Visible to all Admins.")) }}
 
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         {{ util.form_input_static(label=gettext("E-Mail"), value=values['username']) }}
@@ -99,20 +98,14 @@
         {% if "specialisation" in shown_fields and 'cde' in admin_bits %}
             <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"),
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                        info=util.markdownhint) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"),
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                        info=util.markdownhint) }}
             {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"),
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-            {{ util.form_input_textarea(name="interests", label=gettext("Interests"),
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                        info=util.markdownhint) }}
+            {{ util.form_input_textarea(name="interests", label=gettext("Interests"), info=util.markdownhint) }}
             {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                        info=util.markdownhint) }}
         {% endif %}
 
         <div class="panel panel-primary">

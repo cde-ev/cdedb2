@@ -16,7 +16,7 @@
 {% endblock %}
 {% block content %}
     {% if ml_type is none %}
-        <form action="{{ cdedblink('ml/create_mailinglist_form') }}" method="GET" id="selectmltypeform",
+        <form action="{{ cdedblink('ml/create_mailinglist_form') }}" method="GET" id="selectmltypeform"
               class="form-horizontal">
             {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"), entries=available_types|enum_entries(processing=gettext)) }}
             {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink("ml/index"), icon="pen") }}
@@ -47,11 +47,8 @@
                 update_domain();
             </script>
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                    info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
 
         <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
