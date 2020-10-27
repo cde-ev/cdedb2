@@ -30,8 +30,7 @@
         {{ util.form_input_text(name="nr", label=gettext("Number")) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                    info=util.markdownhint) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("cde/show_past_course")) }}
     </form>
 {% endblock %}

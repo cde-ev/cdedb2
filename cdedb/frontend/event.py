@@ -2709,8 +2709,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         spec = self.make_registration_query_spec(event)
 
-        with tempfile.TemporaryDirectory() as tmp_dir_name:
-            tmp_dir = pathlib.Path(tmp_dir_name)
+        with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
 
@@ -2727,7 +2726,7 @@ class EventFrontend(AbstractUserFrontend):
                     query_res = self.eventproxy.submit_general_query(rs, query, event_id)
                     course_key = f"track{track_id}.course_id"
                     # we have to replace the course id with the course number
-                    result = (
+                    result = tuple(
                         {
                             k if k != course_key else 'course':
                                 v if k != course_key else courses[v]['nr']
@@ -2745,7 +2744,7 @@ class EventFrontend(AbstractUserFrontend):
 
             # create a zip archive of all lists
             zipname = f"{rs.ambience['event']['shortname']}_dokuteam_participant_list"
-            zippath = shutil.make_archive(str(tmp_dir / zipname), 'zip',
+            zippath = shutil.make_archive(str(pathlib.Path(tmp_dir, zipname)), 'zip',
                                           base_dir=work_dir, root_dir=tmp_dir)
 
             return self.send_file(rs, path=zippath, inline=False,
@@ -3284,7 +3283,7 @@ class EventFrontend(AbstractUserFrontend):
                 # Check for unfilled mandatory course choices
                 rs.extend_validation_errors(
                     ("course_choice{}_{}".format(track_id, i),
-                     ValueError(n_("You must chose at least %(min_choices)s"
+                     ValueError(n_("You must choose at least %(min_choices)s"
                                    " courses."),
                                 {'min_choices': track['min_choices']}))
                     for i in range(track['min_choices'])

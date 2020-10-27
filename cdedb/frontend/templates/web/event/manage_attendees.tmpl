@@ -20,7 +20,7 @@
         {% trans course=ambience['course']['shortname'] %}
             Attendees of {{ course }}
         {% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}

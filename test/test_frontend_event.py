@@ -1239,7 +1239,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertTitle("Anmeldung für Große Testakademie 2222")
         self.assertValidationError(
-            'course_choice3_1', "Du kannst diesen Kurs nicht als 1. und 2 Wahl wählen.")
+            'course_choice3_1', "Du kannst diesen Kurs nicht als 1. und 2. Wahl wählen.")
         f['course_choice3_1'] = 4
         # Now, we did it right.
         self.submit(f)
@@ -3600,6 +3600,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
         self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
+        self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1

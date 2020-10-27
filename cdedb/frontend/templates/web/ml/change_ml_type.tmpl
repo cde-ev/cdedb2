@@ -21,7 +21,7 @@
     <h1 class="title">
         {% trans %}Change Type{% endtrans %}
         <small>
-            {{- util.make_icon('envelope', arialabel="Mailingliste") }} {{ ambience['mailinglist']['title'] -}}
+            {{- util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] -}}
         </small>
     </h1>
 {% endblock %}

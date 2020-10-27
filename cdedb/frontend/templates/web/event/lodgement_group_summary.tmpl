@@ -23,7 +23,7 @@
 
 
 {% block content %}
-    {% set columns =  [dict(name="title", label="Name", func=util.input_text)] %}
+    {% set columns =  [dict(name="title", label=gettext("Name"), func=util.input_text)] %}
 
     <form action="{{ cdedblink('event/lodgement_group_summary') }}" method="POST" id="lodgementgroupsummaryform">
         {{ util.anti_csrf_token('event/lodgement_group_summary') }}

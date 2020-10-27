@@ -70,8 +70,12 @@
 
 {% block adminviews %}
     {% if ambience['assembly'] %}
-        {{ util.admin_views_toggle(((gettext("Assembly Administration"), ["assembly_mgmt"], None),
-                                    (gettext("Presider Controls"), ["assembly_presider"], None))) }}
+        {% if user.persona_id in ambience['assembly']['presiders'] %}
+            {{ util.admin_views_toggle(((gettext("Assembly Administration"), ["assembly_mgmt"], None),)) }}
+        {% else %}
+            {{ util.admin_views_toggle(((gettext("Assembly Administration"), ["assembly_mgmt"], None),
+                                        (gettext("Presider Controls"), ["assembly_presider"], None))) }}
+        {% endif %}
     {% else %}
         {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
                                     (gettext("Assembly Administration"), ["assembly_mgmt"], None))) }}

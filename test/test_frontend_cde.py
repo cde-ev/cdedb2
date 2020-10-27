@@ -2001,13 +2001,13 @@ class TestCdEFrontend(FrontendTest):
         f['title_-1'] = "East India Company advanced"
         f['shortname_-1'] = "EIC"
         self.submit(f)
-        logs.append({1001: const.PastEventLogCodes.institution_created})
+        logs.append((1001, const.PastEventLogCodes.institution_created))
 
         # change institution
         f = self.response.forms['institutionsummaryform']
         f['title_1001'] = "East India Company"
         self.submit(f)
-        logs.append({1002: const.PastEventLogCodes.institution_changed})
+        logs.append((1002, const.PastEventLogCodes.institution_changed))
 
         # add new past event
         self.traverse({'description': 'Verg. Veranstaltungen'},
@@ -2020,7 +2020,7 @@ class TestCdEFrontend(FrontendTest):
         f['notes'] = "<https://piraten:schiff@ahoi.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
-        logs.append({1003: const.PastEventLogCodes.event_created})
+        logs.append((1003, const.PastEventLogCodes.event_created))
 
         # add new course
         self.traverse({'description': 'Kurs hinzufügen'})
@@ -2029,50 +2029,50 @@ class TestCdEFrontend(FrontendTest):
         f['title'] = "...raten!"
         f['description'] = "Wir können nicht im Kreis fahren."
         self.submit(f)
-        logs.append({1004: const.PastEventLogCodes.course_created})
+        logs.append((1004, const.PastEventLogCodes.course_created))
 
         # change course
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changecourseform']
         f['title'] = "raten"
         self.submit(f)
-        logs.append({1005: const.PastEventLogCodes.course_changed})
+        logs.append((1005, const.PastEventLogCodes.course_changed))
 
         # add participant (to course)
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8,DB-1-9"
         self.submit(f)
-        logs.append({1006: const.PastEventLogCodes.participant_added})
-        logs.append({1007: const.PastEventLogCodes.participant_added})
+        logs.append((1006, const.PastEventLogCodes.participant_added))
+        logs.append((1007, const.PastEventLogCodes.participant_added))
 
         # delete participant (from course)
         f = self.response.forms['removeparticipantform7']
         self.submit(f)
-        logs.append({1008: const.PastEventLogCodes.participant_removed})
+        logs.append((1008, const.PastEventLogCodes.participant_removed))
 
         # delete course
         f = self.response.forms['deletecourseform']
         f['ack_delete'].checked = True
         self.submit(f)
-        logs.append({1009: const.PastEventLogCodes.course_deleted})
+        logs.append((1009, const.PastEventLogCodes.course_deleted))
 
         # add participant (to past event)
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8"
         self.submit(f)
-        logs.append({1010: const.PastEventLogCodes.participant_added})
+        logs.append((1010, const.PastEventLogCodes.participant_added))
 
         # delete participant (from past event)
         f = self.response.forms['removeparticipantform7']
         self.submit(f)
-        logs.append({1011: const.PastEventLogCodes.participant_removed})
+        logs.append((1011, const.PastEventLogCodes.participant_removed))
 
         # change past event
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changeeventform']
         f['description'] = "Leider ins Wasser gefallen..."
         self.submit(f)
-        logs.append({1012: const.PastEventLogCodes.event_changed})
+        logs.append((1012, const.PastEventLogCodes.event_changed))
 
         # delete past event
         # this deletes an other event, because deletion includes log codes
@@ -2081,14 +2081,14 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['deletepasteventform']
         f['ack_delete'].checked = True
         self.submit(f)
-        logs.append({1013: const.PastEventLogCodes.event_deleted})
+        logs.append((1013, const.PastEventLogCodes.event_deleted))
 
         # delete institution
         self.traverse({'description': 'Organisationen verwalten'})
         f = self.response.forms['institutionsummaryform']
         f['delete_1001'].checked = True
         self.submit(f)
-        logs.append({1014: const.PastEventLogCodes.institution_deleted})
+        logs.append((1014, const.PastEventLogCodes.institution_deleted))
 
         # Now check it
         self.traverse({'description': 'Verg.-Veranstaltungen-Log'})
@@ -2104,56 +2104,56 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'}, link)
         f = self.response.forms['billform']
         self.submit(f)
-        logs.append({1001: const.CdeLogCodes.semester_bill})
+        logs.append((1001, const.CdeLogCodes.semester_bill))
 
         # Remove Inactive Members
         self.reload_and_check_form('ejectform', link)
         f = self.response.forms['ejectform']
         self.submit(f)
-        logs.append({1002: const.CdeLogCodes.semester_ejection})
+        logs.append((1002, const.CdeLogCodes.semester_ejection))
 
         # Update Balances
         self.reload_and_check_form('balanceform', link)
         f = self.response.forms['balanceform']
         self.submit(f)
-        logs.append({1003: const.CdeLogCodes.semester_balance_update})
+        logs.append((1003, const.CdeLogCodes.semester_balance_update))
 
         # Next Semester
         self.reload_and_check_form('proceedform', link)
         f = self.response.forms['proceedform']
         self.submit(f)
-        logs.append({1004: const.CdeLogCodes.semester_advance})
+        logs.append((1004, const.CdeLogCodes.semester_advance))
 
         # Payment Request with addresscheck
         self.reload_and_check_form('billform', link)
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
-        logs.append({1005: const.CdeLogCodes.semester_bill_with_addresscheck})
+        logs.append((1005, const.CdeLogCodes.semester_bill_with_addresscheck))
 
         # exPuls with addresscheck
         self.reload_and_check_form('addresscheckform', link)
         f = self.response.forms['addresscheckform']
         self.submit(f)
-        logs.append({1006: const.CdeLogCodes.expuls_addresscheck})
+        logs.append((1006, const.CdeLogCodes.expuls_addresscheck))
 
         # Next exPuls
         self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append({1007: const.CdeLogCodes.expuls_advance})
+        logs.append((1007, const.CdeLogCodes.expuls_advance))
 
         # exPuls without addresscheck
         self.reload_and_check_form('noaddresscheckform', link)
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
-        logs.append({1008: const.CdeLogCodes.expuls_addresscheck_skipped})
+        logs.append((1008, const.CdeLogCodes.expuls_addresscheck_skipped))
 
         # Next exPuls
         self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append({1009: const.CdeLogCodes.expuls_advance})
+        logs.append((1009, const.CdeLogCodes.expuls_advance))
 
         # Now check it
         self.traverse({'description': "CdE-Log"})
@@ -2168,6 +2168,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/finances'})
         self.assertTitle("Finanz-Log [1–2 von 2]")
+        self.assertNonPresence("LogCodes")
 
     @as_users("vera")
     def test_changelog_meta(self, user):

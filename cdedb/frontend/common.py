@@ -55,7 +55,7 @@ from typing import (
     ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO, ItemsView,
     Type
 )
-from typing_extensions import Protocol
+from typing_extensions import Protocol, Literal
 
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
@@ -1904,6 +1904,16 @@ def staticurl(path: str, version: str = "") -> str:
     return ret
 
 
+@overload
+def staticlink(rs: RequestState, label: str, path: str, version: str = "",
+               html: Literal[True] = True) -> jinja2.Markup: ...
+
+
+@overload
+def staticlink(rs: RequestState, label: str, path: str, version: str = "",
+               html: Literal[False] = False) -> str: ...
+
+
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
                html: bool = True) -> Union[jinja2.Markup, str]:
     """Create a link to a static resource.
@@ -1914,11 +1924,10 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
     """
     link: Union[jinja2.Markup, str]
     if html:
-        link = safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
+        return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
         host = rs.urls.get_host("")
-        link = f"https://{host}{staticurl(path, version=version)}"
-    return link
+        return f"https://{host}{staticurl(path, version=version)}"
 
 
 def docurl(topic: str, anchor: str = "") -> str:
@@ -1927,6 +1936,16 @@ def docurl(topic: str, anchor: str = "") -> str:
     if anchor:
         ret += "#" + anchor
     return ret
+
+
+@overload
+def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
+            html: Literal[True] = True) -> jinja2.Markup: ...
+
+
+@overload
+def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
+            html: Literal[False] = False) -> str: ...
 
 
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
@@ -1938,11 +1957,10 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
     """
     link: Union[jinja2.Markup, str]
     if html:
-        link = safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
+        return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
         host = rs.urls.get_host("")
-        link = f"https://{host}{docurl(topic, anchor=anchor)}"
-    return link
+        return f"https://{host}{docurl(topic, anchor=anchor)}"
 
 
 # noinspection PyPep8Naming
