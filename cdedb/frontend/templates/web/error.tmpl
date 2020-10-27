@@ -7,16 +7,16 @@
         {{ util.make_icon('times-circle') }}
         {% if error.code == 403 %}
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
-            {{ error.description }}
+            {{ gettext(error.description) }}
         {% elif error.code == 404 %}
             {% trans %}Couldn’t find the requested page.{% endtrans %}
-            {% if error.description %}({{ error.description }}){% endif %}
+            {% if error.description %}({{ gettext(error.description) }}){% endif %}
         {% elif error.code == 405 %}
             {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
         {% elif error.code == 500 %}
             {% trans %}An internal error occured:{% endtrans %}
             {% if error.description %}
-               {{ error.description.split(')')[0] }})
+               {{ gettext(error.description.split(')')[0]) }})
             {% endif %}
         {% else %}
             {% trans %}An unknown error occurred.{% endtrans %}
