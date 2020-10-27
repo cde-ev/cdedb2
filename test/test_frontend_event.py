@@ -976,7 +976,7 @@ etc;anything else""", f['entries_2'].value)
         f['association_-1'] = const.FieldAssociations.registration.value
         f['kind_-1'] = const.FieldDatatypes.str.value
         self.submit(f)
-        self.get("/event/event/1/field/setselect")
+        self.get("/event/event/1/field/setselect?kind=1")
         f = self.response.forms['selectfieldform']
         f['field_id'] = 1001
         self.submit(f)
@@ -2395,8 +2395,10 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("garcia")
     def test_field_set(self, user):
-        self.get('/event/event/1/field/setselect?reg_ids=1,2')
+        # first for registration-associated fields
+        self.get('/event/event/1/field/setselect?kind=1&ids=1,2')
         self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
+        self.assertNonPresence("Validierung fehlgeschlagen.")
         self.assertNonPresence("Inga")
         f = self.response.forms['selectfieldform']
         f['field_id'] = 2
@@ -2437,6 +2439,41 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Datenfeld lodge setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
         self.assertEqual("Test\nmit\n\nLeerzeilen", f['input4'].value)
+
+        # now, we perform some basic checks for course-associated fields
+        self.traverse({'href': '/event/event/1/course/stats'},
+                      {'description': 'Kurssuche'},
+                      {'description': 'Datenfeld setzen'})
+        self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
+        self.assertPresence("Zu ändernde Kurse")
+        self.assertPresence("α Heldentum")
+        f = self.response.forms['selectfieldform']
+        f['field_id'] = 5
+        self.submit(f)
+        self.assertTitle("Datenfeld room setzen (Große Testakademie 2222)")
+        f = self.response.forms['fieldform']
+        self.assertEqual("Nirwana", f['input5'].value)
+        f['input5'] = "Ganz wo anders!"
+        self.submit(f)
+        self.assertNonPresence("Nirwana")
+        self.assertPresence("Ganz wo anders!")
+
+        # now, we perform some basic checks for lodgement-associated fields
+        self.traverse({'href': '/event/event/1/lodgement/overview'},
+                      {'description': 'Unterkunftssuche'},
+                      {'description': 'Datenfeld setzen'})
+        self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
+        self.assertPresence("Zu ändernde Unterkünfte")
+        self.assertPresence("Einzelzelle, Haupthaus")
+        f = self.response.forms['selectfieldform']
+        f['field_id'] = 6
+        self.submit(f)
+        self.assertTitle("Datenfeld contamination setzen (Große Testakademie 2222)")
+        f = self.response.forms['fieldform']
+        self.assertEqual("high", f['input1'].value)
+        f['input1'] = "medium"
+        self.submit(f)
+        self.assertPresence("elevated level of radiation ")
 
     @as_users("garcia")
     def test_stats(self, user):

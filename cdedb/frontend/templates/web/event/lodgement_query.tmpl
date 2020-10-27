@@ -18,7 +18,7 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements"), icon="home") }}
+{{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
 {{ util.breadcrumb_link(cdedblink("event/lodgement_query"), gettext("Lodgement Query"), active=True) }}
 {% endblock %}
 {% block content %}
@@ -27,6 +27,10 @@
             <div class="p button-par">
                 {{ util.href(cdedblink("event/create_lodgement"), gettext("Create Lodgement"),
                              readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
+            {% if ambience['event']['fields'] %}
+                {{ util.href(cdedblink("event/field_set_select", {'kind': enums['FieldAssociations'].lodgement.value}), gettext("Set Field"),
+                              readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
+            {% endif %}
             </div>
         </div>
         <div class="col-md-8">
@@ -39,6 +43,11 @@
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
+        <!-- Additional buttons for the course_query -->
+
+        <div class="p pull-right">
+            {{ generic.query_button_field_set(enums['FieldAssociations'].lodgement) }}
+        </div>
 
         {{ generic.display_query_result(result, query, titles, choices) }}
 
