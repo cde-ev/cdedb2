@@ -1,7 +1,7 @@
 Tooling
 =======
 
-The development environment is described in :doc:`Development_Setup`,
+The development environment is described in :doc:`Development_Environment`,
 however the CdEDB also has several specialised utility scripts, which can be
 found in the ``bin`` subdirectory.
 
