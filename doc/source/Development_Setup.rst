@@ -1,5 +1,3 @@
-.. _section-using-the-vm-image:
-
 Using the VM image
 ==================
 
