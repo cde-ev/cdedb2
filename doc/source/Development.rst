@@ -8,6 +8,7 @@ Development
    Development_Environment
    Development_FS-Overview
    Development_Workflows
+   Development_Tooling
    Development_Principles
    Development_Typical-Request
 
@@ -72,3 +73,4 @@ it right away.
 * The file ``/PRODUCTIONVM`` is used to mark the live server instance. There
   are some sanity checks to prevent a big catastrophe. Similarily
   ``/OFFLINEVM`` is used for offline deployments at events.
+
