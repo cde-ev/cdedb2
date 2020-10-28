@@ -4061,7 +4061,7 @@ class EventBackend(AbstractBackend):
                              'is_cde_admin', 'is_finance_admin', 'is_cde_realm',
                              'is_core_admin', 'is_event_admin',
                              'is_event_realm', 'is_ml_admin', 'is_ml_realm',
-                             'is_searchable', 'is_cdelokal_admin'):
+                             'is_searchable', 'is_cdelokal_admin', 'is_purged'):
                     del persona[attr]
                 registration['persona'] = persona
             return ret

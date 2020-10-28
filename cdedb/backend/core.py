@@ -620,9 +620,7 @@ class CoreBackend(AbstractBackend):
                       'is_assembly_realm'}
         if (set(data) & realm_keys
                 and ("core_admin" not in rs.user.roles
-                     or "realms" not in allow_specials)):
-            if (any(data[key] for key in realm_keys)
-                    or "archive" not in allow_specials):
+                     or not {"realms", "purge"} & set(allow_specials))):
                 raise PrivilegeError(n_("Realm modification prevented."))
         if (set(data) & ADMIN_KEYS
                 and ("meta_admin" not in rs.user.roles
@@ -1192,6 +1190,7 @@ class CoreBackend(AbstractBackend):
                 # 'is_member' already adjusted
                 'is_searchable': False,
                 # 'is_archived' will be done later
+                # 'is_purged' not relevant here
                 # 'display_name' kept for later recognition
                 # 'given_names' kept for later recognition
                 # 'family_name' kept for later recognition
@@ -1398,9 +1397,14 @@ class CoreBackend(AbstractBackend):
                 'display_name': "N.",
                 'given_names': "N.",
                 'family_name': "N.",
-                'birthday': None,
+                'birthday': "-Infinity",
                 'birth_name': None,
                 'gender': None,
+                'is_cde_realm': True,
+                'is_event_realm': True,
+                'is_ml_realm': True,
+                'is_assembly_realm': True,
+                'is_purged': True,
             }
             ret = self.set_persona(
                 rs, update, generation=None, may_wait=False,
@@ -1697,6 +1701,7 @@ class CoreBackend(AbstractBackend):
             'is_event_admin': False,
             'is_ml_admin': False,
             'is_cdelokal_admin': False,
+            'is_purged': False,
         })
         # Check if admin has rights to create the user in its realms
         if not any(admin <= rs.user.roles
