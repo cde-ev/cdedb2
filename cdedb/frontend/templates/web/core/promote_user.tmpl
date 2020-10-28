@@ -92,8 +92,7 @@
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
                     {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trialmembership")) }}
                     {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                            info=gettext("Supports %(infolink)s.")|format(
-                            infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                                info=util.markdownhint) }}
                 {% endif %}
                 {{ util.form_input_submit(value=gettext("Add Realm"),
                         cancellink=show_user_link(user, ambience['persona']['id'])) }}

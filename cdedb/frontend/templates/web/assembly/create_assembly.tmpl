@@ -17,17 +17,14 @@
         {{ util.anti_csrf_token('assembly/create_assembly') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                    info=util.markdownhint) }}
         {{ util.form_input_text(name="signup_end", label=gettext("Application Deadline"), placeholder="YYYY-MM-DD hh:ii",
                                 type="datetime-local") }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
         {{ util.form_input_text(name="presider_ids", label=gettext("Presiders"), anid="input-presider_ids") }}}
         <script nonce="{{ csp_nonce }}">
             $('#input-presider_ids').cdedbSearchPerson(
-                '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_admin_user&phrase=%s'|s) }}',
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_user&phrase=%s'|s) }}',
                 [], false, true, "{{ gettext("ID, name, email") }}"
             );
         </script>

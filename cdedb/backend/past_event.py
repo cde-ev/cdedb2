@@ -480,7 +480,7 @@ class PastEventBackend(AbstractBackend):
         """Add a participant to a concluded event.
 
         A persona can participate multiple times in a single event. For
-        example if she took several courses in different parts of the event.
+        example if they took several courses in different parts of the event.
 
         :param pcourse_id: If None the persona participated in the event, but
           not in a course (this should be common for orgas).
@@ -653,7 +653,7 @@ class PastEventBackend(AbstractBackend):
             pevent['shortname'] += " ({})".format(part['shortname'])
         del pevent['id']
         new_id = self.create_past_event(rs, pevent)
-        course_ids = self.event.list_db_courses(rs, event['id'])
+        course_ids = self.event.list_courses(rs, event['id'])
         courses = self.event.get_courses(rs, list(course_ids.keys()))
         course_map = {}
         for course_id, course in courses.items():

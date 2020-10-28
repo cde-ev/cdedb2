@@ -32,7 +32,7 @@ from cdedb.common import (
     ArchiveError, extract_realms, implied_realms, encode_parameter,
     decode_parameter, GENESIS_REALM_OVERRIDE, xsorted, Role, Realm, Error,
     CdEDBObject, CdEDBObjectMap, CdEDBLog, DefaultReturnCode, RequestState,
-    DeletionBlockers, get_hash
+    DeletionBlockers, get_hash, ADMIN_KEYS
 )
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -620,19 +620,12 @@ class CoreBackend(AbstractBackend):
                       'is_assembly_realm'}
         if (set(data) & realm_keys
                 and ("core_admin" not in rs.user.roles
-                     or "realms" not in allow_specials)):
-            if (any(data[key] for key in realm_keys)
-                    or "archive" not in allow_specials):
+                     or not {"realms", "purge"} & set(allow_specials))):
                 raise PrivilegeError(n_("Realm modification prevented."))
-        admin_keys = {'is_cde_admin', 'is_finance_admin', 'is_event_admin',
-                      'is_ml_admin', 'is_assembly_admin', 'is_core_admin',
-                      'is_meta_admin', 'is_cdelokal_admin'}
-        if (set(data) & admin_keys
+        if (set(data) & ADMIN_KEYS
                 and ("meta_admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
-            # Allow unsetting adminbits during archival.
-            if (any(data[key] for key in admin_keys)
-                    or "archive" not in allow_specials):
+            if any(data[key] for key in ADMIN_KEYS):
                 raise PrivilegeError(
                     n_("Admin privilege modification prevented."))
         if ("is_member" in data
@@ -661,7 +654,7 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError(n_("Own activation prevented."))
 
         # check for permission to edit
-        allow_meta_admin = data.keys() <= admin_keys | {"id"}
+        allow_meta_admin = data.keys() <= ADMIN_KEYS | {"id"}
         if (rs.user.persona_id != data['id']
                 and not self.is_relative_admin(rs, data['id'],
                                                allow_meta_admin)):
@@ -896,11 +889,7 @@ class CoreBackend(AbstractBackend):
                 data = {
                     "id": case["persona_id"]
                 }
-                admin_keys = {"is_meta_admin", "is_core_admin", "is_cde_admin",
-                              "is_finance_admin", "is_event_admin",
-                              "is_ml_admin", "is_assembly_admin",
-                              "is_cdelokal_admin"}
-                for key in admin_keys:
+                for key in ADMIN_KEYS:
                     if case[key] is not None:
                         data[key] = case[key]
 
@@ -912,8 +901,8 @@ class CoreBackend(AbstractBackend):
                     change_note=note, allow_specials=("admins",))
 
                 # Force password reset if non-admin has gained admin privileges.
-                if (not any(old[key] for key in admin_keys)
-                        and any(data.get(key) for key in admin_keys)):
+                if (not any(old[key] for key in ADMIN_KEYS)
+                        and any(data.get(key) for key in ADMIN_KEYS)):
                     ret *= self.invalidate_password(rs, case["persona_id"])
                     ret *= -1
 
@@ -1152,10 +1141,10 @@ class CoreBackend(AbstractBackend):
             if persona['is_archived']:
                 return 0
 
-            # Disallow archival of meta admins to ensure there always remain
-            # atleast two.
-            if persona['is_meta_admin']:
-                raise ArchiveError(n_("Cannot archive meta admins."))
+            # Disallow archival of admins. Admin privileges should be unset
+            # by two meta admins before.
+            if any(persona[key] for key in ADMIN_KEYS):
+                raise ArchiveError(n_("Cannot archive admins."))
 
             #
             # 2. Remove complicated attributes (membership, foto and password)
@@ -1201,6 +1190,7 @@ class CoreBackend(AbstractBackend):
                 # 'is_member' already adjusted
                 'is_searchable': False,
                 # 'is_archived' will be done later
+                # 'is_purged' not relevant here
                 # 'display_name' kept for later recognition
                 # 'given_names' kept for later recognition
                 # 'family_name' kept for later recognition
@@ -1231,6 +1221,7 @@ class CoreBackend(AbstractBackend):
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,
+                'paper_expuls': True,
                 # 'foto' already adjusted
                 # 'fulltext' is set automatically
             }
@@ -1406,9 +1397,14 @@ class CoreBackend(AbstractBackend):
                 'display_name': "N.",
                 'given_names': "N.",
                 'family_name': "N.",
-                'birthday': None,
+                'birthday': "-Infinity",
                 'birth_name': None,
                 'gender': None,
+                'is_cde_realm': True,
+                'is_event_realm': True,
+                'is_ml_realm': True,
+                'is_assembly_realm': True,
+                'is_purged': True,
             }
             ret = self.set_persona(
                 rs, update, generation=None, may_wait=False,
@@ -1705,6 +1701,7 @@ class CoreBackend(AbstractBackend):
             'is_event_admin': False,
             'is_ml_admin': False,
             'is_cdelokal_admin': False,
+            'is_purged': False,
         })
         # Check if admin has rights to create the user in its realms
         if not any(admin <= rs.user.roles
@@ -1822,14 +1819,19 @@ class CoreBackend(AbstractBackend):
         return sessionkey
 
     @access("persona")
-    def logout(self, rs: RequestState, all_sessions: bool = False
-               ) -> DefaultReturnCode:
-        """Invalidate the current session."""
+    def logout(self, rs: RequestState, this_session: bool = True,
+               other_sessions: bool = False) -> DefaultReturnCode:
+        """Invalidate some sessions, depending on the parameters."""
         query = "UPDATE core.sessions SET is_active = False, atime = now()"
         constraints = ["persona_id = %s", "is_active = True"]
         params: List[Any] = [rs.user.persona_id]
-        if not all_sessions:
+        if not this_session and not other_sessions:
+            return 0
+        elif not other_sessions:
             constraints.append("sessionkey = %s")
+            params.append(rs.sessionkey)
+        elif not this_session:
+            constraints.append("sessionkey != %s")
             params.append(rs.sessionkey)
         query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)
@@ -1893,7 +1895,7 @@ class CoreBackend(AbstractBackend):
     def verify_personas(self, rs: RequestState, ids: Collection[int],
                         required_roles: Collection[Role] = None,
                         introspection_only: bool = True) -> bool:
-        """Check wether certain ids map to actual (active) personas.
+        """Check whether certain ids map to actual (active) personas.
 
         Note that this will return True for an empty set of ids.
 
@@ -1926,6 +1928,18 @@ class CoreBackend(AbstractBackend):
             with open(path, 'wb') as f:
                 f.write(attachment)
         return myhash
+
+    @access("anonymous")
+    def genesis_check_attachment(self, rs: RequestState, attachment_hash: str
+                                 ) -> bool:
+        """Check whether a genesis attachment with the given hash is available.
+
+        Contrary to `genesis_get_attachment` this does not retrieve it's
+        content.
+        """
+        attachment_hash = affirm("str", attachment_hash)
+        path = self.genesis_attachment_dir / attachment_hash
+        return path.is_file()
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")

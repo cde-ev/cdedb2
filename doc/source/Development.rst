@@ -1,20 +1,20 @@
 Development
 ===========
 
-Here you can find every information regarding development of the DBv2.
-Do you want to participate in active development? Please contact us at
-cdedb ät lists.cde-ev.de.
-
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
-   Development_Setup
+   Development_Environment
    Development_FS-Overview
    Development_Workflows
    Development_Tooling
    Development_Principles
    Development_Typical-Request
 
+Here you can find every information regarding development of the DBv2.
+Do you want to participate in active development? Please contact us at
+cdedb ät lists.cde-ev.de.
 
 .. todo:: split this up and move it to the right places
 

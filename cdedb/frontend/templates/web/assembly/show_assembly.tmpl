@@ -14,14 +14,6 @@
             active=True) }}
 {% endblock %}
 {% block content %}
-    <div class="p">
-        {% if ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
-                                                     or ambience['assembly']['id'] in user.presider) %}
-            {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
-                         icon="cog") }}
-        {% endif %}
-    </div>
-
     <div id="description">
         {{ ambience['assembly']['description']|md }}
     </div>
@@ -55,7 +47,7 @@
         {% endif %}
     </dl>
 
-    {% if "assembly_mgmt" in user.admin_views %}
+    {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['is_active'] %}
         <div class="row">
         <div class="col-md-6" id="manage-presiders">
             {% call util.bootstrap_panel(title=gettext("Presiders"), icon='user-friends') %}
@@ -82,8 +74,7 @@
                                            anid='input-add-presiders', arialabel=gettext("IDs of the new Presiders.")) }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-add-presiders').cdedbSearchPerson(
-                                '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_admin_user&phrase=%s&aux='|s) +
-                                    (ambience['assembly']['id']|string|e) }}',
+                                '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_user&phrase=%s'|s) }}',
                                 {{ ambience['assembly']['presiders']|list|json|s }}, false, true,
                                 "{{ gettext("ID, name, email") }}"
                             );
@@ -175,9 +166,10 @@
                         <div class="col-sm-8">
                             <p class="text-muted">
                                 {% trans %}
-                                    Archives the assembly. The configuration cannot be changed after this.
+                                    Archives the assembly. The configuration and attachments cannot be changed after this.
                                     The private keys used to sign the votes will be deleted from the database.
-                                    This should typically be done shortly after all ballots have been conlcuded.
+                                    This should typically be done shortly after all ballots have been concluded and all
+                                    files regarding the assembly have been uploaded correctly.
                                 {% endtrans %}
                             </p>
                         </div>

@@ -38,7 +38,7 @@ class TestEventBackend(BackendTest):
     def test_entity_event(self, user):
         ## need administrator to create event
         self.login(USER_DICT["annika"])
-        old_events = self.event.list_db_events(self.key)
+        old_events = self.event.list_events(self.key)
         data = {
             'title': "New Link Academy",
             'institution': 1,
@@ -291,7 +291,7 @@ class TestEventBackend(BackendTest):
                          self.event.get_event(self.key, new_id))
 
         self.assertNotIn(new_id, old_events)
-        new_events = self.event.list_db_events(self.key)
+        new_events = self.event.list_events(self.key)
         self.assertIn(new_id, new_events)
 
         new_course = {
@@ -601,7 +601,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_entity_course(self, user):
         event_id = 1
-        old_courses = self.event.list_db_courses(self.key, event_id)
+        old_courses = self.event.list_courses(self.key, event_id)
         data = {
             'event_id': event_id,
             'title': "Topos theory for the kindergarden",
@@ -631,7 +631,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(data,
                          self.event.get_course(self.key, new_id))
         self.assertNotIn(new_id, old_courses)
-        new_courses = self.event.list_db_courses(self.key, event_id)
+        new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
         data['active_segments'] = {1}
         self.event.set_course(self.key, {
@@ -767,7 +767,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_visible_events(self, user):
         expectation = {1: 'Große Testakademie 2222'}
-        self.assertEqual(expectation, self.event.list_db_events(
+        self.assertEqual(expectation, self.event.list_events(
             self.key, visible=True, archived=False))
 
     @as_users("annika", "garcia")

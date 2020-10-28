@@ -200,7 +200,7 @@
                                 <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert">
                                     {{ util.make_icon( icontypes[ntype] ) }}
                                     <strong>{{ messagetypes[ntype]|s }}</strong>
-                                    <span class="notificationMessage">{{ gettext(message)|format(**params) }}</span>
+                                    <span class="notificationMessage">{{ gettext(message)|e|format(**params) }}</span>
                                 </div>
                             {% endfor %}
                         {% endwith %}

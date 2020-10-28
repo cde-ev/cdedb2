@@ -379,7 +379,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence(errormsg, div="addmoderatorform")
         # Hades is archived.
-        f['moderators'] = "DB-8-6"
+        f['moderators'] = USER_DICT["hades"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertPresence(errormsg, div="addmoderatorform")
 
@@ -656,8 +656,8 @@ class TestMlFrontend(FrontendTest):
         # Check that no lists with the same address can be made
         f['local_part'] = "platin"
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Uneindeutige Mailadresse")
+        self.assertValidationError("local_part", "Uneindeutige Mailadresse")
+        self.assertValidationError("domain", "Uneindeutige Mailadresse")
 
         f['local_part'] = "munkelwand"
         self.submit(f)
@@ -706,12 +706,15 @@ class TestMlFrontend(FrontendTest):
                 f['assembly_id'] = assembly_id
                 # no ml type should allow event *and* assembly fields to be set
                 self.submit(f, check_notification=False)
-                self.assertIn("alert alert-danger", self.response.text)
                 if ml_type not in event_types:
                     self.assertValidationError('event_id', "Muss leer sein.")
-                    self.assertPresence("Muss eine leere Liste sein.")
+                    self.assertValidationError("registration_stati",
+                                               "Muss eine leere Liste sein.",
+                                               index=0)
                 elif ml_type == const.MailinglistTypes.event_orga:
-                    self.assertPresence("Muss eine leere Liste sein.")
+                    self.assertValidationError("registration_stati",
+                                               "Muss eine leere Liste sein.",
+                                               index=0)
                 else:
                     self.assertNonPresence("Muss eine leere Liste sein.")
                 if ml_type not in assembly_types:
@@ -771,7 +774,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'},)
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['subscribe-mod-form']
-        self.submit(f, check_notification=False)
+        self.submit(f)
         self.logout()
         self.login(USER_DICT['berta'])
         self.traverse({'href': '/ml/$'},
@@ -887,7 +890,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'}, )
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['subscribe-mod-form']
-        self.submit(f, check_notification=False)
+        self.submit(f)
         self.logout()
         self.login(user)
         self.traverse({'href': '/ml/$'},
@@ -898,51 +901,51 @@ class TestMlFrontend(FrontendTest):
         # testing: try to add a subscription request
         # as normal user
         f = self.response.forms['addsubscriberform']
-        f['subscriber_ids'] = "DB-9-4"
+        f['subscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertIn(
+        self.assertPresence(
             "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
-            self.response.text)
+            div="notifications")
         # as mod subscriber
         self.traverse({'href': '/ml/mailinglist/4/management/advanced'}, )
         f = self.response.forms['addmodsubscriberform']
-        f['modsubscriber_ids'] = "DB-9-4"
+        f['modsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertIn(
+        self.assertPresence(
             "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
-            self.response.text)
+            div="notifications")
         # as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
-        f['modunsubscriber_ids'] = "DB-9-4"
+        f['modunsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertIn(
+        self.assertPresence(
             "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
-            self.response.text)
+            div="notifications")
 
         # testing: mod subscribe and unsubscribe
         # add already subscribed user as mod subscribe
         f = self.response.forms['addmodsubscriberform']
-        f['modsubscriber_ids'] = "DB-1-9"
+        f['modsubscriber_ids'] = USER_DICT["anton"]["DB-ID"]
         self.submit(f, check_notification=True)
         # add already subscribed user as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
-        f['modunsubscriber_ids'] = "DB-10-8"
+        f['modunsubscriber_ids'] = USER_DICT["janis"]["DB-ID"]
         self.submit(f, check_notification=True)
         # try to remove mod subscribe with normal subscriber form
         self.traverse({'href': '/ml/mailinglist/4/management'}, )
         f = self.response.forms['removesubscriberform1']
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertIn(
+        self.assertPresence(
             "Der Nutzer kann nicht entfernt werden, da er fixiert ist. "
             "Dies kannst du unter Erweiterte Verwaltung ändern.",
-            self.response.text)
+            div="notifications")
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
-        f['subscriber_ids'] = "DB-7-8"
+        f['subscriber_ids'] = USER_DICT["garcia"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertPresence("Der Nutzer wurde geblockt. "
@@ -1215,39 +1218,38 @@ class TestMlFrontend(FrontendTest):
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Sozialistischer Kampfbrief"},
                       {"description": "Erweiterte Verwaltung"})
-        self.assertPresence("Du hast nur eingeschränkte Moderator Rechte",
+        self.assertPresence("Du hast keine priviligierter Moderator Rechte",
                             div="notifications")
         # they can not add ...
         f = self.response.forms['addmodsubscriberform']
-        f['modsubscriber_ids'] = "DB-1-9"
+        f['modsubscriber_ids'] = USER_DICT["anton"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertPresence("Darf Abonnements nicht ändern.", div="notifications")
         # ... nor remove subscriptions.
         f = self.response.forms['removemodsubscriberform100']
         self.submit(f, check_notification=False)
-        self.assertPresence("Darf Abonnements nicht ändern.",
-                            div="notifications")
+        self.assertPresence("Darf Abonnements nicht ändern.", div="notifications")
 
     @as_users("inga")
     def test_cdelokal_admin(self, user):
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Hogwarts"})
         admin_note = self.sample_data['ml.mailinglists'][65]['notes']
-        self.assertPresence(admin_note, "adminnotes")
+        self.assertPresence(admin_note, div="adminnotes")
         self.traverse({"description": "Verwaltung"})
         f = self.response.forms['addmoderatorform']
         f['moderators'] = user['DB-ID']
         self.submit(f)
-        self.assertPresence(user['given_names'], "moderator_list")
+        self.assertPresence(user['given_names'], div="moderator_list")
         f = self.response.forms[f"removemoderatorform{user['id']}"]
         self.submit(f)
-        self.assertNonPresence(user['given_names'], "moderator_list")
+        self.assertNonPresence(user['given_names'], div="moderator_list")
         self.traverse({"description": "Konfiguration"})
         f = self.response.forms['changelistform']
         new_notes = "Free Butterbeer for everyone!"
         f['notes'] = new_notes
         self.submit(f)
-        self.assertPresence(new_notes, "adminnotes")
+        self.assertPresence(new_notes, div="adminnotes")
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Mailingliste anlegen"})
         f = self.response.forms['selectmltypeform']
@@ -1268,7 +1270,7 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)
         self.assertTitle("Little Whinging")
-        self.assertPresence(moderator['given_names'], "moderator_list")
+        self.assertPresence(moderator['given_names'], div="moderator_list")
 
     @as_users("anton")
     def test_1342(self, user):
@@ -1307,6 +1309,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
         self.assertTitle("Mailinglisten-Log [1–9 von 9]")
+        self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4
@@ -1332,7 +1335,7 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['vera'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
-        self.assertTitle("Mailinglisten-Log [1–9 von 9]")
+        self.assertTitle("Mailinglisten-Log [1–6 von 6]")
         self.assertPresence("Aktivenforum 2001")
         self.assertNonPresence("CdE-Party")
         self.logout()

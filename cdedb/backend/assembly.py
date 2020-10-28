@@ -33,7 +33,7 @@ from pathlib import Path
 from secrets import token_urlsafe
 
 from typing import (
-    Set, Dict, Tuple, Union, Callable, Collection, Optional
+    Any, Set, Dict, Tuple, Union, Callable, Collection, Optional
 )
 from typing_extensions import Protocol
 
@@ -57,7 +57,7 @@ class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
     realm = "assembly"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.attachment_base_path: Path = (
                 self.conf['STORAGE_DIR'] / "assembly_attachment")
@@ -1776,8 +1776,8 @@ class AssemblyBackend(AbstractBackend):
                 raise PrivilegeError(n_("Must have privileged access to add"
                                         " attachment version."))
             self.assembly_log(
-                rs, const.AssemblyLogCodes.attachement_version_added,
-                assembly_id, change_note=f"Version {version}")
+                rs, const.AssemblyLogCodes.attachment_version_added,
+                assembly_id, change_note=f"{data['title']}: Version {version}")
         return ret
 
     @access("assembly")
@@ -1804,7 +1804,12 @@ class AssemblyBackend(AbstractBackend):
             query = (f"UPDATE assembly.attachment_versions SET {setters}"
                      f" WHERE attachment_id = %s AND version = %s")
             params = tuple(data[k] for k in keys) + (attachment_id, version)
-            return self.query_exec(rs, query, params)
+            ret = self.query_exec(rs, query, params)
+            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+            self.assembly_log(
+                rs, const.AssemblyLogCodes.attachment_version_changed,
+                assembly_id, change_note=f"{data['title']}: Version {version}")
+            return ret
 
     @access("assembly")
     def remove_attachment_version(self, rs: RequestState, attachment_id: int,
@@ -1856,8 +1861,9 @@ class AssemblyBackend(AbstractBackend):
                 assembly_id = self.get_assembly_id(
                     rs, attachment_id=attachment_id)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.attachement_version_removed,
-                    assembly_id, change_note=f"Version {version}")
+                    rs, const.AssemblyLogCodes.attachment_version_removed,
+                    assembly_id, change_note=
+                    f"{history[version]['title']}: Version {version}")
             return ret
 
     @access("assembly")

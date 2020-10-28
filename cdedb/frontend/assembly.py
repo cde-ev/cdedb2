@@ -68,7 +68,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         for assembly_id, assembly in assemblies.items():
             assembly['does_attend'] = self.assemblyproxy.does_attend(
                 rs, assembly_id=assembly_id)
-        return self.render(rs, "index", {'assemblies': assemblies})
+        attendees_count = {assembly_id: len(
+                           self.assemblyproxy.list_attendees(rs, assembly_id))
+                           for assembly_id in rs.user.presider}
+        return self.render(rs, "index", {'assemblies': assemblies,
+                                         'attendees_count': attendees_count})
 
     @access("core_admin", "assembly_admin")
     def create_user_form(self, rs: RequestState) -> Response:
@@ -102,12 +106,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
-        query: Optional[Query]
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
@@ -499,7 +501,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         tex = self.fill_template(
             rs, "tex", "list_attendees", {'attendees': attendees})
         return self.send_file(
-            rs, data=tex, inline=False, filename="Anwesenheitsliste.tex")
+            rs, data=tex, inline=False, filename="Anwesenheitsliste-Export.tex")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("ack_conclude", "bool"))

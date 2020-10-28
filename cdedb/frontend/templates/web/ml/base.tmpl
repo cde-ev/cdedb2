@@ -41,7 +41,7 @@
             {% endif %}
         </p>
 
-        <h3 class="heading-sidebar">{{ util.make_icon('envelope', arialabel='Mailingliste') }}
+        <h3 class="heading-sidebar">{{ util.make_icon('envelope', arialabel=gettext("Mailinglist")) }}
             {{ ambience['mailinglist']['title'] }}</h3>
         {{ ml_inner_navigation(ambience['mailinglist']) }}
     {% else %}

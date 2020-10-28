@@ -5,7 +5,7 @@
 --- SCHEMA core
 ---
 
-DROP SCHEMA IF EXISTS core;
+DROP SCHEMA IF EXISTS core CASCADE;
 CREATE SCHEMA core;
 GRANT USAGE ON SCHEMA core TO cdb_anonymous;
 
@@ -61,7 +61,9 @@ CREATE TABLE core.personas (
         -- signal a data set of a former member which was stripped of all
         -- non-essential attributes to implement data protection
         is_archived             boolean NOT NULL DEFAULT False,
-
+        -- signal all remaining information about a user has been cleared.
+        -- this can never be undone.
+        is_purged               boolean NOT NULL DEFAULT False,
         -- name to use when adressing user/"Rufname"
         display_name            varchar NOT NULL,
         -- "Vornamen" (including middle names)
@@ -139,7 +141,7 @@ CREATE INDEX idx_personas_is_ml_realm ON core.personas(is_ml_realm);
 CREATE INDEX idx_personas_is_assembly_realm ON core.personas(is_assembly_realm);
 CREATE INDEX idx_personas_is_member ON core.personas(is_member);
 CREATE INDEX idx_personas_is_searchable ON core.personas(is_searchable);
-GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived) ON core.personas TO cdb_anonymous;
+GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous;
 GRANT UPDATE (username, password_hash) ON core.personas TO cdb_persona;
 GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
 GRANT SELECT, UPDATE ON core.personas TO cdb_member; -- TODO maybe restrict notes to cdb_admin
@@ -320,6 +322,7 @@ CREATE TABLE core.changelog (
         is_member               boolean,
         is_searchable           boolean,
         is_archived             boolean,
+        is_purged               boolean,
         display_name            varchar,
         given_names             varchar,
         family_name             varchar,
@@ -373,7 +376,7 @@ GRANT INSERT, SELECT, UPDATE ON core.cron_store TO cdb_admin;
 ---
 --- SCHEMA cde
 ---
-DROP SCHEMA IF EXISTS cde;
+DROP SCHEMA IF EXISTS cde CASCADE;
 CREATE SCHEMA cde;
 GRANT USAGE ON SCHEMA cde TO cdb_member;
 
@@ -497,7 +500,7 @@ GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_admin;
 --- This is a variation of the schema event (to be found below) which
 --- concerns itself with concluded events.
 ---
-DROP SCHEMA IF EXISTS past_event;
+DROP SCHEMA IF EXISTS past_event CASCADE;
 CREATE SCHEMA past_event;
 GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 
@@ -579,7 +582,7 @@ GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_admin;
 ---
 --- Later on you will find the schema past_event for concluded events.
 ---
-DROP SCHEMA IF EXISTS event;
+DROP SCHEMA IF EXISTS event CASCADE;
 CREATE SCHEMA event;
 GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous;
 
@@ -881,7 +884,7 @@ GRANT DELETE ON event.log TO cdb_admin;
 ---
 --- SCHEMA assembly
 ---
-DROP SCHEMA IF EXISTS assembly;
+DROP SCHEMA IF EXISTS assembly CASCADE;
 CREATE SCHEMA assembly;
 GRANT USAGE ON SCHEMA assembly TO cdb_persona;
 
@@ -977,6 +980,7 @@ CREATE TABLE assembly.attendees (
 CREATE UNIQUE INDEX idx_attendee_constraint ON assembly.attendees(persona_id, assembly_id);
 GRANT SELECT, INSERT ON assembly.attendees TO cdb_member;
 GRANT UPDATE (secret) ON assembly.attendees TO cdb_admin;
+GRANT DELETE ON assembly.attendees TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_member;
 
 -- register who did already vote for what
@@ -1055,7 +1059,7 @@ GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 ---
 --- SCHEMA ml
 ---
-DROP SCHEMA IF EXISTS ml;
+DROP SCHEMA IF EXISTS ml CASCADE;
 CREATE SCHEMA ml;
 GRANT USAGE ON SCHEMA ml TO cdb_persona;
 

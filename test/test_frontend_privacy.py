@@ -149,7 +149,9 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_of_archived(self, inspected):
         expected = {
-            "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen"
+            "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
+            "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
+            "Geschlecht", "Geburtsdatum"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])

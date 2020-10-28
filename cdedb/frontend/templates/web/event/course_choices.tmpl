@@ -125,7 +125,7 @@
                             util.input_select(name="assign_action", anid="input-action",
                                               entries=action_entries, arialabel=gettext("Assignment Method"), sort=True),
                             util.input_select(name="assign_course_id", anid="input-course_id", entries=course_entries,
-                                              nulloption=nbsp, arialabel="Assign to Course")),
+                                              nulloption=nbsp, arialabel=gettext("Assign to Course"))),
                         tracks=tracks,
                         submit='<div class="col-md-2">%s</div>'|s|format(util.input_submit(value=gettext("Go!"))) -%}
                 	{{ assign }} {{ participants }} {{ course }} {{ tracks }} {{ submit }}

@@ -71,7 +71,7 @@
         {% endfor %}
     </div>
 
-    {% if "assembly_presider" in user.admin_views %}
+    {% if "assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider %}
         {% call util.bootstrap_panel(title=gettext("Download"), icon="file-download", aclass="panel-default mosp") %}
             <div class="row">
                 <div class="col-sm-4">

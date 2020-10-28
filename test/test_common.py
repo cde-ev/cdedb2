@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
+import datetime
+import pytz
+import random
+import subprocess
 import unittest
+
 from cdedb.common import (
     extract_roles, schulze_evaluate, int_to_words, xsorted,
     mixed_existence_sorter, unwrap)
 import cdedb.database.constants as const
-import datetime
-import pytz
-import random
-import timeit
+
 
 class TestCommon(unittest.TestCase):
     def test_mixed_existence_sorter(self):
@@ -260,3 +262,11 @@ class TestCommon(unittest.TestCase):
                 with self.assertRaises(TypeError) as cm:
                     unwrap(ncol)
                 self.assertIn("Can only unwrap collections.", cm.exception.args[0])
+
+    def test_mypy(self):
+        try:
+            result = subprocess.run(["make", "mypy"], check=True, capture_output=True)
+        except subprocess.CalledProcessError as cpe:
+            count = len(cpe.stderr.decode().splitlines())
+            msg = f"There are {count} mypy errors. Run `make mypy` for more details."
+            raise self.failureException(msg) from None

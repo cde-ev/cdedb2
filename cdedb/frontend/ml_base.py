@@ -5,7 +5,7 @@
 import copy
 from datetime import datetime
 import collections
-from typing import Dict, Any, Optional, Collection
+from typing import Dict, Any, Optional, Collection, cast
 
 import mailmanclient
 import werkzeug
@@ -17,7 +17,7 @@ from cdedb.frontend.common import (
     cdedbid_filter as cdedbid, keydictsort_filter,
     calculate_db_logparams, calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, mangle_query_input
+from cdedb.query import QUERY_SPECS, mangle_query_input, Query
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
     RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap,
@@ -102,17 +102,16 @@ class MlBaseFrontend(AbstractUserFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_ml_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = "qview_persona"
             result = self.mlproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -157,7 +156,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             group_id = self.mlproxy.get_ml_type(rs, ml_id).sortkey
             grouped[group_id][ml_id] = {
                 'title': mailinglist_infos[ml_id]['title'], 'id': ml_id}
-        event_ids = self.eventproxy.list_db_events(rs)
+        event_ids = self.eventproxy.list_events(rs)
         events = {}
         for event_id in event_ids:
             event = self.eventproxy.get_event(rs, event_id)
@@ -204,7 +203,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             available_domains = atype.domains
             additional_fields = [f for f, _ in atype.get_additional_fields()]
             if "event_id" in additional_fields:
-                event_ids = self.eventproxy.list_db_events(rs)
+                event_ids = self.eventproxy.list_events(rs)
                 events = self.eventproxy.get_events(rs, event_ids)
             else:
                 events = {}
@@ -367,7 +366,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         available_domains = atype.domains
         additional_fields = [f for f, _ in atype.get_additional_fields()]
         if "event_id" in additional_fields:
-            event_ids = self.eventproxy.list_db_events(rs)
+            event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
             sorted_events = keydictsort_filter(events, EntitySorter.event)
             event_entries = [(k, v['title']) for k, v in sorted_events]
@@ -438,7 +437,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                             mailinglist_id: int) -> Response:
         """Render form."""
         available_types = self.mlproxy.get_available_types(rs)
-        event_ids = self.eventproxy.list_db_events(rs)
+        event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         merge_dicts(rs.values, rs.ambience['mailinglist'])

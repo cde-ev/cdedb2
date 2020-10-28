@@ -6,6 +6,7 @@ purpose.
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    Archive_Migration
    Archive_Specification

@@ -731,7 +731,14 @@ def int_to_words(num: int, lang: str) -> str:
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
 
-    def default(self, obj):
+    @overload
+    def default(self, obj: Union[datetime.date, datetime.datetime,
+                                 decimal.Decimal]) -> str: ...
+
+    @overload
+    def default(self, obj: Set[T]) -> Tuple[T, ...]: ...
+
+    def default(self, obj: Any) -> Union[str, Tuple[Any, ...]]:
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
@@ -919,7 +926,7 @@ def unwrap(data: Mapping[Any, T]) -> T: ...
 def unwrap(data: Collection[T]) -> T: ...
 
 
-def unwrap(data):
+def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -1072,7 +1079,7 @@ class LineResolutions(enum.IntEnum):
 INFINITE_ENUM_MAGIC_NUMBER = 0
 
 
-def infinite_enum(aclass):
+def infinite_enum(aclass: T) -> T:
     """Decorator to document infinite enums.
 
     This does nothing and is only for documentation purposes.
@@ -1098,29 +1105,29 @@ def infinite_enum(aclass):
 @functools.total_ordering
 class InfiniteEnum:
     # noinspection PyShadowingBuiltins
-    def __init__(self, enum, int):
+    def __init__(self, enum: enum.IntEnum, int_: int):
         self.enum = enum
-        self.int = int
+        self.int = int_
 
     @property
-    def value(self):
+    def value(self) -> int:
         if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
             return self.int
         return self.enum.value
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
             return "{}({})".format(self.enum, self.int)
         return str(self.enum)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, InfiniteEnum):
             return self.value == other.value
         if isinstance(other, int):
             return self.value == other
         return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         if isinstance(other, InfiniteEnum):
             return self.value < other.value
         if isinstance(other, int):
@@ -1707,6 +1714,12 @@ if TYPE_CHECKING:
 else:
     role_map_type = collections.OrderedDict
 
+#: List of all roles we consider admin roles. Changes in these roles must be
+#: approved by two meta admins in total.
+ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
+              "is_finance_admin", "is_event_admin", "is_ml_admin",
+              "is_assembly_admin", "is_cdelokal_admin"}
+
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
@@ -1818,7 +1831,7 @@ PERSONA_STATUS_FIELDS = (
     "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
     "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
     "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_cdelokal_admin", "is_member", "is_searchable", "is_archived")
+    "is_cdelokal_admin", "is_member", "is_searchable", "is_archived", "is_purged")
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.

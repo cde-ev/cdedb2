@@ -12,7 +12,7 @@ from pathlib import Path
 
 from typing import (
     Dict, Set, Collection, Callable, Tuple, Optional, List, Sequence, Any,
-    Mapping
+    Mapping, Iterable
 )
 
 from cdedb.backend.common import (
@@ -174,7 +174,7 @@ class EventBackend(AbstractBackend):
             time_stop=time_stop)
 
     @access("anonymous")
-    def list_db_events(self, rs: RequestState, visible: bool = None,
+    def list_events(self, rs: RequestState, visible: bool = None,
                        current: bool = None,
                        archived: bool = None) -> CdEDBObjectMap:
         """List all events organized via DB.
@@ -211,7 +211,7 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def list_db_courses(self, rs: RequestState,
+    def list_courses(self, rs: RequestState,
                         event_id: int) -> CdEDBObjectMap:
         """List all courses organized via DB.
 
@@ -537,7 +537,7 @@ class EventBackend(AbstractBackend):
             # Template for retrieving course information for one specific track.
             # We don't use the {base} table from below, because we need
             # the id to be distinct.
-            def track_table(track):
+            def track_table(track: CdEDBObject) -> str:
                 track_id = track['id']
                 choices = ""
                 if track['num_choices'] > 0:
@@ -824,7 +824,7 @@ class EventBackend(AbstractBackend):
                     ON base.tmp_group_id =
                     group_inhabitants_view{part_id}.tmp_group_id"""
 
-            def part_table(p_id):
+            def part_table(p_id: int) -> str:
                 ptable = part_table_template.format(
                     event_id=event_id, part_id=p_id,
                     inhabitants_view=inhabitants_view(p_id),
@@ -3676,11 +3676,11 @@ class EventBackend(AbstractBackend):
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
 
-        def list_to_dict(alist):
+        def list_to_dict(alist: Iterable[CdEDBObject]) -> CdEDBObjectMap:
             return {e['id']: e for e in alist}
 
         with Atomizer(rs):
-            ret = {
+            ret: CdEDBObject = {
                 'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
                 'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
                 'kind': "full",  # could also be "partial"
@@ -4061,7 +4061,7 @@ class EventBackend(AbstractBackend):
                              'is_cde_admin', 'is_finance_admin', 'is_cde_realm',
                              'is_core_admin', 'is_event_admin',
                              'is_event_realm', 'is_ml_admin', 'is_ml_realm',
-                             'is_searchable', 'is_cdelokal_admin'):
+                             'is_searchable', 'is_cdelokal_admin', 'is_purged'):
                     del persona[attr]
                 registration['persona'] = persona
             return ret

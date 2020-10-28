@@ -1,7 +1,8 @@
 import enum
 from collections import OrderedDict
 from typing import (
-    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List,
+    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, NoReturn,
+    Sequence
 )
 
 from cdedb.common import (
@@ -18,7 +19,7 @@ MIPolMap = Dict[int, MIPol]
 
 
 class BackendContainer:
-    def __init__(self, *, core=None, event=None, assembly=None):
+    def __init__(self, *, core=None, event=None, assembly=None):  # type: ignore
         self.core = core
         self.event = event
         self.assembly = assembly
@@ -100,7 +101,7 @@ class GeneralMailinglist:
       hierarchical way for trivial mailinglist types.
 
     """
-    def __init__(self):
+    def __init__(self) -> None:
         raise RuntimeError()
 
     sortkey: MailinglistGroup = MailinglistGroup.other
@@ -185,7 +186,7 @@ class GeneralMailinglist:
     role_map = OrderedDict()
 
     @classmethod
-    def moderator_admin_views(cls) -> Set:
+    def moderator_admin_views(cls) -> Set[str]:
         """All admin views which toggle the moderator view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
@@ -195,7 +196,7 @@ class GeneralMailinglist:
                 for admin in cls.relevant_admins} | {"ml_mod"}
 
     @classmethod
-    def management_admin_views(cls) -> Set:
+    def management_admin_views(cls) -> Set[str]:
         """All admin views which toggle the management view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
@@ -311,6 +312,8 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
+    # Disallow management by cde admins.
+    relevant_admins: Set[str] = set()
 
 
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):

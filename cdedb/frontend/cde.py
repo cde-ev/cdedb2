@@ -47,7 +47,9 @@ from cdedb.frontend.common import (
     Response, periodic,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
+from cdedb.query import (
+    QUERY_SPECS, mangle_query_input, QueryOperators, Query, QueryConstraint
+)
 import cdedb.frontend.parse_statement as parse
 
 MEMBERSEARCH_DEFAULTS = {
@@ -156,7 +158,8 @@ class CdEFrontend(AbstractUserFrontend):
         """
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         return self.render(rs, "consent_decision", {
-            'decided_search': data['decided_search']})
+            'decided_search': data['decided_search'],
+            'verwaltung': self.conf["MANAGEMENT_ADDRESS"] })
 
     @access("member", modi={"POST"})
     @REQUESTdata(("ack", "bool"))
@@ -207,10 +210,9 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
-        query = check(
-            rs, "query_input",
-            mangle_query_input(rs, spec, defaults),
-            "query", spec=spec, allow_empty=not is_search, separator=" ")
+        query = cast(Query, check(
+            rs, "query_input", mangle_query_input(rs, spec, defaults),
+            "query", spec=spec, allow_empty=not is_search, separator=" "))
 
         events = self.pasteventproxy.list_past_events(rs)
         pevent_id = None
@@ -239,7 +241,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.notify("error", n_("You have to specify some filters."))
         elif is_search:
 
-            def restrict(constraint):
+            def restrict(constraint: QueryConstraint) -> QueryConstraint:
                 field, operation, value = constraint
                 if field == 'fulltext':
                     value = [r"\m{}\M".format(val) if len(val) <= 3 else val
@@ -276,11 +278,10 @@ class CdEFrontend(AbstractUserFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_user'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
-        else:
-            query = None
+            query = cast(Query, check(rs, "query_input", query_input, "query",
+                                      spec=spec, allow_empty=False))
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
@@ -296,7 +297,7 @@ class CdEFrontend(AbstractUserFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search:
+        if not rs.has_validation_errors() and is_search and query:
             query.scope = "qview_cde_user"
             result = self.cdeproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -806,7 +807,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         data = data or {}
         merge_dicts(rs.values, data)
-        event_ids = self.eventproxy.list_db_events(rs)
+        event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
             [(event['id'] , event['title']) for event in events.values()],
@@ -897,7 +898,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.parse_statement_form(rs)
         statementlines = statement_file.splitlines()
 
-        event_list = self.eventproxy.list_db_events(rs)
+        event_list = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_list)
 
         get_persona = lambda p_id: self.coreproxy.get_persona(rs, p_id)
@@ -1111,9 +1112,9 @@ class CdEFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject],
-                                sendmail: bool
-                                ) -> Tuple[bool, Optional[int], Optional[int]]:
+    def perform_money_transfers(
+            self, rs: RequestState, data: List[CdEDBObject], sendmail: bool
+    ) -> Tuple[bool, Optional[int], Optional[int]]:
         """Resolve all entries in the money transfers form.
 
         :returns: A bool indicating success and:
@@ -1136,6 +1137,7 @@ class CdEFrontend(AbstractUserFrontend):
                 persona_ids = tuple(e['persona_id'] for e in data)
                 personas = self.coreproxy.get_total_personas(rs, persona_ids)
                 for index, datum in enumerate(data):
+                    assert isinstance(datum['amount'], decimal.Decimal)
                     new_balance = (personas[datum['persona_id']]['balance']
                                    + datum['amount'])
                     note = datum['note']
@@ -2233,7 +2235,7 @@ class CdEFrontend(AbstractUserFrontend):
             for key, value in institution.items() if key != 'id'}
         merge_dicts(rs.values, current)
         is_referenced = set()
-        event_ids = self.eventproxy.list_db_events(rs)
+        event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids.keys())
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids.keys())
@@ -2589,30 +2591,38 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("pcourse_id", "id_or_None"), ("persona_id", "cdedbid"),
+    @REQUESTdata(("pcourse_id", "id_or_None"),
+                 ("persona_ids", "cdedbid_csv_list"),
                  ("is_instructor", "bool"), ("is_orga", "bool"))
-    def add_participant(self, rs: RequestState, pevent_id: int,
-                        pcourse_id: Optional[int], persona_id: int,
-                        is_instructor: bool, is_orga: bool) -> Response:
+    def add_participants(self, rs: RequestState, pevent_id: int,
+                         pcourse_id: Optional[int],
+                         persona_ids: Collection[int],
+                         is_instructor: bool, is_orga: bool) -> Response:
         """Add participant to concluded event."""
         if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
                 return self.show_past_event(rs, pevent_id)
-        if pcourse_id:
-            param = {'pcourse_id': pcourse_id}
-        else:
-            param = {'pevent_id': pevent_id}
-        participants = self.pasteventproxy.list_participants(rs, **param)
-        if persona_id in participants:
-            rs.notify("warning", n_("Participant already present."))
+
+        # Check presence of valid event users for the given ids
+        if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
+            rs.append_validation_error(("persona_ids",
+                ValueError(n_("Some of these users do not exist."))))
+        if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
+            rs.append_validation_error(("persona_ids",
+                ValueError(n_("Some of these users are not event users."))))
+        if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
                 return self.show_past_event(rs, pevent_id)
-        code = self.pasteventproxy.add_participant(
-            rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
+
+        code = 1
+        # TODO: Check if participants are already present.
+        for persona_id in persona_ids:
+            code *= self.pasteventproxy.add_participant(rs, pevent_id,
+                pcourse_id, persona_id, is_instructor, is_orga)
         self.notify_return_code(rs, code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course",

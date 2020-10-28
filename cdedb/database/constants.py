@@ -426,9 +426,9 @@ class AssemblyLogCodes(enum.IntEnum):
     attachment_added = 40  #:
     attachment_removed = 41  #:
     attachment_changed = 42
-    attachement_version_added = 50
-    attachement_version_removed = 51
-    attachement_version_changed = 52
+    attachment_version_added = 50
+    attachment_version_removed = 51
+    attachment_version_changed = 52
 
 
 @enum.unique
