@@ -3319,7 +3319,7 @@ etc;anything else""", f['entries_2'].value)
         del second['timestamp']
         self.assertEqual(first, second)
 
-    @as_users("anton")
+    @as_users("ferdinand")
     def test_archive(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
@@ -3402,6 +3402,49 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg.-Veranstaltungen'})
         self.assertNonPresence("CdE-Party 2050")
+
+    @as_users("anton")
+    def test_archive_event_purge_persona(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'CyberTestAkademie'})
+        self.assertTitle("CyberTestAkademie")
+        f = self.response.forms["archiveeventform"]
+        f['ack_archive'].checked = True
+        f['create_past_event'].checked = False
+        self.submit(f)
+
+        self.assertTitle("CyberTestAkademie")
+        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+                            div="notifications")
+
+        # check that there is no past event
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Verg.-Veranstaltungen'})
+        self.assertNonPresence("CdE-CyberTestAkademie")
+
+        # now, archive and purge a participant
+        self.admin_view_profile("daniel", "cde")
+        self.assertTitle("Daniel D. Dino")
+        f = self.response.forms['archivepersonaform']
+        f['ack_delete'].checked = True
+        f['note'] = "Archived for testing."
+        self.submit(f)
+        self.assertTitle("Daniel D. Dino")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        f = self.response.forms['purgepersonaform']
+        f['ack_delete'].checked = True
+        self.submit(f)
+        self.assertTitle("N. N.")
+        self.assertPresence("Der Benutzer wurde geleert.", div='purged')
+
+        # now, test if the event is still working
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'CyberTestAkademie'},
+                      {'description': 'Statistik'})
+        self.assertTitle("Statistik (CyberTestAkademie)")
+        self.get('/event/event/3/registration/7/show')
+        self.assertTitle("Anmeldung von N. N. (CyberTestAkademie)")
+        self.assertNonPresence("Daniel")
 
     @as_users("annika")
     def test_one_track_no_courses(self, user):

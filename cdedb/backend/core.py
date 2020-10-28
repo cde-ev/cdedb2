@@ -1399,7 +1399,7 @@ class CoreBackend(AbstractBackend):
                 'family_name': "N.",
                 'birthday': "-Infinity",
                 'birth_name': None,
-                'gender': None,
+                'gender': const.Genders.not_specified,
                 'is_cde_realm': True,
                 'is_event_realm': True,
                 'is_ml_realm': True,
