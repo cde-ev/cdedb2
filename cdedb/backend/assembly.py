@@ -33,7 +33,7 @@ from pathlib import Path
 from secrets import token_urlsafe
 
 from typing import (
-    Any, Set, Dict, Tuple, Union, Callable, Collection, Optional
+    Any, Set, Dict, Tuple, Union, Collection, Optional
 )
 from typing_extensions import Protocol
 
@@ -69,20 +69,23 @@ class AssemblyBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("persona")
-    def presider_infos(self, rs: RequestState, ids: Collection[int]
+    def presider_infos(self, rs: RequestState, persona_ids: Collection[int]
                        ) -> Dict[int, Set[int]]:
         """List assemblies managed by specific personas."""
-        ids = affirm_set("id", ids)
+        persona_ids = affirm_set("id", persona_ids)
         data = self.sql_select(
             rs, "assembly.presiders", ("persona_id", "assembly_id"),
-            ids, entity_key="persona_id")
+            persona_ids, entity_key="persona_id")
         ret = {}
-        for anid in ids:
+        for anid in persona_ids:
             ret[anid] = {e['assembly_id']
                          for e in data if e['persona_id'] == anid}
         return ret
-    presider_info: Callable[['AssemblyBackend', RequestState, int], Set[int]]
-    presider_info = singularize(presider_infos)
+
+    class PresiderInfo(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
+    presider_info: PresiderInfo = singularize(
+        presider_infos, "persona_ids", "persona_id")
 
     @access("persona")
     def is_presider(self, rs: RequestState, *, assembly_id: int = None,
@@ -147,11 +150,6 @@ class AssemblyBackend(AbstractBackend):
 
         Exactly one of assembly_id, ballot_id and attachment_id has to be
         provided.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type ballot_id: int
-        :rtype: bool
         """
         assembly_id = affirm("id_or_None", assembly_id)
         ballot_id = affirm("id_or_None", ballot_id)
@@ -471,7 +469,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_assemblies(self, rs: RequestState,
-                       ids: Collection[int]) -> CdEDBObjectMap:
+                       assembly_ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data for some assemblies.
 
         In addition to the keys in `cdedb.common.ASSEMBLY_FIELDS`, this
@@ -479,13 +477,13 @@ class AssemblyBackend(AbstractBackend):
         those who have privileged access to the assembly (similar to orgas for
         events).
         """
-        ids = affirm_set("id", ids)
-        if not all(self.may_access(rs, assembly_id=anid) for anid in ids):
+        assembly_ids = affirm_set("id", assembly_ids)
+        if not all(self.may_access(rs, assembly_id=anid) for anid in assembly_ids):
             raise PrivilegeError(n_("Not privileged."))
-        data = self.sql_select(rs, 'assembly.assemblies', ASSEMBLY_FIELDS, ids)
+        data = self.sql_select(rs, 'assembly.assemblies', ASSEMBLY_FIELDS, assembly_ids)
         presider_data = self.sql_select(
             rs, 'assembly.presiders', ("assembly_id", "persona_id"),
-            ids, entity_key="assembly_id")
+            assembly_ids, entity_key="assembly_id")
         ret = {}
         for assembly in data:
             if 'presiders' in assembly:
@@ -494,8 +492,11 @@ class AssemblyBackend(AbstractBackend):
                                      if p['assembly_id'] == assembly['id']}
             ret[assembly['id']] = assembly
         return ret
-    get_assembly: Callable[['AssemblyBackend', RequestState, int], CdEDBObject]
-    get_assembly = singularize(get_assemblies)
+
+    class GetAssembly(Protocol):
+        def __call__(self, rs: RequestState, assembly_id: int) -> CdEDBObject: ...
+    get_assembly: GetAssembly = singularize(
+        get_assemblies, "assembly_ids", "assembly_id")
 
     @access("assembly")
     def set_assembly(self, rs: RequestState, data: CdEDBObject
@@ -531,26 +532,26 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def set_assembly_presiders(self, rs: RequestState, assembly_id: int,
-                               ids: Collection[int]) -> DefaultReturnCode:
+                               persona_ids: Collection[int]) -> DefaultReturnCode:
         """Overwrite the set of presiders for an assembly."""
         assembly_id = affirm("id", assembly_id)
-        ids = affirm_set("id", ids)
+        persona_ids = affirm_set("id", persona_ids)
         with Atomizer(rs):
             assembly = self.get_assembly(rs, assembly_id)
             if not assembly['is_active']:
                 raise ValueError(n_("Cannot alter assembly presiders after"
                                     " assembly has been concluded."))
-            if not self.core.verify_ids(rs, ids, is_archived=False):
+            if not self.core.verify_ids(rs, persona_ids, is_archived=False):
                 raise ValueError(n_(
                     "Some of these users do not exist or are archived."))
-            if not self.core.verify_personas(rs, ids, {"assembly"}):
+            if not self.core.verify_personas(rs, persona_ids, {"assembly"}):
                 raise ValueError(n_(
                     "Some of these users are not assembly users."))
             current = self.sql_select(rs, "assembly.presiders", ("persona_id",),
                                       (assembly_id,), entity_key="assembly_id")
             existing = {unwrap(e) for e in current}
-            new = ids - existing
-            deleted = existing - ids
+            new = persona_ids - existing
+            deleted = existing - persona_ids
             ret = 1
             if new:
                 inserts = [{
@@ -728,9 +729,6 @@ class AssemblyBackend(AbstractBackend):
                      assembly_id: int) -> Dict[int, str]:
         """List all ballots of an assembly.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :rtype: {int: str}
         :returns: Mapping of ballot ids to titles.
         """
         assembly_id = affirm("id", assembly_id)
@@ -741,37 +739,36 @@ class AssemblyBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
-    def get_ballots(self, rs: RequestState,
-                    ids: Collection[int]) -> CdEDBObjectMap:
+    def get_ballots(self, rs: RequestState, ballot_ids: Collection[int]
+                    ) -> CdEDBObjectMap:
         """Retrieve data for some ballots,
 
         They do not need to be associated to the same assembly. This has an
         additional field 'candidates' listing the available candidates for
         this ballot.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
         """
-        ids = affirm_set("id", ids)
+        ballot_ids = affirm_set("id", ballot_ids)
 
         with Atomizer(rs):
-            data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ids)
+            data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ballot_ids)
             ret = {e['id']: e for e in data}
             data = self.sql_select(
                 rs, "assembly.candidates",
-                ("id", "ballot_id", "title", "shortname"), ids,
+                ("id", "ballot_id", "title", "shortname"), ballot_ids,
                 entity_key="ballot_id")
-            for anid in ids:
+            for anid in ballot_ids:
                 candidates = {e['id']: e for e in data
                               if e['ballot_id'] == anid}
-                assert ('candidates' not in ret[anid])
+                if 'candidates' in ret[anid]:
+                    raise RuntimeError
                 ret[anid]['candidates'] = candidates
             ret = {k: v for k, v in ret.items()
                    if self.may_access(rs, ballot_id=k)}
         return ret
-    get_ballot: Callable[['AssemblyBackend', RequestState, int], CdEDBObject]
-    get_ballot = singularize(get_ballots)
+
+    class GetBallot(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+    get_ballot: GetBallot = singularize(get_ballots, "ballot_ids", "ballot_id")
 
     @access("assembly")
     def set_ballot(self, rs: RequestState, data: CdEDBObject) -> int:
@@ -1526,9 +1523,10 @@ class AssemblyBackend(AbstractBackend):
                 ret[entry["attachment_id"]][entry["version"]] = entry
 
         return ret
-    get_attachment_history: Callable[['AssemblyBackend', RequestState, int],
-                                     CdEDBObjectMap]
-    get_attachment_history = singularize(
+
+    class GetAttachmentHistory(Protocol):
+        def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObjectMap: ...
+    get_attachment_history: GetAttachmentHistory = singularize(
         get_attachment_histories, "attachment_ids", "attachment_id")
 
     @access("assembly")
@@ -1741,8 +1739,7 @@ class AssemblyBackend(AbstractBackend):
     class GetCurrentVersion(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int,
                      include_deleted: bool = False) -> int: ...
-    get_current_version: GetCurrentVersion
-    get_current_version = singularize(
+    get_current_version: GetCurrentVersion = singularize(
         get_current_versions, "attachment_ids", "attachment_id")
 
     @access("assembly")
@@ -1858,12 +1855,11 @@ class AssemblyBackend(AbstractBackend):
                 path = self.attachment_base_path / f"{attachment_id}_v{version}"
                 if path.exists():
                     path.unlink()
-                assembly_id = self.get_assembly_id(
-                    rs, attachment_id=attachment_id)
+                assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+                change_note = f"{history[version]['title']}: Version {version}"
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_version_removed,
-                    assembly_id, change_note=
-                    f"{history[version]['title']}: Version {version}")
+                    assembly_id, change_note=change_note)
             return ret
 
     @access("assembly")
@@ -1946,8 +1942,10 @@ class AssemblyBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         ret = {e['id']: e for e in data}
         return ret
-    _get_attachment_info: Callable[[RequestState, int], CdEDBObject]
-    _get_attachment_info = singularize(
+
+    class GetAttachmentInfo(Protocol):
+        def __call__(self, rs: RequestState, attachement_id: int) -> CdEDBObject: ...
+    _get_attachment_info: GetAttachmentInfo = singularize(
         _get_attachment_infos, "attachment_ids", "attachment_id")
 
     @access("assembly")
@@ -1959,7 +1957,8 @@ class AssemblyBackend(AbstractBackend):
             if not self.check_attachment_access(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
             return self._get_attachment_infos(rs, attachment_ids)
-    get_attachment: Callable[['AssemblyBackend', RequestState, int],
-                             CdEDBObject]
-    get_attachment = singularize(
+
+    class GetAttachment(Protocol):
+        def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObject: ...
+    get_attachment: GetAttachment = singularize(
         get_attachments, "attachment_ids", "attachment_id")
