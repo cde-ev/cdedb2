@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
 "POT-Creation-Date: 2020-10-24 08:25+0200\n"
-"PO-Revision-Date: 2020-10-03 12:01+0200\n"
+"PO-Revision-Date: 2020-10-29 15:56+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1823,9 +1823,7 @@ msgstr "Kein Account gefunden."
 
 #: cdedb/frontend/core.py:749
 msgid "Must provide id of the associated mailinglist to use this kind."
-msgstr ""
-"Um diese Art Anfrage zu benutzen musst die zugehörige Mailinglisten-ID "
-"angegeben werden."
+msgstr "Um diese Art Anfrage zu benutzen muss die zugehörige Mailinglisten-ID angegeben werden."
 
 #: cdedb/frontend/core.py:948
 msgid "No valid realm."
