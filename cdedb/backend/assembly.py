@@ -27,8 +27,9 @@ do it.
 """
 
 import copy
-import hmac
 import datetime
+import hmac
+import math
 from pathlib import Path
 from secrets import token_urlsafe
 
@@ -770,7 +771,7 @@ class AssemblyBackend(AbstractBackend):
                         member_count = unwrap(self.query_one(rs, query, (attendees,)))
                         assert member_count is not None
                         total_count = member_count + len(attendees)
-                        e["quorum"] = -(-total_count * e["rel_quorum"] // 100)
+                        e["quorum"] = math.ceil(total_count * e["rel_quorum"] // 100)
                     else:
                         e["quorum"] = 0
                 ret[e['id']] = e
