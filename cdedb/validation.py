@@ -362,7 +362,8 @@ def _percentage(val, argname: str = None, *, _convert: bool = True,
     int_val, errs = None, []
     if _convert:
         if isinstance(val, float):
-            int_val = int(val * 100)
+            int_val, errs = _int(val * 100, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if int_val is None:
         int_val, errs = _int(val, argname, _convert=_convert,
                              _ignore_warnings=_ignore_warnings)
