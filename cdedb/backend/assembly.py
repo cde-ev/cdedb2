@@ -768,6 +768,7 @@ class AssemblyBackend(AbstractBackend):
                         query = ("SELECT COUNT(id) FROM core.personas"
                                  " WHERE is_member = TRUE AND NOT(id = ANY(%s))")
                         member_count = unwrap(self.query_one(rs, query, (attendees,)))
+                        assert member_count is not None
                         total_count = member_count + len(attendees)
                         e["quorum"] = -(-total_count * e["rel_quorum"] // 100)
                     else:
