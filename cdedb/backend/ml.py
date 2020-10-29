@@ -4,8 +4,7 @@
 event and assembly realm in the form of specific mailing lists.
 """
 from datetime import datetime
-from typing import (Callable, Collection, Dict, List, Optional, Set,
-                    Tuple, overload, Any, cast)
+from typing import (Collection, Dict, List, Optional, Set, Tuple, overload, Any, cast)
 from typing_extensions import Protocol
 
 import cdedb.database.constants as const
@@ -226,25 +225,22 @@ class MlBackend(AbstractBackend):
                 or ml["id"] in rs.user.moderator)
 
     @access("persona")
-    def moderator_infos(self, rs: RequestState,
-                        ids: Collection[int]) -> Dict[int, Set[int]]:
-        """List mailing lists moderated by specific personas.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {int}}
-        """
-        ids = affirm_set("id", ids)
+    def moderator_infos(self, rs: RequestState, persona_ids: Collection[int]
+                        ) -> Dict[int, Set[int]]:
+        """List mailing lists moderated by specific personas."""
+        persona_ids = affirm_set("id", persona_ids)
         data = self.sql_select(
-            rs, "ml.moderators", ("persona_id", "mailinglist_id"), ids,
+            rs, "ml.moderators", ("persona_id", "mailinglist_id"), persona_ids,
             entity_key="persona_id")
         ret = {}
-        for anid in ids:
-            ret[anid] = {x['mailinglist_id']
-                         for x in data if x['persona_id'] == anid}
+        for anid in persona_ids:
+            ret[anid] = {x['mailinglist_id'] for x in data if x['persona_id'] == anid}
         return ret
-    moderator_info: Callable[['MlBackend', RequestState, int], Set[int]]
-    moderator_info = singularize(moderator_infos)
+
+    class ModeratorInfo(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
+    moderator_info: ModeratorInfo = singularize(
+        moderator_infos, "persona_ids", "persona_id")
 
     def ml_log(self, rs: RequestState, code: const.MlLogCodes,
                mailinglist_id: Optional[int], persona_id: Optional[int] = None,
@@ -411,53 +407,50 @@ class MlBackend(AbstractBackend):
         return {e['id']: e['address'] for e in data}
 
     @access("ml", "droid")
-    def get_mailinglists(self, rs: RequestState,
-                         ids: Collection[int]) -> CdEDBObjectMap:
+    def get_mailinglists(self, rs: RequestState, mailinglist_ids: Collection[int]
+                         ) -> CdEDBObjectMap:
         """Retrieve data for some mailinglists.
 
         This provides the following additional attributes:
 
         * moderators,
         * whitelist.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
         """
-        ids = affirm_set("id", ids)
+        mailinglist_ids = affirm_set("id", mailinglist_ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
-                                   ids)
+                                   mailinglist_ids)
             ret = {e['id']: e for e in data}
             # Maybe more elegant than using get_ml_type?
             # for k in ret:
             #    ret[k]['type'] = ml_type.TYPE_MAP[ret[k]['ml_type']]
             data = self.sql_select(
-                rs, "ml.moderators", ("persona_id", "mailinglist_id"), ids,
+                rs, "ml.moderators", ("persona_id", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
-            for anid in ids:
+            for anid in mailinglist_ids:
                 moderators = {d['persona_id']
                               for d in data if d['mailinglist_id'] == anid}
-                assert ('moderators' not in ret[anid])
+                if 'moderators' in ret[anid]:
+                    raise RuntimeError
                 ret[anid]['moderators'] = moderators
             data = self.sql_select(
-                rs, "ml.whitelist", ("address", "mailinglist_id"), ids,
+                rs, "ml.whitelist", ("address", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
-            for anid in ids:
-                whitelist = {d['address']
-                             for d in data if d['mailinglist_id'] == anid}
-                assert ('whitelist' not in ret[anid])
+            for anid in mailinglist_ids:
+                whitelist = {d['address'] for d in data if d['mailinglist_id'] == anid}
+                if 'whitelist' in ret[anid]:
+                    raise RuntimeError
                 ret[anid]['whitelist'] = whitelist
-            for anid in ids:
+            for anid in mailinglist_ids:
 
-                # noinspection PyArgumentList
                 ret[anid]['domain_str'] = str(const.MailinglistDomain(
                     ret[anid]['domain']))
-                ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[
-                    ret[anid]['ml_type']]
+                ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
         return ret
-    get_mailinglist: Callable[['MlBackend', RequestState, int], CdEDBObject]
-    get_mailinglist = singularize(get_mailinglists)
+
+    class GetMailinglist(Protocol):
+        def __call__(self, rs: RequestState, mailinglist_id: int) -> CdEDBObject: ...
+    get_mailinglist: GetMailinglist = singularize(get_mailinglists)
 
     @access("ml")
     def set_moderators(self, rs: RequestState, mailinglist_id: int,
@@ -832,8 +825,7 @@ class MlBackend(AbstractBackend):
         data = affirm_array("subscription_state", data)
 
         if not all(datum['persona_id'] == rs.user.persona_id
-                   or self.may_manage(rs, datum['mailinglist_id'],
-                                      privileged=True)
+                   or self.may_manage(rs, datum['mailinglist_id'], privileged=True)
                    for datum in data):
             raise PrivilegeError("Not privileged.")
 
@@ -853,9 +845,11 @@ class MlBackend(AbstractBackend):
             num += self.query_exec(rs, query, params)
 
         return num
-    _set_subscription: Callable[
-        ['MlBackend', RequestState, CdEDBObject], DefaultReturnCode]
-    _set_subscription = singularize(
+
+    class SetSubscription(Protocol):
+        def __call__(self, rs: RequestState, datum: CdEDBObject
+                     ) -> DefaultReturnCode: ...
+    _set_subscription: SetSubscription = singularize(
         _set_subscriptions, "data", "datum", passthrough=True)
 
     @internal
@@ -889,9 +883,11 @@ class MlBackend(AbstractBackend):
             ret = self.query_exec(rs, query, params)
 
         return ret
-    _remove_subscription: Callable[['MlBackend', RequestState, CdEDBObject],
-                                   DefaultReturnCode]
-    _remove_subscription = singularize(
+
+    class RemoveSubscription(Protocol):
+        def __call__(self, rs: RequestState, datum: CdEDBObject
+                     ) -> DefaultReturnCode: ...
+    _remove_subscription: RemoveSubscription = singularize(
         _remove_subscriptions, "data", "datum", passthrough=True)
 
     @access("ml")
@@ -1104,12 +1100,11 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    class GetSubScriptionState(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int,
+    class GetSubScriptionStates(Protocol):
+        def __call__(self, rs: RequestState, mailinglist_id: int,
                      states: SubStates = None
                      ) -> Dict[int, const.SubscriptionStates]: ...
-    get_subscription_states: GetSubScriptionState
-    get_subscription_states = singularize(
+    get_subscription_states: GetSubScriptionStates = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
     @access("ml")
@@ -1168,8 +1163,7 @@ class MlBackend(AbstractBackend):
                      persona_id: Optional[int], *, mailinglist_id: int,
                      states: SubStates = None
                      ) -> Optional[const.SubscriptionStates]: ...
-    get_subscription: GetSubscription
-    get_subscription = singularize(
+    get_subscription: GetSubscription = singularize(
         get_user_subscriptions, "mailinglist_ids", "mailinglist_id")
 
     @access("ml", "droid_rklist")
