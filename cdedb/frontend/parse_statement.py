@@ -168,6 +168,7 @@ def get_event_name_pattern(event: CdEDBObject) -> str:
     y_p = re.compile(r"(\d\d)(\d\d)")
     replacements = [
         ("Pseudo", r"Pseudo"),  # For testing purposes.
+        ("Cyber", r"Cyber"),
         ("Winter", r"Winter"),
         ("Sommer", r"Sommer"),
         ("Musik", r"Musik"),
