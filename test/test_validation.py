@@ -571,7 +571,7 @@ class TestValidation(unittest.TestCase):
             (0.11, 11, None, False),
             (19, 19, None, True),
             (97.0, None, ValueError, False),
-            (0.2311, 23, None, False),
+            (0.2311, None, ValueError, False),
             (1997, None, ValueError, False),
             ("abc", None, ValueError, False),
             (1, 1, None, True),
