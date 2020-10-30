@@ -4,7 +4,6 @@ BEGIN;
     ALTER TABLE core.personas DROP CONSTRAINT personas_check2;
     ALTER TABLE core.personas DROP CONSTRAINT personas_check3;
     ALTER TABLE core.personas DROP CONSTRAINT personas_check4;
-    ALTER TABLE core.personas DROP CONSTRAINT personas_check5;
     ALTER TABLE core.personas ADD CONSTRAINT personas_realm_gender
         CHECK((NOT is_cde_realm AND NOT is_event_realm) OR gender IS NOT NULL);
     ALTER TABLE core.personas ADD CONSTRAINT personas_cde_balance
@@ -18,3 +17,6 @@ BEGIN;
     ALTER TABLE core.personas ADD CONSTRAINT personas_cde_expuls
         CHECK(NOT is_cde_realm OR paper_expuls IS NOT NULL);
 COMMIT;
+
+ALTER TABLE core.personas DROP CONSTRAINT IF EXISTS personas_check5;
+ALTER TABLE core.personas DROP CONSTRAINT IF EXISTS personas_check6;
