@@ -34,14 +34,24 @@ reload:
 	sudo systemctl restart apache2
 
 i18n-refresh:
+	$(MAKE) i18n-extract
+	$(MAKE) i18n-update
+
+i18n-extract:
 	pybabel extract -F ./babel.cfg  --sort-by-file -o ./i18n/cdedb.pot\
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
+
+i18n-update:
 	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb --ignore-obsolete
 	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb --ignore-obsolete
 
 i18n-compile:
 	pybabel compile -d ./i18n/ -l de -D cdedb
 	pybabel compile -d ./i18n/ -l en -D cdedb
+
+i18n-check:
+	msgfmt -c ./i18n/de/LC_MESSAGES/cdedb.po --statistics --output /dev/null
+	msgfmt -c ./i18n/en/LC_MESSAGES/cdedb.po --statistics --output /dev/null
 
 sample-data:
 	$(MAKE) storage > /dev/null

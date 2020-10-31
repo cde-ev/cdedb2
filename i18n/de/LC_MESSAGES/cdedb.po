@@ -2469,7 +2469,7 @@ msgstr "Validierung fehlgeschlagen."
 
 #: cdedb/frontend/common.py:967 cdedb/frontend/common.py:977
 msgid "Must not be used in web templates."
-msgstr ""
+msgstr "Darf nicht in Web-Templates verwendet werden."
 
 #: cdedb/frontend/common.py:1029 cdedb/frontend/common.py:1011
 #: cdedb/frontend/common.py:1010 cdedb/frontend/common.py:998
@@ -2759,6 +2759,8 @@ msgstr "Kein Account gefunden."
 #: cdedb/frontend/core.py:749
 msgid "Must provide id of the associated mailinglist to use this kind."
 msgstr ""
+"Um diese Art Anfrage zu benutzen muss die zugehörige Mailinglisten-ID "
+"angegeben werden."
 
 #: cdedb/frontend/core.py:948 cdedb/frontend/core.py:963
 #: cdedb/frontend/core.py:945 cdedb/frontend/core.py:962
@@ -5264,11 +5266,11 @@ msgid ""
 "with %(tab)s, confirm it with %(enter)s or %(space)s, then select a box with "
 "%(tab)s and confirm the selection with %(enter)s or %(space)s."
 msgstr ""
-"Um die Kandidaten anzuordnen, bewege sie in eine der schattierten Boxen. "
-"Eine Einordnung in einer höheren Box drückt eine höhere Präferenz dieses "
-"Kandidaten aus. Kandidaten, die sich in der gleichen Box befinden, werden "
-"mit gleicher Präferenz gewertet. Bewegst Du einen Kandidaten in den "
-"Zwischenraum ober- und unterhalb der Boxen, entsteht dort eine neue Box."
+"Es gibt drei Möglichkeiten die Kandidaten anzuordnen: Die Kandidaten per "
+"Drag’n’Drop verschieben, erst einen Kandidaten und dann eine Box anklicken "
+"oder mit %(tab)s einen Kandidaten auswählen, die Auswahl mit %(space)s oder "
+"%(enter)s bestätigen und anschließend mit %(tab)s eine Box auswählen und "
+"wiederum mit %(space)s oder %(enter)s bestätigen."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:184
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:188
@@ -5293,11 +5295,10 @@ msgid ""
 "you want to reject below this box (they will be highlighted in red). Should "
 "all candidates be rejected, the board may take additional measures."
 msgstr ""
-"Eine der Boxen ist stets als „Neutral“ gekennzeichnet. Bitte ordne\n"
-"Kandidaten, die Du für geeignet hältst, oberhalb dieser Box an (Boxen "
-"werden\n"
-"grün hinterlegt) und Kandidaten die Du ablehnst unterhalb (Boxen werden rot\n"
-"hinterlegt). Sollten in der Auszählung alle Kandidaten abgelehnt werden, so\n"
+"Eine der Boxen ist stets als „Neutral“ gekennzeichnet. Bitte ordne "
+"Kandidaten, die Du für geeignet hältst, oberhalb dieser Box an (Boxen werden "
+"grün hinterlegt) und Kandidaten die Du ablehnst unterhalb (Boxen werden rot "
+"hinterlegt). Sollten in der Auszählung alle Kandidaten abgelehnt werden, so "
 "kann der Vorstand ggf. weitere Maßnahmen ergreifen."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:203
@@ -9012,9 +9013,8 @@ msgid "Additional Data"
 msgstr "Zusätzliche Daten"
 
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:93
-#, fuzzy
 msgid "Grant Trialmembership"
-msgstr "Probemitgliedschaft gewähren\n"
+msgstr "Probemitgliedschaft gewähren"
 
 #: cdedb/frontend/templates/web/core/reset_password.tmpl:10
 msgid ""
