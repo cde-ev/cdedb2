@@ -1218,17 +1218,11 @@ class TestMlFrontend(FrontendTest):
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Sozialistischer Kampfbrief"},
                       {"description": "Erweiterte Verwaltung"})
-        self.assertPresence("Du hast keine priviligierter Moderator Rechte",
+        self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
                             div="notifications")
-        # they can not add ...
-        f = self.response.forms['addmodsubscriberform']
-        f['modsubscriber_ids'] = USER_DICT["anton"]["DB-ID"]
-        self.submit(f, check_notification=False)
-        self.assertPresence("Darf Abonnements nicht ändern.", div="notifications")
-        # ... nor remove subscriptions.
-        f = self.response.forms['removemodsubscriberform100']
-        self.submit(f, check_notification=False)
-        self.assertPresence("Darf Abonnements nicht ändern.", div="notifications")
+        # they can neither add nor remove subscriptions.
+        self.assertNotIn('addmodsubscriberform', self.response.forms)
+        self.assertNotIn('removemodsubscriberform100', self.response.forms)
 
     @as_users("inga")
     def test_cdelokal_admin(self, user):

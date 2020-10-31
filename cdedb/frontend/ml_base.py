@@ -550,9 +550,11 @@ class MlBaseFrontend(AbstractUserFrontend):
         requests = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
             requests, key=lambda anid: EntitySorter.persona(personas[anid])))
+        privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
-            'moderators': moderators, 'explicits': explicits})
+            'moderators': moderators, 'explicits': explicits,
+            'privileged': privileged})
 
     @access("ml")
     @mailinglist_guard()
@@ -577,9 +579,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             (anid, personas[anid]) for anid in sorted(
                 unsubscription_overrides,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
+        privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
         return self.render(rs, "show_subscription_details", {
             'subscription_overrides': subscription_overrides,
-            'unsubscription_overrides': unsubscription_overrides})
+            'unsubscription_overrides': unsubscription_overrides,
+            'privileged': privileged})
 
     @access("ml")
     @mailinglist_guard()
@@ -763,7 +767,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("persona_id", "id"))
-    @mailinglist_guard()
+    @mailinglist_guard(requires_privilege=True)
     def approve_request(self, rs: RequestState, mailinglist_id: int,
                         persona_id: int) -> Response:
         """Evaluate whether to admit subscribers."""
@@ -776,7 +780,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("persona_id", "id"))
-    @mailinglist_guard()
+    @mailinglist_guard(requires_privilege=True)
     def deny_request(self, rs: RequestState, mailinglist_id: int,
                      persona_id: int) -> Response:
         """Evaluate whether to admit subscribers."""
@@ -789,7 +793,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("persona_id", "id"))
-    @mailinglist_guard()
+    @mailinglist_guard(requires_privilege=True)
     def block_request(self, rs: RequestState, mailinglist_id: int,
                       persona_id: int) -> Response:
         """Evaluate whether to admit subscribers."""
@@ -802,7 +806,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("subscriber_ids", "cdedbid_csv_list"))
-    @mailinglist_guard()
+    @mailinglist_guard(requires_privilege=True)
     def add_subscribers(self, rs: RequestState, mailinglist_id: int,
                         subscriber_ids: Collection[int]) -> Response:
         """Administratively subscribe somebody."""
@@ -818,7 +822,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("subscriber_id", "id"))
-    @mailinglist_guard()
+    @mailinglist_guard(requires_privilege=True)
     def remove_subscriber(self, rs: RequestState, mailinglist_id: int,
                           subscriber_id: int) -> Response:
         """Administratively unsubscribe somebody."""
@@ -831,7 +835,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modsubscriber_ids", "cdedbid_csv_list"))
-    @mailinglist_guard()
+    @mailinglist_guard(requires_privilege=True)
     def add_subscription_overrides(self, rs: RequestState, mailinglist_id: int,
                                    modsubscriber_ids: Collection[int]) -> Response:
         """Administratively subscribe somebody with moderator override."""
@@ -847,7 +851,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modsubscriber_id", "id"))
-    @mailinglist_guard()
+    @mailinglist_guard(requires_privilege=True)
     def remove_subscription_override(self, rs: RequestState,
                                      mailinglist_id: int,
                                      modsubscriber_id: int) -> Response:
@@ -861,7 +865,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modunsubscriber_ids", "cdedbid_csv_list"))
-    @mailinglist_guard()
+    @mailinglist_guard(requires_privilege=True)
     def add_unsubscription_overrides(self, rs: RequestState, mailinglist_id: int,
                                      modunsubscriber_ids: Collection[int]) -> Response:
         """Administratively block somebody."""
@@ -877,7 +881,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modunsubscriber_id", "id"))
-    @mailinglist_guard()
+    @mailinglist_guard(requires_privilege=True)
     def remove_unsubscription_override(self, rs: RequestState,
                                        mailinglist_id: int,
                                        modunsubscriber_id: int) -> Response:
