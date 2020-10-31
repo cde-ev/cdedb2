@@ -1555,6 +1555,8 @@ class EventBackend(AbstractBackend):
             existing = {unwrap(e) for e in current}
             new = ids - existing
             deleted = existing - ids
+            if not new and not deleted:
+                return -1
             if new:
                 for anid in mixed_existence_sorter(new):
                     new_orga = {

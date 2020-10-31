@@ -507,7 +507,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_event(rs, event_id)
         new = rs.ambience['event']['orgas'] - {orga_id}
         code = self.eventproxy.set_event_orgas(rs, event_id, new)
-        self.notify_return_code(rs, code)
+        self.notify_return_code(rs, code, pending=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})

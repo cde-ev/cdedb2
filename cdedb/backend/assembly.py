@@ -552,6 +552,8 @@ class AssemblyBackend(AbstractBackend):
             new = ids - existing
             deleted = existing - ids
             ret = 1
+            if not new and not deleted:
+                return -1
             if new:
                 inserts = [{
                         'persona_id': anid,
