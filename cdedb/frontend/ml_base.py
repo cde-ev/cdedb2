@@ -649,7 +649,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         moderators |= set(rs.ambience['mailinglist']['moderators'])
         code = self.mlproxy.set_moderators(rs, mailinglist_id, moderators)
-        self.notify_return_code(rs, code)
+        self.notify_return_code(rs, code, pending=n_("Action had no effect."))
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
