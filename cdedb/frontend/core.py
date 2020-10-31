@@ -1274,7 +1274,7 @@ class CoreFrontend(AbstractFrontend):
             rs, privilege_change_id, case_status)
         success = n_("Change committed.") if ack else n_("Change rejected.")
         info = n_("Password reset issued for new admin.")
-        self.notify_return_code(rs, code, success=success, pending=info)
+        self.notify_return_code(rs, code, success=success, info=info)
         if not code:
             return self.show_privilege_change(rs, privilege_change_id)
         else:
@@ -1530,7 +1530,7 @@ class CoreFrontend(AbstractFrontend):
             return self.set_foto_form(rs, persona_id)
         code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
         self.notify_return_code(rs, code, success=n_("Foto updated."),
-                                pending=n_("Foto removed."))
+                                info=n_("Foto removed."))
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin", modi={"POST"})
@@ -2010,7 +2010,7 @@ class CoreFrontend(AbstractFrontend):
             error=n_("Verification failed. Please contact the administrators."),
             success=n_("Email verified. Wait for moderation. "
                        "You will be notified by mail."),
-            pending=n_("This account request was already verified.")
+            info=n_("This account request was already verified.")
         )
         if not code:
             return self.redirect(rs, "core/genesis_request_form")

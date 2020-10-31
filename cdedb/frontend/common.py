@@ -1408,7 +1408,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def notify_return_code(rs: RequestState, code: Union[int, bool, None],
                            success: str = n_("Change committed."),
-                           pending: str = n_("Change pending."),
+                           info: str = n_("Change pending."),
                            error: str = n_("Change failed.")) -> None:
         """Small helper to issue a notification based on a return code.
 
@@ -1426,7 +1426,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif code is True or code > 0:
             rs.notify("success", success)
         elif code < 0:
-            rs.notify("info", pending)
+            rs.notify("info", info)
         else:
             raise RuntimeError(n_("Impossible."))
 

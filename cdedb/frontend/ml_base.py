@@ -649,7 +649,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         moderators |= set(rs.ambience['mailinglist']['moderators'])
         code = self.mlproxy.set_moderators(rs, mailinglist_id, moderators)
-        self.notify_return_code(rs, code, pending=n_("Action had no effect."))
+        self.notify_return_code(rs, code, info=n_("Action had no effect."))
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -761,7 +761,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs.notify("error",
                           n_("Not privileged to change subscriptions."))
         if infos_only:
-            self.notify_return_code(rs, -1, pending=n_("Action had no effect."))
+            self.notify_return_code(rs, -1, info=n_("Action had no effect."))
         else:
             self.notify_return_code(rs, code)
 
