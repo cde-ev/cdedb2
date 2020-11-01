@@ -203,7 +203,7 @@
                                     <span class="notificationMessage">{{ gettext(message)|e|format(**params) }}</span>
                                 </div>
                             {% endfor %}
-                            {% block extra_notifications %}
+                            {% block static_notifications %}
                             {% endblock %}
                         {% endwith %}
                     </div>

@@ -28,7 +28,7 @@
         <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
     </h1>
 {% endblock %}
-{% block extra_notifications %}
+{% block static_notifications %}
     {% if not privileged %}
         <div class="alert alert-info">
             {{ util.make_icon('info-circle') }}

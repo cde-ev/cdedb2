@@ -27,7 +27,7 @@
         </small>
     </h1>
 {% endblock %}
-{% block extra_notifications %}
+{% block static_notifications %}
     {% if not privileged and "registration_stati" in additional_fields %}
         <div class="alert alert-info">
             {{ util.make_icon('info-circle') }}
