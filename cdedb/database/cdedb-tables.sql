@@ -24,35 +24,61 @@ CREATE TABLE core.personas (
         password_hash           varchar NOT NULL,
         -- inactive accounts may not log in
         is_active               boolean NOT NULL DEFAULT True,
+        CONSTRAINT personas_active_archived
+            CHECK (NOT (is_archived AND is_active)),
         -- administrative notes about this user
         notes                   varchar,
 
         -- global admin, grants all privileges
         is_meta_admin           boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_meta
+            CHECK (NOT is_meta_admin OR is_cde_realm),
         -- allows managing all users and general database configuration
         is_core_admin           boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_core
+            CHECK (NOT is_core_admin OR is_cde_realm),
         -- allows managing of cde users (members and former members) and
         -- other cde stuff (past events, direct debit)
         is_cde_admin            boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_cde
+            CHECK (NOT is_cde_admin OR is_cde_realm),
         is_finance_admin        boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_finance
+            CHECK (NOT is_finance_admin OR is_cde_admin),
         -- allows managing of events and event users
         is_event_admin          boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_event
+            CHECK (NOT is_event_admin OR is_event_realm),
         -- allows managing of mailinglists and ml users
         is_ml_admin             boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_ml
+            CHECK (NOT is_ml_admin OR is_ml_realm),
         -- allows managing of assemblies and assembly users
         is_assembly_admin       boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_assembly
+            CHECK (NOT is_assembly_admin OR is_assembly_realm),
         -- allows managing a subset of all mailinglists, those related to CdE Lokalgruppen
         is_cdelokal_admin       boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_cdelokal
+            CHECK (NOT is_cdelokal_admin OR is_ml_realm),
         -- allows usage of cde functionality
         is_cde_realm            boolean NOT NULL,
+        CONSTRAINT personas_realm_cde_implicits
+            CHECK (NOT is_cde_realm OR (is_event_realm AND is_assembly_realm)),
         -- allows usage of event functionality
         is_event_realm          boolean NOT NULL,
+        CONSTRAINT personas_realm_event_implicits
+            CHECK (NOT is_event_realm OR is_ml_realm),
         -- allows usage of mailinglist functionality
         is_ml_realm             boolean NOT NULL,
         -- allows usage of assembly functionality
         is_assembly_realm       boolean NOT NULL,
+        CONSTRAINT personas_realm_assembly_implicits
+            CHECK (NOT is_assembly_realm OR is_ml_realm),
         -- member status grants access to additional functionality
         is_member               boolean NOT NULL,
+        CONSTRAINT personas_member_implicits
+            CHECK (NOT is_member OR is_cde_realm),
         -- searchability governs whether a persona may search for others
         --
         -- a persona is visible/may search
@@ -64,6 +90,8 @@ CREATE TABLE core.personas (
         -- signal all remaining information about a user has been cleared.
         -- this can never be undone.
         is_purged               boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_archived_purged
+            CHECK (NOT is_purged OR is_archived),
         -- name to use when adressing user/"Rufname"
         display_name            varchar NOT NULL,
         -- "Vornamen" (including middle names)
