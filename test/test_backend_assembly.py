@@ -403,11 +403,13 @@ class TestAssemblyBackend(BackendTest):
         ballot_data['rel_quorum'] = -5
         with self.assertRaises(ValueError) as cm:
             self.assembly.create_ballot(self.key, ballot_data)
-        self.assertIn("Must be between 0 and 100.", cm.exception.args[0])
+        self.assertIn("Relative quorum must be between 0 and 100.",
+                      cm.exception.args[0])
         ballot_data['rel_quorum'] = 168
         with self.assertRaises(ValueError) as cm:
             self.assembly.create_ballot(self.key, ballot_data)
-        self.assertIn("Must be between 0 and 100.", cm.exception.args[0])
+        self.assertIn("Relative quorum must be between 0 and 100.",
+                      cm.exception.args[0])
 
         # Initial quorum should be number of members.
         self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])

@@ -356,25 +356,6 @@ def _partial_import_id(val, argname=None, *, _convert=True,
 
 
 @_addvalidator
-def _percentage(val, argname: str = None, *, _convert: bool = True,
-                _ignore_warnings: bool = False) -> int:
-    """An integer between 0 and 100 to be used as a percentage."""
-    int_val, errs = None, []
-    if _convert:
-        if isinstance(val, float):
-            int_val, errs = _int(val * 100, argname, _convert=_convert,
-                                 _ignore_warnings=_ignore_warnings)
-    if int_val is None:
-        int_val, errs = _int(val, argname, _convert=_convert,
-                             _ignore_warnings=_ignore_warnings)
-    if not errs:
-        if not 0 <= int_val <= 100:
-            int_val = None
-            errs.append((argname, ValueError(n_("Must be between 0 and 100."))))
-    return int_val, errs
-
-
-@_addvalidator
 def _float(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
@@ -3952,7 +3933,7 @@ _BALLOT_OPTIONAL_FIELDS = lambda: {
     'extended': _bool_or_None,
     'vote_extension_end': _datetime_or_None,
     'abs_quorum': _int,
-    'rel_quorum': _percentage,
+    'rel_quorum': _int,
     'votes': _int_or_None,
     'use_bar': _bool,
     'is_tallied': _bool,
@@ -4035,6 +4016,9 @@ def _ballot(val, argname=None, *, creation=False, _convert=True,
         quorum = val['abs_quorum']
     if 'rel_quorum' in val and not quorum:
         quorum = val['rel_quorum']
+        if not 0 <= quorum <= 100:
+            msg = ValueError(n_("Relative quorum must be between 0 and 100."))
+            errs.append(("abs_quorum", msg))
 
     vote_extension_errors = [
         ("vote_extension_end", ValueError(n_("Must be specified if quorum is given."))),

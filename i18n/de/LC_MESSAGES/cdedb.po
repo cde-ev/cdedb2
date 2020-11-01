@@ -17738,8 +17738,8 @@ msgid "Inconsistent with quorum."
 msgstr "Inkonsistent mit dem Quorum."
 
 #: cdedb/validation.py:368
-msgid "Must be between 0 and 100."
-msgstr "Muss zwischen 0 und 100 liegen."
+msgid "Relative quorum must be between 0 and 100."
+msgstr "Relatives Quorum muss zwischen 0 und 100 liegen."
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"

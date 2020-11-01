@@ -568,14 +568,14 @@ class TestValidation(unittest.TestCase):
     def test_percentage(self):
         self.do_validator_test("_percentage", (
             ("23", 23, None, False),
-            (0.11, 11, None, False),
+            (11.0, 11, None, False),
             (19, 19, None, True),
-            (97.0, None, ValueError, False),
-            (0.2311, None, ValueError, False),
-            (1997, None, ValueError, False),
+            (0.97, None, ValueError, False),
+            (23.11, None, ValueError, False),
+            (1997, 1997, None, True),
             ("abc", None, ValueError, False),
             (1, 1, None, True),
-            (1.0, 100, None, False),
+            (1.0, 1, None, False),
             ("1", 1, None, False),
             ("1.0", None, ValueError, False),
         ))
