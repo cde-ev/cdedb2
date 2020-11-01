@@ -533,56 +533,6 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta, AssemblyMailinglist)
         return bc.assembly.list_attendees(rs, mailinglist["assembly_id"])
 
 
-class AssemblyPresiderMailinglist(AssemblyAssociatedMeta, AssemblyMailinglist):
-    @classmethod
-    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
-                                mailinglist: CdEDBObject
-                                ) -> bool:
-        """Check if moderator is privileged.
-
-        For AssemblyAssociatedMailinglists, this are assembly admins.
-        """
-        is_moderator = mailinglist['id'] in rs.user.moderator
-        if mailinglist['assembly_id'] is None:
-            return is_moderator
-        is_privileged = bc.assembly.may_assemble(rs,
-            assembly_id=mailinglist['assembly_id'])
-        return is_moderator and is_privileged
-
-    @classmethod
-    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
-                                 mailinglist: CdEDBObject,
-                                 persona_ids: Collection[int],
-                                 ) -> MIPolMap:
-        """Determine the MIPol of the user or a persona with a mailinglist.
-
-        For the `AssemblyAssociatedMailinglist` this means opt-out for
-        attendees of the associated assembly.
-        """
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
-
-        ret: MIPolMap = {}
-        for persona_id in persona_ids:
-            presiding = bc.assembly.get_assembly(rs,
-                assembly_id=mailinglist["assembly_id"])['presiders']
-            if presiding:
-                ret[persona_id] = const.MailinglistInteractionPolicy.opt_out
-            else:
-                ret[persona_id] = None
-        return ret
-
-    @classmethod
-    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
-                                 mailinglist: CdEDBObject) -> Set[int]:
-        """Get a list of people that should be on this mailinglist.
-
-        For the `AssemblyAssociatedMailinglist` this means the attendees of the
-        linked assembly.
-        """
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
-        return bc.assembly.get_assembly(rs,
-            assembly_id=mailinglist["assembly_id"])['presiders']
-
 class AssemblyOptInMailinglist(AssemblyMailinglist):
     role_map = OrderedDict([
         ("assembly", MailinglistInteractionPolicy.opt_in)
