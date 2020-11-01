@@ -760,7 +760,7 @@ class AssemblyBackend(AbstractBackend):
                 candidates = {e['id']: e for e in data
                               if e['ballot_id'] == anid}
                 if 'candidates' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 ret[anid]['candidates'] = candidates
             ret = {k: v for k, v in ret.items()
                    if self.may_access(rs, ballot_id=k)}

@@ -431,7 +431,7 @@ class MlBackend(AbstractBackend):
                 moderators = {d['persona_id']
                               for d in data if d['mailinglist_id'] == anid}
                 if 'moderators' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 ret[anid]['moderators'] = moderators
             data = self.sql_select(
                 rs, "ml.whitelist", ("address", "mailinglist_id"), mailinglist_ids,
@@ -439,7 +439,7 @@ class MlBackend(AbstractBackend):
             for anid in mailinglist_ids:
                 whitelist = {d['address'] for d in data if d['mailinglist_id'] == anid}
                 if 'whitelist' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 ret[anid]['whitelist'] = whitelist
             for anid in mailinglist_ids:
 

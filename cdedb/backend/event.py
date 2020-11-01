@@ -944,7 +944,7 @@ class EventBackend(AbstractBackend):
             for anid in event_ids:
                 parts = {d['id']: d for d in data if d['event_id'] == anid}
                 if 'parts' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 ret[anid]['parts'] = parts
             track_data = self.sql_select(
                 rs, "event.course_tracks", COURSE_TRACK_FIELDS,
@@ -956,7 +956,7 @@ class EventBackend(AbstractBackend):
                 for part_id in ret[anid]['parts']:
                     tracks = {d['id']: d for d in track_data if d['part_id'] == part_id}
                     if 'tracks' in ret[anid]['parts'][part_id]:
-                        raise RuntimeError
+                        raise RuntimeError()
                     ret[anid]['parts'][part_id]['tracks'] = tracks
                 ret[anid]['tracks'] = {d['id']: d for d in track_data
                                        if d['part_id'] in ret[anid]['parts']}
@@ -969,7 +969,7 @@ class EventBackend(AbstractBackend):
             for anid in event_ids:
                 orgas = {d['persona_id'] for d in data if d['event_id'] == anid}
                 if 'orgas' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 ret[anid]['orgas'] = orgas
             data = self.sql_select(
                 rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
@@ -977,7 +977,7 @@ class EventBackend(AbstractBackend):
             for anid in event_ids:
                 fields = {d['id']: d for d in data if d['event_id'] == anid}
                 if 'fields' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 ret[anid]['fields'] = fields
         for anid in event_ids:
             ret[anid]['begin'] = min((p['part_begin']
@@ -2089,12 +2089,12 @@ class EventBackend(AbstractBackend):
             for anid in course_ids:
                 segments = {p['track_id'] for p in data if p['course_id'] == anid}
                 if 'segments' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 ret[anid]['segments'] = segments
                 active_segments = {p['track_id'] for p in data
                                    if p['course_id'] == anid and p['is_active']}
                 if 'active_segments' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 ret[anid]['active_segments'] = active_segments
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
         return ret
@@ -2722,7 +2722,7 @@ class EventBackend(AbstractBackend):
                 registration_ids, entity_key="registration_id")
             for anid in tuple(ret):
                 if 'parts' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 ret[anid]['parts'] = {
                     e['part_id']: e for e in pdata if e['registration_id'] == anid
                 }
@@ -2743,7 +2743,7 @@ class EventBackend(AbstractBackend):
                 entity_key="registration_id")
             for anid in ret:
                 if 'tracks' in ret[anid]:
-                    raise RuntimeError
+                    raise RuntimeError()
                 tracks = {e['track_id']: e for e in tdata
                           if e['registration_id'] == anid}
                 for track_id in tracks:
