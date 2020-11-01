@@ -7,8 +7,9 @@ concluded events.
 import datetime
 
 from typing import (
-    Collection, Dict, Callable, Optional, Tuple, Union, List, Set, Any
+    Collection, Dict, Optional, Tuple, Union, List, Set, Any
 )
+from typing_extensions import Protocol
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, Silencer, AbstractBackend,
@@ -41,26 +42,26 @@ class PastEventBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("cde", "event")
-    def participation_infos(self, rs: RequestState, ids: Collection[int]
+    def participation_infos(self, rs: RequestState, persona_ids: Collection[int]
                             ) -> Dict[int, CdEDBObjectMap]:
         """List concluded events visited by specific personas.
 
         :returns: First keys are the ids, second are the pevent_ids.
         """
-        ids = affirm_set("id", ids)
+        persona_ids = affirm_set("id", persona_ids)
         query = glue(
             "SELECT p.persona_id, e.id, e.title, e.tempus, p.is_orga",
             "FROM past_event.participants AS p",
             "INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)",
             "WHERE p.persona_id = ANY(%s)")
-        pevents = self.query_all(rs, query, (ids,))
+        pevents = self.query_all(rs, query, (persona_ids,))
         query = glue(
             "SELECT p.persona_id, c.id, c.pevent_id, c.title, c.nr,",
             "p.is_instructor",
             "FROM past_event.participants AS p",
             "LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)",
             "WHERE p.persona_id = ANY(%s)")
-        pcourse = self.query_all(rs, query, (ids,))
+        pcourse = self.query_all(rs, query, (persona_ids,))
         ret = {}
         course_fields = ('id', 'title', 'is_instructor', 'nr')
         for pevent in pevents:
@@ -69,12 +70,14 @@ class PastEventBackend(AbstractBackend):
                 for c in pcourse if (c['persona_id'] == pevent['persona_id']
                                      and c['pevent_id'] == pevent['id'])
             }
-        for anid in ids:
+        for anid in persona_ids:
             ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}
         return ret
-    participation_info: Callable[
-        ['PastEventBackend', RequestState, int], CdEDBObjectMap]
-    participation_info = singularize(participation_infos)
+
+    class _ParticipationInfoProtocol(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int) -> CdEDBObjectMap: ...
+    participation_info: _ParticipationInfoProtocol = singularize(
+        participation_infos, "persona_ids", "persona_id")
 
     def past_event_log(self, rs: RequestState, code: const.PastEventLogCodes,
                        pevent_id: Optional[int], persona_id: int = None,
@@ -128,16 +131,18 @@ class PastEventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
-    def get_institutions(self, rs: RequestState, ids: Collection[int]
+    def get_institutions(self, rs: RequestState, institution_ids: Collection[int]
                          ) -> CdEDBObjectMap:
         """Retrieve data for some institutions."""
-        ids = affirm_set("id", ids)
+        institution_ids = affirm_set("id", institution_ids)
         data = self.sql_select(rs, "past_event.institutions",
-                               INSTITUTION_FIELDS, ids)
+                               INSTITUTION_FIELDS, institution_ids)
         return {e['id']: e for e in data}
-    get_institution: Callable[['PastEventBackend', RequestState, int],
-                              CdEDBObject]
-    get_institution = singularize(get_institutions)
+
+    class _GetInstitutionProtocol(Protocol):
+        def __call__(self, rs: RequestState, institution_id: int) -> CdEDBObject: ...
+    get_institution: _GetInstitutionProtocol = singularize(
+        get_institutions, "institution_ids", "institution_id")
 
     @access("cde_admin", "event_admin")
     def set_institution(self, rs: RequestState, data: CdEDBObject
@@ -242,15 +247,18 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("cde", "event")
-    def get_past_events(self, rs: RequestState, ids: Collection[int]
+    def get_past_events(self, rs: RequestState, pevent_ids: Collection[int]
                         ) -> CdEDBObjectMap:
         """Retrieve data for some concluded events."""
-        ids = affirm_set("id", ids)
-        data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, ids)
+        pevent_ids = affirm_set("id", pevent_ids)
+        data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS,
+                               pevent_ids)
         return {e['id']: e for e in data}
-    get_past_event: Callable[
-        ['PastEventBackend', RequestState, int], CdEDBObject]
-    get_past_event = singularize(get_past_events)
+
+    class _GetPastEventProtocol(Protocol):
+        def __call__(self, rs: RequestState, pevent_id: int) -> CdEDBObject: ...
+    get_past_event: _GetPastEventProtocol = singularize(
+        get_past_events, "pevent_ids", "pevent_id")
 
     @access("cde_admin", "event_admin")
     def set_past_event(self, rs: RequestState, data: CdEDBObject
@@ -370,19 +378,21 @@ class PastEventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
-    def get_past_courses(self, rs: RequestState, ids: Collection[int]
+    def get_past_courses(self, rs: RequestState, pcourse_ids: Collection[int]
                          ) -> CdEDBObjectMap:
         """Retrieve data for some concluded courses.
 
         They do not need to be associated to the same event.
         """
-        ids = affirm_set("id", ids)
-        data = self.sql_select(rs, "past_event.courses", PAST_COURSE_FIELDS,
-                               ids)
+        pcourse_ids = affirm_set("id", pcourse_ids)
+        data = self.sql_select(
+            rs, "past_event.courses", PAST_COURSE_FIELDS, pcourse_ids)
         return {e['id']: e for e in data}
-    get_past_course: Callable[
-        ['PastEventBackend', RequestState, int], CdEDBObject]
-    get_past_course = singularize(get_past_courses)
+
+    class _GetPastCourseProtocol(Protocol):
+        def __call__(self, rs: RequestState, pcourse_id: int) -> CdEDBObject: ...
+    get_past_course: _GetPastCourseProtocol = singularize(
+        get_past_courses, "pcourse_ids", "pcourse_id")
 
     @access("cde_admin", "event_admin")
     def set_past_course(self, rs: RequestState, data: CdEDBObject
