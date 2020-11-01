@@ -286,6 +286,8 @@ def _int(val, argname=None, *, _convert=True, _ignore_warnings=False):
             val = int(val)
     if not isinstance(val, int) or isinstance(val, bool):
         return None, [(argname, TypeError(n_("Must be an integer.")))]
+    if not -2147483648 <= val < 2147483648:
+        return None, [(argname, ValueError(n_("Integer too large.")))]
     return val, []
 
 
@@ -373,6 +375,9 @@ def _float(val, argname=None, *, _convert=True, _ignore_warnings=False):
     if not isinstance(val, float):
         return None, [(argname,
                        TypeError(n_("Must be a floating point number.")))]
+    if val >= 1e7:
+        return None, [(argname,
+                       ValueError(n_("Must be smaller than a million.")))]
     return val, []
 
 
@@ -393,6 +398,9 @@ def _decimal(val, argname=None, *, _convert=True, _ignore_warnings=False):
                 argname, ValueError(n_("Invalid input for decimal number.")))]
     if not isinstance(val, decimal.Decimal):
         return None, [(argname, TypeError(n_("Must be a decimal.Decimal.")))]
+    if val >= 1e7:
+        return None, [(argname,
+                       ValueError(n_("Must be smaller than a billion.")))]
     return val, []
 
 
