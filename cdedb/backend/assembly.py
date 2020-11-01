@@ -82,9 +82,9 @@ class AssemblyBackend(AbstractBackend):
                          for e in data if e['persona_id'] == anid}
         return ret
 
-    class PresiderInfo(Protocol):
+    class _PresiderInfoProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
-    presider_info: PresiderInfo = singularize(
+    presider_info: _PresiderInfoProtocol = singularize(
         presider_infos, "persona_ids", "persona_id")
 
     @access("persona")
@@ -493,9 +493,9 @@ class AssemblyBackend(AbstractBackend):
             ret[assembly['id']] = assembly
         return ret
 
-    class GetAssembly(Protocol):
+    class _GetAssemblyProtocol(Protocol):
         def __call__(self, rs: RequestState, assembly_id: int) -> CdEDBObject: ...
-    get_assembly: GetAssembly = singularize(
+    get_assembly: _GetAssemblyProtocol = singularize(
         get_assemblies, "assembly_ids", "assembly_id")
 
     @access("assembly")
@@ -766,9 +766,9 @@ class AssemblyBackend(AbstractBackend):
                    if self.may_access(rs, ballot_id=k)}
         return ret
 
-    class GetBallot(Protocol):
+    class _GetBallotProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
-    get_ballot: GetBallot = singularize(get_ballots, "ballot_ids", "ballot_id")
+    get_ballot: _GetBallotProtocol = singularize(get_ballots, "ballot_ids", "ballot_id")
 
     @access("assembly")
     def set_ballot(self, rs: RequestState, data: CdEDBObject) -> int:
@@ -1524,9 +1524,9 @@ class AssemblyBackend(AbstractBackend):
 
         return ret
 
-    class GetAttachmentHistory(Protocol):
+    class _GetAttachmentHistoryProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObjectMap: ...
-    get_attachment_history: GetAttachmentHistory = singularize(
+    get_attachment_history: _GetAttachmentHistoryProtocol = singularize(
         get_attachment_histories, "attachment_ids", "attachment_id")
 
     @access("assembly")
@@ -1736,10 +1736,10 @@ class AssemblyBackend(AbstractBackend):
                 ret.update({e["attachment_id"]: e["version"] for e in data})
             return ret
 
-    class GetCurrentVersion(Protocol):
+    class _GetCurrentVersionProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int,
                      include_deleted: bool = False) -> int: ...
-    get_current_version: GetCurrentVersion = singularize(
+    get_current_version: _GetCurrentVersionProtocol = singularize(
         get_current_versions, "attachment_ids", "attachment_id")
 
     @access("assembly")
@@ -1943,9 +1943,9 @@ class AssemblyBackend(AbstractBackend):
         ret = {e['id']: e for e in data}
         return ret
 
-    class GetAttachmentInfo(Protocol):
+    class _GetAttachmentInfoProtocol(Protocol):
         def __call__(self, rs: RequestState, attachement_id: int) -> CdEDBObject: ...
-    _get_attachment_info: GetAttachmentInfo = singularize(
+    _get_attachment_info: _GetAttachmentInfoProtocol = singularize(
         _get_attachment_infos, "attachment_ids", "attachment_id")
 
     @access("assembly")
@@ -1958,7 +1958,7 @@ class AssemblyBackend(AbstractBackend):
                 raise PrivilegeError(n_("Not privileged."))
             return self._get_attachment_infos(rs, attachment_ids)
 
-    class GetAttachment(Protocol):
+    class _GetAttachmentProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObject: ...
-    get_attachment: GetAttachment = singularize(
+    get_attachment: _GetAttachmentProtocol = singularize(
         get_attachments, "attachment_ids", "attachment_id")

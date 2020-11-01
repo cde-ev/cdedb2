@@ -465,9 +465,9 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, (ids, valid_status))
         return {e['persona_id']: e['generation'] for e in data}
 
-    class ChangelogGetGeneration(Protocol):
+    class _ChangelogGetGenerationProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> int: ...
-    changelog_get_generation: ChangelogGetGeneration = singularize(
+    changelog_get_generation: _ChangelogGetGenerationProtocol = singularize(
         changelog_get_generations)
 
     @access("core_admin")
@@ -528,10 +528,10 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select(rs, "core.personas", columns, persona_ids)
         return {d['id']: d for d in data}
 
-    class RetrievePersona(Protocol):
+    class _RetrievePersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int, columns: Tuple[str, ...]
                      ) -> CdEDBObject: ...
-    retrieve_persona: RetrievePersona = singularize(
+    retrieve_persona: _RetrievePersonaProtocol = singularize(
         retrieve_personas, "persona_ids", "persona_id")
 
     @internal
@@ -972,10 +972,10 @@ class CoreBackend(AbstractBackend):
             rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, privilege_change_ids)
         return {e["id"]: e for e in data}
 
-    class GetPrivilegeChange(Protocol):
+    class _GetPrivilegeChangeProtocol(Protocol):
         def __call__(self, rs: RequestState, privilege_change_id: int
                      ) -> CdEDBObject: ...
-    get_privilege_change: GetPrivilegeChange = singularize(
+    get_privilege_change: _GetPrivilegeChangeProtocol = singularize(
         get_privilege_changes, "privilege_change_ids", "privilege_change_id")
 
     @access("persona")
@@ -1500,11 +1500,12 @@ class CoreBackend(AbstractBackend):
         persona_ids = affirm_set("id", persona_ids)
         return self.retrieve_personas(rs, persona_ids, columns=PERSONA_CORE_FIELDS)
 
-    class GetPersona(Protocol):
+    class _GetPersonaProtocol(Protocol):
         # `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(self, rs: RequestState, persona_id: Optional[int]
                      ) -> CdEDBObject: ...
-    get_persona: GetPersona = singularize(get_personas, "persona_ids", "persona_id")
+    get_persona: _GetPersonaProtocol = singularize(
+        get_personas, "persona_ids", "persona_id")
 
     @access("event", "droid_quick_partial_export")
     def get_event_users(self, rs: RequestState, persona_ids: Collection[int],
@@ -1567,11 +1568,11 @@ class CoreBackend(AbstractBackend):
             raise RuntimeError(n_("Not an event user."))
         return ret
 
-    class GetEventUser(Protocol):
+    class _GetEventUserProtocol(Protocol):
         # `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(self, rs: RequestState, persona_id: Optional[int],
                      event_id: int = None) -> CdEDBObject: ...
-    get_event_user: GetEventUser = singularize(
+    get_event_user: _GetEventUserProtocol = singularize(
         get_event_users, "persona_ids", "persona_id")
 
     @overload
@@ -1655,7 +1656,8 @@ class CoreBackend(AbstractBackend):
                                  for e in ret.values()))):
                 raise RuntimeError(n_("Improper access to member data."))
             return ret
-    get_cde_user: GetPersona = singularize(get_cde_users, "persona_ids", "persona_id")
+    get_cde_user: _GetPersonaProtocol = singularize(
+        get_cde_users, "persona_ids", "persona_id")
 
     @access("ml")
     def get_ml_users(self, rs: RequestState, persona_ids: Collection[int]
@@ -1666,7 +1668,8 @@ class CoreBackend(AbstractBackend):
         if any(not e['is_ml_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an ml user."))
         return ret
-    get_ml_user: GetPersona = singularize(get_ml_users, "persona_ids", "persona_id")
+    get_ml_user: _GetPersonaProtocol = singularize(
+        get_ml_users, "persona_ids", "persona_id")
 
     @access("assembly")
     def get_assembly_users(self, rs: RequestState, persona_ids: Collection[int]
@@ -1677,7 +1680,7 @@ class CoreBackend(AbstractBackend):
         if any(not e['is_assembly_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an assembly user."))
         return ret
-    get_assembly_user: GetPersona = singularize(
+    get_assembly_user: _GetPersonaProtocol = singularize(
         get_assembly_users, "persona_ids", "persona_id")
 
     @access("persona")
@@ -1694,7 +1697,7 @@ class CoreBackend(AbstractBackend):
                         for anid in persona_ids)):
             raise PrivilegeError(n_("Must be privileged."))
         return self.retrieve_personas(rs, persona_ids, columns=PERSONA_ALL_FIELDS)
-    get_total_persona: GetPersona = singularize(
+    get_total_persona: _GetPersonaProtocol = singularize(
         get_total_personas, "persona_ids", "persona_id")
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
@@ -1882,10 +1885,10 @@ class CoreBackend(AbstractBackend):
         num = unwrap(self.query_one(rs, query, params))
         return num == len(persona_ids)
 
-    class VerifyID(Protocol):
+    class _VerifyIDProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
                      is_archived: bool = None) -> bool: ...
-    verify_id: VerifyID = singularize(
+    verify_id: _VerifyIDProtocol = singularize(
         verify_ids, "persona_ids", "persona_id", passthrough=True)
 
     @internal
@@ -1902,10 +1905,10 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select(rs, "core.personas", bits, persona_ids)
         return {d['id']: extract_roles(d, introspection_only) for d in data}
 
-    class GetRolesSingle(Protocol):
+    class _GetRolesSingleProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: Optional[int],
                      introspection_only: bool = False) -> Set[Role]: ...
-    get_roles_single: GetRolesSingle = singularize(get_roles_multi)
+    get_roles_single: _GetRolesSingleProtocol = singularize(get_roles_multi)
 
     @access("persona")
     def get_realms_multi(self, rs: RequestState, persona_ids: Collection[int],
@@ -1917,10 +1920,10 @@ class CoreBackend(AbstractBackend):
         all_realms = {"cde", "event", "assembly", "ml"}
         return {key: value & all_realms for key, value in roles.items()}
 
-    class GetRealmsSingle(Protocol):
+    class _GetRealmsSingleProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int,
                      introspection_only: bool = False) -> Set[Realm]: ...
-    get_realms_single: GetRealmsSingle = singularize(
+    get_realms_single: _GetRealmsSingleProtocol = singularize(
         get_realms_multi, "persona_ids", "persona_id")
 
     @access("persona")
@@ -1941,11 +1944,11 @@ class CoreBackend(AbstractBackend):
         return len(roles) == len(persona_ids) and all(
             value >= required_roles for value in roles.values())
 
-    class VerifyPersona(Protocol):
+    class _VerifyPersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
                      required_roles: Collection[Role] = None,
                      introspection_only: bool = True) -> bool: ...
-    verify_persona: VerifyPersona = singularize(
+    verify_persona: _VerifyPersonaProtocol = singularize(
         verify_personas, "persona_ids", "persona_id", passthrough=True)
 
     @access("anonymous")
@@ -2472,9 +2475,9 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
-    class GenesisGetCase(Protocol):
+    class _GenesisGetCaseProtocol(Protocol):
         def __call__(self, rs: RequestState, genesis_case_id: int) -> CdEDBObject: ...
-    genesis_get_case: GenesisGetCase = singularize(
+    genesis_get_case: _GenesisGetCaseProtocol = singularize(
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",

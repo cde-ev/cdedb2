@@ -74,9 +74,9 @@ class PastEventBackend(AbstractBackend):
             ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}
         return ret
 
-    class ParticipationInfo(Protocol):
+    class _ParticipationInfoProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int) -> CdEDBObjectMap: ...
-    participation_info: ParticipationInfo = singularize(
+    participation_info: _ParticipationInfoProtocol = singularize(
         participation_infos, "persona_ids", "persona_id")
 
     def past_event_log(self, rs: RequestState, code: const.PastEventLogCodes,
@@ -139,9 +139,9 @@ class PastEventBackend(AbstractBackend):
                                INSTITUTION_FIELDS, institution_ids)
         return {e['id']: e for e in data}
 
-    class GetInstitution(Protocol):
+    class _GetInstitutionProtocol(Protocol):
         def __call__(self, rs: RequestState, institution_id: int) -> CdEDBObject: ...
-    get_institution: GetInstitution = singularize(
+    get_institution: _GetInstitutionProtocol = singularize(
         get_institutions, "institution_ids", "institution_id")
 
     @access("cde_admin", "event_admin")
@@ -255,9 +255,9 @@ class PastEventBackend(AbstractBackend):
                                pevent_ids)
         return {e['id']: e for e in data}
 
-    class GetPastEvent(Protocol):
+    class _GetPastEventProtocol(Protocol):
         def __call__(self, rs: RequestState, pevent_id: int) -> CdEDBObject: ...
-    get_past_event: GetPastEvent = singularize(
+    get_past_event: _GetPastEventProtocol = singularize(
         get_past_events, "pevent_ids", "pevent_id")
 
     @access("cde_admin", "event_admin")
@@ -389,9 +389,9 @@ class PastEventBackend(AbstractBackend):
             rs, "past_event.courses", PAST_COURSE_FIELDS, pcourse_ids)
         return {e['id']: e for e in data}
 
-    class GetPastCourse(Protocol):
+    class _GetPastCourseProtocol(Protocol):
         def __call__(self, rs: RequestState, pcourse_id: int) -> CdEDBObject: ...
-    get_past_course: GetPastCourse = singularize(
+    get_past_course: _GetPastCourseProtocol = singularize(
         get_past_courses, "pcourse_ids", "pcourse_id")
 
     @access("cde_admin", "event_admin")

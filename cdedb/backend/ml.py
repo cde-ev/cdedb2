@@ -237,9 +237,9 @@ class MlBackend(AbstractBackend):
             ret[anid] = {x['mailinglist_id'] for x in data if x['persona_id'] == anid}
         return ret
 
-    class ModeratorInfo(Protocol):
+    class _ModeratorInfoProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
-    moderator_info: ModeratorInfo = singularize(
+    moderator_info: _ModeratorInfoProtocol = singularize(
         moderator_infos, "persona_ids", "persona_id")
 
     def ml_log(self, rs: RequestState, code: const.MlLogCodes,
@@ -448,9 +448,9 @@ class MlBackend(AbstractBackend):
                 ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
         return ret
 
-    class GetMailinglist(Protocol):
+    class _GetMailinglistProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int) -> CdEDBObject: ...
-    get_mailinglist: GetMailinglist = singularize(get_mailinglists)
+    get_mailinglist: _GetMailinglistProtocol = singularize(get_mailinglists)
 
     @access("ml")
     def set_moderators(self, rs: RequestState, mailinglist_id: int,
@@ -846,10 +846,10 @@ class MlBackend(AbstractBackend):
 
         return num
 
-    class SetSubscription(Protocol):
+    class _SetSubscriptionProtocol(Protocol):
         def __call__(self, rs: RequestState, datum: CdEDBObject
                      ) -> DefaultReturnCode: ...
-    _set_subscription: SetSubscription = singularize(
+    _set_subscription: _SetSubscriptionProtocol = singularize(
         _set_subscriptions, "data", "datum", passthrough=True)
 
     @internal
@@ -884,10 +884,10 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    class RemoveSubscription(Protocol):
+    class _RemoveSubscriptionProtocol(Protocol):
         def __call__(self, rs: RequestState, datum: CdEDBObject
                      ) -> DefaultReturnCode: ...
-    _remove_subscription: RemoveSubscription = singularize(
+    _remove_subscription: _RemoveSubscriptionProtocol = singularize(
         _remove_subscriptions, "data", "datum", passthrough=True)
 
     @access("ml")
@@ -1100,11 +1100,11 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    class GetSubScriptionStates(Protocol):
+    class _GetSubScriptionStatesProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int,
                      states: SubStates = None
                      ) -> Dict[int, const.SubscriptionStates]: ...
-    get_subscription_states: GetSubScriptionStates = singularize(
+    get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
     @access("ml")
@@ -1158,12 +1158,12 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    class GetSubscription(Protocol):
+    class _GetSubscriptionProtocol(Protocol):
         def __call__(self, rs: RequestState,
                      persona_id: Optional[int], *, mailinglist_id: int,
                      states: SubStates = None
                      ) -> Optional[const.SubscriptionStates]: ...
-    get_subscription: GetSubscription = singularize(
+    get_subscription: _GetSubscriptionProtocol = singularize(
         get_user_subscriptions, "mailinglist_ids", "mailinglist_id")
 
     @access("ml", "droid_rklist")

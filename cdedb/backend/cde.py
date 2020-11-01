@@ -137,9 +137,9 @@ class CdEBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
-    class GetLastschrift(Protocol):
+    class _GetLastschriftProtocol(Protocol):
         def __call__(self, rs: RequestState, lastschrift_id: int) -> CdEDBObject: ...
-    get_lastschrift: GetLastschrift = singularize(
+    get_lastschrift: _GetLastschriftProtocol = singularize(
         get_lastschrifts, "lastschrift_ids", "lastschrift_id")
 
     @access("cde_admin")
@@ -321,9 +321,9 @@ class CdEBackend(AbstractBackend):
 
         return {e['id']: e for e in data}
 
-    class GetLastschriftTransaction(Protocol):
+    class _GetLastschriftTransactionProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
-    get_lastschrift_transaction: GetLastschriftTransaction = singularize(
+    get_lastschrift_transaction: _GetLastschriftTransactionProtocol = singularize(
         get_lastschrift_transactions)
 
     @access("finance_admin")

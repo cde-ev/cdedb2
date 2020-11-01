@@ -125,9 +125,9 @@ class EventBackend(AbstractBackend):
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
 
-    class OrgaInfo(Protocol):
+    class _OrgaInfoProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
-    orga_info: OrgaInfo = singularize(orga_infos, "persona_ids", "persona_id")
+    orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: int = None,
@@ -991,9 +991,9 @@ class EventBackend(AbstractBackend):
                          or ret[anid]['registration_hard_limit'] >= now()))
         return ret
 
-    class GetEvent(Protocol):
+    class _GetEventProtocol(Protocol):
         def __call__(self, rs: RequestState, event_id: int) -> CdEDBObject: ...
-    get_event: GetEvent = singularize(get_events, "event_ids", "event_id")
+    get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
 
     def _get_event_fields(self, rs: RequestState,
                           event_id: int) -> CdEDBObjectMap:
@@ -2099,9 +2099,9 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
         return ret
 
-    class GetCourse(Protocol):
+    class _GetCourseProtocol(Protocol):
         def __call__(self, rs: RequestState, course_id: int) -> CdEDBObject: ...
-    get_course: GetCourse = singularize(get_courses, "course_ids", "course_id")
+    get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
     def set_course(self, rs: RequestState,
@@ -2755,9 +2755,9 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
         return ret
 
-    class GetRegistration(Protocol):
+    class _GetRegistrationProtocol(Protocol):
         def __call__(self, rs: RequestState, registration_id: int) -> CdEDBObject: ...
-    get_registration: GetRegistration = singularize(
+    get_registration: _GetRegistrationProtocol = singularize(
         get_registrations, "registration_ids", "registration_id")
 
     @access("event")
@@ -3211,10 +3211,10 @@ class EventBackend(AbstractBackend):
                     rs, reg, event=event, is_member=is_member)
         return ret
 
-    class CalculateFee(Protocol):
+    class _CalculateFeeProtocol(Protocol):
         def __call__(self, rs: RequestState, registration_id: int
                      ) -> decimal.Decimal: ...
-    calculate_fee: CalculateFee = singularize(
+    calculate_fee: _CalculateFeeProtocol = singularize(
         calculate_fees, "registration_ids", "registration_id")
 
     @access("event")
@@ -3281,9 +3281,9 @@ class EventBackend(AbstractBackend):
                 raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
-    class GetLodgementGroup(Protocol):
+    class _GetLodgementGroupProtocol(Protocol):
         def __call__(self, rs: RequestState, group_id: int) -> CdEDBObject: ...
-    get_lodgement_group: GetLodgementGroup = singularize(
+    get_lodgement_group: _GetLodgementGroupProtocol = singularize(
         get_lodgement_groups, "group_ids", "group_id")
 
     @access("event")
@@ -3437,9 +3437,9 @@ class EventBackend(AbstractBackend):
                 entry['fields'] = cast_fields(entry['fields'], event_fields)
         return {e['id']: e for e in data}
 
-    class GetLodgement(Protocol):
+    class _GetLodgementProtocol(Protocol):
         def __call__(self, rs: RequestState, lodgement_id: int) -> CdEDBObject: ...
-    get_lodgement: GetLodgement = singularize(
+    get_lodgement: _GetLodgementProtocol = singularize(
         get_lodgements, "lodgement_ids", "lodgement_id")
 
     @access("event")
