@@ -271,6 +271,23 @@ class CoreFrontend(AbstractFrontend):
         ret.delete_cookie("sessionkey")
         return ret
 
+    @periodic("deactivate_old_sessions", period=4 * 24)
+    def deactivate_old_sessions(self, rs: RequestState, store: CdEDBObject
+                                ) -> CdEDBObject:
+        """Once per day deactivate old sessions."""
+        count = self.coreproxy.deactivate_old_sessions(rs)
+        self.logger.info(f"Deactivated {count} old sessions.")
+        store["total"] = store.get("total", 0) + count
+        return store
+
+    @periodic("clean_session_log", period=4 * 24 * 30)
+    def clean_session_log(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        """Once per month, cleanup old inactive sessions."""
+        count = self.coreproxy.clean_session_log(rs)
+        self.logger.info(f"Deleted {count} old entries from the session log.")
+        store["total"] = store.get("total", 0) + count
+        return store
+
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))
     def change_locale(self, rs: RequestState, locale: str, wants: Optional[str]

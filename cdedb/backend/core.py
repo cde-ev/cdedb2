@@ -1836,6 +1836,24 @@ class CoreBackend(AbstractBackend):
         query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)
 
+    @access("core_admin")
+    def deactivate_old_sessions(self, rs: RequestState) -> DefaultReturnCode:
+        """Deactivate old leftover sessions."""
+        query = ("UPDATE core.sessions SET is_active = False"
+                 " WHERE is_active = True AND atime < now() - INTERVAL '30 days'")
+        return self.query_exec(rs, query, ())
+
+    @access("core_admin")
+    def clean_session_log(self, rs: RequestState) -> DefaultReturnCode:
+        """Delete old entries from the sessionlog."""
+        query = ("DELETE FROM core.sessions WHERE is_active = False"
+                 " AND atime < now() - INTERVAL '30 days'"
+                 " AND (persona_id, atime) NOT IN"
+                 " (SELECT persona_id, MAX(atime) AS atime FROM core.sessions"
+                 "  WHERE is_active = False GROUP BY persona_id)")
+
+        return self.query_exec(rs, query, ())
+
     @access("persona")
     def verify_ids(self, rs: RequestState, ids: Collection[int],
                    is_archived: bool = None) -> bool:
