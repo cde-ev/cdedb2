@@ -268,7 +268,8 @@ class TestCommon(unittest.TestCase):
         try:
             result = subprocess.run(["make", "mypy"], check=True, capture_output=True)
         except subprocess.CalledProcessError as cpe:
-            count = len(cpe.stderr.decode().splitlines())
+            pattern = re.compile(": error: ")
+            count = len(re.findall(pattern, cpe.stdout.decode()))
             msg = f"There are {count} mypy errors. Run `make mypy` for more details."
             raise self.failureException(msg) from None
 
