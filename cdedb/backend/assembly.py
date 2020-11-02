@@ -765,13 +765,17 @@ class AssemblyBackend(AbstractBackend):
                     if e["abs_quorum"]:
                         e["quorum"] = e["abs_quorum"]
                     elif e["rel_quorum"]:
+                        # The total number of possible voters is the number of
+                        # attendees plus the number of member who may decide to
+                        # attend in the future.
                         attendees = self.list_attendees(rs, e["assembly_id"])
                         query = ("SELECT COUNT(id) FROM core.personas"
                                  " WHERE is_member = TRUE AND NOT(id = ANY(%s))")
-                        member_count = unwrap(self.query_one(rs, query, (attendees,)))
-                        assert member_count is not None
-                        total_count = member_count + len(attendees)
-                        e["quorum"] = math.ceil(total_count * e["rel_quorum"] // 100)
+                        non_attending_member_count = unwrap(
+                            self.query_one(rs, query, (attendees,)))
+                        assert non_attending_member_count is not None
+                        total_count = non_attending_member_count + len(attendees)
+                        e["quorum"] = math.ceil(total_count * e["rel_quorum"] / 100)
                     else:
                         e["quorum"] = 0
                 ret[e['id']] = e
