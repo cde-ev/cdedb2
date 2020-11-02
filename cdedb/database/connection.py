@@ -173,7 +173,7 @@ class Atomizer:
                  value: Optional[Exception],
                  tb: Optional[TracebackType]) -> Literal[False]:
         self.rs._conn.decontaminate()
-        return cast(Literal[False], self.rs._conn.__exit__(atype, value, tb))
+        return self.rs._conn.__exit__(atype, value, tb)
 
 
 class IrradiatedConnection(psycopg2.extensions.connection):
@@ -208,7 +208,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
 
     def __exit__(self, etype: Optional[Type[Exception]],
                  evalue: Optional[Exception],
-                 tb: Optional[TracebackType]) -> bool:
+                 tb: Optional[TracebackType]) -> Literal[False]:
         if self._radiation_level:
             # grab any exception
             self._saved_etype = etype or self._saved_etype
