@@ -362,12 +362,12 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         """
         check_appropriate_type(mailinglist, cls)
 
-        is_moderator = super().is_privileged_moderator(rs, bc, mailinglist)
+        basic_privilege = super().is_privileged_moderator(rs, bc, mailinglist)
         if mailinglist['event_id'] is None:
-            return is_moderator
-        is_privileged = (mailinglist['event_id'] in rs.user.orga
-                         or "event_admin" in rs.user.roles)
-        return is_moderator and is_privileged
+            return basic_privilege
+        additional_privilege = (mailinglist['event_id'] in rs.user.orga
+                                or "event_admin" in rs.user.roles)
+        return basic_privilege and additional_privilege
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -495,10 +495,10 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
         """
         check_appropriate_type(mailinglist, cls)
 
-        is_moderator = super().is_privileged_moderator(rs, bc, mailinglist)
-        is_privileged = bc.assembly.may_assemble(
+        basic_privilege = super().is_privileged_moderator(rs, bc, mailinglist)
+        additional_privilege = bc.assembly.may_assemble(
             rs, assembly_id=mailinglist['assembly_id'])
-        return is_moderator and is_privileged
+        return basic_privilege and additional_privilege
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
