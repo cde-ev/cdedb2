@@ -279,7 +279,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         presider_ids = set(presider_ids) | rs.ambience['assembly']['presiders']
         code = self.assemblyproxy.set_assembly_presiders(
             rs, assembly_id, presider_ids)
-        self.notify_return_code(rs, code)
+        self.notify_return_code(rs, code, info=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
