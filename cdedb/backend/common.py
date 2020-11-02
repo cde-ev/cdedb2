@@ -260,8 +260,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     # differently than others, so we just ignore everything here.
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: Mapping[S, T]       # type: ignore
-                           ) -> Mapping[S, T]: ...  # type: ignore
+    def _sanitize_db_input(obj: Mapping[S, T]) -> Mapping[S, T]: ...  # type: ignore
 
     @staticmethod
     @overload
@@ -277,7 +276,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: T) -> T: ...  # type: ignore
+    def _sanitize_db_input(obj: T) -> T: ...
 
     @staticmethod
     def _sanitize_db_input(obj: Any) -> Any:
@@ -325,16 +324,16 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
 
-    def query_exec(self, rs: RequestState, query: str, params: Sequence[Any]
-                   ) -> int:
+    def query_exec(self, rs: RequestState,  # type: ignore
+                   query: str, params: Sequence[Any]) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    def query_one(self, rs: RequestState, query: str, params: Sequence[Any]
-                  ) -> Optional[CdEDBObject]:
+    def query_one(self, rs: RequestState,  # type: ignore
+                  query: str, params: Sequence[Any]) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: First result of query or None if there is none
@@ -344,8 +343,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.execute_db_query(cur, query, params)
                 return self._sanitize_db_output(cur.fetchone())  # type: ignore
 
-    def query_all(self, rs: RequestState, query: str, params: Sequence[Any]
-                  ) -> Tuple[CdEDBObject, ...]:
+    def query_all(self, rs: RequestState,  # type: ignore
+                  query: str, params: Sequence[Any]) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query

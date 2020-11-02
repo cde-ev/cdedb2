@@ -1447,7 +1447,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_username(self, rs: RequestState, persona_id: int,
-                        new_username: str, password: Optional[str]
+                        new_username: Optional[str], password: Optional[str]
                         ) -> Tuple[bool, str]:
         """Since usernames are used for login, this needs a bit of care.
 
@@ -1481,7 +1481,10 @@ class CoreBackend(AbstractBackend):
                     self.core_log(
                         rs, const.CoreLogCodes.username_change, persona_id,
                         change_note=new_username)
-                    return True, new_username
+                    if new_username:
+                        return True, new_username
+                    else:
+                        return True, n_("Username removed.")
         return False, n_("Failed.")
 
     @access("persona")
@@ -2135,7 +2138,7 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        if not validate.is_password_strength(new_password):  # type: ignore
+        if not validate.is_password_strength(new_password):
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
@@ -2238,7 +2241,7 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate.check_password_strength(  # type: ignore
+        password, errs = validate.check_password_strength(
             password, argname, admin=admin, inputs=inputs)
 
         return password, errs
@@ -2443,7 +2446,7 @@ class CoreBackend(AbstractBackend):
                 self.core_log(
                     rs, const.CoreLogCodes.genesis_verified, persona_id=None,
                     change_note=data["username"])
-        return ret, data["realm"]
+            return ret, data["realm"]
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
@@ -2522,16 +2525,16 @@ class CoreBackend(AbstractBackend):
                              & rs.user.roles)):
                 raise PrivilegeError(n_("Not privileged."))
             ret = self.sql_update(rs, "core.genesis_cases", data)
-        if (data.get('case_status')
-                and data['case_status'] != current['case_status']):
-            if data['case_status'] == const.GenesisStati.approved:
-                self.core_log(
-                    rs, const.CoreLogCodes.genesis_approved, persona_id=None,
-                    change_note=current['username'])
-            elif data['case_status'] == const.GenesisStati.rejected:
-                self.core_log(
-                    rs, const.CoreLogCodes.genesis_rejected, persona_id=None,
-                    change_note=current['username'])
+            if (data.get('case_status')
+                    and data['case_status'] != current['case_status']):
+                if data['case_status'] == const.GenesisStati.approved:
+                    self.core_log(
+                        rs, const.CoreLogCodes.genesis_approved, persona_id=None,
+                        change_note=current['username'])
+                elif data['case_status'] == const.GenesisStati.rejected:
+                    self.core_log(
+                        rs, const.CoreLogCodes.genesis_rejected, persona_id=None,
+                        change_note=current['username'])
         return ret
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",

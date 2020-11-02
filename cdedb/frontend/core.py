@@ -243,8 +243,8 @@ class CoreFrontend(AbstractFrontend):
                 response = self.redirect(rs, "core/index")
         else:
             response = self.redirect(rs, "core/index")
-        response.set_cookie("sessionkey", sessionkey,  # type: ignore
-                               httponly=True, secure=True, samesite="Lax")
+        response.set_cookie("sessionkey", sessionkey,
+                            httponly=True, secure=True, samesite="Lax")
         return response
 
     # We don't check anti CSRF tokens here, since logging does not harm anyone.

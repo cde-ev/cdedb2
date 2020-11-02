@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # pylint: disable=not-callable
-# self.user_management['proxy'] confuses pylint
 
 """More common infrastructure for the frontend services.
 
@@ -27,10 +26,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
     This is basically every frontend with exception of 'core'.
     """
-    #: Specification how user management works. To be filled by child classes.
-    user_management: Mapping[str, Callable] = {  # type: ignore
-        "persona_getter": None,
-    }
 
     @classmethod
     @abc.abstractmethod

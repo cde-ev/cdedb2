@@ -32,10 +32,6 @@ from cdedb.ml_type_aux import (
 class MlBaseFrontend(AbstractUserFrontend):
     realm = "ml"
 
-    user_management = {
-        "persona_getter": lambda obj: obj.coreproxy.get_ml_user,
-    }
-
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
@@ -184,7 +180,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml")
     @REQUESTdata(("ml_type", "enum_mailinglisttypes_or_None"))
     def create_mailinglist_form(self, rs: RequestState,
-                                ml_type: const.MailinglistTypes) -> Response:
+                                ml_type: Optional[const.MailinglistTypes]) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
         if ml_type is None:
@@ -655,7 +651,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                          moderator_id: int) -> Response:
         """Demote persona from moderator status."""
         moderators = set(rs.ambience['mailinglist']['moderators'])
-        if moderator_id is not None and moderator_id not in moderators:
+        if moderator_id is not None and moderator_id not in moderators:  # type: ignore
             rs.append_validation_error(
                 ("moderator_id", ValueError(n_("User is no moderator."))))
         if rs.has_validation_errors():

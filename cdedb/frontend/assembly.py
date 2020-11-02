@@ -40,9 +40,6 @@ MAGIC_ABSTAIN = "special: abstain"
 class AssemblyFrontend(AbstractUserFrontend):
     """Organize congregations and vote on ballots."""
     realm = "assembly"
-    user_management = {
-        "persona_getter": lambda obj: obj.coreproxy.get_assembly_user,
-    }
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -701,6 +698,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         It can either be associated to an assembly or a ballot.
         """
         if attachment and not filename:
+            assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, "identifier", tmp, 'filename')
         attachment = cast(bytes, check(rs, "pdffile", attachment, 'attachment'))
@@ -1080,8 +1078,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             if result:
                 afile = io.BytesIO(result)
                 my_hash = get_hash(result)
-                attachment_result: Dict[str, str] = {  # type: ignore
-                    'file': afile,
+                attachment_result: Dict[str, str] = {
+                    'file': afile,  # type: ignore
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
                 to = [self.conf["BALLOT_TALLY_ADDRESS"]]
@@ -1102,12 +1100,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         return 0
 
     def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
-                          ) -> Union[Dict[str, Any], None]:
+                          ) -> Optional[CdEDBObject]:
         """Helper to get the result information of a tallied ballot."""
-        result = None
         if ballot['is_tallied']:
-            result = json.loads(  # type: ignore
-                self.assemblyproxy.get_ballot_result(rs, ballot['id']))
+            ballot_result = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
+            assert ballot_result is not None
+            result = json.loads(ballot_result)
             tiers = tuple(x.split('=') for x in result['result'].split('>'))
             winners: List[Collection[str]] = []
             losers: List[Collection[str]] = []
@@ -1155,8 +1153,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 if '>' not in vote['vote']:
                     abstentions += 1
             result['abstentions'] = abstentions
-
-        return result
+            return result
+        return None
 
     @periodic("check_tally_ballot", period=1)
     def check_tally_ballot(self, rs: RequestState, store: CdEDBObject
