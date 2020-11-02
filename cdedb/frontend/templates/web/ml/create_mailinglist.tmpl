@@ -54,8 +54,8 @@
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
                 entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
         {{ util.input_hidden("ml_type", value=ml_type.value) }}
-        {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"),
-                entries=enums['MailinglistTypes']|enum_entries(processing=gettext), readonly=True) }}
+        {{ util.form_input_static(label=gettext("Mailinglist Type"),
+                    value=(gettext( enums['MailinglistTypes'](ml_type)|string ))) }}
         {% if "event_id" in additional_fields %}
             {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption=nbsp,
                 entries=events|dictsort|dict_entries('id', 'title'), info=gettext("The participants of this event will "
