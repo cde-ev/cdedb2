@@ -80,7 +80,8 @@ CREATE TABLE core.personas (
         name_supplement         varchar DEFAULT NULL,
         -- see cdedb.database.constants.Genders
         gender                  integer,
-        CHECK((NOT is_cde_realm AND NOT is_event_realm) OR is_archived OR gender IS NOT NULL),
+        CONSTRAINT personas_realm_gender
+            CHECK((NOT is_cde_realm AND NOT is_event_realm) OR gender IS NOT NULL),
         -- may be NULL in historical cases; we try to minimize these occurences
         birthday                date,
         telephone               varchar,
@@ -115,21 +116,26 @@ CREATE TABLE core.personas (
         -- anything else the member wants to tell
         free_form               varchar,
         balance                 numeric(8,2) DEFAULT NULL,
-        CHECK(NOT is_cde_realm OR balance IS NOT NULL),
+        CONSTRAINT personas_cde_balance
+            CHECK(NOT is_cde_realm OR balance IS NOT NULL),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
-        CHECK(NOT is_cde_realm OR decided_search IS NOT NULL),
+        CONSTRAINT personas_cde_consent
+            CHECK(NOT is_cde_realm OR decided_search IS NOT NULL),
         -- True for trial members (first semester after the first official academy)
         trial_member            boolean,
-        CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
+        CONSTRAINT personas_cde_trial
+            CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
         -- if True this member's data may be passed on to BuB
         bub_search              boolean DEFAULT FALSE,
-        CHECK(NOT is_cde_realm OR bub_search IS NOT NULL),
+        CONSTRAINT personas_cde_bub
+            CHECK(NOT is_cde_realm OR bub_search IS NOT NULL),
         -- file name of image
         foto                    varchar DEFAULT NULL,
         -- wants to receive the exPuls in printed form
         paper_expuls            boolean DEFAULT TRUE,
-        CHECK(NOT is_cde_realm OR paper_expuls IS NOT NULL),
+        CONSTRAINT personas_cde_expuls
+            CHECK(NOT is_cde_realm OR paper_expuls IS NOT NULL),
         -- automatically managed attribute containing all above values as a
         -- string for fulltext search
         fulltext                varchar NOT NULL
@@ -1071,7 +1077,8 @@ CREATE TABLE ml.mailinglists (
         local_part              varchar NOT NULL,
         -- see cdedb.database.constants.MailinglistDomains
         domain                  integer NOT NULL,
-        unique(local_part, domain),
+        CONSTRAINT mailinglists_unique_address
+            UNIQUE(domain, local_part),
         description             varchar,
         -- see cdedb.database.constants.ModerationPolicy
         mod_policy              integer NOT NULL,

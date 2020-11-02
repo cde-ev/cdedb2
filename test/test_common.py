@@ -3,6 +3,7 @@
 import datetime
 import pytz
 import random
+import re
 import subprocess
 import unittest
 
@@ -270,3 +271,15 @@ class TestCommon(unittest.TestCase):
             count = len(cpe.stderr.decode().splitlines())
             msg = f"There are {count} mypy errors. Run `make mypy` for more details."
             raise self.failureException(msg) from None
+
+    def test_untranslated_strings(self):
+        try:
+            result = subprocess.run(["make", "i18n-check"], check=True,
+                                    capture_output=True)
+        except subprocess.CalledProcessError as cpe:
+            self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
+        pattern = re.compile(" (\d+) (?:unübersetzte Meldung|untranslated message)")
+        match = re.search(pattern, result.stderr.decode().splitlines()[0])
+        if match:
+            self.fail(f"There are {match.group(1)} untranslated strings (German)."
+                      f" Make sure all strings are translated to German.")

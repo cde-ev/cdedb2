@@ -1464,8 +1464,8 @@ class CronTest(unittest.TestCase):
     def execute(self, *args: Any, check_stores: bool = True) -> None:
         if not args:
             raise ValueError("Must specify jobs to run.")
-        self.cron.execute(args)
         self._run_periodics.update(args)
+        self.cron.execute(args)
         if check_stores:
             expectation = set(args) | {"_base"}
             self.assertEqual(expectation, set(s.cron for s in self.stores))
