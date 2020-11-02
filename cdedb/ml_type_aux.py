@@ -624,11 +624,16 @@ def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
 
 
 def check_appropriate_type(mailinglist: CdEDBObject, ml_type: MLType) -> None:
-    """Check that a ml_type is appropriate for a given mailinglist.
+    """Make sure that a method is not used on a mailinglist with a non-child class.
+
+    Note, that if child class C does not override classmethod `foo` of parent class `P`
+    the actual call will be:
+
+    `P.foo(<class C>, ...)` rather than `P.foo(<class P>, ...)`.
 
     Perform this check inside methods that override `GeneralMailinglist`'s methods.
     """
-    if not issubclass(get_type(mailinglist["ml_type"]), ml_type):
+    if not get_type(mailinglist["ml_type"]) is ml_type:
         raise RuntimeError(n_("%(ml_type)s is not an appropriate type for this"
                               " mailinglist."), {"ml_type": ml_type})
 
