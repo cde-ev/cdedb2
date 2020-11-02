@@ -846,7 +846,8 @@ class TestMlFrontend(FrontendTest):
                               {'href': '/event/event/1/show'})
                 f = self.response.forms['addorgaform']
                 f['orga_id'] = user['DB-ID']
-                self.submit(f)
+                self.submit(f, check_notification=False)
+                self.assertPresence(user['given_names'], div='manage-orgas')
                 self.logout()
                 self.login(user)
                 self.traverse({'href': '/'})

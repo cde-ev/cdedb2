@@ -21,7 +21,8 @@ from cdedb.query import QUERY_SPECS, mangle_query_input, Query
 from cdedb.common import (
     n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
     RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap,
-    MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, PrivilegeError)
+    MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS,
+    PrivilegeError)
 import cdedb.database.constants as const
 from cdedb.config import SecretsConfig
 
@@ -364,7 +365,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Render form."""
         atype = TYPE_MAP[rs.ambience['mailinglist']['ml_type']]
         available_domains = atype.domains
-        additional_fields = [f for f, _ in atype.get_additional_fields()]
+        additional_fields = {f for f, _ in atype.get_additional_fields()}
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
@@ -383,7 +384,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         if not self.mlproxy.is_relevant_admin(
                 rs, mailinglist=rs.ambience['mailinglist']):
             rs.notify("info", n_("Some fields may only be changed by admins."))
-        privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
+        # privileged is only set if there are actually fields,
+        # requiring privileged access
+        privileged = (self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
+                      or not (additional_fields & PRIVILEGE_MOD_REQUIRING_FIELDS))
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,

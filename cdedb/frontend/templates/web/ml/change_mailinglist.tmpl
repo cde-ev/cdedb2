@@ -28,7 +28,7 @@
     </h1>
 {% endblock %}
 {% block static_notifications %}
-    {% if not privileged and "registration_stati" in additional_fields %}
+    {% if not privileged %}
         <div class="alert alert-info">
             {{ util.make_icon('info-circle') }}
             {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
@@ -73,13 +73,13 @@
                 entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
         {{ util.input_hidden(name="ml_type") }}
         {% if readonly %}
-        {{ util.form_input_static(label=gettext("Mailinglist Type"),
-                value=(gettext( enums['MailinglistTypes'](ambience['mailinglist']['ml_type'])|string ))) }}
+            {{ util.form_input_static(label=gettext("Mailinglist Type"),
+                    value=(gettext( enums['MailinglistTypes'](ambience['mailinglist']['ml_type'])|string ))) }}
         {% else %}
-        {{ util.form_input_static(label=gettext("Mailinglist Type"),
-                value=(gettext( enums['MailinglistTypes'](ambience['mailinglist']['ml_type'])|string ) + (' ')
-                    + util.href(cdedblink('ml/change_ml_type'), gettext("Change Type"),
-                                aclass="btn btn-warning btn-xs", icon="pen"))) }}
+            {{ util.form_input_static(label=gettext("Mailinglist Type"),
+                    value=(gettext( enums['MailinglistTypes'](ambience['mailinglist']['ml_type'])|string ) + (' ')
+                        + util.href(cdedblink('ml/change_ml_type'), gettext("Change Type"),
+                                    aclass="btn btn-warning btn-xs", icon="pen"))) }}
         {% endif %}
         {% if 'event_id' in additional_fields %}
             {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption=nbsp,
