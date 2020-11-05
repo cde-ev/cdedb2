@@ -1,6 +1,6 @@
 BEGIN;
     ALTER TABLE core.personas ADD CONSTRAINT personas_active_archived
-            CHECK (NOT (is_archived AND is_active)),
+            CHECK (NOT (is_archived AND is_active));
     ALTER TABLE core.personas ADD CONSTRAINT personas_admin_meta
         CHECK (NOT is_meta_admin OR is_cde_realm);
     ALTER TABLE core.personas ADD CONSTRAINT personas_admin_core
