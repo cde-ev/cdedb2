@@ -286,6 +286,9 @@ def _int(val, argname=None, *, _convert=True, _ignore_warnings=False):
             val = int(val)
     if not isinstance(val, int) or isinstance(val, bool):
         return None, [(argname, TypeError(n_("Must be an integer.")))]
+    if not -2 ** 31  <= val < 2 ** 31:
+        # Our postgres columns only support 32-bit integers.
+        return None, [(argname, ValueError(n_("Integer too large.")))]
     return val, []
 
 
@@ -373,11 +376,16 @@ def _float(val, argname=None, *, _convert=True, _ignore_warnings=False):
     if not isinstance(val, float):
         return None, [(argname,
                        TypeError(n_("Must be a floating point number.")))]
+    if abs(val) >= 1e7:
+        # We are using numeric(8,2) columns in postgres, which only support
+        # numbers up to this size,
+        return None, [(argname,
+                       ValueError(n_("Must be smaller than a million.")))]
     return val, []
 
 
 @_addvalidator
-def _decimal(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _decimal(val, argname=None, *, large=False, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
@@ -393,11 +401,21 @@ def _decimal(val, argname=None, *, _convert=True, _ignore_warnings=False):
                 argname, ValueError(n_("Invalid input for decimal number.")))]
     if not isinstance(val, decimal.Decimal):
         return None, [(argname, TypeError(n_("Must be a decimal.Decimal.")))]
+    if not large and abs(val) >= 1e7:
+        # We are using numeric(8,2) columns in postgres, which only support
+        # numbers up to this size,
+        return None, [(argname,
+                       ValueError(n_("Must be smaller than a million.")))]
+    if abs(val) >= 1e10:
+        # We are using numeric(11,2) columns in postgres for summation columns.
+        # These only support numbers up to this size,
+        return None, [(argname,
+                       ValueError(n_("Must be smaller than a billion.")))]
     return val, []
 
 
 @_addvalidator
-def _non_negative_decimal(val, argname=None, *, _convert=True,
+def _non_negative_decimal(val, argname=None, *, large=False, _convert=True,
                           _ignore_warnings=False):
     """
     :type val: object
@@ -406,7 +424,7 @@ def _non_negative_decimal(val, argname=None, *, _convert=True,
     :type _ignore_warnings: bool
     :rtype: (decimal.Decimal or None, [(str or None, exception)])
     """
-    val, err = _decimal(val, argname, _convert=_convert,
+    val, err = _decimal(val, argname, large=large, _convert=_convert,
                         _ignore_warnings=_ignore_warnings)
     if not err and val < 0:
         val = None
@@ -430,6 +448,19 @@ def _positive_decimal(val, argname=None, *, _convert=True,
         val = None
         err.append((argname, ValueError(n_("Transfer saldo is negative."))))
     return val, err
+
+@_addvalidator
+def _non_negative_large_decimal(val, argname=None, *, large=False, _convert=True,
+                          _ignore_warnings=False):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: (decimal.Decimal or None, [(str or None, exception)])
+    """
+    return _non_negative_decimal(val, argname, large=True, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
@@ -1775,7 +1806,7 @@ def _period(val, argname=None, *, _convert=True, _ignore_warnings=False):
         'balance_state': _id_or_None,
         'balance_done': _datetime,
         'balance_trialmembers': _non_negative_int,
-        'balance_total': _non_negative_decimal,
+        'balance_total': _non_negative_large_decimal,
     }
     return _examine_dictionary_fields(
         val, {'id': _id}, optional_fields, _convert=_convert,

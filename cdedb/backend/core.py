@@ -828,8 +828,7 @@ class CoreBackend(AbstractBackend):
                         and not data.get('is_cde_admin'))):
                     raise ValueError(errormsg)
 
-            if (data.get('is_core_admin') or data.get('is_meta_admin')
-                    or data.get('is_cdelokal_admin')):
+            if data.get('is_core_admin') or data.get('is_meta_admin'):
                 if not persona['is_cde_realm']:
                     raise ValueError(errormsg)
 
