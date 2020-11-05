@@ -467,7 +467,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_event(rs, event_id)
         code = self.eventproxy.change_minor_form(rs, event_id, minor_form)
         self.notify_return_code(rs, code, success=n_("Minor form updated."),
-                                pending=n_("Minor form has been removed."),
+                                info=n_("Minor form has been removed."),
                                 error=n_("Nothing to remove."))
         return self.redirect(rs, "event/show_event")
 
@@ -491,7 +491,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_event(rs, event_id)
         new = rs.ambience['event']['orgas'] | {orga_id}
         code = self.eventproxy.set_event_orgas(rs, event_id, new)
-        self.notify_return_code(rs, code)
+        self.notify_return_code(rs, code, info=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
@@ -507,7 +507,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_event(rs, event_id)
         new = rs.ambience['event']['orgas'] - {orga_id}
         code = self.eventproxy.set_event_orgas(rs, event_id, new)
-        self.notify_return_code(rs, code)
+        self.notify_return_code(rs, code, info=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})

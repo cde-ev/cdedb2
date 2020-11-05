@@ -487,6 +487,8 @@ class MlBackend(AbstractBackend):
             existing = current['moderators']
             new = moderators - existing
             deleted = existing - moderators
+            if not new and not deleted:
+                return -1
             if new:
                 for anid in mixed_existence_sorter(new):
                     new_mod = {

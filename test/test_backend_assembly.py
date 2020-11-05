@@ -105,7 +105,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, self.assembly.set_assembly(self.key, data))
         self.assertTrue(self.assembly.set_assembly_presiders(self.key, new_id, {23}))
         # Check return of setting presiders to the same thing.
-        self.assertTrue(self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        self.assertEqual(-1, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
         expectation['presiders'] = {23}
         self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
         self.assertLess(0, self.assembly.delete_assembly(

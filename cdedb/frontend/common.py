@@ -1408,7 +1408,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def notify_return_code(rs: RequestState, code: Union[int, bool, None],
                            success: str = n_("Change committed."),
-                           pending: str = n_("Change pending."),
+                           info: str = n_("Change pending."),
                            error: str = n_("Change failed.")) -> None:
         """Small helper to issue a notification based on a return code.
 
@@ -1426,7 +1426,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif code is True or code > 0:
             rs.notify("success", success)
         elif code < 0:
-            rs.notify("info", pending)
+            rs.notify("info", info)
         else:
             raise RuntimeError(n_("Impossible."))
 
@@ -2181,7 +2181,8 @@ def event_guard(argname: str = "event_id",
 
 
 def mailinglist_guard(argname: str = "mailinglist_id",
-                      allow_moderators: bool = True) -> Callable[[F], F]:
+                      allow_moderators: bool = True,
+                      requires_privilege: bool = False) -> Callable[[F], F]:
     """This decorator checks the access with respect to a specific
     mailinglist. The list is specified by id which has either to be a
     keyword parameter or the first positional parameter after the
@@ -2206,14 +2207,11 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
-                if not obj.mlproxy.may_manage(rs, mailinglist_id=arg,
-                                              privileged=True):
-                    link = doclink(rs, label=rs.gettext("privileged moderator"),
-                                   topic="Handbuch_Moderator",
-                                   anchor="privilegierte-moderatoren")
-                    rs.notify("info", n_(
-                        "You do not have %(link)s access and may not change "
-                        "subscriptions."), {'link': link})
+                if (requires_privilege and not
+                    obj.mlproxy.may_manage(rs, mailinglist_id=arg, privileged=True)):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "You do not have privileged moderator access and may not change "
+                        "subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
