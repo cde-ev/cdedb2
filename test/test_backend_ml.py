@@ -29,31 +29,34 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina")
     def test_entity_mailinglist(self, user):
-        expectation = {1: 'Verkündungen',
-                       2: 'Werbung',
-                       3: 'Witz des Tages',
-                       4: 'Klatsch und Tratsch',
-                       5: 'Sozialistischer Kampfbrief',
-                       7: 'Aktivenforum 2001',
-                       8: 'Orga-Liste',
-                       9: 'Teilnehmer-Liste',
-                      10: 'Warte-Liste',
-                      11: 'Kampfbrief-Kommentare',
-                      51: 'CdE-All',
-                      52: 'CdE-Info',
-                      53: 'Mitgestaltungsforum',
-                      54: 'Gutscheine',
-                      55: 'Platin-Lounge',
-                      56: 'Feriendorf Bau',
-                      57: 'Geheimbund',
-                      58: 'Testakademie 2222, Gäste',
-                      59: 'CdE-Party 2050 Orgateam',
-                      60: 'CdE-Party 2050 Teilnehmer',
-                      61: 'Kanonische Beispielversammlung',
-                      62: 'Walergebnisse',
-                      63: 'DSA-Liste',
-                      64: 'Das Leben, das Universum ...',
-                      65: 'Hogwarts'}
+        expectation = {
+            1: 'Verkündungen',
+            2: 'Werbung',
+            3: 'Witz des Tages',
+            4: 'Klatsch und Tratsch',
+            5: 'Sozialistischer Kampfbrief',
+            7: 'Aktivenforum 2001',
+            8: 'Orga-Liste',
+            9: 'Teilnehmer-Liste',
+            10: 'Warte-Liste',
+            11: 'Kampfbrief-Kommentare',
+            51: 'CdE-All',
+            52: 'CdE-Info',
+            53: 'Mitgestaltungsforum',
+            54: 'Gutscheine',
+            55: 'Platin-Lounge',
+            56: 'Feriendorf Bau',
+            57: 'Geheimbund',
+            58: 'Testakademie 2222, Gäste',
+            59: 'CdE-Party 2050 Orgateam',
+            60: 'CdE-Party 2050 Teilnehmer',
+            61: 'Kanonische Beispielversammlung',
+            62: 'Walergebnisse',
+            63: 'DSA-Liste',
+            64: 'Das Leben, das Universum ...',
+            65: 'Hogwarts',
+            66: 'Versammlungsleitung Internationaler Kongress',
+        }
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
         expectation[6] = 'Aktivenforum 2000'
         self.assertEqual(expectation,
@@ -841,6 +844,28 @@ class TestMlBackend(BackendTest):
                          code=None, state=SS.unsubscribed, kind="error")
         self._change_sub(user['id'],  ml_id, SA.subscribe,
                          code=1, state=SS.subscribed)
+
+        ml_id = 66
+        assembly_id = self.ml.get_mailinglist(self.key, ml_id)["assembly_id"]
+
+        expectation = {
+            23: SS.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, ml_id)
+        self.assertEqual(result, expectation)
+
+        admin_key = self.login("viktor")
+        self.assembly.set_assembly_presiders(admin_key, assembly_id, set())
+        self.ml.write_subscription_states(self.key, ml_id)
+        self.assertEqual({}, self.ml.get_subscription_states(self.key, ml_id))
+        self.assembly.set_assembly_presiders(admin_key, assembly_id, {1})
+        self.ml.write_subscription_states(self.key, ml_id)
+
+        expectation = {
+            1: SS.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, ml_id)
+        self.assertEqual(result, expectation)
 
     @as_users("nina")
     def test_bullshit_requests(self, user):
@@ -1888,6 +1913,8 @@ class TestMlBackend(BackendTest):
                        {'address': '42@lists.cde-ev.de',
                         'is_active': True},
                        {'address': 'hogwarts@cdelokal.cde-ev.de',
+                        'is_active': True},
+                       {'address': 'kongress-leitung@lists.cde-ev.de',
                         'is_active': True})
 
         self.assertEqual(
@@ -2018,7 +2045,11 @@ class TestMlBackend(BackendTest):
                        {'address': 'hogwarts@cdelokal.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
-                        'mime': False})
+                        'mime': False},
+                       {'address': 'kongress-leitung@lists.cde-ev.de',
+                        'inactive': False,
+                        'maxsize': None,
+                        'mime': False},)
         self.assertEqual(
             expectation,
             self.ml.oldstyle_mailinglist_config_export(

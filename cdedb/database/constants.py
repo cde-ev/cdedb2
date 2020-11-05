@@ -183,6 +183,7 @@ class MailinglistTypes(enum.IntEnum):
 
     assembly_associated = 30
     assembly_opt_in = 31
+    assembly_presider = 32
 
     general_opt_in = 40
 

@@ -103,9 +103,9 @@ class TestAssemblyBackend(BackendTest):
             'presiders': {1},
         }
         self.assertLess(0, self.assembly.set_assembly(self.key, data))
-        self.assertLess(0, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        self.assertTrue(self.assembly.set_assembly_presiders(self.key, new_id, {23}))
         # Check return of setting presiders to the same thing.
-        self.assertLess(0, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        self.assertTrue(self.assembly.set_assembly_presiders(self.key, new_id, {23}))
         expectation['presiders'] = {23}
         self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
         self.assertLess(0, self.assembly.delete_assembly(
@@ -439,7 +439,7 @@ class TestAssemblyBackend(BackendTest):
             'title': 'Außerordentliche Mitgliederversammlung'
         }
         new_id = self.assembly.create_assembly(self.key, data)
-        self.assertLess(0, self.assembly.set_assembly_presiders(
+        self.assertTrue(self.assembly.set_assembly_presiders(
             self.key, new_id, {USER_DICT["werner"]["id"]}))
         self.login("werner")
         # werner is no member, so he must use the external signup function

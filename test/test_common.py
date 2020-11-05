@@ -11,7 +11,7 @@ from cdedb.common import (
     extract_roles, schulze_evaluate, int_to_words, xsorted,
     mixed_existence_sorter, unwrap)
 import cdedb.database.constants as const
-
+import cdedb.ml_type_aux as ml_type
 
 class TestCommon(unittest.TestCase):
     def test_mixed_existence_sorter(self):
@@ -284,3 +284,17 @@ class TestCommon(unittest.TestCase):
         if match:
             self.fail(f"There are {match.group(1)} untranslated strings (German)."
                       f" Make sure all strings are translated to German.")
+
+    def test_ml_type_mismatch(self):
+        pseudo_mailinglist = {"ml_type": const.MailinglistTypes.event_associated}
+        with self.assertRaises(RuntimeError):
+            # Cannot use method of a non-parent-non-child class
+            ml_type.AssemblyAssociatedMailinglist.get_implicit_subscribers(
+                None, None, pseudo_mailinglist)
+        with self.assertRaises(RuntimeError):
+            # Cannot use method of a child class
+            ml_type.AssemblyAssociatedMailinglist.get_implicit_subscribers(
+                None, None, {"ml_type": const.MailinglistTypes.general_opt_in})
+        # Can use method of a parent class
+        ml_type.GeneralMailinglist.get_implicit_subscribers(
+            None, None, pseudo_mailinglist)

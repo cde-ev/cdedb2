@@ -1,12 +1,11 @@
 import enum
 from collections import OrderedDict
 from typing import (
-    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List, NoReturn,
-    Sequence
+    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List
 )
 
 from cdedb.common import (
-    extract_roles, n_, unwrap, CdEDBObject, RequestState, User
+    extract_roles, n_, CdEDBObject, RequestState, User
 )
 from cdedb.query import Query, QueryOperators
 import cdedb.database.constants as const
@@ -19,6 +18,7 @@ MIPolMap = Dict[int, MIPol]
 
 
 class BackendContainer:
+    """Helper class to pass multiple backends into the ml_type methods at once."""
     def __init__(self, *, core=None, event=None, assembly=None):  # type: ignore
         self.core = core
         self.event = event
@@ -26,6 +26,7 @@ class BackendContainer:
 
 
 def full_address(val: CdEDBObject) -> str:
+    """Construct the full address of a mailinglist."""
     if isinstance(val, dict):
         return val['local_part'] + '@' + str(MailinglistDomain(val['domain']))
     else:
@@ -34,6 +35,7 @@ def full_address(val: CdEDBObject) -> str:
 
 
 class MailinglistGroup(enum.IntEnum):
+    """To be used in `MlType.sortkey` to group similar mailinglists together."""
     cde = 2
     team = 3
     event = 10
@@ -49,15 +51,9 @@ class AllMembersImplicitMeta:
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        """Return a set of all current members."""
+        check_appropriate_type(mailinglist, cls)  # type: ignore
         return bc.core.list_current_members(rs, is_active=False)
-
-
-class AssemblyAssociatedMeta:
-    """Metaclass for all assembly associated mailinglists."""
-    mandatory_validation_fields = {
-        ("assembly_id", "id"),
-    }
 
 
 class EventAssociatedMeta:
@@ -70,6 +66,7 @@ class EventAssociatedMeta:
     @classmethod
     def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
                          ) -> bool:
+        """Disable periodic cleanup to freeze legacy event-lists."""
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
         return mailinglist["event_id"] is not None
 
@@ -88,17 +85,21 @@ class GeneralMailinglist:
     Class attributes:
 
     * `sortkey`: Determines where mailinglists of this type are grouped.
-    * `domain`: Determines the domain of the mailinglist.
+    * `domains`: Determines the available domains for mailinglists of this type.
+    * `max_size_default`: A default value for `max_size` when creating a new
+        mailinglist of this type.
     * `allow_unsub`: Whether or not to allow unsubscribing from a mailinglist
-      of this type.
-    * `validation_fields`: A list of additional fields to be considered
-      during validation for mailinglists of this type.
+        of this type.
+    * `mandatory_validation_fields`: A Set of additional (mandatory) fields to be
+        checked during validation for mailinglists of this type.
+    * `optional_validation_fields`: Like `madatory_validation_fields` but optional
+        instead.
     * `viewer_roles`: Determines who may view the mailinglist.
-      See `may_view()` for details.
+        See `may_view()` for details.
     * `relevant_admins`: Determines who may administrate the mailinglist. See
-      `is_relevant_admin()` for details.
+        `is_relevant_admin()` for details.
     * `role_map`: An ordered Dict to determine mailinglist interactions in a
-      hierarchical way for trivial mailinglist types.
+        hierarchical way for trivial mailinglist types.
 
     """
     def __init__(self) -> None:
@@ -148,7 +149,7 @@ class GeneralMailinglist:
     def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
                                 mailinglist: CdEDBObject
                                 ) -> bool:
-        """Check if moderator is privileged.
+        """Check if the user is a privileged moderator.
 
         Everyone with ml realm may be moderator of any mailinglist. But for some
         lists, you must have additional privileges to make subscription-state
@@ -229,6 +230,7 @@ class GeneralMailinglist:
     def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,
                                mailinglist: CdEDBObject, persona_id: int,
                                ) -> MIPol:
+        """Singularized wrapper for `get_interaction_policies`."""
         return cls.get_interaction_policies(
             rs, bc, mailinglist, (persona_id,))[persona_id]
 
@@ -248,8 +250,6 @@ class GeneralMailinglist:
         frontend and does not currently have a way of accessing the relevant
         methods of the MailinglistBackend.
         """
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
-
         # TODO check for access to the ml? Needs ml_backend.
         personas = bc.core.get_personas(rs, persona_ids)
         ret: MIPolMap = {}
@@ -273,7 +273,6 @@ class GeneralMailinglist:
     def periodic_cleanup(cls, rs: RequestState, mailinglist: CdEDBObject,
                          ) -> bool:
         """Whether or not to do periodic subscription cleanup on this list."""
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
         return True
 
 
@@ -349,8 +348,6 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    sortkey = MailinglistGroup.event
-    # TODO I bet this can be done more simple, but I dont get how
     mandatory_validation_fields = (
             EventAssociatedMeta.mandatory_validation_fields
             | {("registration_stati", "[enum_registrationpartstati]")})
@@ -359,16 +356,18 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
                                 mailinglist: CdEDBObject
                                 ) -> bool:
-        """Check if moderator is privileged.
+        """Check if the user is a privileged moderator.
 
         For EventAssociatedMailinglists, this are the orgas of the event.
         """
-        is_moderator = mailinglist['id'] in rs.user.moderator
+        check_appropriate_type(mailinglist, cls)
+
+        basic_privilege = super().is_privileged_moderator(rs, bc, mailinglist)
         if mailinglist['event_id'] is None:
-            return is_moderator
-        is_privileged = (mailinglist['event_id'] in rs.user.orga
-                         or "event_admin" in rs.user.roles)
-        return is_moderator and is_privileged
+            return basic_privilege
+        additional_privilege = (mailinglist['event_id'] in rs.user.orga
+                                or "event_admin" in rs.user.roles)
+        return basic_privilege and additional_privilege
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -380,7 +379,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         For the `EventOrgaMailinglist` this basically means opt-in for all
         implicit subscribers. See `get_impicit_subscribers`.
         """
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        check_appropriate_type(mailinglist, cls)
 
         # Make event-lists without event link static.
         if mailinglist["event_id"] is None:
@@ -406,7 +405,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         For the `EventAssociatedMailinglist` this means registrations with
         one of the configured stati in any part.
         """
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        check_appropriate_type(mailinglist, cls)
 
         if mailinglist["event_id"] is None:
             raise ValueError(n_("No implicit subscribers possible for "
@@ -436,8 +435,6 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
 
 class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
-    sortkey = MailinglistGroup.event
-
     maxsize_default = 8192
 
     @classmethod
@@ -449,7 +446,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
         For the `EventOrgaMailinglist` this means opt-out for orgas only.
         """
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        check_appropriate_type(mailinglist, cls)
 
         # Make event-lists without event link static.
         if mailinglist["event_id"] is None:
@@ -472,32 +469,36 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
         For the `EventOrgaMailinglist` this means the event's orgas.
         """
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        check_appropriate_type(mailinglist, cls)
 
         if mailinglist["event_id"] is None:
             raise ValueError(n_("No implicit subscribers possible for "
                                 "legacy event list."))
 
-        event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
+        event = bc.event.get_event(rs, mailinglist["event_id"])
         return event["orgas"]
 
 
-class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
-                                    AssemblyMailinglist):
+class AssemblyAssociatedMailinglist(AssemblyMailinglist):
+    mandatory_validation_fields = {
+        ("assembly_id", "id"),
+    }
+
     @classmethod
     def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
                                 mailinglist: CdEDBObject
                                 ) -> bool:
-        """Check if moderator is privileged.
+        """Check if a moderator is privileged.
 
-        For AssemblyAssociatedMailinglists, this are assembly admins.
+        For AssemblyAssociatedMailinglists this is the case if the moderator may
+        interact with the associated assembly.
         """
-        is_moderator = mailinglist['id'] in rs.user.moderator
-        if mailinglist['assembly_id'] is None:
-            return is_moderator
-        is_privileged = bc.assembly.may_assemble(rs,
-                                                 assembly_id=mailinglist['assembly_id'])
-        return is_moderator and is_privileged
+        check_appropriate_type(mailinglist, cls)
+
+        basic_privilege = super().is_privileged_moderator(rs, bc, mailinglist)
+        additional_privilege = bc.assembly.may_assemble(
+            rs, assembly_id=mailinglist['assembly_id'])
+        return basic_privilege and additional_privilege
 
     @classmethod
     def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -509,7 +510,7 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
         For the `AssemblyAssociatedMailinglist` this means opt-out for
         attendees of the associated assembly.
         """
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        check_appropriate_type(mailinglist, cls)
 
         ret: MIPolMap = {}
         for persona_id in persona_ids:
@@ -530,8 +531,43 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
         For the `AssemblyAssociatedMailinglist` this means the attendees of the
         linked assembly.
         """
-        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        check_appropriate_type(mailinglist, cls)
         return bc.assembly.list_attendees(rs, mailinglist["assembly_id"])
+
+
+class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
+    maxsize_default = 8192
+
+    @classmethod
+    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject,
+                                 persona_ids: Collection[int],
+                                 ) -> MIPolMap:
+        """Determine the MIPol of some personas with a mailinglist.
+
+        For the `AssemblyPresiderMailinglist` this means opt-out for presiders only.
+        """
+        check_appropriate_type(mailinglist, cls)
+
+        presiders = bc.assembly.list_assembly_presiders(rs, mailinglist["assembly_id"])
+        ret: MIPolMap = {}
+        for persona_id in persona_ids:
+            if persona_id in presiders:
+                ret[persona_id] = MailinglistInteractionPolicy.opt_out
+            else:
+                ret[persona_id] = None
+        return ret
+
+    @classmethod
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
+        """Get a list of people that should be on this mailinglist.
+
+        For the `AssemblyPresiderMailignlist` this means the presiders of the
+        linked assembly.
+        """
+        check_appropriate_type(mailinglist, cls)
+        return bc.assembly.list_assembly_presiders(rs, mailinglist["assembly_id"])
 
 
 class AssemblyOptInMailinglist(AssemblyMailinglist):
@@ -587,6 +623,21 @@ def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
     raise ValueError(n_("Cannot determine ml_type from {}".format(val)))
 
 
+def check_appropriate_type(mailinglist: CdEDBObject, ml_type: MLType) -> None:
+    """Make sure that a method is not used on a mailinglist with a non-child class.
+
+    Note, that if child class C does not override classmethod `foo` of parent class `P`
+    the actual call will be:
+
+    `P.foo(<class C>, ...)` rather than `P.foo(<class P>, ...)`.
+
+    Perform this check inside methods that override `GeneralMailinglist`'s methods.
+    """
+    if not get_type(mailinglist["ml_type"]) is ml_type:
+        raise RuntimeError(n_("%(ml_type)s is not an appropriate type for this"
+                              " mailinglist."), {"ml_type": ml_type})
+
+
 TYPE_MAP = {
     MailinglistTypes.member_mandatory: MemberMandatoryMailinglist,
     MailinglistTypes.member_opt_out: MemberOptOutMailinglist,
@@ -599,6 +650,7 @@ TYPE_MAP = {
     MailinglistTypes.event_orga: EventOrgaMailinglist,
     MailinglistTypes.assembly_associated: AssemblyAssociatedMailinglist,
     MailinglistTypes.assembly_opt_in: AssemblyOptInMailinglist,
+    MailinglistTypes.assembly_presider: AssemblyPresiderMailinglist,
     MailinglistTypes.general_opt_in: GeneralOptInMailinglist,
     MailinglistTypes.semi_public: SemiPublicMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,

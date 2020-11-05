@@ -6511,6 +6511,25 @@
             "event_id": null,
             "registration_stati": [],
             "assembly_id": null
+        },
+        {
+            "id": 66,
+            "title": "Versammlungsleitung Internationaler Kongress",
+            "address": "kongress-leitung@lists.cde-ev.de",
+            "local_part": "kongress-leitung",
+            "domain": 4,
+            "description": "Hier erreicht ihr die Versammlungsleitung des Internationalen Kongress.",
+            "mod_policy": 1,
+            "attachment_policy": 1,
+            "ml_type": 32,
+            "subject_prefix": "kongress-leitung",
+            "maxsize": null,
+            "is_active": true,
+            "notes": null,
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": 1
         }
     ],
     "ml.moderators": [
@@ -6677,6 +6696,10 @@
         {
             "mailinglist_id": 11,
             "persona_id": 2
+        },
+        {
+            "mailinglist_id": 66,
+            "persona_id": 23
         }
     ],
     "ml.whitelist": [
@@ -6743,831 +6766,698 @@
     ],
     "ml.subscription_states": [
         {
-            "id": 1,
             "mailinglist_id": 1,
             "persona_id": 1,
             "subscription_state": 30
         },
         {
-            "id": 2,
             "mailinglist_id": 1,
             "persona_id": 2,
             "subscription_state": 30
         },
         {
-            "id": 3,
             "mailinglist_id": 1,
             "persona_id": 3,
             "subscription_state": 1
         },
         {
-            "id": 4,
             "mailinglist_id": 1,
             "persona_id": 6,
             "subscription_state": 30
         },
         {
-            "id": 5,
             "mailinglist_id": 1,
             "persona_id": 7,
             "subscription_state": 30
         },
         {
-            "id": 6,
             "mailinglist_id": 1,
             "persona_id": 9,
             "subscription_state": 30
         },
         {
-            "id": 7,
             "mailinglist_id": 1,
             "persona_id": 12,
             "subscription_state": 30
         },
         {
-            "id": 8,
             "mailinglist_id": 1,
             "persona_id": 13,
             "subscription_state": 2
         },
         {
-            "id": 9,
             "mailinglist_id": 1,
             "persona_id": 15,
             "subscription_state": 30
         },
         {
-            "id": 10,
             "mailinglist_id": 1,
             "persona_id": 22,
             "subscription_state": 2
         },
         {
-            "id": 11,
             "mailinglist_id": 1,
             "persona_id": 23,
             "subscription_state": 2
         },
         {
-            "id": 12,
             "mailinglist_id": 1,
             "persona_id": 27,
             "subscription_state": 2
         },
         {
-            "id": 13,
             "mailinglist_id": 1,
             "persona_id": 32,
             "subscription_state": 2
         },
         {
-            "id": 14,
             "mailinglist_id": 1,
             "persona_id": 100,
             "subscription_state": 30
         },
         {
-            "id": 15,
             "mailinglist_id": 2,
             "persona_id": 1,
             "subscription_state": 30
         },
         {
-            "id": 16,
             "mailinglist_id": 2,
             "persona_id": 2,
             "subscription_state": 30
         },
         {
-            "id": 17,
             "mailinglist_id": 2,
             "persona_id": 3,
             "subscription_state": 30
         },
         {
-            "id": 18,
             "mailinglist_id": 2,
             "persona_id": 6,
             "subscription_state": 2
         },
         {
-            "id": 19,
             "mailinglist_id": 2,
             "persona_id": 7,
             "subscription_state": 30
         },
         {
-            "id": 20,
             "mailinglist_id": 2,
             "persona_id": 9,
             "subscription_state": 30
         },
         {
-            "id": 21,
             "mailinglist_id": 2,
             "persona_id": 12,
             "subscription_state": 30
         },
         {
-            "id": 22,
             "mailinglist_id": 2,
             "persona_id": 13,
             "subscription_state": 2
         },
         {
-            "id": 23,
             "mailinglist_id": 2,
             "persona_id": 15,
             "subscription_state": 30
         },
         {
-            "id": 24,
             "mailinglist_id": 2,
             "persona_id": 22,
             "subscription_state": 2
         },
         {
-            "id": 25,
             "mailinglist_id": 2,
             "persona_id": 23,
             "subscription_state": 2
         },
         {
-            "id": 26,
             "mailinglist_id": 2,
             "persona_id": 27,
             "subscription_state": 2
         },
         {
-            "id": 27,
             "mailinglist_id": 2,
             "persona_id": 32,
             "subscription_state": 2
         },
         {
-            "id": 28,
             "mailinglist_id": 2,
             "persona_id": 100,
             "subscription_state": 30
         },
         {
-            "id": 29,
             "mailinglist_id": 3,
             "persona_id": 1,
             "subscription_state": 1
         },
         {
-            "id": 30,
             "mailinglist_id": 3,
             "persona_id": 2,
             "subscription_state": 2
         },
         {
-            "id": 31,
             "mailinglist_id": 3,
             "persona_id": 10,
             "subscription_state": 1
         },
         {
-            "id": 32,
             "mailinglist_id": 4,
             "persona_id": 1,
             "subscription_state": 1
         },
         {
-            "id": 33,
             "mailinglist_id": 4,
             "persona_id": 2,
             "subscription_state": 1
         },
         {
-            "id": 34,
             "mailinglist_id": 4,
             "persona_id": 3,
             "subscription_state": 1
         },
         {
-            "id": 35,
             "mailinglist_id": 4,
             "persona_id": 7,
             "subscription_state": 11
         },
         {
-            "id": 36,
             "mailinglist_id": 4,
             "persona_id": 100,
             "subscription_state": 1
         },
         {
-            "id": 37,
             "mailinglist_id": 5,
             "persona_id": 1,
             "subscription_state": 30
         },
         {
-            "id": 38,
             "mailinglist_id": 5,
             "persona_id": 2,
             "subscription_state": 30
         },
         {
-            "id": 39,
             "mailinglist_id": 5,
             "persona_id": 3,
             "subscription_state": 10
         },
         {
-            "id": 40,
             "mailinglist_id": 5,
             "persona_id": 9,
             "subscription_state": 11
         },
         {
-            "id": 41,
             "mailinglist_id": 5,
             "persona_id": 11,
             "subscription_state": 30
         },
         {
-            "id": 42,
             "mailinglist_id": 5,
             "persona_id": 14,
             "subscription_state": 10
         },
         {
-            "id": 43,
             "mailinglist_id": 5,
             "persona_id": 23,
             "subscription_state": 30
         },
         {
-            "id": 44,
             "mailinglist_id": 5,
             "persona_id": 100,
             "subscription_state": 10
         },
         {
-            "id": 45,
             "mailinglist_id": 6,
             "persona_id": 1,
             "subscription_state": 1
         },
         {
-            "id": 46,
             "mailinglist_id": 6,
             "persona_id": 2,
             "subscription_state": 1
         },
         {
-            "id": 47,
             "mailinglist_id": 7,
             "persona_id": 1,
             "subscription_state": 2
         },
         {
-            "id": 48,
             "mailinglist_id": 7,
             "persona_id": 3,
             "subscription_state": 1
         },
         {
-            "id": 49,
             "mailinglist_id": 7,
             "persona_id": 6,
             "subscription_state": 20
         },
         {
-            "id": 50,
             "mailinglist_id": 8,
             "persona_id": 7,
             "subscription_state": 30
         },
         {
-            "id": 51,
             "mailinglist_id": 9,
             "persona_id": 1,
             "subscription_state": 30
         },
         {
-            "id": 52,
             "mailinglist_id": 9,
             "persona_id": 5,
             "subscription_state": 2
         },
         {
-            "id": 53,
             "mailinglist_id": 9,
             "persona_id": 7,
             "subscription_state": 1
         },
         {
-            "id": 54,
             "mailinglist_id": 9,
             "persona_id": 9,
             "subscription_state": 30
         },
         {
-            "id": 55,
             "mailinglist_id": 9,
             "persona_id": 100,
             "subscription_state": 30
         },
         {
-            "id": 56,
             "mailinglist_id": 10,
             "persona_id": 5,
             "subscription_state": 30
         },
         {
-            "id": 57,
             "mailinglist_id": 11,
             "persona_id": 3,
             "subscription_state": 1
         },
         {
-            "id": 58,
             "mailinglist_id": 11,
             "persona_id": 4,
             "subscription_state": 2
         },
         {
-            "id": 59,
             "mailinglist_id": 11,
             "persona_id": 9,
             "subscription_state": 11
         },
         {
-            "id": 60,
             "mailinglist_id": 11,
             "persona_id": 11,
             "subscription_state": 1
         },
         {
-            "id": 61,
             "mailinglist_id": 11,
             "persona_id": 23,
             "subscription_state": 1
         },
         {
-            "id": 62,
             "mailinglist_id": 11,
             "persona_id": 100,
             "subscription_state": 11
         },
         {
-            "id": 63,
             "mailinglist_id": 51,
             "persona_id": 32,
             "subscription_state": 2
         },
         {
-            "id": 64,
             "mailinglist_id": 51,
             "persona_id": 1,
             "subscription_state": 30
         },
         {
-            "id": 65,
             "mailinglist_id": 51,
             "persona_id": 2,
             "subscription_state": 30
         },
         {
-            "id": 66,
             "mailinglist_id": 51,
             "persona_id": 3,
             "subscription_state": 30
         },
         {
-            "id": 67,
             "mailinglist_id": 51,
             "persona_id": 100,
             "subscription_state": 30
         },
         {
-            "id": 68,
             "mailinglist_id": 51,
             "persona_id": 6,
             "subscription_state": 30
         },
         {
-            "id": 69,
             "mailinglist_id": 51,
             "persona_id": 7,
             "subscription_state": 30
         },
         {
-            "id": 70,
             "mailinglist_id": 51,
             "persona_id": 9,
             "subscription_state": 30
         },
         {
-            "id": 71,
             "mailinglist_id": 51,
             "persona_id": 12,
             "subscription_state": 30
         },
         {
-            "id": 72,
             "mailinglist_id": 51,
             "persona_id": 13,
             "subscription_state": 2
         },
         {
-            "id": 73,
             "mailinglist_id": 51,
             "persona_id": 15,
             "subscription_state": 30
         },
         {
-            "id": 74,
             "mailinglist_id": 51,
             "persona_id": 22,
             "subscription_state": 2
         },
         {
-            "id": 75,
             "mailinglist_id": 51,
             "persona_id": 23,
             "subscription_state": 2
         },
         {
-            "id": 76,
             "mailinglist_id": 51,
             "persona_id": 27,
             "subscription_state": 2
         },
         {
-            "id": 77,
             "mailinglist_id": 52,
             "persona_id": 32,
             "subscription_state": 2
         },
         {
-            "id": 78,
             "mailinglist_id": 52,
             "persona_id": 1,
             "subscription_state": 30
         },
         {
-            "id": 79,
             "mailinglist_id": 52,
             "persona_id": 2,
             "subscription_state": 30
         },
         {
-            "id": 80,
             "mailinglist_id": 52,
             "persona_id": 3,
             "subscription_state": 30
         },
         {
-            "id": 81,
             "mailinglist_id": 52,
             "persona_id": 100,
             "subscription_state": 30
         },
         {
-            "id": 82,
             "mailinglist_id": 52,
             "persona_id": 6,
             "subscription_state": 30
         },
         {
-            "id": 83,
             "mailinglist_id": 52,
             "persona_id": 7,
             "subscription_state": 30
         },
         {
-            "id": 84,
             "mailinglist_id": 52,
             "persona_id": 9,
             "subscription_state": 30
         },
         {
-            "id": 85,
             "mailinglist_id": 52,
             "persona_id": 12,
             "subscription_state": 30
         },
         {
-            "id": 86,
             "mailinglist_id": 52,
             "persona_id": 13,
             "subscription_state": 2
         },
         {
-            "id": 87,
             "mailinglist_id": 52,
             "persona_id": 15,
             "subscription_state": 30
         },
         {
-            "id": 88,
             "mailinglist_id": 52,
             "persona_id": 22,
             "subscription_state": 2
         },
         {
-            "id": 89,
             "mailinglist_id": 52,
             "persona_id": 23,
             "subscription_state": 2
         },
         {
-            "id": 90,
             "mailinglist_id": 52,
             "persona_id": 27,
             "subscription_state": 2
         },
         {
-            "id": 91,
             "mailinglist_id": 53,
             "persona_id": 1,
             "subscription_state": 1
         },
         {
-            "id": 92,
             "mailinglist_id": 53,
             "persona_id": 2,
             "subscription_state": 1
         },
         {
-            "id": 93,
             "mailinglist_id": 53,
             "persona_id": 7,
             "subscription_state": 1
         },
         {
-            "id": 94,
             "mailinglist_id": 53,
             "persona_id": 9,
             "subscription_state": 1
         },
         {
-            "id": 95,
             "mailinglist_id": 54,
             "persona_id": 3,
             "subscription_state": 11
         },
         {
-            "id": 96,
             "mailinglist_id": 54,
             "persona_id": 11,
             "subscription_state": 10
         },
         {
-            "id": 97,
             "mailinglist_id": 54,
             "persona_id": 100,
             "subscription_state": 1
         },
         {
-            "id": 98,
             "mailinglist_id": 54,
             "persona_id": 2,
             "subscription_state": 20
         },
         {
-            "id": 99,
             "mailinglist_id": 54,
             "persona_id": 7,
             "subscription_state": 11
         },
         {
-            "id": 100,
             "mailinglist_id": 55,
             "persona_id": 100,
             "subscription_state": 1
         },
         {
-            "id": 101,
             "mailinglist_id": 55,
             "persona_id": 1,
             "subscription_state": 1
         },
         {
-            "id": 102,
             "mailinglist_id": 55,
             "persona_id": 23,
             "subscription_state": 2
         },
         {
-            "id": 103,
             "mailinglist_id": 55,
             "persona_id": 27,
             "subscription_state": 2
         },
         {
-            "id": 104,
             "mailinglist_id": 55,
             "persona_id": 22,
             "subscription_state": 2
         },
         {
-            "id": 105,
             "mailinglist_id": 55,
             "persona_id": 32,
             "subscription_state": 11
         },
         {
-            "id": 106,
             "mailinglist_id": 55,
             "persona_id": 11,
             "subscription_state": 10
         },
         {
-            "id": 107,
             "mailinglist_id": 56,
             "persona_id": 7,
             "subscription_state": 20
         },
         {
-            "id": 108,
             "mailinglist_id": 56,
             "persona_id": 9,
             "subscription_state": 1
         },
         {
-            "id": 109,
             "mailinglist_id": 57,
             "persona_id": 12,
             "subscription_state": 1
         },
         {
-            "id": 110,
             "mailinglist_id": 58,
             "persona_id": 5,
             "subscription_state": 30
         },
         {
-            "id": 111,
             "mailinglist_id": 59,
             "persona_id": 1,
             "subscription_state": 30
         },
         {
-            "id": 112,
             "mailinglist_id": 59,
             "persona_id": 2,
             "subscription_state": 30
         },
         {
-            "id": 113,
             "mailinglist_id": 59,
             "persona_id": 100,
             "subscription_state": 30
         },
         {
-            "id": 114,
             "mailinglist_id": 62,
             "persona_id": 23,
             "subscription_state": 1
         },
         {
-            "id": 115,
             "mailinglist_id": 62,
             "persona_id": 11,
             "subscription_state": 1
         },
         {
-            "id": 116,
             "mailinglist_id": 62,
             "persona_id": 4,
             "subscription_state": 1
         },
         {
-            "id": 117,
             "mailinglist_id": 63,
             "persona_id": 2,
             "subscription_state": 1
         },
         {
-            "id": 118,
             "mailinglist_id": 63,
             "persona_id": 9,
             "subscription_state": 1
         },
         {
-            "id": 119,
             "mailinglist_id": 63,
             "persona_id": 6,
             "subscription_state": 1
         },
         {
-            "id": 120,
             "mailinglist_id": 63,
             "persona_id": 13,
             "subscription_state": 1
         },
         {
-            "id": 121,
             "mailinglist_id": 63,
             "persona_id": 11,
             "subscription_state": 1
         },
         {
-            "id": 122,
             "mailinglist_id": 64,
             "persona_id": 3,
             "subscription_state": 1
         },
         {
-            "id": 123,
             "mailinglist_id": 64,
             "persona_id": 10,
             "subscription_state": 1
         },
         {
-            "id": 124,
             "mailinglist_id": 64,
             "persona_id": 9,
             "subscription_state": 1
         },
         {
-            "id": 125,
             "mailinglist_id": 65,
             "persona_id": 10,
             "subscription_state": 1
         },
         {
-            "id": 126,
             "mailinglist_id": 65,
             "persona_id": 14,
             "subscription_state": 1
         },
         {
-            "id": 127,
             "mailinglist_id": 65,
             "persona_id": 1,
             "subscription_state": 11
         },
         {
-            "id": 128,
             "mailinglist_id": 65,
             "persona_id": 100,
             "subscription_state": 11
         },
         {
-            "id": 129,
             "mailinglist_id": 52,
             "persona_id": 17,
             "subscription_state": 2
         },
         {
-            "id": 130,
             "mailinglist_id": 51,
             "persona_id": 17,
             "subscription_state": 2
         },
         {
-            "id": 131,
             "mailinglist_id": 2,
             "persona_id": 17,
             "subscription_state": 2
         },
         {
-            "id": 132,
             "mailinglist_id": 1,
             "persona_id": 17,
             "subscription_state": 2
         },
         {
-            "id": 133,
             "mailinglist_id": 9,
             "persona_id": 2,
             "subscription_state": 30
         },
         {
-            "id": 134,
             "mailinglist_id": 1,
             "persona_id": 16,
             "subscription_state": 2
         },
         {
-            "id": 135,
             "mailinglist_id": 2,
             "persona_id": 16,
             "subscription_state": 2
         },
         {
-            "id": 136,
             "mailinglist_id": 51,
             "persona_id": 16,
             "subscription_state": 2
         },
         {
-            "id": 137,
             "mailinglist_id": 52,
             "persona_id": 16,
             "subscription_state": 2
         },
         {
-            "id": 138,
             "mailinglist_id": 61,
             "persona_id": 18,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 66,
+            "persona_id": 23,
             "subscription_state": 30
         }
     ],

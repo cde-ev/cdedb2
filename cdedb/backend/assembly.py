@@ -573,6 +573,19 @@ class AssemblyBackend(AbstractBackend):
                         assembly_id, anid)
         return ret
 
+    @internal
+    @access("ml_admin", "assembly")
+    def list_assembly_presiders(self, rs: RequestState, assembly_id: int) -> Set[int]:
+        """Retrieve a list of assembly presiders.
+
+        This is a helper so that "ml_admin" may retrieve this list even without
+        "asembly" realm.
+        """
+        assembly_id = affirm("id", assembly_id)
+        data = self.sql_select(rs, "assembly.presiders", ("assembly_id", "persona_id"),
+                               (assembly_id,), "assembly_id")
+        return {e["persona_id"] for e in data}
+
     @access("assembly_admin")
     def create_assembly(self, rs: RequestState, data: CdEDBObject
                         ) -> DefaultReturnCode:
