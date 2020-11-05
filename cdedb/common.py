@@ -2059,10 +2059,11 @@ MOD_ALLOWED_FIELDS = {
     "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
     "maxsize"}
 
+#: Fields of a mailinglist which require privileged moderator access to be changed
 PRIVILEGE_MOD_REQUIRING_FIELDS = {
     'registration_stati'}
 
-#: Fields of a mailinglist which need privileged moderators to be changed
+#: Fields of a mailinglist which may be changed by privileged moderators
 PRIVILEGED_MOD_ALLOWED_FIELDS = MOD_ALLOWED_FIELDS | PRIVILEGE_MOD_REQUIRING_FIELDS
 
 #: Fields of an assembly
