@@ -36,24 +36,25 @@
     {{ util.admin_views_toggle(views) }}
 {% endblock %}
 
-
-{% block content %}
+{% block static_notifications %}
     {% if is_relative_admin %}
         {% if ambience['persona']['is_purged'] %}
-            <div class="alert alert-info" id="purged">
-                {{ util.make_icon('info-circle') }} {% trans %}This user has been purged.{% endtrans %}
-            </div>
+            {% call util.notifications('info', id='purged') %}
+                {% trans %}This user has been purged.{% endtrans %}
+            {% endcall %}
         {% elif ambience['persona']['is_archived'] %}
-            <div class="alert alert-info" id="archived">
-                {{ util.make_icon('info-circle') }} {% trans %}The user is archived.{% endtrans %}
-            </div>
+            {% call util.notifications('info', id='archived') %}
+                {% trans %}The user is archived.{% endtrans %}
+            {% endcall %}
         {% elif not ambience['persona']['is_active'] %}
-            <div class="alert alert-info" id="deactivated">
-                {{ util.make_icon('info-circle') }} {% trans %}The user is deactivated.{% endtrans %}
-            </div>
+            {% call util.notifications('info', id='deactivated') %}
+                {% trans %}The user is deactivated.{% endtrans %}
+            {% endcall %}
         {% endif %}
     {% endif %}
+{% endblock %}
 
+{% block content %}
     {% if quoteable %}
         {{ util.href(show_user_link(user, ambience['persona']['id'], quote_me=True), gettext("Show complete Profile"),
                      aclass="btn btn-info btn-sm", icon='eye-slash') }}

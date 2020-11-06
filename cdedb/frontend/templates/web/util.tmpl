@@ -931,3 +931,17 @@ mailto:
         title=gettext("Short Markdown summary")
     )
 )|s %}
+
+{% macro notifications(ntype, id) %}
+    {% with icontypes = {"success": "check-circle", "info": "info-circle", "warning": "exclamation-circle",
+                         "error" : "times-circle"},
+            alerttypes = {"success": "success", "info": "info", "warning": "warning", "error": "danger"},
+            messagetypes = {"success": _("Success!"), "info": _("Info!"),
+                            "warning": _("Warning!"), "error": _("Error!")} %}
+        <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert" {% if id %}id="{{ id }}"{% endif %}>
+            {{ util.make_icon( icontypes[ntype] ) }}
+            <strong>{{ messagetypes[ntype]|s }}</strong>
+            <span class="notificationMessage">{{ caller() }}</span>
+        </div>
+    {% endwith %}
+{%- endmacro %}

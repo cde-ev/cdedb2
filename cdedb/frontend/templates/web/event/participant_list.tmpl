@@ -61,19 +61,16 @@
     {{ util.href(show_user_link(user, persona['id'], quote_me=not is_admin, event_id=ambience['event']['id']), display) }}
 {% endmacro %}
 
+{% block static_notifications %}
+    {{ super() }}
+    {% if not ambience['event']['is_participant_list_visible'] %}
+        {% call util.notifications('info') %}
+            {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-    {% if not ambience['event']['is_participant_list_visible'] %}
-        <div class="alert alert-info" role="alert">
-            {{ util.make_icon('info-circle') }}
-            <strong>{% trans %}Caution!{% endtrans %}</strong>
-            <span class="notificationMessage">
-                {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
-            </span>
-        </div>
-    {% endif %}
-
-
     {% if registrations and list_consent %}
         {% if ambience['event']['parts']|length > 1 %}
             <nav>
@@ -194,19 +191,14 @@
             {% trans count=registrations|length %}There are {{ count }} participants in total.{% endtrans %}
         </p>
 
-
     {% elif not list_consent %}
-        <div class="alert alert-info" role="alert">
+        <p class="text-info">
             {{ util.make_icon('info-circle') }}
-            <strong>{% trans %}Caution!{% endtrans %}</strong>
-            <span class="notificationMessage">
-                {% trans %}
-                    You can not access the Participant List as you have not agreed to have your own data
-                    sent to other participants before the event.
-                {% endtrans %}
-            </span>
-        </div>
-
+            {% trans %}
+                You can not access the Participant List as you have not agreed to have your own data
+                sent to other participants before the event.
+            {% endtrans %}
+        </p>
 
     {% else %}
         {% trans %}There are no participants yet.{% endtrans %}

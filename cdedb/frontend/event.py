@@ -84,14 +84,6 @@ class EventFrontend(AbstractUserFrontend):
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
-            if (rs.ambience['event'].get('is_archived') and
-                    rs.ambience['event'].get('is_cancelled')):
-                rs.notify("info",
-                          n_("This event was cancelled and has been archived."))
-            elif rs.ambience['event'].get('is_archived'):
-                rs.notify("info", n_("This event has been archived."))
-            elif rs.ambience['event'].get('is_cancelled'):
-                rs.notify("info", n_("This event has been cancelled."))
         return super().render(rs, templatename, params=params)
 
     @classmethod

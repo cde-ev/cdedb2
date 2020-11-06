@@ -190,22 +190,14 @@
                     {% endif %}
 
                     <div id="notifications">
-                        {% with icontypes = {"success" : "check-circle", "info" : "info-circle", "question" : "question-circle",
-                                             "warning" : "exclamation-circle", "error" : "times-circle"},
-                                alerttypes = {"success" : "success", "info" : "info", "question" : "info",
-                                              "warning" : "warning", "error" : "danger"},
-                                messagetypes = {"success" : _("Success!"), "info" : _("Info!"), "question" : _("Question:"),
-                                                "warning" : _("Warning!"), "error" : _("Error!")} %}
-                            {% for ntype, message, params in notifications %}
-                                <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert">
-                                    {{ util.make_icon( icontypes[ntype] ) }}
-                                    <strong>{{ messagetypes[ntype]|s }}</strong>
-                                    <span class="notificationMessage">{{ gettext(message)|e|format(**params) }}</span>
-                                </div>
-                            {% endfor %}
-                            {% block static_notifications %}
-                            {% endblock %}
-                        {% endwith %}
+                        {% for ntype, message, params in notifications %}
+                            {% call util.notifications(ntype) %}
+                                {{ gettext(message)|e|format(**params) }}
+                            {% endcall %}
+                        {% endfor %}
+                        {% block static_notifications %}
+                            {# For notifications indicating a state instead of the results of a user interaction #}
+                        {% endblock %}
                     </div>
 
                     <div role="main">

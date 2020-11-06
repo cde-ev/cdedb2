@@ -7289,7 +7289,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:19
 #: cdedb/frontend/templates/web/core/login.tmpl:21
-msgid "This is an Offline-Instance of the CdE-DB"
+msgid "This is an Offline-Instance of the CdEDB"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:34

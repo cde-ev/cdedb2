@@ -34,7 +34,8 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("aka@example.cde", div="orga-address")
         self.assertPresence("Erste Hälfte", div="timeframe-parts")
         self.assertNonPresence("Everybody come!")
-        self.assertPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar")
+        self.assertPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar",
+                            div='notifications')
 
         self.traverse({'description': 'Kursliste'})
         self.assertPresence("α. Planetenretten für Anfänger", div='list-courses')
@@ -262,7 +263,8 @@ class TestEventFrontend(FrontendTest):
                             "Zweite Hälfte: 11.11.2222 – 30.11.2222",
                             div='timeframe-parts')
         self.assertPresence("Everybody come!", div='description')
-        self.assertNonPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar")
+        self.assertNonPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar",
+                               div='notifications')
         self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
                             div='timeframe-registration')
         self.assertPresence("aka@example.cde", div='orga-address')
@@ -575,14 +577,15 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'})
         self.assertPresence("fällt aus")
-        self.assertPresence("Achtung! Ausfallende Kurse werden nur für Orgas "
-                            "hier markiert.")
+        self.assertPresence("Info! Ausfallende Kurse werden nur für Orgas "
+                            "hier markiert.", div='notifications')
         self.traverse({'href': '/event/event/1/change'})
         f = self.response.forms['changeeventform']
         f['is_course_state_visible'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/course/list'})
-        self.assertNonPresence("Cancelled courses are only marked for orgas")
+        self.assertNonPresence("Ausfallende Kurse werden nur für Orgas",
+                               div='notifications')
 
         self.logout()
         self.login(USER_DICT['charly'])
@@ -1674,7 +1677,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': 'event/event/1/registration/list'})
         self.assertTitle("Teilnehmerliste Große Testakademie 2222")
         self.assertPresence("Die Teilnehmerliste ist aktuell nur für Orgas und "
-                            "Admins sichtbar.")
+                            "Admins sichtbar.", div='notifications')
         self.assertPresence("Übersicht")
         self.assertPresence("Administrator")
         self.assertPresence("emilia@example.cde")
@@ -1726,7 +1729,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/list'})
         self.assertTitle("Teilnehmerliste Große Testakademie 2222")
         self.assertNonPresence("Die Teilnehmerliste ist aktuell nur für Orgas "
-                               "und Admins sichtbar.")
+                               "und Admins sichtbar.", div='notifications')
         self.assertPresence("Warmup")
         self.assertPresence("Zweite Hälfte")
         self.traverse({'description': 'Zweite Hälfte'},)

@@ -15,14 +15,10 @@
 {% endblock %}
 {% block content %}
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
-        <div class="alert alert-info">
-            <p>
-                {{ util.make_icon('info-circle') }} <strong>{% trans %}Info{% endtrans %}</strong>
-                {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
-            </p>
-
-            <p class=nosp>{# TODO Erklärtext #}</p>
-        </div>
+        {% call util.notifications('info') %}
+            {% trans %}This is an Offline-Instance of the CdEDB{% endtrans %}
+            {# TODO Erklärtext #}
+        {% endcall %}
     {% endif %}
 
     <form action="{{ cdedblink('core/login') }}" method="POST" id="loginform" class="form-horizontal">

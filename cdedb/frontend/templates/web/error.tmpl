@@ -3,8 +3,7 @@
 {% block title %}{{ error.code }}: {{ error.name }}{% endblock %}
 {% block content %}
 {% set maillink = util.href(util.mailto("cdedb@lists.cde-ev.de", gettext("CdE-Datenbank development team")), "cdedb@lists.cde-ev.de") %}
-    <div class="alert alert-danger">
-        {{ util.make_icon('times-circle') }}
+    {% call util.notifications('error') %}
         {% if error.code == 403 %}
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
             {{ gettext(error.description) }}
@@ -24,7 +23,7 @@
                 {{ (error.description|string)[:21] }}
             {% endif %}
         {% endif %}
-    </div>
+    {% endcall %}
 
     {% if error.code == 403 %}
         {% if not help is none %}
