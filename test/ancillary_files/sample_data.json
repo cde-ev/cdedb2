@@ -6517,7 +6517,7 @@
             "title": "Versammlungsleitung Internationaler Kongress",
             "address": "kongress-leitung@lists.cde-ev.de",
             "local_part": "kongress-leitung",
-            "domain": 4,
+            "domain": 1,
             "description": "Hier erreicht ihr die Versammlungsleitung des Internationalen Kongress.",
             "mod_policy": 1,
             "attachment_policy": 1,
