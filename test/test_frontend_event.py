@@ -2999,7 +2999,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertValidationError('order', "Ungültige Eingabe für eine Ganzzahl.")
         f = self.response.forms['reorderquestionnaireform']
-        f['order'] = "-1,7,7"
+        f['order'] = "-1,6,6"
         self.submit(f, check_notification=False)
         self.assertValidationError("order", "Reihenindex außerhalb des Bereichs.")
         self.assertValidationError("order", "Jede Reihe darf nur genau einmal vorkommen.")

@@ -3832,7 +3832,8 @@ class EventFrontend(AbstractUserFrontend):
     def reorder_questionnaire_form(self, rs: RequestState, event_id: int,
                                    kind: const.QuestionnaireUsages) -> Response:
         """Render form."""
-        # we must take care if the kind parameter is error prone
+        # we must take care if the kind parameter is error prone. All other validation
+        #  errors should be displayed on the rendered page.
         if rs.has_validation_errors() and any(
                 field == 'kind' for field, _ in rs.retrieve_validation_errors()):
             rs.notify("error", n_("Unknown questionnaire kind."))
@@ -3867,12 +3868,12 @@ class EventFrontend(AbstractUserFrontend):
             return self.reorder_questionnaire_form(rs, event_id, kind=kind)
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
-        if not all(0 <= i <= len(questionnaire) for i in order):
+        if not all(0 <= i < len(questionnaire) for i in order):
             rs.append_validation_error(
                 ("order", ValueError(n_("Row index out of range."))))
         if not len(set(order)) == len(order):
             rs.append_validation_error(
-                ("order", ValueError(n_("Every row may occur exactly once."))))
+                ("order", ValueError(n_("Every row must occur exactly once."))))
         if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id, kind=kind)
 

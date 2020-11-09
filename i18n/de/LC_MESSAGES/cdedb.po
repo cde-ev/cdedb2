@@ -2424,7 +2424,7 @@ msgid "Row index out of range."
 msgstr "Reihenindex außerhalb des Bereichs."
 
 #: cdedb/frontend/event.py:3875
-msgid "Every row may occur exactly once."
+msgid "Every row must occur exactly once."
 msgstr "Jede Reihe darf nur genau einmal vorkommen."
 
 #: cdedb/frontend/event.py:3888
