@@ -2995,6 +2995,18 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/questionnaire/reorder'})
         f = self.response.forms['reorderquestionnaireform']
         self.assertEqual(f['order'].value, "0,1,2,3,4,5")
+        f['order'] = "Hallo, Kekse"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('order', "Ungültige Eingabe für eine Ganzzahl.")
+        f = self.response.forms['reorderquestionnaireform']
+        f['order'] = "-1,7"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("order", "Reihenindex außerhalb des Bereichs.")
+        f = self.response.forms['reorderquestionnaireform']
+        f['order'] = "0,1,2"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("order", "Reihen gingen beim Neuordnen verloren.")
+        f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
         self.submit(f)
         self.assertTitle("Fragebogen umordnen (Große Testakademie 2222)")
