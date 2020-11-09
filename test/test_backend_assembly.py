@@ -163,6 +163,8 @@ class TestAssemblyBackend(BackendTest):
                 'id': 1,
                 'is_tallied': False,
                 'notes': None,
+                'abs_quorum': 2,
+                'rel_quorum': 0,
                 'quorum': 2,
                 'title': 'Antwort auf die letzte aller Fragen',
                 'vote_begin': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222, tzinfo=pytz.utc),
@@ -196,6 +198,8 @@ class TestAssemblyBackend(BackendTest):
                 'id': 4,
                 'is_tallied': False,
                 'notes': None,
+                'abs_quorum': 0,
+                'rel_quorum': 0,
                 'quorum': 0,
                 'title': 'Akademie-Nachtisch',
                 'vote_begin': nearly_now(),
@@ -234,6 +238,8 @@ class TestAssemblyBackend(BackendTest):
             'id': 2,
             'is_tallied': False,
             'notes': 'Nochmal alle auf diese wichtige Entscheidung hinweisen.',
+            'abs_quorum': 0,
+            'rel_quorum': 0,
             'quorum': 0,
             'title': 'Farbe des Logos',
             'vote_begin': datetime.datetime(2222, 2, 2, 20, 22, 22, 222222, tzinfo=pytz.utc),
@@ -251,11 +257,13 @@ class TestAssemblyBackend(BackendTest):
             },
             'notes': "foo",
             'vote_extension_end': datetime.datetime(2222, 2, 20, 20, 22, 22, 222222, tzinfo=pytz.utc),
-            'quorum': 42,
+            'rel_quorum': 100,
         }
         self.assertLess(0, self.assembly.set_ballot(self.key, data))
-        for key in ('use_bar', 'notes', 'vote_extension_end', 'quorum'):
+        for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
+        expectation['abs_quorum'] = 0
+        expectation['quorum'] = 11
         expectation['candidates'][6]['title'] = data['candidates'][6]['title']
         expectation['candidates'][6]['shortname'] = data['candidates'][6]['shortname']
         del expectation['candidates'][7]
@@ -273,7 +281,8 @@ class TestAssemblyBackend(BackendTest):
                            -2: {'title': 'Nein', 'shortname': 'n'},},
             'description': 'Sind sie sich sicher?',
             'notes': None,
-            'quorum': 10,
+            'abs_quorum': 10,
+            'rel_quorum': 0,
             'title': 'Verstehen wir Spaß',
             'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222, tzinfo=pytz.utc),
             'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222, tzinfo=pytz.utc),
@@ -283,6 +292,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, new_id)
         data.update({
             'extended': None,
+            'quorum': 10,
             'id': new_id,
             'is_tallied': False,
             'candidates': {1002: {'ballot_id': new_id,
@@ -320,7 +330,7 @@ class TestAssemblyBackend(BackendTest):
                            -2: {'title': 'Nein', 'shortname': 'n'},},
             'description': 'Sind sie sich sicher?',
             'notes': None,
-            'quorum': 11,
+            'abs_quorum': 11,
             'title': 'Verstehen wir Spaß',
             'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222, tzinfo=pytz.utc),
             'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222, tzinfo=pytz.utc),
@@ -329,18 +339,18 @@ class TestAssemblyBackend(BackendTest):
         with self.assertRaises(ValueError):
             self.assembly.create_ballot(self.key, data)
 
-        data['quorum'] = 0
+        data['abs_quorum'] = 0
         data['vote_extension_end'] = datetime.datetime(2222, 2, 7, 13, 22, 22, 222222, tzinfo=pytz.utc)
         with self.assertRaises(ValueError):
             self.assembly.create_ballot(self.key, data)
 
         # now create the ballot
-        data['quorum'] = 11
+        data['abs_quorum'] = 11
         new_id = self.assembly.create_ballot(self.key, data)
 
         data = {
             'id': new_id,
-            'quorum': 0,
+            'abs_quorum': 0,
         }
         with self.assertRaises(ValueError):
             self.assembly.set_ballot(self.key, data)
@@ -354,10 +364,67 @@ class TestAssemblyBackend(BackendTest):
 
         data = {
             'id': new_id,
-            'quorum': 0,
+            'abs_quorum': 0,
             'vote_extension_end': None,
         }
         self.assembly.set_ballot(self.key, data)
+
+    @as_users("viktor")
+    def test_relative_quorum(self, user):
+        delta = 0.1
+        future = now() + datetime.timedelta(seconds=delta)
+
+        assembly_data = {
+            'description': None,
+            'notes': None,
+            'signup_end': datetime.datetime(2222, 2, 22),
+            'title': "MGV 2222",
+        }
+        assembly_id = self.assembly.create_assembly(self.key, assembly_data)
+        ballot_data = {
+            'assembly_id': assembly_id,
+            'use_bar': False,
+            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
+                           -2: {'title': 'Nein', 'shortname': 'n'},},
+            'description': 'Sind sie sich sicher?',
+            'notes': None,
+            'rel_quorum': 100,
+            'title': 'Verstehen wir Spaß',
+            'vote_begin': future,
+            'vote_end': future + datetime.timedelta(seconds=delta),
+            'vote_extension_end': future + 2 * datetime.timedelta(seconds=delta),
+        }
+        ballot_id = self.assembly.create_ballot(self.key, ballot_data)
+
+        ballot_data['rel_quorum'] = 3.141
+        with self.assertRaises(ValueError) as cm:
+            self.assembly.create_ballot(self.key, ballot_data)
+        self.assertIn("Precision loss.", cm.exception.args[0])
+        ballot_data['rel_quorum'] = -5
+        with self.assertRaises(ValueError) as cm:
+            self.assembly.create_ballot(self.key, ballot_data)
+        self.assertIn("Relative quorum must be between 0 and 100.",
+                      cm.exception.args[0])
+        ballot_data['rel_quorum'] = 168
+        with self.assertRaises(ValueError) as cm:
+            self.assembly.create_ballot(self.key, ballot_data)
+        self.assertIn("Relative quorum must be between 0 and 100.",
+                      cm.exception.args[0])
+
+        # Initial quorum should be number of members.
+        self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+
+        # Adding a non-member attendee increases the quorum.
+        self.assembly.external_signup(self.key, assembly_id, 4)
+        self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+
+        # Conclude the ballot.
+        time.sleep(2 * delta)
+        self.assembly.check_voting_period_extension(self.key, ballot_id)
+        # Now adding an attendee does not change the quorum.
+        self.assembly.external_signup(self.key, assembly_id, 11)
+        self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+
 
     def test_extension(self):
         self.login(USER_DICT['werner'])
@@ -370,7 +437,7 @@ class TestAssemblyBackend(BackendTest):
                            -2: {'title': 'Nein', 'shortname': 'n'},},
             'description': 'Sind sie sich sicher?',
             'notes': None,
-            'quorum': 10,
+            'abs_quorum': 10,
             'title': 'Verstehen wir Spaß',
             'vote_begin': future,
             'vote_end': farfuture,
@@ -380,7 +447,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(None, self.assembly.get_ballot(self.key, new_id)['extended'])
         self.login(USER_DICT['kalif'])
         time.sleep(1)
-        self.assertEqual(True, self.assembly.check_voting_priod_extension(self.key, new_id))
+        self.assertEqual(True, self.assembly.check_voting_period_extension(self.key, new_id))
         self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
 
     @as_users("charly")
@@ -453,7 +520,7 @@ class TestAssemblyBackend(BackendTest):
                            -2: {'title': 'Nein', 'shortname': 'n'},},
             'description': 'Sind sie sich sicher?',
             'notes': None,
-            'quorum': 0,
+            'abs_quorum': 0,
             'title': 'Verstehen wir Spaß',
             'vote_begin': future,
             'vote_end': farfuture,
@@ -461,7 +528,7 @@ class TestAssemblyBackend(BackendTest):
             'votes': None}
         ballot_id = self.assembly.create_ballot(self.key, data)
         time.sleep(1)
-        self.assembly.check_voting_priod_extension(self.key, ballot_id)
+        self.assembly.check_voting_period_extension(self.key, ballot_id)
         self.assertTrue(self.assembly.tally_ballot(self.key, ballot_id))
         self.assembly.external_signup(self.key, new_id,
                                       persona_id=USER_DICT['kalif']['id'])

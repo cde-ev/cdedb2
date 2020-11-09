@@ -27,8 +27,9 @@ do it.
 """
 
 import copy
-import hmac
 import datetime
+import hmac
+import math
 from pathlib import Path
 from secrets import token_urlsafe
 
@@ -761,12 +762,36 @@ class AssemblyBackend(AbstractBackend):
         They do not need to be associated to the same assembly. This has an
         additional field 'candidates' listing the available candidates for
         this ballot.
+
+        If the regular voting period has not yet passed the stored value for `quorum`
+        will be `None` and the correct value will be calculated on the fly here.
+        Once regular voting ends, the quorum value at that point will be stored and
+        afterwards this specific value will be used from there on.
         """
         ballot_ids = affirm_set("id", ballot_ids)
 
         with Atomizer(rs):
             data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ballot_ids)
-            ret = {e['id']: e for e in data}
+            ret = {}
+            for e in data:
+                if e["quorum"] is None:
+                    if e["abs_quorum"]:
+                        e["quorum"] = e["abs_quorum"]
+                    elif e["rel_quorum"]:
+                        # The total number of possible voters is the number of
+                        # attendees plus the number of member who may decide to
+                        # attend in the future.
+                        attendees = self.list_attendees(rs, e["assembly_id"])
+                        query = ("SELECT COUNT(id) FROM core.personas"
+                                 " WHERE is_member = TRUE AND NOT(id = ANY(%s))")
+                        non_attending_member_count = unwrap(
+                            self.query_one(rs, query, (attendees,)))
+                        assert non_attending_member_count is not None
+                        total_count = non_attending_member_count + len(attendees)
+                        e["quorum"] = math.ceil(total_count * e["rel_quorum"] / 100)
+                    else:
+                        e["quorum"] = 0
+                ret[e['id']] = e
             data = self.sql_select(
                 rs, "assembly.candidates",
                 ("id", "ballot_id", "title", "shortname"), ballot_ids,
@@ -1026,8 +1051,7 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    def check_voting_priod_extension(self, rs: RequestState,
-                                     ballot_id: int) -> bool:
+    def check_voting_period_extension(self, rs: RequestState, ballot_id: int) -> bool:
         """Update extension status w.r.t. quorum.
 
         After the normal voting period has ended an extension is enacted
@@ -1052,6 +1076,7 @@ class AssemblyBackend(AbstractBackend):
             update = {
                 'id': ballot_id,
                 'extended': len(votes) < ballot['quorum'],
+                'quorum': ballot['quorum'],
             }
             # do not use set_ballot since it would throw an error
             self.sql_update(rs, "assembly.ballots", update)
