@@ -4524,29 +4524,34 @@ def _enum_validator_maker(anenum, name=None, internal=False):
         :type _ignore_warnings: bool
         :rtype: (enum or None, [(str or None, exception)])
         """
-        if _convert and not isinstance(val, anenum):
+        if isinstance(val, anenum):
+            return val, []
+
+        elif isinstance(val, int):
+            try:
+                return anenum(val), []
+            except ValueError:
+                pass
+
+        elif _convert:
+            # first, try to convert if the enum member is given as "class.member"
+            if type(val) is str:
+                assert type(val) is str
+                try:
+                    val_list = val.split(".")
+                    return anenum[val_list[-1]], []
+                except KeyError:
+                    pass
+
+            # second, try to convert if the enum member is given as str(int)
             val, errs = _int(val, argname=argname, _convert=_convert,
                              _ignore_warnings=_ignore_warnings)
-            if errs:
-                return val, errs
             try:
-                val = anenum(val)
+                return anenum(val), []
             except ValueError:
-                return None, [(argname,
-                               ValueError(error_msg, {'enum': anenum}))]
-        else:
-            if not isinstance(val, anenum):
-                if isinstance(val, int):
-                    try:
-                        val = anenum(val)
-                    except ValueError:
-                        return None, [(
-                            argname, ValueError(error_msg, {'enum': anenum}))]
-                else:
-                    return None, [
-                        (argname, TypeError(n_("Must be a %(type)s."),
-                                            {'type': anenum}))]
-        return val, []
+                pass
+
+        return None, [(argname, ValueError(error_msg, {'enum': anenum}))]
 
     the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())
     if not internal:
