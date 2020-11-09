@@ -3832,11 +3832,11 @@ class EventFrontend(AbstractUserFrontend):
     def reorder_questionnaire_form(self, rs: RequestState, event_id: int,
                                    kind: const.QuestionnaireUsages) -> Response:
         """Render form."""
-        if rs.has_validation_errors():
-            kind = const.QuestionnaireUsages.additional
-            rs.notify(
-                "error", n_("Unknown questionnaire kind. Defaulted to %(kind)s."),
-                {'kind': repr(kind)})
+        # we must take care if the kind parameter is error prone
+        if rs.has_validation_errors() and any(
+                field == 'kind' for field, _ in rs.retrieve_validation_errors()):
+            rs.notify("error", n_("Unknown questionnaire kind."))
+            return self.redirect(rs, "event/show_event")
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         redirects = {
@@ -3847,11 +3847,9 @@ class EventFrontend(AbstractUserFrontend):
         }
         if not questionnaire:
             rs.notify("info", n_("No questionnaire rows of this kind found."))
-            if kind in redirects:
-                return self.redirect(rs, redirects[kind])
+            return self.redirect(rs, redirects[kind])
         return self.render(rs, "reorder_questionnaire", {
-            'questionnaire': questionnaire,
-            'kind': kind})
+            'questionnaire': questionnaire, 'kind': kind, 'redirect': redirects[kind]})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -3869,14 +3867,24 @@ class EventFrontend(AbstractUserFrontend):
             return self.reorder_questionnaire_form(rs, event_id, kind)
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
-        new_questionnaire = {
-            kind: list(self._sanitize_questionnaire_row(questionnaire[i])
-                       for i in order)}
-        code = self.eventproxy.set_questionnaire(
-            rs, event_id, new_questionnaire)
+        if not all(0 <= i <= len(questionnaire) for i in order):
+            rs.append_validation_error(
+                ("order", ValueError(n_("Row index out of range."))))
+            return self.reorder_questionnaire_form(rs, event_id, kind)
+        new_questionnaire = [self._sanitize_questionnaire_row(questionnaire[i])
+                             for i in order]
+
+        # make sure no field vanished during reordering
+        q_set = {field['field_id'] for field in questionnaire}
+        new_q_set = {field['field_id'] for field in new_questionnaire}
+        # check the length to make sure no text only field vanished (with field_id None)
+        if len(questionnaire) != len(new_questionnaire) or q_set != new_q_set:
+            rs.notify("error", n_("Questionaire fields got lost during reorder."))
+            return self.reorder_questionnaire_form(rs, event_id, kind)
+
+        code = self.eventproxy.set_questionnaire(rs, event_id, {kind: new_questionnaire})
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/reorder_questionnaire_form",
-                             {'kind': kind.value})
+        return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})
 
     @access("event")
     @event_guard()
