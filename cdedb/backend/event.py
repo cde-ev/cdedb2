@@ -2796,7 +2796,7 @@ class EventBackend(AbstractBackend):
                 for row in self.query_all(rs, query, (event_id,))}
 
     def _set_course_choices(self, rs: RequestState, registration_id: int,
-                            track_id: int, choices: Sequence[int],
+                            track_id: int, choices: Optional[Sequence[int]],
                             course_segments: Mapping[int, Collection[int]],
                             new_registration: bool = False
                             ) -> DefaultReturnCode:
@@ -3614,8 +3614,8 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def set_questionnaire(self, rs: RequestState, event_id: int,
-                          data: Dict[const.QuestionnaireUsages,
-                                     List[CdEDBObject]]) -> DefaultReturnCode:
+                          data: Optional[Dict[const.QuestionnaireUsages,
+                                              List[CdEDBObject]]]) -> DefaultReturnCode:
         """Replace current questionnaire rows for a specific event, by kind.
 
         This superseeds the current questionnaire for all given kinds.

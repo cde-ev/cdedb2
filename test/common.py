@@ -198,11 +198,12 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
         else:
             apitoken = key
 
-        rs = RequestState(  # type: ignore
-            sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
-            notifications=[], mapadapter=None, requestargs=None, errors=[],
-            values=None, lang="de", gettext=translator.gettext,
-            ngettext=translator.ngettext, coders=None, begin=now())
+        rs = RequestState(
+            sessionkey=sessionkey, apitoken=apitoken, user=user,
+            request=None, notifications=[], mapadapter=None,  # type: ignore
+            requestargs=None, errors=[], values=None, lang="de",
+            gettext=translator.gettext, ngettext=translator.ngettext,
+            coders=None, begin=now())
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
@@ -243,8 +244,9 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-ExceptionInfo = Tuple[
-    Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]]
+ExceptionInfo = Union[
+    Tuple[Type[BaseException], BaseException, TracebackType],
+    Tuple[None, None, None], None]
 
 
 class MyTextTestResult(unittest.TextTestResult):
@@ -414,8 +416,8 @@ class BackendTest(CdEDBTest):
         if isinstance(user, str):
             user = USER_DICT[user]
         assert isinstance(user, dict)
-        self.key = self.core.login(  # type: ignore
-            None, user['username'], user['password'], ip)
+        self.key = self.core.login(
+            None, user['username'], user['password'], ip)  # type: ignore
         return self.key
 
     @staticmethod
@@ -767,7 +769,7 @@ class FrontendTest(BackendTest):
         self.app.reset()
         # Make sure all available admin views are enabled.
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
-        self.response = None  # type: ignore
+        self.response = None
 
     def basic_validate(self, verbose: bool = False) -> None:
         if self.response.content_type == "text/html":
@@ -1335,7 +1337,7 @@ class MultiAppFrontendTest(FrontendTest):
 
     def setUp(self) -> None:
         """Reset all apps and responses and the current app index."""
-        self.responses = [None for _ in range(self.n)]  # type: ignore
+        self.responses = [None for _ in range(self.n)]
         super().setUp()
         for app in self.apps:
             app.reset()

@@ -79,9 +79,6 @@ class CdEFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
     the organization."""
     realm = "cde"
-    user_management = {
-        "persona_getter": lambda obj: obj.coreproxy.get_cde_user,
-    }
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -272,7 +269,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("core_admin", "cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
-    def user_search(self, rs: RequestState, download: str, is_search: bool
+    def user_search(self, rs: RequestState, download: Optional[str], is_search: bool
                     ) -> Response:
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_user'])
@@ -359,7 +356,7 @@ class CdEFrontend(AbstractUserFrontend):
             'sendmail': True,
         }
         merge_dicts(rs.values, defaults)
-        data = data or {}
+        data = data or []
         csvfields = csvfields or tuple()
         pevents = self.pasteventproxy.list_past_events(rs)
         pevent_ids = {d['pevent_id'] for d in data if d['pevent_id']}
@@ -888,7 +885,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         This uses POST because the expected data is too large for GET.
         """
-
+        assert statement_file.filename is not None
         filename = pathlib.Path(statement_file.filename).parts[-1]
         start, end, timestamp = parse.dates_from_filename(filename)
         # The statements from BFS are encoded in latin-1
@@ -1044,7 +1041,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         defaults = {'sendmail': True}
         merge_dicts(rs.values, defaults)
-        data = data or {}
+        data = data or []
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
         return self.render(rs, "money_transfers", {

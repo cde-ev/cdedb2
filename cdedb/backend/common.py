@@ -260,8 +260,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     # differently than others, so we just ignore everything here.
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: Mapping[S, T]       # type: ignore
-                           ) -> Mapping[S, T]: ...  # type: ignore
+    def _sanitize_db_input(obj: Mapping[S, T]) -> Mapping[S, T]: ...  # type: ignore
 
     @staticmethod
     @overload
@@ -277,7 +276,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: T) -> T: ...  # type: ignore
+    def _sanitize_db_input(obj: T) -> T: ...
 
     @staticmethod
     def _sanitize_db_input(obj: Any) -> Any:
@@ -325,8 +324,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
 
-    def query_exec(self, rs: RequestState, query: str, params: Sequence[Any]
-                   ) -> int:
+    def query_exec(self, rs: RequestState, query: str, params: Sequence[Any]) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         with rs.conn as conn:
             with conn.cursor() as cur:
