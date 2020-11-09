@@ -3870,7 +3870,12 @@ class EventFrontend(AbstractUserFrontend):
         if not all(0 <= i <= len(questionnaire) for i in order):
             rs.append_validation_error(
                 ("order", ValueError(n_("Row index out of range."))))
+        if not len(set(order)) == len(order):
+            rs.append_validation_error(
+                ("order", ValueError(n_("Every row may occur exactly once."))))
+        if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id, kind=kind)
+
         new_questionnaire = [self._sanitize_questionnaire_row(questionnaire[i])
                              for i in order]
 
