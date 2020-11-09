@@ -964,7 +964,7 @@ class FrontendTest(BackendTest):
                 return None
             return result.group(1)
 
-        mails = list(filter(None, (_extract_path(x) for x in elements)))
+        mails = list(filter(None, (map(_extract_path, elements))))
         ret = []
         for path in mails:
             with open(path) as f:
