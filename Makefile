@@ -22,7 +22,7 @@ help:
 
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
-MYPYBIN ?= python3 -m mypy
+MYPYBIN ?= mypy
 TESTPREPARATION ?= automatic
 
 doc:
