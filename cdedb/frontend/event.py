@@ -3864,13 +3864,13 @@ class EventFrontend(AbstractUserFrontend):
         laborious to do without.
         """
         if rs.has_validation_errors():
-            return self.reorder_questionnaire_form(rs, event_id, kind)
+            return self.reorder_questionnaire_form(rs, event_id, kind=kind)
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         if not all(0 <= i <= len(questionnaire) for i in order):
             rs.append_validation_error(
                 ("order", ValueError(n_("Row index out of range."))))
-            return self.reorder_questionnaire_form(rs, event_id, kind)
+            return self.reorder_questionnaire_form(rs, event_id, kind=kind)
         new_questionnaire = [self._sanitize_questionnaire_row(questionnaire[i])
                              for i in order]
 
@@ -3879,8 +3879,9 @@ class EventFrontend(AbstractUserFrontend):
         new_q_set = {field['field_id'] for field in new_questionnaire}
         # check the length to make sure no text only field vanished (with field_id None)
         if len(questionnaire) != len(new_questionnaire) or q_set != new_q_set:
-            rs.notify("error", n_("Questionaire fields got lost during reorder."))
-            return self.reorder_questionnaire_form(rs, event_id, kind)
+            rs.append_validation_error(
+                ("order", ValueError(n_("Rows got lost during reorder."))))
+            return self.reorder_questionnaire_form(rs, event_id, kind=kind)
 
         code = self.eventproxy.set_questionnaire(rs, event_id, {kind: new_questionnaire})
         self.notify_return_code(rs, code)
