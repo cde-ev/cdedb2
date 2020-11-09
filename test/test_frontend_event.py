@@ -848,8 +848,8 @@ etc;anything else""", f['entries_2'].value)
         f['kind_-1'].force_value("invalid")
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
-        self.assertValidationError("kind_-1",
-                                   "Ungültige Eingabe für eine Ganzzahl.")
+        self.assertValidationError(
+            "kind_-1", "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>.")
         f['create_-1'].checked = True
         f['field_name_-1'] = "invalid"
         f['association_-1'] = const.FieldAssociations.registration.value
