@@ -328,7 +328,10 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 raise PrivilegeError(n_("Attribute %(name)s not public"),
                                      {"name": name})
 
-            return wrapit(attr)
+            if not getattr(attr, "static", False):
+                return wrapit(attr)
+            else:
+                return attr
 
         @staticmethod
         def _get_backend_class() -> Type[B]:
@@ -2071,8 +2074,8 @@ PRIVILEGE_MOD_REQUIRING_FIELDS = {
 PRIVILEGED_MOD_ALLOWED_FIELDS = MOD_ALLOWED_FIELDS | PRIVILEGE_MOD_REQUIRING_FIELDS
 
 #: Fields of an assembly
-ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
-                   "is_active", "notes")
+ASSEMBLY_FIELDS = ("id", "title", "shortname", "description", "presider_address",
+                   "signup_end", "is_active", "notes")
 
 #: Fields of a ballot
 BALLOT_FIELDS = (

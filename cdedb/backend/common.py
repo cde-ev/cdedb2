@@ -167,6 +167,16 @@ def internal(function: F) -> F:
     return function
 
 
+def static_access(function: F) -> F:
+    """Mark a function as universally accessible regardless of user.
+
+    This also means that the RequestState does not have to be passed to this function.
+    """
+    function.access = True  # type: ignore
+    function.static = True  # type: ignore
+    return function
+
+
 class AbstractBackend(metaclass=abc.ABCMeta):
     """Basic template for all backend services.
 

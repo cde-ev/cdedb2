@@ -152,6 +152,50 @@
         {% if ambience['assembly']['is_active'] or "vote_begin" not in delete_blockers %}
             {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
                 {% if ambience['assembly']['is_active'] %}
+                    {% if not ambience['assembly']['presider_address'] %}
+                        <div class="row" id="create-presider-list">
+                            <div class="col-sm-4">
+                                <div class="p">
+                                    <form action="{{ cdedblink('assembly/create_assembly_mailinglist') }}" method="POST"
+                                          id="cratepresiderlistform" style="display: inline;">
+                                        {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
+                                        {{ util.input_hidden('presider_list', value=True) }}
+                                        {{ util.input_submit(value=gettext("Create Presider Mailinglist"),
+                                                             aclass="btn btn-success", icon="plus") }}
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="col-sm-8">
+                                <div class="p text-muted">
+                                    {% trans %}
+                                        Create a presider mailinglist for this assembly with a default configuration.
+                                    {% endtrans %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if not attendee_list %}
+                        <div class="row" id="create-attendee-list">
+                            <div class="col-sm-4">
+                                <div class="p">
+                                    <form action="{{ cdedblink('assembly/create_assembly_mailinglist') }}" method="POST"
+                                          id="cratepresiderlistform" style="display: inline;">
+                                        {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
+                                        {{ util.input_hidden('presider_list', value=False) }}
+                                        {{ util.input_submit(value=gettext("Create Attendee Mailinglist"),
+                                                             aclass="btn btn-success", icon="plus") }}
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="col-sm-8">
+                                <div class="p text-muted">
+                                    {% trans %}
+                                        Create a attendee mailinglist for this assembly with a default configuration.
+                                    {% endtrans %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">

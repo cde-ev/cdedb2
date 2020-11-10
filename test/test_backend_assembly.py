@@ -66,7 +66,7 @@ class TestAssemblyBackend(BackendTest):
             'description': 'Proletarier aller Länder vereinigt Euch!',
             'id': 1,
             'is_active': True,
-            'mail_address': 'kongress@example.cde',
+            'presider_address': 'kongress@example.cde',
             'notes': None,
             'presiders': {23},
             'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
@@ -94,7 +94,7 @@ class TestAssemblyBackend(BackendTest):
         new_id = self.assembly.create_assembly(self.key, new_assembly)
         expectation = new_assembly
         expectation['id'] = new_id
-        expectation['mail_address'] = None
+        expectation['presider_address'] = None
         expectation['is_active'] = True
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, new_id))
@@ -744,7 +744,7 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies
-        (title, description, mail_address, signup_end) VALUES
+        (title, description, presider_address, signup_end) VALUES
         ('Umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
          date '2111-11-11');""")
     def test_prepsql(self, user):
