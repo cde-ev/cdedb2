@@ -4948,7 +4948,7 @@
             "vote_extension_end": "---now---",
             "extended": true,
             "use_bar": true,
-            "quorum": 2,
+            "abs_quorum": 2,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -4963,7 +4963,7 @@
             "vote_extension_end": null,
             "extended": null,
             "use_bar": false,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": null,
             "is_tallied": false,
             "notes": "Nochmal alle auf diese wichtige Entscheidung hinweisen."
@@ -4978,7 +4978,7 @@
             "vote_extension_end": null,
             "extended": null,
             "use_bar": true,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -4993,7 +4993,7 @@
             "vote_extension_end": null,
             "extended": null,
             "use_bar": true,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": 2,
             "is_tallied": false,
             "notes": null
@@ -5008,7 +5008,7 @@
             "vote_extension_end": null,
             "extended": null,
             "use_bar": false,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5023,7 +5023,7 @@
             "vote_extension_end": null,
             "extended": false,
             "use_bar": false,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5038,7 +5038,7 @@
             "vote_extension_end": null,
             "extended": null,
             "use_bar": false,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5053,7 +5053,7 @@
             "vote_extension_end": "1999-09-05T23:00:00+00:00",
             "extended": true,
             "use_bar": true,
-            "quorum": 100000,
+            "abs_quorum": 100000,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5068,7 +5068,7 @@
             "vote_extension_end": null,
             "extended": false,
             "use_bar": true,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": 2,
             "is_tallied": false,
             "notes": null
@@ -5083,7 +5083,7 @@
             "vote_extension_end": "2016-07-31T23:00:00+00:00",
             "extended": true,
             "use_bar": false,
-            "quorum": 4444,
+            "abs_quorum": 4444,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5098,7 +5098,7 @@
             "vote_extension_end": null,
             "extended": false,
             "use_bar": false,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5113,7 +5113,7 @@
             "vote_extension_end": "2101-08-24T23:00:00+00:00",
             "extended": null,
             "use_bar": false,
-            "quorum": 4,
+            "abs_quorum": 4,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5128,7 +5128,7 @@
             "vote_extension_end": null,
             "extended": null,
             "use_bar": true,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5143,7 +5143,7 @@
             "vote_extension_end": "2100-03-16T23:00:00+00:00",
             "extended": null,
             "use_bar": false,
-            "quorum": 3333,
+            "abs_quorum": 3333,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5158,7 +5158,7 @@
             "vote_extension_end": "2222-07-28T23:00:00+00:00",
             "extended": null,
             "use_bar": false,
-            "quorum": 2000,
+            "abs_quorum": 2000,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5173,7 +5173,7 @@
             "vote_extension_end": null,
             "extended": null,
             "use_bar": false,
-            "quorum": 0,
+            "abs_quorum": 0,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -6517,7 +6517,7 @@
             "title": "Versammlungsleitung Internationaler Kongress",
             "address": "kongress-leitung@lists.cde-ev.de",
             "local_part": "kongress-leitung",
-            "domain": 4,
+            "domain": 1,
             "description": "Hier erreicht ihr die Versammlungsleitung des Internationalen Kongress.",
             "mod_policy": 1,
             "attachment_policy": 1,

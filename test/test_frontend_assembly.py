@@ -441,7 +441,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             'description': "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will.",
             'vote_begin': future.isoformat(),
             'vote_end': farfuture.isoformat(),
-            'quorum': "0",
+            'abs_quorum': "0",
+            'rel_quorum': "0",
             'votes': "",
             'notes': "Kein Aprilscherz!",
         }
@@ -749,7 +750,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                              .format("w." if use_bar else "w/o"),
                     'vote_begin': future.isoformat(),
                     'vote_end': farfuture.isoformat(),
-                    'quorum': "0",
+                    'abs_quorum': "0",
+                    'rel_quorum': "0",
                     'votes': "2",
                     'use_bar': use_bar,
                 }
@@ -825,18 +827,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['vote_begin'] = future.isoformat()
         f['vote_end'] = farfuture.isoformat()
         f['vote_extension_end'] = "2222-5-1 00:00:00"
-        f['quorum'] = "1000"
+        f['abs_quorum'] = "0"
+        f['rel_quorum'] = "100"
         f['votes'] = ""
         self.submit(f)
         self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
         self.assertPresence(
-            "Verlängerung bis 01.05.2222, 00:00:00, falls 1000 Stimmen nicht "
+            "Verlängerung bis 01.05.2222, 00:00:00, falls 11 Stimmen nicht "
             "erreicht werden.", div='voting-period')
         time.sleep(1)
         self.traverse({'href': '/assembly/1/ballot/list'},
                       {'description': 'Maximale Länge der Verfassung'},)
         self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
-        s = ("Wurde bis 01.05.2222, 00:00:00 verlängert, da 1000 Stimmen nicht "
+        s = ("Wurde bis 01.05.2222, 00:00:00 verlängert, da 11 Stimmen nicht "
              "erreicht wurden.")
         self.assertPresence(s, div='voting-period')
 
@@ -922,7 +925,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             'title': 'Maximale Länge der Verfassung',
             'vote_begin': future.isoformat(),
             'vote_end': farfuture.isoformat(),
-            'quorum': "0",
+            'abs_quorum': "0",
+            'rel_quorum': "0",
             'votes': "1",
         }
         candidates = [

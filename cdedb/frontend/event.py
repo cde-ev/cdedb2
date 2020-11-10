@@ -63,9 +63,6 @@ LodgementProblem = NamedTuple(
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
     realm = "event"
-    user_management = {
-        "persona_getter": lambda obj: obj.coreproxy.get_event_user,
-    }
 
     def render(self, rs: RequestState, templatename: str,
                params: CdEDBObject = None) -> Response:
@@ -279,10 +276,8 @@ class EventFrontend(AbstractUserFrontend):
         else:
             part_ids = rs.ambience['event']['parts'].keys()
 
-        data: CdEDBObject = self._get_participant_list_data(
+        data = self._get_participant_list_data(
             rs, event_id, part_ids, sortkey, reverse=reverse)
-        if data is None:
-            return self.redirect(rs, "event/participant_list")
         if len(rs.ambience['event']['parts']) == 1:
             part_id = unwrap(rs.ambience['event']['parts'].keys())
         data['part_id'] = part_id
@@ -341,7 +336,7 @@ class EventFrontend(AbstractUserFrontend):
                 if not len(part_ids) == 1:
                     raise werkzeug.exceptions.BadRequest(n_(
                         "Only one part id allowed."))
-                part_id = unwrap(part_ids)  # type: ignore
+                part_id = unwrap(part_ids)
                 all_tracks = parts[part_id]['tracks']
                 registered_tracks = [registrations[anid]['tracks'][track_id]
                                      for track_id in all_tracks]
@@ -1058,7 +1053,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata(('active_tab', 'str_or_None'))
-    def field_summary(self, rs: RequestState, event_id: int, active_tab: str
+    def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str]
                       ) -> Response:
         """Manipulate the fields of an event."""
         fields = self.process_field_input(
@@ -1075,9 +1070,9 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/field_summary_form",
-                             anchor=(("tab:" + active_tab)
-                                     if active_tab is not None else None))
+        return self.redirect(
+            rs, "event/field_summary_form", anchor=(
+                ("tab:" + active_tab) if active_tab is not None else None))
 
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
@@ -6056,7 +6051,7 @@ class EventFrontend(AbstractUserFrontend):
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
-                rs, event_id, kind=kind.value, internal=True)
+                rs, event_id, kind=kind, internal=True)
         entities, ordered_ids, _, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
@@ -6066,7 +6061,7 @@ class EventFrontend(AbstractUserFrontend):
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
-                rs, event_id, kind=kind.value, internal=True)
+                rs, event_id, kind=kind, internal=True)
 
         if kind == const.FieldAssociations.registration:
             entity_setter = self.eventproxy.set_registration

@@ -57,6 +57,10 @@ COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
+if TYPE_CHECKING:
+    CdEDBMultiDict = werkzeug.MultiDict[str, Any]
+else:
+    CdEDBMultiDict = werkzeug.MultiDict
 
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
@@ -148,11 +152,11 @@ class RequestState:
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
-                 values: Optional[werkzeug.MultiDict], lang: str,
+                 values: Optional[CdEDBMultiDict], lang: str,
                  gettext: Callable[[str], str],
                  ngettext: Callable[[str, str, int], str],
                  coders: Optional[Mapping[str, Callable]],  # type: ignore
-                 begin: datetime.datetime,
+                 begin: Optional[datetime.datetime],
                  default_gettext: Callable[[str], str] = None,
                  default_ngettext: Callable[[str, str, int], str] = None):
         """
@@ -191,7 +195,7 @@ class RequestState:
         self.default_gettext = default_gettext or gettext
         self.default_ngettext = default_ngettext or ngettext
         self._coders = coders or {}
-        self.begin = begin
+        self.begin = begin or now()
         # Visible version of the database connection
         # noinspection PyTypeChecker
         self.conn: IrradiatedConnection = None  # type: ignore
@@ -381,7 +385,7 @@ def glue(*args: str) -> str:
 S = TypeVar("S")
 
 
-def merge_dicts(targetdict: Union[MutableMapping[T, S], werkzeug.MultiDict],
+def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
                 *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
@@ -2073,8 +2077,8 @@ ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
 #: Fields of a ballot
 BALLOT_FIELDS = (
     "id", "assembly_id", "title", "description", "vote_begin", "vote_end",
-    "vote_extension_end", "extended", "use_bar", "quorum", "votes",
-    "is_tallied", "notes")
+    "vote_extension_end", "extended", "use_bar", "abs_quorum", "rel_quorum", "quorum",
+    "votes", "is_tallied", "notes")
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)

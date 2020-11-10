@@ -197,8 +197,8 @@ class Application(BaseApp):
                         fake_rs = types.SimpleNamespace()
                         fake_rs.user = user
                         notifications = json.dumps([
-                            self.encode_notification(  # type: ignore
-                                fake_rs, "error", n_("Session expired."))])
+                            self.encode_notification(fake_rs,  # type: ignore
+                                                     "error", n_("Session expired."))])
                         ret.set_cookie("displaynote", notifications)
                         return ret
                 coders: Dict[str, Callable[..., Any]] = {

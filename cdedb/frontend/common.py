@@ -62,7 +62,7 @@ from cdedb.common import (
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
     encode_parameter, decode_parameter, make_proxy, EntitySorter,
-    REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap,
+    REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap, CdEDBMultiDict,
     CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User,
     ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, _tdelta
 )
@@ -252,7 +252,7 @@ def date_filter(val: Union[datetime.date, str, None],
         return val.strftime(formatstr)
 
 
-def datetime_filter(val: Optional[datetime.datetime],
+def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
                     verbosity: str = "medium",
                     passthrough: bool = False) -> Optional[str]:
@@ -633,23 +633,23 @@ def get_markdown_parser() -> markdown.Markdown:
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
     if md is None:
-        md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty",
-                                           "toc"],
-                               extension_configs={
-                                   "toc": {
-                                       "baselevel": 4,
-                                       "permalink": True,
-                                       "slugify": md_id_wrapper,
-                                   },
-                                   'smarty': {
-                                       'substitutions': {
-                                           'left-single-quote': '&sbquo;',
-                                           'right-single-quote': '&lsquo;',
-                                           'left-double-quote': '&bdquo;',
-                                           'right-double-quote': '&ldquo;'
-                                       }
-                                   }
-                               })
+        extension_configs = {
+            "toc": {
+                "baselevel": 4,
+                "permalink": True,
+                "slugify": md_id_wrapper,
+            },
+            'smarty': {
+                'substitutions': {
+                    'left-single-quote': '&sbquo;',
+                    'right-single-quote': '&lsquo;',
+                    'left-double-quote': '&bdquo;',
+                    'right-double-quote': '&ldquo;',
+                },
+            },
+        }
+        md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty", "toc"],
+                               extension_configs=extension_configs)  # type: ignore
 
         MARKDOWN_PARSER.md = md
     else:
@@ -1184,7 +1184,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not fields:
             raise ValueError(n_("Cannot download query result without fields"
                                 " of interest."))
-        fields = sum((csvfield.split(',') for csvfield in fields), [])
+        fields: List[str] = sum((csvfield.split(',') for csvfield in fields), [])
         filename += f".{kind}"
         if kind == "csv":
             csv_data = csv_output(result, fields, substitutions=substitutions)
@@ -1207,16 +1207,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         # handy, should probably survive in a commented HTML portion
         if 'debugstring' not in params and self.conf["CDEDB_DEV"]:
-            debugstring = glue(
-                "We have is_multithreaded={}; is_multiprocess={};",
-                "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
-                "method={} ; remote_addr={} ; values={}, ambience={},",
-                "errors={}, time={}").format(
-                    rs.request.is_multithread, rs.request.is_multiprocess,
-                    rs.request.base_url, rs.request.cookies, rs.request.url,
-                    rs.request.is_secure, rs.request.method,
-                    rs.request.remote_addr, rs.values, rs.ambience,
-                    rs.retrieve_validation_errors(), now())
+            debugstring = (
+                f"We have is_multithreaded={rs.request.is_multithread};"
+                f" is_multiprocess={rs.request.is_multiprocess};"
+                f" base_url={rs.request.base_url}; cookies={rs.request.cookies};"
+                f" url={rs.request.url}; is_secure={rs.request.is_secure};"
+                f" method={rs.request.method}; remote_addr={rs.request.remote_addr};"
+                f" values={rs.values}; ambience={rs.ambience};"
+                f" errors={rs.retrieve_validation_errors()}; time={now()}")
+
             params['debugstring'] = debugstring
         if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
@@ -1239,7 +1238,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "style-src 'self' 'unsafe-inline';",
             "img-src *")
         response.headers.add('Content-Security-Policy',
-                                csp_header_template.format(csp_nonce))
+                             csp_header_template.format(csp_nonce))
         return response
 
     # TODO use new typing feature to accurately define the following:
@@ -1305,7 +1304,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # however at the end of lines the standard requires spaces to be
         # encoded hence we have to be a bit careful (encoding is a pain!)
         # 'quoted-printable' ensures we only get str here:
-        payload: str = msg.get_payload()  # type: ignore
+        payload: str = msg.get_payload()
         payload = re.sub('=20(.)', r' \1', payload)
         # do this twice for adjacent encoded spaces
         payload = re.sub('=20(.)', r' \1', payload)
@@ -1324,7 +1323,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if headers[header]:
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            msg[header] = headers[header]  # type: ignore
+            msg[header] = headers[header]
         subject = headers["Prefix"] + " " + headers['Subject']  # type: ignore
         msg["Subject"] = subject
         msg["Message-ID"] = email.utils.make_msgid(
@@ -1876,7 +1875,7 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
                 return attempt
         raise RuntimeError(n_("Magic URL parameter replacement failed."))
     # Second we come to the normal case
-    allparams = werkzeug.datastructures.MultiDict()
+    allparams: CdEDBMultiDict = werkzeug.datastructures.MultiDict()
     for arg in rs.requestargs:
         if rs.urls.map.is_endpoint_expecting(endpoint, arg):
             allparams[arg] = rs.requestargs[arg]
@@ -2483,8 +2482,7 @@ def calculate_db_logparams(offset: Optional[int], length: int
 
 def calculate_loglinks(rs: RequestState, total: int,
                        offset: Optional[int], length: int
-                       ) -> Dict[str, Union[werkzeug.MultiDict,
-                                            List[werkzeug.MultiDict]]]:
+                       ) -> Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]:
     """Calculate the target parameters for the links in the log pagination bar.
 
     :param total: The total count of log entries
@@ -2500,7 +2498,8 @@ def calculate_loglinks(rs: RequestState, total: int,
         trueoffset = offset
 
     # Create values sets for the necessary links.
-    new_md = lambda: werkzeug.MultiDict(rs.values)
+    def new_md() -> CdEDBMultiDict:
+        return werkzeug.MultiDict(rs.values)
     loglinks = {
         "first": new_md(),
         "previous": new_md(),
@@ -2523,6 +2522,6 @@ def calculate_loglinks(rs: RequestState, total: int,
     loglinks["current"]["offset"] = trueoffset
 
     # piece everything together
-    ret: Dict[str, Union[werkzeug.MultiDict, List[werkzeug.MultiDict]]]
+    ret: Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret
