@@ -19,21 +19,27 @@ import cdedb.database.constants as const
 class AssemblyTestHelpers(FrontendTest):
     """This class contains only helpers and no tests."""
 
-    def _create_assembly(self, adata=None):
+    def _create_assembly(self, adata=None, delta=None):
         if not adata:
             adata = {
                 'title': 'Drittes CdE-Konzil',
+                'shortname': 'konzil3',
                 'signup_end': "2222-4-1 00:00:00",
                 'description': "Wir werden alle Häretiker exkommunizieren.",
                 'notes': "Nur ein Aprilscherz",
-                'presider_ids': "DB-23-X"
+                'presider_ids': "DB-23-X",
             }
+        if delta:
+            adata.update(delta)
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Versammlung anlegen'})
         self.assertTitle("Versammlung anlegen")
         f = self.response.forms['createassemblyform']
         for k, v in adata.items():
-            f[k] = v
+            if isinstance(f[k], webtest.forms.Checkbox):
+                f[k].checked = bool(v)
+            else:
+                f[k] = v
         self.submit(f)
         self.assertTitle(adata['title'])
 
@@ -328,11 +334,18 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNonPresence("22.02.2000, 01:00:00")
         self.assertPresence("(Anmeldung nicht mehr möglich)")
 
-    @as_users("ferdinand")
+    @as_users("viktor")
     def test_create_delete_assembly(self, user):
-        self._create_assembly()
+        self._create_assembly(delta={'create_presider_list': True})
         self.assertPresence("Häretiker", div='description')
         self.assertPresence("Aprilscherz", div='notes')
+        self.assertPresence("Versammlungsleitungs-Mailingliste angelegt.",
+                            div="notifications")
+        self.assertNotIn('createpresiderlistform', self.response.forms)
+        f = self.response.forms['createattendeelistform']
+        self.submit(f)
+        self.assertPresence("Versammlungsteilnehmer-Mailingliste angelegt.",
+                            div="notifications")
         self.traverse({'description': "Abstimmungen"})
         self.assertPresence("Es wurden noch keine Abstimmungen angelegt.")
         self.traverse({'description': r"\sÜbersicht"})
