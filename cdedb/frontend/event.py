@@ -3834,10 +3834,14 @@ class EventFrontend(AbstractUserFrontend):
         """Render form."""
         # we must take care if the kind parameter is error prone. All other validation
         #  errors should be displayed on the rendered page.
-        if rs.has_validation_errors() and any(
-                field == 'kind' for field, _ in rs.retrieve_validation_errors()):
-            rs.notify("error", n_("Unknown questionnaire kind."))
-            return self.redirect(rs, "event/show_event")
+        if rs.has_validation_errors():
+            if any(field == 'kind' for field, _ in rs.retrieve_validation_errors()):
+                rs.notify("error", n_("Unknown questionnaire kind."))
+                return self.redirect(rs, "event/show_event")
+            else:
+                # we want to render the errors from reorder_questionnaire on this page,
+                # so we only redirect to another kind is error prone
+                pass
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         redirects = {
