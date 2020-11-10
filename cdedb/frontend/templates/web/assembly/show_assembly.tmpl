@@ -157,7 +157,7 @@
                             <div class="col-sm-4">
                                 <div class="p">
                                     <form action="{{ cdedblink('assembly/create_assembly_mailinglist') }}" method="POST"
-                                          id="cratepresiderlistform" style="display: inline;">
+                                          id="createattendeelistform" style="display: inline;">
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=True) }}
                                         {{ util.input_submit(
@@ -182,7 +182,7 @@
                             <div class="col-sm-4">
                                 <div class="p">
                                     <form action="{{ cdedblink('assembly/create_assembly_mailinglist') }}" method="POST"
-                                          id="cratepresiderlistform" style="display: inline;">
+                                          id="createattendeelistform" style="display: inline;">
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=False) }}
                                         {{ util.input_submit(
