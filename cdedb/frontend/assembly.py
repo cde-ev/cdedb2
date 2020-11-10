@@ -260,7 +260,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs.ambience['assembly'])
-            params['attendee_list'] = self.mlproxy.verify_existence(
+            params['attendee_list_exists'] = self.mlproxy.verify_existence(
                 rs, self.mlproxy.get_full_address(ml_data))
 
         return self.render(rs, "show_assembly", params)
