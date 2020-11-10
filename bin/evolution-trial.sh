@@ -40,8 +40,8 @@ fi
 
 # old revision
 echo "Checkout $OLDREVISION"
-git checkout $OLDREVISION &> /dev/null
-git pull &> /dev/null
+git checkout $OLDREVISION
+git pull
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 make -B test/ancillary_files/sample_data.sql &> /dev/null
 if [[ "$ISOLATED" == true ]]; then
@@ -53,8 +53,8 @@ fi
 
 # new revision
 echo "Checkout $NEWREVISION"
-git checkout $NEWREVISION &> /dev/null
-git pull &> /dev/null
+git checkout $NEWREVISION
+git pull
 ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
 grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt \
      > /tmp/todoevolutions.txt
