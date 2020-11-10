@@ -160,8 +160,11 @@
                                           id="cratepresiderlistform" style="display: inline;">
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=True) }}
-                                        {{ util.input_submit(value=gettext("Create Presider Mailinglist"),
-                                                             aclass="btn btn-success", icon="plus") }}
+                                        {{ util.input_submit(
+                                                value=gettext("Create Presider Mailinglist"), aclass="btn btn-success",
+                                                icon="plus", readonly=not ambience['assembly']['presiders'],
+                                                title=("" if ambience['assembly']['presiders']
+                                                       else "Must have presiders to create mailinglist.")) }}
                                     </form>
                                 </div>
                             </div>
@@ -182,8 +185,11 @@
                                           id="cratepresiderlistform" style="display: inline;">
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=False) }}
-                                        {{ util.input_submit(value=gettext("Create Attendee Mailinglist"),
-                                                             aclass="btn btn-success", icon="plus") }}
+                                        {{ util.input_submit(
+                                                value=gettext("Create Attendee Mailinglist"), aclass="btn btn-success",
+                                                icon="plus", readonly=not ambience['assembly']['presiders'],
+                                                title=("" if ambience['assembly']['presiders']
+                                                       else "Must have presiders to create mailinglist.")) }}
                                     </form>
                                 </div>
                             </div>
