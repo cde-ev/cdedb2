@@ -334,7 +334,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNonPresence("22.02.2000, 01:00:00")
         self.assertPresence("(Anmeldung nicht mehr möglich)")
 
-    @as_users("viktor")
+    # Use ferdinand since viktor is not a member and may not signup.
+    @as_users("ferdinand")
     def test_create_delete_assembly(self, user):
         self._create_assembly(delta={'create_presider_list': True})
         self.assertPresence("Häretiker", div='description')
