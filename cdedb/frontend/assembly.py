@@ -366,7 +366,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'mod_policy': const.ModerationPolicy.non_subscribers,
                 'attachment_policy': const.AttachmentPolicy.pdf_only,
                 'subject_prefix': assembly['shortname'],
-                'maxsize': 1024,
+                'maxsize': 2048,
                 'is_active': True,
                 'assembly_id': assembly_id,
                 'notes': None,
