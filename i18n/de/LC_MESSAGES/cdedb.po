@@ -4388,7 +4388,7 @@ msgstr "Legt eine Standard-Versammlungsleitungs-Mailingliste an."
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:198
 msgid ""
-"Create a attendee mailinglist for this assembly with a default "
+"Create an attendee mailinglist for this assembly with a default "
 "configuration."
 msgstr "Legt eine Standard-Versammlugnsteilnehmer-Mailingliste an."
 
