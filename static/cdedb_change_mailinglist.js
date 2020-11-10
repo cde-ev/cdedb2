@@ -17,7 +17,8 @@
             // 20 = participant list; 21 = orga list; 30 = participant list
             var visible = {
                 'event_id':     (fields['ml_type'].val() == 20 || fields['ml_type'].val() == 21),
-                'assembly_id':  (fields['ml_type'].val() == 30) // ml type 31 (assembly_opt_in) is not bound to a
+                'assembly_id':  (fields['ml_type'].val() == 30 || fields['ml_type'].val() == 32)
+                                            // ml type 31 (assembly_opt_in) is not bound to a
                                             // concrete assembly, so an assembly_id must not be specified for this type
             };
 
