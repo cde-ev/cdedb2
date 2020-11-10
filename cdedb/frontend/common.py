@@ -1207,16 +1207,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         # handy, should probably survive in a commented HTML portion
         if 'debugstring' not in params and self.conf["CDEDB_DEV"]:
-            debugstring = glue(
-                "We have is_multithreaded={}; is_multiprocess={};",
-                "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
-                "method={} ; remote_addr={} ; values={}, ambience={},",
-                "errors={}, time={}").format(
-                    rs.request.is_multithread, rs.request.is_multiprocess,
-                    rs.request.base_url, rs.request.cookies, rs.request.url,
-                    rs.request.is_secure, rs.request.method,
-                    rs.request.remote_addr, rs.values, rs.ambience,
-                    rs.retrieve_validation_errors(), now())
+            debugstring = (
+                f"We have is_multithreaded={rs.request.is_multithread};"
+                f" is_multiprocess={rs.request.is_multiprocess};"
+                f" base_url={rs.request.base_url}; cookies={rs.request.cookies};"
+                f" url={rs.request.url}; is_secure={rs.request.is_secure};"
+                f" method={rs.request.method}; remote_addr={rs.request.remote_addr};"
+                f" values={rs.values}; ambience={rs.ambience};"
+                f" errors={rs.retrieve_validation_errors()}; time={now()}")
+
             params['debugstring'] = debugstring
         if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
@@ -1239,7 +1238,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "style-src 'self' 'unsafe-inline';",
             "img-src *")
         response.headers.add('Content-Security-Policy',
-                                csp_header_template.format(csp_nonce))
+                             csp_header_template.format(csp_nonce))
         return response
 
     # TODO use new typing feature to accurately define the following:
