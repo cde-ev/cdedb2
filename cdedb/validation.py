@@ -4535,11 +4535,13 @@ def _enum_validator_maker(anenum, name=None, internal=False):
 
         elif _convert:
             # first, try to convert if the enum member is given as "class.member"
-            if type(val) is str:
-                assert type(val) is str
+            if isinstance(val, str):
                 try:
-                    val_list = val.split(".")
-                    return anenum[val_list[-1]], []
+                    enum_name, enum_val = val.split(".", 1)
+                    if enum_name == anenum.__name__:
+                        return anenum[enum_val], []
+                except ValueError:
+                    pass
                 except KeyError:
                     pass
 
