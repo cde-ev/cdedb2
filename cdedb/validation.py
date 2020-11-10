@@ -4540,9 +4540,7 @@ def _enum_validator_maker(anenum, name=None, internal=False):
                     enum_name, enum_val = val.split(".", 1)
                     if enum_name == anenum.__name__:
                         return anenum[enum_val], []
-                except ValueError:
-                    pass
-                except KeyError:
+                except (KeyError, ValueError):
                     pass
 
             # second, try to convert if the enum member is given as str(int)
