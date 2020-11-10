@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import datetime
+import os
+import pathlib
 import pytz
 import random
 import re
 import subprocess
+import tempfile
 import unittest
 
 from cdedb.common import (
@@ -274,11 +277,23 @@ class TestCommon(unittest.TestCase):
             raise self.failureException(msg) from None
 
     def test_untranslated_strings(self):
-        try:
-            result = subprocess.run(["make", "i18n-check"], check=True,
-                                    capture_output=True)
-        except subprocess.CalledProcessError as cpe:
-            self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
+        with tempfile.TemporaryDirectory() as tempdir:
+            try:
+                temppath = pathlib.Path(tempdir)
+                env = os.environ.copy()
+                env['I18NDIR'] = tempdir
+                for lang in ('de', 'en'):
+                    langdir = temppath / lang / 'LC_MESSAGES'
+                    langdir.mkdir(parents=True)
+                    pofile = langdir / 'cdedb.po'
+                    pofile.touch()
+                subprocess.run(["make", "i18n-refresh"], check=True, env=env,
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL)
+                result = subprocess.run(["make", "i18n-check"], check=True,
+                                        capture_output=True, env=env)
+            except subprocess.CalledProcessError as cpe:
+                self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
         pattern = re.compile(" (\d+) (?:unübersetzte Meldung|untranslated message)")
         match = re.search(pattern, result.stderr.decode().splitlines()[0])
         if match:

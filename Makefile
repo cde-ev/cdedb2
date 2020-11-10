@@ -24,6 +24,7 @@ PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
 MYPYBIN ?= mypy
 TESTPREPARATION ?= automatic
+I18NDIR ?= ./i18n
 
 doc:
 	bin/create_email_template_list.sh .
@@ -38,20 +39,25 @@ i18n-refresh:
 	$(MAKE) i18n-update
 
 i18n-extract:
-	pybabel extract -F ./babel.cfg  --sort-by-file -o ./i18n/cdedb.pot\
+	pybabel extract \
+		-F ./babel.cfg  --sort-by-file -o $(I18NDIR)/cdedb.pot \
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
 
 i18n-update:
-	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb --ignore-obsolete
-	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb --ignore-obsolete
+	pybabel update -i $(I18NDIR)/cdedb.pot -d $(I18NDIR)/ -l de -D cdedb \
+		--ignore-obsolete
+	pybabel update -i $(I18NDIR)/cdedb.pot -d $(I18NDIR)/ -l en -D cdedb \
+		--ignore-obsolete
 
 i18n-compile:
-	pybabel compile -d ./i18n/ -l de -D cdedb
-	pybabel compile -d ./i18n/ -l en -D cdedb
+	pybabel compile -d $(I18NDIR)/ -l de -D cdedb
+	pybabel compile -d $(I18NDIR)/ -l en -D cdedb
 
 i18n-check:
-	msgfmt -c ./i18n/de/LC_MESSAGES/cdedb.po --statistics --output /dev/null
-	msgfmt -c ./i18n/en/LC_MESSAGES/cdedb.po --statistics --output /dev/null
+	msgfmt -c $(I18NDIR)/de/LC_MESSAGES/cdedb.po --statistics \
+		--output /dev/null
+	msgfmt -c $(I18NDIR)/en/LC_MESSAGES/cdedb.po --statistics \
+		--output /dev/null
 
 sample-data:
 	$(MAKE) storage > /dev/null
@@ -153,7 +159,8 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
 	$(MAKE) sql-schema
-	$(PYTHONBIN) bin/execute_sql_script.py test/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		test/ancillary_files/sample_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
 		test/ancillary_files/sample_data.sql
 
