@@ -101,13 +101,16 @@ RUN a2enmod ssl wsgi headers \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
-    && sed -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
-        /tmp/autobuild/localconfig.py \
-        > /etc/cdedb-application-config.py \
-    \
     && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
     \
     && rm -rf /tmp/autobuild
+
+# this does not currently work
+# && sed -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
+#     -e 's|Path("/log/cdedb.log|Path("/var/log/cdedb/global.log|' \
+#     /tmp/autobuild/localconfig.py \
+#     > /etc/cdedb-application-config.py \
+# \
 
 EXPOSE 443
 
