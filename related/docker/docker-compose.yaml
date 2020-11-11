@@ -1,4 +1,4 @@
-version: "3"
+version: "3.2"
 
 services:
   cdb:
@@ -7,7 +7,7 @@ services:
       context: ../..
       dockerfile: ./related/docker/Dockerfile-postgres
     volumes:
-      - database:/var/lib/postgresql/data
+      - database:/var/lib/postgresql/data # tables etc
     environment:
       POSTGRES_PASSWORD: passwd
   app:
@@ -16,7 +16,8 @@ services:
       context: ../..
       dockerfile: ./related/docker/Dockerfile-cdedb
     volumes:
-      - files:/var/lib/cdedb # attachments etc?
+      - files:/var/lib/cdedb # attachments etc
+      - ../..:/cdedb2
     ports:
       - 8443:443
     depends_on:

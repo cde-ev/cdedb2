@@ -151,26 +151,21 @@ endif
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
 	sudo systemctl start pgbouncer
 
-sql:
-	$(MAKE) sql-schema
-	$(MAKE) sql-seed-database
-
 sql-seed-database: test/ancillary_files/sample_data.sql
-	$(PYTHONBIN) bin/execute_sql_script.py \
-                test/ancillary_files/sample_data.sql cdb cdb_test
-
-sql: test/ancillary_files/sample_data.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname cdb \
+                test/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname cdb_test \
+                test/ancillary_files/sample_data.sql
+
+sql:
 	$(MAKE) sql-schema
-	$(PYTHONBIN) bin/execute_sql_script.py \
-		test/ancillary_files/sample_data.sql
-	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
-		test/ancillary_files/sample_data.sql
+	$(MAKE) sql-seed-database
 
 # This does not recurse to sql-schema, so in the very rare circumstance that
 # you want to completely reset the test database it has to be executed
@@ -194,7 +189,7 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
 	$(MAKE) sql-schema
-	$(PYTHONBIN) bin/execute_sql_script.py \
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb \
 		test/ancillary_files/sample_data_escaping.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
 		test/ancillary_files/sample_data_escaping.sql

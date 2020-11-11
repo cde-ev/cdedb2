@@ -1,6 +1,6 @@
 FROM debian:buster-20200607
 
-# TODO replace with mount from host or snakeoil?
+# TODO replace with mount from host, snakeoil or first-run script?
 RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
     && mkdir /etc/ssl/apache2 \
     && openssl req \
@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
     && apt-get purge --yes --autoremove openssl \
     && rm -rf /var/lib/apt/lists/*
 
-# TODO maybe add pylint3, mypy?
 # texlive-plain-generic is needed for iftex - can be removed in next debian
 RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
     && echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
@@ -35,6 +34,8 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     texlive-luatex \
     && rm -rf /var/lib/apt/lists/*
 
+# TODO maybe add pylint, mypy?
+# split these into two so adding a library will not trigger latex reinstallation
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3 \
     python3-psycopg2 \
@@ -60,6 +61,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-typing-extensions \
     && rm -rf /var/lib/apt/lists/*
 
+# TODO check wether it is sensible to lower privileges to cdedb user
+# create and configure directories for the apache user
 RUN mkdir /var/lib/cdedb \
     && mkdir /var/lib/cdedb/foto \
     && mkdir /var/lib/cdedb/minor_form \
@@ -75,8 +78,15 @@ RUN mkdir /var/lib/cdedb \
     \
     && useradd --system cdedb
 
+# make storage persistent
+VOLUME /var/lib/cdedb
+
 COPY ./related/auto-build/files/stage3 /tmp/autobuild
 
+# put configuration files into correct positions
+# - store localconfig in /etc to allow mounting code seperately
+# - rewrite config to store logs inside of /var/log/cdedb
+# - add symlink to /cdedb2/cdedb directory so python can find it
 RUN a2enmod ssl wsgi headers \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
@@ -88,18 +98,17 @@ RUN a2enmod ssl wsgi headers \
     && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
+    && sed -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
+        /tmp/autobuild/localconfig.py \
+        > /etc/cdedb-application-config.py \
+    \
+    && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
+    \
     && rm -rf /tmp/autobuild
 
 EXPOSE 443
 
-COPY ./related/auto-build/files/stage3/localconfig.py /etc/cdedb-application-config.py
-
-RUN sed --in-place -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' /etc/cdedb-application-config.py
-
+# mount the code here
 WORKDIR /cdedb2
-
-COPY . ./
-
-RUN make doc && make i18n-compile
 
 CMD ["apachectl", "-DFOREGROUND"]
