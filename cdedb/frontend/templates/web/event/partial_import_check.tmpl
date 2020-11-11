@@ -14,12 +14,13 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans %}Partial Import{% endtrans %} <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
+        {% trans %}Partial Import{% endtrans -%}
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
-{# The following macro generates the diff table for a changed registration, lodgement or course. It takes the (flattened)
-diff of the item and shows a table with all changed attributes, old and new values. #}
+{# The following macro generates the diff table for a changed registration, lodgement or course.
+   It takes the (flattened) diff of the item and shows a table with all changed attributes, old and new values. #}
 {% macro diff_table(diff, titles, choices) %}
     <table class="table table-layout-fixed small">
         <thead>
@@ -79,7 +80,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
     "notes": gettext("Notes"),
     }) %}
 {% do lodgement_titles.update({
-    "moniker": gettext("Moniker"),
+    "title": gettext("Title"),
     "regular_capacity": gettext("Regular Capacity"),
     "camping_mat_capacity": gettext("Camping Mat Capacity"),
     "notes": gettext("Notes"),
@@ -95,38 +96,40 @@ diff of the item and shows a table with all changed attributes, old and new valu
     </p>
 
     <h2>{% trans %}Summary of Changes{% endtrans %}</h2>
-
-    {% if summary['deleted_registration_ids']|length > summary['real_deleted_registration_ids']|length %}
-         <div class="alert alert-warning">
-            {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-            {% trans %}There were double registration deletions. Did you already import this file?{% endtrans %}
-        </div>
-    {% endif %}
-    {% if summary['deleted_course_ids']|length > summary['real_deleted_course_ids']|length %}
-        <div class="alert alert-warning">
-            {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-            {% trans %}There were double course deletions. Did you already import this file?{% endtrans %}
-        </div>
-    {% endif %}
-    {% if summary['deleted_lodgement_ids']|length > summary['real_deleted_lodgement_ids']|length %}
-        <div class="alert alert-warning">
-            {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-            {% trans %}There were double lodgement deletions. Did you already import this file?{% endtrans %}
-        </div>
-    {% endif %}
-    {% if suspicious_courses %}
-        <div class="alert alert-warning">
-            {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-            {% trans %}There were hints at double course creations. Did you already import this file?{% endtrans %}
-        </div>
-    {% endif %}
-    {% if suspicious_lodgements %}
-        <div class="alert alert-warning">
-            {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-            {% trans %}There were hints at double lodgement creations. Did you already import this file?{% endtrans %}
-        </div>
-    {% endif %}
-
+    <div id="duplication-warnings">
+        {% if summary['deleted_registration_ids']|length > summary['real_deleted_registration_ids']|length %}
+             <div class="alert alert-warning">
+                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+                {% trans %}There were double registration deletions. Did you already import this file?{% endtrans %}
+            </div>
+        {% endif %}
+        {% if summary['deleted_course_ids']|length > summary['real_deleted_course_ids']|length %}
+            <div class="alert alert-warning">
+                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+                {% trans %}There were double course deletions. Did you already import this file?{% endtrans %}
+            </div>
+        {% endif %}
+        {% if summary['deleted_lodgement_ids']|length > summary['real_deleted_lodgement_ids']|length %}
+            <div class="alert alert-warning">
+                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+                {% trans %}There were double lodgement deletions. Did you already import this file?{% endtrans %}
+            </div>
+        {% endif %}
+        {% if suspicious_courses %}
+            <div class="alert alert-warning">
+                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+                {% trans %}There were hints at double course creations. Did you already import this file?{% endtrans %}
+            </div>
+        {% endif %}
+        {% if suspicious_lodgements %}
+            <div class="alert alert-warning">
+                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+                {% trans %}
+                    There were hints at double lodgement creations. Did you already import this file?
+                {% endtrans %}
+            </div>
+        {% endif %}
+    </div>
     {% if summary['changed_registrations'] or summary['new_registration_ids'] or summary['deleted_registration_ids'] %}
         <h3>{% trans %}Registrations{% endtrans %}</h3>
         <!-- Changed registrations -->
@@ -237,7 +240,9 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                             {{ courses[course_id]['nr'] }}.{# -#}
                                             {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
                                             {{ courses[course_id]['shortname'] }}{# -#}
-                                            {% if 'shortname' in course_diff %}/{{ course_diff['shortname'][1] }}{% endif %}
+                                            {%- if 'shortname' in course_diff -%}
+                                                /{{ course_diff['shortname'][1] }}
+                                            {%- endif -%}
                                         </summary>
                                         {{ diff_table(course_diff, course_titles, course_choices) }}
                                     </details>
@@ -318,8 +323,10 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                 <li>
                                     <details>
                                         <summary>
-                                            {{ lodgements[lodgement_id]['moniker'] }}{# -#}
-                                            {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
+                                            {{ lodgements[lodgement_id]['title'] }}
+                                            {%- if 'title' in lodgement_diff -%}
+                                                /{{ lodgement_diff['title'][1] }}
+                                            {%- endif %}
                                         </summary>
                                         {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
                                     </details>
@@ -350,7 +357,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim">
                             {% for lodgement_id in summary['new_lodgement_ids'] %}
                                 <li>
-                                    {{ delta['lodgements'][lodgement_id]['moniker'] }}
+                                    {{ delta['lodgements'][lodgement_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -366,7 +373,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim">
                             {% for lodgement_id in summary['real_deleted_lodgement_ids'] %}
                                 <li>
-                                    {{ lodgements[lodgement_id]['moniker'] }}
+                                    {{ lodgements[lodgement_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -376,7 +383,9 @@ diff of the item and shows a table with all changed attributes, old and new valu
         </div>
     {% endif %}
 
-    {% if summary['changed_lodgement_groups'] or summary['new_lodgement_group_ids'] or summary['real_deleted_lodgement_group_ids'] %}
+    {% if (summary['changed_lodgement_groups']
+           or summary['new_lodgement_group_ids']
+           or summary['real_deleted_lodgement_group_ids']) %}
         {% call util.bootstrap_panel(gettext("Lodgement Groups"), aclass='panel panel-info',
                                      icon='th-large', anid='box-lodgement-groups') %}
             <div class="row">
@@ -386,7 +395,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim" id="list-new-lodgement-groups">
                             {% for lodgement_group_id in summary['new_lodgement_group_ids'] %}
                                 <li>
-                                    {{ delta['lodgement_groups'][lodgement_group_id]['moniker'] }}
+                                    {{ delta['lodgement_groups'][lodgement_group_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -396,10 +405,13 @@ diff of the item and shows a table with all changed attributes, old and new valu
                     <div class="col-md-4 text-warning">
                         <h5>{% trans %}Changed{% endtrans %}</h5>
                         <ul class="slim" id="list-changed-lodgement-groups">
-                            {% for lodgement_group_id, lodgement_group_diff in summary['changed_lodgement_groups'].items() %}
+                            {% for lodgement_group_id, lodgement_group_diff
+                                    in summary['changed_lodgement_groups'].items() %}
                                 <li>
-                                    {{ lodgement_groups[lodgement_group_id]['moniker'] }}{# -#}
-                                    {% if 'moniker' in lodgement_group_diff %}/{{ lodgement_group_diff['moniker'][1] }}{% endif %}
+                                    {{ lodgement_groups[lodgement_group_id]['title'] }}
+                                    {%- if 'title' in lodgement_group_diff -%}
+                                        /{{ lodgement_group_diff['title'][1] }}
+                                    {%- endif %}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -411,7 +423,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim" id="list-deleted-lodgement-groups">
                             {% for lodgement_group_id in summary['real_deleted_lodgement_group_ids'] %}
                                 <li>
-                                    {{ lodgement_groups[lodgement_group_id]['moniker'] }}
+                                    {{ lodgement_groups[lodgement_group_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -421,10 +433,12 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% endcall %}
     {% endif %}
 
-    {% if not summary['changed_registratios'] and not summary['new_registration_ids'] and not summary['real_deleted_registration_ids']
-            and not summary['changed_courses'] and not summary['new_course_ids'] and not summary['real_deleted_course_ids']
-            and not summary['changed_lodgements'] and not summary['new_lodgement_ids'] and not summary['real_deleted_lodgement_ids']
-            and not summary['changed_lodgement_groups'] and not summary['new_lodgement_group_ids'] and not summary['real_deleted_lodgement_group_ids'] %}
+    {% if not (summary['changed_registratios'] or summary['new_registration_ids']
+               or summary['real_deleted_registration_ids'] or summary['changed_courses']
+               or summary['new_course_ids'] or summary['real_deleted_course_ids']
+               or summary['changed_lodgements'] or summary['new_lodgement_ids']
+               or summary['real_deleted_lodgement_ids'] or summary['changed_lodgement_groups']
+               or summary['new_lodgement_group_ids'] or summary['real_deleted_lodgement_group_ids']) %}
         {% trans %}The input produced an empty diff. No changes are to be imported.{% endtrans %}
     {% endif %}
 
@@ -432,7 +446,8 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {{ util.anti_csrf_token('event/partial_import') }}
         {{ util.input_hidden(name='token') }}
         {{ util.input_hidden(name='partial_import_data') }}
-        {{ util.form_input_submit(value=gettext('Apply changes'), cancellink=cdedblink('event/partial_import_form'), horizontal=False) }}
+        {{ util.form_input_submit(value=gettext('Apply changes'), cancellink=cdedblink('event/partial_import_form'),
+                                  horizontal=False) }}
     </form>
 
     <script nonce="{{ csp_nonce }}">

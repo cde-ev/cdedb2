@@ -20,13 +20,15 @@
                     gettext("Attachment Overview"), aclass="list-group-item", icon="file",
                     active=(sidenav_active == 'assembly_attachments')) }}
 
-            {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['is_active'] %}
-                {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), gettext("Configuration"),
-                             aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
-            {% endif %}
-            {% if "assembly_presider" in user.admin_views %}
-                {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}), gettext("Log"),
-                             aclass="list-group-item", icon="far fa-list-alt", active=(sidenav_active == 'assembly_assembly_log')) }}
+            {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider) %}
+                {% if ambience['assembly']['is_active'] %}
+                    {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}),
+                                 gettext("Configuration"), aclass="list-group-item", icon="cog",
+                                  active=(sidenav_active == 'assembly_config')) }}
+                {% endif %}
+                {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}),
+                             gettext("Log"), aclass="list-group-item", icon="far fa-list-alt",
+                             active=(sidenav_active == 'assembly_assembly_log')) }}
             {% endif %}
         </div>
 {% endmacro %}
@@ -68,8 +70,12 @@
 
 {% block adminviews %}
     {% if ambience['assembly'] %}
-        {{ util.admin_views_toggle(((gettext("Assembly Administration"), ["assembly_mgmt"], None),
-                                    (gettext("Presider Controls"), ["assembly_presider"], None))) }}
+        {% if user.persona_id in ambience['assembly']['presiders'] %}
+            {{ util.admin_views_toggle(((gettext("Assembly Administration"), ["assembly_mgmt"], None),)) }}
+        {% else %}
+            {{ util.admin_views_toggle(((gettext("Assembly Administration"), ["assembly_mgmt"], None),
+                                        (gettext("Presider Controls"), ["assembly_presider"], None))) }}
+        {% endif %}
     {% else %}
         {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
                                     (gettext("Assembly Administration"), ["assembly_mgmt"], None))) }}

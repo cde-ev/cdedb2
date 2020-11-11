@@ -22,7 +22,8 @@
 
     <form action="{{ cdedblink('core/send_username_change_link') }}" method="GET" id="usernamechangeform"
             class="form-horizontal">
-        {{ util.form_input_text(name="new_username", label=gettext("New Email Address"), type="email") }}
+        {{ util.form_input_text(name="new_username", label=gettext("New Email Address"), type="email",
+                                attributes='autocomplete="email"'|s) }}
         {{ util.form_input_submit(value=gettext("Send verification mail")) }}
     </form>
 {% endblock %}

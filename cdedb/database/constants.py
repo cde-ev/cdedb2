@@ -183,6 +183,7 @@ class MailinglistTypes(enum.IntEnum):
 
     assembly_associated = 30
     assembly_opt_in = 31
+    assembly_presider = 32
 
     general_opt_in = 40
 
@@ -421,12 +422,14 @@ class AssemblyLogCodes(enum.IntEnum):
     candidate_updated = 21  #:
     candidate_removed = 22  #:
     new_attendee = 30  #:
+    assembly_presider_added = 35  #:
+    assembly_presider_removed = 36  #:
     attachment_added = 40  #:
     attachment_removed = 41  #:
     attachment_changed = 42
-    attachement_version_added = 50
-    attachement_version_removed = 51
-    attachement_version_changed = 52
+    attachment_version_added = 50
+    attachment_version_removed = 51
+    attachment_version_changed = 52
 
 
 @enum.unique

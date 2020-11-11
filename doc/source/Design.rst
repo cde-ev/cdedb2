@@ -1,6 +1,21 @@
 General Design
 ==============
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   Design_Roles
+   Design_WSGI
+   Design_Database
+   Design_Backend
+   Design_Frontend
+   Design_Template
+   Design_Configuration
+   Design_Validation
+   Design_Logging
+   Design_Internationalisation
+
 This WSGI-application has three main parts: frontend (python), backend
 (python) and database (SQL). The communication between frontend and backend
 is designed as if mediated by an RPC mechanism (for example
@@ -26,17 +41,3 @@ some realms.
 Additionally there are API access accounts which are referred to as
 droids. These do not have an associated session but instead authenticate
 with a token.
-
-.. toctree::
-   :maxdepth: 1
-
-   Design_Roles
-   Design_WSGI
-   Design_Database
-   Design_Backend
-   Design_Frontend
-   Design_Template
-   Design_Configuration
-   Design_Validation
-   Design_Logging
-   Design_Internationalisation

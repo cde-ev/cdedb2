@@ -68,8 +68,8 @@ class CronFrontend(BaseApp):
         urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/",
                                 url_scheme="https")
         # This is not a real request, so we can go without some of these.
-        rs = RequestState(  # type: ignore
-            sessionkey=None, apitoken=None, user=user, request=None,
+        rs = RequestState(
+            sessionkey=None, apitoken=None, user=user, request=None,  # type: ignore
             notifications=[], mapadapter=urls, requestargs={}, errors=[],
             values=None, lang=lang, coders=coders, begin=None,
             gettext=self.translations[lang].gettext,

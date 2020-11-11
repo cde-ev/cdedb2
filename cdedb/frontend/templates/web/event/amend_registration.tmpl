@@ -61,7 +61,7 @@
             {% endif %}
             {{ util.form_input_select(name="mixed_lodging", entries=(
                 (True, gettext("I agree to mixed lodging.")),
-                (False, gettext("I want to be lodged seperated by gender."))),
+                (False, gettext("I want to be lodged separated by gender."))),
                 label=gettext("Mixed Lodging"), info=mix_info, readonly=readonly) }}
         {% endif %}
         {{ util.form_input_checkbox(name="list_consent", label=gettext(

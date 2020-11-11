@@ -43,51 +43,53 @@
     </head>
     <body class="{% if CDEDB_DEV %}development{% elif CDEDB_OFFLINE_DEPLOYMENT %}offline{% endif %}">
         <div class="container page" id="maincontainer">
-            <div class="clearfix" role="banner">
-                <div class="logo pull-left">
-                    <a href={{ cdedblink("core/index") }} ><img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" /></a>
-                </div>
-                <div class="pull-right text-right" style="width: 20%;">
-                    {% if CDEDB_DEV %}
-                        <div class="text-danger text-uppercase"><small>Development Mode</small></div>
-                    {% elif CDEDB_OFFLINE_DEPLOYMENT %}
-                        <div class="text-info text-uppercase"><small>Offline Deployment</small></div>
-                    {% endif %}
-                    {% if I18N_LANGUAGES %}
-                        <form action="{{ cdedblink('core/change_locale') }}" id="changelocaleform" method="post"
-                            class="display-inline">
-                            {% if original_request and original_request.url %}
-                                {# In the anonymous case we must have a timeout. #}
-                                {{ util.input_hidden("wants", encode_parameter(
-                                       "core/change_locale", "wants", original_request.url, user.persona_id,
-                                       timeout=(None if user.persona_id else UNCRITICAL_PARAMETER_TIMEOUT))) }}
-                            {% endif %}
-                            {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
-                                              'en': ("English", "Switch to English"),} %}
-                                {% for l in I18N_LANGUAGES if l != lang %}
-                                    <button type="submit" class="btn-lang-change" name="locale" value="{{ l }}"
-                                            title="{{ TITLES.get(l, (None, None))[1] }}">
-                                        <img src="{{ staticurl("flags/{}.png".format(l)) }}"
-                                             alt="{{ TITLES.get(l, (None, None))[0] }}" />
-                                    </button>
-                                {% endfor %}
-                            {% endwith %}
-                        </form>
-                        |
-                    {% endif %}
-                    <span class="text-info text-uppercase small">
-                        {{ util.href(docurl("index"), gettext("Documentation"), title=gettext("Documentation"), icon="book") }}
-                    </span>
+            <div style="padding-bottom: 1em;" role="banner">
+                <div class="clearfix">
+                    <a href={{ cdedblink("core/index") }} class="logo">
+                        <img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" />
+                    </a>
+                    <div class="pull-right text-right">
+                        {% if CDEDB_DEV %}
+                            <div class="text-danger text-uppercase"><small>Development Mode</small></div>
+                        {% elif CDEDB_OFFLINE_DEPLOYMENT %}
+                            <div class="text-info text-uppercase"><small>Offline Deployment</small></div>
+                        {% endif %}
+                        {% if I18N_LANGUAGES %}
+                            <form action="{{ cdedblink('core/change_locale') }}" id="changelocaleform" method="post"
+                                class="display-inline">
+                                {% if original_request and original_request.url %}
+                                    {# In the anonymous case we must have a timeout. #}
+                                    {{ util.input_hidden("wants", encode_parameter(
+                                        "core/change_locale", "wants", original_request.url, user.persona_id,
+                                        timeout=(None if user.persona_id else UNCRITICAL_PARAMETER_TIMEOUT))) }}
+                                {% endif %}
+                                {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
+                                                'en': ("English", "Switch to English"),} %}
+                                    {% for l in I18N_LANGUAGES if l != lang %}
+                                        <button type="submit" class="btn-lang-change" name="locale" value="{{ l }}"
+                                                title="{{ TITLES.get(l, (None, None))[1] }}">
+                                            <img src="{{ staticurl("flags/{}.png".format(l)) }}"
+                                                alt="{{ TITLES.get(l, (None, None))[0] }}" />
+                                        </button>
+                                    {% endfor %}
+                                {% endwith %}
+                            </form>
+                            |
+                        {% endif %}
+                        <span class="text-info text-uppercase small">
+                            {{ util.href(docurl("index"), gettext("Doc"), title=gettext("Documentation"), icon="book") }}
+                        </span>
+                    </div>
                 </div>
                 {% if jshint %}
                     <noscript>
                         {% if jshint == 'strong' %}
-                            <div class="jshint pull-right text-danger">
+                            <div class="text-right text-danger">
                                 {{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}This site provides additional functionality with JavaScript enabled.{% endtrans %}
                             </div>
                         {% else %}
-                            <div class="jshint pull-right text-warning">
+                            <div class="text-right text-warning">
                                 {{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}This site can be used more easily with JavaScript enabled.{% endtrans %}
                             </div>
@@ -198,9 +200,11 @@
                                 <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert">
                                     {{ util.make_icon( icontypes[ntype] ) }}
                                     <strong>{{ messagetypes[ntype]|s }}</strong>
-                                    <span class="notificationMessage">{{ gettext(message)|format(**params) }}</span>
+                                    <span class="notificationMessage">{{ gettext(message)|e|format(**params) }}</span>
                                 </div>
                             {% endfor %}
+                            {% block static_notifications %}
+                            {% endblock %}
                         {% endwith %}
                     </div>
 

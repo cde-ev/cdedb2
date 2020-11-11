@@ -1,8 +1,8 @@
 {
     "CDEDB_EXPORT_EVENT_VERSION": 13,
     "EVENT_SCHEMA_VERSION": [
-        13,
-        2
+        14,
+        1
     ],
     "kind": "partial",
     "id": 1,
@@ -98,15 +98,15 @@
     },
     "lodgement_groups": {
         "1": {
-            "moniker": "Haupthaus"
+            "title": "Haupthaus"
         },
         "2": {
-            "moniker": "Au\u00dfenWohnGruppe"
+            "title": "Au\u00dfenWohnGruppe"
         }
     },
     "lodgements": {
         "1": {
-            "moniker": "Warme Stube",
+            "title": "Warme Stube",
             "regular_capacity": 5,
             "camping_mat_capacity": 1,
             "notes": null,
@@ -116,7 +116,7 @@
             }
         },
         "2": {
-            "moniker": "Kalte Kammer",
+            "title": "Kalte Kammer",
             "regular_capacity": 10,
             "camping_mat_capacity": 2,
             "notes": "Daf\u00fcr mit Frischluft.",
@@ -126,7 +126,7 @@
             }
         },
         "3": {
-            "moniker": "Kellerverlies",
+            "title": "Kellerverlies",
             "regular_capacity": 0,
             "camping_mat_capacity": 100,
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
@@ -136,7 +136,7 @@
             }
         },
         "4": {
-            "moniker": "Einzelzelle",
+            "title": "Einzelzelle",
             "regular_capacity": 1,
             "camping_mat_capacity": 0,
             "notes": null,

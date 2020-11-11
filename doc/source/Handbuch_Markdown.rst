@@ -1,8 +1,8 @@
 Markdown
-==================
+========
 
 Crashkurs
-^^^^^^^^^^^^^^
+---------
 
 +-------------------------------------------------------+-------------------------------------------------+
 | Eingabe                                               | Ausgabe                                         |
@@ -74,7 +74,7 @@ Eine längere Einführung gibt es im `Markdown Guide
 <https://www.markdownguide.org/basic-syntax/>`_.
 
 Spezifikation
-^^^^^^^^^^^^^^^^^
+-------------
 
 Dieser Abschnitt enthält Informationen zu den technischen Details der Syntax, die für das Schreiben einfacher
 Markdown-Texte nicht benötigt werden.

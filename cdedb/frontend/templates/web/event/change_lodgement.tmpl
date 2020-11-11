@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans lodgement=ambience['lodgement']['moniker'], event=ambience['event']['title'] %}
+    {% trans lodgement=ambience['lodgement']['title'], event=ambience['event']['title'] %}
         Edit Lodgement {{ lodgement }} ({{ event }})
     {% endtrans %}
 {% endblock %}
@@ -12,12 +12,12 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
-    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker'], icon='home') }}
+    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['title'], icon='home') }}
     {{ util.breadcrumb_link(cdedblink("event/change_lodgement"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans lodgement=ambience['lodgement']['moniker'] %}Edit Lodgement {{ lodgement }}{% endtrans %}
+        {% trans lodgement=ambience['lodgement']['title'] %}Edit Lodgement {{ lodgement }}{% endtrans %}
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -25,7 +25,7 @@
     <form action="{{ cdedblink('event/change_lodgement') }}" method="POST" id="changelodgementform"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_lodgement') }}
-        {{ util.form_input_text(name="moniker", label=gettext("Moniker")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity")) }}
         {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity")) }}
         {{ util.form_input_select(name="group_id", entries=groups.items(), label=gettext("Lodgement Group"),

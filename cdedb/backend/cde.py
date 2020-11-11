@@ -12,6 +12,7 @@ import decimal
 from typing import (
     Collection, Dict, Tuple, List, Any, Optional
 )
+from typing_extensions import Protocol
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend,
@@ -125,16 +126,21 @@ class CdEBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("member", "cde_admin")
-    def get_lastschrifts(self, rs: RequestState,
-                         ids: Collection[int]) -> CdEDBObjectMap:
+    def get_lastschrifts(self, rs: RequestState, lastschrift_ids: Collection[int]
+                         ) -> CdEDBObjectMap:
         """Retrieve direct debit permits."""
-        ids = affirm_set("id", ids)
-        data = self.sql_select(rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, ids)
+        lastschrift_ids = affirm_set("id", lastschrift_ids)
+        data = self.sql_select(
+            rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, lastschrift_ids)
         if ("cde_admin" not in rs.user.roles
                 and any(e['persona_id'] != rs.user.persona_id for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
-    get_lastschrift = singularize(get_lastschrifts)
+
+    class _GetLastschriftProtocol(Protocol):
+        def __call__(self, rs: RequestState, lastschrift_id: int) -> CdEDBObject: ...
+    get_lastschrift: _GetLastschriftProtocol = singularize(
+        get_lastschrifts, "lastschrift_ids", "lastschrift_id")
 
     @access("cde_admin")
     def set_lastschrift(self, rs: RequestState,
@@ -314,7 +320,11 @@ class CdEBackend(AbstractBackend):
         _ = self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
 
         return {e['id']: e for e in data}
-    get_lastschrift_transaction = singularize(get_lastschrift_transactions)
+
+    class _GetLastschriftTransactionProtocol(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+    get_lastschrift_transaction: _GetLastschriftTransactionProtocol = singularize(
+        get_lastschrift_transactions)
 
     @access("finance_admin")
     def issue_lastschrift_transaction(self, rs: RequestState, data: CdEDBObject,
@@ -325,12 +335,8 @@ class CdEBackend(AbstractBackend):
         This only creates the database entry. The SEPA file will be
         generated in the frontend.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :type check_unique: bool
         :param check_unique: If True: raise an error if there already is an
           issued transaction.
-        :rtype: int
         :returns: The id of the new transaction.
         """
         stati = const.LastschriftTransactionStati
@@ -810,7 +816,7 @@ class CdEBackend(AbstractBackend):
                              persona_id=None, change_note=msg)
             return ret
 
-    @access("searchable", "cde_admin")
+    @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around

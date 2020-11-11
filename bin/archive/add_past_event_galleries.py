@@ -1,8 +1,7 @@
-import sys
+#!/usr/bin/env python3
+
 import csv
 import re
-
-sys.path.insert(0, "/cdedb2/")
 
 from cdedb.script import setup, make_backend
 

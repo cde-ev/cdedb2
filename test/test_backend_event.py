@@ -38,7 +38,7 @@ class TestEventBackend(BackendTest):
     def test_entity_event(self, user):
         ## need administrator to create event
         self.login(USER_DICT["annika"])
-        old_events = self.event.list_db_events(self.key)
+        old_events = self.event.list_events(self.key)
         data = {
             'title': "New Link Academy",
             'institution': 1,
@@ -291,7 +291,7 @@ class TestEventBackend(BackendTest):
                          self.event.get_event(self.key, new_id))
 
         self.assertNotIn(new_id, old_events)
-        new_events = self.event.list_db_events(self.key)
+        new_events = self.event.list_events(self.key)
         self.assertIn(new_id, new_events)
 
         new_course = {
@@ -317,7 +317,7 @@ class TestEventBackend(BackendTest):
 
         new_group = {
             'event_id': new_id,
-            'moniker': "Nebenan",
+            'title': "Nebenan",
         }
         new_group_id = self.event.create_lodgement_group(self.key, new_group)
         self.assertLess(0, new_group_id)
@@ -328,7 +328,7 @@ class TestEventBackend(BackendTest):
         new_lodgement = {
             'regular_capacity': 42,
             'event_id': new_id,
-            'moniker': 'Hyrule',
+            'title': 'Hyrule',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': new_group_id,
@@ -601,7 +601,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_entity_course(self, user):
         event_id = 1
-        old_courses = self.event.list_db_courses(self.key, event_id)
+        old_courses = self.event.list_courses(self.key, event_id)
         data = {
             'event_id': event_id,
             'title': "Topos theory for the kindergarden",
@@ -631,7 +631,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(data,
                          self.event.get_course(self.key, new_id))
         self.assertNotIn(new_id, old_courses)
-        new_courses = self.event.list_db_courses(self.key, event_id)
+        new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
         data['active_segments'] = {1}
         self.event.set_course(self.key, {
@@ -766,8 +766,8 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_visible_events(self, user):
-        expectation = {1: 'Große Testakademie 2222'}
-        self.assertEqual(expectation, self.event.list_db_events(
+        expectation = {1: 'Große Testakademie 2222', 3: 'CyberTestAkademie'}
+        self.assertEqual(expectation, self.event.list_events(
             self.key, visible=True, archived=False))
 
     @as_users("annika", "garcia")
@@ -1140,9 +1140,24 @@ class TestEventBackend(BackendTest):
                 },
             },
             'payment': None,
-            'persona_id': 3,
+            'persona_id': 999,
             'real_persona_id': None
         }
+        with self.assertRaises(ValueError) as cm:
+            self.event.create_registration(self.key, new_reg)
+        self.assertIn("This user does not exist or is archived.",
+                      cm.exception.args)
+        new_reg['persona_id'] = 8
+        with self.assertRaises(ValueError) as cm:
+            self.event.create_registration(self.key, new_reg)
+        self.assertIn("This user does not exist or is archived.",
+                      cm.exception.args)
+        new_reg['persona_id'] = 11
+        with self.assertRaises(ValueError) as cm:
+            self.event.create_registration(self.key, new_reg)
+        self.assertIn("This user is not an event user.", cm.exception.args)
+
+        new_reg['persona_id'] = 3
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
@@ -1209,12 +1224,12 @@ class TestEventBackend(BackendTest):
             1: {
                 'id': 1,
                 'event_id': 1,
-                'moniker': "Haupthaus",
+                'title': "Haupthaus",
             },
             2: {
                 'id': 2,
                 'event_id': 1,
-                'moniker': "AußenWohnGruppe",
+                'title': "AußenWohnGruppe",
             },
         }
         self.assertEqual(expectation_groups,
@@ -1222,7 +1237,7 @@ class TestEventBackend(BackendTest):
 
         new_group = {
             'event_id': event_id,
-            'moniker': "Nebenan",
+            'title': "Nebenan",
         }
         new_group_id = self.event.create_lodgement_group(self.key, new_group)
         self.assertLess(0, new_group_id)
@@ -1231,7 +1246,7 @@ class TestEventBackend(BackendTest):
             new_group, self.event.get_lodgement_group(self.key, new_group_id))
         update = {
             'id': new_group_id,
-            'moniker': "Auf der anderen Rheinseite",
+            'title': "Auf der anderen Rheinseite",
         }
         self.assertLess(0, self.event.set_lodgement_group(self.key, update))
         new_group.update(update)
@@ -1241,7 +1256,7 @@ class TestEventBackend(BackendTest):
         new_lodgement = {
             'regular_capacity': 42,
             'event_id': 1,
-            'moniker': 'Hyrule',
+            'title': 'Hyrule',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': new_group_id,
@@ -1253,7 +1268,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
 
-        expectation_list[new_group_id] = new_group['moniker']
+        expectation_list[new_group_id] = new_group['title']
         self.assertEqual(expectation_list,
                          self.event.list_lodgement_groups(self.key, event_id))
         self.assertLess(
@@ -1284,7 +1299,7 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
                 'fields': {'contamination': 'high'},
                 'id': 1,
-                'moniker': 'Warme Stube',
+                'title': 'Warme Stube',
                 'notes': None,
                 'camping_mat_capacity': 1,
                 'group_id': 2,
@@ -1294,7 +1309,7 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
                 'fields': {'contamination': 'high'},
                 'id': 4,
-                'moniker': 'Einzelzelle',
+                'title': 'Einzelzelle',
                 'notes': None,
                 'camping_mat_capacity': 0,
                 'group_id': 1,
@@ -1304,7 +1319,7 @@ class TestEventBackend(BackendTest):
         new = {
             'regular_capacity': 42,
             'event_id': 1,
-            'moniker': 'Hyrule',
+            'title': 'Hyrule',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': None,
@@ -1618,10 +1633,10 @@ class TestEventBackend(BackendTest):
             fields_of_interest=[
                 "lodgement.regular_capacity",
                 "lodgement.group_id",
-                "lodgement.moniker",
+                "lodgement.title",
                 "lodgement.camping_mat_capacity",
                 "lodgement_fields.xfield_contamination",
-                "lodgement_group.moniker",
+                "lodgement_group.title",
                 "lodgement_group.regular_capacity",
                 "lodgement_group.camping_mat_capacity",
                 "part1.regular_inhabitants",
@@ -1644,11 +1659,11 @@ class TestEventBackend(BackendTest):
                 'id': 4,
                 'lodgement.regular_capacity': 1,
                 'lodgement.group_id': 1,
-                'lodgement.moniker': "Einzelzelle",
+                'lodgement.title': "Einzelzelle",
                 'lodgement.camping_mat_capacity': 0,
                 'lodgement_fields.xfield_contamination': 'high',
                 'lodgement_group.regular_capacity': 11,
-                'lodgement_group.moniker': 'Haupthaus',
+                'lodgement_group.title': 'Haupthaus',
                 'lodgement_group.camping_mat_capacity': 2,
                 'part1.group_regular_inhabitants': 2,
                 'part1.group_camping_mat_inhabitants': 0,
@@ -1661,11 +1676,11 @@ class TestEventBackend(BackendTest):
                 'id': 2,
                 'lodgement.regular_capacity': 10,
                 'lodgement.group_id': 1,
-                'lodgement.moniker': "Kalte Kammer",
+                'lodgement.title': "Kalte Kammer",
                 'lodgement.camping_mat_capacity': 2,
                 'lodgement_fields.xfield_contamination': 'none',
                 'lodgement_group.regular_capacity': 11,
-                'lodgement_group.moniker': 'Haupthaus',
+                'lodgement_group.title': 'Haupthaus',
                 'lodgement_group.camping_mat_capacity': 2,
                 'part1.group_regular_inhabitants': 2,
                 'part1.group_camping_mat_inhabitants': 0,
@@ -1910,7 +1925,7 @@ class TestEventBackend(BackendTest):
         new_data['event.lodgement_groups'][5000] = {
             'id': 5000,
             'event_id': 1,
-            'moniker': 'Nebenan',
+            'title': 'Nebenan',
         }
         ## lodgements
         new_data['event.lodgements'][6000] = {
@@ -1918,7 +1933,7 @@ class TestEventBackend(BackendTest):
             'event_id': 1,
             'fields': {},
             'id': 6000,
-            'moniker': 'Matte im Orgabüro',
+            'title': 'Matte im Orgabüro',
             'notes': None,
             'group_id': 1,
             'camping_mat_capacity': 0}
@@ -2119,14 +2134,14 @@ class TestEventBackend(BackendTest):
         stored_data['event.lodgement_groups'][1001] = {
             'id': 1001,
             'event_id': 1,
-            'moniker': 'Nebenan',
+            'title': 'Nebenan',
         }
         stored_data['event.lodgements'][1001] = {
             'regular_capacity': 1,
             'event_id': 1,
             'fields': {},
             'id': 1001,
-            'moniker': 'Matte im Orgabüro',
+            'title': 'Matte im Orgabüro',
             'notes': None,
             'group_id': 1,
             'camping_mat_capacity': 0}
@@ -2512,16 +2527,16 @@ class TestEventBackend(BackendTest):
                              'title': 'Blitzkurs'},
                         3: None,
                         4: {'segments': {1: None}}},
-            'lodgement_groups': {-1: {'moniker': 'Geheime Etage'}},
+            'lodgement_groups': {-1: {'title': 'Geheime Etage'}},
             'lodgements': {-1: {'regular_capacity': 12,
                                 'fields': {'contamination': 'none'},
-                                'moniker': 'Geheimkabinett',
+                                'title': 'Geheimkabinett',
                                 'notes': 'Einfach den unsichtbaren Schildern folgen.',
                                 'group_id': -1,
                                 'camping_mat_capacity': 2},
                            -2: {'regular_capacity': 42,
                                 'fields': {'contamination': 'low'},
-                                'moniker': 'Handtuchraum',
+                                'title': 'Handtuchraum',
                                 'notes': 'Hier gibt es Handtücher für jeden.',
                                 'group_id': None,
                                 'camping_mat_capacity': 0},
@@ -2808,6 +2823,29 @@ class TestEventBackend(BackendTest):
                 self.key, event_id=1, persona_id=1)
 
     @as_users("annika")
+    def test_set_event_orgas(self, user):
+        event_id = 1
+        self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertLess(0, self.event.set_event_orgas(self.key, event_id, {1}))
+        self.assertEqual({1}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertLess(
+            0, self.event.set_event(self.key, {'id': event_id, 'orgas': {7}}))
+        self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
+
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event_orgas(self.key, event_id, {8})
+        self.assertIn("Some of these orgas do not exist or are archived.",
+                      cm.exception.args)
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event_orgas(self.key, event_id, {1000})
+        self.assertIn("Some of these orgas do not exist or are archived.",
+                      cm.exception.args)
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event_orgas(self.key, event_id, {11})
+        self.assertIn("Some of these orgas are not event users.",
+                      cm.exception.args)
+
+    @as_users("annika")
     def test_log(self, user):
         # first check the already existing log
         offset = 4
@@ -3075,7 +3113,7 @@ class TestEventBackend(BackendTest):
         new = {
             'regular_capacity': 42,
             'event_id': 1,
-            'moniker': 'Hyrule',
+            'title': 'Hyrule',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': None,

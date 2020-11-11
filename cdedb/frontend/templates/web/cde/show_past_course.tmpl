@@ -37,21 +37,22 @@
     {% if "past_event" in user.admin_views %}
         {% call util.bootstrap_panel(title=gettext("Add Participant to this Course"),
                 aclass="panel-success panel-condensed", icon='plus') %}
-                <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
-                    {{ util.anti_csrf_token('cde/add_participant') }}
+                <form action="{{ cdedblink('cde/add_participants') }}" method="POST" id="addparticipantform">
+                    {{ util.anti_csrf_token('cde/add_participants') }}
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                     <div class="row">
-                        <div class="col-sm-5 {% if 'persona_id' in errors %}has-error{% endif %}">
-                            {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
-                                               anid='input-add-participant', aclass='form-control input-sm',
-                                               arialabel=gettext("ID of the new Participant")) }}
-                            <script nonce="{{ csp_nonce }}">
-                                $('#input-add-participant').cdedbSearchPerson(
-                                    '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'|s }}',
-                                    {{ participants.keys()|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
-                                );
-                            </script>
-                            {{ util.output_errors('persona_id') }}
+                        <div class="col-sm-5 {% if 'persona_ids' in errors %}has-error{% endif %}">
+                            {% call util.output_errors('persona_ids') %}
+                                {{ util.input_text(name="persona_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                                                   anid='input-add-participant', aclass='form-control input-sm',
+                                                   arialabel=gettext("ID of the new Participant")) }}
+                                <script nonce="{{ csp_nonce }}">
+                                    $('#input-add-participant').cdedbSearchPerson(
+                                        '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'|s }}',
+                                        {{ participants.keys()|list|json|s }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                    );
+                                </script>
+                            {% endcall %}
                         </div>
                         <div class="col-sm-2">
                             <div class="checkbox input-sm">

@@ -143,7 +143,7 @@
     {% endif %}
     {% with current = history[version] %}
         {% if icon %}
-            {{- util.make_icon('file', arialabel='Attachment') }}
+            {{- util.make_icon('file', arialabel=gettext('Attachment')) }}
         {% endif %}
         {{ current['title'] -}}
         {% if version_info %}

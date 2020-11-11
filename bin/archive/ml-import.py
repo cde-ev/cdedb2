@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import json
-import sys
-sys.path.insert(0, "/cdedb2/")
 from cdedb.script import setup, make_backend
 from cdedb.common import SubscriptionActions
 import cdedb.database.constants as const

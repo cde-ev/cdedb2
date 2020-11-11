@@ -57,6 +57,10 @@ COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
+if TYPE_CHECKING:
+    CdEDBMultiDict = werkzeug.MultiDict[str, Any]
+else:
+    CdEDBMultiDict = werkzeug.MultiDict
 
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
@@ -113,7 +117,8 @@ class User:
                  roles: Set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
-                 moderator: Collection[int] = None) -> None:
+                 moderator: Collection[int] = None,
+                 presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
         self.roles = roles or {"anonymous"}
         self.username = username
@@ -122,6 +127,7 @@ class User:
         self.family_name = family_name
         self.orga: Set[int] = set(orga) if orga else set()
         self.moderator: Set[int] = set(moderator) if moderator else set()
+        self.presider: Set[int] = set(presider) if presider else set()
         self.admin_views: Set[AdminView] = set()
 
     @property
@@ -146,11 +152,11 @@ class RequestState:
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
-                 values: Optional[werkzeug.MultiDict], lang: str,
+                 values: Optional[CdEDBMultiDict], lang: str,
                  gettext: Callable[[str], str],
                  ngettext: Callable[[str, str, int], str],
                  coders: Optional[Mapping[str, Callable]],  # type: ignore
-                 begin: datetime.datetime,
+                 begin: Optional[datetime.datetime],
                  default_gettext: Callable[[str], str] = None,
                  default_ngettext: Callable[[str, str, int], str] = None):
         """
@@ -189,7 +195,7 @@ class RequestState:
         self.default_gettext = default_gettext or gettext
         self.default_ngettext = default_ngettext or ngettext
         self._coders = coders or {}
-        self.begin = begin
+        self.begin = begin or now()
         # Visible version of the database connection
         # noinspection PyTypeChecker
         self.conn: IrradiatedConnection = None  # type: ignore
@@ -379,7 +385,7 @@ def glue(*args: str) -> str:
 S = TypeVar("S")
 
 
-def merge_dicts(targetdict: Union[MutableMapping[T, S], werkzeug.MultiDict],
+def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
                 *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
@@ -564,11 +570,11 @@ class EntitySorter:
 
     @staticmethod
     def lodgement(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['moniker'], lodgement['id'])
+        return (lodgement['title'], lodgement['id'])
 
     @staticmethod
     def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
-        return (lodgement_group['moniker'], lodgement_group['id'])
+        return (lodgement_group['title'], lodgement_group['id'])
 
     @staticmethod
     def event_part(event_part: CdEDBObject) -> Sortkey:
@@ -585,7 +591,7 @@ class EntitySorter:
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
-        return (candidates['moniker'], candidates['id'])
+        return (candidates['shortname'], candidates['id'])
 
     @staticmethod
     def assembly(assembly: CdEDBObject) -> Sortkey:
@@ -617,7 +623,7 @@ class EntitySorter:
 
     @staticmethod
     def institution(institution: CdEDBObject) -> Sortkey:
-        return (institution['moniker'], institution['id'])
+        return (institution['shortname'], institution['id'])
 
     @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
@@ -729,7 +735,14 @@ def int_to_words(num: int, lang: str) -> str:
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
 
-    def default(self, obj):
+    @overload
+    def default(self, obj: Union[datetime.date, datetime.datetime,
+                                 decimal.Decimal]) -> str: ...
+
+    @overload
+    def default(self, obj: Set[T]) -> Tuple[T, ...]: ...
+
+    def default(self, obj: Any) -> Union[str, Tuple[Any, ...]]:
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
@@ -802,7 +815,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     This is used by the assembly realm to tally votes -- however this is
     pretty abstract, so we move it here.
 
-    Votes have the form ``3>0>1=2>4`` where the monikers between the
+    Votes have the form ``3>0>1=2>4`` where the shortnames between the
     relation signs are exactly those passed in the ``candidates`` parameter.
 
     The Schulze method is described in the pdf found in the ``related``
@@ -901,8 +914,8 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     return condensed, detailed
 
 
-#: Magic value of moniker of the ballot candidate representing the bar.
-ASSEMBLY_BAR_MONIKER = "_bar_"
+#: Magic value of shortname of the ballot candidate representing the bar.
+ASSEMBLY_BAR_SHORTNAME = "_bar_"
 
 
 @overload
@@ -917,7 +930,7 @@ def unwrap(data: Mapping[Any, T]) -> T: ...
 def unwrap(data: Collection[T]) -> T: ...
 
 
-def unwrap(data):
+def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -958,7 +971,7 @@ def unwrap(data):
 class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
     #: default sortkey (currently equal to EntitySorter.lodgement)
-    moniker = 1
+    title = 1
     #: regular_capacity which is used in this part
     used_regular = 10
     #: camping_mat_capacity which is used in this part
@@ -1070,7 +1083,7 @@ class LineResolutions(enum.IntEnum):
 INFINITE_ENUM_MAGIC_NUMBER = 0
 
 
-def infinite_enum(aclass):
+def infinite_enum(aclass: T) -> T:
     """Decorator to document infinite enums.
 
     This does nothing and is only for documentation purposes.
@@ -1096,29 +1109,29 @@ def infinite_enum(aclass):
 @functools.total_ordering
 class InfiniteEnum:
     # noinspection PyShadowingBuiltins
-    def __init__(self, enum, int):
+    def __init__(self, enum: enum.IntEnum, int_: int):
         self.enum = enum
-        self.int = int
+        self.int = int_
 
     @property
-    def value(self):
+    def value(self) -> int:
         if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
             return self.int
         return self.enum.value
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
             return "{}({})".format(self.enum, self.int)
         return str(self.enum)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, InfiniteEnum):
             return self.value == other.value
         if isinstance(other, int):
             return self.value == other
         return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         if isinstance(other, InfiniteEnum):
             return self.value < other.value
         if isinstance(other, int):
@@ -1705,6 +1718,12 @@ if TYPE_CHECKING:
 else:
     role_map_type = collections.OrderedDict
 
+#: List of all roles we consider admin roles. Changes in these roles must be
+#: approved by two meta admins in total.
+ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
+              "is_finance_admin", "is_event_admin", "is_ml_admin",
+              "is_assembly_admin", "is_cdelokal_admin"}
+
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
@@ -1773,7 +1792,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
-        result |= {"core_user", "core"}
+        result |= {"core", "core_user", "cde_user", "event_user",
+                   "assembly_user", "ml_user"}
     if "cde_admin" in roles:
         result |= {"cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:
@@ -1805,7 +1825,7 @@ CDEDB_EXPORT_EVENT_VERSION = 13
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (13, 2)
+EVENT_SCHEMA_VERSION = (14, 1)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1815,7 +1835,7 @@ PERSONA_STATUS_FIELDS = (
     "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
     "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
     "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_cdelokal_admin", "is_member", "is_searchable", "is_archived")
+    "is_cdelokal_admin", "is_member", "is_searchable", "is_archived", "is_purged")
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
@@ -1962,7 +1982,7 @@ PRIVILEGE_CHANGE_FIELDS = (
     "is_assembly_admin", "is_cdelokal_admin", "notes", "reviewer")
 
 #: Fields for institutions of events
-INSTITUTION_FIELDS = ("id", "title", "moniker")
+INSTITUTION_FIELDS = ("id", "title", "shortname")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
@@ -2020,10 +2040,10 @@ REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
                              "course_instructor")
 
 #: Fields of a lodgement group
-LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
+LODGEMENT_GROUP_FIELDS = ("id", "event_id", "title")
 
 #: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "moniker", "regular_capacity",
+LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
                     "camping_mat_capacity", "notes", "group_id", "fields")
 
 # Fields of a row in a questionnaire.
@@ -2038,6 +2058,18 @@ MAILINGLIST_FIELDS = (
     "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")
 
+#: Fields of a mailinglist which may be changed by moderators
+MOD_ALLOWED_FIELDS = {
+    "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
+    "maxsize"}
+
+#: Fields of a mailinglist which require privileged moderator access to be changed
+PRIVILEGE_MOD_REQUIRING_FIELDS = {
+    'registration_stati'}
+
+#: Fields of a mailinglist which may be changed by privileged moderators
+PRIVILEGED_MOD_ALLOWED_FIELDS = MOD_ALLOWED_FIELDS | PRIVILEGE_MOD_REQUIRING_FIELDS
+
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
                    "is_active", "notes")
@@ -2045,8 +2077,8 @@ ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
 #: Fields of a ballot
 BALLOT_FIELDS = (
     "id", "assembly_id", "title", "description", "vote_begin", "vote_end",
-    "vote_extension_end", "extended", "use_bar", "quorum", "votes",
-    "is_tallied", "notes")
+    "vote_extension_end", "extended", "use_bar", "abs_quorum", "rel_quorum", "quorum",
+    "votes", "is_tallied", "notes")
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)

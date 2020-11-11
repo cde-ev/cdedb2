@@ -195,7 +195,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(new_pass, effective)
         with self.assertRaises(PrivilegeError):
             self.core.make_reset_cookie(self.key, "anton@example.cde")
-        ret, _ = self.core.make_reset_cookie(self.key, "nonexistant@example.cde")
+        ret, _ = self.core.make_reset_cookie(self.key, "nonexistent@example.cde")
         self.assertFalse(ret)
 
     @as_users("vera")
@@ -215,6 +215,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -259,6 +260,7 @@ class TestCoreBackend(BackendTest):
                 'is_ml_admin': False,
                 'is_ml_realm': False,
                 'is_cdelokal_admin': False,
+                'is_purged': False,
                 'is_searchable': False,
                 'location': None,
                 'location2': None,
@@ -332,6 +334,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -368,11 +371,12 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
 
-    @as_users("vera", "werner")
+    @as_users("vera", "viktor")
     def test_create_assembly_user(self, user):
         data = copy.deepcopy(PERSONA_TEMPLATE)
         data['is_ml_realm'] = True
@@ -391,6 +395,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -428,6 +433,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -623,6 +629,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
@@ -696,6 +703,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
@@ -771,6 +779,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': True,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
@@ -841,9 +850,19 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_verify_personas(self, user):
-        self.assertEqual(
-            {1, 2, 3, 4, 5, 6, 7, 9, 12},
-            set(self.core.verify_personas(self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), ("event",))))
+        self.assertFalse(self.core.verify_personas(
+            self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), {"event"}))
+        self.assertFalse(self.core.verify_persona(self.key, 1000))
+        self.assertFalse(self.core.verify_persona(self.key, 5, {"cde"}))
+        self.assertTrue(self.core.verify_persona(self.key, 5, {"event"}))
+        self.assertTrue(self.core.verify_persona(self.key, 2, {"cde"}))
+        self.assertTrue(self.core.verify_persona(self.key, 1, {"meta_admin"}))
+        self.assertTrue(self.core.verify_personas(
+            self.key, (1, 2, 3, 7, 9), {"cde", "member"}))
+        self.assertFalse(self.core.verify_personas(
+            self.key, (1, 2, 3, 7, 9), {"searchable"}))
+        self.assertTrue(self.core.verify_personas(
+            self.key, (1, 2, 9), {"searchable"}))
 
     @as_users("vera")
     def test_user_getters(self, user):
@@ -869,6 +888,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_ml_realm': True,
             'is_cdelokal_admin': False,
+            'is_purged': False,
             'is_searchable': True,
             'username': 'berta@example.cde'}
         self.assertEqual(expectation, self.core.get_persona(self.key, 2))
@@ -969,13 +989,13 @@ class TestCoreBackend(BackendTest):
         self.core.dearchive_persona(self.key, persona_id)
 
         # Check that sole moderators cannot be archived.
-        self.ml.set_moderators(self.key, 1, {persona_id})
+        self.ml.set_moderators(self.key, 2, {persona_id})
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
         self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])
 
         # Test archival of user that is no moderator.
-        self.core.archive_persona(self.key, 6, "Testing")
+        self.core.archive_persona(self.key, 8, "Testing")
 
     @as_users("vera")
     def test_archive_activate_bug(self, user):
@@ -992,6 +1012,12 @@ class TestCoreBackend(BackendTest):
             'is_active': True,
         }
         self.core.change_persona(self.key, data, may_wait=False)
+
+    @as_users("vera")
+    def test_archive_admin(self, user):
+        # Nina is mailinglist admin.
+        with self.assertRaises(ArchiveError):
+            self.core.archive_persona(self.key, 14, "Admins can not be archived.")
 
     @as_users("vera")
     def test_purge(self, user):
@@ -1065,8 +1091,8 @@ class TestCoreBackend(BackendTest):
         result = self.core.retrieve_log(self.key)
         self.assertEqual(core_log_expectation, result)
 
-        total = 31
-        changelog_expectation = (total, (
+        sample_entries = len(self.sample_data["core.changelog"])
+        changelog_expectation = (sample_entries + 1, (
             # Committing the changed admin bits.
             {
                 'id': 1001,
@@ -1080,7 +1106,8 @@ class TestCoreBackend(BackendTest):
             },
         ))
         # Set offset to avoid selecting the Init. changelog entries
-        result = self.core.retrieve_changelog_meta(self.key, offset=total-1)
+        result = self.core.retrieve_changelog_meta(
+            self.key, offset=sample_entries)
         self.assertEqual(changelog_expectation, result)
 
     @as_users("anton", "martin")
@@ -1181,7 +1208,7 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_changelog_meta(self, user):
         expectation = self.get_sample_data(
-            "core.changelog", range(1, 31),
+            "core.changelog", range(1, 32),
             ("id", "submitted_by", "reviewed_by", "ctime", "generation",
              "change_note", "code", "persona_id"))
         self.assertEqual((len(expectation), tuple(expectation.values())),

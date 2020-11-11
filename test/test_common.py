@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 
+import datetime
+import os
+import pathlib
+import pytz
+import random
+import re
+import subprocess
+import tempfile
 import unittest
+
 from cdedb.common import (
     extract_roles, schulze_evaluate, int_to_words, xsorted,
     mixed_existence_sorter, unwrap)
 import cdedb.database.constants as const
-import datetime
-import pytz
-import random
-import timeit
+import cdedb.ml_type_aux as ml_type
 
 class TestCommon(unittest.TestCase):
     def test_mixed_existence_sorter(self):
@@ -260,3 +266,50 @@ class TestCommon(unittest.TestCase):
                 with self.assertRaises(TypeError) as cm:
                     unwrap(ncol)
                 self.assertIn("Can only unwrap collections.", cm.exception.args[0])
+
+    def test_mypy(self):
+        try:
+            result = subprocess.run(["make", "mypy"], check=True, capture_output=True)
+        except subprocess.CalledProcessError as cpe:
+            pattern = re.compile(": error: ")
+            count = len(re.findall(pattern, cpe.stdout.decode()))
+            msg = f"There are {count} mypy errors. Run `make mypy` for more details."
+            raise self.failureException(msg) from None
+
+    def test_untranslated_strings(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            try:
+                temppath = pathlib.Path(tempdir)
+                env = os.environ.copy()
+                env['I18NDIR'] = tempdir
+                for lang in ('de', 'en'):
+                    langdir = temppath / lang / 'LC_MESSAGES'
+                    langdir.mkdir(parents=True)
+                    pofile = langdir / 'cdedb.po'
+                    pofile.touch()
+                subprocess.run(["make", "i18n-refresh"], check=True, env=env,
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL)
+                result = subprocess.run(["make", "i18n-check"], check=True,
+                                        capture_output=True, env=env)
+            except subprocess.CalledProcessError as cpe:
+                self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
+        pattern = re.compile(" (\d+) (?:unübersetzte Meldung|untranslated message)")
+        match = re.search(pattern, result.stderr.decode().splitlines()[0])
+        if match:
+            self.fail(f"There are {match.group(1)} untranslated strings (German)."
+                      f" Make sure all strings are translated to German.")
+
+    def test_ml_type_mismatch(self):
+        pseudo_mailinglist = {"ml_type": const.MailinglistTypes.event_associated}
+        with self.assertRaises(RuntimeError):
+            # Cannot use method of a non-parent-non-child class
+            ml_type.AssemblyAssociatedMailinglist.get_implicit_subscribers(
+                None, None, pseudo_mailinglist)
+        with self.assertRaises(RuntimeError):
+            # Cannot use method of a child class
+            ml_type.AssemblyAssociatedMailinglist.get_implicit_subscribers(
+                None, None, {"ml_type": const.MailinglistTypes.general_opt_in})
+        # Can use method of a parent class
+        ml_type.GeneralMailinglist.get_implicit_subscribers(
+            None, None, pseudo_mailinglist)

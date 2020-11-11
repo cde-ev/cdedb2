@@ -89,6 +89,8 @@ class TestValidation(unittest.TestCase):
             (12.5, None, ValueError, False),
             (True, 1, None, False),
             (False, 0, None, False),
+            (2147483647, 2147483647, None, True),
+            (1e10, None, ValueError, False),
             ))
 
     def test_bool_int(self):
@@ -106,6 +108,8 @@ class TestValidation(unittest.TestCase):
             ("-12.3", -12.3, None, False),
             ("garbage", None, ValueError, False),
             (12, 12.0, None, False),
+            (9e6, 9e6, None, True),
+            (1e7, None, ValueError, False),
             ))
 
     def test_decimal(self):
@@ -421,11 +425,11 @@ class TestValidation(unittest.TestCase):
             'votes': None,
             'use_bar': True,
             'candidates': {
-                1: {'moniker': 'A'},
-                2: {'moniker': 'B'},
-                3: {'moniker': 'C'},
-                4: {'moniker': 'D'},
-                5: {'moniker': 'E'},
+                1: {'shortname': 'A'},
+                2: {'shortname': 'B'},
+                3: {'shortname': 'C'},
+                4: {'shortname': 'D'},
+                5: {'shortname': 'E'},
             }
         }
         classical_ballot = copy.deepcopy(ballot)

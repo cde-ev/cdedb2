@@ -1,7 +1,10 @@
 {% set sidenav_active='ml_change' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_change_mailinglist.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_change_mailinglist.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
     {% trans title=ambience['mailinglist']['title'] %}
@@ -20,9 +23,20 @@
     <h1 class="title">
         {% trans %}Configuration{% endtrans %}
         <small>
-            {{- util.make_icon('envelope', arialabel="Mailingliste") }} {{ ambience['mailinglist']['title'] -}}
+            {{- util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] -}}
         </small>
     </h1>
+{% endblock %}
+{% block static_notifications %}
+    {% if not privileged %}
+        <div class="alert alert-info">
+            {{ util.make_icon('info-circle') }}
+            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
+                                      gettext("privileged moderator access"))|s %}
+                You do not have %(link)s and may not change subscriptions.
+            {% endtrans %}
+        </div>
+    {% endif %}
 {% endblock %}
 {% block content %}
     <script nonce="{{ csp_nonce }}">
@@ -31,90 +45,78 @@
         });
     </script>
     {% set readonly = not ambience['mailinglist']['ml_type_class'].has_management_view(user) %}
-    {% if not readonly %}
-        <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
-            {{ util.anti_csrf_token('ml/change_mailinglist') }}
-    {% else %}
-        <div id="changelistform" class="form-horizontal">
-    {% endif %}
-        <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
-            {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly) }}
-            {{ util.form_input_text(name="title", label=gettext("Title"), readonly=readonly) }}
-            {{ util.form_input_text(name="local_part", label=gettext("Address"), readonly=readonly,
-                                    addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
-            {{ util.form_input_select(name="domain", label=gettext("Domain"), readonly=readonly, defaultvalue=ambience['mailinglist']['domain'].value,
-                        entries=available_domains|enum_entries(processing=gettext, prefix="@")) }}
-            <script nonce="{{ csp_nonce }}">
-                domain_inp = $("#changelistform [name='domain']");
-                function update_domain() {
-                    $("#changelistform [name='local_part'] ~ .input-group-addon")
-                        .text(domain_inp[0].options[domain_inp[0].selectedIndex].innerHTML);
-                }
-                domain_inp.on('input', update_domain);
-                update_domain();
-            </script>
-            {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", readonly=readonly,
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                            infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
-                                                               title=gettext("Short Markdown summary")))|s) }}
-            {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", readonly=readonly,
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                            infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
-                                                               title=gettext("Short Markdown summary")))|s) }}
+    <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
+        {{ util.anti_csrf_token('ml/change_mailinglist') }}
+    <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
+        {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly, info=gettext(
+            "Due to limitations of our current mailinglist infrastructure, disabling can not be undone.")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title"), readonly=readonly) }}
+        {{ util.form_input_text(name="local_part", label=gettext("Address"), readonly=readonly,
+                                addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
+        {{ util.form_input_select(name="domain", label=gettext("Domain"), readonly=readonly, defaultvalue=ambience['mailinglist']['domain'].value,
+                    entries=available_domains|enum_entries(processing=gettext, prefix="@")) }}
+        <script nonce="{{ csp_nonce }}">
+            domain_inp = $("#changelistform [name='domain']");
+            function update_domain() {
+                $("#changelistform [name='local_part'] ~ .input-group-addon")
+                    .text(domain_inp[0].options[domain_inp[0].selectedIndex].innerHTML);
+            }
+            domain_inp.on('input', update_domain);
+            update_domain();
+        </script>
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
+                                    info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
 
-        <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
-            {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"), readonly=readonly,
-                    entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
-            {{ util.input_hidden(name="ml_type") }}
-            {% if readonly %}
+    <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
+        {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
+                entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
+        {{ util.input_hidden(name="ml_type") }}
+        {% if readonly %}
             {{ util.form_input_static(label=gettext("Mailinglist Type"),
                     value=(gettext( enums['MailinglistTypes'](ambience['mailinglist']['ml_type'])|string ))) }}
-            {% else %}
+        {% else %}
             {{ util.form_input_static(label=gettext("Mailinglist Type"),
                     value=(gettext( enums['MailinglistTypes'](ambience['mailinglist']['ml_type'])|string ) + (' ')
                         + util.href(cdedblink('ml/change_ml_type'), gettext("Change Type"),
                                     aclass="btn btn-warning btn-xs", icon="pen"))) }}
-            {% endif %}
-            {% if 'event_id' in additional_fields %}
-                {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption=nbsp,
-                        entries=event_entries, readonly=readonly, info=gettext("The participants of this event will be "
-                            "subscribers of this mailinglist. (Opt-Out)")) }}
-            {% endif %}
-            {% if 'registration_stati' in additional_fields %}
-                {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
-                        readonly=readonly, entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
-            {% endif %}
-            {% if 'assembly_id' in additional_fields %}
-                {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption=nbsp,
-                    readonly=readonly, entries=assembly_entries, info=gettext("The participants of this assembly will "
-                        "be subscribers of this mailinglist. (Opt-Out)")) }}
-            {% endif %}
+        {% endif %}
+        {% if 'event_id' in additional_fields %}
+            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption=nbsp,
+                    entries=event_entries, readonly=readonly, info=gettext("The participants of this event will be "
+                        "subscribers of this mailinglist. (Opt-Out)")) }}
+        {% endif %}
+        {% if 'registration_stati' in additional_fields %}
+            {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
+                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), readonly=not privileged) }}
+        {% endif %}
+        {% if 'assembly_id' in additional_fields %}
+            {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption=nbsp,
+                readonly=readonly, entries=assembly_entries, info=gettext("The participants of this assembly will "
+                    "be subscribers of this mailinglist. (Opt-Out)")) }}
+        {% endif %}
 
-        <h4 class="heading-underline">{% trans %}Mails{% endtrans %}</h4>
-            {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix"), readonly=readonly,
-                    info=gettext("Example: If the subject prefix is set to \"info\" and a user sends a Mail with "
-                                "subject \"Invitation to PfingstAka\", the mail will be sent to the recipients as "
-                                "\"[info] Invitation to PfingstAka\".")) }}
-            <script nonce="{{ csp_nonce }}">
-                var sp_inp = $('#changelistform').find("[name='subject_prefix']");
-                function build_preview() {
-                    if (Boolean(sp_inp.val())===true) // if no subject_prefix is given, mailman also won't add any braces
-                        var repl = "[" + escapeHtml(sp_inp.val()) +  "] ";
-                    else var repl = "";
-                    sp_inp.siblings("p.help-block").html('{{ util.make_icon('info-circle') }} ' +
-                        "{{ gettext("Preview: %(prefix)sMail'sSubjectHere") }}"
-                            .replace('%(prefix)s', repl));
-                }
-                sp_inp.on("input", build_preview);
-                build_preview();
-            </script>
-            {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"), readonly=readonly,
-                    entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), readonly=readonly, type="number") }}
-    {% if not readonly %}
-            {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
-        </form>
-    {% else %}
-        </div>
-    {% endif %}
+    <h4 class="heading-underline">{% trans %}Mails{% endtrans %}</h4>
+        {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix"),
+                info=gettext("Example: If the subject prefix is set to \"info\" and a user sends a Mail with "
+                            "subject \"Invitation to PfingstAka\", the mail will be sent to the recipients as "
+                            "\"[info] Invitation to PfingstAka\".")) }}
+        <script nonce="{{ csp_nonce }}">
+            var sp_inp = $('#changelistform').find("[name='subject_prefix']");
+            function build_preview() {
+                if (Boolean(sp_inp.val())===true) // if no subject_prefix is given, mailman also won't add any braces
+                    var repl = "[" + escapeHtml(sp_inp.val()) +  "] ";
+                else var repl = "";
+                sp_inp.siblings("p.help-block").html('{{ util.make_icon('info-circle') }} ' +
+                    "{{ gettext("Preview: %(prefix)sMail'sSubjectHere") }}"
+                        .replace('%(prefix)s', repl));
+            }
+            sp_inp.on("input", build_preview);
+            build_preview();
+        </script>
+        {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
+                entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number") }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
+    </form>
 {% endblock %}

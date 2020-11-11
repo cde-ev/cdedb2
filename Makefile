@@ -23,6 +23,8 @@ help:
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
 MYPYBIN ?= mypy
+TESTPREPARATION ?= automatic
+I18NDIR ?= ./i18n
 
 doc:
 	bin/create_email_template_list.sh .
@@ -33,14 +35,29 @@ reload:
 	sudo systemctl restart apache2
 
 i18n-refresh:
-	pybabel extract -F ./babel.cfg  -o ./i18n/cdedb.pot\
+	$(MAKE) i18n-extract
+	$(MAKE) i18n-update
+
+i18n-extract:
+	pybabel extract \
+		-F ./babel.cfg  --sort-by-file -o $(I18NDIR)/cdedb.pot \
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
-	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb
-	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb
+
+i18n-update:
+	pybabel update -i $(I18NDIR)/cdedb.pot -d $(I18NDIR)/ -l de -D cdedb \
+		--ignore-obsolete
+	pybabel update -i $(I18NDIR)/cdedb.pot -d $(I18NDIR)/ -l en -D cdedb \
+		--ignore-obsolete
 
 i18n-compile:
-	pybabel compile -d ./i18n/ -l de -D cdedb
-	pybabel compile -d ./i18n/ -l en -D cdedb
+	pybabel compile -d $(I18NDIR)/ -l de -D cdedb
+	pybabel compile -d $(I18NDIR)/ -l en -D cdedb
+
+i18n-check:
+	msgfmt -c $(I18NDIR)/de/LC_MESSAGES/cdedb.po --statistics \
+		--output /dev/null
+	msgfmt -c $(I18NDIR)/en/LC_MESSAGES/cdedb.po --statistics \
+		--output /dev/null
 
 sample-data:
 	$(MAKE) storage > /dev/null
@@ -150,10 +167,14 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
 	$(MAKE) sql-schema
-	$(PYTHONBIN) bin/execute_sql_script.py test/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		test/ancillary_files/sample_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
 		test/ancillary_files/sample_data.sql
 
+# This does not recurse to sql-schema, so in the very rare circumstance that
+# you want to completely reset the test database it has to be executed
+# explicitly. This is due to the restrictions of the docker environment.
 sql-test:
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
 		cdedb/database/cdedb-tables.sql
@@ -207,10 +228,14 @@ lint:
 
 
 prepare-check:
+ifneq ($(TESTPREPARATION), manual)
 	$(MAKE) i18n-compile
 	$(MAKE) sample-data-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
 		|| true
+else
+	@echo "Omitting test preparation."
+endif
 
 check: export CDEDB_TEST=True
 check:
@@ -299,4 +324,4 @@ mypy:
 	${MYPYBIN} cdedb/backend/ cdedb/frontend cdedb/__init__.py \
 		cdedb/common.py cdedb/enums.py cdedb/i18n_additional.py \
 		cdedb/ml_subscription_aux.py cdedb/ml_type_aux.py cdedb/query.py \
-		cdedb/script.py cdedb/validationdata.py
+		cdedb/script.py cdedb/validationdata.py test/common.py

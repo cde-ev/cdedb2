@@ -60,7 +60,7 @@
                             {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
                                    if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
                                 {% if registration['parts'][part_id]['lodgement_id'] %}
-                                    {{ lodgements[registration['parts'][part_id]['lodgement_id']]['moniker'] }}
+                                    {{ lodgements[registration['parts'][part_id]['lodgement_id']]['title'] }}
                                 {% else %}
                                     –
                                 {% endif %}

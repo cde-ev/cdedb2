@@ -24,35 +24,61 @@ CREATE TABLE core.personas (
         password_hash           varchar NOT NULL,
         -- inactive accounts may not log in
         is_active               boolean NOT NULL DEFAULT True,
+        CONSTRAINT personas_active_archived
+            CHECK (NOT (is_archived AND is_active)),
         -- administrative notes about this user
         notes                   varchar,
 
         -- global admin, grants all privileges
         is_meta_admin           boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_meta
+            CHECK (NOT is_meta_admin OR is_cde_realm),
         -- allows managing all users and general database configuration
         is_core_admin           boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_core
+            CHECK (NOT is_core_admin OR is_cde_realm),
         -- allows managing of cde users (members and former members) and
         -- other cde stuff (past events, direct debit)
         is_cde_admin            boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_cde
+            CHECK (NOT is_cde_admin OR is_cde_realm),
         is_finance_admin        boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_finance
+            CHECK (NOT is_finance_admin OR is_cde_admin),
         -- allows managing of events and event users
         is_event_admin          boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_event
+            CHECK (NOT is_event_admin OR is_event_realm),
         -- allows managing of mailinglists and ml users
         is_ml_admin             boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_ml
+            CHECK (NOT is_ml_admin OR is_ml_realm),
         -- allows managing of assemblies and assembly users
         is_assembly_admin       boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_assembly
+            CHECK (NOT is_assembly_admin OR is_assembly_realm),
         -- allows managing a subset of all mailinglists, those related to CdE Lokalgruppen
         is_cdelokal_admin       boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_admin_cdelokal
+            CHECK (NOT is_cdelokal_admin OR is_ml_realm),
         -- allows usage of cde functionality
         is_cde_realm            boolean NOT NULL,
+        CONSTRAINT personas_realm_cde_implicits
+            CHECK (NOT is_cde_realm OR (is_event_realm AND is_assembly_realm)),
         -- allows usage of event functionality
         is_event_realm          boolean NOT NULL,
+        CONSTRAINT personas_realm_event_implicits
+            CHECK (NOT is_event_realm OR is_ml_realm),
         -- allows usage of mailinglist functionality
         is_ml_realm             boolean NOT NULL,
         -- allows usage of assembly functionality
         is_assembly_realm       boolean NOT NULL,
+        CONSTRAINT personas_realm_assembly_implicits
+            CHECK (NOT is_assembly_realm OR is_ml_realm),
         -- member status grants access to additional functionality
         is_member               boolean NOT NULL,
+        CONSTRAINT personas_member_implicits
+            CHECK (NOT is_member OR is_cde_realm),
         -- searchability governs whether a persona may search for others
         --
         -- a persona is visible/may search
@@ -61,7 +87,11 @@ CREATE TABLE core.personas (
         -- signal a data set of a former member which was stripped of all
         -- non-essential attributes to implement data protection
         is_archived             boolean NOT NULL DEFAULT False,
-
+        -- signal all remaining information about a user has been cleared.
+        -- this can never be undone.
+        is_purged               boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_archived_purged
+            CHECK (NOT is_purged OR is_archived),
         -- name to use when adressing user/"Rufname"
         display_name            varchar NOT NULL,
         -- "Vornamen" (including middle names)
@@ -78,7 +108,8 @@ CREATE TABLE core.personas (
         name_supplement         varchar DEFAULT NULL,
         -- see cdedb.database.constants.Genders
         gender                  integer,
-        CHECK((NOT is_cde_realm AND NOT is_event_realm) OR is_archived OR gender IS NOT NULL),
+        CONSTRAINT personas_realm_gender
+            CHECK((NOT is_cde_realm AND NOT is_event_realm) OR gender IS NOT NULL),
         -- may be NULL in historical cases; we try to minimize these occurences
         birthday                date,
         telephone               varchar,
@@ -112,22 +143,27 @@ CREATE TABLE core.personas (
         interests               varchar,
         -- anything else the member wants to tell
         free_form               varchar,
-        balance                 numeric(8,2) DEFAULT NULL,
-        CHECK(NOT is_cde_realm OR balance IS NOT NULL),
+        balance                 numeric(8, 2) DEFAULT NULL,
+        CONSTRAINT personas_cde_balance
+            CHECK(NOT is_cde_realm OR balance IS NOT NULL),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
-        CHECK(NOT is_cde_realm OR decided_search IS NOT NULL),
+        CONSTRAINT personas_cde_consent
+            CHECK(NOT is_cde_realm OR decided_search IS NOT NULL),
         -- True for trial members (first semester after the first official academy)
         trial_member            boolean,
-        CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
+        CONSTRAINT personas_cde_trial
+            CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
         -- if True this member's data may be passed on to BuB
         bub_search              boolean DEFAULT FALSE,
-        CHECK(NOT is_cde_realm OR bub_search IS NOT NULL),
+        CONSTRAINT personas_cde_bub
+            CHECK(NOT is_cde_realm OR bub_search IS NOT NULL),
         -- file name of image
         foto                    varchar DEFAULT NULL,
         -- wants to receive the exPuls in printed form
         paper_expuls            boolean DEFAULT TRUE,
-        CHECK(NOT is_cde_realm OR paper_expuls IS NOT NULL),
+        CONSTRAINT personas_cde_expuls
+            CHECK(NOT is_cde_realm OR paper_expuls IS NOT NULL),
         -- automatically managed attribute containing all above values as a
         -- string for fulltext search
         fulltext                varchar NOT NULL
@@ -139,7 +175,7 @@ CREATE INDEX idx_personas_is_ml_realm ON core.personas(is_ml_realm);
 CREATE INDEX idx_personas_is_assembly_realm ON core.personas(is_assembly_realm);
 CREATE INDEX idx_personas_is_member ON core.personas(is_member);
 CREATE INDEX idx_personas_is_searchable ON core.personas(is_searchable);
-GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived) ON core.personas TO cdb_anonymous;
+GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous;
 GRANT UPDATE (username, password_hash) ON core.personas TO cdb_persona;
 GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
 GRANT SELECT, UPDATE ON core.personas TO cdb_member; -- TODO maybe restrict notes to cdb_admin
@@ -320,6 +356,7 @@ CREATE TABLE core.changelog (
         is_member               boolean,
         is_searchable           boolean,
         is_archived             boolean,
+        is_purged               boolean,
         display_name            varchar,
         given_names             varchar,
         family_name             varchar,
@@ -364,7 +401,7 @@ GRANT DELETE ON core.changelog TO cdb_admin;
 CREATE TABLE core.cron_store
 (
         id                      serial PRIMARY KEY,
-        moniker                 varchar NOT NULL UNIQUE,
+        title                   varchar NOT NULL UNIQUE,
         store                   jsonb NOT NULL
 );
 GRANT SELECT, UPDATE ON core.cron_store_id_seq TO cdb_admin;
@@ -397,7 +434,7 @@ CREATE TABLE cde.org_period (
         balance_state           integer REFERENCES core.personas(id),
         balance_done            timestamp WITH TIME ZONE DEFAULT NULL,
         balance_trialmembers    integer NOT NULL DEFAULT 0,
-        balance_total           numeric(8, 2) NOT NULL DEFAULT 0,
+        balance_total           numeric(11, 2) NOT NULL DEFAULT 0,
         semester_done           timestamp WITH TIME ZONE DEFAULT NULL
 );
 GRANT SELECT ON cde.org_period TO cdb_persona;
@@ -421,7 +458,7 @@ CREATE TABLE cde.lastschrift (
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         -- actual data
         persona_id              integer REFERENCES core.personas(id) NOT NULL,
-        amount                  numeric(7,2) NOT NULL,
+        amount                  numeric(8, 2) NOT NULL,
         iban                    varchar NOT NULL,
         -- if different from the paying member
         account_owner           varchar,
@@ -443,11 +480,11 @@ CREATE TABLE cde.lastschrift_transactions
         lastschrift_id          integer REFERENCES cde.lastschrift(id) NOT NULL,
         period_id               integer REFERENCES cde.org_period(id) NOT NULL,
         status                  integer NOT NULL,
-        amount                  numeric(7,2) NOT NULL,
+        amount                  numeric(8, 2) NOT NULL,
         issued_at               timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         processed_at            timestamp WITH TIME ZONE DEFAULT NULL,
         -- positive for money we got and negative if bounced with fee
-        tally                   numeric(7,2) DEFAULT NULL
+        tally                   numeric(8, 2) DEFAULT NULL
 );
 CREATE INDEX idx_cde_lastschrift_transactions_lastschrift_id ON cde.lastschrift_transactions(lastschrift_id);
 GRANT SELECT ON cde.lastschrift_transactions TO cdb_member;
@@ -462,14 +499,14 @@ CREATE TABLE cde.finance_log (
         submitted_by            integer REFERENCES core.personas(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
-        delta                   numeric(7,2),
-        new_balance             numeric(7,2),
+        delta                   numeric(8, 2),
+        new_balance             numeric(8, 2),
         change_note             varchar,
         -- checksums
         -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
         members                 integer NOT NULL,
         -- sum of all balances (SELECT SUM(balance) FROM core.personas)
-        total                   numeric(10,2) NOT NULL
+        total                   numeric(11, 2) NOT NULL
 );
 CREATE INDEX idx_cde_finance_log_code ON cde.finance_log(code);
 CREATE INDEX idx_cde_finance_log_persona_id ON cde.finance_log(persona_id);
@@ -504,7 +541,7 @@ GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 CREATE TABLE past_event.institutions (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
-        moniker                 varchar NOT NULL
+        shortname               varchar NOT NULL
 );
 GRANT SELECT ON past_event.institutions TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
@@ -600,7 +637,7 @@ CREATE TABLE event.events (
         -- automatically warned about registering late
         registration_hard_limit     timestamp WITH TIME ZONE,
         iban                        varchar,
-        nonmember_surcharge         numeric(8,2) NOT NULL,
+        nonmember_surcharge         numeric(8, 2) NOT NULL,
         orga_address                varchar,
         registration_text           varchar,
         mail_text                   varchar,
@@ -635,7 +672,7 @@ CREATE TABLE event.event_parts (
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
         -- fees are cummulative
-        fee                     numeric(8,2) NOT NULL,
+        fee                     numeric(8, 2) NOT NULL,
         -- reference to custom data field for waitlist management
         waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
 );
@@ -691,7 +728,7 @@ CREATE TABLE event.fee_modifiers (
         part_id                 integer NOT NULL REFERENCES event.event_parts(id),
         modifier_name           varchar NOT NULL,
         -- the amount to modify the fee by. Can be negative.
-        amount                  decimal(8,2) NOT NULL,
+        amount                  numeric(8, 2) NOT NULL,
         -- in which field do we save the information whether the modifier has been selected:
         field_id                integer NOT NULL REFERENCES event.field_definitions(id)
 );
@@ -750,7 +787,7 @@ GRANT SELECT ON event.orgas TO cdb_anonymous;
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        moniker                 varchar NOT NULL
+        title                   varchar NOT NULL
 );
 CREATE INDEX ids_lodgement_groups_event_id ON event.lodgement_groups(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgement_groups TO cdb_persona;
@@ -759,7 +796,7 @@ GRANT SELECT, UPDATE ON event.lodgement_groups_id_seq TO cdb_persona;
 CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        moniker                 varchar NOT NULL,
+        title                   varchar NOT NULL,
         regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
         camping_mat_capacity    integer NOT NULL DEFAULT 0,
@@ -786,8 +823,8 @@ CREATE TABLE event.registrations (
         notes                   varchar,
         orga_notes              varchar DEFAULT NULL,
         payment                 date DEFAULT NULL,
-        amount_paid             numeric(7,2) NOT NULL DEFAULT 0,
-        amount_owed             numeric(7,2) NOT NULL DEFAULT 0,
+        amount_paid             numeric(8, 2) NOT NULL DEFAULT 0,
+        amount_owed             numeric(8, 2) NOT NULL DEFAULT 0,
         -- parental consent for minors (defaults to True for non-minors)
         parental_agreement      boolean NOT NULL DEFAULT False,
         mixed_lodging           boolean NOT NULL,
@@ -898,8 +935,20 @@ CREATE TABLE assembly.assemblies (
         notes                   varchar
 );
 GRANT SELECT ON assembly.assemblies TO cdb_persona;
-GRANT INSERT, UPDATE, DELETE ON assembly.assemblies TO cdb_admin;
+GRANT INSERT, DELETE ON assembly.assemblies TO cdb_admin;
+GRANT UPDATE ON assembly.assemblies TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.assemblies_id_seq TO cdb_admin;
+
+CREATE TABLE assembly.presiders (
+        id                      serial PRIMARY KEY,
+        assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
+        persona_id              integer NOT NULL REFERENCES core.personas(id)
+);
+CREATE INDEX idx_assembly_presiders_persona_id ON assembly.presiders(persona_id);
+CREATE UNIQUE INDEX idx_assembly_presiders_constraint ON assembly.presiders(assembly_id, persona_id);
+GRANT SELECT ON assembly.presiders TO cdb_persona;
+GRANT INSERT, DELETE ON assembly.presiders TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.presiders_id_seq TO cdb_admin;
 
 CREATE TABLE assembly.ballots (
         id                      serial PRIMARY KEY,
@@ -919,10 +968,14 @@ CREATE TABLE assembly.ballots (
         -- alternative title may be "reopen nominations".
         --
         -- It will not be listed in the assembly.candidates table, but added
-        -- on the fly. Its moniker will be "_bar_".
+        -- on the fly. Its shortname will be "_bar_".
         use_bar                 boolean NOT NULL,
-        -- number of submitted votes necessary to not trigger extension
-        quorum                  integer NOT NULL DEFAULT 0,
+        -- number of submitted votes necessary to not trigger extension.
+        -- quorum is the actual value, but will be calculated from abs_quorum or
+        -- rel_quorum until regular voting ends. After that it is saved to quorum.
+        abs_quorum              integer NOT NULL DEFAULT 0,
+        rel_quorum              integer NOT NULL DEFAULT 0,
+        quorum                  integer,
         -- number of votes per ballot
         --
         -- NULL means arbitrary preference list
@@ -942,19 +995,19 @@ CREATE TABLE assembly.ballots (
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
 GRANT SELECT ON assembly.ballots TO cdb_member;
 GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_member;
-GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_member;
 
 CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
-        description             varchar NOT NULL,
-        moniker                 varchar NOT NULL
+        title                   varchar NOT NULL,
+        shortname               varchar NOT NULL
 );
-CREATE UNIQUE INDEX idx_moniker_constraint ON assembly.candidates(ballot_id, moniker);
+CREATE UNIQUE INDEX idx_shortname_constraint ON assembly.candidates(ballot_id, shortname);
 GRANT SELECT ON assembly.candidates TO cdb_member;
-GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attendees (
         id                      serial PRIMARY KEY,
@@ -965,6 +1018,7 @@ CREATE TABLE assembly.attendees (
 CREATE UNIQUE INDEX idx_attendee_constraint ON assembly.attendees(persona_id, assembly_id);
 GRANT SELECT, INSERT ON assembly.attendees TO cdb_member;
 GRANT UPDATE (secret) ON assembly.attendees TO cdb_admin;
+GRANT DELETE ON assembly.attendees TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_member;
 
 -- register who did already vote for what
@@ -975,16 +1029,15 @@ CREATE TABLE assembly.voter_register (
         has_voted               boolean NOT NULL DEFAULT False
 );
 CREATE UNIQUE INDEX idx_voter_constraint ON assembly.voter_register(persona_id, ballot_id);
-GRANT SELECT, INSERT ON assembly.voter_register TO cdb_member;
+GRANT SELECT, INSERT, DELETE ON assembly.voter_register TO cdb_member;
 GRANT UPDATE (has_voted) ON assembly.voter_register TO cdb_member;
-GRANT DELETE ON assembly.voter_register TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.voter_register_id_seq TO cdb_member;
 
 CREATE TABLE assembly.votes (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         -- The vote is of the form '2>3=1>0>4' where the pieces between the
-        -- relation symbols are the corresponding monikers from
+        -- relation symbols are the corresponding shortnames from
         -- assembly.candidates.
         vote                    varchar NOT NULL,
         salt                    varchar NOT NULL,
@@ -1004,9 +1057,8 @@ CREATE TABLE assembly.attachments (
 );
 CREATE INDEX idx_attachments_assembly_id ON assembly.attachments(assembly_id);
 CREATE INDEX idx_attachments_ballot_id ON assembly.attachments(ballot_id);
-GRANT SELECT ON assembly.attachments TO cdb_member;
-GRANT INSERT, DELETE, UPDATE ON assembly.attachments TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_admin;
+GRANT SELECT, UPDATE, INSERT, DELETE ON assembly.attachments TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_versions (
         id                      bigserial PRIMARY KEY,
@@ -1022,9 +1074,8 @@ CREATE TABLE assembly.attachment_versions (
 );
 CREATE INDEX idx_attachment_versions_attachment_id ON assembly.attachment_versions(attachment_id);
 CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version);
-GRANT SELECT ON assembly.attachment_versions TO cdb_member;
-GRANT INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_admin;
-GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_admin;
+GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
+GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.log (
         id                      bigserial PRIMARY KEY,
@@ -1039,8 +1090,8 @@ CREATE TABLE assembly.log (
 );
 CREATE INDEX idx_assembly_log_code ON assembly.log(code);
 CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
-GRANT SELECT, DELETE ON assembly.log TO cdb_admin;
-GRANT INSERT ON assembly.log TO cdb_member;
+GRANT DELETE ON assembly.log TO cdb_admin;
+GRANT SELECT, INSERT ON assembly.log TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 
 ---
@@ -1058,7 +1109,8 @@ CREATE TABLE ml.mailinglists (
         local_part              varchar NOT NULL,
         -- see cdedb.database.constants.MailinglistDomains
         domain                  integer NOT NULL,
-        unique(local_part, domain),
+        CONSTRAINT mailinglists_unique_address
+            UNIQUE(domain, local_part),
         description             varchar,
         -- see cdedb.database.constants.ModerationPolicy
         mod_policy              integer NOT NULL,

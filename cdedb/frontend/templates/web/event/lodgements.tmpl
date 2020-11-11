@@ -50,7 +50,7 @@
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">
-                    {{ display_sorting_header(None, enums['LodgementsSortkeys'].moniker.value, gettext("Lodgement")) }}
+                    {{ display_sorting_header(None, enums['LodgementsSortkeys'].title.value, gettext("Lodgement")) }}
                 </th>
                 <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">
                     {% trans %}Inhabitants{% endtrans -%}</th>
@@ -83,7 +83,7 @@
                 {% if grouped_lodgements|length > 1 %}
                     <tr class="subheading">
                         <td colspan="2">
-                            {% if group_id %}{{ groups[group_id]['moniker'] }}
+                            {% if group_id %}{{ groups[group_id]['title'] }}
                             {% else %}
                                 <i>{% trans %}Ungrouped Lodgements{% endtrans %}</i>
                             {% endif %}
@@ -107,7 +107,7 @@
                     <tr>
                         <td class="indent"></td>
                         <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
-                                         lodgement['moniker']) }}</td>
+                                         lodgement['title']) }}</td>
                         {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
                         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                             {% set problem = problems[(lodgement_id, part_id)] %}

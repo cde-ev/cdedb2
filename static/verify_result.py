@@ -50,7 +50,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     This is used by the assembly realm to tally votes -- however this is
     pretty abstract, so we move it here.
 
-    Votes have the form ``3>0>1=2>4`` where the monikers between the
+    Votes have the form ``3>0>1=2>4`` where the shortnames between the
     relation signs are exactly those passed in the ``candidates`` parameter.
 
     The Schulze method is described in the pdf found in the ``related``
@@ -177,10 +177,10 @@ if __name__ == "__main__":
 
         # ... und zähle neu aus
         votes = [entry['vote'] for entry in data['votes']]
-        monikers = list(data['candidates'])
+        shortnames = list(data['candidates'])
         if data['use_bar']:
-            monikers.append("_bar_")
-        condensed, detailed = schulze_evaluate(votes, monikers)
+            shortnames.append("_bar_")
+        condensed, detailed = schulze_evaluate(votes, shortnames)
 
         # zeige schließlich die Ergebnisse an
         announce = "Detail:"

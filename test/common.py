@@ -5,6 +5,7 @@ import datetime
 import email.parser
 import email.message
 import email.policy
+import enum
 import functools
 import gettext
 import os
@@ -13,7 +14,6 @@ import re
 import subprocess
 import sys
 import tempfile
-import types
 import unittest
 import urllib.parse
 import json
@@ -23,9 +23,11 @@ import time
 import copy
 import decimal
 
+from types import TracebackType
 from typing import (
-    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set,
-    MutableMapping, Any, no_type_check, TYPE_CHECKING, Collection, Iterable,
+    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set, Union,
+    NamedTuple, MutableMapping, Any, no_type_check, Iterable, Tuple, TextIO, ClassVar,
+    Collection, Sequence
 )
 
 import pytz
@@ -42,13 +44,14 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, PrivilegeError, RequestState, n_,
-    roles_to_db_role, unwrap, PathLike, CdEDBObject, CdEDBObjectMap, now,
+    roles_to_db_role, PathLike, CdEDBObject, CdEDBObjectMap, now,
 )
 from cdedb.config import BasicConfig, SecretsConfig, Config
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
 from cdedb.frontend.cron import CronFrontend
+from cdedb.frontend.common import AbstractFrontend
 from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()
@@ -71,14 +74,14 @@ class NearlyNow(datetime.datetime):
     we use this to avoid nasty work arounds.
     """
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, datetime.datetime):
             delta = self - other
             return (datetime.timedelta(minutes=10) > delta
                     > datetime.timedelta(minutes=-10))
         return False
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
 
@@ -142,6 +145,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/test/ancillary_files/"
         for e in table_data:
             _id = e.get('id', _id)
             assert _id not in data
+            e['id'] = _id
             data[_id] = e
             _id += 1
         ret[table] = data
@@ -151,7 +155,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/test/ancillary_files/"
 B = TypeVar("B", bound=AbstractBackend)
 
 
-def make_backend_shim(backend: B, internal=False) -> B:
+def make_backend_shim(backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -194,11 +198,12 @@ def make_backend_shim(backend: B, internal=False) -> B:
         else:
             apitoken = key
 
-        rs = RequestState(  # type: ignore
-            sessionkey=sessionkey, apitoken=apitoken, user=user, request=None,
-            notifications=[], mapadapter=None, requestargs=None, errors=[],
-            values=None, lang="de", gettext=translator.gettext,
-            ngettext=translator.ngettext, coders=None, begin=now())
+        rs = RequestState(
+            sessionkey=sessionkey, apitoken=apitoken, user=user,
+            request=None, notifications=[], mapadapter=None,  # type: ignore
+            requestargs=None, errors=[], values=None, lang="de",
+            gettext=translator.gettext, ngettext=translator.ngettext,
+            coders=None, begin=now())
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
@@ -207,13 +212,16 @@ def make_backend_shim(backend: B, internal=False) -> B:
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(  # type: ignore
                 rs, rs.user.persona_id)
+        if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
+            rs.user.presider = backend.presider_info(  # type: ignore
+                rs, rs.user.persona_id)
         return rs
 
     class Proxy:
         """
         Wrap calls to the backend in a access check and provide a RequestState.
         """
-        def __getattr__(self, name):
+        def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
             if any([
                 not getattr(attr, "access", False),
@@ -224,13 +232,21 @@ def make_backend_shim(backend: B, internal=False) -> B:
                     n_("Attribute %(name)s not public"), {"name": name})
 
             @functools.wraps(attr)
-            def wrapper(key, *args, **kwargs):
+            def wrapper(key: str, *args: Any, **kwargs: Any) -> Any:
                 rs = setup_requeststate(key)
                 return attr(rs, *args, **kwargs)
 
             return wrapper
 
+        def __setattr__(self, key: str, value: Any) -> None:
+            return setattr(backend, key, value)
+
     return cast(B, Proxy())
+
+
+ExceptionInfo = Union[
+    Tuple[Type[BaseException], BaseException, TracebackType],
+    Tuple[None, None, None], None]
 
 
 class MyTextTestResult(unittest.TextTestResult):
@@ -240,29 +256,32 @@ class MyTextTestResult(unittest.TextTestResult):
     and print a summary at the end of the TestCase itself.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(MyTextTestResult, self).__init__(*args, **kwargs)
+    def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None:
+        self.showAll: bool
+        self.stream: TextIO
+        super().__init__(stream, descriptions, verbosity)
+        self._subTestErrors: List[ExceptionInfo] = []
+        self._subTestFailures: List[ExceptionInfo] = []
+        self._subTestSkips: List[str] = []
+
+    def startTest(self, test: unittest.TestCase) -> None:
+        super().startTest(test)
         self._subTestErrors = []
         self._subTestFailures = []
         self._subTestSkips = []
 
-    def startTest(self, test):
-        super(MyTextTestResult, self).startTest(test)
-        self._subTestErrors = []
-        self._subTestFailures = []
-        self._subTestSkips = []
-
-    def addSubTest(self, test, subtest, err):
-        super(MyTextTestResult, self).addSubTest(test, subtest, err)
-        if err is not None:
+    def addSubTest(self, test: unittest.TestCase, subtest: unittest.TestCase,
+                   err: Optional[ExceptionInfo]) -> None:
+        super().addSubTest(test, subtest, err)
+        if err is not None and err[0] is not None:
             if issubclass(err[0], subtest.failureException):
                 errors = self._subTestFailures
             else:
                 errors = self._subTestErrors
             errors.append(err)
 
-    def stopTest(self, test):
-        super(MyTextTestResult, self).stopTest(test)
+    def stopTest(self, test: unittest.TestCase) -> None:
+        super().stopTest(test)
         # Print a comprehensive list of failures and errors in subTests.
         output = []
         if self._subTestErrors:
@@ -288,12 +307,12 @@ class MyTextTestResult(unittest.TextTestResult):
             output.append(s)
         if output:
             if self.showAll:
-                self.stream.writeln(", ".join(output))
+                self.stream.writeln(", ".join(output))  # type: ignore
             else:
                 self.stream.write("".join(output))
                 self.stream.flush()
 
-    def addSkip(self, test, reason):
+    def addSkip(self, test: unittest.TestCase, reason: str) -> None:
         # Purposely override the parents method, to not print the skip here.
         super(unittest.TextTestResult, self).addSkip(test, reason)
         self._subTestSkips.append(reason)
@@ -302,14 +321,16 @@ class MyTextTestResult(unittest.TextTestResult):
 class CdEDBTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
     testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
+    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
+    conf: ClassVar[Config]
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         # Keep a clean copy of sample data that should not be messed with.
         cls._clean_sample_data = read_sample_data()
         cls.conf = Config()
 
-    def setUp(self):
+    def setUp(self) -> None:
         subprocess.check_call(("make", "sample-data-test-shallow"),
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
@@ -355,12 +376,25 @@ class CdEDBTest(unittest.TestCase):
         return ret
 
 
+UserIdentifier = Union[CdEDBObject, str]
+
+
 class BackendTest(CdEDBTest):
     """
     Base class for a TestCase that uses some backends. Needs to be subclassed.
     """
+    maxDiff = None
+    session: ClassVar[SessionBackend]
+    core: ClassVar[CoreBackend]
+    cde: ClassVar[CdEBackend]
+    event: ClassVar[EventBackend]
+    pastevent: ClassVar[PastEventBackend]
+    ml: ClassVar[MlBackend]
+    assembly: ClassVar[AssemblyBackend]
+    key: Optional[str]
+
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         cls.session = cls.initialize_raw_backend(SessionBackend)
         cls.core = cls.initialize_backend(CoreBackend)
@@ -369,17 +403,21 @@ class BackendTest(CdEDBTest):
         cls.pastevent = cls.initialize_backend(PastEventBackend)
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
+        # Workaround to make orga info available for calls into the MLBackend.
+        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore
+            rs.sessionkey, persona_id)
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Reset login state."""
         super().setUp()
         self.key = None
 
-    def login(self, user, ip="127.0.0.0"):
+    def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         if isinstance(user, str):
             user = USER_DICT[user]
-        # noinspection PyTypeChecker
-        self.key = self.core.login(None, user['username'], user['password'], ip)
+        assert isinstance(user, dict)
+        self.key = self.core.login(
+            None, user['username'], user['password'], ip)  # type: ignore
         return self.key
 
     @staticmethod
@@ -594,6 +632,15 @@ USER_DICT = {
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
     },
+    "viktor": {
+        'id': 48,
+        'DB-ID': "DB-48-5",
+        'username': "viktor@example.cde",
+        'password': "secret",
+        'display_name': "Viktor",
+        'given_names': "Viktor",
+        'family_name': "Versammlungsadmin",
+    },
     "akira": {
         'id': 100,
         'DB-ID': "DB-100-7",
@@ -606,19 +653,24 @@ USER_DICT = {
 }
 
 
-F = TypeVar("F", bound=Callable)
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def as_users(*users: str) -> Callable[[F], F]:
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(self, *args, **kwargs):
+        def new_fun(self: Union[BackendTest, FrontendTest], *args: Any, **kwargs: Any
+                    ) -> None:
             for i, user in enumerate(users):
                 with self.subTest(user=user):
                     if i > 0:
                         self.setUp()
                     if user is "anonymous":
+                        if not isinstance(self, FrontendTest):
+                            raise RuntimeError(
+                                "Anonymous testing not supported for backend tests."
+                                " Use `key=None` instead.")
                         kwargs['user'] = None
                         self.get('/')
                     else:
@@ -633,7 +685,7 @@ def admin_views(*views: str) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(self, *args, **kwargs):
+        def new_fun(self: FrontendTest, *args: Any, **kwargs: Any) -> Any:
             self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(views))
             return fun(self, *args, **kwargs)
         return cast(F, new_fun)
@@ -644,7 +696,7 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(*args, **kwargs):
+        def new_fun(*args: Any, **kwargs: Any) -> Any:
             execsql(sql)
             return fun(*args, **kwargs)
         return cast(F, new_fun)
@@ -666,7 +718,7 @@ def execsql(sql: AnyStr) -> None:
     subprocess.check_call(psql + (str(path),), stdout=null)
 
 
-class FrontendTest(CdEDBTest):
+class FrontendTest(BackendTest):
     """
     Base class for frontend tests.
 
@@ -677,7 +729,10 @@ class FrontendTest(CdEDBTest):
     directory by specifying `SCRAP_ENCOUNTERED_PAGES` as environment variable.
     """
     lang = "de"
-    app: webtest.TestApp
+    app: ClassVar[webtest.TestApp]
+    gettext: ClassVar[Callable[[str], str]]
+    do_scrap: ClassVar[bool]
+    scrap_path: ClassVar[str]
     response: webtest.TestResponse
     app_extra_environ = {
         'REMOTE_ADDR': "127.0.0.0",
@@ -685,7 +740,7 @@ class FrontendTest(CdEDBTest):
         'wsgi.url_scheme': 'https'}
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         super().setUpClass()
         app = Application()
         cls.gettext = app.translations[cls.lang].gettext
@@ -699,7 +754,8 @@ class FrontendTest(CdEDBTest):
             print(cls.scrap_path, file=sys.stderr)
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
+        super().tearDownClass()
         if cls.do_scrap:
             # make scrap_path directory and content publicly readable
             folder = pathlib.Path(cls.scrap_path)
@@ -707,15 +763,15 @@ class FrontendTest(CdEDBTest):
             for file in folder.iterdir():
                 file.chmod(0o0644)  # 0644/-rw-r--r--
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Reset web application."""
         super().setUp()
         self.app.reset()
         # Make sure all available admin views are enabled.
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
-        self.response = None  # type: ignore
+        self.response = None
 
-    def basic_validate(self, verbose=False):
+    def basic_validate(self, verbose: bool = False) -> None:
         if self.response.content_type == "text/html":
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
@@ -723,7 +779,7 @@ class FrontendTest(CdEDBTest):
             self.scrap()
         self.log_generation_time()
 
-    def scrap(self):
+    def scrap(self) -> None:
         if self.do_scrap and self.response.status_int // 100 == 2:
             # path without host but with query string - capped at 64 chars
             url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
@@ -733,7 +789,7 @@ class FrontendTest(CdEDBTest):
                 # persisting after process completion and dump the response.
                 f.write(self.response.body)
 
-    def log_generation_time(self, response=None):
+    def log_generation_time(self, response: webtest.TestResponse = None) -> None:
         if response is None:
             response = self.response
         if _BASICCONF["TIMING_LOG"]:
@@ -744,20 +800,20 @@ class FrontendTest(CdEDBTest):
                     response.request.query_string)
                 f.write(output)
 
-    def get(self, url: str, *args, verbose=False, **kwargs) -> None:
+    def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
         self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def follow(self, **kwargs) -> None:
+    def follow(self, **kwargs: Any) -> None:
         """Follow a redirect if one occurrs."""
         oldresponse = self.response
         self.response = self.response.maybe_follow(**kwargs)
         if self.response != oldresponse:
             self.log_generation_time(oldresponse)
 
-    def post(self, url: str, *args, verbose=False, **kwargs) -> None:
+    def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Directly send a POST-request.
 
         Note that most of our POST-handlers require a CSRF-token."""
@@ -793,9 +849,12 @@ class FrontendTest(CdEDBTest):
                 raise AssertionError(
                     "Post request did not produce success notification.")
 
-    def traverse(self, *links: MutableMapping[str, Any], verbose: bool = False
-                 ) -> None:
+    def traverse(self, *links: Union[MutableMapping[str, Any], str],
+                 verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
+
+        A link can also be just a string, in which case that string is assumed
+        to be the `description` of the link.
 
         A link should usually contain some of the following descriptors:
 
@@ -811,6 +870,8 @@ class FrontendTest(CdEDBTest):
         :param verbose: If True, display additional debug information.
         """
         for link in links:
+            if isinstance(link, str):
+                link = {'description': link}
             if 'index' not in link:
                 link['index'] = 0
             try:
@@ -821,16 +882,21 @@ class FrontendTest(CdEDBTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user: CdEDBObject, verbose: bool = False) -> None:
+    def login(self, user: UserIdentifier, *, ip: str = "", verbose: bool = False
+              ) -> Optional[str]:
         """Log in as the given user.
 
         :param verbose: If True display additional debug information.
         """
+        if isinstance(user, str):
+            user = USER_DICT[user]
         self.get("/", verbose=verbose)
         f = self.response.forms['loginform']
         f['username'] = user['username']
         f['password'] = user['password']
         self.submit(f, check_notification=False, verbose=verbose)
+        self.key = self.app.cookies.get('sessionkey', None)
+        return self.key
 
     def logout(self, verbose: bool = False) -> None:
         """Log out. Raises a KeyError if not currently logged in.
@@ -839,6 +905,7 @@ class FrontendTest(CdEDBTest):
         """
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False, verbose=verbose)
+        self.key = None
 
     def admin_view_profile(self, user: str, check: bool = True,
                            verbose: bool = False) -> None:
@@ -874,7 +941,7 @@ class FrontendTest(CdEDBTest):
         self.traverse({'href': '/{}/$'.format(realm)},
                       {'href': '/{}/search/user'.format(realm)},
                       verbose=verbose)
-        id_field = 'personas.id' if realm in {'event', 'cde'} else 'id'
+        id_field = 'personas.id'
         f = self.response.forms['queryform']
         f['qsel_' + id_field].checked = True
         f['qop_' + id_field] = QueryOperators.equal.value
@@ -885,17 +952,19 @@ class FrontendTest(CdEDBTest):
             self.assertTitle("{} {}".format(u['given_names'],
                                             u['family_name']))
 
-    def fetch_mail(self) -> List:
+    def fetch_mail(self) -> List[email.message.EmailMessage]:
         """
         Get the content of mails that were sent, using the E-Mail-notification.
         """
         elements = self.response.lxml.xpath(
             "//div[@class='alert alert-info']/span/text()")
 
-        def _extract_path(s):
+        def _extract_path(s: str) -> str:
             regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
-            ret = re.match(regex, s).group(1)
-            return ret
+            result = re.match(regex, s)
+            if not result:
+                raise RuntimeError(f"Failed to extract debug email path from {s!r}.")
+            return result.group(1)
         mails = [_extract_path(x)
                  for x in elements if x.startswith("E-Mail als ")]
         ret = []
@@ -903,14 +972,16 @@ class FrontendTest(CdEDBTest):
             with open(path) as f:
                 raw = f.read()
                 parser = email.parser.Parser(policy=email.policy.default)
-                msg = parser.parsestr(raw)
+                msg = cast(email.message.EmailMessage, parser.parsestr(raw))
                 ret.append(msg)
         return ret
 
     @staticmethod
-    def fetch_link(msg, num: int = 1) -> Optional[str]:
+    def fetch_link(msg: email.message.EmailMessage, num: int = 1) -> Optional[str]:
         ret = None
-        for line in msg.get_body().get_content().splitlines():
+        body = msg.get_body()
+        assert isinstance(body, email.message.EmailMessage)
+        for line in body.get_content().splitlines():
             if line.startswith('[{}] '.format(num)):
                 ret = line.split(maxsplit=1)[-1]
         return ret
@@ -949,7 +1020,7 @@ class FrontendTest(CdEDBTest):
             raise ValueError("Id doesnt belong to a checkbox", anid)
         self.assertEqual(str(status), checkbox['data-checked'])
 
-    def assertPresence(self, s: str, div: str = "content", regex: bool = False,
+    def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False) -> None:
         """Assert that a string is present in the element with the given id.
 
@@ -967,7 +1038,7 @@ class FrontendTest(CdEDBTest):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s: str, div: str = "content",
+    def assertNonPresence(self, s: str, *, div: str = "content",
                           check_div: bool = True) -> None:
         """Assert that a string is not present in the element with the given id.
 
@@ -992,26 +1063,52 @@ class FrontendTest(CdEDBTest):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
 
-    def assertValidationError(self, fieldname: str, message: str = "") -> None:
+    def assertValidationError(
+            self, fieldname: str, message: str = "", index: int = None,
+            notification: Optional[str] = "Validierung fehlgeschlagen") -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
-        and a specific error message to be shown near the field.
+        and a specific error message to be shown near the field. Also check that an
+        .alert-danger notification (with the given text) is indicating validation
+        failure.
 
         :param fieldname: The field's 'name' attribute
-        :param message: The expected error message
+        :param index: If more than one field with the given name exists,
+            specify which one should be checked.
+        :param message: The expected error message displayed below the input
+        :param notification: The expected notification displayed at the top of the page
+            This can be a regex. If this is None, skip the notification check.
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
-        node = self.response.lxml.xpath(
+        if notification is not None:
+            self.assertIn("alert alert-danger", self.response.text)
+            self.assertPresence(notification, div="notifications",
+                                regex=True)
+
+        nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
-        if len(node) != 1:
-            raise AssertionError("Input with name \"{}\" not found"
-                                 .format(fieldname))
+        f = fieldname
+        if index is None:
+            if len(nodes) == 1:
+                node = nodes[0]
+            elif len(nodes) == 0:
+                raise AssertionError(f"No input with name {f!r} found.")
+            else:
+                raise AssertionError(f"More than one input with name {f!r}"
+                                     f" found. Need to specify index.")
+        else:
+            try:
+                node = nodes[index]
+            except IndexError:
+                raise AssertionError(f"Input with name {f!r} and index {index}"
+                                     f" not found. {len(nodes)} inputs with"
+                                     f" name {f!r} found.") from None
+
         # From https://devhints.io/xpath#class-check
-        container = node[0].xpath(
+        container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
             "' has-error ')]")
-        f = fieldname
         if not container:
             raise AssertionError(
                 f"Input with name {f!r} is not contained in an .has-error box")
@@ -1033,7 +1130,7 @@ class FrontendTest(CdEDBTest):
         href_pat = webtest.utils.make_pattern(href_pattern)
         content_pat = webtest.utils.make_pattern(content)
 
-        def printlog(s):
+        def printlog(s: str) -> None:
             if verbose:
                 print(s)
 
@@ -1055,15 +1152,13 @@ class FrontendTest(CdEDBTest):
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
 
-    def log_pagination(self, title, logs):
+    def log_pagination(self, title: str, logs: List[Tuple[int, enum.IntEnum]]) -> None:
         """Helper function to test the logic of the log pagination.
 
         This should be called from every frontend log, to ensure our pagination
         works. Logs must contain at least 9 log entries.
 
-        :type title: str
         :param title: of the Log page, like "Userdata-Log"
-        :type logs: [{id: LogCode}]
         :param logs: list of log entries mapped to their LogCode
         """
         # check the landing page
@@ -1071,6 +1166,12 @@ class FrontendTest(CdEDBTest):
         total = len(logs)
         self._log_subroutine(title, logs, start=1,
                              end=total if total < 50 else 50)
+        # check if the log page numbers are proper (no 0th page, no last+1 page)
+        self.assertNonPresence("", div="pagination-0", check_div=False)
+        self.assertNonPresence("", check_div=False,
+                               div=f"pagination-{str(total // 50 + 2)}")
+        # check translations
+        self.assertNonPresence("LogCodes")
 
         # check a combination of offset and length with 0th page
         length = total // 3
@@ -1131,7 +1232,8 @@ class FrontendTest(CdEDBTest):
         f["length"] = None
         self.submit(f)
 
-    def _log_subroutine(self, title, all_logs, start, end):
+    def _log_subroutine(self, title: str, all_logs: List[Tuple[int, enum.IntEnum]],
+                        start: int, end: int) -> None:
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
 
@@ -1140,18 +1242,16 @@ class FrontendTest(CdEDBTest):
 
         # adapt slicing to our count of log entries
         logs = all_logs[start-1:end]
-        for index, log in enumerate(logs, start=1):
-            log_id = unwrap(log.keys())
-            log_code = unwrap(log)
-            log_code_str = self.gettext(str(log_code))
+        for index, log_entry in enumerate(logs, start=1):
+            log_id, log_code = log_entry
+            log_code_str = self.gettext(str(log_code))  # type: ignore
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins, out):
+    def check_sidebar(self, ins: Collection[str], out: Collection[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
         Raise an error if an element is in the sidebar and not in ins.
 
-        :type ins: [str]
         :param ins: elements which are in the sidebar
         :param out: elements which are not in the sidebar
         :return: None
@@ -1168,7 +1268,7 @@ class FrontendTest(CdEDBTest):
             raise AssertionError(
                 f"Unexpected sidebar elements '{present}' found.")
 
-    def _click_admin_view_button(self, label, current_state=None):
+    def _click_admin_view_button(self, label: str, current_state: bool = None) -> None:
         """
         Helper function for checking the disableable admin views
 
@@ -1177,13 +1277,12 @@ class FrontendTest(CdEDBTest):
         the form using this button's value to enable/disable the corresponding
         admin view(s).
 
-        :param label: A regex used to find the correct admin view button
-        :type label: str or re.Pattern
+        :param label: A regex used to find the correct admin view button.
+            May also be a regex pattern.
         :param current_state: If not None, the admin view button's active state
-            is checked to be equal to this boolean
-        :type current_state: bool or None
-        :return: The button element to perform further checks
-        :rtype: BeautifulSoup element
+            is checked to be equal to this boolean.
+        :return: The button element to perform further checks.
+            Is actually of type `bs4.BeautifulSoup`.
         """
         f = self.response.forms['adminviewstoggleform']
         button = self.response.html\
@@ -1198,8 +1297,9 @@ class FrontendTest(CdEDBTest):
         self.submit(f, 'view_specifier', False, value=button['value'])
         return button
 
-    def reload_and_check_form(self, form, link, max_tries: int = 42,
-                              waittime: float = 0.1, fail: bool = True) -> None:
+    def reload_and_check_form(self, form: webtest.Form, link: Union[CdEDBObject, str],
+                              max_tries: int = 42, waittime: float = 0.1,
+                              fail: bool = True) -> None:
         """Helper to repeatedly reload a page until a certain form is present.
 
         This is mostly required for the "Semesterverwaltung".
@@ -1237,7 +1337,7 @@ class MultiAppFrontendTest(FrontendTest):
 
     def setUp(self) -> None:
         """Reset all apps and responses and the current app index."""
-        self.responses = [None for _ in range(self.n)]  # type: ignore
+        self.responses = [None for _ in range(self.n)]
         super().setUp()
         for app in self.apps:
             app.reset()
@@ -1272,46 +1372,50 @@ class MultiAppFrontendTest(FrontendTest):
         self.current_app = i
 
 
-StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])
-MailTrace = collections.namedtuple(
-    "MailTrace", ['realm', 'template', 'args', 'kwargs'])
+StoreTrace = NamedTuple("StoreTrace", [('cron', str), ('data', CdEDBObject)])
+MailTrace = NamedTuple("MailTrace", [('realm', str), ('template', str),
+                                     ('args', Sequence[Any]),
+                                     ('kwargs', Dict[str, Any])])
 
 
-class CronBackendShim:
-    def __init__(self, cron, proxy):
-        self._cron = cron
-        self._proxy = proxy
+def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
+    class CronBackendProxy:
+        def __getattr__(self, name: str) -> Callable[..., Any]:
+            attr = getattr(backend, name)
 
-    def _wrapit(self, fun):
-        @functools.wraps(fun)
-        def new_fun(*args, **kwargs):
-            rs = self._cron.make_request_state()
-            return fun(rs, *args, **kwargs)
-        return new_fun
+            @functools.wraps(attr)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                rs = cron.make_request_state()
+                return attr(rs, *args, **kwargs)
+            return wrapper
 
-    def __getattr__(self, name):
-        if name in {"_proxy", "_cron"}:
-            raise AttributeError()
-        attr = getattr(self._proxy, name)
-        return self._wrapit(attr)
+    return cast(B, CronBackendProxy())
 
 
 class CronTest(unittest.TestCase):
     _all_periodics: Set[str]
     _run_periodics: Set[str]
+    cron: ClassVar[CronFrontend]
+    core: ClassVar[CoreBackend]
+    cde: ClassVar[CdEBackend]
+    event: ClassVar[EventBackend]
+    pastevent: ClassVar[PastEventBackend]
+    assembly: ClassVar[AssemblyBackend]
+    ml: ClassVar[MlBackend]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.stores = []
+        self.stores: List[StoreTrace] = []
+        self.mails: List[MailTrace] = []
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.cron = CronFrontend()
-        cls.core = CronBackendShim(cls.cron, cls.cron.core.coreproxy)
-        cls.cde = CronBackendShim(cls.cron, cls.cron.core.cdeproxy)
-        cls.event = CronBackendShim(cls.cron, cls.cron.core.eventproxy)
-        cls.assembly = CronBackendShim(cls.cron, cls.cron.core.assemblyproxy)
-        cls.ml = CronBackendShim(cls.cron, cls.cron.core.mlproxy)
+        cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
+        cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
+        cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
+        cls.assembly = make_cron_backend_proxy(cls.cron, cls.cron.core.assemblyproxy)
+        cls.ml = make_cron_backend_proxy(cls.cron, cls.cron.core.mlproxy)
         cls._all_periodics = {
             job.cron['name']
             for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
@@ -1327,42 +1431,43 @@ class CronTest(unittest.TestCase):
             raise AssertionError(f"The following cron-periodics never ran:"
                                  f" {cls._all_periodics - cls._run_periodics}")
 
-    def setUp(self):
+    def setUp(self) -> None:
         subprocess.check_call(("make", "sql-test-shallow"),
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
         self.stores = []
         self.mails = []
 
-        original_store = self.cron.core.set_cron_store
+        def store_decorator(fun: F) -> F:
+            @functools.wraps(fun)
+            def store_wrapper(rs: RequestState, name: str,
+                              data: CdEDBObject) -> CdEDBObject:
+                self.stores.append(StoreTrace(name, data))
+                return fun(rs, name, data)
+            return cast(F, store_wrapper)
 
-        @functools.wraps(self.cron.core.set_cron_store)
-        def new_store(self_, rs, name, data):
-            self.stores.append(StoreTrace(name, data))
-            return original_store(rs, name, data)
+        setattr(self.cron.core, "set_cron_store", store_decorator(
+            self.cron.core.set_cron_store))
 
-        self.cron.core.set_cron_store = types.MethodType(new_store,
-                                                         self.cron.core)
+        def mail_decorator(front: AbstractFrontend) -> Callable[[F], F]:
+            def the_decorator(fun: F) -> F:
+                @functools.wraps(fun)
+                def mail_wrapper(rs: RequestState, name: str,
+                                 *args: Any, **kwargs: Any) -> Optional[str]:
+                    self.mails.append(MailTrace(front.realm, name, args, kwargs))
+                    return fun(rs, name, *args, **kwargs)
+                return cast(F, mail_wrapper)
+            return the_decorator
 
         for frontend in (self.cron.core, self.cron.cde, self.cron.event,
                          self.cron.assembly, self.cron.ml):
-            original_do_mail = frontend.do_mail
+            setattr(frontend, "do_mail", mail_decorator(frontend)(frontend.do_mail))
 
-            def latebindinghack(original_fun=original_do_mail, front=frontend):
-                @functools.wraps(original_fun)
-                def new_do_mail(self_, rs, name, *args, **kwargs):
-                    self.mails.append(MailTrace(front.realm, name, args,
-                                                kwargs))
-                    return original_fun(rs, name, *args, **kwargs)
-                return new_do_mail
-
-            frontend.do_mail = types.MethodType(latebindinghack(), frontend)
-
-    def execute(self, *args, check_stores=True):
+    def execute(self, *args: Any, check_stores: bool = True) -> None:
         if not args:
             raise ValueError("Must specify jobs to run.")
-        self.cron.execute(args)
         self._run_periodics.update(args)
+        self.cron.execute(args)
         if check_stores:
             expectation = set(args) | {"_base"}
             self.assertEqual(expectation, set(s.cron for s in self.stores))

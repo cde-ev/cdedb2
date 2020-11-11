@@ -34,7 +34,7 @@ import tempfile
 import threading
 import urllib.parse
 import decimal
-from enum import Enum, EnumMeta
+import enum
 from secrets import token_hex
 
 import markdown
@@ -52,18 +52,19 @@ import werkzeug.wrappers
 from typing import (
     Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
     Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO,
+    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO, ItemsView,
+    Type
 )
-from typing_extensions import Protocol
+from typing_extensions import Protocol, Literal
 
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
     encode_parameter, decode_parameter, make_proxy, EntitySorter,
-    REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap,
+    REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap, CdEDBMultiDict,
     CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User,
-    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS
+    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, _tdelta
 )
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -129,8 +130,10 @@ class BaseApp(metaclass=abc.ABCMeta):
                 secrets["URL_PARAMETER_SALT"], target, name, param,
                 persona_id))
 
-        def local_encode(target, name, param, persona_id,
-                         timeout=self.conf["PARAMETER_TIMEOUT"]):
+        def local_encode(
+                target: str, name: str, param: str, persona_id: Optional[int],
+                timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"]
+        ) -> str:
             return encode_parameter(secrets["URL_PARAMETER_SALT"], target, name,
                                     param, persona_id, timeout)
 
@@ -214,7 +217,7 @@ def safe_filter(val: None) -> None: ...
 def safe_filter(val: str) -> jinja2.Markup: ...
 
 
-def safe_filter(val):
+def safe_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """Custom jinja filter to mark a string as safe.
 
     This prevents autoescaping of this entity. To be used for dynamically
@@ -249,7 +252,7 @@ def date_filter(val: Union[datetime.date, str, None],
         return val.strftime(formatstr)
 
 
-def datetime_filter(val: Optional[datetime.datetime],
+def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
                     verbosity: str = "medium",
                     passthrough: bool = False) -> Optional[str]:
@@ -276,14 +279,17 @@ def datetime_filter(val: Optional[datetime.datetime],
 
 
 @overload
-def money_filter(val: None) -> None: ...
+def money_filter(val: None, currency: str = "EUR", lang: str = "de"
+                 ) -> None: ...
 
 
 @overload
-def money_filter(val: decimal.Decimal, currency: str, land: str) -> str: ...
+def money_filter(val: decimal.Decimal, currency: str = "EUR", lang: str = "de"
+                 ) -> str: ...
 
 
-def money_filter(val, currency="EUR", lang="de"):
+def money_filter(val: Optional[decimal.Decimal], currency: str = "EUR",
+                 lang: str = "de") -> Optional[str]:
     """Custom jinja filter to format ``decimal.Decimal`` objects.
 
     This is for values representing monetary amounts.
@@ -302,7 +308,7 @@ def decimal_filter(val: None, lang: str) -> None: ...
 def decimal_filter(val: float, lang: str) -> str: ...
 
 
-def decimal_filter(val, lang):
+def decimal_filter(val: Optional[float], lang: str) -> Optional[str]:
     """Cutom jinja filter to format floating point numbers."""
     if val is None:
         return None
@@ -318,7 +324,7 @@ def cdedbid_filter(val: None) -> None: ...
 def cdedbid_filter(val: int) -> str: ...
 
 
-def cdedbid_filter(val):
+def cdedbid_filter(val: Optional[int]) -> Optional[str]:
     """Custom jinja filter to format persona ids with a check digit. Every user
     visible id should be formatted with this filter. The check digit is
     one of the letters between 'A' and 'K' to make a clear distinction
@@ -337,7 +343,7 @@ def iban_filter(val: None) -> None: ...
 def iban_filter(val: str) -> str: ...
 
 
-def iban_filter(val):
+def iban_filter(val: Optional[str]) -> Optional[str]:
     """Custom jinja filter for displaying IBANs in nice to read blocks."""
     if val is None:
         return None
@@ -354,7 +360,7 @@ def escape_filter(val: None) -> None: ...
 def escape_filter(val: str) -> jinja2.Markup: ...
 
 
-def escape_filter(val):
+def escape_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """Custom jinja filter to reconcile escaping with the finalize method
     (which suppresses all ``None`` values and thus mustn't be converted to
     strings first).
@@ -387,7 +393,7 @@ def tex_escape_filter(val: None) -> None: ...
 def tex_escape_filter(val: str) -> str: ...
 
 
-def tex_escape_filter(val):
+def tex_escape_filter(val: Optional[str]) -> Optional[str]:
     """Custom jinja filter for escaping LaTeX-relevant charakters."""
     if val is None:
         return None
@@ -438,16 +444,14 @@ def json_filter(val: Any) -> str:
 
 
 @overload
-def enum_filter(val: None, enum: Any) -> None:
-    pass
+def enum_filter(val: None, enum: Type[enum.Enum]) -> None: ...
 
 
 @overload
-def enum_filter(val: int, enum: Enum) -> str:
-    pass
+def enum_filter(val: int, enum: Type[enum.Enum]) -> str: ...
 
 
-def enum_filter(val, enum):
+def enum_filter(val: Optional[int], enum: Type[enum.Enum]) -> Optional[str]:
     """Custom jinja filter to convert enums to something printable.
 
     This exists mainly because of the possibility of None values.
@@ -458,17 +462,17 @@ def enum_filter(val, enum):
 
 
 @overload
-def genus_filter(val: None, female: Any, male: Any, unknown: Any) -> None:
-    pass
+def genus_filter(val: None, female: str, male: str, unknown: Optional[str]
+                 ) -> None: ...
 
 
 @overload
 def genus_filter(val: int, female: str, male: str,
-                 unknown: Optional[str]) -> Optional[str]:
-    pass
+                 unknown: Optional[str]) -> Optional[str]: ...
 
 
-def genus_filter(val, female, male, unknown=None):
+def genus_filter(val: Optional[int], female: str, male: str,
+                 unknown: str = None) -> Optional[str]:
     """Custom jinja filter to select gendered form of a string."""
     if val is None:
         return None
@@ -522,17 +526,16 @@ def querytoparams_filter(val: query_mod.Query) -> CdEDBObject:
 
 
 @overload
-def linebreaks_filter(val: None, replacements: Any) -> None:
-    pass
+def linebreaks_filter(val: None, replacement: str) -> None: ...
 
 
 @overload
 def linebreaks_filter(val: Union[str, jinja2.Markup],
-                      replacement: str) -> jinja2.Markup:
-    pass
+                      replacement: str) -> jinja2.Markup: ...
 
 
-def linebreaks_filter(val, replacement="<br>"):
+def linebreaks_filter(val: Union[None, str, jinja2.Markup],
+                      replacement: str = "<br>") -> Optional[jinja2.Markup]:
     """Custom jinja filter to convert line breaks to <br>.
 
     This filter escapes the input value (if required), replaces the linebreaks
@@ -590,16 +593,14 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
 
 
 @overload
-def bleach_filter(val: None) -> None:
-    pass
+def bleach_filter(val: None) -> None: ...
 
 
 @overload
-def bleach_filter(val: str) -> jinja2.Markup:
-    pass
+def bleach_filter(val: str) -> jinja2.Markup: ...
 
 
-def bleach_filter(val):
+def bleach_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """Custom jinja filter to convert sanitize html with bleach."""
     if val is None:
         return None
@@ -632,23 +633,23 @@ def get_markdown_parser() -> markdown.Markdown:
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
     if md is None:
-        md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty",
-                                           "toc"],
-                               extension_configs={
-                                   "toc": {
-                                       "baselevel": 4,
-                                       "permalink": True,
-                                       "slugify": md_id_wrapper,
-                                   },
-                                   'smarty': {
-                                       'substitutions': {
-                                           'left-single-quote': '&sbquo;',
-                                           'right-single-quote': '&lsquo;',
-                                           'left-double-quote': '&bdquo;',
-                                           'right-double-quote': '&ldquo;'
-                                       }
-                                   }
-                               })
+        extension_configs = {
+            "toc": {
+                "baselevel": 4,
+                "permalink": True,
+                "slugify": md_id_wrapper,
+            },
+            'smarty': {
+                'substitutions': {
+                    'left-single-quote': '&sbquo;',
+                    'right-single-quote': '&lsquo;',
+                    'left-double-quote': '&bdquo;',
+                    'right-double-quote': '&ldquo;',
+                },
+            },
+        }
+        md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty", "toc"],
+                               extension_configs=extension_configs)  # type: ignore
 
         MARKDOWN_PARSER.md = md
     else:
@@ -657,16 +658,14 @@ def get_markdown_parser() -> markdown.Markdown:
 
 
 @overload
-def md_filter(val: None) -> None:
-    pass
+def md_filter(val: None) -> None: ...
 
 
 @overload
-def md_filter(val: str) -> jinja2.Markup:
-    pass
+def md_filter(val: str) -> jinja2.Markup: ...
 
 
-def md_filter(val):
+def md_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """Custom jinja filter to convert markdown to html."""
     if val is None:
         return None
@@ -730,7 +729,19 @@ def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def enum_entries_filter(enum: EnumMeta, processing: Callable[[Any], str] = None,
+def map_dict_filter(d: Dict[str, str],
+                      processing: Callable[[Any], str]
+                      ) -> ItemsView[str, str]:
+    """
+    Processes the values of some string using processing function
+
+    :param processing: A function to be applied on the dict values
+    :return: The dict with its values replaced with the processed values
+    """
+    return {k: processing(v) for k, v in d.items()}.items()
+
+
+def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = None,
                         raw: bool = False,
                         prefix: str = "") -> List[Tuple[int, str]]:
     """
@@ -825,6 +836,7 @@ JINJA_FILTERS = {
     'querytoparams': querytoparams_filter,
     'genus': genus_filter,
     'linebreaks': linebreaks_filter,
+    'map_dict': map_dict_filter,
     'md': md_filter,
     'enum': enum_filter,
     'sort': sort_filter,
@@ -848,13 +860,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def __init__(self, configpath: PathLike = None, *args: Any,
                  **kwargs: Any) -> None:
         super().__init__(configpath, *args, **kwargs)
+        self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
+                                         "frontend", "templates")
         self.jinja_env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(
-                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
-            extensions=['jinja2.ext.i18n', 'jinja2.ext.do',
-                        'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True,
-            auto_reload=self.conf["CDEDB_DEV"])
+            loader=jinja2.FileSystemLoader(str(self.template_dir)),
+            extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
+            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -922,10 +933,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                   jinjas default syntax is nasty for this.
 
         :param modus: Type of thing we want to generate; can be one of
-
           * web,
           * mail,
-          * tex.
+          * tex,
+          * other.
         :param templatename: file name of template without extension
         """
 
@@ -946,6 +957,26 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             force_external=(modus != "web"),
                             magic_placeholders=magic_placeholders)
 
+        def _doclink(topic: str, anchor: str = "") -> str:
+            """Create link to documentation in non-web templates.
+
+            This should be used to avoid hardcoded links in our templates. To create
+            links in web-templates, use docurl in combination with util.href instead.
+            """
+            if modus == "web":
+                raise RuntimeError(n_("Must not be used in web templates."))
+            return doclink(rs, label="", topic=topic, anchor=anchor, html=False)
+
+        def _staticlink(path: str, version: str = "") -> str:
+            """Create link to static files in non-web templates.
+
+            This should be used to avoid hardcoded links in our templates. To create
+            links in web-templates, use staticurl in combination with util.href instead.
+            """
+            if modus == "web":
+                raise RuntimeError(n_("Must not be used in web templates."))
+            return staticlink(rs, label="", path=path, version=version, html=False)
+
         def _show_user_link(user: User, persona_id: int, quote_me: bool = None,
                             event_id: int = None, ml_id: int = None) -> str:
             """Convenience method to create link to user data page.
@@ -957,7 +988,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params = {
                 'persona_id': persona_id,
                 'confirm_id': self.encode_parameter(
-                    "core/show_user", "confirm_id", persona_id,
+                    "core/show_user", "confirm_id", str(persona_id),
                     persona_id=user.persona_id, timeout=None)}
             if quote_me:
                 params['quote_me'] = True
@@ -1000,11 +1031,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         errorsdict: Dict[Optional[str], List[Exception]] = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
-        # here come the always accessible things promised above
 
+        # here come the always accessible things promised above
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
+            'doclink': _doclink,
+            'staticlink': _staticlink,
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
             'gettext': rs.gettext,
@@ -1021,20 +1054,30 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'user': rs.user,
             'values': rs.values,
         }
+
         # check that default values are not overridden
         if set(data) & set(params):
             raise ValueError(
                 n_("Default values cannot be overridden: %(keys)s"),
                 {'keys': set(data) & set(params)})
         merge_dicts(data, params)
-        if modus == "tex":
-            jinja_env = self.jinja_env_tex
+
+        if modus == "web":
+            jinja_env = self.jinja_env
         elif modus == "mail":
             jinja_env = self.jinja_env_mail
-        else:
+        elif modus == "tex":
+            jinja_env = self.jinja_env_tex
+        elif modus == "other":
             jinja_env = self.jinja_env
-        t = jinja_env.get_template(str(pathlib.Path(
-            modus, self.realm, "{}.tmpl".format(templatename))))
+        else:
+            raise NotImplementedError(n_("Requested modus does not exists: %(modus)s"),
+                                      {'modus': modus})
+        tmpl = pathlib.Path(modus, self.realm, f"{templatename}.tmpl")
+        # sadly, jinja does not catch nicely if the template exists, so we do this here
+        if not (self.template_dir / tmpl).is_file():
+            raise ValueError(n_("Template not found: %(file)s"), {'file': tmpl})
+        t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
 
     @staticmethod
@@ -1141,7 +1184,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not fields:
             raise ValueError(n_("Cannot download query result without fields"
                                 " of interest."))
-        fields = sum((csvfield.split(',') for csvfield in fields), [])
+        fields: List[str] = sum((csvfield.split(',') for csvfield in fields), [])
         filename += f".{kind}"
         if kind == "csv":
             csv_data = csv_output(result, fields, substitutions=substitutions)
@@ -1164,16 +1207,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         # handy, should probably survive in a commented HTML portion
         if 'debugstring' not in params and self.conf["CDEDB_DEV"]:
-            debugstring = glue(
-                "We have is_multithreaded={}; is_multiprocess={};",
-                "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
-                "method={} ; remote_addr={} ; values={}, ambience={},",
-                "errors={}, time={}").format(
-                    rs.request.is_multithread, rs.request.is_multiprocess,
-                    rs.request.base_url, rs.request.cookies, rs.request.url,
-                    rs.request.is_secure, rs.request.method,
-                    rs.request.remote_addr, rs.values, rs.ambience,
-                    rs.retrieve_validation_errors(), now())
+            debugstring = (
+                f"We have is_multithreaded={rs.request.is_multithread};"
+                f" is_multiprocess={rs.request.is_multiprocess};"
+                f" base_url={rs.request.base_url}; cookies={rs.request.cookies};"
+                f" url={rs.request.url}; is_secure={rs.request.is_secure};"
+                f" method={rs.request.method}; remote_addr={rs.request.remote_addr};"
+                f" values={rs.values}; ambience={rs.ambience};"
+                f" errors={rs.retrieve_validation_errors()}; time={now()}")
+
             params['debugstring'] = debugstring
         if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
@@ -1196,7 +1238,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "style-src 'self' 'unsafe-inline';",
             "img-src *")
         response.headers.add('Content-Security-Policy',
-                                csp_header_template.format(csp_nonce))
+                             csp_header_template.format(csp_nonce))
         return response
 
     # TODO use new typing feature to accurately define the following:
@@ -1262,7 +1304,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # however at the end of lines the standard requires spaces to be
         # encoded hence we have to be a bit careful (encoding is a pain!)
         # 'quoted-printable' ensures we only get str here:
-        payload: str = msg.get_payload()  # type: ignore
+        payload: str = msg.get_payload()
         payload = re.sub('=20(.)', r' \1', payload)
         # do this twice for adjacent encoded spaces
         payload = re.sub('=20(.)', r' \1', payload)
@@ -1281,7 +1323,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if headers[header]:
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            msg[header] = headers[header]  # type: ignore
+            msg[header] = headers[header]
         subject = headers["Prefix"] + " " + headers['Subject']  # type: ignore
         msg["Subject"] = subject
         msg["Message-ID"] = email.utils.make_msgid(
@@ -1355,7 +1397,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         somewhat lengthy and only necessary because of our paranoia.
         """
         cid = self.encode_parameter(
-            "core/show_user", "confirm_id", persona_id,
+            "core/show_user", "confirm_id", str(persona_id),
             persona_id=rs.user.persona_id, timeout=None)
         params = {'confirm_id': cid, 'persona_id': persona_id}
         if quote_me is not None:
@@ -1365,7 +1407,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def notify_return_code(rs: RequestState, code: Union[int, bool, None],
                            success: str = n_("Change committed."),
-                           pending: str = n_("Change pending."),
+                           info: str = n_("Change pending."),
                            error: str = n_("Change failed.")) -> None:
         """Small helper to issue a notification based on a return code.
 
@@ -1383,7 +1425,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif code is True or code > 0:
             rs.notify("success", success)
         elif code < 0:
-            rs.notify("info", pending)
+            rs.notify("info", info)
         else:
             raise RuntimeError(n_("Impossible."))
 
@@ -1574,7 +1616,7 @@ class Worker(threading.Thread):
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
-        def runner():
+        def runner() -> None:
             """Implement the actual loop running the task inside the Thread."""
             name = task.__name__
             doc = f" {task.__doc__.splitlines()[0]}" if task.__doc__ else ""
@@ -1613,12 +1655,12 @@ def reconnoitre_ambience(obj: AbstractFrontend,
     Scout = collections.namedtuple('Scout', ('getter', 'param_name',
                                              'object_name', 'dependencies'))
 
-    def do_assert(x):
+    def do_assert(x: bool) -> None:
         if not x:
             raise werkzeug.exceptions.BadRequest(
                 rs.gettext("Inconsistent request."))
 
-    def attachment_check(a):
+    def attachment_check(a: CdEDBObject) -> None:
         if a['attachment']['ballot_id']:
             do_assert(a['attachment']['ballot_id']
                       == rs.requestargs.get('ballot_id'))
@@ -1764,7 +1806,7 @@ class PeriodicJob(Protocol):
     cron: CdEDBObject
 
     def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        pass
+        ...
 
 
 def periodic(name: str, period: int = 1
@@ -1833,7 +1875,7 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
                 return attempt
         raise RuntimeError(n_("Magic URL parameter replacement failed."))
     # Second we come to the normal case
-    allparams = werkzeug.datastructures.MultiDict()
+    allparams: CdEDBMultiDict = werkzeug.datastructures.MultiDict()
     for arg in rs.requestargs:
         if rs.urls.map.is_endpoint_expecting(endpoint, arg):
             allparams[arg] = rs.requestargs[arg]
@@ -1847,9 +1889,9 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
 
 
 def staticurl(path: str, version: str = "") -> str:
-    """Construct an HTTP URL to a static resource (to be found in the static
-    directory). We encapsulate this here so moving the directory around
-    causes no pain.
+    """Construct an HTTP URL to a static resource (to be found in the static directory).
+
+    We encapsulate this here so moving the directory around causes no pain.
 
     :param version: If not None, this string is appended to the URL as an URL
         parameter. This can be used to force Browsers to flush their caches on
@@ -1861,12 +1903,63 @@ def staticurl(path: str, version: str = "") -> str:
     return ret
 
 
+@overload
+def staticlink(rs: RequestState, label: str, path: str, version: str = "",
+               html: Literal[True] = True) -> jinja2.Markup: ...
+
+
+@overload
+def staticlink(rs: RequestState, label: str, path: str, version: str = "",
+               html: Literal[False] = False) -> str: ...
+
+
+def staticlink(rs: RequestState, label: str, path: str, version: str = "",
+               html: bool = True) -> Union[jinja2.Markup, str]:
+    """Create a link to a static resource.
+
+    This can either create a basic html link or a fully qualified, static https link.
+
+    .. note:: This will be overridden by _staticlink in templates, see fill_template.
+    """
+    link: Union[jinja2.Markup, str]
+    if html:
+        return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
+    else:
+        host = rs.urls.get_host("")
+        return f"https://{host}{staticurl(path, version=version)}"
+
+
 def docurl(topic: str, anchor: str = "") -> str:
     """Construct an HTTP URL to a doc page."""
     ret = str(pathlib.PurePosixPath("/doc", topic + ".html"))
     if anchor:
         ret += "#" + anchor
     return ret
+
+
+@overload
+def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
+            html: Literal[True] = True) -> jinja2.Markup: ...
+
+
+@overload
+def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
+            html: Literal[False] = False) -> str: ...
+
+
+def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
+            html: bool = True) -> Union[jinja2.Markup, str]:
+    """Create a link to our documentation.
+
+    This can either create a basic html link or a fully qualified, static https link.
+    .. note:: This will be overridden by _doclink in templates, see fill_template.
+    """
+    link: Union[jinja2.Markup, str]
+    if html:
+        return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
+    else:
+        host = rs.urls.get_host("")
+        return f"https://{host}{docurl(topic, anchor=anchor)}"
 
 
 # noinspection PyPep8Naming
@@ -2087,7 +2180,8 @@ def event_guard(argname: str = "event_id",
 
 
 def mailinglist_guard(argname: str = "mailinglist_id",
-                      allow_moderators: bool = True) -> Callable[[F], F]:
+                      allow_moderators: bool = True,
+                      requires_privilege: bool = False) -> Callable[[F], F]:
     """This decorator checks the access with respect to a specific
     mailinglist. The list is specified by id which has either to be a
     keyword parameter or the first positional parameter after the
@@ -2112,6 +2206,11 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
+                if (requires_privilege and not
+                    obj.mlproxy.may_manage(rs, mailinglist_id=arg, privileged=True)):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "You do not have privileged moderator access and may not change "
+                        "subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
@@ -2122,6 +2221,26 @@ def mailinglist_guard(argname: str = "mailinglist_id",
         return cast(F, new_fun)
 
     return wrap
+
+
+def assembly_guard(fun: F) -> F:
+    """This decorator checks that the user has privileged access to an assembly.
+    """
+
+    @functools.wraps(fun)
+    def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
+                **kwargs: Any) -> Any:
+        if "assembly_id" in kwargs:
+            assembly_id = kwargs["assembly_id"]
+        else:
+            assembly_id = args[0]
+        if not obj.assemblyproxy.is_presider(rs, assembly_id=assembly_id):
+            raise werkzeug.exceptions.Forbidden(rs.gettext(
+                "This page may only be accessed by the assembly's"
+                " presiders or assembly admins."))
+        return fun(obj, rs, *args, **kwargs)
+
+    return cast(F, new_fun)
 
 
 def check_validation(rs: RequestState, assertion: str, value: T,
@@ -2363,8 +2482,7 @@ def calculate_db_logparams(offset: Optional[int], length: int
 
 def calculate_loglinks(rs: RequestState, total: int,
                        offset: Optional[int], length: int
-                       ) -> Dict[str, Union[werkzeug.MultiDict,
-                                            List[werkzeug.MultiDict]]]:
+                       ) -> Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]:
     """Calculate the target parameters for the links in the log pagination bar.
 
     :param total: The total count of log entries
@@ -2375,12 +2493,13 @@ def calculate_loglinks(rs: RequestState, total: int,
     # the first shown entry. This is done magically, if no offset has been
     # given.
     if offset is None:
-        trueoffset = length * ((total - 1) // length)
+        trueoffset = length * ((total - 1) // length) if total != 0 else 0
     else:
         trueoffset = offset
 
     # Create values sets for the necessary links.
-    new_md = lambda: werkzeug.MultiDict(rs.values)
+    def new_md() -> CdEDBMultiDict:
+        return werkzeug.MultiDict(rs.values)
     loglinks = {
         "first": new_md(),
         "previous": new_md(),
@@ -2389,15 +2508,13 @@ def calculate_loglinks(rs: RequestState, total: int,
         "last": new_md(),
     }
     pre = [new_md() for x in range(3) if trueoffset - x * length > 0]
-    post = [new_md() for x in range(3) if trueoffset + x * length < total]
+    post = [new_md() for x in range(3) if trueoffset + (x + 1) * length < total]
 
     # Fix the offset for each set of values.
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
     for x, _ in enumerate(pre):
-        pre[x]["offset"] = (
-                trueoffset - (len(pre) - x) * length
-        )
+        pre[x]["offset"] = (trueoffset - (len(pre) - x) * length)
     loglinks["previous"]["offset"] = trueoffset - length
     for x, _ in enumerate(post):
         post[x]["offset"] = trueoffset + (x + 1) * length
@@ -2405,6 +2522,6 @@ def calculate_loglinks(rs: RequestState, total: int,
     loglinks["current"]["offset"] = trueoffset
 
     # piece everything together
-    ret: Dict[str, Union[werkzeug.MultiDict, List[werkzeug.MultiDict]]]
+    ret: Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret
