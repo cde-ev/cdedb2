@@ -215,6 +215,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -259,6 +260,7 @@ class TestCoreBackend(BackendTest):
                 'is_ml_admin': False,
                 'is_ml_realm': False,
                 'is_cdelokal_admin': False,
+                'is_purged': False,
                 'is_searchable': False,
                 'location': None,
                 'location2': None,
@@ -332,6 +334,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -368,6 +371,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -391,6 +395,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -428,6 +433,7 @@ class TestCoreBackend(BackendTest):
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(data, new_data)
@@ -623,6 +629,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
@@ -696,6 +703,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': False,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
@@ -771,6 +779,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_member': True,
             'is_ml_admin': False,
+            'is_purged': False,
             'is_cdelokal_admin': False,
             'id': new_id,
             'display_name': 'Zelda',
@@ -879,6 +888,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_ml_realm': True,
             'is_cdelokal_admin': False,
+            'is_purged': False,
             'is_searchable': True,
             'username': 'berta@example.cde'}
         self.assertEqual(expectation, self.core.get_persona(self.key, 2))
@@ -979,13 +989,13 @@ class TestCoreBackend(BackendTest):
         self.core.dearchive_persona(self.key, persona_id)
 
         # Check that sole moderators cannot be archived.
-        self.ml.set_moderators(self.key, 1, {persona_id})
+        self.ml.set_moderators(self.key, 2, {persona_id})
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
         self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])
 
         # Test archival of user that is no moderator.
-        self.core.archive_persona(self.key, 6, "Testing")
+        self.core.archive_persona(self.key, 8, "Testing")
 
     @as_users("vera")
     def test_archive_activate_bug(self, user):
@@ -1002,6 +1012,12 @@ class TestCoreBackend(BackendTest):
             'is_active': True,
         }
         self.core.change_persona(self.key, data, may_wait=False)
+
+    @as_users("vera")
+    def test_archive_admin(self, user):
+        # Nina is mailinglist admin.
+        with self.assertRaises(ArchiveError):
+            self.core.archive_persona(self.key, 14, "Admins can not be archived.")
 
     @as_users("vera")
     def test_purge(self, user):

@@ -13,8 +13,8 @@
 {% endblock %}
 
 {% block content %}
-    {% set columns =  [dict(name="title", label="Name", func=util.input_text),
-                       dict(name="shortname", label="Shortname", func=util.input_text)] %}
+    {% set columns =  [dict(name="title", label=gettext("Name"), func=util.input_text),
+                       dict(name="shortname", label=gettext("Shortname"), func=util.input_text)] %}
 
     <form action="{{ cdedblink('cde/institution_summary') }}" method="POST" id="institutionsummaryform">
         {{ util.anti_csrf_token('cde/institution_summary') }}

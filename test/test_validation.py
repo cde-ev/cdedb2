@@ -91,6 +91,8 @@ class TestValidation(unittest.TestCase):
             (12.5, None, ValueError, False),
             (True, 1, None, False),
             (False, 0, None, False),
+            (2147483647, 2147483647, None, True),
+            (1e10, None, ValueError, False),
         ))
 
     def test_bool_int(self):
@@ -108,6 +110,8 @@ class TestValidation(unittest.TestCase):
             ("-12.3", -12.3, None, False),
             ("garbage", None, ValueError, False),
             (12, 12.0, None, False),
+            (9e6, 9e6, None, True),
+            (1e7, None, ValueError, False),
         ))
 
     def test_decimal(self):

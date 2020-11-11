@@ -28,7 +28,7 @@ from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
     n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, make_proxy,
-    ADMIN_VIEWS_COOKIE_NAME, make_root_logger, PathLike
+    ADMIN_VIEWS_COOKIE_NAME, make_root_logger, PathLike, CdEDBObject
 )
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
@@ -121,7 +121,7 @@ class Application(BaseApp):
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
-            def _cdedblink(endpoint, params=None):
+            def _cdedblink(endpoint: str, params: CdEDBObject = None) -> str:
                 return urls.build(endpoint, params or {})
 
             begin = now()
@@ -197,8 +197,8 @@ class Application(BaseApp):
                         fake_rs = types.SimpleNamespace()
                         fake_rs.user = user
                         notifications = json.dumps([
-                            self.encode_notification(  # type: ignore
-                                fake_rs, "error", n_("Session expired."))])
+                            self.encode_notification(fake_rs,  # type: ignore
+                                                     "error", n_("Session expired."))])
                         ret.set_cookie("displaynote", notifications)
                         return ret
                 coders: Dict[str, Callable[..., Any]] = {

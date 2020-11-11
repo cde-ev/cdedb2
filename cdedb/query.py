@@ -13,10 +13,10 @@ import collections
 import enum
 
 from typing import (
-    Collection, Dict, Tuple, Any
+    Any, Collection, Dict, Tuple, TYPE_CHECKING
 )
 
-from cdedb.common import glue, CdEDBObject
+from cdedb.common import glue, CdEDBObject, RequestState
 
 
 @enum.unique
@@ -139,7 +139,7 @@ class Query:
                 f" constraints={self.constraints}, order={self.order},"
                 f" spec={self.spec})")
 
-    def fix_custom_columns(self):
+    def fix_custom_columns(self) -> None:
         """Custom columns may contain upper case, this wraps them in qoutes."""
         self.fields_of_interest = [
             ",".join(
@@ -172,6 +172,8 @@ class Query:
 #: .. note:: For schema specified columns (like ``personas.id``)
 #:           the schema part does not survive querying and needs to be stripped
 #:           before output.
+if TYPE_CHECKING:
+    QUERY_SPECS: Dict[str, collections.OrderedDict[str, str]]
 QUERY_SPECS = {
     "qview_cde_member":
         collections.OrderedDict([
@@ -471,7 +473,8 @@ QUERY_PRIMARIES = {
 }
 
 
-def mangle_query_input(rs, spec, defaults=None):
+def mangle_query_input(rs: RequestState, spec: Dict[str, str],
+                       defaults: CdEDBObject = None) -> Dict[str, str]:
     """This is to be used in conjunction with the ``query_input`` validator,
     which is exceptional since it is not used via a decorator. To take
     care of the differences this function exists.

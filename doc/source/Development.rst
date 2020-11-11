@@ -1,19 +1,20 @@
 Development
 ===========
 
-Here you can find every information regarding development of the DBv2.
-Do you want to participate in active development? Please contact us at
-cdedb ät lists.cde-ev.de.
-
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
-   Development_Setup
+   Development_Environment
    Development_FS-Overview
    Development_Workflows
+   Development_Tooling
    Development_Principles
    Development_Typical-Request
 
+Here you can find every information regarding development of the DBv2.
+Do you want to participate in active development? Please contact us at
+cdedb ät lists.cde-ev.de.
 
 .. todo:: split this up and move it to the right places
 
@@ -72,3 +73,4 @@ it right away.
 * The file ``/PRODUCTIONVM`` is used to mark the live server instance. There
   are some sanity checks to prevent a big catastrophe. Similarily
   ``/OFFLINEVM`` is used for offline deployments at events.
+

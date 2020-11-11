@@ -24,6 +24,7 @@ PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
 MYPYBIN ?= mypy
 TESTPREPARATION ?= automatic
+I18NDIR ?= ./i18n
 
 doc:
 	bin/create_email_template_list.sh .
@@ -34,14 +35,29 @@ reload:
 	sudo systemctl restart apache2
 
 i18n-refresh:
-	pybabel extract -F ./babel.cfg  --sort-by-file -o ./i18n/cdedb.pot\
+	$(MAKE) i18n-extract
+	$(MAKE) i18n-update
+
+i18n-extract:
+	pybabel extract \
+		-F ./babel.cfg  --sort-by-file -o $(I18NDIR)/cdedb.pot \
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
-	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb
-	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb
+
+i18n-update:
+	pybabel update -i $(I18NDIR)/cdedb.pot -d $(I18NDIR)/ -l de -D cdedb \
+		--ignore-obsolete
+	pybabel update -i $(I18NDIR)/cdedb.pot -d $(I18NDIR)/ -l en -D cdedb \
+		--ignore-obsolete
 
 i18n-compile:
-	pybabel compile -d ./i18n/ -l de -D cdedb
-	pybabel compile -d ./i18n/ -l en -D cdedb
+	pybabel compile -d $(I18NDIR)/ -l de -D cdedb
+	pybabel compile -d $(I18NDIR)/ -l en -D cdedb
+
+i18n-check:
+	msgfmt -c $(I18NDIR)/de/LC_MESSAGES/cdedb.po --statistics \
+		--output /dev/null
+	msgfmt -c $(I18NDIR)/en/LC_MESSAGES/cdedb.po --statistics \
+		--output /dev/null
 
 sample-data:
 	$(MAKE) storage > /dev/null
@@ -118,7 +134,7 @@ storage-test:
 		/tmp/cdedb-store/assembly_attachment/3_v1
 	cp -t /tmp/cdedb-store/testfiles/ test/ancillary_files/{$(TESTFILES)}
 
-sql: test/ancillary_files/sample_data.sql
+sql-schema:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
@@ -133,24 +149,34 @@ endif
 		-v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data.sql
 	sudo systemctl start pgbouncer
 
+sql: test/ancillary_files/sample_data.sql
+ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
+	$(error Refusing to touch live instance)
+endif
+ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+	$(error Refusing to touch orga instance)
+endif
+	$(MAKE) sql-schema
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		test/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
+		test/ancillary_files/sample_data.sql
+
+# This does not recurse to sql-schema, so in the very rare circumstance that
+# you want to completely reset the test database it has to be executed
+# explicitly. This is due to the restrictions of the docker environment.
 sql-test:
-	sudo systemctl stop pgbouncer
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb_test
-	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
+		cdedb/database/cdedb-tables.sql
 	$(MAKE) sql-test-shallow
-	sudo systemctl start pgbouncer
 
 sql-test-shallow: test/ancillary_files/sample_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/clean_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
+		test/ancillary_files/clean_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
+		test/ancillary_files/sample_data.sql
 
 sql-xss:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -159,19 +185,11 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-	sudo systemctl stop pgbouncer
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb_test
-	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb \
-		-f test/ancillary_files/sample_data_escaping.sql
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data_escaping.sql
-	sudo systemctl start pgbouncer
+	$(MAKE) sql-schema
+	$(PYTHONBIN) bin/execute_sql_script.py \
+		test/ancillary_files/sample_data_escaping.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
+		test/ancillary_files/sample_data_escaping.sql
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
@@ -298,4 +316,4 @@ mypy:
 	${MYPYBIN} cdedb/backend/ cdedb/frontend cdedb/__init__.py \
 		cdedb/common.py cdedb/enums.py cdedb/i18n_additional.py \
 		cdedb/ml_subscription_aux.py cdedb/ml_type_aux.py cdedb/query.py \
-		cdedb/script.py cdedb/validationdata.py
+		cdedb/script.py cdedb/validationdata.py test/common.py

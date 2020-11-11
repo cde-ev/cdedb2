@@ -26,7 +26,7 @@ These are be imported in `cdedb:common.py` and should be imported from there.
 import enum
 from cdedb.database.constants import SubscriptionStates, MlLogCodes
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 
 
 def n_(x: str) -> str:
@@ -57,8 +57,13 @@ class SubscriptionError(RuntimeError):
 
 class SubscriptionInfo(SubscriptionError):
     """Exception for SubscriptionErrors with kind info."""
-    def __init__(self, *args):
+    def __init__(self, *args: Any) -> None:
         super().__init__(*args, kind="info")
+
+
+SubscriptionErrorMatrix = Dict["SubscriptionActions",
+                               Dict[Optional[SubscriptionStates],
+                                    Optional[SubscriptionError]]]
 
 
 @enum.unique
@@ -78,7 +83,7 @@ class SubscriptionActions(enum.IntEnum):
     remove_subscription_override = 31  #: A mod removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
 
-    def get_target_state(self):
+    def get_target_state(self) -> Optional[SubscriptionStates]:
         """Get the target state associated with an action."""
         target_state = {
             SubscriptionActions.subscribe:
@@ -110,7 +115,7 @@ class SubscriptionActions(enum.IntEnum):
         }
         return target_state.get(self)
 
-    def get_log_code(self):
+    def get_log_code(self) -> MlLogCodes:
         """Get the log code associated with performing an action."""
         log_code_map = {
             SubscriptionActions.subscribe:
@@ -140,10 +145,10 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.remove_unsubscription_override:
                 MlLogCodes.unsubscribed,
         }
-        return log_code_map.get(self)
+        return log_code_map[self]
 
     @staticmethod
-    def error_matrix():
+    def error_matrix() -> SubscriptionErrorMatrix:
         """This defines the logic of which state transitions are legal.
 
         SubscriptionErrors defined in this matrix will be raised by the backend.
@@ -152,9 +157,7 @@ class SubscriptionActions(enum.IntEnum):
         error = SubscriptionError
         info = SubscriptionInfo
 
-        matrix: Dict[SubscriptionActions,
-                     Dict[Optional[SubscriptionStates],
-                          Optional[SubscriptionError]]] = {
+        matrix: SubscriptionErrorMatrix = {
             SubscriptionActions.add_subscriber: {
                 ss.subscribed: info(n_("User already subscribed.")),
                 ss.unsubscribed: None,
@@ -267,7 +270,7 @@ class SubscriptionActions(enum.IntEnum):
         return matrix
 
     @classmethod
-    def unsubscribing_actions(cls):
+    def unsubscribing_actions(cls) -> Set["SubscriptionActions"]:
         """All actions that unsubscribe a user from a mailinglist."""
         return {
             SubscriptionActions.unsubscribe,
@@ -275,12 +278,12 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.add_unsubscription_override,
         }
 
-    def is_unsubscribing(self):
+    def is_unsubscribing(self) -> bool:
         """Whether ot not an action unsubscribes a user."""
         return self in self.unsubscribing_actions()
 
     @classmethod
-    def managing_actions(cls):
+    def managing_actions(cls) -> Set["SubscriptionActions"]:
         """All actions that require additional privileges."""
         return {
             SubscriptionActions.approve_request,
@@ -294,7 +297,7 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.remove_unsubscription_override
         }
 
-    def is_managing(self):
+    def is_managing(self) -> bool:
         """Whether or not an action requires additional privileges."""
         return self in self.managing_actions()
 

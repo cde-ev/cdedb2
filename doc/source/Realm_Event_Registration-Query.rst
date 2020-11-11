@@ -56,7 +56,7 @@ The following fields are avalable in the dynamic tables:
 * ``lodgement{part_id}.notes``
 * ``track{track_id}.course_id``
 * ``track{track_id}.course_instructor``
-* ``track{track_id}.course_is_course_instructor``
+* ``track{track_id}.is_course_instructor``
 * ``course{track_id}.xfield_{field_name}`` *For every track and every custom course datafield.*
 * ``course{track_id}.nr``
 * ``course{track_id}.title``
@@ -103,7 +103,7 @@ The Track Tables
 
 For every track we have three tables.
 
-The first tables contains information from ``event.registration_tracks``, mainly about the assigned and any instructed course: ::
+The first tables contains information from ``event.registration_tracks``, mainly about the assigned and any instructed course::
 
   SELECT
       registration_id, course_id, course_instructor,
@@ -112,9 +112,9 @@ The first tables contains information from ``event.registration_tracks``, mainly
   FROM
       event.registration_tracks
   WHERE
-      track_id = {track_id}
+      track_id = X
 
-After that we have two views on the ``event.courses`` table for both the assigned and instrcuted course. All columns will be None, if no course is assigned/instructed: ::
+After that we have two views on the ``event.courses`` table for both the assigned and instrcuted course. All columns will be None, if no course is assigned/instructed::
 
   SELECT
       course_field_columns,
@@ -122,7 +122,7 @@ After that we have two views on the ``event.courses`` table for both the assigne
   FROM
       event.courses
   WHERE
-      event_id = {event_id}
+      event_id = X
 
 The Complete View
 -----------------

@@ -1,6 +1,16 @@
 import datetime
 import decimal
-from typing import Any, AnyStr, Dict, Iterable, List, Mapping, NewType, Optional, Union
+from typing import (
+    Any,
+    AnyStr,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NewType,
+    Optional,
+    Union,
+)
 
 from cdedb.common import CdEDBObject
 from cdedb.query import Query
@@ -18,6 +28,8 @@ SingleDigitInt = NewType("SingleDigitInt", int)
 CdedbID = NewType("CdedbID", int)
 
 NonNegativeDecimal = NewType("NonNegativeDecimal", decimal.Decimal)
+NonNegativeLargeDecimal = NewType(
+    "NonNegativeLargeDecimal", NonNegativeDecimal)
 PositiveDecimal = NewType("PositiveDecimal", decimal.Decimal)
 
 EmptyDict = NewType("EmptyDict", Dict[Any, Any])
@@ -61,7 +73,6 @@ JSON = NewType("JSON", Any)  # TODO can we narrow this down?
 ByFieldDatatype = NewType("ByFieldDatatype", str)
 
 # COMPLEX/DICTIONARY TYPES
-# TODO some might be CdEObjectMap instead.
 # TODO some could be subtypes (e.g. serializedeventupload -> serializedevent)
 
 Persona = NewType("Persona", CdEDBObject)
@@ -93,7 +104,8 @@ Questionnaire = NewType("Questionnaire", CdEDBObject)
 
 SerializedEventUpload = NewType("SerializedEventUpload", CdEDBObject)
 SerializedEvent = NewType("SerializedEvent", CdEDBObject)
-SerializedPartialEventUpload = NewType("SerializedPartialEventUpload", CdEDBObject)
+SerializedPartialEventUpload = NewType(
+    "SerializedPartialEventUpload", CdEDBObject)
 SerializedPartialEvent = NewType("SerializedPartialEvent", CdEDBObject)
 
 PartialCourse = NewType("PartialCourse", CdEDBObject)
@@ -107,7 +119,8 @@ Mailinglist = NewType("Mailinglist", CdEDBObject)
 SubscriptionIdentifier = NewType("SubscriptionIdentifier", CdEDBObject)
 SubscriptionState = NewType("SubscriptionState", CdEDBObject)
 SubscriptionAddress = NewType("SubscriptionAddress", CdEDBObject)
-SubscriptionRequestResolution = NewType("SubscriptionRequestResolution", CdEDBObject)
+SubscriptionRequestResolution = NewType(
+    "SubscriptionRequestResolution", CdEDBObject)
 Assembly = NewType("Assembly", CdEDBObject)
 Ballot = NewType("Ballot", CdEDBObject)
 BallotCandidate = NewType("BallotCandidate", CdEDBObject)

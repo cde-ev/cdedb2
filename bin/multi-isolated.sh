@@ -39,7 +39,7 @@ fi
 qemu-img create -f qcow2 -b "$BASEIMAGE" "$CONTAINER"
 
 qemu-system-x86_64 -m 1G -enable-kvm -device virtio-rng-pci \
-                   -net nic,model=virtio \
+                   -net nic,model=virtio -nographic\
                    -net "user,hostfwd=tcp:127.0.0.1:${1}022-:22" \
                    -drive file="$CONTAINER",if=virtio,cache=unsafe &
 

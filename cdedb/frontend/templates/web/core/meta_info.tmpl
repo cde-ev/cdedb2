@@ -26,10 +26,7 @@
             {{ util.form_input_text(name=key, label=gettext(key)) }}
         {% endfor %}
         {% for key in ("banner_before_login", "banner_after_login", "banner_genesis", "cde_misc") %}
-            {{ util.form_input_textarea(name=key, label=gettext(key), rows=5,
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"),
-                                                           gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+            {{ util.form_input_textarea(name=key, label=gettext(key), rows=5, info=util.markdownhint) }}
         {% endfor %}
         <div>
             {{ util.form_input_submit(value=gettext("Save")) }}

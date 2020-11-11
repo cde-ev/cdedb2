@@ -458,6 +458,9 @@ def _int(
     # disallow booleans as psycopg will try to send them as such and not ints
     if not isinstance(val, int) or isinstance(val, bool):
         raise ValidationSummary(TypeError(argname, n_("Must be an integer.")))
+    if not -2 ** 31 <= val < 2 ** 31:
+        # Our postgres columns only support 32-bit integers.
+        raise ValidationSummary(ValueError(argname, n_("Integer too large.")))
     return val
 
 
@@ -518,12 +521,18 @@ def _float(
     if not isinstance(val, float):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a floating point number.")))
+    if abs(val) >= 1e7:
+        # we are using numeric(8,2) columns in postgres
+        # which only support numbers up to this size
+        raise ValidationSummary(
+            ValueError(argname, n_("Must be smaller than a million.")))
     return val
 
 
 @_add_typed_validator
 def _decimal(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
+    val: Any, argname: str = None, *,
+    large: bool = False, _convert: bool = True, **kwargs: Any
 ) -> decimal.Decimal:
     if _convert and isinstance(val, str):
         try:
@@ -534,6 +543,16 @@ def _decimal(
     if not isinstance(val, decimal.Decimal):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a decimal.Decimal.")))
+    if not large and abs(val) >= 1e7:
+        # we are using numeric(8,2) columns in postgres
+        # which only support numbers up to this size
+        raise ValidationSummary(
+            ValueError(argname, n_("Must be smaller than a million.")))
+    if abs(val) >= 1e10:
+        # we are using numeric(11,2) columns in postgres for summation columns
+        # which only support numbers up to this size
+        raise ValidationSummary(
+            ValueError(argname, n_("Must be smaller than a billion.")))
     return val
 
 
@@ -546,6 +565,14 @@ def _non_negative_decimal(
         raise ValidationSummary(ValueError(
             argname, n_("Transfer saldo is negative.")))
     return NonNegativeDecimal(val)
+
+
+@_add_typed_validator
+def _non_negative_large_decimal(
+    val: Any, argname: str = None, **kwargs: Any
+) -> NonNegativeLargeDecimal:
+    return NonNegativeLargeDecimal(
+        _non_negative_decimal(val, argname, large=True, **kwargs))
 
 
 @_add_typed_validator
@@ -1655,7 +1682,7 @@ def _period(
         'balance_state': Optional[ID],
         'balance_done': datetime.datetime,
         'balance_trialmembers': NonNegativeInt,
-        'balance_total': NonNegativeDecimal,
+        'balance_total': NonNegativeLargeDecimal,
     }
 
     return Period(_examine_dictionary_fields(
@@ -3681,7 +3708,8 @@ def _BALLOT_COMMON_FIELDS(): return {
 def _BALLOT_OPTIONAL_FIELDS(): return {
     'extended': Optional[bool],
     'vote_extension_end': Optional[datetime.datetime],
-    'quorum': int,
+    'abs_quorum': int,
+    'rel_quorum': int,
     'votes': Optional[int],
     'use_bar': bool,
     'is_tallied': bool,
@@ -3744,23 +3772,49 @@ def _ballot(
                     newcandidates[anid] = candidate
         val['candidates'] = newcandidates
 
-    if ('quorum' in val) != ('vote_extension_end' in val):
+    if val.get('abs_quorum') and val.get('rel_quorum'):
+        msg = n_("Must not specify both absolute and relative quorum.")
         errs.extend([
-            ValueError("vote_extension_end", n_(
-                "Must be specified if quorum is given.")),
-            ValueError("quorum", n_(
-                "Must be specified if vote extension end is given."))
+            ValueError('abs_quorum', msg),
+            ValueError('rel_quorum', msg),
         ])
 
-    if 'quorum' in val and 'vote_extension_end' in val:
-        if not ((val['quorum'] != 0 and val['vote_extension_end'] is not None)
-                or (val['quorum'] == 0 and val['vote_extension_end'] is None)):
-            errs.extend([
-                ValueError("vote_extension_end", n_(
-                    "Inconsitent with quorum.")),
-                ValueError("quorum", n_(
-                    "Inconsitent with vote extension end."))
-            ])
+    quorum = None
+    if 'abs_quorum' in val:
+        quorum = val['abs_quorum']
+    if 'rel_quorum' in val and not quorum:
+        quorum = val['rel_quorum']
+        if not 0 <= quorum <= 100:
+            errs.append(ValueError("abs_quorum", n_(
+                "Relative quorum must be between 0 and 100.")))
+
+    vote_extension_error = ValueError("vote_extension_end", n_(
+        "Must be specified if quorum is given."))
+
+    quorum_msg = n_("Must specify a quorum if vote extension end is given.")
+    quorum_errors = [
+        ValueError("abs_quorum", quorum_msg),
+        ValueError("rel_quorum", quorum_msg),
+    ]
+
+    if (quorum is None) == ('vote_extension_end' in val):
+        # only one of quorum and extension end is given
+        if quorum is None:
+            errs.extend(quorum_errors)
+        else:
+            errs.append(vote_extension_error)
+        # at least one error occured
+        raise errs
+
+    # TODO this and the above could be merged
+    if 'vote_extension_end' in val:
+        # quorum can not be None at this point
+        if val['vote_extension_end'] is None and quorum:
+            # No extension end, but quorum
+            errs.append(vote_extension_error)
+        elif val['vote_extension_end'] and not quorum:
+            # No quorum, but extension end
+            errs.extend(quorum_errors)
 
     if errs:
         raise errs

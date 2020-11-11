@@ -308,8 +308,8 @@
 {% macro add_candidate_form() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
 
-    {% set columns =  [dict(name="shortname", label="Shortname", func=util.input_text),
-                       dict(name="title", label="Title", func=util.input_text)] %}
+    {% set columns =  [dict(name="shortname", label=gettext("Shortname"), func=util.input_text),
+                       dict(name="title", label=gettext("Title"), func=util.input_text)] %}
 
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}

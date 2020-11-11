@@ -2,12 +2,10 @@
 
 import copy
 import re
-import json
 
 import urllib.parse
 from test.common import USER_DICT, FrontendTest, as_users
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, get_hash
-from cdedb.frontend.core import USER_REALM_NAMES
 
 import cdedb.database.constants as const
 import webtest
@@ -228,16 +226,16 @@ class TestCoreFrontend(FrontendTest):
                           'email': 'daniel@example.cde',
                           'id': 4,
                           'name': 'Daniel D. Dino'},
-                          {'display_name': 'Ferdinand',
-                           'email': 'ferdinand@example.cde',
-                           'id': 6,
-                           'name': 'Ferdinand F. Findus'}]}
+                         {'display_name': 'Ferdinand',
+                          'email': 'ferdinand@example.cde',
+                          'id': 6,
+                          'name': 'Ferdinand F. Findus'}]}
         self.assertEqual(expectation, self.response.json)
-        self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5')
+        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
         expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
+        self.get('/core/persona/select?kind=event_user&phrase=bert')
         expectation = (2,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -254,7 +252,7 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
-    @as_users("berta", "martin", "nina", "vera", "werner", "annika")
+    @as_users("berta", "martin", "nina", "rowena", "vera", "viktor", "werner", "annika")
     def test_selectpersona_403(self, user):
         # These can not be done by Berta no matter what.
         if user['display_name'] != "Vera":
@@ -264,39 +262,33 @@ class TestCoreFrontend(FrontendTest):
             self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if user['display_name'] != "Werner":
+        if user['display_name'] not in {"Viktor", "Werner"}:
             self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if user['display_name'] != "Nina":
-            self.get('/core/persona/select?kind=ml_admin_user&phrase=@exam',
+        if user['display_name'] in {"Martin", "Rowena"}:
+            self.get('/core/persona/select?kind=ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if user['display_name'] != "Annika":
-            self.get('/core/persona/select?kind=event_admin_user&phrase=@exam',
+        if user['display_name'] not in {"Annika", "Bertå"}:
+            self.get('/core/persona/select?kind=event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
 
-        # These can be done by Berta for other values of aux.
-        if (user['display_name'] in
-                {"Berta", "Martin", "Werner"}):
+        if user['display_name'] in {"Martin", "Rowena", "Werner"}:
             self.get('/core/persona/select'
-                     '?kind=orga_event_user&phrase=@exam&aux=1',
+                     '?kind=event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
             self.get('/core/persona/select'
-                     '?kind=mod_ml_user&phrase=@exam&aux=57&variant=20',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-            self.get('/core/persona/select'
-                     '?kind=mod_ml_user&phrase=@exam&aux=57',
+                     '?kind=ml_subscriber&phrase=@exam&aux=57',
                      status=403)
             self.assertTitle('403: Forbidden')
 
     @as_users("vera")
     def test_selectpersona_relative_cde_admin(self, user):
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=57')
+                 '?kind=ml_user&phrase=@exam')
         expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -304,7 +296,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("annika")
     def test_selectpersona_relative_event_admin(self, user):
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=8')
+                 '?kind=ml_user&phrase=@exam')
         expectation = (1, 2, 3)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -312,7 +304,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("viktor")
     def test_selectpersona_relative_assembly_admin(self, user):
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=11')
+                 '?kind=ml_user&phrase=@exam')
         expectation = (1, 2, 3)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -322,12 +314,12 @@ class TestCoreFrontend(FrontendTest):
         # Only event participants are shown
         # ml_admins are allowed to do this even if they are no orgas.
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=9&variant=20')
+                 '?kind=ml_subscriber&phrase=@exam&aux=9')
         expectation = (1, 2, 5)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=inga&aux=9&variant=20')
+                 '?kind=ml_subscriber&phrase=inga&aux=9')
         expectation = (9,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -335,7 +327,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("berta")
     def test_selectpersona_ml_event_403(self, user):
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=9&variant=20',
+                 '?kind=ml_subscriber&phrase=@exam&aux=9',
                  status=403)
         self.assertTitle('403: Forbidden')
 
@@ -343,28 +335,45 @@ class TestCoreFrontend(FrontendTest):
     def test_selectpersona_ml_assembly(self, user):
         # Only assembly participants are shown
         self.get('/core/persona/select'
-                 '?kind=mod_ml_user&phrase=@exam&aux=5&variant=20')
+                 '?kind=ml_subscriber&phrase=@exam&aux=5')
         expectation = (1, 2, 9)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
     @as_users("garcia")
     def test_selectpersona_unprivileged_event(self, user):
-        self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
+        self.get('/core/persona/select?kind=event_user&phrase=bert')
         expectation = (2,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("werner")
+    def test_selectpersona_unprivileged_assembly(self, user):
+        # Normal use search
+        self.get('/core/persona/select?kind=assembly_user&phrase=bert')
+        expectation = (2,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        # Pure assembly user search
+        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kalif')
+        expectation = (11,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=pure_assembly_user&phrase=bert')
+        expectation = tuple()
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
     @as_users("berta")
     def test_selectpersona_unprivileged_ml(self, user):
-        self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=1')
+        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
         expectation = (1, 2, 3)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
     @as_users("janis")
     def test_selectpersona_unprivileged_ml2(self, user):
-        self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=2')
+        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
         expectation = (1, 2, 3)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
@@ -450,9 +459,9 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(
-            'Das ist ähnlich zu einem häufig genutzen Passwort.')
+        self.assertValidationError(
+            "new_password", "Das ist ähnlich zu einem häufig genutzten Passwort.",
+            notification="Passwort ist zu schwach.")
         self.assertPresence(
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         # Password two: Repeating patterns
@@ -463,9 +472,10 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(
-            ' Wiederholungen wie „abcabcabc“ sind nur geringfügig schwieriger zu erraten als „abc“.')
+        self.assertValidationError("new_password",
+                                   'Wiederholungen wie „abcabcabc“ sind nur geringfügig'
+                                   ' schwieriger zu erraten als „abc“.',
+                                   notification="Passwort ist zu schwach.")
         self.assertPresence(
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         self.assertPresence(
@@ -478,9 +488,10 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(
-            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertValidationError(
+            "new_password",
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
+            notification="Passwort ist zu schwach.")
         self.assertPresence('Großschreibung hilft nicht wirklich.')
         # Password four: German umlauts
         new_password = 'überwährend'
@@ -489,9 +500,10 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(
-            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertValidationError(
+            "new_password",
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
+            notification="Passwort ist zu schwach.")
         # Password five: User-specific passwords
         new_password = (user['given_names'].replace('-', ' ').split()[0] +
                         user['family_name'].replace('-', ' ').split()[0])
@@ -501,7 +513,8 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertValidationError("new_password", "",
+                                   notification="Passwort ist zu schwach.")
         # Password six+seven: CdE-specific passwords
         new_password = "cdeakademie"
         f = self.response.forms['passwordchangeform']
@@ -510,7 +523,8 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertValidationError("new_password", "",
+                                   notification="Passwort ist zu schwach.")
         new_password = "duschorgie"
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
@@ -518,7 +532,8 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertValidationError("new_password", "",
+                                   notification="Passwort ist zu schwach.")
 
     @as_users("vera", "ferdinand")
     def test_change_password_zxcvbn_admin(self, user):
@@ -532,7 +547,9 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach für einen Admin-Account.')
+        self.assertValidationError(
+            "new_password", "Passwort ist zu schwach für einen Admin-Account.",
+            notification="Passwort ist zu schwach.")
 
     @as_users("berta", "emilia")
     def test_change_password_zxcvbn_noadmin(self, user):
@@ -609,8 +626,10 @@ class TestCoreFrontend(FrontendTest):
                     elif key == 'bad':
                         self.submit(f, check_notification=False)
                         self.assertNonPresence('Passwort zurückgesetzt.')
-                        self.assertPresence('Passwort ist zu schwach.',
-                                            div="notifications")
+                        self.assertValidationError(
+                            "new_password",
+                            "Das ist ähnlich zu einem häufig genutzten Passwort.",
+                            notification="Passwort ist zu schwach.")
 
     def test_repeated_password_reset(self):
         new_password = "krce63koLe#$e"
@@ -696,8 +715,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['new_username'] = current_username
         self.submit(f, check_notification=False)
-        self.assertPresence(
-            "Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
+        self.assertValidationError(
+            "new_username", "Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
         self.assertNonPresence("E-Mail abgeschickt!", div="notifications")
         # Now with new username
         new_username = "zelda@example.cde"
@@ -932,7 +951,7 @@ class TestCoreFrontend(FrontendTest):
         f["note"] = "Archived for testing."
         f["ack_delete"].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Meta-Admins können nicht archiviert werden.",
+        self.assertPresence("Admins können nicht archiviert werden.",
                             div="notifications")
         self.assertNonPresence("Benutzer ist archiviert", div="notifications")
         self.assertPresence(USER_DICT["martin"]["username"])
@@ -1156,8 +1175,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Archivierungsnotiz muss angegeben werden.",
-                            div="notifications")
+        self.assertValidationError("note", "Darf nicht leer sein",
+                                   notification="Archivierungsnotiz muss angegeben werden.")
         self.assertTitle("Charly C. Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
@@ -1183,9 +1202,12 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
-        self.assertPresence("Name N. N.", div='personal-information',
-                            exact=True)
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Name N. N. Geburtsdatum 01.01.1 Geschlecht keine Angabe",
+                            div='personal-information', exact=True)
+        self.assertNonPresence("archiviert")
+        self.assertPresence("Der Benutzer wurde geleert.", div='purged')
+        self.assertNotIn('dearchivepersonaform', self.response.forms)
+        self.assertNotIn('purgepersonaform', self.response.forms)
 
     @as_users("farin")
     def test_modify_balance(self, user):
@@ -1207,8 +1229,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['modifybalanceform']
         f['new_balance'] = 15.66
         self.submit(f, check_notification=False)
-        self.assertPresence("Validierung fehlgeschlagen", div="notifications")
         self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
+        self.assertValidationError("change_note", "Darf nicht leer sein.")
         # Test changing balance
         f = self.response.forms['modifybalanceform']
         f['new_balance'] = 15.66
@@ -1376,8 +1398,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
         self.assertCheckbox(True, "paper_expuls_checkbox")
-        self.assertNonPresence("CdE-Mitglied", "cde-membership")
-        self.assertNonPresence("Probemitgliedschaft", "cde-membership")
+        self.assertNonPresence("CdE-Mitglied", div="cde-membership")
+        self.assertNonPresence("Probemitgliedschaft", div="cde-membership")
 
         # Do another promotion, this time granting trial membership.
         self.admin_view_profile('nina')
@@ -1409,7 +1431,7 @@ class TestCoreFrontend(FrontendTest):
         # First check error handling by entering an invalid birthday
         f['birthday'] = "foobar"
         self.submit(f, check_notification=False)
-        self.assertPresence('Validierung ', div='notifications')
+        self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
         self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
         # Now, do it right
         f['birthday'] = "21.6.1977"
@@ -1604,8 +1626,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'})
         self.assertTitle("Zelda Zeruda-Hime")
 
-    @as_users("vera")
-    def test_genesis_cde(self, user):
+    def test_genesis_cde(self):
         self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
         self.assertPresence("Die maximale Dateigröße ist 8 MB.")
@@ -1619,7 +1640,7 @@ class TestCoreFrontend(FrontendTest):
         f['attachment'] = webtest.Upload(
             "my_participation_certificate.pdf", data, content_type="application/pdf")
         self.submit(f, check_notification=False)
-        self.assertPresence("Darf nicht leer sein.")
+        self.assertValidationError("notes", "Darf nicht leer sein.")
         self.assertPresence("Anhang my_participation_certificate.pdf")
         f = self.response.forms['genesisform']
         f['notes'] = "Gimme!"
@@ -1628,6 +1649,7 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link(mail)
         self.get(link)
         self.follow()
+        self.login(USER_DICT["vera"])
         self.traverse({'href': '/core'},
                       {'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")
@@ -1785,8 +1807,8 @@ class TestCoreFrontend(FrontendTest):
             f[field] = entry
         f['birthday'] = "2222-06-05"
         self.submit(f, check_notification=False)
-        self.assertPresence(
-            "Ein Geburtsdatum muss in der Vergangenheit liegen.")
+        self.assertValidationError(
+            "birthday", "Ein Geburtsdatum muss in der Vergangenheit liegen.")
 
     def test_genesis_missing_data(self):
         self.get('/')
@@ -1797,7 +1819,7 @@ class TestCoreFrontend(FrontendTest):
             f[field] = entry
         f['notes'] = ""
         self.submit(f, check_notification=False)
-        self.assertPresence("Notwendige Angabe fehlt.")
+        self.assertValidationError("notes", "Notwendige Angabe fehlt.")
 
     def test_genesis_modify(self):
         self._genesis_request(self.ML_GENESIS_DATA)
@@ -1864,30 +1886,30 @@ class TestCoreFrontend(FrontendTest):
         # First: generate data
         # request two new accounts
         self._genesis_request(self.ML_GENESIS_DATA)
-        logs.append({1001: const.CoreLogCodes.genesis_request})
-        logs.append({1002: const.CoreLogCodes.genesis_verified})
+        logs.append((1001, const.CoreLogCodes.genesis_request))
+        logs.append((1002, const.CoreLogCodes.genesis_verified))
 
         event_genesis = self.EVENT_GENESIS_DATA.copy()
         event_genesis['username'] = "tester@example.cde"
         self._genesis_request(event_genesis)
-        logs.append({1003: const.CoreLogCodes.genesis_request})
-        logs.append({1004: const.CoreLogCodes.genesis_verified})
+        logs.append((1003, const.CoreLogCodes.genesis_request))
+        logs.append((1004, const.CoreLogCodes.genesis_verified))
 
         # approve the account requests
         self.login(user)
         self.traverse({'description': 'Accountanfragen'})
         f = self.response.forms['genesismlapprovalform1']
         self.submit(f)
-        logs.append({1005: const.CoreLogCodes.genesis_approved})
-        logs.append({1006: const.CoreLogCodes.persona_creation})
-        logs.append({1007: const.CoreLogCodes.password_reset_cookie})
+        logs.append((1005, const.CoreLogCodes.genesis_approved))
+        logs.append((1006, const.CoreLogCodes.persona_creation))
+        logs.append((1007, const.CoreLogCodes.password_reset_cookie))
 
         self.traverse({'href': 'core/genesis/1002/show'})
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
-        logs.append({1008: const.CoreLogCodes.genesis_approved})
-        logs.append({1009: const.CoreLogCodes.persona_creation})
-        logs.append({1010: const.CoreLogCodes.password_reset_cookie})
+        logs.append((1008, const.CoreLogCodes.genesis_approved))
+        logs.append((1009, const.CoreLogCodes.persona_creation))
+        logs.append((1010, const.CoreLogCodes.password_reset_cookie))
 
         # make janis assembly user
         self.admin_view_profile('janis')
@@ -1897,7 +1919,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         f = self.response.forms['promotionform']
         self.submit(f)
-        logs.append({1011: const.CoreLogCodes.realm_change})
+        logs.append((1011, const.CoreLogCodes.realm_change))
 
         # change berta's user name
         self.admin_view_profile('berta')
@@ -1905,7 +1927,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['new_username'] = "bertalotta@example.cde"
         self.submit(f)
-        logs.append(({1012: const.CoreLogCodes.username_change}))
+        logs.append(((1012, const.CoreLogCodes.username_change)))
 
         # Now check it
         self.traverse({'description': 'Index'},

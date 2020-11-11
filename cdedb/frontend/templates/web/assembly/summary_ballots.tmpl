@@ -32,6 +32,8 @@
         </p>
     {% endfor %}
 
-    {{ ballot_result.explain_result(classical=True, preferential=True, use_bar=True) }}
+    {% if ballots %}
+        {{ ballot_result.explain_result(classical=True, preferential=True, use_bar=True) }}
+    {% endif %}
 
 {% endblock %}

@@ -193,7 +193,7 @@
                 {% endif %}
                 {% for event_id in params["events"] %}
                     <button type="submit" name="event" value="{{ event_id }}" class="btn btn-primary">
-                        {{ util.make_icon('download') }} {% trans shortname=events[event_id['shortname']] %}Download {{ shortname }}{% endtrans %}
+                        {{ util.make_icon('download') }} {% trans shortname=events[event_id]['shortname'] %}Download {{ shortname }}{% endtrans %}
                     </button>
                 {% endfor %}
             {% endif %}

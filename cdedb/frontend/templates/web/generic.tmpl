@@ -66,10 +66,7 @@
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                    anid="input_checkbox_is_searchable") }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"),
-                                    gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", info=util.markdownhint) }}
 
 
         {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
@@ -636,4 +633,23 @@
         </table>
         </div>
     {% endif %}
+{% endmacro %}
+
+{% macro query_button_field_set(field_association) %}
+    <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
+        {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
+    </button>
+    <script nonce="{{ csp_nonce }}">
+        $('#btn-set-field').click(function(){
+            var list = [];
+            $('#query-result').find('.ls-selected').each(function(){
+                list.push($(this).attr('data-id'));
+            });
+            if (list.length === 0)
+                return;
+            location.href =
+                "{{ cdedblink("event/field_set_select", {'kind': field_association.value}, magic_placeholders=['ids'])|safe }}"
+                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+        });
+    </script>
 {% endmacro %}

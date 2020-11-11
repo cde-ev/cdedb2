@@ -44,5 +44,5 @@
     {% endcall %}
 
     {{ logging.navigation('ml/view_ml_log', total, length, loglinks) }}
-    {{ logging.filter('ml/view_ml_log', enums['MlLogCodes'], 'mod_ml_user', aux=ambience['mailinglist']['id']) }}
+    {{ logging.filter('ml/view_ml_log', enums['MlLogCodes'], 'ml_user') }}
 {% endblock %}

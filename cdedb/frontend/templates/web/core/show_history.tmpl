@@ -88,12 +88,7 @@
     {% endif %}
     {% if not current['is_active'] %}
         <p class="text-danger">
-            {% trans %}The User is deactivated.{% endtrans %}
-        </p>
-    {% endif %}
-    {% if current['is_archived'] %}
-        <p class="text-danger">
-            {% trans %}The User is archived.{% endtrans %}
+            {% trans %}The user is deactivated.{% endtrans %}
         </p>
     {% endif %}
 
