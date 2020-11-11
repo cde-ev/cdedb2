@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 # pylint: disable=undefined-variable
 # we do some setattrs which confuse pylint
-# TODO why does this have a shebang?
 # TODO using doctest may be nice for the atomic validators
 # TODO split in multiple files?
 # TODO do not use underscore for protection but instead specify __all__
@@ -22,24 +20,29 @@ We offer three variants.
 * ``is_*`` returns a :py:class:`boolean`, but does no type conversion (hence
   things like dates mustn't be strings)
 
-The raw validator implementations are functions with signature ``(val,
-argname, *, _convert, _ignore_warnings, **kwargs)`` which are wrapped into the
-three variants above.
+The raw validator implementations are functions with signature
+``(val, argname, **kwargs)`` of which many support the keyword arguments
+``_convert`` and ``_ignore_warnings``.
+These functions are registered and than wrapped to generate the above variants.
 
-They return the tuple ``(mangled_value, errors)``, where
-``errors`` is a list containing tuples ``(argname, exception)``. Each
-exception may have one or two arguments. The first is the error string
-and the second optional may be a {str: object} dict describing
-substitutions to the error string done after i18n.
+They return the the validated and optionally converted value
+and raise a ``ValidationSummary`` when encountering errors.
+Each exception summary contains a list of ``ValdidationError``s
+which store the ``argname`` of the validator where the error occured
+as well as the original ``exception``.
+A ``ValidationError`` may also store a third argument.
+This optional argument should be a ``Mapping[str, Any]``
+describing substitutions of the error string to done after i18n.
 
-The parameter ``_convert`` is present in every validator and is usually passed
-along from the original caller to every validation inside. If ``True``,
-validators may try to convert the value into the appropriate type. For instance
-``_int`` will try to convert the input into an int which would be useful for
-string inputs especially.
+The parameter ``_convert`` is present in many validators
+and is usually passed along from the original caller to every validation inside
+as part of the keyword arugments.
+If ``True``, validators may try to convert the value into the appropriate type.
+For instance ``_int`` will try to convert the input into an int
+which would be useful for string inputs especially.
 
-The parameter ``_ignore_warnings`` is present in every validator. If ``True``,
-certain Errors of type ``ValidationWarning`` may be ignored instead of returned.
+The parameter ``_ignore_warnings`` is present in some validators.
+If ``True``, ``ValidationWarning`` may be ignored instead of raised.
 Think of this like a toggle to enable less strict validation of some constants
 which might change externally like german postal codes.
 """
@@ -85,12 +88,12 @@ import zxcvbn
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME,
-    CdEDBObject,
-    CdEDBObjectMap,
     EPSILON,
     EVENT_SCHEMA_VERSION,
     INFINITE_ENUM_MAGIC_NUMBER,
     REALM_SPECIFIC_GENESIS_FIELDS,
+    CdEDBObject,
+    CdEDBObjectMap,
     Error,
     InfiniteEnum,
     ValidationWarning,
@@ -276,21 +279,18 @@ def _examine_dictionary_fields(
     mandatory_fields: Mapping[str, Type[Any]],
     optional_fields: Mapping[str, Type[Any]] = None,
     *,
-    allow_superfluous: bool = False, **kwargs: Any
+    allow_superfluous: bool = False,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """Check more complex dictionaries.
 
-    :param adict: a :py:class:`dict` to check
-    :param mandatory_fields: The mandatory keys to be checked for in
-      :py:obj:`adict`, the callable is a validator to check the corresponding
-      value in :py:obj:`adict` for conformance. A missing key is an error in
-      itself.
+    :param adict: the dictionary to check
+    :param mandatory_fields: mandatory fields to be checked for.
+      It should map keys to registered types.
+      A missing key is an error in itself.
     :param optional_fields: Like :py:obj:`mandatory_fields`, but facultative.
     :param allow_superfluous: If ``False`` keys which are neither in
       :py:obj:`mandatory_fields` nor in :py:obj:`optional_fields` are errors.
-    :param _convert: If ``True`` do type conversions.
-    :param _ignore_warnings: If ``True`` skip Errors
-        of type ``ValidationWarning``.
     """
     optional_fields = optional_fields or {}
     errs = ValidationSummary()
@@ -327,7 +327,7 @@ def _examine_dictionary_fields(
 def _augment_dict_validator(
     validator: Callable[..., Any],
     augmentation: Mapping[str, Type[Any]],
-    strict: bool = True
+    strict: bool = True,
 ) -> Callable[..., Any]:
     """Beef up a dict validator.
 
@@ -337,8 +337,10 @@ def _augment_dict_validator(
 
     This can also be used as a decorator.
 
-    :param augmentation: Syntax is the same as for :py:meth:`_examine_dictionary_fields`.
-    :param strict: If True the additional arguments are mandatory otherwise they are optional.
+    :param augmentation: Syntax is the same as for
+        :py:meth:`_examine_dictionary_fields`.
+    :param strict: if ``True`` the additional arguments are mandatory
+        otherwise they are optional.
     """
 
     @functools.wraps(validator)
@@ -453,7 +455,7 @@ def _int(
                 raise ValidationSummary(ValueError(
                     argname, n_("Precision loss.")))
             val = int(val)
-    # TODO why not allow bool?
+    # disallow booleans as psycopg will try to send them as such and not ints
     if not isinstance(val, int) or isinstance(val, bool):
         raise ValidationSummary(TypeError(argname, n_("Must be an integer.")))
     return val
@@ -1211,9 +1213,9 @@ def _date(
         except (ValueError, TypeError) as e:  # TODO TypeError should not occur
             raise ValidationSummary(ValueError(
                 argname, n_("Invalid input for date."))) from e
+    # always convert datetime to date as psycopg will try to commit them as such
+    # and every call to now() returns a datetime instead of a date
     if isinstance(val, datetime.datetime):
-        # TODO why not just use the subclass
-        # necessary: isinstance(datetime.datetime.now(), datetime.date) == True
         val = val.date()
     if not isinstance(val, datetime.date):
         raise ValidationSummary(
@@ -3465,7 +3467,7 @@ def _mailinglist(
     optional_validation_fields = [('whitelist', '[email]'), ]
     if "ml_type" not in val:
         raise ValidationSummary(ValueError("ml_type",
-            "Must provide ml_type for setting mailinglist."))
+                                           "Must provide ml_type for setting mailinglist."))
     atype = ml_type.get_type(val["ml_type"])
     mandatory_validation_fields.extend(atype.mandatory_validation_fields)
     optional_validation_fields.extend(atype.optional_validation_fields)
@@ -3879,7 +3881,8 @@ def _vote(
     val = _str(val, argname, **kwargs)
     errs = ValidationSummary()
     if not ballot:
-        errs.append(RuntimeError(n_("Must specify ballot in order to validate vote.")))
+        errs.append(RuntimeError(
+            n_("Must specify ballot in order to validate vote.")))
         raise errs
 
     entries = tuple(y for x in val.split('>') for y in x.split('='))
