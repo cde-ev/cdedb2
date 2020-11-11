@@ -707,7 +707,7 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
     path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
-    psql = ("/cdedb2/execute_sql_script.py",
+    psql = ("/cdedb2/bin/execute_sql_script.py",
             "--dbuser", "cdb", "--dbname", "cdb_test")
     null = subprocess.DEVNULL
     mode = "w"
