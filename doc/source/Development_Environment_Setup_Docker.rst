@@ -51,9 +51,14 @@ To do this you can run the following:
 
 .. code-block:: console
 
-    $ docker-compose exec app make i18n-compile
-    $ docker-compose exec app make doc
+    $ make i18n-compile
+    $ make doc
+    $ cp related/auto-build/files/stage3/localconfig.py cdedb/
+    $ cd related/docker
     $ docker-compose exec app sudo -u www-data make sql-seed-database
+
+All off these command could also have been executed inside the docker folder
+but this would have lead to them being owned by root.
 
 Using the containers
 --------------------

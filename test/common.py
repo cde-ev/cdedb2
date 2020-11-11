@@ -221,6 +221,7 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
         """
         Wrap calls to the backend in a access check and provide a RequestState.
         """
+
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
             if any([
@@ -706,15 +707,14 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
     path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
-    chmod = ("chmod", "0644")
-    psql = ("sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb_test", "-f")
+    psql = ("/cdedb2/execute_sql_script.py",
+            "--dbuser", "cdb", "--dbname", "cdb_test")
     null = subprocess.DEVNULL
     mode = "w"
     if isinstance(sql, bytes):
         mode = "wb"
     with open(path, mode) as f:
         f.write(sql)
-    subprocess.check_call(chmod + (str(path),), stdout=null)
     subprocess.check_call(psql + (str(path),), stdout=null)
 
 
@@ -802,7 +802,8 @@ class FrontendTest(BackendTest):
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
-        self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
+        self.response: webtest.TestResponse = self.app.get(
+            url, *args, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
 
@@ -963,7 +964,8 @@ class FrontendTest(BackendTest):
             regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
             result = re.match(regex, s)
             if not result:
-                raise RuntimeError(f"Failed to extract debug email path from {s!r}.")
+                raise RuntimeError(
+                    f"Failed to extract debug email path from {s!r}.")
             return result.group(1)
         mails = [_extract_path(x)
                  for x in elements if x.startswith("E-Mail als ")]
@@ -1414,7 +1416,8 @@ class CronTest(unittest.TestCase):
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
-        cls.assembly = make_cron_backend_proxy(cls.cron, cls.cron.core.assemblyproxy)
+        cls.assembly = make_cron_backend_proxy(
+            cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = make_cron_backend_proxy(cls.cron, cls.cron.core.mlproxy)
         cls._all_periodics = {
             job.cron['name']
@@ -1454,14 +1457,16 @@ class CronTest(unittest.TestCase):
                 @functools.wraps(fun)
                 def mail_wrapper(rs: RequestState, name: str,
                                  *args: Any, **kwargs: Any) -> Optional[str]:
-                    self.mails.append(MailTrace(front.realm, name, args, kwargs))
+                    self.mails.append(
+                        MailTrace(front.realm, name, args, kwargs))
                     return fun(rs, name, *args, **kwargs)
                 return cast(F, mail_wrapper)
             return the_decorator
 
         for frontend in (self.cron.core, self.cron.cde, self.cron.event,
                          self.cron.assembly, self.cron.ml):
-            setattr(frontend, "do_mail", mail_decorator(frontend)(frontend.do_mail))
+            setattr(frontend, "do_mail", mail_decorator(
+                frontend)(frontend.do_mail))
 
     def execute(self, *args: Any, check_stores: bool = True) -> None:
         if not args:
