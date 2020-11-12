@@ -54,12 +54,6 @@ class MlBackend(AbstractBackend):
             raise ValueError(n_("Unknown mailinglist_id."))
         return ml_type.get_type(data['ml_type'])
 
-    @staticmethod
-    @static_access
-    def get_full_address(mailinglist: CdEDBObject) -> str:
-        """Access to `ml_type_aux` without need to import that module elsewhere."""
-        return ml_type.full_address(mailinglist)
-
     @overload
     def is_relevant_admin(self, rs: RequestState, *,
                           mailinglist: CdEDBObject) -> bool: ...
@@ -687,7 +681,7 @@ class MlBackend(AbstractBackend):
         :rtype: str
         :returns: the id of the new mailinglist
         """
-        address = self.get_full_address(data)
+        address = ml_type.get_full_address(data)
         addresses = self.list_mailinglist_addresses(rs)
         # address can either be free or taken by the current mailinglist
         if (address in addresses.values()

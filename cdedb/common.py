@@ -328,10 +328,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 raise PrivilegeError(n_("Attribute %(name)s not public"),
                                      {"name": name})
 
-            if not getattr(attr, "static", False):
-                return wrapit(attr)
-            else:
-                return attr
+            return wrapit(attr)
 
         @staticmethod
         def _get_backend_class() -> Type[B]:

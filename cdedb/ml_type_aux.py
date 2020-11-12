@@ -25,7 +25,7 @@ class BackendContainer:
         self.assembly = assembly
 
 
-def full_address(val: CdEDBObject) -> str:
+def get_full_address(val: CdEDBObject) -> str:
     """Construct the full address of a mailinglist."""
     if isinstance(val, dict):
         return val['local_part'] + '@' + str(MailinglistDomain(val['domain']))

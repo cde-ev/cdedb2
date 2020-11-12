@@ -51,6 +51,7 @@ from cdedb.common import (
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
+import cdedb.ml_type_aux as ml_type
 
 
 LodgementProblem = NamedTuple(
@@ -225,7 +226,7 @@ class EventFrontend(AbstractUserFrontend):
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs.ambience['event'])
             params['participant_list'] = self.mlproxy.verify_existence(
-                rs, self.mlproxy.get_full_address(ml_data))
+                rs, ml_type.get_full_address(ml_data))
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (
@@ -513,7 +514,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
-        ml_address = self.mlproxy.get_full_address(ml_data)
+        ml_address = ml_type.get_full_address(ml_data)
         if not self.mlproxy.verify_existence(rs, ml_address):
             if not orgalist:
                 link = cdedburl(rs, "event/register", {'event_id': event_id})
@@ -527,7 +528,7 @@ class EventFrontend(AbstractUserFrontend):
                 self.eventproxy.set_event(rs, data)
         else:
             rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                      {'address': self.mlproxy.get_full_address(ml_data)})
+                      {'address': ml_type.get_full_address(ml_data)})
         return self.redirect(rs, "event/show_event")
 
     @access("event")
@@ -1176,7 +1177,7 @@ class EventFrontend(AbstractUserFrontend):
         orga_ml_address = None
         if create_orga_list:
             orga_ml_data = self._get_mailinglist_setter(data, orgalist=True)
-            orga_ml_address = self.mlproxy.get_full_address(orga_ml_data)
+            orga_ml_address = ml_type.get_full_address(orga_ml_data)
             data['orga_address'] = orga_ml_address
             if self.mlproxy.verify_existence(rs, orga_ml_address):
                 orga_ml_data = None
@@ -1219,7 +1220,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, code, success=n_("Orga mailinglist created."))
         if create_participant_list:
             participant_ml_data = self._get_mailinglist_setter(data)
-            participant_ml_address = self.mlproxy.get_full_address(participant_ml_data)
+            participant_ml_address = ml_type.get_full_address(participant_ml_data)
             if not self.mlproxy.verify_existence(rs, participant_ml_address):
                 link = cdedburl(rs, "event/register", {'event_id': new_id})
                 descr = participant_ml_data['description'].format(link)

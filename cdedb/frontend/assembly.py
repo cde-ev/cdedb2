@@ -29,6 +29,7 @@ from cdedb.common import (
     DefaultReturnCode, CdEDBObjectMap,
 )
 import cdedb.database.constants as const
+import cdedb.ml_type_aux as ml_type
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a shortname since it contains
@@ -261,7 +262,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs.ambience['assembly'])
             params['attendee_list_exists'] = self.mlproxy.verify_existence(
-                rs, self.mlproxy.get_full_address(ml_data))
+                rs, ml_type.get_full_address(ml_data))
 
         return self.render(rs, "show_assembly", params)
 
@@ -347,7 +348,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'mod_policy': const.ModerationPolicy.unmoderated,
                 'attachment_policy': const.AttachmentPolicy.allow,
                 'subject_prefix': f"{assembly['shortname']}-leitung",
-                'maxsize': 8192,
+                'maxsize': ml_type.AssemblyPresiderMailinglist.maxsize_default,
                 'is_active': True,
                 'assembly_id': assembly_id,
                 'notes': None,
@@ -366,7 +367,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'mod_policy': const.ModerationPolicy.non_subscribers,
                 'attachment_policy': const.AttachmentPolicy.pdf_only,
                 'subject_prefix': assembly['shortname'],
-                'maxsize': 2048,
+                'maxsize': ml_type.AssemblyAssociatedMailinglist.maxsize_default,
                 'is_active': True,
                 'assembly_id': assembly_id,
                 'notes': None,
@@ -383,7 +384,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['assembly'], presider_list)
-        ml_address = self.mlproxy.get_full_address(ml_data)
+        ml_address = ml_type.get_full_address(ml_data)
         if not self.mlproxy.verify_existence(rs, ml_address):
             if not presider_list:
                 link = cdedburl(rs, "assembly/show_assembly",
@@ -417,7 +418,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         presider_ml_data = None
         if create_presider_list:
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
-            presider_address = self.mlproxy.get_full_address(presider_ml_data)
+            presider_address = ml_type.get_full_address(presider_ml_data)
             data["presider_address"] = presider_address
             if self.mlproxy.verify_existence(rs, presider_address):
                 presider_ml_data = None
@@ -450,7 +451,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs, code, success=n_("Presider mailinglist created."))
         if create_attendee_list:
             attendee_ml_data = self._get_mailinglist_setter(data)
-            attendee_address = self.mlproxy.get_full_address(attendee_ml_data)
+            attendee_address = ml_type.get_full_address(attendee_ml_data)
             if not self.mlproxy.verify_existence(rs, attendee_address):
                 link = cdedburl(rs, "assembly/show_assembly", {'assembly_id': new_id})
                 descr = attendee_ml_data['description'].format(link)
