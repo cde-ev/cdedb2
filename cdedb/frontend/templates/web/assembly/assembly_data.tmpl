@@ -43,7 +43,7 @@
                                 info=util.markdownhint) }}
     {{ util.form_input_text(name="presider_address", label=gettext("Presider Address"),
                                 info=gettext("This will be the default address for replies to mails sent for this assembly.")) }}
-    {{ util.form_input_text(name="signup_end", label=gettext("Application Deadline"), placeholder="YYYY-MM-DD hh:ii",
+    {{ util.form_input_text(name="signup_end", label=gettext("Application Deadline"), placeholder="YYYY-MM-DD HH:MM:SS",
                             type="datetime-local") }}
     {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
 
