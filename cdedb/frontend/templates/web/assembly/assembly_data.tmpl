@@ -16,7 +16,7 @@
     {% endif %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
+    {{ super() }}
     {% if ambience["assembly"] %}
         {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
         {{ util.breadcrumb_link(cdedblink("assembly/change_assembly"), gettext("Configuration"), active=True) }}
