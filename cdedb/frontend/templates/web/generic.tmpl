@@ -154,6 +154,10 @@
         'is_ml_admin,is_event_admin,is_assembly_admin,is_cde_admin,is_core_admin,is_meta_admin':
             gettext("Admin") + ": " + gettext("Any"),
         'is_meta_admin': gettext("Admin") + ": " + gettext("Meta"),
+        'lastschrift.granted_at': gettext("Lastschrift Granted"),
+        'lastschrift.revoked_at': gettext("Lastschrift Revoked"),
+        'lastschrift.active_lastschrift': gettext("Active Lastschrift"),
+        'lastschrift.amount': gettext("Lastschrift Amount"),
     } %}
 
             {% if realm == "archived" %}
@@ -219,6 +223,10 @@
         'is_cde_admin': "Admin " + util.make_icon('graduation-cap', title=gettext("Admin") + ": " + gettext("cde_realm")),
         'is_core_admin': "Admin " + util.make_icon('user', title=gettext("Admin") + ": " + gettext("Core")),
         'is_meta_admin': "Admin " + util.make_icon('wrench', title=gettext("Admin") + ": " + gettext("Meta")),
+        'lastschrift.granted_at': gettext("Lastschrift Granted"),
+        'lastschrift.revoked_at': gettext("Lastschrift Revoked"),
+        'lastschrift.active_lastschrift': gettext("Active Lastschrift"),
+        'lastschrift.amount': gettext("Lastschrift Amount"),
     } %}
 
         {{ display_query_result(result, query, TITLES, choices) }}
