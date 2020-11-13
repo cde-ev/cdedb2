@@ -3872,15 +3872,9 @@ class EventFrontend(AbstractUserFrontend):
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
 
-        if not all(0 <= i < len(questionnaire) for i in order):
-            rs.append_validation_error(
-                ("order", ValueError(n_("Row index out of range."))))
-        if not len(set(order)) == len(order):
-            rs.append_validation_error(
-                ("order", ValueError(n_("Every row must occur exactly once."))))
         if not set(order) == set(range(len(questionnaire))):
             rs.append_validation_error(
-                ("order", ValueError(n_("Rows got lost during reorder."))))
+                ("order", ValueError(n_("Every row must occur exactly once."))))
         if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id, kind=kind)
 
