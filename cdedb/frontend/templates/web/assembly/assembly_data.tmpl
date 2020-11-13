@@ -23,6 +23,16 @@
         {% trans %}Create Assembly{% endtrans %}
     {% endif %}
 {% endblock %}
+{% block heading %}
+    {% if ambience["assembly"] %}
+        <h1 class="title">
+            {% trans %}Configuration{% endtrans %}
+            <small>{{ util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience["assembly"]["title"] }}</small>
+        </h1>
+    {% else %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {% if ambience["assembly"] %}
