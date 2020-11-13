@@ -28,8 +28,7 @@ from typing import (
 )
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, csv_output,
-    check_validation as check, event_guard, query_result_to_json,
+    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     enum_entries_filter, safe_filter, cdedburl, RequestConstraint,
     CustomCSVDialect, keydictsort_filter, calculate_db_logparams,
@@ -44,7 +43,7 @@ from cdedb.common import (
     unwrap, now, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
-    LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
+    LodgementsSortkeys, xsorted, get_hash, RequestState,
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
     InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC, asciificator
 )
@@ -1099,7 +1098,7 @@ class EventFrontend(AbstractUserFrontend):
                 'mod_policy': const.ModerationPolicy.unmoderated,
                 'attachment_policy': const.AttachmentPolicy.allow,
                 'subject_prefix': event['shortname'],
-                'maxsize': 8192,
+                'maxsize': ml_type.EventOrgaMailinglist.maxsize_default,
                 'is_active': True,
                 'event_id': event_id,
                 'notes': None,
@@ -1121,7 +1120,7 @@ class EventFrontend(AbstractUserFrontend):
                 'mod_policy': const.ModerationPolicy.non_subscribers,
                 'attachment_policy': const.AttachmentPolicy.pdf_only,
                 'subject_prefix': event['shortname'],
-                'maxsize': 1024,
+                'maxsize': ml_type.EventAssociatedMailinglist.maxsize_default,
                 'is_active': True,
                 'event_id': event_id,
                 'registration_stati': [const.RegistrationPartStati.participant],
