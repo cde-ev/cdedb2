@@ -157,7 +157,7 @@
                             <div class="col-sm-4">
                                 <div class="p">
                                     <form action="{{ cdedblink('assembly/create_assembly_mailinglist') }}" method="POST"
-                                          id="createattendeelistform" style="display: inline;">
+                                          id="createpresiderlistform" style="display: inline;">
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=True) }}
                                         {{ util.input_submit(
