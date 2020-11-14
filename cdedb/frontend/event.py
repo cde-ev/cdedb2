@@ -527,7 +527,7 @@ class EventFrontend(AbstractUserFrontend):
                 self.eventproxy.set_event(rs, data)
         else:
             rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                      {'address': ml_type.get_full_address(ml_data)})
+                      {'address': ml_address})
         return self.redirect(rs, "event/show_event")
 
     @access("event")
