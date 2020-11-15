@@ -3822,10 +3822,13 @@ class EventFrontend(AbstractUserFrontend):
                                    kind: const.QuestionnaireUsages) -> Response:
         """Render form."""
         if rs.has_validation_errors():
-            kind = const.QuestionnaireUsages.additional
-            rs.notify(
-                "error", n_("Unknown questionnaire kind. Defaulted to %(kind)s."),
-                {'kind': repr(kind)})
+            if any(field == 'kind' for field, _ in rs.retrieve_validation_errors()):
+                rs.notify("error", n_("Unknown questionnaire kind."))
+                return self.redirect(rs, "event/show_event")
+            else:
+                # we want to render the errors from reorder_questionnaire on this page,
+                # so we only redirect to another page if 'kind' does not pass validation
+                pass
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         redirects = {
@@ -3836,11 +3839,9 @@ class EventFrontend(AbstractUserFrontend):
         }
         if not questionnaire:
             rs.notify("info", n_("No questionnaire rows of this kind found."))
-            if kind in redirects:
-                return self.redirect(rs, redirects[kind])
+            return self.redirect(rs, redirects[kind])
         return self.render(rs, "reorder_questionnaire", {
-            'questionnaire': questionnaire,
-            'kind': kind})
+            'questionnaire': questionnaire, 'kind': kind, 'redirect': redirects[kind]})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -3855,17 +3856,22 @@ class EventFrontend(AbstractUserFrontend):
         laborious to do without.
         """
         if rs.has_validation_errors():
-            return self.reorder_questionnaire_form(rs, event_id, kind)
+            return self.reorder_questionnaire_form(rs, event_id, kind=kind)
+
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
-        new_questionnaire = {
-            kind: list(self._sanitize_questionnaire_row(questionnaire[i])
-                       for i in order)}
-        code = self.eventproxy.set_questionnaire(
-            rs, event_id, new_questionnaire)
+
+        if not set(order) == set(range(len(questionnaire))):
+            rs.append_validation_error(
+                ("order", ValueError(n_("Every row must occur exactly once."))))
+        if rs.has_validation_errors():
+            return self.reorder_questionnaire_form(rs, event_id, kind=kind)
+
+        new_questionnaire = [self._sanitize_questionnaire_row(questionnaire[i])
+                             for i in order]
+        code = self.eventproxy.set_questionnaire(rs, event_id, {kind: new_questionnaire})
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/reorder_questionnaire_form",
-                             {'kind': kind.value})
+        return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})
 
     @access("event")
     @event_guard()
