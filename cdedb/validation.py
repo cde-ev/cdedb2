@@ -3902,13 +3902,14 @@ def _subscription_request_resolution(val, argname=None, *, _convert=True,
 
 _ASSEMBLY_COMMON_FIELDS = lambda: {
     'title': _str,
+    'shortname': _identifier,
     'description': _str_or_None,
     'signup_end': _datetime,
     'notes': _str_or_None,
 }
 _ASSEMBLY_OPTIONAL_FIELDS = lambda: {
     'is_active': _bool,
-    'mail_address': _str_or_None,
+    'presider_address': _str_or_None,
     'presiders': _iterable,
 }
 

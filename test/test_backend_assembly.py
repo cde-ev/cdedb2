@@ -66,11 +66,13 @@ class TestAssemblyBackend(BackendTest):
             'description': 'Proletarier aller Länder vereinigt Euch!',
             'id': 1,
             'is_active': True,
-            'mail_address': 'kongress@example.cde',
+            'presider_address': 'kongress@example.cde',
             'notes': None,
             'presiders': {23},
             'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
-            'title': 'Internationaler Kongress'}
+            'title': 'Internationaler Kongress',
+            'shortname': 'kongress',
+        }
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 1))
         data = {
@@ -78,6 +80,7 @@ class TestAssemblyBackend(BackendTest):
             'notes': "More fun for everybody",
             'signup_end': datetime.datetime(2111, 11, 11, 23, 0, tzinfo=pytz.utc),
             'title': "Allumfassendes Konklave",
+            'shortname': 'konklave',
         }
         self.assertLess(0, self.assembly.set_assembly(self.key, data))
         expectation.update(data)
@@ -88,13 +91,14 @@ class TestAssemblyBackend(BackendTest):
             'notes': None,
             'signup_end': now(),
             'title': 'Außerordentliche Mitgliederversammlung',
+            'shortname': 'amgv',
             'presiders': {1, 23},
         }
         self.login("viktor")
         new_id = self.assembly.create_assembly(self.key, new_assembly)
         expectation = new_assembly
         expectation['id'] = new_id
-        expectation['mail_address'] = None
+        expectation['presider_address'] = None
         expectation['is_active'] = True
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, new_id))
@@ -118,7 +122,8 @@ class TestAssemblyBackend(BackendTest):
             'description': None,
             'notes': None,
             'signup_end': now(),
-            'title': 'Außerordentliche Mitgliederversammlung'
+            'title': 'Außerordentliche Mitgliederversammlung',
+            'shortname': 'amgv',
         }
         new_id = self.assembly.create_assembly(self.key, data)
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
@@ -379,6 +384,7 @@ class TestAssemblyBackend(BackendTest):
             'notes': None,
             'signup_end': datetime.datetime(2222, 2, 22),
             'title': "MGV 2222",
+            'shortname': "mgv2222",
         }
         assembly_id = self.assembly.create_assembly(self.key, assembly_data)
         ballot_data = {
@@ -503,7 +509,8 @@ class TestAssemblyBackend(BackendTest):
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
             'signup_end': FUTURE_TIMESTAMP,
-            'title': 'Außerordentliche Mitgliederversammlung'
+            'title': 'Außerordentliche Mitgliederversammlung',
+            'shortname': 'amgv',
         }
         new_id = self.assembly.create_assembly(self.key, data)
         self.assertTrue(self.assembly.set_assembly_presiders(
@@ -744,8 +751,8 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies
-        (title, description, mail_address, signup_end) VALUES
-        ('Umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
+        (title, shortname, description, presider_address, signup_end) VALUES
+        ('Umfrage', 'umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
          date '2111-11-11');""")
     def test_prepsql(self, user):
         expectation = {

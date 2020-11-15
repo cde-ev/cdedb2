@@ -28,8 +28,7 @@ from typing import (
 )
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, csv_output,
-    check_validation as check, event_guard, query_result_to_json,
+    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     enum_entries_filter, safe_filter, cdedburl, RequestConstraint,
     CustomCSVDialect, keydictsort_filter, calculate_db_logparams,
@@ -44,7 +43,7 @@ from cdedb.common import (
     unwrap, now, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
-    LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
+    LodgementsSortkeys, xsorted, get_hash, RequestState,
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
     InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC, asciificator
 )
@@ -226,7 +225,7 @@ class EventFrontend(AbstractUserFrontend):
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs.ambience['event'])
             params['participant_list'] = self.mlproxy.verify_existence(
-                rs, ml_type.full_address(ml_data))
+                rs, ml_type.get_full_address(ml_data))
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (
@@ -514,7 +513,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
-        if not self.mlproxy.verify_existence(rs, ml_type.full_address(ml_data)):
+        ml_address = ml_type.get_full_address(ml_data)
+        if not self.mlproxy.verify_existence(rs, ml_address):
             if not orgalist:
                 link = cdedburl(rs, "event/register", {'event_id': event_id})
                 ml_data['description'] = ml_data['description'].format(link)
@@ -523,14 +523,11 @@ class EventFrontend(AbstractUserFrontend):
                    else n_("Participant mailinglist created."))
             self.notify_return_code(rs, code, success=msg)
             if code and orgalist:
-                data = {
-                    'id': event_id,
-                    'orga_address': ml_type.full_address(ml_data),
-                }
+                data = {'id': event_id, 'orga_address': ml_address}
                 self.eventproxy.set_event(rs, data)
         else:
-            rs.notify("error", n_("Mailinglist %(address)s already exists."),
-                      {'address': ml_type.full_address(ml_data)})
+            rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                      {'address': ml_address})
         return self.redirect(rs, "event/show_event")
 
     @access("event")
@@ -1090,9 +1087,9 @@ class EventFrontend(AbstractUserFrontend):
         # During event creation the id is not yet known.
         event_id = event.get('id')
         if orgalist:
-            descr = ("Bitte wende dich bei Fragen oder Problemen, die mit "
-                     "unserer Veranstaltung zusammenhängen, über diese Liste "
-                     "an uns.")
+            descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit"
+                     " unserer Veranstaltung zusammenhängen, über diese Liste"
+                     " an uns.")
             orga_ml_data = {
                 'title': "{} Orgateam".format(event['title']),
                 'local_part': email_local_part,
@@ -1104,14 +1101,13 @@ class EventFrontend(AbstractUserFrontend):
                 'maxsize': ml_type.EventOrgaMailinglist.maxsize_default,
                 'is_active': True,
                 'event_id': event_id,
-                'registration_stati': [],
                 'notes': None,
                 'moderators': event['orgas'],
                 'ml_type': const.MailinglistTypes.event_orga,
             }
             return orga_ml_data
         else:
-            descr = ("Dieser Liste kannst du nur beitreten, indem du dich zu "
+            descr = ("Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
                      "unserer [Veranstaltung anmeldest]({}) und den Status "
                      "*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
                      "Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
@@ -1180,7 +1176,7 @@ class EventFrontend(AbstractUserFrontend):
         orga_ml_address = None
         if create_orga_list:
             orga_ml_data = self._get_mailinglist_setter(data, orgalist=True)
-            orga_ml_address = ml_type.full_address(orga_ml_data)
+            orga_ml_address = ml_type.get_full_address(orga_ml_data)
             data['orga_address'] = orga_ml_address
             if self.mlproxy.verify_existence(rs, orga_ml_address):
                 orga_ml_data = None
@@ -1223,7 +1219,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, code, success=n_("Orga mailinglist created."))
         if create_participant_list:
             participant_ml_data = self._get_mailinglist_setter(data)
-            participant_ml_address = ml_type.full_address(participant_ml_data)
+            participant_ml_address = ml_type.get_full_address(participant_ml_data)
             if not self.mlproxy.verify_existence(rs, participant_ml_address):
                 link = cdedburl(rs, "event/register", {'event_id': new_id})
                 descr = participant_ml_data['description'].format(link)
