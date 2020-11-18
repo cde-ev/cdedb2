@@ -174,7 +174,7 @@ _ALL_TYPED = ValidatorStorage()
 
 
 def _create_assert_valid(fun: Callable[..., T]) -> Callable[..., T]:
-    @ functools.wraps(fun)
+    @functools.wraps(fun)
     def assert_valid(*args: Any, **kwargs: Any) -> T:
         try:
             val = fun(*args, **kwargs)
@@ -193,7 +193,7 @@ def _create_assert_valid(fun: Callable[..., T]) -> Callable[..., T]:
 
 
 def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
-    @ functools.wraps(fun)
+    @functools.wraps(fun)
     def is_valid(*args: Any, **kwargs: Any) -> bool:
         kwargs['_convert'] = False
         try:
@@ -207,7 +207,7 @@ def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
 
 def _create_check_valid(fun: Callable[..., T]
                         ) -> Callable[..., Tuple[Optional[T], List[Error]]]:
-    @ functools.wraps(fun)
+    @functools.wraps(fun)
     def check_valid(*args: Any, **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
         try:
             val = fun(*args, **kwargs)
@@ -229,7 +229,7 @@ def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     This causes falsy values to be mapped to ``None`` if there is an error.
     """
 
-    @ functools.wraps(fun)
+    @functools.wraps(fun)
     def new_fun(val: Any, *args: Any, **kwargs: Any) -> Optional[T]:
         if val is None:
             return None
