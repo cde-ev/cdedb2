@@ -3991,10 +3991,11 @@ def _non_regex(
 ) -> NonRegex:
     val = _str(val, argname, **kwargs)
     forbidden_chars = r'\*+?{}()[]|'
-    msg = n_(r"Must not contain any forbidden characters"
-             f" (which are {forbidden_chars} while .^$ are allowed).")
+    msg = n_("Must not contain any forbidden characters"
+             " (which are %(forbidden_chars)s while .^$ are allowed).")
     if any(char in val for char in forbidden_chars):
-        raise ValidationSummary(ValueError(argname, msg))
+        raise ValidationSummary(
+            ValueError(argname, msg, {"forbidden_chars": forbidden_chars}))
     return NonRegex(val)
 
 
