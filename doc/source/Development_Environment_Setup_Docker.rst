@@ -53,7 +53,10 @@ To do this you can run the following:
 
     $ make i18n-compile
     $ make doc
-    $ cp related/auto-build/files/stage3/localconfig.py cdedb/
+    $ sed -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
+        -e 's|Path("/log/cdedb.log|Path("/var/log/cdedb/global.log|' \
+        related/auto-build/files/stage3/localconfig.py \
+        > cdedb/localconfig.py
     $ cd related/docker
     $ docker-compose exec app sudo -u www-data make sql-seed-database
 
