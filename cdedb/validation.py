@@ -648,7 +648,7 @@ def _bytes(
 @_add_typed_validator
 def _mapping(
     val: Any, argname: str = None, **kwargs: Any
-) -> Mapping[Any, Any]:
+) -> Mapping:
     """
     :param _convert: is ignored since no useful default conversion is available
     """
@@ -660,7 +660,7 @@ def _mapping(
 @_add_typed_validator
 def _iterable(
     val: Any, argname: str = None, **kwargs: Any
-) -> Iterable[Any]:
+) -> Iterable:
     """
     :param _convert: is ignored since no useful default conversion is available
     """
@@ -672,7 +672,7 @@ def _iterable(
 @_add_typed_validator
 def _sequence(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
-) -> Sequence[Any]:
+) -> Sequence:
     if _convert:
         try:
             val = tuple(val)
