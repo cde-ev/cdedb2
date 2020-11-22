@@ -3585,7 +3585,7 @@ msgstr "Nicht für Veranstaltung angemeldet."
 #: cdedb/frontend/event.py:280 cdedb/frontend/event.py:274
 #: cdedb/frontend/event.py:279 cdedb/frontend/event.py:288
 msgid "Participant list not published yet."
-msgstr "Die Teilnehmer Liste ist noch nicht veröffentlicht."
+msgstr "Die Teilnehmerliste ist noch nicht veröffentlicht."
 
 #: cdedb/frontend/event.py:318 cdedb/frontend/event.py:4603
 #: cdedb/frontend/event.py:312 cdedb/frontend/event.py:4513

@@ -195,15 +195,20 @@
                                 {{ gettext(message)|e|format(**params) }}
                             {% endcall %}
                         {% endfor %}
-                        {% block static_notifications %}
-                            {# For notifications indicating a state instead of the results of a user interaction #}
-                        {% endblock %}
                     </div>
 
                     <div role="main">
                         {% block heading %}
                             <h1 class="title" id="title">{{ gettext(self.title()) }}</h1>
                         {% endblock %}
+
+                        <div id="static-notifications">
+                            {% block static_notifications %}
+                                {# For notifications indicating a state instead of the results of a user interaction.
+                                   Hence, they are shown below their respective heading. #}
+                            {% endblock %}
+                        </div>
+
 
                         <div id="content">
                             {% block content %}

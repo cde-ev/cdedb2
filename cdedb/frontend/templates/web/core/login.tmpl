@@ -11,16 +11,17 @@
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
 {% endblock %}
-{% block content %}
+{% block static_notifications %}
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
         {% call util.notifications('info') %}
             {% trans %}This is an Offline-Instance of the CdEDB{% endtrans %}
             {# TODO Erklärtext #}
         {% endcall %}
     {% endif %}
-
+{% endblock %}
+{% block content %}
     <form action="{{ cdedblink('core/login') }}" method="POST" id="loginform" class="form-horizontal">
         {{ util.form_input_text(name="username", label=gettext("E-Mail"), type="email", small=True,
                                 anid="login_name", attributes='autocomplete="email" autofocus'|s) }}

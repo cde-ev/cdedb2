@@ -13,14 +13,16 @@
     {{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
 {% endblock %}
 
-{% block content %}
+{% block static_notifications %}
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
         {% call util.notifications('info') %}
             {% trans %}This is an Offline-Instance of the CdEDB{% endtrans %}
             {# TODO Erklärtext #}
         {% endcall %}
     {% endif %}
+{% endblock %}
 
+{% block content %}
     {{ util.meta_info_banner('banner_after_login') }}
 
     <div class="row">
