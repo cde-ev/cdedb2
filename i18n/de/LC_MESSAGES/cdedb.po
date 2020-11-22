@@ -8661,7 +8661,7 @@ msgid ""
 "people to change their course choices for cancelled courses, when updating "
 "their registration."
 msgstr ""
-"Achtung: Wird dies vor dem Anmeldungschluss aktiviert, werden potentielle "
+" Achtung: Wird dies vor dem Anmeldungschluss aktiviert, werden potentielle "
 "Teilnehmer beim Aktualisieren ihrer Anmeldung gezwungen, ihre Kurswahl für "
 "ausfallende Kurse zu ändern."
 
