@@ -1179,8 +1179,11 @@ class AssemblyFrontend(AbstractUserFrontend):
                            ) -> Response:
         ballot = rs.ambience['ballot']
         result = self.get_online_result(rs, ballot)
+        result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
+        result_hash = get_hash(result_bytes)
         return self.render(rs, "show_ballot_result", {
-            'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,})
+            'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
+            'result_hash': result_hash})
 
     def _update_ballot_state(self, rs: RequestState,
                              ballot: Dict[str, Any]) -> DefaultReturnCode:
