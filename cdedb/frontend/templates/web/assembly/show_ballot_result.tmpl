@@ -1,0 +1,93 @@
+{% set sidenav_active='assembly_ballots' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/_ballot_result.tmpl" as ballot_result with context %}
+
+{% block title %}
+    {% trans title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
+        Result ({{ title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}
+            Result
+        {% endtrans %}
+        <small>
+            {{ util.make_icon('thumbs-up') }}{{ nbsp }}{{ ambience['ballot']['title'] }}
+        </small>
+    </h1>
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot_result"), gettext("Result"), active=True) }}
+{% endblock %}
+
+{% block content %}
+
+    <p>
+        {% trans %}
+            On this page, we provide some further details about the tallied ballot mentioned above.
+            Everybody participating at the assembly or who is an active member can view this page.
+        {% endtrans %}
+    </p>
+
+        {{ ballot_result.show_summary() }}
+
+    <h2>{% trans %}Verify the result{% endtrans %}</h2>
+        <p>
+            {% trans %}
+            We {{ skript }} allow you to verify every voting which had take place in the CdEDB2. For this, we offer you a
+            download JSON-file containing every information about a tallied ballot which is stored in the DB.
+        {% endtrans %}
+        </p>
+        <p>
+            {% trans method=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
+            With our provided verification script, you can check that the result displayed in the DB is
+            actually the one which results from applying the {{ method }}.
+        {% endtrans %}
+        </p>
+
+    <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
+    <p>{{ util.href(staticurl("verify_result.py"), gettext("Download Verification Skript"), icon="download") }}</p>
+
+
+
+
+    <h2>{% trans %}Voters{% endtrans %}</h2>
+
+        <div class="row" id="voters-list">
+            {% for list in result['voters'] | slice((3 if result['voters']|length > 20 else 2)
+                                                       if result['voters']|length > 10 else 1) %}
+                <div class="col-sm-4">
+                    <ul class="slim nosp">
+                        {% for voter in list %}
+                            <li>{{ voter }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+
+
+    <h2>{% trans %}Votes{% endtrans %}</h2>
+
+        <div class="row" id="votes-list">
+            {% for list in result['votes'] | slice((3 if result['votes']|length > 20 else 2)
+                                                      if result['votes']|length > 10 else 1) %}
+                <div class="col-sm-4">
+                    <ul class="slim nosp">
+                        {% for vote in list %}
+                            <li>{{ vote['vote'] }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+
+{% endblock %}

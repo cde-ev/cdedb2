@@ -1174,6 +1174,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             'secret': secret, 'has_voted': has_voted,
         })
 
+    @access("assembly")
+    def show_ballot_result(self, rs: RequestState, assembly_id: int, ballot_id: int
+                           ) -> Response:
+        ballot = rs.ambience['ballot']
+        result = self.get_online_result(rs, ballot)
+        return self.render(rs, "show_ballot_result", {
+            'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,})
+
     def _update_ballot_state(self, rs: RequestState,
                              ballot: Dict[str, Any]) -> DefaultReturnCode:
         """Helper to automatically update a ballots state.
