@@ -1177,7 +1177,13 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def show_ballot_result(self, rs: RequestState, assembly_id: int, ballot_id: int
                            ) -> Response:
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
+        if not ballot['is_tallied']:
+            rs.notify("error", n_("Ballot has not been tallied."))
+            return self.redirect(rs, "assembly/show_ballot")
+
         result = self.get_online_result(rs, ballot)
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
         result_hash = get_hash(result_bytes)
