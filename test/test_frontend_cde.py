@@ -655,7 +655,7 @@ class TestCdEFrontend(FrontendTest):
         text = mail.get_body().get_content()
         # but in the notification mail there should be only the hidden iban version
         self.assertNotIn("DE12 5001 0517 0648 4898 90", text)
-        self.assertIn("DE12 **** **** **** **** 90", text)
+        self.assertIn("DE12 **** **** **** **98 90", text)
 
     @as_users("berta")
     def test_iban_non_visibility(self, user):
@@ -665,7 +665,7 @@ class TestCdEFrontend(FrontendTest):
         # the full iban should not be visible for non-finance admins ...
         self.assertNonPresence("DE12 5001 0517 0648 4898 90")
         # ... only a hidden form should be shown
-        self.assertPresence("DE12 **** **** **** **** 90", div='iban', exact=True)
+        self.assertPresence("DE12 **** **** **** **98 90", div='iban', exact=True)
 
     @as_users("farin")
     def test_double_lastschrift_revoke(self, user):

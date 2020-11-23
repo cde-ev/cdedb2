@@ -365,9 +365,8 @@ def hidden_iban_filter(val: Optional[str]) -> Optional[str]:
     if val is None:
         return None
     else:
-        val = val.strip().replace(" ", "")
-        looper = range(0, len(val), 4)
-        return " ".join(val[x:x + 4] if x in {looper[0], looper[-1]} else "****" for x in looper)
+        val = val[:4] + "*" * (len(val) - 8) + val[-4:]
+        return iban_filter(val)
 
 
 @overload
