@@ -30,14 +30,16 @@
 
 {% block content %}
 
+    {% set classical = ambience['ballot']['votes'] %}
+    {% set preferential = not ambience['ballot']['votes'] %}
+
     <p>
         {% trans %}
             On this page, we provide some further details about the tallied ballot mentioned above.
             Everybody participating at the assembly or who is an active member can view this page.
         {% endtrans %}
     </p>
-
-        {{ ballot_result.show_summary() }}
+        {{ ballot_result.show_summary(preferential) }}
 
     <h2>{% trans %}Verify the result{% endtrans %}</h2>
         <p>

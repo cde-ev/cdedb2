@@ -222,36 +222,40 @@
     {% endcall %}
 {% endmacro %}
 
-{% macro show_summary() -%}
+{% macro show_summary(is_preferential) -%}
     <pre style="max-width: 500px;">{{ result['result'] }}</pre>
 
-    {# info box for preferential votes #}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
-        <p>
+    <p>
+        {% if is_preferential %}
             {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
                 This vote was a preferential vote. Voters arranged the candidates according to their preference.
                 The preferences of all participants were evaluated using the {{ link }},
                 to determine the winner.
             {% endtrans %}
-        </p>
+        {% else %}
+            {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
+                This vote was a classical vote. The result was obtained by using the {{ link }}.
+            {% endtrans %}
+        {% endif %}
+    </p>
+
+    <p>
+        {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s %}
+            The summary shows the combined preference list of all participant.
+            The greater-than character {{ gt }} means that the candidate, represented by their
+            shortname, on the left has higher overall preference than the one on the right.
+            The equals character {{ eq }} means that two or more candidates have the same overall
+            preference across all participants.
+        {% endtrans %}
+    </p>
+    {% if ambience['ballot']['use_bar'] %}
         <p>
-            {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s %}
-                The summary shows the combined preference list of all participant.
-                The greater-than character {{ gt }} means that the candidate, represented by their
-                shortname, on the left has higher overall preference than the one on the right.
-                The equals character {{ eq }} means that two or more candidates have the same overall
-                preference across all participants.
+            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
+                Additionally the shortname {{ abm }} shows where in the election the rejection limit was ranked.
+                Should no candidate have won against the rejection limit, the board may take additional measures.
             {% endtrans %}
         </p>
-        {% if ambience['ballot']['use_bar'] %}
-            <p>
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
-                    Additionally the shortname {{ abm }} shows where in the election the rejection limit was ranked.
-                    Should no candidate have won against the rejection limit, the board may take additional measures.
-                {% endtrans %}
-            </p>
-        {% endif %}
-    {% endcall %}
+    {% endif %}
 {%- endmacro %}
 
 {% macro show_own_vote() -%}
