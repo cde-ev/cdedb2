@@ -633,8 +633,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/vote", methods=_POST,
                          endpoint="vote"),
                     rule("/result", methods=_GET,
+                         endpoint="show_ballot_result"),
+                    rule("/result/download", methods=_GET,
                          endpoint="get_result"),
-                    rule("/show_result", methods=_GET, endpoint="show_ballot_result"),
                     sub("/attachment", (
                         rule("/add", methods=_GET,
                              endpoint="add_attachment_form"),
