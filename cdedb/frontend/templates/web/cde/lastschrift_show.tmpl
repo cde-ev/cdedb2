@@ -67,7 +67,11 @@
                 <dd id="amount">{{ lastschrift['amount']|money(lang=lang) }}</dd>
 
                 <dt>{% trans %}IBAN{% endtrans %}</dt>
-                <dd id="iban">{{ lastschrift['iban']|iban }}</dd>
+                {% if 'finance' in user.admin_views %}
+                    <dd id="iban">{{ lastschrift['iban']|iban }}</dd>
+                {% else %}
+                    <dd id="iban">{{ lastschrift['iban']|hidden_iban }}</dd>
+                {% endif %}
 
                 <dt>{% trans %}Account holder{% endtrans %}</dt>
                 <dd id="account-holder">
