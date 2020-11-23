@@ -39,20 +39,22 @@
             Everybody participating at the assembly or who is an active member can view this page.
         {% endtrans %}
     </p>
-        {{ ballot_result.show_summary(preferential) }}
+    {{ ballot_result.show_summary(preferential) }}
+
 
     <h2>{% trans %}Verify the result{% endtrans %}</h2>
+
         <p>
             {% trans %}
-            We {{ skript }} allow you to verify every voting which had take place in the CdEDB2. For this, we offer you a
-            download JSON-file containing every information about a tallied ballot which is stored in the DB.
-        {% endtrans %}
+                We allow you to verify every voting which had take place in the CdEDB2. For this, we offer you a
+                download JSON-file containing every information about a tallied ballot which is stored in the DB.
+            {% endtrans %}
         </p>
         <p>
             {% trans method=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
-            With our provided verification script, you can check that the result displayed in the DB is
-            actually the one which results from applying the {{ method }}.
-        {% endtrans %}
+                With our provided verification script, you can check that the result displayed in the DB is
+                actually the one which results from applying the {{ method }}.
+            {% endtrans %}
         </p>
 
     <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
