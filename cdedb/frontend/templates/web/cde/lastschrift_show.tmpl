@@ -2,6 +2,10 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
+{% if "finance" in user.admin_views %}
+    {% set jshint='strong' %}
+{% endif %}
+
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
