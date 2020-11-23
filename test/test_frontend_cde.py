@@ -640,6 +640,34 @@ class TestCdEFrontend(FrontendTest):
                             div='searchability')
 
     @as_users("farin")
+    def test_iban_visibility(self, user):
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Einzugsermächtigungen'},
+                      {'description': 'Bertålotta Beispiel'})
+        self.assertTitle('Einzugsermächtigung Bertålotta Beispiel')
+        # the iban should be visible for finance admins
+        self.assertPresence("DE12 5001 0517 0648 4898 90", div='iban', exact=True)
+
+        f = self.response.forms['generatetransactionform']
+        self.submit(f)
+
+        mail = self.fetch_mail()[0]
+        text = mail.get_body().get_content()
+        # but in the notification mail there should be only the hidden iban version
+        self.assertNotIn("DE12 5001 0517 0648 4898 90", text)
+        self.assertIn("DE12 **** **** **** **** 90", text)
+
+    @as_users("berta")
+    def test_iban_non_visibility(self, user):
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Einzugsermächtigung'})
+        self.assertTitle('Einzugsermächtigung Bertålotta Beispiel')
+        # the full iban should not be visible for non-finance admins ...
+        self.assertNonPresence("DE12 5001 0517 0648 4898 90")
+        # ... only a hidden form should be shown
+        self.assertPresence("DE12 **** **** **** **** 90", div='iban', exact=True)
+
+    @as_users("farin")
     def test_double_lastschrift_revoke(self, user):
         self.admin_view_profile('berta')
         self.traverse({'description': 'Mitglieder'},
