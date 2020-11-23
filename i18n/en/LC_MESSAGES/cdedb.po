@@ -3679,7 +3679,7 @@ msgstr ""
 msgid ""
 "This vote was a preferential vote. Voters arranged the candidates according "
 "to their preference. The preferences of all participants were evaluated "
-"using the %(link)s, to determine the winner."
+"using the %(link)s, to determine the option with the most votes.."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:231
@@ -3813,7 +3813,7 @@ msgstr ""
 msgid ""
 "This vote is a preferential vote. You can arrange the candidates in the "
 "field above according to your personal preference. The preferences of all "
-"participants will be evaluated using the %(link)s, to determine the winner."
+"participants will be evaluated using the %(link)s, to determine the option with the most votes.."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:80
