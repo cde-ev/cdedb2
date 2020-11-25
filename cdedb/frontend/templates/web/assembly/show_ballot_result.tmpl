@@ -10,6 +10,7 @@
 {% endblock %}
 
 {% block heading %}
+    {{ util.doclink('Realm_Assembly_Voting-Procedere') }}
     <h1 class="title">
         {% trans %}
             Result
@@ -46,19 +47,27 @@
 
         <p>
             {% trans %}
-                We allow you to verify every voting which had take place in the CdEDB2. For this, we offer you a
+                We allow you to verify every voting which had taken place in the CdEDB. For this, we offer you a
                 download JSON-file containing every information about a tallied ballot which is stored in the DB.
             {% endtrans %}
         </p>
         <p>
             {% trans method=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
-                With our provided verification script, you can check that the result displayed in the DB is
-                actually the one which results from applying the {{ method }}.
+                With our provided "Result Verification Script", you can check that the result displayed in the DB is
+                actually correct. To obtain the result from the votes, we apply the {{ method }} internally.
+            {% endtrans %}
+        </p>
+        <p>
+            {% trans %}
+                If you had voted in this ballot, you can verify the correct count of your vote with the
+                "Own Vote Verification Script". Additionally, you need your personal secret you
+                received per mail when registering for this assembly.
             {% endtrans %}
         </p>
 
     <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
-    <p>{{ util.href(staticurl("verify_result.py"), gettext("Download Verification Skript"), icon="download") }}</p>
+    <p>{{ util.href(staticurl("verify_result.py"), gettext("Download Result Verification Script"), icon="download") }}</p>
+    <p>{{ util.href(staticurl("verify_vote.py"), gettext("Download Own Vote Verification Script"), icon="download") }}</p>
 
 
     <h2>{% trans %}Result file hash{% endtrans %}</h2>
@@ -67,18 +76,18 @@
             {% trans %}
                 After a ballot has been tallied, the generated result file and its hash
                 will be sent to the specified mailinglist in the assembly configuration
-                and to the `Wahlbekanntmachungs` mailinglist.
+                and to the "Wahlbekanntmachungen" mailinglist.
             {% endtrans %}
         </p>
         <p>
             {% trans %}
-                To ensure that the result file has not been modified on the CdE Server
-                (this is not trivial possible), we show the hash of the stored result
+                To ensure that the result file has not been modified on the CdE server
+                (this is not trivially possible), we show the hash of the stored result
                 file here, so you can compare those two. Of course, you can also
                 download the result file and calculate the hash by yourself.
             {% endtrans %}
         </p>
-        <p>{{ result_hash }}</p>
+        <pre>{{ result_hash }}</pre>
 
 
     <h2>{% trans %}Voters{% endtrans %}</h2>

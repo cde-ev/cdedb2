@@ -61,9 +61,9 @@
         {{ ballot_result.show_result(ambience['ballot'], result) }}
         {{ ballot_result.explain_result(classical=classical, preferential=preferential, use_bar=ambience['ballot']['use_bar']) }}
 
-        <h3>{% trans %}Summary{% endtrans %}</h3>
+        <h3>{% trans %}Detailed Result{% endtrans %}</h3>
         {% trans link=util.href(cdedblink("assembly/show_ballot_result"), gettext("here")) %}
-            An outgoing summary can be find {{ link }}.
+            A more detailed result can be found {{ link }}.
         {% endtrans %}
 
         {{ ballot_result.show_own_vote() }}
