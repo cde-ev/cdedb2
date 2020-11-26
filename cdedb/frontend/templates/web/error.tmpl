@@ -4,7 +4,7 @@
     {{ error.code }}: {{ error.name }}
 {% endblock %}
 {% block static_notifications %}
-    {% call util.notifications('error') %}
+    {% call util.notification('error') %}
         {% if error.code == 403 %}
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
             {{ gettext(error.description) }}

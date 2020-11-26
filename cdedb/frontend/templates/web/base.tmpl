@@ -191,7 +191,7 @@
 
                     <div id="notifications">
                         {% for ntype, message, params in notifications %}
-                            {% call util.notifications(ntype) %}
+                            {% call util.notification(ntype) %}
                                 {{ gettext(message)|e|format(**params) }}
                             {% endcall %}
                         {% endfor %}

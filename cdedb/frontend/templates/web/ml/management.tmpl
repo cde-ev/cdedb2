@@ -26,7 +26,7 @@
 {% endblock %}
 {% block static_notifications %}
     {% if not privileged %}
-        {% call util.notifications('info') %}
+        {% call util.notification('info') %}
             {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
                                       gettext("privileged moderator access"))|s %}
                 You do not have %(link)s and may not change subscriptions.

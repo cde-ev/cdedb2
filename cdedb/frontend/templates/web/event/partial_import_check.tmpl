@@ -98,27 +98,27 @@
     <h2>{% trans %}Summary of Changes{% endtrans %}</h2>
     <div id="duplication-warnings">
         {% if summary['deleted_registration_ids']|length > summary['real_deleted_registration_ids']|length %}
-            {% call util.notifications('warning') %}
+            {% call util.notification('warning') %}
                 {% trans %}There were double registration deletions. Did you already import this file?{% endtrans %}
             {% endcall %}
         {% endif %}
         {% if summary['deleted_course_ids']|length > summary['real_deleted_course_ids']|length %}
-            {% call util.notifications('warning') %}
+            {% call util.notification('warning') %}
                 {% trans %}There were double course deletions. Did you already import this file?{% endtrans %}
             {% endcall %}
         {% endif %}
         {% if summary['deleted_lodgement_ids']|length > summary['real_deleted_lodgement_ids']|length %}
-            {% call util.notifications('warning') %}
+            {% call util.notification('warning') %}
                 {% trans %}There were double lodgement deletions. Did you already import this file?{% endtrans %}
             {% endcall %}
         {% endif %}
         {% if suspicious_courses %}
-            {% call util.notifications('warning') %}
+            {% call util.notification('warning') %}
                 {% trans %}There were hints at double course creations. Did you already import this file?{% endtrans %}
             {% endcall %}
         {% endif %}
         {% if suspicious_lodgements %}
-            {% call util.notifications('warning') %}
+            {% call util.notification('warning') %}
                 {% trans %}There were hints at double lodgement creations. Did you already import this file?{% endtrans %}
             {% endcall %}
         {% endif %}

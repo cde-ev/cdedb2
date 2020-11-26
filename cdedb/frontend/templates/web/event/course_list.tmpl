@@ -23,11 +23,11 @@
 {% block static_notifications %}
     {{ super() }}
     {% if not ambience['event']['is_course_list_visible'] %}
-        {% call util.notifications('info', id='course-not-visible') %}
+        {% call util.notification('info', id='course-not-visible') %}
             {% trans %}The Courselist is currently only visible to Orgas and Admins.{% endtrans %}
         {% endcall %}
     {% elif not ambience['event']['is_course_state_visible'] and ambience['event']['id'] in user.orga %}
-        {% call util.notifications('info', id='cancelled-not-visible') %}
+        {% call util.notification('info', id='cancelled-not-visible') %}
             {% if ambience['event']['tracks']|length > 1 %}
                 {% trans %}
                     Cancelled courses are only marked for orgas. Other users can currently only see in which course
@@ -41,7 +41,7 @@
         {% endcall %}
     {% endif %}
     {% if courses and "event" not in user.roles %}
-        {% call util.notifications('info', id='instructors-not-visible') %}
+        {% call util.notification('info', id='instructors-not-visible') %}
             {% trans %}The instructors for each course are only visible to logged in event users.{% endtrans %}
         {% endcall %}
     {% endif %}

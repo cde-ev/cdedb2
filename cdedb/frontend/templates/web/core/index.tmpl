@@ -15,7 +15,7 @@
 
 {% block static_notifications %}
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
-        {% call util.notifications('info') %}
+        {% call util.notification('info') %}
             {% trans %}This is an Offline-Instance of the CdEDB{% endtrans %}
             {# TODO Erklärtext #}
         {% endcall %}

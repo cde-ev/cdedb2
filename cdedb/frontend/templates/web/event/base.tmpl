@@ -83,15 +83,15 @@
 {% block static_notifications %}
     {% if ambience['event'] %}
         {% if ambience['event']['is_archived'] and ambience['event']['is_cancelled'] %}
-            {% call util.notifications('info') %}
+            {% call util.notification('info') %}
                 {% trans %}This event was cancelled and has been archived.{% endtrans %}
             {% endcall %}
         {% elif ambience['event']['is_archived'] %}
-            {% call util.notifications('info') %}
+            {% call util.notification('info') %}
                 {% trans %}This event has been archived.{% endtrans %}
             {% endcall %}
         {% elif ambience['event']['is_cancelled'] %}
-            {% call util.notifications('info') %}
+            {% call util.notification('info') %}
                 {% trans %}This event has been cancelled.{% endtrans %}
             {% endcall %}
         {% endif %}

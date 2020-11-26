@@ -39,15 +39,15 @@
 {% block static_notifications %}
     {% if is_relative_admin %}
         {% if ambience['persona']['is_purged'] %}
-            {% call util.notifications('info', id='purged') %}
+            {% call util.notification('info', id='purged') %}
                 {% trans %}This user has been purged.{% endtrans %}
             {% endcall %}
         {% elif ambience['persona']['is_archived'] %}
-            {% call util.notifications('info', id='archived') %}
+            {% call util.notification('info', id='archived') %}
                 {% trans %}The user is archived.{% endtrans %}
             {% endcall %}
         {% elif not ambience['persona']['is_active'] %}
-            {% call util.notifications('info', id='deactivated') %}
+            {% call util.notification('info', id='deactivated') %}
                 {% trans %}The user is deactivated.{% endtrans %}
             {% endcall %}
         {% endif %}

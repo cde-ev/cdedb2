@@ -21,7 +21,7 @@
 {% block static_notifications %}
     {{ super() }}
     {% if "event" not in user.roles %}
-        {% call util.notifications('info', id='instructors-not-visible') %}
+        {% call util.notification('info', id='instructors-not-visible') %}
             {% trans %}More detailed information about the event is visible to logged in event users.{% endtrans %}
         {% endcall %}
     {% endif %}

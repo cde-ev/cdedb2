@@ -64,7 +64,7 @@
 {% block static_notifications %}
     {{ super() }}
     {% if not ambience['event']['is_participant_list_visible'] %}
-        {% call util.notifications('info') %}
+        {% call util.notification('info') %}
             {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
         {% endcall %}
     {% endif %}
