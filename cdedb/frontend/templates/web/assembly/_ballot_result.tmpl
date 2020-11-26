@@ -277,64 +277,56 @@
 {% macro show_own_vote() -%}
     <h3>{% trans %}Your Vote{% endtrans %}</h3>
     <div id="own-vote">
-        {% set is_active = ambience["assembly"]["is_active"] %}
-
         {% if not attends %}
             {% trans %}You are not participating in this assembly.{% endtrans %}
-        {% elif not is_active and not own_vote %}
-            {% if not has_voted %}
+        {% elif not has_voted %}
                 {% trans %}You did not vote.{% endtrans %}
-            {% else %}
-                {% if not secret %}
-                    <p>
-                        {{ util.make_icon('info-circle') }}
-                        {% trans %}The assembly concluded. The votes of specific users can no longer be extracted from the database in any way.{% endtrans %}
-                        {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
-                    </p>
-                {% else %}
-                    <p>
-                        {{ util.make_icon('info-circle') }}
-                        {% trans %}You entered an invalid secret.{% endtrans %}
-                        {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
-                    </p>
-                {% endif %}
-                <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
-                    {{ util.anti_csrf_token("assembly/show_old_vote") }}
-                    <div class="input-group">
-                        <span class="input-group-addon"><label for="input-secret">
-                            {% trans %}Secret{% endtrans %}
-                        </label></span>
-                        {{ util.input_text(name="secret", anid="input-secret") }}
-                        <div class="input-group-btn">
-                            {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
-                        </div>
-                    </div>
-                    {{ util.output_errors('secret', wrapper=True) }}
-                </form>
-            {% endif %}
-        {% elif not own_vote %}
-            {% if ambience['ballot']['is_voting'] %}
-                {% trans %}You have not voted yet.{% endtrans %}
-            {% else %}
-                {% trans %}You did not vote.{% endtrans %}
-            {% endif %}
-        {% elif ambience['ballot']['votes'] %}
+        {% elif own_vote %}
             {# Show own vote under result: Classical vote #}
-            {% if split_vote|length == 1 %}
-                {% trans %}You abstained.{% endtrans %}
-            {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_SHORTNAME] %}
-                {% trans %}You voted against all candidates.{% endtrans %}
+            {% if ambience['ballot']['votes'] %}
+                {% if split_vote|length == 1 %}
+                    {% trans %}You abstained.{% endtrans %}
+                {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_SHORTNAME] %}
+                    {% trans %}You voted against all candidates.{% endtrans %}
+                {% else %}
+                    {% trans %}You voted for the following candidates:{% endtrans %}<br />
+                    {% for vote in split_vote[0] %}
+                        {{ candidates[vote]['title'] }}{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                {% endif %}
+            {# Show own vote under result: Preferential vote #}
             {% else %}
-                {% trans %}You voted for the following candidates:{% endtrans %}<br />
-                {% for vote in split_vote[0] %}
-                    {{ candidates[vote]['title'] }}{% if not loop.last %},{% endif %}
-                {% endfor %}
+                {%- trans vote="<code>%(vote)s</code>"|s|format(vote=own_vote) %}
+                    You voted {{ vote }}.
+                {% endtrans -%}
             {% endif %}
         {% else %}
-            {# Show own vote under result: Preferential vote #}
-            {%- trans vote="<code>%(vote)s</code>"|s|format(vote=own_vote) %}
-                You voted {{ vote }}.
-            {% endtrans -%}
+            {% if secret %}
+                <p>
+                    {{ util.make_icon('info-circle') }}
+                    {% trans %}You entered an invalid secret.{% endtrans %}
+                    {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
+                </p>
+            {% else %}
+                <p>
+                    {{ util.make_icon('info-circle') }}
+                    {% trans %}The assembly concluded. The votes of specific users can no longer be extracted from the database in any way.{% endtrans %}
+                    {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
+                </p>
+            {% endif %}
+            <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
+                {{ util.anti_csrf_token("assembly/show_old_vote") }}
+                <div class="input-group">
+                    <span class="input-group-addon"><label for="input-secret">
+                        {% trans %}Secret{% endtrans %}
+                    </label></span>
+                    {{ util.input_text(name="secret", anid="input-secret") }}
+                    <div class="input-group-btn">
+                        {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
+                    </div>
+                </div>
+                {{ util.output_errors('secret', wrapper=True) }}
+            </form>
         {% endif %}
     </div>
 {%- endmacro %}
