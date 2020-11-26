@@ -233,6 +233,12 @@ p.nosp {
 h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {
     margin-top: 0;
 }
+h2.mosp {
+    margin-top: 40px;
+}
+h3.mosp {
+    margin-top: 30px;
+}
 label.nosp {
     margin-bottom: 0;
 }
@@ -244,6 +250,10 @@ label.nosp {
 }
 h4.mosp,h5.mosp {
     margin-top: 20px;
+}
+dl.mosp {
+    margin-top: 30px;
+    margin-bottom: 30px;
 }
 ul.nosp, ol.nosp {
     margin-bottom: 0;

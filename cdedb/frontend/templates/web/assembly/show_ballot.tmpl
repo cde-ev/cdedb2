@@ -12,7 +12,10 @@
 {% endblock %}
 
 {% set jshint = 'weak' %}
-{% block title %}{{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }}){% endblock %}
+
+{% block title %}
+    {{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }})
+{% endblock %}
 
 {% block heading %}
     <h1 class="title">
@@ -57,14 +60,12 @@
 
     {# Display of result #}
     {% if ambience['ballot']['is_tallied'] %}
-        <h3>{% trans %}Result{% endtrans %}</h3>
+        <h3>
+            {% trans %}Result{% endtrans %}
+            {{ util.href(cdedblink("assembly/show_ballot_result"), gettext("More details"), aclass="btn btn-info btn-sm pull-right", icon="book") }}
+        </h3>
         {{ ballot_result.show_result(ambience['ballot'], result) }}
         {{ ballot_result.explain_result(classical=classical, preferential=preferential, use_bar=ambience['ballot']['use_bar']) }}
-
-        <h3>{% trans %}Detailed Result{% endtrans %}</h3>
-        {% trans link=util.href(cdedblink("assembly/show_ballot_result"), gettext("here")) %}
-            A more detailed result can be found {{ link }}.
-        {% endtrans %}
 
         {{ ballot_result.show_own_vote() }}
     {% else %}
@@ -72,7 +73,7 @@
             {{ ballot_voting.add_candidate_form() }}
         {% else %}
             {# Classical voting, not tallied #}
-            {% if ambience['ballot']['votes'] %}
+            {% if classical %}
                 {% if ambience['ballot']['is_voting'] and attends %}
                     {{ ballot_voting.show_classical_voting() }}
                 {% else %}
@@ -90,7 +91,6 @@
 
 
     {% if attachments or edit_mode %}
-        <br />
         {{ ballot_meta.show_attachments(edit_mode) }}
     {% endif %}
     {{ ballot_meta.show_navigation() }}

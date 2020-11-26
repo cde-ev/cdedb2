@@ -17,16 +17,12 @@
     <h3>{% trans %}Ballot{% endtrans %}</h3>
     <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/vote') }}
-        {% if ambience['ballot']['votes'] > 1 %}
-            {{ util.form_input_static(value=gettext("You have %(votes)s votes.")|
-                                            format(votes=ambience['ballot']['votes']), small=True) }}
-        {% endif %}
         {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
                                       entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('shortname', 'title'),
                                       radio=(ambience['ballot']['votes'] == 1), small=True) }}
         {% if ambience['ballot']['use_bar'] %}
             {{ util.form_input_checkboxes(
-                "vote", label="", entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("Against all Candidates"))],
+                "vote", label=gettext("Rejection"), entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("Against all Candidates"))],
                 small=True, radio=(ambience['ballot']['votes'] == 1),
                 info=gettext("With this option you reject all candidates. "
                              "If this gets a majority the board may take additional measures.")) }}
@@ -75,7 +71,7 @@
 {%- endmacro %}
 
 {% macro show_manual_for_text_preferential_voting() -%}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
@@ -165,7 +161,7 @@
 {%- endmacro %}
 
 {% macro show_manual_for_js_preferential_voting() -%}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
@@ -212,7 +208,7 @@
 
 {# Preferential voting: Voting form #}
 {% macro show_preferential_voting() -%}
-    <h3>{% trans %}Ballot{% endtrans %}</h3>
+    <h3 class="mosp">{% trans %}Ballot{% endtrans %}</h3>
 
     {# Tab controls to switch to javascript preferential voting form #}
     <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">

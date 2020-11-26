@@ -43,7 +43,7 @@
     {{ ballot_result.show_summary(preferential) }}
 
 
-    <h2>{% trans %}Verify the result{% endtrans %}</h2>
+    <h2 class="mosp">{% trans %}Verify the result{% endtrans %}</h2>
 
         <p>
             {% trans %}
@@ -70,7 +70,7 @@
     <p>{{ util.href(staticurl("verify_vote.py"), gettext("Download Own Vote Verification Script"), icon="download") }}</p>
 
 
-    <h2>{% trans %}Result file hash{% endtrans %}</h2>
+    <h2 class="mosp">{% trans %}Result file hash{% endtrans %}</h2>
 
         <p>
             {% trans %}
@@ -90,23 +90,7 @@
         <pre>{{ result_hash }}</pre>
 
 
-    <h2>{% trans %}Voters{% endtrans %}</h2>
-
-        <div class="row" id="voters-list">
-            {% for list in result['voters'] | slice((3 if result['voters']|length > 20 else 2)
-                                                       if result['voters']|length > 10 else 1) %}
-                <div class="col-sm-4">
-                    <ul class="slim nosp">
-                        {% for voter in list %}
-                            <li>{{ voter }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endfor %}
-        </div>
-
-
-    <h2>{% trans %}Votes{% endtrans %}</h2>
+    <h2 class="mosp">{% trans %}Votes{% endtrans %}</h2>
 
         <div class="row" id="votes-list">
             {% for list in result['votes'] | slice((3 if result['votes']|length > 20 else 2)
@@ -115,6 +99,22 @@
                     <ul class="slim nosp">
                         {% for vote in list %}
                             <li>{{ vote['vote'] }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+
+
+    <h2 class="mosp">{% trans %}Voters{% endtrans %}</h2>
+
+        <div class="row" id="voters-list">
+            {% for list in result['voters'] | slice((3 if result['voters']|length > 20 else 2)
+                                                       if result['voters']|length > 10 else 1) %}
+                <div class="col-sm-4">
+                    <ul class="slim nosp">
+                        {% for voter in list %}
+                            <li>{{ voter }}</li>
                         {% endfor %}
                     </ul>
                 </div>

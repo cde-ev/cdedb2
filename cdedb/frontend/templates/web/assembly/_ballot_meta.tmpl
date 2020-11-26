@@ -31,8 +31,8 @@
 {%- endmacro %}
 
 {% macro show_status() -%}
-<dl class="dl-horizontal">
-    <dt>{% trans %}Voting Period{% endtrans %}</dt>
+<dl class="dl-horizontal mosp">
+    <dt>{% trans %}Period{% endtrans %}</dt>
         <dd id="voting-period">
             {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
                      end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
@@ -95,7 +95,7 @@
                 {% endif %}
             {% endif %}
         </dd>
-        <dt>{% trans %}Voting Modality{% endtrans %}</dt>
+        <dt>{% trans %}Modality{% endtrans %}</dt>
         <dd>
             {% if ambience['ballot']['votes'] == 1 %}
                 {% if ambience['ballot']['use_bar'] %}
@@ -130,15 +130,14 @@
             {% endif %}
         </dd>
         {% if ambience['ballot']['vote_begin'] < now() %}
+            <dt>{% trans %}Voted{% endtrans %}</dt>
             {% if ambience['ballot']['is_tallied'] %}
-                <dt>{% trans %}Had voted{% endtrans %}</dt>
                 <dd id="had-voted">
                     {% trans count=ambience['ballot']['vote_count'] %}
                         {{ count }} attendees had given their vote for this ballot.
                     {% endtrans %}
                 </dd>
             {% else %}
-                <dt>{% trans %}Already voted{% endtrans %}</dt>
                 <dd id="already-voted">
                     {% trans count=ambience['ballot']['vote_count'] %}
                         Until now, {{ count }} attendees had given their vote for this ballot.

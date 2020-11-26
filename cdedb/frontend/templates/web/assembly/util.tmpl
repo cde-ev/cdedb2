@@ -154,7 +154,7 @@
 
 {% macro attachment_box(attachments, histories, title=gettext("General Files"), ballot=None, edit=False,
                         new_attachment_button=False, full_history=True, icon='file', edit_buttons_below=True) %}
-    {% call util.bootstrap_panel(title=title, icon=icon) %}
+    {% call util.bootstrap_panel(title=title, icon=icon, aclass="panel-default panel-condensed mosp") %}
         {{ attachment_list(attachments=attachments, histories=histories, ballot=ballot, edit=edit,
                            new_attachment_button=new_attachment_button, full_history=full_history,
                            edit_buttons_below=edit_buttons_below) }}

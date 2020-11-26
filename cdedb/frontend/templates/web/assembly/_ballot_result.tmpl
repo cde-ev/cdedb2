@@ -182,7 +182,7 @@
 {%- endmacro %}
 
 {% macro explain_result(classical=false, preferential=false, use_bar=false) %}
-    {% call util.bootstrap_panel(title=gettext("Help for tallying"), icon='info-circle', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help for tallying"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         {% if classical and preferential %}
             <b>{% trans %}Classical vote{% endtrans %}</b><br />
         {% endif %}
