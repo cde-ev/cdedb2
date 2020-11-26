@@ -1,18 +1,18 @@
 {% macro show_result(ballot, result, short=False) -%}
-    {% set is_classical_vote = ballot['votes'] %}
+    {% set is_classical = ballot['votes'] %}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
                 <th class="col-sm-1">
                     {{ util.make_icon('sort-amount-down-alt', title=gettext("Ranking"), fixed_width=False) }}
                 </th>
-                <th class="col-sm-{% if is_classical_vote %}10{% else %}9{% endif %}">
+                <th class="col-sm-{% if is_classical %}10{% else %}9{% endif %}">
                     {% trans %}Candidates{% endtrans %}
                 </th>
                 <th class="col-sm-1">
                     {{ util.make_icon('plus', title=gettext("Pro-Votes"), fixed_width=False) }}
                 </th>
-            {% if not is_classical_vote %}
+            {% if not is_classical %}
                 <th class="col-sm-1">
                     {{ util.make_icon('minus', title=gettext("Contra-Votes"), fixed_width=False) }}
                 </th>
@@ -41,7 +41,7 @@
                                 </span>
                             {% endif %}
                         </td>
-                    {% if is_classical_vote %}
+                    {% if is_classical %}
                         <td>
                             {% if first_candidate %}
                                 {{ result['counts'][candidate_shortname] }}
@@ -88,7 +88,7 @@
                     {# We do not count bar as candidate, imagine bar to be an infinitisimal border between candidates. #}
                 </td>
                 <td class="text-info">
-                    {% if is_classical_vote %}
+                    {% if is_classical %}
                         {% trans %}
                             Against all Candidates.
                         {% endtrans %}
@@ -98,7 +98,7 @@
                         {% endtrans %}
                     {% endif %}
                 </td>
-            {% if is_classical_vote %}
+            {% if is_classical %}
                 {# this are the votes for the 'against all' choice #}
                 <td>
                     {{ result['counts'][ASSEMBLY_BAR_SHORTNAME] }}
@@ -145,7 +145,7 @@
                                 </span>
                             {% endif %}
                         </td>
-                    {% if is_classical_vote %}
+                    {% if is_classical %}
                         <td>
                             {% if first_candidate %}
                                 {{ result['counts'][candidate_shortname] }}
@@ -181,11 +181,16 @@
     {% endtrans %}
 {%- endmacro %}
 
+
+
+{# Print an explanation text for the result. If both classical and preferential is given, both are printed. #}
 {% macro explain_result(classical=false, preferential=false, use_bar=false) %}
     {% call util.bootstrap_panel(title=gettext("Help for tallying"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
+
         {% if classical and preferential %}
             <b>{% trans %}Classical vote{% endtrans %}</b><br />
         {% endif %}
+
         {% if classical %}
             <p>
                 {% trans %}
@@ -202,9 +207,11 @@
                 </p>
             {% endif %}
         {% endif %}
+
         {% if classical and preferential %}
             <b>{% trans %}Preferential vote{% endtrans %}</b><br />
         {% endif %}
+
         {% if preferential %}
             <p>
                 {% trans %}
@@ -219,10 +226,15 @@
                 {% endtrans %}
             </p>
         {% endif %}
+
     {% endcall %}
 {% endmacro %}
 
-{% macro show_summary(is_preferential) -%}
+
+
+{% macro show_summary() -%}
+    {% set is_preferential = ambience['ballot']['votes'] %}
+
     <pre style="max-width: 500px;">{{ result['result'] }}</pre>
 
     <p>
@@ -248,6 +260,7 @@
             preference across all participants.
         {% endtrans %}
     </p>
+
     {% if ambience['ballot']['use_bar'] %}
         <p>
             {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
@@ -256,12 +269,16 @@
             {% endtrans %}
         </p>
     {% endif %}
+
 {%- endmacro %}
+
+
 
 {% macro show_own_vote() -%}
     <h3>{% trans %}Your Vote{% endtrans %}</h3>
     <div id="own-vote">
         {% set is_active = ambience["assembly"]["is_active"] %}
+
         {% if not attends %}
             {% trans %}You are not participating in this assembly.{% endtrans %}
         {% elif not is_active and not own_vote %}

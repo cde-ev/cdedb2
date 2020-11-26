@@ -30,9 +30,11 @@
     {% endcall %}
 {%- endmacro %}
 
+
+
 {% macro show_status() -%}
-<dl class="dl-horizontal mosp">
-    <dt>{% trans %}Period{% endtrans %}</dt>
+    <dl class="dl-horizontal mosp">
+        <dt>{% trans %}Period{% endtrans %}</dt>
         <dd id="voting-period">
             {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
                      end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
@@ -61,6 +63,7 @@
                 {% endif %}
             {% endif %}
         </dd>
+
         <dt>{% trans %}Status{% endtrans %}</dt>
         <dd id="status">
             {% if now() < ambience['ballot']['vote_begin'] %}
@@ -95,6 +98,7 @@
                 {% endif %}
             {% endif %}
         </dd>
+
         <dt>{% trans %}Modality{% endtrans %}</dt>
         <dd>
             {% if ambience['ballot']['votes'] == 1 %}
@@ -129,6 +133,7 @@
                 {% endif %}
             {% endif %}
         </dd>
+
         {% if ambience['ballot']['vote_begin'] < now() %}
             <dt>{% trans %}Voted{% endtrans %}</dt>
             {% if ambience['ballot']['is_tallied'] %}
@@ -154,10 +159,14 @@
     {% endif %}
 {%- endmacro %}
 
+
+
 {% macro show_attachments(edit_mode) -%}
     {{ assembly_util.attachment_box(attachments, attachment_histories, edit=edit_mode, title=gettext("Files"),
                                     ballot=ambience['ballot'], new_attachment_button=True, full_history=False) }}
 {%- endmacro %}
+
+
 
 {% macro show_navigation() -%}
     <nav>

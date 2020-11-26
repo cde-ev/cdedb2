@@ -32,10 +32,11 @@
 {% endblock %}
 
 {% block content %}
-    {% set edit_mode = now() < ambience['ballot']['vote_begin'] and ("assembly_presider" in user.admin_views
-                                                                     or ambience['assembly']['id'] in user.presider) %}
-    {% set classical = ambience['ballot']['votes'] %}
-    {% set preferential = not ambience['ballot']['votes'] %}
+    {% set edit_mode = now() < ambience['ballot']['vote_begin']
+                       and ("assembly_presider" in user.admin_views
+                            or ambience['assembly']['id'] in user.presider) %}
+    {% set is_classical = ambience['ballot']['votes'] %}
+    {% set is_preferential = not ambience['ballot']['votes'] %}
 
     {# Admin modification options (delete and edit) #}
     {% if edit_mode %}
@@ -55,17 +56,18 @@
 
     {# General information about ballot and personalized state info #}
     {{ ambience['ballot']['description']|md }}
-
     {{ ballot_meta.show_status() }}
 
     {# Display of result #}
     {% if ambience['ballot']['is_tallied'] %}
         <h3>
             {% trans %}Result{% endtrans %}
-            {{ util.href(cdedblink("assembly/show_ballot_result"), gettext("More details"), aclass="btn btn-info btn-sm pull-right", icon="book") }}
+            {{ util.href(cdedblink("assembly/show_ballot_result"), gettext("More details"),
+                         aclass="btn btn-info btn-sm pull-right", icon="book") }}
         </h3>
         {{ ballot_result.show_result(ambience['ballot'], result) }}
-        {{ ballot_result.explain_result(classical=classical, preferential=preferential, use_bar=ambience['ballot']['use_bar']) }}
+        {{ ballot_result.explain_result(classical=is_classical, preferential=is_preferential,
+                                        use_bar=ambience['ballot']['use_bar']) }}
 
         {{ ballot_result.show_own_vote() }}
     {% else %}
@@ -73,7 +75,7 @@
             {{ ballot_voting.add_candidate_form() }}
         {% else %}
             {# Classical voting, not tallied #}
-            {% if classical %}
+            {% if is_classical %}
                 {% if ambience['ballot']['is_voting'] and attends %}
                     {{ ballot_voting.show_classical_voting() }}
                 {% else %}
@@ -93,9 +95,11 @@
     {% if attachments or edit_mode %}
         {{ ballot_meta.show_attachments(edit_mode) }}
     {% endif %}
+
     {{ ballot_meta.show_navigation() }}
 
     {% if edit_mode %}
         {{ ballot_meta.ballot_action_panel() }}
     {% endif %}
+
 {% endblock %}

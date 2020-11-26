@@ -12,6 +12,8 @@
     </ul>
 {%- endmacro %}
 
+
+
 {# Classical voting: Voting form #}
 {% macro show_classical_voting() -%}
     <h3>{% trans %}Ballot{% endtrans %}</h3>
@@ -53,6 +55,8 @@
     </div>
 {%- endmacro %}
 
+
+
 {# Preferential voting: Presentation of candidates #}
 {% macro show_preferential_candidates() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
@@ -69,6 +73,8 @@
         {% endfor %}
     </ul>
 {%- endmacro %}
+
+
 
 {% macro show_manual_for_text_preferential_voting() -%}
     {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
@@ -160,6 +166,8 @@
     {% endcall %}
 {%- endmacro %}
 
+
+
 {% macro show_manual_for_js_preferential_voting() -%}
     {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
@@ -205,6 +213,8 @@
         {% endif %}
     {% endcall %}
 {%- endmacro %}
+
+
 
 {# Preferential voting: Voting form #}
 {% macro show_preferential_voting() -%}
@@ -300,6 +310,8 @@
         </div>
     </div>
 {%- endmacro %}
+
+
 
 {% macro add_candidate_form() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
