@@ -68,8 +68,6 @@
         {{ ballot_result.show_result(ambience['ballot'], result) }}
         {{ ballot_result.explain_result(classical=is_classical, preferential=is_preferential,
                                         use_bar=ambience['ballot']['use_bar']) }}
-
-        {{ ballot_result.show_own_vote() }}
     {% else %}
         {% if edit_mode %}
             {{ ballot_voting.add_candidate_form() }}
