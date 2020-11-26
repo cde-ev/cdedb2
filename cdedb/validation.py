@@ -286,6 +286,9 @@ def _int(val, argname=None, *, _convert=True, _ignore_warnings=False):
             val = int(val)
     if not isinstance(val, int) or isinstance(val, bool):
         return None, [(argname, TypeError(n_("Must be an integer.")))]
+    if not -2 ** 31  <= val < 2 ** 31:
+        # Our postgres columns only support 32-bit integers.
+        return None, [(argname, ValueError(n_("Integer too large.")))]
     return val, []
 
 
@@ -373,11 +376,16 @@ def _float(val, argname=None, *, _convert=True, _ignore_warnings=False):
     if not isinstance(val, float):
         return None, [(argname,
                        TypeError(n_("Must be a floating point number.")))]
+    if abs(val) >= 1e7:
+        # We are using numeric(8,2) columns in postgres, which only support
+        # numbers up to this size,
+        return None, [(argname,
+                       ValueError(n_("Must be smaller than a million.")))]
     return val, []
 
 
 @_addvalidator
-def _decimal(val, argname=None, *, _convert=True, _ignore_warnings=False):
+def _decimal(val, argname=None, *, large=False, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
@@ -393,11 +401,21 @@ def _decimal(val, argname=None, *, _convert=True, _ignore_warnings=False):
                 argname, ValueError(n_("Invalid input for decimal number.")))]
     if not isinstance(val, decimal.Decimal):
         return None, [(argname, TypeError(n_("Must be a decimal.Decimal.")))]
+    if not large and abs(val) >= 1e7:
+        # We are using numeric(8,2) columns in postgres, which only support
+        # numbers up to this size,
+        return None, [(argname,
+                       ValueError(n_("Must be smaller than a million.")))]
+    if abs(val) >= 1e10:
+        # We are using numeric(11,2) columns in postgres for summation columns.
+        # These only support numbers up to this size,
+        return None, [(argname,
+                       ValueError(n_("Must be smaller than a billion.")))]
     return val, []
 
 
 @_addvalidator
-def _non_negative_decimal(val, argname=None, *, _convert=True,
+def _non_negative_decimal(val, argname=None, *, large=False, _convert=True,
                           _ignore_warnings=False):
     """
     :type val: object
@@ -406,7 +424,7 @@ def _non_negative_decimal(val, argname=None, *, _convert=True,
     :type _ignore_warnings: bool
     :rtype: (decimal.Decimal or None, [(str or None, exception)])
     """
-    val, err = _decimal(val, argname, _convert=_convert,
+    val, err = _decimal(val, argname, large=large, _convert=_convert,
                         _ignore_warnings=_ignore_warnings)
     if not err and val < 0:
         val = None
@@ -430,6 +448,19 @@ def _positive_decimal(val, argname=None, *, _convert=True,
         val = None
         err.append((argname, ValueError(n_("Transfer saldo is negative."))))
     return val, err
+
+@_addvalidator
+def _non_negative_large_decimal(val, argname=None, *, large=False, _convert=True,
+                          _ignore_warnings=False):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type _ignore_warnings: bool
+    :rtype: (decimal.Decimal or None, [(str or None, exception)])
+    """
+    return _non_negative_decimal(val, argname, large=True, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
@@ -1775,7 +1806,7 @@ def _period(val, argname=None, *, _convert=True, _ignore_warnings=False):
         'balance_state': _id_or_None,
         'balance_done': _datetime,
         'balance_trialmembers': _non_negative_int,
-        'balance_total': _non_negative_decimal,
+        'balance_total': _non_negative_large_decimal,
     }
     return _examine_dictionary_fields(
         val, {'id': _id}, optional_fields, _convert=_convert,
@@ -3871,13 +3902,14 @@ def _subscription_request_resolution(val, argname=None, *, _convert=True,
 
 _ASSEMBLY_COMMON_FIELDS = lambda: {
     'title': _str,
+    'shortname': _identifier,
     'description': _str_or_None,
     'signup_end': _datetime,
     'notes': _str_or_None,
 }
 _ASSEMBLY_OPTIONAL_FIELDS = lambda: {
     'is_active': _bool,
-    'mail_address': _str_or_None,
+    'presider_address': _str_or_None,
     'presiders': _iterable,
 }
 
@@ -3932,7 +3964,8 @@ _BALLOT_COMMON_FIELDS = lambda: {
 _BALLOT_OPTIONAL_FIELDS = lambda: {
     'extended': _bool_or_None,
     'vote_extension_end': _datetime_or_None,
-    'quorum': _int,
+    'abs_quorum': _int,
+    'rel_quorum': _int,
     'votes': _int_or_None,
     'use_bar': _bool,
     'is_tallied': _bool,
@@ -4004,22 +4037,48 @@ def _ballot(val, argname=None, *, creation=False, _convert=True,
                 else:
                     newcandidates[anid] = candidate
         val['candidates'] = newcandidates
-    if ('quorum' in val) != ('vote_extension_end' in val):
-        errs.extend(
-            [("vote_extension_end",
-              ValueError(n_("Must be specified if quorum is given."))),
-             ("quorum", ValueError(
-                 n_("Must be specified if vote extension end is given.")))]
-        )
-    if 'quorum' in val and 'vote_extension_end' in val:
-        if not ((val['quorum'] != 0 and val['vote_extension_end'] is not None)
-                or (val['quorum'] == 0 and val['vote_extension_end'] is None)):
-            errs.extend(
-                [("vote_extension_end",
-                  ValueError(n_("Inconsitent with quorum."))),
-                 ("quorum", ValueError(
-                     n_("Inconsitent with vote extension end.")))]
-            )
+
+    if val.get('abs_quorum') and val.get('rel_quorum'):
+        msg = ValueError(n_("Must not specify both absolute and relative quorum."))
+        errs.append(('abs_quorum', msg))
+        errs.append(('rel_quorum', msg))
+
+    quorum = None
+    if 'abs_quorum' in val:
+        quorum = val['abs_quorum']
+    if 'rel_quorum' in val and not quorum:
+        quorum = val['rel_quorum']
+        if not 0 <= quorum <= 100:
+            msg = ValueError(n_("Relative quorum must be between 0 and 100."))
+            errs.append(("abs_quorum", msg))
+
+    vote_extension_errors = [
+        ("vote_extension_end", ValueError(n_("Must be specified if quorum is given."))),
+    ]
+    quorum_msg = ValueError(n_("Must specify a quorum if vote extension end is given."))
+    quorum_errors = [
+        ("abs_quorum", quorum_msg),
+        ("rel_quorum", quorum_msg),
+    ]
+
+    if (quorum is None) == ('vote_extension_end' in val):
+        # Only one of quorum and extension end is given.
+        if quorum is None:
+            errs.extend(quorum_errors)
+        else:
+            errs.extend(vote_extension_errors)
+        # Skip the last validation step.
+        return val, errs
+
+    if 'vote_extension_end' in val:
+        # quorum can not be None at this point.
+        if val['vote_extension_end'] is None and quorum:
+            # No extension end, but quorum.
+            errs.extend(vote_extension_errors)
+        elif val['vote_extension_end'] and not quorum:
+            # No quorum, but extension end.
+            errs.extend(quorum_errors)
+
     return val, errs
 
 
@@ -4493,29 +4552,34 @@ def _enum_validator_maker(anenum, name=None, internal=False):
         :type _ignore_warnings: bool
         :rtype: (enum or None, [(str or None, exception)])
         """
-        if _convert and not isinstance(val, anenum):
+        if isinstance(val, anenum):
+            return val, []
+
+        elif isinstance(val, int):
+            try:
+                return anenum(val), []
+            except ValueError:
+                pass
+
+        elif _convert:
+            # first, try to convert if the enum member is given as "class.member"
+            if isinstance(val, str):
+                try:
+                    enum_name, enum_val = val.split(".", 1)
+                    if enum_name == anenum.__name__:
+                        return anenum[enum_val], []
+                except (KeyError, ValueError):
+                    pass
+
+            # second, try to convert if the enum member is given as str(int)
             val, errs = _int(val, argname=argname, _convert=_convert,
                              _ignore_warnings=_ignore_warnings)
-            if errs:
-                return val, errs
             try:
-                val = anenum(val)
+                return anenum(val), []
             except ValueError:
-                return None, [(argname,
-                               ValueError(error_msg, {'enum': anenum}))]
-        else:
-            if not isinstance(val, anenum):
-                if isinstance(val, int):
-                    try:
-                        val = anenum(val)
-                    except ValueError:
-                        return None, [(
-                            argname, ValueError(error_msg, {'enum': anenum}))]
-                else:
-                    return None, [
-                        (argname, TypeError(n_("Must be a %(type)s."),
-                                            {'type': anenum}))]
-        return val, []
+                pass
+
+        return None, [(argname, ValueError(error_msg, {'enum': anenum}))]
 
     the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())
     if not internal:

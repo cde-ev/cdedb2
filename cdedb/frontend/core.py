@@ -235,7 +235,7 @@ class CoreFrontend(AbstractFrontend):
 
         if wants:
             response = basic_redirect(rs, wants)
-        elif "member" in rs.user.roles and "searchable" not in rs.user.roles:
+        elif "member" in rs.user.roles:
             data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             if not data['decided_search']:
                 response = self.redirect(rs, "cde/consent_decision_form")
@@ -243,15 +243,15 @@ class CoreFrontend(AbstractFrontend):
                 response = self.redirect(rs, "core/index")
         else:
             response = self.redirect(rs, "core/index")
-        response.set_cookie("sessionkey", sessionkey,  # type: ignore
-                               httponly=True, secure=True, samesite="Lax")
+        response.set_cookie("sessionkey", sessionkey,
+                            httponly=True, secure=True, samesite="Lax")
         return response
 
     # We don't check anti CSRF tokens here, since logging does not harm anyone.
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
         """Invalidate the current session."""
-        self.coreproxy.logout(rs, all_sessions=False)
+        self.coreproxy.logout(rs)
         response = self.redirect(rs, "core/index")
         response.delete_cookie("sessionkey")
         return response
@@ -262,7 +262,7 @@ class CoreFrontend(AbstractFrontend):
         """Invalidate all sessions for the current user."""
         if rs.has_validation_errors():
             return self.index(rs)
-        count = self.coreproxy.logout(rs, all_sessions=True)
+        count = self.coreproxy.logout(rs, other_sessions=True)
         rs.notify(
             "success", n_("%(count)s session(s) terminated."), {'count': count})
         # Unset persona_id so the notification is encoded correctly.
@@ -270,6 +270,23 @@ class CoreFrontend(AbstractFrontend):
         ret = self.redirect(rs, "core/index")
         ret.delete_cookie("sessionkey")
         return ret
+
+    @periodic("deactivate_old_sessions", period=4 * 24)
+    def deactivate_old_sessions(self, rs: RequestState, store: CdEDBObject
+                                ) -> CdEDBObject:
+        """Once per day deactivate old sessions."""
+        count = self.coreproxy.deactivate_old_sessions(rs)
+        self.logger.info(f"Deactivated {count} old sessions.")
+        store["total"] = store.get("total", 0) + count
+        return store
+
+    @periodic("clean_session_log", period=4 * 24 * 30)
+    def clean_session_log(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        """Once per month, cleanup old inactive sessions."""
+        count = self.coreproxy.clean_session_log(rs)
+        self.logger.info(f"Deleted {count} old entries from the session log.")
+        store["total"] = store.get("total", 0) + count
+        return store
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))
@@ -1274,7 +1291,7 @@ class CoreFrontend(AbstractFrontend):
             rs, privilege_change_id, case_status)
         success = n_("Change committed.") if ack else n_("Change rejected.")
         info = n_("Password reset issued for new admin.")
-        self.notify_return_code(rs, code, success=success, pending=info)
+        self.notify_return_code(rs, code, success=success, info=info)
         if not code:
             return self.show_privilege_change(rs, privilege_change_id)
         else:
@@ -1530,7 +1547,7 @@ class CoreFrontend(AbstractFrontend):
             return self.set_foto_form(rs, persona_id)
         code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
         self.notify_return_code(rs, code, success=n_("Foto updated."),
-                                pending=n_("Foto removed."))
+                                info=n_("Foto removed."))
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin", modi={"POST"})
@@ -1602,6 +1619,9 @@ class CoreFrontend(AbstractFrontend):
                     rs.user.persona_id))
             return self.change_password_form(rs)
         else:
+            count = self.coreproxy.logout(rs, other_sessions=True, this_session=False)
+            rs.notify(
+                "success", n_("%(count)s session(s) terminated."), {'count': count})
             return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("anonymous")
@@ -2007,7 +2027,7 @@ class CoreFrontend(AbstractFrontend):
             error=n_("Verification failed. Please contact the administrators."),
             success=n_("Email verified. Wait for moderation. "
                        "You will be notified by mail."),
-            pending=n_("This account request was already verified.")
+            info=n_("This account request was already verified.")
         )
         if not code:
             return self.redirect(rs, "core/genesis_request_form")

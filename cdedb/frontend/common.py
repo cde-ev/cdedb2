@@ -55,14 +55,14 @@ from typing import (
     ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO, ItemsView,
     Type
 )
-from typing_extensions import Protocol
+from typing_extensions import Protocol, Literal
 
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
     encode_parameter, decode_parameter, make_proxy, EntitySorter,
-    REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap,
+    REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap, CdEDBMultiDict,
     CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User,
     ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, _tdelta
 )
@@ -252,7 +252,7 @@ def date_filter(val: Union[datetime.date, str, None],
         return val.strftime(formatstr)
 
 
-def datetime_filter(val: Optional[datetime.datetime],
+def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
                     verbosity: str = "medium",
                     passthrough: bool = False) -> Optional[str]:
@@ -350,6 +350,23 @@ def iban_filter(val: Optional[str]) -> Optional[str]:
     else:
         val = val.strip().replace(" ", "")
         return " ".join(val[x:x + 4] for x in range(0, len(val), 4))
+
+
+@overload
+def hidden_iban_filter(val: None) -> None: ...
+
+
+@overload
+def hidden_iban_filter(val: str) -> str: ...
+
+
+def hidden_iban_filter(val: Optional[str]) -> Optional[str]:
+    """Custom jinja filter for hiding IBANs in nice to read blocks."""
+    if val is None:
+        return None
+    else:
+        val = val[:4] + "*" * (len(val) - 8) + val[-4:]
+        return iban_filter(val)
 
 
 @overload
@@ -633,23 +650,23 @@ def get_markdown_parser() -> markdown.Markdown:
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
     if md is None:
-        md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty",
-                                           "toc"],
-                               extension_configs={
-                                   "toc": {
-                                       "baselevel": 4,
-                                       "permalink": True,
-                                       "slugify": md_id_wrapper,
-                                   },
-                                   'smarty': {
-                                       'substitutions': {
-                                           'left-single-quote': '&sbquo;',
-                                           'right-single-quote': '&lsquo;',
-                                           'left-double-quote': '&bdquo;',
-                                           'right-double-quote': '&ldquo;'
-                                       }
-                                   }
-                               })
+        extension_configs = {
+            "toc": {
+                "baselevel": 4,
+                "permalink": True,
+                "slugify": md_id_wrapper,
+            },
+            'smarty': {
+                'substitutions': {
+                    'left-single-quote': '&sbquo;',
+                    'right-single-quote': '&lsquo;',
+                    'left-double-quote': '&bdquo;',
+                    'right-double-quote': '&ldquo;',
+                },
+            },
+        }
+        md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty", "toc"],
+                               extension_configs=extension_configs)  # type: ignore
 
         MARKDOWN_PARSER.md = md
     else:
@@ -829,6 +846,7 @@ JINJA_FILTERS = {
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
     'iban': iban_filter,
+    'hidden_iban': hidden_iban_filter,
     'escape': escape_filter,
     'e': escape_filter,
     'json': json_filter,
@@ -967,7 +985,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 raise RuntimeError(n_("Must not be used in web templates."))
             return doclink(rs, label="", topic=topic, anchor=anchor, html=False)
 
-        def _staticlink(path: str, version: str = ""):
+        def _staticlink(path: str, version: str = "") -> str:
             """Create link to static files in non-web templates.
 
             This should be used to avoid hardcoded links in our templates. To create
@@ -1184,7 +1202,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not fields:
             raise ValueError(n_("Cannot download query result without fields"
                                 " of interest."))
-        fields = sum((csvfield.split(',') for csvfield in fields), [])
+        fields: List[str] = sum((csvfield.split(',') for csvfield in fields), [])
         filename += f".{kind}"
         if kind == "csv":
             csv_data = csv_output(result, fields, substitutions=substitutions)
@@ -1207,16 +1225,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         # handy, should probably survive in a commented HTML portion
         if 'debugstring' not in params and self.conf["CDEDB_DEV"]:
-            debugstring = glue(
-                "We have is_multithreaded={}; is_multiprocess={};",
-                "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
-                "method={} ; remote_addr={} ; values={}, ambience={},",
-                "errors={}, time={}").format(
-                    rs.request.is_multithread, rs.request.is_multiprocess,
-                    rs.request.base_url, rs.request.cookies, rs.request.url,
-                    rs.request.is_secure, rs.request.method,
-                    rs.request.remote_addr, rs.values, rs.ambience,
-                    rs.retrieve_validation_errors(), now())
+            debugstring = (
+                f"We have is_multithreaded={rs.request.is_multithread};"
+                f" is_multiprocess={rs.request.is_multiprocess};"
+                f" base_url={rs.request.base_url}; cookies={rs.request.cookies};"
+                f" url={rs.request.url}; is_secure={rs.request.is_secure};"
+                f" method={rs.request.method}; remote_addr={rs.request.remote_addr};"
+                f" values={rs.values}; ambience={rs.ambience};"
+                f" errors={rs.retrieve_validation_errors()}; time={now()}")
+
             params['debugstring'] = debugstring
         if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
@@ -1239,7 +1256,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "style-src 'self' 'unsafe-inline';",
             "img-src *")
         response.headers.add('Content-Security-Policy',
-                                csp_header_template.format(csp_nonce))
+                             csp_header_template.format(csp_nonce))
         return response
 
     # TODO use new typing feature to accurately define the following:
@@ -1305,7 +1322,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # however at the end of lines the standard requires spaces to be
         # encoded hence we have to be a bit careful (encoding is a pain!)
         # 'quoted-printable' ensures we only get str here:
-        payload: str = msg.get_payload()  # type: ignore
+        payload: str = msg.get_payload()
         payload = re.sub('=20(.)', r' \1', payload)
         # do this twice for adjacent encoded spaces
         payload = re.sub('=20(.)', r' \1', payload)
@@ -1324,7 +1341,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if headers[header]:
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            msg[header] = headers[header]  # type: ignore
+            msg[header] = headers[header]
         subject = headers["Prefix"] + " " + headers['Subject']  # type: ignore
         msg["Subject"] = subject
         msg["Message-ID"] = email.utils.make_msgid(
@@ -1408,7 +1425,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def notify_return_code(rs: RequestState, code: Union[int, bool, None],
                            success: str = n_("Change committed."),
-                           pending: str = n_("Change pending."),
+                           info: str = n_("Change pending."),
                            error: str = n_("Change failed.")) -> None:
         """Small helper to issue a notification based on a return code.
 
@@ -1426,7 +1443,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif code is True or code > 0:
             rs.notify("success", success)
         elif code < 0:
-            rs.notify("info", pending)
+            rs.notify("info", info)
         else:
             raise RuntimeError(n_("Impossible."))
 
@@ -1876,7 +1893,7 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
                 return attempt
         raise RuntimeError(n_("Magic URL parameter replacement failed."))
     # Second we come to the normal case
-    allparams = werkzeug.datastructures.MultiDict()
+    allparams: CdEDBMultiDict = werkzeug.datastructures.MultiDict()
     for arg in rs.requestargs:
         if rs.urls.map.is_endpoint_expecting(endpoint, arg):
             allparams[arg] = rs.requestargs[arg]
@@ -1904,20 +1921,30 @@ def staticurl(path: str, version: str = "") -> str:
     return ret
 
 
+@overload
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: bool = True) -> str:
+               html: Literal[True] = True) -> jinja2.Markup: ...
+
+
+@overload
+def staticlink(rs: RequestState, label: str, path: str, version: str = "",
+               html: Literal[False] = False) -> str: ...
+
+
+def staticlink(rs: RequestState, label: str, path: str, version: str = "",
+               html: bool = True) -> Union[jinja2.Markup, str]:
     """Create a link to a static resource.
 
     This can either create a basic html link or a fully qualified, static https link.
 
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
+    link: Union[jinja2.Markup, str]
     if html:
-        link = safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
+        return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
         host = rs.urls.get_host("")
-        link = f"https://{host}{staticurl(path, version=version)}"
-    return link
+        return f"https://{host}{staticurl(path, version=version)}"
 
 
 def docurl(topic: str, anchor: str = "") -> str:
@@ -1928,19 +1955,29 @@ def docurl(topic: str, anchor: str = "") -> str:
     return ret
 
 
+@overload
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: bool = True) -> str:
+            html: Literal[True] = True) -> jinja2.Markup: ...
+
+
+@overload
+def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
+            html: Literal[False] = False) -> str: ...
+
+
+def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
+            html: bool = True) -> Union[jinja2.Markup, str]:
     """Create a link to our documentation.
 
     This can either create a basic html link or a fully qualified, static https link.
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
+    link: Union[jinja2.Markup, str]
     if html:
-        link = safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
+        return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
         host = rs.urls.get_host("")
-        link = f"https://{host}{docurl(topic, anchor=anchor)}"
-    return link
+        return f"https://{host}{docurl(topic, anchor=anchor)}"
 
 
 # noinspection PyPep8Naming
@@ -2161,7 +2198,8 @@ def event_guard(argname: str = "event_id",
 
 
 def mailinglist_guard(argname: str = "mailinglist_id",
-                      allow_moderators: bool = True) -> Callable[[F], F]:
+                      allow_moderators: bool = True,
+                      requires_privilege: bool = False) -> Callable[[F], F]:
     """This decorator checks the access with respect to a specific
     mailinglist. The list is specified by id which has either to be a
     keyword parameter or the first positional parameter after the
@@ -2186,14 +2224,11 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
-                if not obj.mlproxy.may_manage(rs, mailinglist_id=arg,
-                                              privileged=True):
-                    link = doclink(rs, label=rs.gettext("privileged moderator"),
-                                   topic="Handbuch_Moderator",
-                                   anchor="privilegierte-moderatoren")
-                    rs.notify("info", n_(
-                        "You do not have %(link)s access and may not change "
-                        "subscriptions."), {'link': link})
+                if (requires_privilege and not
+                    obj.mlproxy.may_manage(rs, mailinglist_id=arg, privileged=True)):
+                    raise werkzeug.exceptions.Forbidden(rs.gettext(
+                        "You do not have privileged moderator access and may not change "
+                        "subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
@@ -2465,8 +2500,7 @@ def calculate_db_logparams(offset: Optional[int], length: int
 
 def calculate_loglinks(rs: RequestState, total: int,
                        offset: Optional[int], length: int
-                       ) -> Dict[str, Union[werkzeug.MultiDict,
-                                            List[werkzeug.MultiDict]]]:
+                       ) -> Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]:
     """Calculate the target parameters for the links in the log pagination bar.
 
     :param total: The total count of log entries
@@ -2482,7 +2516,8 @@ def calculate_loglinks(rs: RequestState, total: int,
         trueoffset = offset
 
     # Create values sets for the necessary links.
-    new_md = lambda: werkzeug.MultiDict(rs.values)
+    def new_md() -> CdEDBMultiDict:
+        return werkzeug.MultiDict(rs.values)
     loglinks = {
         "first": new_md(),
         "previous": new_md(),
@@ -2505,6 +2540,6 @@ def calculate_loglinks(rs: RequestState, total: int,
     loglinks["current"]["offset"] = trueoffset
 
     # piece everything together
-    ret: Dict[str, Union[werkzeug.MultiDict, List[werkzeug.MultiDict]]]
+    ret: Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret

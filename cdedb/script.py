@@ -164,7 +164,7 @@ class Script(Atomizer):
         self.start_time = time.time()
         return super().__enter__()
 
-    def __exit__(self, exc_type: Optional[Type[Exception]],
+    def __exit__(self, exc_type: Optional[Type[Exception]],  # type: ignore
                  exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> bool:
         """Calculate time taken and provide success message.
@@ -193,5 +193,5 @@ class Script(Atomizer):
         print()
         print(formatmsg(msg))
         print()
-        ret = super().__exit__(exc_type, exc_val, exc_tb)
-        return ret or isinstance(exc_val, DryRunError)
+        super().__exit__(exc_type, exc_val, exc_tb)
+        return isinstance(exc_val, DryRunError)

@@ -39,14 +39,17 @@
 
 {% block content %}
     {% if is_relative_admin %}
-        {% if not ambience['persona']['is_active'] %}
-            <div class="alert alert-info" id="deactivated">
-                {{ util.make_icon('info-circle') }} {% trans %}The User is deactivated.{% endtrans %}
+        {% if ambience['persona']['is_purged'] %}
+            <div class="alert alert-info" id="purged">
+                {{ util.make_icon('info-circle') }} {% trans %}This user has been purged.{% endtrans %}
             </div>
-        {% endif %}
-        {% if ambience['persona']['is_archived'] %}
+        {% elif ambience['persona']['is_archived'] %}
             <div class="alert alert-info" id="archived">
-                {{ util.make_icon('info-circle') }} {% trans %}The User is archived.{% endtrans %}
+                {{ util.make_icon('info-circle') }} {% trans %}The user is archived.{% endtrans %}
+            </div>
+        {% elif not ambience['persona']['is_active'] %}
+            <div class="alert alert-info" id="deactivated">
+                {{ util.make_icon('info-circle') }} {% trans %}The user is deactivated.{% endtrans %}
             </div>
         {% endif %}
     {% endif %}
@@ -416,7 +419,7 @@
             </tbody>
             </table>
         {% endif %}
-        {%  if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
+        {% if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT and not ambience['persona']['is_purged'] %}
             <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
@@ -437,7 +440,7 @@ Mitglied.</pre>
         {% endif %}
     </div>
 
-    {% if data['id'] != user.persona_id and is_relative_admin %}
+    {% if data['id'] != user.persona_id and is_relative_admin and not ambience['persona']['is_purged'] %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
                     <div class="row">
@@ -531,7 +534,7 @@ Mitglied.</pre>
                         <div class="col-sm-8">
                             <p class="text-muted">
                                 {% trans %}
-                                	Archives the Account. The User can no longer login and most Information is deleted.
+                                    Archives the Account. The User can no longer login and most Information is deleted.
                                     Only Information necessary to restore Membership will be retained
                                     (i. e. Name and Past Events attendance).
                                     Other Users can no longer see the Account.

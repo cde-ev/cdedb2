@@ -21,8 +21,8 @@ from typing_extensions import Protocol
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
-    access, internal, singularize, diacritic_patterns,
-    affirm_validation as affirm, affirm_set_validation as affirm_set)
+    access, internal, singularize, affirm_validation as affirm,
+    affirm_set_validation as affirm_set)
 from cdedb.common import (
     n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
@@ -455,9 +455,6 @@ class CoreBackend(AbstractBackend):
         """Retrieve the current generation of the persona ids in the
         changelog. This includes committed and pending changelog entries.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: int}
         :returns: dict mapping ids to generations
         """
         query = glue("SELECT persona_id, max(generation) AS generation",
@@ -467,7 +464,11 @@ class CoreBackend(AbstractBackend):
                         const.MemberChangeStati.committed)
         data = self.query_all(rs, query, (ids, valid_status))
         return {e['persona_id']: e['generation'] for e in data}
-    changelog_get_generation = singularize(changelog_get_generations)
+
+    class _ChangelogGetGenerationProtocol(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> int: ...
+    changelog_get_generation: _ChangelogGetGenerationProtocol = singularize(
+        changelog_get_generations)
 
     @access("core_admin")
     def changelog_get_changes(self, rs: RequestState,
@@ -514,7 +515,7 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("persona", "droid")
-    def retrieve_personas(self, rs: RequestState, ids: Collection[int],
+    def retrieve_personas(self, rs: RequestState, persona_ids: Collection[int],
                           columns: Tuple[str, ...] = PERSONA_CORE_FIELDS
                           ) -> CdEDBObjectMap:
         """Helper to access a persona dataset.
@@ -524,9 +525,14 @@ class CoreBackend(AbstractBackend):
         """
         if "id" not in columns:
             columns += ("id",)
-        data = self.sql_select(rs, "core.personas", columns, ids)
+        data = self.sql_select(rs, "core.personas", columns, persona_ids)
         return {d['id']: d for d in data}
-    retrieve_persona = singularize(retrieve_personas)
+
+    class _RetrievePersonaProtocol(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int, columns: Tuple[str, ...]
+                     ) -> CdEDBObject: ...
+    retrieve_persona: _RetrievePersonaProtocol = singularize(
+        retrieve_personas, "persona_ids", "persona_id")
 
     @internal
     @access("ml")
@@ -620,10 +626,8 @@ class CoreBackend(AbstractBackend):
                       'is_assembly_realm'}
         if (set(data) & realm_keys
                 and ("core_admin" not in rs.user.roles
-                     or "realms" not in allow_specials)):
-            if (any(data[key] for key in realm_keys)
-                    or "archive" not in allow_specials):
-                raise PrivilegeError(n_("Realm modification prevented."))
+                     or not {"realms", "purge"} & set(allow_specials))):
+            raise PrivilegeError(n_("Realm modification prevented."))
         if (set(data) & ADMIN_KEYS
                 and ("meta_admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
@@ -824,8 +828,7 @@ class CoreBackend(AbstractBackend):
                         and not data.get('is_cde_admin'))):
                     raise ValueError(errormsg)
 
-            if (data.get('is_core_admin') or data.get('is_meta_admin')
-                    or data.get('is_cdelokal_admin')):
+            if data.get('is_core_admin') or data.get('is_meta_admin'):
                 if not persona['is_cde_realm']:
                     raise ValueError(errormsg)
 
@@ -842,7 +845,7 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("meta_admin")
-    def finalize_privilege_change(self, rs: RequestState, case_id: int,
+    def finalize_privilege_change(self, rs: RequestState, privilege_change_id: int,
                                   case_status: const.PrivilegeChangeStati
                                   ) -> DefaultReturnCode:
         """Finalize a pending change to a users admin bits.
@@ -852,20 +855,20 @@ class CoreBackend(AbstractBackend):
         If the user had no admin privileges previously, we require a password
         reset afterwards.
 
-        :returns: default return code. A neegative return indicates, that the
+        :returns: default return code. A negative return indicates, that the
             users password was invalidated and will need to be changed.
         """
-        case_id = affirm("id", case_id)
+        privilege_change_id = affirm("id", privilege_change_id)
         case_status = affirm("enum_privilegechangestati", case_status)
 
         data = {
-            "id": case_id,
+            "id": privilege_change_id,
             "ftime": now(),
             "reviewer": rs.user.persona_id,
             "status": case_status,
         }
         with Atomizer(rs):
-            case = self.get_privilege_change(rs, case_id)
+            case = self.get_privilege_change(rs, privilege_change_id)
             if case['status'] != const.PrivilegeChangeStati.pending:
                 raise ValueError(
                     n_("Invalid privilege change state: %(status)s."),
@@ -910,7 +913,7 @@ class CoreBackend(AbstractBackend):
 
                 # Mark case as successful
                 data = {
-                    "id": case_id,
+                    "id": privilege_change_id,
                     "status": const.PrivilegeChangeStati.successful,
                 }
                 ret *= self.sql_update(rs, "core.privilege_changes", data)
@@ -960,14 +963,19 @@ class CoreBackend(AbstractBackend):
         return {e["id"]: e for e in data}
 
     @access("meta_admin")
-    def get_privilege_changes(self, rs: RequestState, ids: Collection[int]
-                              ) -> CdEDBObjectMap:
+    def get_privilege_changes(self, rs: RequestState,
+                              privilege_change_ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve datasets for priviledge changes."""
-        ids = affirm_set("id", ids)
+        privilege_change_ids = affirm_set("id", privilege_change_ids)
         data = self.sql_select(
-            rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, ids)
+            rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, privilege_change_ids)
         return {e["id"]: e for e in data}
-    get_privilege_change = singularize(get_privilege_changes)
+
+    class _GetPrivilegeChangeProtocol(Protocol):
+        def __call__(self, rs: RequestState, privilege_change_id: int
+                     ) -> CdEDBObject: ...
+    get_privilege_change: _GetPrivilegeChangeProtocol = singularize(
+        get_privilege_changes, "privilege_change_ids", "privilege_change_id")
 
     @access("persona")
     def list_admins(self, rs: RequestState, realm: str) -> List[int]:
@@ -1192,6 +1200,7 @@ class CoreBackend(AbstractBackend):
                 # 'is_member' already adjusted
                 'is_searchable': False,
                 # 'is_archived' will be done later
+                # 'is_purged' not relevant here
                 # 'display_name' kept for later recognition
                 # 'given_names' kept for later recognition
                 # 'family_name' kept for later recognition
@@ -1398,9 +1407,14 @@ class CoreBackend(AbstractBackend):
                 'display_name': "N.",
                 'given_names': "N.",
                 'family_name': "N.",
-                'birthday': None,
+                'birthday': "-Infinity",
                 'birth_name': None,
-                'gender': None,
+                'gender': const.Genders.not_specified,
+                'is_cde_realm': True,
+                'is_event_realm': True,
+                'is_ml_realm': True,
+                'is_assembly_realm': True,
+                'is_purged': True,
             }
             ret = self.set_persona(
                 rs, update, generation=None, may_wait=False,
@@ -1432,7 +1446,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_username(self, rs: RequestState, persona_id: int,
-                        new_username: str, password: Optional[str]
+                        new_username: Optional[str], password: Optional[str]
                         ) -> Tuple[bool, str]:
         """Since usernames are used for login, this needs a bit of care.
 
@@ -1466,7 +1480,10 @@ class CoreBackend(AbstractBackend):
                     self.core_log(
                         rs, const.CoreLogCodes.username_change, persona_id,
                         change_note=new_username)
-                    return True, new_username
+                    if new_username:
+                        return True, new_username
+                    else:
+                        return True, n_("Username removed.")
         return False, n_("Failed.")
 
     @access("persona")
@@ -1479,15 +1496,21 @@ class CoreBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, (foto,))) or 0
 
     @access("persona")
-    def get_personas(self, rs: RequestState,
-                     ids: Collection[int]) -> CdEDBObjectMap:
+    def get_personas(self, rs: RequestState, persona_ids: Collection[int]
+                     ) -> CdEDBObjectMap:
         """Acquire data sets for specified ids."""
-        ids = affirm_set("id", ids)
-        return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
-    get_persona = singularize(get_personas)
+        persona_ids = affirm_set("id", persona_ids)
+        return self.retrieve_personas(rs, persona_ids, columns=PERSONA_CORE_FIELDS)
+
+    class _GetPersonaProtocol(Protocol):
+        # `persona_id` is actually not optional, but it produces a lot of errors.
+        def __call__(self, rs: RequestState, persona_id: Optional[int]
+                     ) -> CdEDBObject: ...
+    get_persona: _GetPersonaProtocol = singularize(
+        get_personas, "persona_ids", "persona_id")
 
     @access("event", "droid_quick_partial_export")
-    def get_event_users(self, rs: RequestState, ids: Collection[int],
+    def get_event_users(self, rs: RequestState, persona_ids: Collection[int],
                         event_id: int = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.
 
@@ -1498,9 +1521,9 @@ class CoreBackend(AbstractBackend):
         :param event_id: allows all users which are registered to this event
             to query for other participants of the same event by their ids.
         """
-        ids = affirm_set("id", ids)
+        persona_ids = affirm_set("id", persona_ids)
         event_id = affirm("id_or_None", event_id)
-        ret = self.retrieve_personas(rs, ids, columns=PERSONA_EVENT_FIELDS)
+        ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
         # The event user view on a cde user contains lots of personal
         # data. So we require the requesting user to be orga (to get access to
         # all event users who are related to their event) or 'participant'
@@ -1517,7 +1540,7 @@ class CoreBackend(AbstractBackend):
                 self.query_all(rs, orga, (rs.user.persona_id, event_id)))
         else:
             is_orga = False
-        if (ids != {rs.user.persona_id}
+        if (persona_ids != {rs.user.persona_id}
                 and not (rs.user.roles
                          & {"event_admin", "cde_admin", "core_admin",
                             "droid_quick_partial_export"})):
@@ -1546,7 +1569,13 @@ class CoreBackend(AbstractBackend):
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
         return ret
-    get_event_user = singularize(get_event_users)
+
+    class _GetEventUserProtocol(Protocol):
+        # `persona_id` is actually not optional, but it produces a lot of errors.
+        def __call__(self, rs: RequestState, persona_id: Optional[int],
+                     event_id: int = None) -> CdEDBObject: ...
+    get_event_user: _GetEventUserProtocol = singularize(
+        get_event_users, "persona_ids", "persona_id")
 
     @overload
     def quota(self, rs: RequestState, *, ids: Collection[int]) -> int: ...
@@ -1612,14 +1641,14 @@ class CoreBackend(AbstractBackend):
                 and not {"cde_admin", "core_admin"} & rs.user.roles)
 
     @access("cde")
-    def get_cde_users(self, rs: RequestState,
-                      ids: Collection[int]) -> CdEDBObjectMap:
+    def get_cde_users(self, rs: RequestState, persona_ids: Collection[int]
+                      ) -> CdEDBObjectMap:
         """Get an cde view on some data sets."""
-        ids = affirm_set("id", ids)
+        persona_ids = affirm_set("id", persona_ids)
         with Atomizer(rs):
-            if self.check_quota(rs, ids=ids):
+            if self.check_quota(rs, ids=persona_ids):
                 raise QuotaException(n_("Too many queries."))
-            ret = self.retrieve_personas(rs, ids, columns=PERSONA_CDE_FIELDS)
+            ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_CDE_FIELDS)
             if any(not e['is_cde_realm'] for e in ret.values()):
                 raise RuntimeError(n_("Not a CdE user."))
             if (not {"cde_admin", "core_admin"} & rs.user.roles
@@ -1629,52 +1658,55 @@ class CoreBackend(AbstractBackend):
                                  for e in ret.values()))):
                 raise RuntimeError(n_("Improper access to member data."))
             return ret
-    get_cde_user = singularize(get_cde_users)
+    get_cde_user: _GetPersonaProtocol = singularize(
+        get_cde_users, "persona_ids", "persona_id")
 
     @access("ml")
-    def get_ml_users(self, rs: RequestState,
-                     ids: Collection[int]) -> CdEDBObjectMap:
+    def get_ml_users(self, rs: RequestState, persona_ids: Collection[int]
+                     ) -> CdEDBObjectMap:
         """Get an ml view on some data sets."""
-        ids = affirm_set("id", ids)
-        ret = self.retrieve_personas(rs, ids, columns=PERSONA_ML_FIELDS)
+        persona_ids = affirm_set("id", persona_ids)
+        ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_ML_FIELDS)
         if any(not e['is_ml_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an ml user."))
         return ret
-    get_ml_user = singularize(get_ml_users)
+    get_ml_user: _GetPersonaProtocol = singularize(
+        get_ml_users, "persona_ids", "persona_id")
 
     @access("assembly")
-    def get_assembly_users(self, rs: RequestState,
-                           ids: Collection[int]) -> CdEDBObjectMap:
+    def get_assembly_users(self, rs: RequestState, persona_ids: Collection[int]
+                           ) -> CdEDBObjectMap:
         """Get an assembly view on some data sets."""
-        ids = affirm_set("id", ids)
-        ret = self.retrieve_personas(rs, ids, columns=PERSONA_ASSEMBLY_FIELDS)
+        persona_ids = affirm_set("id", persona_ids)
+        ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_ASSEMBLY_FIELDS)
         if any(not e['is_assembly_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an assembly user."))
         return ret
-    get_assembly_user = singularize(get_assembly_users)
+    get_assembly_user: _GetPersonaProtocol = singularize(
+        get_assembly_users, "persona_ids", "persona_id")
 
     @access("persona")
-    def get_total_personas(self, rs: RequestState,
-                           ids: Collection[int]) -> CdEDBObjectMap:
+    def get_total_personas(self, rs: RequestState, persona_ids: Collection[int]
+                           ) -> CdEDBObjectMap:
         """Acquire data sets for specified ids.
 
         This includes all attributes regardless of which realm they
         pertain to.
         """
-        ids = affirm_set("id", ids)
-        if (ids != {rs.user.persona_id} and not self.is_admin(rs)
-                and any(not self.is_relative_admin(rs, anid,
-                                                   allow_meta_admin=True)
-                        for anid in ids)):
+        persona_ids = affirm_set("id", persona_ids)
+        if (persona_ids != {rs.user.persona_id} and not self.is_admin(rs)
+                and any(not self.is_relative_admin(rs, anid, allow_meta_admin=True)
+                        for anid in persona_ids)):
             raise PrivilegeError(n_("Must be privileged."))
-        return self.retrieve_personas(rs, ids, columns=PERSONA_ALL_FIELDS)
-    get_total_persona = singularize(get_total_personas)
+        return self.retrieve_personas(rs, persona_ids, columns=PERSONA_ALL_FIELDS)
+    get_total_persona: _GetPersonaProtocol = singularize(
+        get_total_personas, "persona_ids", "persona_id")
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
     def create_persona(self, rs: RequestState, data: CdEDBObject,
-                       submitted_by: int = None,
-                       ignore_warnings: bool = False) -> DefaultReturnCode:
+                       submitted_by: int = None, ignore_warnings: bool = False
+                       ) -> DefaultReturnCode:
         """Instantiate a new data set.
 
         This does the house-keeping and inserts the corresponding entry in
@@ -1697,6 +1729,7 @@ class CoreBackend(AbstractBackend):
             'is_event_admin': False,
             'is_ml_admin': False,
             'is_cdelokal_admin': False,
+            'is_purged': False,
         })
         # Check if admin has rights to create the user in its realms
         if not any(admin <= rs.user.roles
@@ -1814,32 +1847,55 @@ class CoreBackend(AbstractBackend):
         return sessionkey
 
     @access("persona")
-    def logout(self, rs: RequestState, all_sessions: bool = False
-               ) -> DefaultReturnCode:
-        """Invalidate the current session."""
+    def logout(self, rs: RequestState, this_session: bool = True,
+               other_sessions: bool = False) -> DefaultReturnCode:
+        """Invalidate some sessions, depending on the parameters."""
         query = "UPDATE core.sessions SET is_active = False, atime = now()"
         constraints = ["persona_id = %s", "is_active = True"]
         params: List[Any] = [rs.user.persona_id]
-        if not all_sessions:
+        if not this_session and not other_sessions:
+            return 0
+        elif not other_sessions:
             constraints.append("sessionkey = %s")
+            params.append(rs.sessionkey)
+        elif not this_session:
+            constraints.append("sessionkey != %s")
             params.append(rs.sessionkey)
         query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)
 
+    @access("core_admin")
+    def deactivate_old_sessions(self, rs: RequestState) -> DefaultReturnCode:
+        """Deactivate old leftover sessions."""
+        query = ("UPDATE core.sessions SET is_active = False"
+                 " WHERE is_active = True AND atime < now() - INTERVAL '30 days'")
+        return self.query_exec(rs, query, ())
+
+    @access("core_admin")
+    def clean_session_log(self, rs: RequestState) -> DefaultReturnCode:
+        """Delete old entries from the sessionlog."""
+        query = ("DELETE FROM core.sessions WHERE is_active = False"
+                 " AND atime < now() - INTERVAL '30 days'"
+                 " AND (persona_id, atime) NOT IN"
+                 " (SELECT persona_id, MAX(atime) AS atime FROM core.sessions"
+                 "  WHERE is_active = False GROUP BY persona_id)")
+
+        return self.query_exec(rs, query, ())
+
     @access("persona")
-    def verify_ids(self, rs: RequestState, ids: Collection[int],
+    def verify_ids(self, rs: RequestState, persona_ids: Collection[int],
                    is_archived: bool = None) -> bool:
         """Check that persona ids do exist.
 
         :param is_archived: If given, check the given archival status.
         """
-        ids = affirm_set("id", ids)
+        persona_ids = affirm_set("id", persona_ids)
         is_archived = affirm("bool_or_None", is_archived)
-        if ids == {rs.user.persona_id}:
+        if persona_ids == {rs.user.persona_id}:
             return True
         query = "SELECT COUNT(*) AS num FROM core.personas"
         constraints: List[str] = ["id = ANY(%s)"]
-        params: List[Any] = [ids]
+        params: List[Any] = [persona_ids]
         if is_archived is not None:
             constraints.append("is_archived = %s")
             params.append(is_archived)
@@ -1847,42 +1903,51 @@ class CoreBackend(AbstractBackend):
         if constraints:
             query += " WHERE " + " AND ".join(constraints)
         num = unwrap(self.query_one(rs, query, params))
-        return num == len(ids)
+        return num == len(persona_ids)
 
-    class VerifyID(Protocol):
+    class _VerifyIDProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
                      is_archived: bool = None) -> bool: ...
-    verify_id: VerifyID
-    verify_id = singularize(verify_ids, "ids", "anid", passthrough=True)
+    verify_id: _VerifyIDProtocol = singularize(
+        verify_ids, "persona_ids", "persona_id", passthrough=True)
 
     @internal
     @access("anonymous")
-    def get_roles_multi(self, rs: RequestState, ids: Collection[int],
+    def get_roles_multi(self, rs: RequestState, persona_ids: Collection[Optional[int]],
                         introspection_only: bool = False
                         ) -> Dict[Optional[int], Set[Role]]:
         """Resolve ids into roles.
 
         Returns an empty role set for inactive users."""
-        if set(ids) == {rs.user.persona_id}:
+        if set(persona_ids) == {rs.user.persona_id}:
             return {rs.user.persona_id: rs.user.roles}
         bits = PERSONA_STATUS_FIELDS + ("id",)
-        data = self.sql_select(rs, "core.personas", bits, ids)
+        data = self.sql_select(rs, "core.personas", bits, persona_ids)
         return {d['id']: extract_roles(d, introspection_only) for d in data}
-    get_roles_single = singularize(get_roles_multi)
+
+    class _GetRolesSingleProtocol(Protocol):
+        def __call__(self, rs: RequestState, persona_id: Optional[int],
+                     introspection_only: bool = False) -> Set[Role]: ...
+    get_roles_single: _GetRolesSingleProtocol = singularize(get_roles_multi)
 
     @access("persona")
-    def get_realms_multi(self, rs: RequestState, ids: Collection[int],
+    def get_realms_multi(self, rs: RequestState, persona_ids: Collection[int],
                          introspection_only: bool = False
                          ) -> Dict[Optional[int], Set[Realm]]:
         """Resolve persona ids into realms (only for active users)."""
-        ids = affirm_set("id", ids)
-        roles = self.get_roles_multi(rs, ids, introspection_only)
+        persona_ids = affirm_set("id", persona_ids)
+        roles = self.get_roles_multi(rs, persona_ids, introspection_only)
         all_realms = {"cde", "event", "assembly", "ml"}
         return {key: value & all_realms for key, value in roles.items()}
-    get_realms_single = singularize(get_realms_multi)
+
+    class _GetRealmsSingleProtocol(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int,
+                     introspection_only: bool = False) -> Set[Realm]: ...
+    get_realms_single: _GetRealmsSingleProtocol = singularize(
+        get_realms_multi, "persona_ids", "persona_id")
 
     @access("persona")
-    def verify_personas(self, rs: RequestState, ids: Collection[int],
+    def verify_personas(self, rs: RequestState, persona_ids: Collection[int],
                         required_roles: Collection[Role] = None,
                         introspection_only: bool = True) -> bool:
         """Check whether certain ids map to actual (active) personas.
@@ -1892,20 +1957,19 @@ class CoreBackend(AbstractBackend):
         :param required_roles: If given check that all personas have
           these roles.
         """
-        ids = affirm_set("id", ids)
+        persona_ids = affirm_set("id", persona_ids)
         required_roles = required_roles or tuple()
         required_roles = affirm_set("str", required_roles)
-        roles = self.get_roles_multi(rs, ids, introspection_only)
-        return len(roles) == len(ids) and all(
+        roles = self.get_roles_multi(rs, persona_ids, introspection_only)
+        return len(roles) == len(persona_ids) and all(
             value >= required_roles for value in roles.values())
 
-    class VerifyPersona(Protocol):
+    class _VerifyPersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
                      required_roles: Collection[Role] = None,
                      introspection_only: bool = True) -> bool: ...
-    verify_persona: VerifyPersona
-    verify_persona = singularize(
-        verify_personas, "ids", "anid", passthrough=True)
+    verify_persona: _VerifyPersonaProtocol = singularize(
+        verify_personas, "persona_ids", "persona_id", passthrough=True)
 
     @access("anonymous")
     def genesis_set_attachment(self, rs: RequestState, attachment: bytes
@@ -2073,7 +2137,7 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        if not validate.is_password_strength(new_password):  # type: ignore
+        if not validate.is_password_strength(new_password):
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
@@ -2176,7 +2240,7 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate.check_password_strength(  # type: ignore
+        password, errs = validate.check_password_strength(
             password, argname, admin=admin, inputs=inputs)
 
         return password, errs
@@ -2381,7 +2445,7 @@ class CoreBackend(AbstractBackend):
                 self.core_log(
                     rs, const.CoreLogCodes.genesis_verified, persona_id=None,
                     change_note=data["username"])
-        return ret, data["realm"]
+            return ret, data["realm"]
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
@@ -2419,18 +2483,22 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
-    def genesis_get_cases(self, rs: RequestState,
-                          ids: Collection[int]) -> CdEDBObjectMap:
+    def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int]
+                          ) -> CdEDBObjectMap:
         """Retrieve datasets for persona creation cases."""
-        ids = affirm_set("id", ids)
+        genesis_case_ids = affirm_set("id", genesis_case_ids)
         data = self.sql_select(rs, "core.genesis_cases", GENESIS_CASE_FIELDS,
-                               ids)
+                               genesis_case_ids)
         if ("core_admin" not in rs.user.roles
                 and any("{}_admin".format(e['realm']) not in rs.user.roles
                         for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
-    genesis_get_case = singularize(genesis_get_cases)
+
+    class _GenesisGetCaseProtocol(Protocol):
+        def __call__(self, rs: RequestState, genesis_case_id: int) -> CdEDBObject: ...
+    genesis_get_case: _GenesisGetCaseProtocol = singularize(
+        genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
@@ -2456,16 +2524,16 @@ class CoreBackend(AbstractBackend):
                              & rs.user.roles)):
                 raise PrivilegeError(n_("Not privileged."))
             ret = self.sql_update(rs, "core.genesis_cases", data)
-        if (data.get('case_status')
-                and data['case_status'] != current['case_status']):
-            if data['case_status'] == const.GenesisStati.approved:
-                self.core_log(
-                    rs, const.CoreLogCodes.genesis_approved, persona_id=None,
-                    change_note=current['username'])
-            elif data['case_status'] == const.GenesisStati.rejected:
-                self.core_log(
-                    rs, const.CoreLogCodes.genesis_rejected, persona_id=None,
-                    change_note=current['username'])
+            if (data.get('case_status')
+                    and data['case_status'] != current['case_status']):
+                if data['case_status'] == const.GenesisStati.approved:
+                    self.core_log(
+                        rs, const.CoreLogCodes.genesis_approved, persona_id=None,
+                        change_note=current['username'])
+                elif data['case_status'] == const.GenesisStati.rejected:
+                    self.core_log(
+                        rs, const.CoreLogCodes.genesis_rejected, persona_id=None,
+                        change_note=current['username'])
         return ret
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",

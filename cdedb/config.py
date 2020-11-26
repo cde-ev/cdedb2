@@ -229,7 +229,9 @@ def generate_event_registration_default_queries(
     return queries
 
 
-def generate_event_course_default_queries(gettext, event, spec):
+def generate_event_course_default_queries(
+        gettext: Callable[[str], str], event: CdEDBObject,
+        spec: Dict[str, str]) -> Dict[str, Query]:
     """
     Generate default queries for course_queries.
 

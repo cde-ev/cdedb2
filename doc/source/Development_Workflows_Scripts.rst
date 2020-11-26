@@ -50,7 +50,7 @@ run mode, i.e. without actually commiting any changes made.
 ``setup`` returns a ``RequestState`` factory, which you can call with a
 persona id, to get a fake ``RequestState`` for that user. If called without
 an argument this will default to the ``persona_id`` passed to ``setup``.
-If you do not need different ``RequestState``, you might want to call this
+If you do not need different ``RequestState``\s, you might want to call this
 once to avoid mistakes down the line. ::
 
     rs = rs()

@@ -1,6 +1,32 @@
 #!/usr/bin/env python3
-from cdedb.common import User
-from test.common import BackendTest, USER_DICT, MultiAppFrontendTest
+import datetime
+import secrets
+from typing import Sequence, NamedTuple
+
+from cdedb.common import User, now
+from test.common import BackendTest, USER_DICT, MultiAppFrontendTest, prepsql, execsql
+
+SessionEntry = NamedTuple(
+    "SessionEntry", [("persona_id", int), ("is_active", bool), ("ip", str),
+                     ("sessionkey", str), ("ctime", datetime.datetime),
+                     ("atime", datetime.datetime)])
+
+
+def make_session_entry(persona_id: int, is_active: bool = True, ip: str = "127.0.0.1",
+                       sessionkey: str = None, ctime: datetime.datetime = None,
+                       atime: datetime.datetime = None) -> SessionEntry:
+    if sessionkey is None:
+        sessionkey = secrets.token_hex()
+    return SessionEntry(persona_id, is_active, ip, sessionkey, ctime, atime)
+
+
+def insert_sessions_template(data: Sequence[SessionEntry]) -> str:
+    values = ', '.join(
+        f"({e.persona_id}, {e.is_active}, '{e.ip}', '{e.sessionkey}',"
+        f" '{e.ctime if e.ctime else 'now()'}', '{e.atime if e.atime else 'now()'}')"
+        for e in data)
+    return (f"INSERT INTO core.sessions"
+            f" (persona_id, is_active, ip, sessionkey, ctime, atime) VALUES {values}")
 
 
 class TestSessionBackend(BackendTest):
@@ -54,7 +80,7 @@ class TestSessionBackend(BackendTest):
                 self.session.lookupsession(keys[i], ips[i]).__dict__)
 
         # Terminate all sessions.
-        self.core.logout(keys[2], all_sessions=True)
+        self.core.logout(keys[2], other_sessions=True)
         # Check that all sessions have been terminated.
         for i in (0, 1, 2):
             self.assertEqual(
@@ -86,7 +112,7 @@ class TestSessionBackend(BackendTest):
         ip = "1.2.3.4."
 
         # Create some sessions for some different users.
-        keys = {u: self.login(u, ip) for u in USER_DICT
+        keys = {u: self.login(u, ip=ip) for u in USER_DICT
                 if u not in {"hades", "lisa", "olaf"}}
         for u, key in keys.items():
             with self.subTest(user=u, key=key):
@@ -97,8 +123,8 @@ class TestSessionBackend(BackendTest):
         # Create a new session and do a "logout everywhere" with it.
         logout_user = "anton"
         # This will only work with this specific ip:
-        key = self.login(logout_user, "127.0.0.0")
-        self.core.logout(key, all_sessions=True)
+        key = self.login(logout_user, ip="127.0.0.0")
+        self.core.logout(key, other_sessions=True)
 
         # Check that the other sessions (from other users) are still active.
         for u, key in keys.items():
@@ -111,17 +137,40 @@ class TestSessionBackend(BackendTest):
                     self.assertEqual(user.persona_id, USER_DICT[u]["id"])
                     self.assertLess({"anonymous"}, user.roles)
 
+    def test_old_sessions(self):
+        old_time = now() - datetime.timedelta(days=50)
+        delta = datetime.timedelta(minutes=1)
+        entries = [
+            make_session_entry(1, ctime=old_time, atime=old_time),
+            make_session_entry(1, ctime=old_time + delta, atime=old_time + delta),
+            make_session_entry(1, ctime=old_time + 2*delta, atime=old_time + 2*delta),
+            make_session_entry(2, ctime=old_time, atime=old_time),
+            make_session_entry(2, ctime=old_time + delta, atime=old_time + delta),
+            make_session_entry(3, ctime=old_time, atime=old_time),
+            make_session_entry(3, ctime=old_time + delta, atime=old_time + delta)]
+        unique_personas = len(set(e.persona_id for e in entries))
+        execsql(insert_sessions_template(entries))
+
+        user = USER_DICT["anton"]
+        key = self.login(user)
+        self.login("vera")
+        self.assertEqual(len(entries) - unique_personas,
+                         self.core.deactivate_old_sessions(self.key))
+        self.assertEqual(0, self.core.deactivate_old_sessions(self.key))
+        self.assertEqual(len(entries) - unique_personas,
+                         self.core.clean_session_log(self.key))
+        self.assertEqual(0, self.core.clean_session_log(self.key))
+
+        u = self.session.lookupsession(key, "127.0.0.0")
+        self.assertEqual(u.persona_id, user["id"])
+
 
 class TestMultiSessionFrontend(MultiAppFrontendTest):
     n = 3  # Needs to be at least 3 for the following test to work correctly.
 
-    def test_logout_all(self):
+    def _setup_multisessions(self, user, session_cookie: str):
         self.assertGreaterEqual(self.n, 3, "This test will only work correctly"
                                            " with 3 or more apps.")
-
-        user = USER_DICT["anton"]
-        session_cookie = "sessionkey"
-
         # Set up multiple sessions.
         keys = []
         for i in range(self.n):
@@ -133,6 +182,13 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
             self.assertTitle(f"{user['given_names']} {user['family_name']}")
             self.assertNotIn('loginform', self.response.forms)
         self.assertEqual(len(set(keys)), len(keys))
+
+        return keys
+
+    def test_logout_all(self):
+        user = USER_DICT["anton"]
+        session_cookie = "sessionkey"
+        self._setup_multisessions(user, session_cookie)
 
         # Terminate session 0.
         self.switch_app(0)
@@ -155,6 +211,30 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
         self.assertPresence(f"{self.n - 1} Sitzung(en) beendet.",
                             div="notifications")
         for i in range(self.n):
+            self.switch_app(i)
+            with self.subTest(app_index=i):
+                self.get("/core/self/show")
+                self.assertTitle("CdE-Datenbank")
+                self.assertIn('loginform', self.response.forms)
+
+    def test_change_password(self):
+        user = USER_DICT["inga"]
+        session_cookie = "sessionkey"
+        self._setup_multisessions(user, session_cookie)
+
+        # Change password in session 0
+        self.switch_app(0)
+        new_password = 'krce84#(=kNO3xb'
+        self.traverse({'description': user['display_name']},
+                      {'description': 'Passwort ändern'})
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f)
+
+        # Check that no other sessions are still active.
+        for i in range(1, self.n):
             self.switch_app(i)
             with self.subTest(app_index=i):
                 self.get("/core/self/show")

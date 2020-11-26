@@ -89,37 +89,13 @@
                 </td>
                 <td class="text-info">
                     {% if is_classical_vote %}
-                        {% if short %}
-                            {% trans %}
-                                Against all Candidates.
-                            {% endtrans %}
-                        {% else %}
-                            {% if result['losers'] %}
-                                {% trans %}
-                                    The following candidates have less votes than the "Against all Candidates" choice.
-                                {% endtrans %}
-                            {% else %}
-                                {% trans %}
-                                    No candidate has less votes than the "Against all Candidates" choice.
-                                {% endtrans %}
-                            {% endif %}
-                        {% endif %}
+                        {% trans %}
+                            Against all Candidates.
+                        {% endtrans %}
                     {% else %}
-                        {% if short %}
-                            {% trans %}
-                                Rejection limit.
-                            {% endtrans %}
-                        {% else %}
-                            {% if result['losers'] %}
-                                {% trans %}
-                                    The following candidates lost against the rejection limit.
-                                {% endtrans %}
-                            {% else %}
-                                {% trans %}
-                                    No candidate lost against the rejection limit.
-                                {% endtrans %}
-                            {% endif %}
-                        {% endif %}
+                        {% trans %}
+                            Rejection limit.
+                        {% endtrans %}
                     {% endif %}
                 </td>
             {% if is_classical_vote %}
@@ -232,14 +208,8 @@
         {% if preferential %}
             <p>
                 {% trans %}
-                    Pro votes (i.e. 5) and Contra votes (i.e. 2) are valid for the given position and are relative to
-                    the next lower position (i.e. 3.). Multiple candidates can share the same position in the ranking.
-                {% endtrans %}
-            </p>
-            <p>
-                {% trans %}
-                    Therefore, all candidates on 3rd place win against all candidates on fourth place with 5 Pro votes
-                    and 2 Contra votes.
+                    Pro votes and Contra votes are valid for the given position and are relative to
+                    the next lower position. Multiple candidates can share the same position in the ranking.
                 {% endtrans %}
             </p>
         {% endif %}
@@ -255,7 +225,7 @@
             {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
                 This vote was a preferential vote. Voters arranged the candidates according to their preference.
                 The preferences of all participants were evaluated using the {{ link }},
-                to determine the winner.
+                to determine the option with the most votes.
             {% endtrans %}
         </p>
         <p>
@@ -271,7 +241,7 @@
             <p>
                 {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
                     Additionally the shortname {{ abm }} shows where in the election the rejection limit was ranked.
-                    Should no candidate have won against the rejection limit, the board may take additional measures.
+                    Should no candidate get more votes than the rejection limit, the board may take additional measures.
                 {% endtrans %}
             </p>
         {% endif %}
@@ -291,7 +261,7 @@
                 {% if not secret %}
                     <p>
                         {{ util.make_icon('info-circle') }}
-                        {% trans %}The assembly concluded and the votes got encrypted.{% endtrans %}
+                        {% trans %}The assembly concluded. The votes of specific users can no longer be extracted from the database in any way.{% endtrans %}
                         {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
                     </p>
                 {% else %}

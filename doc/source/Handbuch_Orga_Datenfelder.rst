@@ -47,9 +47,8 @@ Es gibt verschiedene Möglichkeiten, um Datenfelder zu benutzen:
 
     Die naheliegenste Möglichkeit ist, das Datenfeld als zusätzliches
     Informationsfeld zu benutzen, das ihr selber befüllt. Dabei könnt ihr über
-    die Suchmasken und den Knopf ``Datefeld setzen`` für mehrer eurer
-    Suchergebnisse ein Datenfeld setzen (das vermeidet einige Klicks)
-    (aktuell für Anmeldungen möglich).
+    die Suchmasken und den Knopf ``Datenfeld setzen`` für mehrer eurer
+    Suchergebnisse ein Datenfeld setzen (das vermeidet einige Klicks).
     So könnt ihr etwa für jedes Haus in Kirchheim speichern, auf welchem Hof es
     liegt, oder das Material, das ein Kurs benötigt, in der Datenbank tracken.
 

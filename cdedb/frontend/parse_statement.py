@@ -19,7 +19,7 @@ import cdedb.validation as validate
 # This is the specification of the order of the fields in the input.
 # This could be changed in the online banking, but we woud lose backwards
 # compability with multiple years of saved csv exports.
-# Note that "reference" is a `restkey` rather thatn a real key.
+# Note that "reference" is a `restkey` rather than a real key.
 STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
                         "statementDate", "currency", "valuta", "date",
                         "currency2", "amount", "textKey",
@@ -168,6 +168,7 @@ def get_event_name_pattern(event: CdEDBObject) -> str:
     y_p = re.compile(r"(\d\d)(\d\d)")
     replacements = [
         ("Pseudo", r"Pseudo"),  # For testing purposes.
+        ("Cyber", r"Cyber"),
         ("Winter", r"Winter"),
         ("Sommer", r"Sommer"),
         ("Musik", r"Musik"),

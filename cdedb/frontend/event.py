@@ -28,8 +28,7 @@ from typing import (
 )
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, csv_output,
-    check_validation as check, event_guard, query_result_to_json,
+    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     enum_entries_filter, safe_filter, cdedburl, RequestConstraint,
     CustomCSVDialect, keydictsort_filter, calculate_db_logparams,
@@ -44,7 +43,7 @@ from cdedb.common import (
     unwrap, now, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
-    LodgementsSortkeys, xsorted, get_hash, RequestState, extract_roles,
+    LodgementsSortkeys, xsorted, get_hash, RequestState,
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
     InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC, asciificator
 )
@@ -63,9 +62,6 @@ LodgementProblem = NamedTuple(
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
     realm = "event"
-    user_management = {
-        "persona_getter": lambda obj: obj.coreproxy.get_event_user,
-    }
 
     def render(self, rs: RequestState, templatename: str,
                params: CdEDBObject = None) -> Response:
@@ -229,7 +225,7 @@ class EventFrontend(AbstractUserFrontend):
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs.ambience['event'])
             params['participant_list'] = self.mlproxy.verify_existence(
-                rs, ml_type.full_address(ml_data))
+                rs, ml_type.get_full_address(ml_data))
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (
@@ -287,10 +283,8 @@ class EventFrontend(AbstractUserFrontend):
         else:
             part_ids = rs.ambience['event']['parts'].keys()
 
-        data: CdEDBObject = self._get_participant_list_data(
+        data = self._get_participant_list_data(
             rs, event_id, part_ids, sortkey, reverse=reverse)
-        if data is None:
-            return self.redirect(rs, "event/participant_list")
         if len(rs.ambience['event']['parts']) == 1:
             part_id = unwrap(rs.ambience['event']['parts'].keys())
         data['part_id'] = part_id
@@ -349,7 +343,7 @@ class EventFrontend(AbstractUserFrontend):
                 if not len(part_ids) == 1:
                     raise werkzeug.exceptions.BadRequest(n_(
                         "Only one part id allowed."))
-                part_id = unwrap(part_ids)  # type: ignore
+                part_id = unwrap(part_ids)
                 all_tracks = parts[part_id]['tracks']
                 registered_tracks = [registrations[anid]['tracks'][track_id]
                                      for track_id in all_tracks]
@@ -467,7 +461,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_event(rs, event_id)
         code = self.eventproxy.change_minor_form(rs, event_id, minor_form)
         self.notify_return_code(rs, code, success=n_("Minor form updated."),
-                                pending=n_("Minor form has been removed."),
+                                info=n_("Minor form has been removed."),
                                 error=n_("Nothing to remove."))
         return self.redirect(rs, "event/show_event")
 
@@ -491,7 +485,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_event(rs, event_id)
         new = rs.ambience['event']['orgas'] | {orga_id}
         code = self.eventproxy.set_event_orgas(rs, event_id, new)
-        self.notify_return_code(rs, code)
+        self.notify_return_code(rs, code, info=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
@@ -507,7 +501,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_event(rs, event_id)
         new = rs.ambience['event']['orgas'] - {orga_id}
         code = self.eventproxy.set_event_orgas(rs, event_id, new)
-        self.notify_return_code(rs, code)
+        self.notify_return_code(rs, code, info=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
@@ -519,7 +513,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
-        if not self.mlproxy.verify_existence(rs, ml_type.full_address(ml_data)):
+        ml_address = ml_type.get_full_address(ml_data)
+        if not self.mlproxy.verify_existence(rs, ml_address):
             if not orgalist:
                 link = cdedburl(rs, "event/register", {'event_id': event_id})
                 ml_data['description'] = ml_data['description'].format(link)
@@ -528,14 +523,11 @@ class EventFrontend(AbstractUserFrontend):
                    else n_("Participant mailinglist created."))
             self.notify_return_code(rs, code, success=msg)
             if code and orgalist:
-                data = {
-                    'id': event_id,
-                    'orga_address': ml_type.full_address(ml_data),
-                }
+                data = {'id': event_id, 'orga_address': ml_address}
                 self.eventproxy.set_event(rs, data)
         else:
-            rs.notify("error", n_("Mailinglist %(address)s already exists."),
-                      {'address': ml_type.full_address(ml_data)})
+            rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                      {'address': ml_address})
         return self.redirect(rs, "event/show_event")
 
     @access("event")
@@ -1066,7 +1058,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata(('active_tab', 'str_or_None'))
-    def field_summary(self, rs: RequestState, event_id: int, active_tab: str
+    def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str]
                       ) -> Response:
         """Manipulate the fields of an event."""
         fields = self.process_field_input(
@@ -1083,9 +1075,9 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/field_summary_form",
-                             anchor=(("tab:" + active_tab)
-                                     if active_tab is not None else None))
+        return self.redirect(
+            rs, "event/field_summary_form", anchor=(
+                ("tab:" + active_tab) if active_tab is not None else None))
 
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
@@ -1095,9 +1087,9 @@ class EventFrontend(AbstractUserFrontend):
         # During event creation the id is not yet known.
         event_id = event.get('id')
         if orgalist:
-            descr = ("Bitte wende dich bei Fragen oder Problemen, die mit "
-                     "unserer Veranstaltung zusammenhängen, über diese Liste "
-                     "an uns.")
+            descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit"
+                     " unserer Veranstaltung zusammenhängen, über diese Liste"
+                     " an uns.")
             orga_ml_data = {
                 'title': "{} Orgateam".format(event['title']),
                 'local_part': email_local_part,
@@ -1106,18 +1098,16 @@ class EventFrontend(AbstractUserFrontend):
                 'mod_policy': const.ModerationPolicy.unmoderated,
                 'attachment_policy': const.AttachmentPolicy.allow,
                 'subject_prefix': event['shortname'],
-                'maxsize': 1024,
+                'maxsize': ml_type.EventOrgaMailinglist.maxsize_default,
                 'is_active': True,
                 'event_id': event_id,
-                'registration_stati': [],
-                'assembly_id': None,
                 'notes': None,
                 'moderators': event['orgas'],
                 'ml_type': const.MailinglistTypes.event_orga,
             }
             return orga_ml_data
         else:
-            descr = ("Dieser Liste kannst du nur beitreten, indem du dich zu "
+            descr = ("Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
                      "unserer [Veranstaltung anmeldest]({}) und den Status "
                      "*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
                      "Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
@@ -1130,11 +1120,10 @@ class EventFrontend(AbstractUserFrontend):
                 'mod_policy': const.ModerationPolicy.non_subscribers,
                 'attachment_policy': const.AttachmentPolicy.pdf_only,
                 'subject_prefix': event['shortname'],
-                'maxsize': 1024,
+                'maxsize': ml_type.EventAssociatedMailinglist.maxsize_default,
                 'is_active': True,
                 'event_id': event_id,
                 'registration_stati': [const.RegistrationPartStati.participant],
-                'assembly_id': None,
                 'notes': None,
                 'moderators': event['orgas'],
                 'ml_type': const.MailinglistTypes.event_associated,
@@ -1187,7 +1176,7 @@ class EventFrontend(AbstractUserFrontend):
         orga_ml_address = None
         if create_orga_list:
             orga_ml_data = self._get_mailinglist_setter(data, orgalist=True)
-            orga_ml_address = ml_type.full_address(orga_ml_data)
+            orga_ml_address = ml_type.get_full_address(orga_ml_data)
             data['orga_address'] = orga_ml_address
             if self.mlproxy.verify_existence(rs, orga_ml_address):
                 orga_ml_data = None
@@ -1230,7 +1219,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, code, success=n_("Orga mailinglist created."))
         if create_participant_list:
             participant_ml_data = self._get_mailinglist_setter(data)
-            participant_ml_address = ml_type.full_address(participant_ml_data)
+            participant_ml_address = ml_type.get_full_address(participant_ml_data)
             if not self.mlproxy.verify_existence(rs, participant_ml_address):
                 link = cdedburl(rs, "event/register", {'event_id': new_id})
                 descr = participant_ml_data['description'].format(link)
@@ -2710,7 +2699,6 @@ class EventFrontend(AbstractUserFrontend):
         spec = self.make_registration_query_spec(event)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_dir = pathlib.Path(tmp_dir)
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
 
@@ -2724,16 +2712,16 @@ class EventFrontend(AbstractUserFrontend):
                     order = [("persona.given_names", True)]
                     query = Query("qview_registration", spec, fields_of_interest,
                                   constrains, order)
-                    result = self.eventproxy.submit_general_query(rs, query, event_id)
+                    query_res = self.eventproxy.submit_general_query(rs, query, event_id)
                     course_key = f"track{track_id}.course_id"
                     # we have to replace the course id with the course number
-                    result = (
+                    result = tuple(
                         {
                             k if k != course_key else 'course':
                                 v if k != course_key else courses[v]['nr']
                             for k, v in entry.items()
                         }
-                        for entry in result
+                        for entry in query_res
                     )
                     data = self.fill_template(
                         rs, "other", "dokuteam_participant_list", {'result': result})
@@ -2745,8 +2733,8 @@ class EventFrontend(AbstractUserFrontend):
 
             # create a zip archive of all lists
             zipname = f"{rs.ambience['event']['shortname']}_dokuteam_participant_list"
-            zippath = shutil.make_archive(tmp_dir / zipname, 'zip', base_dir=work_dir,
-                                          root_dir=tmp_dir)
+            zippath = shutil.make_archive(str(pathlib.Path(tmp_dir, zipname)), 'zip',
+                                          base_dir=work_dir, root_dir=tmp_dir)
 
             return self.send_file(rs, path=zippath, inline=False,
                                   filename=f"{zipname}.zip")
@@ -3284,7 +3272,7 @@ class EventFrontend(AbstractUserFrontend):
                 # Check for unfilled mandatory course choices
                 rs.extend_validation_errors(
                     ("course_choice{}_{}".format(track_id, i),
-                     ValueError(n_("You must chose at least %(min_choices)s"
+                     ValueError(n_("You must choose at least %(min_choices)s"
                                    " courses."),
                                 {'min_choices': track['min_choices']}))
                     for i in range(track['min_choices'])
@@ -3834,10 +3822,13 @@ class EventFrontend(AbstractUserFrontend):
                                    kind: const.QuestionnaireUsages) -> Response:
         """Render form."""
         if rs.has_validation_errors():
-            kind = const.QuestionnaireUsages.additional
-            rs.notify(
-                "error", n_("Unknown questionnaire kind. Defaulted to %(kind)s."),
-                {'kind': repr(kind)})
+            if any(field == 'kind' for field, _ in rs.retrieve_validation_errors()):
+                rs.notify("error", n_("Unknown questionnaire kind."))
+                return self.redirect(rs, "event/show_event")
+            else:
+                # we want to render the errors from reorder_questionnaire on this page,
+                # so we only redirect to another page if 'kind' does not pass validation
+                pass
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         redirects = {
@@ -3848,11 +3839,9 @@ class EventFrontend(AbstractUserFrontend):
         }
         if not questionnaire:
             rs.notify("info", n_("No questionnaire rows of this kind found."))
-            if kind in redirects:
-                return self.redirect(rs, redirects[kind])
+            return self.redirect(rs, redirects[kind])
         return self.render(rs, "reorder_questionnaire", {
-            'questionnaire': questionnaire,
-            'kind': kind})
+            'questionnaire': questionnaire, 'kind': kind, 'redirect': redirects[kind]})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -3867,17 +3856,22 @@ class EventFrontend(AbstractUserFrontend):
         laborious to do without.
         """
         if rs.has_validation_errors():
-            return self.reorder_questionnaire_form(rs, event_id, kind)
+            return self.reorder_questionnaire_form(rs, event_id, kind=kind)
+
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
-        new_questionnaire = {
-            kind: list(self._sanitize_questionnaire_row(questionnaire[i])
-                       for i in order)}
-        code = self.eventproxy.set_questionnaire(
-            rs, event_id, new_questionnaire)
+
+        if not set(order) == set(range(len(questionnaire))):
+            rs.append_validation_error(
+                ("order", ValueError(n_("Every row must occur exactly once."))))
+        if rs.has_validation_errors():
+            return self.reorder_questionnaire_form(rs, event_id, kind=kind)
+
+        new_questionnaire = [self._sanitize_questionnaire_row(questionnaire[i])
+                             for i in order]
+        code = self.eventproxy.set_questionnaire(rs, event_id, {kind: new_questionnaire})
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/reorder_questionnaire_form",
-                             {'kind': kind.value})
+        return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})
 
     @access("event")
     @event_guard()
@@ -5928,134 +5922,208 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, 'event/checkin')
 
+    FIELD_REDIRECT = {
+        const.FieldAssociations.registration: "event/registration_query",
+        const.FieldAssociations.course: "event/course_query",
+        const.FieldAssociations.lodgement: "event/lodgement_query",
+    }
+
+    def field_set_aux(self, rs: RequestState, event_id: int, field_id: Optional[int],
+                      ids: Collection[int], kind: const.FieldAssociations) \
+            -> Tuple[CdEDBObjectMap, List[int], Dict[int, str], Optional[CdEDBObject]]:
+        """Process field set inputs.
+
+        This function retrieves the data dependent on the given kind and returns it in
+        a standardized way to be used in the generic field_set_* functions.
+
+        :param ids: ids of the entities where the field should be modified.
+        :param kind: specifies the entity: registration, course or lodgement
+
+        :returns: A tuple of values, containing
+            * entities: corresponding to the given ids (registrations, courses, lodgements)
+            * ordered_ids: given ids, sorted by the corresponding EntitySorter
+            * labels: name of the entities which will be displayed in the template
+            * field: the event field which will be changed, None if no field_id was given
+        """
+        if kind == const.FieldAssociations.registration:
+            if not ids:
+                ids = self.eventproxy.list_registrations(rs, event_id)
+            entities = self.eventproxy.get_registrations(rs, ids)
+            personas = self.coreproxy.get_personas(
+                rs, tuple(e['persona_id'] for e in entities.values()))
+            labels = {
+                reg_id: (f"{personas[entity['persona_id']]['given_names']}"
+                         f" {personas[entity['persona_id']]['family_name']}")
+                for reg_id, entity in entities.items()}
+            ordered_ids = xsorted(
+                entities.keys(), key=lambda anid: EntitySorter.persona(
+                    personas[entities[anid]['persona_id']]))
+        elif kind == const.FieldAssociations.course:
+            if not ids:
+                ids = self.eventproxy.list_courses(rs, event_id)
+            entities = self.eventproxy.get_courses(rs, ids)
+            labels = {course_id: f"{course['nr']} {course['shortname']}"
+                      for course_id, course in entities.items()}
+            ordered_ids = xsorted(
+                entities.keys(), key=lambda anid: EntitySorter.course(entities[anid]))
+        elif kind == const.FieldAssociations.lodgement:
+            if not ids:
+                ids = self.eventproxy.list_lodgements(rs, event_id)
+            entities = self.eventproxy.get_lodgements(rs, ids)
+            group_ids = {lodgement['group_id'] for lodgement in entities.values()
+                         if lodgement['group_id'] is not None}
+            groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+            labels = {
+                lodg_id: f"{lodg['title']}" if lodg['group_id'] is None
+                         else safe_filter(f"{lodg['title']}, "
+                                          f"<em>{groups[lodg['group_id']]['title']}</em>")
+                for lodg_id, lodg in entities.items()}
+            ordered_ids = xsorted(
+                entities.keys(), key=lambda anid: EntitySorter.lodgement(entities[anid]))
+        else:
+            # this should not happen, since we check before for validation errors
+            raise NotImplementedError(f"Unknown kind {kind}")
+
+        if field_id:
+            if field_id not in rs.ambience['event']['fields']:
+                raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
+            field = rs.ambience['event']['fields'][field_id]
+            if field['association'] != kind:
+                raise werkzeug.exceptions.NotFound(n_("Wrong associated field."))
+        else:
+            field = None
+
+        return entities, ordered_ids, labels, field
+
     @access("event")
     @REQUESTdata(("field_id", "id_or_None"),
-                 ("reg_ids", "int_csv_list_or_None"))
+                 ("ids", "int_csv_list_or_None"),
+                 ("kind", "enum_fieldassociations"))
     @event_guard(check_offline=True)
     def field_set_select(self, rs: RequestState, event_id: int, field_id: int,
-                         reg_ids: Collection[int]) -> Response:
-        """Select a field for manipulation across all registrations."""
+                         ids: Collection[int], kind: const.FieldAssociations) -> Response:
+        """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
             return self.render(rs, "field_set_select")
-        if field_id is None:
-            registrations = self.eventproxy.get_registrations(rs, reg_ids)
-            personas = self.coreproxy.get_personas(
-                rs, tuple(e['persona_id'] for e in registrations.values()))
-            reg_order = xsorted(
-                registrations.keys(),
-                key=lambda anid: EntitySorter.persona(
-                    personas[registrations[anid]['persona_id']]))
-            registrations = OrderedDict(
-                (reg_id, registrations[reg_id]) for reg_id in reg_order)
-            return self.render(rs, "field_set_select",
-                               {'reg_ids': reg_ids,
-                                'registrations': registrations,
-                                'personas': personas})
-        else:
-            if field_id not in rs.ambience['event']['fields']:
-                raise werkzeug.exceptions.NotFound(
-                    n_("Wrong associated event."))
-            field = rs.ambience['event']['fields'][field_id]
-            if field['association'] != const.FieldAssociations.registration:
-                raise werkzeug.exceptions.NotFound(
-                    n_("Wrong associated field."))
-            return self.redirect(rs, "event/field_set_form",
-                                 {'field_id': field_id,
-                                  'reg_ids': (','.join(str(i) for i in reg_ids)
-                                              if reg_ids else None)})
+        if field_id:
+            return self.redirect(
+                rs, "event/field_set_form", {
+                    'ids': (','.join(str(i) for i in ids) if ids else None),
+                    'field_id': field_id, 'kind': kind.value})
+        _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids, kind)
+        fields = [(field['id'], field['field_name'])
+                  for field in xsorted(rs.ambience['event']['fields'].values(),
+                                       key=EntitySorter.event_field)
+                  if field['association'] == kind]
+        return self.render(
+            rs, "field_set_select", {
+                'ids': (','.join(str(i) for i in ids) if ids else None),
+                'ordered': ordered_ids, 'labels': labels, 'fields': fields,
+                'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event")
     @REQUESTdata(("field_id", "id"),
-                 ("reg_ids", "int_csv_list_or_None"))
+                 ("ids", "int_csv_list_or_None"),
+                 ("kind", "enum_fieldassociations"))
     @event_guard(check_offline=True)
     def field_set_form(self, rs: RequestState, event_id: int, field_id: int,
-                       reg_ids: Collection[int], internal: bool = False
-                       ) -> Response:
+                       ids: Collection[int], kind: const.FieldAssociations,
+                       internal: bool = False) -> Response:
         """Render form.
 
         The internal flag is used if the call comes from another frontend
         function to disable further redirection on validation errors.
         """
         if rs.has_validation_errors() and not internal:
-            return self.redirect(rs, "event/registration_query")
-        if field_id not in rs.ambience['event']['fields']:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
-        field = rs.ambience['event']['fields'][field_id]
-        if field['association'] != const.FieldAssociations.registration:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated field."))
-        if reg_ids:
-            registration_ids = reg_ids
-        else:
-            registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_personas(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
-        ordered = xsorted(
-            registrations.keys(),
-            key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]))
-        values = {
-            "input{}".format(registration_id):
-                registration['fields'].get(field['field_name'])
-            for registration_id, registration in registrations.items()}
+            redirect = self.FIELD_REDIRECT.get(kind, "event/show_event")
+            return self.redirect(rs, redirect)
+        entities, ordered_ids, labels, field = self.field_set_aux(
+            rs, event_id, field_id, ids, kind)
+        assert field is not None  # to make mypy happy
+
+        values = {f"input{anid}": entity['fields'].get(field['field_name'])
+                  for anid, entity in entities.items()}
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
-            'registrations': registrations, 'personas': personas,
-            'ordered': ordered,
-            'reg_ids': reg_ids})
+            'ids': (','.join(str(i) for i in ids) if ids else None),
+            'entities': entities, 'labels': labels, 'ordered': ordered_ids,
+            'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("field_id", "id"),
-                 ("reg_ids", "int_csv_list_or_None"))
+                 ("ids", "int_csv_list_or_None"),
+                 ("kind", "enum_fieldassociations"))
     @event_guard(check_offline=True)
     def field_set(self, rs: RequestState, event_id: int, field_id: int,
-                  reg_ids: Collection[int]) -> Response:
-        """Modify a specific field on all registrations."""
-        if field_id not in rs.ambience['event']['fields']:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
-        field = rs.ambience['event']['fields'][field_id]
-        if field['association'] != const.FieldAssociations.registration:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated field."))
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        kind = "{}_or_None".format(const.FieldDatatypes(field['kind']).name)
-        data_params = tuple(("input{}".format(registration_id), kind)
-                            for registration_id in registration_ids)
+                  ids: Collection[int], kind: const.FieldAssociations) -> Response:
+        """Modify a specific field on the given entities."""
+        if rs.has_validation_errors():
+            return self.field_set_form(  # type: ignore
+                rs, event_id, kind=kind, internal=True)
+        entities, ordered_ids, _, field = self.field_set_aux(
+            rs, event_id, field_id, ids, kind)
+        assert field is not None  # to make mypy happy
+
+        field_kind = f"{const.FieldDatatypes(field['kind']).name}_or_None"
+        data_params = tuple((f"input{anid}", field_kind) for anid in entities)
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
-                rs, event_id, internal=True)
+                rs, event_id, kind=kind, internal=True)
 
-        # If no list of registration_ids is given as parameter get all
-        # registrations
-        if not reg_ids:
-            reg_ids = self.eventproxy.list_registrations(rs, event_id)
+        if kind == const.FieldAssociations.registration:
+            entity_setter = self.eventproxy.set_registration
+        elif kind == const.FieldAssociations.course:
+            entity_setter = self.eventproxy.set_course
+        elif kind == const.FieldAssociations.lodgement:
+            entity_setter = self.eventproxy.set_lodgement
+        else:
+            # this can not happen, since kind was validated successfully
+            raise NotImplementedError(f"Unknown kind {kind}.")
 
-        registrations = self.eventproxy.get_registrations(rs, reg_ids)
         code = 1
-        for registration_id, registration in registrations.items():
-            if (data["input{}".format(registration_id)]
-                    != registration['fields'].get(field['field_name'])):
+        for anid, entity in entities.items():
+            if data[f"input{anid}"] != entity['fields'].get(field['field_name']):
                 new = {
-                    'id': registration_id,
-                    'fields': {
-                        field['field_name']:
-                            data["input{}".format(registration_id)]
-                    }
+                    'id': anid,
+                    'fields': {field['field_name']: data[f"input{anid}"]}
                 }
-                code *= self.eventproxy.set_registration(rs, new)
+                code *= entity_setter(rs, new)
         self.notify_return_code(rs, code)
 
-        # redirect to query filtered by registration_ids
-        query = Query(
-            "qview_registration",
-            self.make_registration_query_spec(rs.ambience['event']),
-            ("persona.given_names", "persona.family_name", "persona.username",
-             "reg.id", "reg_fields.xfield_{}".format(field["field_name"])),
-            (("reg.id", QueryOperators.oneof, registration_ids),),
-            (("persona.family_name", True), ("persona.given_names", True),)
-        )
-        return self.redirect(rs, "event/registration_query",
-                             querytoparams_filter(query))
+        if kind == const.FieldAssociations.registration:
+            query = Query(
+                "qview_registration",
+                self.make_registration_query_spec(rs.ambience['event']),
+                ("persona.given_names", "persona.family_name", "persona.username",
+                 "reg.id", f"reg_fields.xfield_{field['field_name']}"),
+                (("reg.id", QueryOperators.oneof, entities),),
+                (("persona.family_name", True), ("persona.given_names", True))
+            )
+        elif kind == const.FieldAssociations.course:
+            query = Query(
+                "qview_event_course",
+                self.make_course_query_spec(rs.ambience['event']),
+                ("course.nr", "course.shortname", "course.title", "course.id",
+                 f"course_fields.xfield_{field['field_name']}"),
+                (("course.id", QueryOperators.oneof, entities),),
+                (("course.nr", True), ("course.shortname", True))
+            )
+        elif kind == const.FieldAssociations.lodgement:
+            query = Query(
+                "qview_event_lodgement",
+                self.make_lodgement_query_spec(rs.ambience['event']),
+                ("lodgement.title", "lodgement_group.title", "lodgement.id",
+                 f"lodgement_fields.xfield_{field['field_name']}"),
+                (("lodgement.id", QueryOperators.oneof, entities),),
+                (("lodgement.title", True), ("lodgement.id", True))
+            )
+        else:
+            # this can not happen, since kind was validated successfully
+            raise NotImplementedError(f"Unknown kind {kind}.")
+
+        redirect = self.FIELD_REDIRECT[kind]
+        return self.redirect(rs, redirect, querytoparams_filter(query))
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)

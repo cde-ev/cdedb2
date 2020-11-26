@@ -80,7 +80,7 @@
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
-                evaluated using the {{ link }}, to determine the winner.
+                evaluated using the {{ link }}, to determine the option with the most votes.
             {% endtrans %}
         </p>
         <p>
@@ -99,7 +99,7 @@
                     Use it in your preferencelist like you would a candidate. Put all
                     candidates you deem suitable higher than {{ abm }} and all
                     candidates you reject lower, i. e. to the right of {{ abm }}.
-                    Should no candidate win against the bar, the board may take additional measures.
+                    Should no candidate get more votes than the bar, the board may take additional measures.
                 {% endtrans %}
             </p>
         {% endif %}
@@ -170,7 +170,7 @@
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
-                evaluated using the {{ link }}, to determine the winner.
+                evaluated using the {{ link }}, to determine the option with the most votes.
             {% endtrans %}
         </p>
         <p>
@@ -308,8 +308,8 @@
 {% macro add_candidate_form() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
 
-    {% set columns =  [dict(name="shortname", label="Shortname", func=util.input_text),
-                       dict(name="title", label="Title", func=util.input_text)] %}
+    {% set columns =  [dict(name="shortname", label=gettext("Shortname"), func=util.input_text),
+                       dict(name="title", label=gettext("Title"), func=util.input_text)] %}
 
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}

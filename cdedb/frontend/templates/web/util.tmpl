@@ -922,3 +922,12 @@ mailto:
         {% endcall %}
     {% endif %}
 {% endmacro %}
+
+{# Constant to be assigned to the "info" flag of form_input_textarea #}
+{% set markdownhint = gettext("Supports %(infolink)s.")|format(
+    infolink=href(
+        docurl("Handbuch_Markdown"),
+        gettext("Markdown"),
+        title=gettext("Short Markdown summary")
+    )
+)|s %}

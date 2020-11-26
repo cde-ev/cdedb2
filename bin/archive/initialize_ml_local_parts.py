@@ -2,7 +2,7 @@
 
 from cdedb.script import setup, make_backend
 from cdedb.database.connection import Atomizer
-from cdedb.ml_type_aux import get_type, full_address
+from cdedb.ml_type_aux import get_type, get_full_address
 import cdedb.database.constants as const
 # Configuration
 
@@ -56,7 +56,7 @@ with Atomizer(rs()):
             'id': datum['id'],
             'domain': domain,
         }
-        setter['address'] = full_address(dict(datum, **setter))
+        setter['address'] = get_full_address(dict(datum, **setter))
         ml.sql_update(rs(), "ml.mailinglists", setter)
 
     query = "ALTER TABLE ml.mailinglists ALTER COLUMN domain SET NOT NULL"

@@ -184,11 +184,10 @@ if __name__ == "__main__":
 
         # zeige schließlich die Ergebnisse an
         announce = "Detail:"
-        msg = ("{} Optionen {} gewinnen gegen {}"
-               " mit {} pro und {} contra Stimmen")
         for level in detailed:
-            print(msg.format(announce, level['winner'], level['loser'],
-                             level['pro_votes'], level['contra_votes']))
+            print(f"{announce} Optionen {level['winner']} bekamen mehr Stimmen als"
+                  f" {level['loser']} mit {level['pro_votes']} Pro und"
+                  f" {level['contra_votes']} Contra Stimmen.")
             announce = "       "
 
         print("Ergebnis: {}".format(condensed))

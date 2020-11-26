@@ -186,8 +186,7 @@ QUERY_SPECS = {
             ("telephone,mobile", "str"),
             ("location,location2", "str"),
             ("country,country2", "str"),
-            ("weblink,specialisation,affiliation,timeline,interests,free_form",
-             "str"),
+            ("weblink,specialisation,affiliation,timeline,interests,free_form", "str"),
             ("pevent_id", "id"),
             ("pcourse_id", "id"),
             ("fulltext", "str"),
@@ -239,6 +238,10 @@ QUERY_SPECS = {
             ("pcourse_id", "id"),
             ("notes", "str"),
             ("fulltext", "str"),
+            ("lastschrift.granted_at", "datetime"),
+            ("lastschrift.revoked_at", "datetime"),
+            ("lastschrift.active_lastschrift", "bool"),
+            ("lastschrift.amount", "float"),
         ]),
     "qview_archived_persona":
         collections.OrderedDict([
@@ -438,10 +441,19 @@ QUERY_VIEWS = {
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
-    "qview_cde_user": glue(
-        "core.personas",
-        "LEFT OUTER JOIN past_event.participants",
-        "ON personas.id = participants.persona_id"),
+    "qview_cde_user": """core.personas
+    LEFT OUTER JOIN past_event.participants ON personas.id = participants.persona_id
+    LEFT OUTER JOIN (
+        SELECT
+            id, granted_at, revoked_at, revoked_at IS NOT NULL AS active_lastschrift,
+            amount, persona_id
+        FROM cde.lastschrift
+        WHERE (granted_at, persona_id) IN (
+            SELECT MAX(granted_at) AS granted_at, persona_id
+            FROM cde.lastschrift GROUP BY persona_id
+        )
+    ) AS lastschrift ON personas.id = lastschrift.persona_id
+    """,
     "qview_past_event_user": glue(
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
