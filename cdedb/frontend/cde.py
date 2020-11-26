@@ -75,15 +75,13 @@ MEMBERSEARCH_DEFAULTS = {
 }
 
 COURSESEARCH_DEFAULTS = {
-    'qop_courses.fulltext': QueryOperators.containsall,
     'qsel_courses.title': True,
     'qop_courses.title': QueryOperators.match,
-    'qsel_courses.pevent_id': True,
-    'qop_events.title': QueryOperators.match,
     'qsel_events.title': True,
-    'qop_courses.pevent_id': QueryOperators.equal,
+    'qop_events.title': QueryOperators.match,
     'qop_courses.nr': QueryOperators.match,
     'qop_courses.description': QueryOperators.match,
+    'qsel_courses.pevent_id': True,
     'qsel_events.tempus': True,
     'qord_primary': 'courses.title',
     'qord_primary_ascending': True,
@@ -289,15 +287,13 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("member")
     @REQUESTdata(("is_search", "bool"))
-    def course_search(self, rs: RequestState, is_search: bool) -> Response:
-        """Search for members."""
+    def past_course_search(self, rs: RequestState, is_search: bool) -> Response:
+        """Search for past courses."""
         defaults = copy.deepcopy(COURSESEARCH_DEFAULTS)
         spec = copy.deepcopy(QUERY_SPECS['qview_pevent_course'])
         query = cast(Query, check(
             rs, "query_input", mangle_query_input(rs, spec, defaults),
             "query", spec=spec, allow_empty=not is_search, separator=" "))
-
-        events = self.pasteventproxy.list_past_events(rs)
         result: Optional[Sequence[CdEDBObject]] = None
         count = 0
 
@@ -321,8 +317,8 @@ class CdEFrontend(AbstractUserFrontend):
                     'pevent_id': result[0]['courses.pevent_id'],
                     'pcourse_id': result[0]['courses.id']})
 
-        return self.render(rs, "course_search", {
-            'spec': spec, 'pevents': events, 'result': result, 'count': count})
+        return self.render(rs, "past_course_search", {
+            'spec': spec, 'result': result, 'count': count})
 
     @access("core_admin", "cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))

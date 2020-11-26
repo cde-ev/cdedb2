@@ -1,4 +1,4 @@
-{% set sidenav_active='cde_course_search' %}
+{% set sidenav_active='cde_past_course_search' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
@@ -6,7 +6,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/course_search"), gettext("CdE Course Search"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("cde/past_course_search"), gettext("Course Search"), active="True") }}
 {% endblock %}
 {% block content %}
     {% if values['is_search'] %}
@@ -47,7 +47,7 @@
         {% endif %}
     {% endif %}
 
-    <form action="{{ cdedblink('cde/course_search') }}" method="GET" id="coursesearchform" class="form-horizontal">
+    <form action="{{ cdedblink('cde/past_course_search') }}" method="GET" id="coursesearchform" class="form-horizontal">
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary mosp">
             <div class="panel-heading">
@@ -56,25 +56,27 @@
             <div class="panel-body">
                 <div class="row">
                     <div class="col-sm-6">
-                        {{ util.form_input_text(name="qval_courses.fulltext", label=gettext("Fulltext"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_courses.title", label=gettext("Title"),
-                                aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_courses.nr", label=gettext("Nr"),
-                                aclass="input-sm") }}
+                        {{ util.form_input_text(
+                            name="qval_courses.title", label=gettext("Name"),  aclass="input-sm") }}
+                        {{ util.form_input_text(
+                            name="qval_courses.nr", label=gettext("Nr"), aclass="input-sm") }}
                     </div>
                     <div class="col-sm-6">
                         {{ util.form_input_text(
-                                name="qval_courses.description", label=gettext("Description"), aclass="input-sm") }}
-                        {{ util.form_input_select(name="qval_courses.pevent_id", entries=pevents.items(),
-                                                  nulloption=nbsp, label=gettext("Academy"), aclass="input-sm",
-                                                  sort=True) }}
-                        {{ util.form_input_text(name="qval_instructors", label=gettext("Instructors"),
-                                                aclass="input-sm") }}
+                            name="qval_courses.description", label=gettext("Description"), aclass="input-sm") }}
+                        {{ util.form_input_text(
+                            name="qval_events.title", label=gettext("Academy"), aclass="input-sm") }}
                     </div>
                 </div>
             </div>
-            <div class="panel-footer text-right">
-                {{ util.input_submit(gettext("Search"), icon='search') }}
+            <div class="panel-footer">
+                <div style="float: left;">
+                    {{ util.make_icon('info-circle') }}
+                    {% trans membersearch=util.href(cdedblink("cde/member_search"), gettext("Member Search")) %}
+                        To search by course instructor, use the {{ membersearch }} instead,
+                    {% endtrans %}
+                </div>
+                <div class=text-right>{{ util.input_submit(gettext("Search"), icon='search') }}</div>
             </div>
         </div>
     </form>

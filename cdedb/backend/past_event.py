@@ -556,9 +556,6 @@ class PastEventBackend(AbstractBackend):
         This is mainly for batch admission, where we want to
         automatically resolve past events to their ids.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type shortname: str
-        :rtype: (int or None, [exception])
         :returns: The id of the past event or None if there were errors.
         """
         shortname = affirm("str_or_None", shortname)

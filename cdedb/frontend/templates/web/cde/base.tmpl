@@ -47,8 +47,8 @@
                 {{ util.href(cdedblink("cde/list_past_events"), gettext("Past Events"), icon="calendar-alt",
                         aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
                 {% if "member" in user.roles %}
-                    {{ util.href(cdedblink("cde/course_search"), gettext("Course Search"), icon="search",
-                                 aclass="list-group-item", active=(sidenav_active=='cde_course_search')) }}
+                    {{ util.href(cdedblink("cde/past_course_search"), gettext("Course Search"), icon="search",
+                                 aclass="list-group-item", active=(sidenav_active=='cde_past_course_search')) }}
                 {% endif %}
                 {% if "past_event" in user.admin_views %}
                     {{ util.href(cdedblink("cde/institution_summary"), gettext("Manage Institutions"), icon="briefcase",

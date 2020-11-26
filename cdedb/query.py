@@ -376,10 +376,8 @@ QUERY_SPECS = {
             ("courses.nr", "str"),
             ("courses.title", "str"),
             ("courses.description", "str"),
-            ("courses.fulltext", "str"),
             ("events.title", "str"),
             ("events.tempus", "date")
-            # This will be augmented with additional fields in the fly.
         ]),
     "qview_core_user":  # query for a general user including past event infos
         collections.OrderedDict([
