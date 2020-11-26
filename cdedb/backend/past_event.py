@@ -731,7 +731,6 @@ class PastEventBackend(AbstractBackend):
         semantically the event parts mostly behave like separate events
         which happen to take place consecutively.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
         :returns: The first entry are the ids of the new past events or None
           if there were complications or create_past_events is False.
           If there were complications, the second entry is an error message.
@@ -760,10 +759,6 @@ class PastEventBackend(AbstractBackend):
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type query: :py:class:`cdedb.query.Query`
-        :rtype: [{str: object}]
         """
         query = affirm("query", query)
         if query.scope == "qview_pevent_course":
