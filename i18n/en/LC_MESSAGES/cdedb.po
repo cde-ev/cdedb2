@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-11-26 03:55+0100\n"
+"POT-Creation-Date: 2020-11-28 00:39+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -36,7 +36,7 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:293 cdedb/backend/cde.py:865
 #: cdedb/backend/core.py:2678 cdedb/backend/event.py:912
-#: cdedb/backend/ml.py:343 cdedb/backend/past_event.py:772
+#: cdedb/backend/ml.py:343 cdedb/backend/past_event.py:767
 msgid "Bad scope."
 msgstr ""
 
@@ -981,7 +981,7 @@ msgstr ""
 msgid "Ambiguous course."
 msgstr ""
 
-#: cdedb/backend/past_event.py:742
+#: cdedb/backend/past_event.py:741
 msgid "Needs both admin privileges."
 msgstr ""
 
@@ -1357,11 +1357,11 @@ msgstr ""
 msgid "Decision noted."
 msgstr ""
 
-#: cdedb/frontend/cde.py:253 cdedb/frontend/cde.py:307
+#: cdedb/frontend/cde.py:247 cdedb/frontend/cde.py:295
 msgid "You have to specify some filters."
 msgstr ""
 
-#: cdedb/frontend/cde.py:279
+#: cdedb/frontend/cde.py:273
 msgid "Too many query results."
 msgstr ""
 
@@ -3737,7 +3737,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:30
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:25
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:33
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:66
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:69
 #: cdedb/frontend/templates/web/event/change_course.tmpl:34
 #: cdedb/frontend/templates/web/event/change_event.tmpl:30
 #: cdedb/frontend/templates/web/event/create_course.tmpl:31
@@ -4667,7 +4667,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:89
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:68
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:71
 msgid "Academy"
 msgstr ""
 
@@ -5155,7 +5155,7 @@ msgid "Manage Institutions of past Events"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:16
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:60
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:63
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:57
 #: cdedb/frontend/templates/web/core/show_history.tmpl:105
 #: cdedb/frontend/templates/web/core/show_user.tmpl:118
@@ -5503,7 +5503,7 @@ msgid "To use the Member Search, you must be an active CdE member."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:31
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:15
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:18
 msgid "Go to Search."
 msgstr ""
 
@@ -5667,28 +5667,34 @@ msgstr ""
 msgid "CdE Course Search"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:20
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:12
+msgid ""
+"This search allows to search for courses from past events. Here, events "
+"from all institutions are included."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:23
 #, python-format
 msgid "%(count)s Course found"
 msgid_plural "%(count)s Courses found"
 msgstr[0] ""
 msgstr[1] ""
 
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:43
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:46
 msgid "No courses found."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:62
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:65
 msgid "Nr"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:75
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:78
 msgid "Member Search"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:75
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:78
 #, python-format
-msgid "To search by course instructor, use the %(membersearch)s instead,"
+msgid "To search by course instructor, use the %(membersearch)s instead."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:38
@@ -10456,8 +10462,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:60
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:34
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:61
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:18
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:40
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:21
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:43
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:33
 #: cdedb/frontend/templates/web/core/archived_user_search.tmpl:22
 #: cdedb/frontend/templates/web/core/user_search.tmpl:36
@@ -10637,7 +10643,7 @@ msgid "Lastschrift Amount"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:75
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:54
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:57
 #: cdedb/frontend/templates/web/generic.tmpl:245
 msgid "Search Mask"
 msgstr ""
@@ -10744,7 +10750,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:23
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:123
-#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:79
+#: cdedb/frontend/templates/web/cde/past_course_search.tmpl:82
 #: cdedb/frontend/templates/web/core/index.tmpl:39
 #: cdedb/frontend/templates/web/event/show_event.tmpl:141
 #: cdedb/frontend/templates/web/generic.tmpl:415

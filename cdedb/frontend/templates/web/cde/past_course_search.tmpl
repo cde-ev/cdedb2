@@ -9,6 +9,9 @@
     {{ util.breadcrumb_link(cdedblink("cde/past_course_search"), gettext("Course Search"), active="True") }}
 {% endblock %}
 {% block content %}
+    {% trans %}
+        This search allows to search for courses from past events. Here, events from all institutions are included.
+    {% endtrans %}
     {% if values['is_search'] %}
         {% if result %}
             <div class="p">
@@ -73,7 +76,7 @@
                 <div style="float: left;">
                     {{ util.make_icon('info-circle') }}
                     {% trans membersearch=util.href(cdedblink("cde/member_search"), gettext("Member Search")) %}
-                        To search by course instructor, use the {{ membersearch }} instead,
+                        To search by course instructor, use the {{ membersearch }} instead.
                     {% endtrans %}
                 </div>
                 <div class=text-right>{{ util.input_submit(gettext("Search"), icon='search') }}</div>
