@@ -586,10 +586,9 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             raise RuntimeError(n_("Impossible."))
         if datum['pevent_id'] and persona_id:
-            # TODO preserve instructor/orga information
             self.pasteventproxy.add_participant(
-                rs, datum['pevent_id'], datum['pcourse_id'],
-                persona_id, is_instructor=False, is_orga=False)
+                rs, datum['pevent_id'], datum['pcourse_id'], persona_id,
+                is_instructor=datum['is_instructor'], is_orga=datum['is_orga'])
         return ret
 
     def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
@@ -722,10 +721,14 @@ class CdEFrontend(AbstractUserFrontend):
             params = (
                 ("resolution{}".format(lineno), "enum_lineresolutions_or_None"),
                 ("doppelganger_id{}".format(lineno), "id_or_None"),
-                ("hash{}".format(lineno), "str_or_None"),)
+                ("hash{}".format(lineno), "str_or_None"),
+                (f"is_orga{lineno}", "bool"),
+                (f"is_instructor{lineno}", "bool"))
             tmp = request_extractor(rs, params)
             dataset['resolution'] = tmp["resolution{}".format(lineno)]
             dataset['doppelganger_id'] = tmp["doppelganger_id{}".format(lineno)]
+            dataset['is_orga'] = tmp[f"is_orga{lineno}"]
+            dataset['is_instructor'] = tmp[f"is_instructor{lineno}"]
             dataset['old_hash'] = tmp["hash{}".format(lineno)]
             dataset['new_hash'] = get_hash(accountlines[lineno].encode())
             rs.values["hash{}".format(lineno)] = dataset['new_hash']

@@ -119,6 +119,12 @@
                                         nulloption=nbsp, aclass="form-control select-action",
                                         arialabel=gettext("Operation for line %s")|format(dataset['lineno'])) }}
                             </div>
+                            {% if dataset['pevent_id'] %}
+                                {{ util.input_checkbox("is_orga{}".format(dataset['lineno'] - 1), label=gettext("Orga")) }}
+                                {% if dataset['pcourse_id'] %}
+                                    {{ util.input_checkbox("is_instructor{}".format(dataset['lineno'] - 1), label=gettext("Course instructor")) }}
+                                {% endif %}
+                            {% endif %}
                         </div>
 
                         {% if dataset['doppelgangers'] %}
