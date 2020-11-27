@@ -1114,6 +1114,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
 
         vote_dict = self._retrieve_own_vote(rs, ballot, secret=None)
+        merge_dicts(rs.values, {'vote': vote_dict['vote']})
 
         candidates = {e['shortname']: e for e in ballot['candidates'].values()}
         if ballot['use_bar']:
