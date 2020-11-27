@@ -4,7 +4,7 @@ Wir danken Dir, dass Du uns erlaubt hast jährlich per Lastschrift
 von Deinem Konto den jährlichen Mitgliedsbeitrag und eine Spende
 einzuziehen. Am {{ data['payment_date']|date(lang="de") }} (bzw. am darauffolgenden
 Arbeitstag) werden wir nun den vereinbarten Betrag von {{ data['amount']|money }}
-von dem Konto ({{ data['iban']|iban }}) abbuchen.
+von dem Konto ({{ data['iban']|hidden_iban }}) abbuchen.
 
 Bitte stelle sicher, dass das Konto zu diesem Zeitpunkt ausreichend gedeckt ist.
 

@@ -353,6 +353,23 @@ def iban_filter(val: Optional[str]) -> Optional[str]:
 
 
 @overload
+def hidden_iban_filter(val: None) -> None: ...
+
+
+@overload
+def hidden_iban_filter(val: str) -> str: ...
+
+
+def hidden_iban_filter(val: Optional[str]) -> Optional[str]:
+    """Custom jinja filter for hiding IBANs in nice to read blocks."""
+    if val is None:
+        return None
+    else:
+        val = val[:4] + "*" * (len(val) - 8) + val[-4:]
+        return iban_filter(val)
+
+
+@overload
 def escape_filter(val: None) -> None: ...
 
 
@@ -829,6 +846,7 @@ JINJA_FILTERS = {
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
     'iban': iban_filter,
+    'hidden_iban': hidden_iban_filter,
     'escape': escape_filter,
     'e': escape_filter,
     'json': json_filter,
