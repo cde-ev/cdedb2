@@ -3966,7 +3966,7 @@ _BALLOT_OPTIONAL_FIELDS = lambda: {
     'vote_extension_end': _datetime_or_None,
     'abs_quorum': _int,
     'rel_quorum': _int,
-    'votes': _id_or_None,
+    'votes': _positive_int_or_None,
     'use_bar': _bool,
     'is_tallied': _bool,
     'candidates': _mapping
