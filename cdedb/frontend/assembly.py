@@ -1172,6 +1172,11 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         result = self.get_online_result(rs, ballot)
 
+        # calculate the occurrence of each vote
+        vote_set = {vote['vote'] for vote in result['votes']}
+        vote_counts = {vote: sum((1 for v in result['votes'] if v.get('vote') == vote))
+                       for vote in vote_set}
+
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
         assert result_bytes is not None
@@ -1179,7 +1184,8 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         return self.render(rs, "show_ballot_result", {
             'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
-            'result_hash': result_hash, 'secret': secret, **vote_dict})
+            'result_hash': result_hash, 'secret': secret, **vote_dict,
+            'vote_counts': vote_counts})
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
                            secret: str = None) -> dict:

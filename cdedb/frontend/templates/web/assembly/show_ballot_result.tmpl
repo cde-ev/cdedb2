@@ -119,18 +119,22 @@
 
     <h2 class="mosp">{% trans %}Votes{% endtrans %}</h2>
 
-        <div class="row" id="votes-list">
-            {% for list in result['votes'] | slice((3 if result['votes']|length > 20 else 2)
-                                                      if result['votes']|length > 10 else 1) %}
-                <div class="col-sm-4">
-                    <ul class="slim nosp">
-                        {% for vote in list %}
-                            <li>{{ vote['vote'] }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endfor %}
-        </div>
+        <table class="table table-condensed table-hover">
+            <thead>
+                <tr>
+                    <th class="col-sm-11">{% trans %}Vote{% endtrans %}</th>
+                    <th class="col-sm-push-1">{% trans %}Count{% endtrans %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vote, count in vote_counts|dictsort %}
+                    <tr>
+                        <td>{{ vote }}</td>
+                        <td>{{ count }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
 
     <h2 class="mosp">{% trans %}Your Vote{% endtrans %}</h2>
