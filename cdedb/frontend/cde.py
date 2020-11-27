@@ -242,13 +242,7 @@ class CdEFrontend(AbstractUserFrontend):
         cutoff = self.conf["MAX_MEMBER_SEARCH_RESULTS"]
 
         if rs.has_validation_errors():
-            # A little hack to fix displaying of errors: The form uses
-            # 'qval_<field>' as input name, the validation only returns the
-            # field's name
-            current = tuple(rs.retrieve_validation_errors())
-            rs.retrieve_validation_errors().clear()
-            rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
-            rs.ignore_validation_errors()
+            self._fix_validation_errors(rs)
         elif is_search and not query.constraints:
             rs.notify("error", n_("You have to specify some filters."))
         elif is_search:
@@ -296,13 +290,7 @@ class CdEFrontend(AbstractUserFrontend):
         count = 0
 
         if rs.has_validation_errors():
-            # A little hack to fix displaying of errors: The form uses
-            # 'qval_<field>' as input name, the validation only returns the
-            # field's name
-            current = tuple(rs.retrieve_validation_errors())
-            rs.retrieve_validation_errors().clear()
-            rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
-            rs.ignore_validation_errors()
+            self._fix_validation_errors(rs)
         elif is_search and not query.constraints:
             rs.notify("error", n_("You have to specify some filters."))
         elif is_search:
@@ -317,6 +305,18 @@ class CdEFrontend(AbstractUserFrontend):
 
         return self.render(rs, "past_course_search", {
             'spec': spec, 'result': result, 'count': count})
+
+    @staticmethod
+    def _fix_validation_errors(rs: RequestState) -> None:
+        """A little hack to fix displaying of errors for course and meber search:
+
+        The form uses 'qval_<field>' as input name, the validation only returns the
+        field's name.
+        """
+        current = tuple(rs.retrieve_validation_errors())
+        rs.retrieve_validation_errors().clear()
+        rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
+        rs.ignore_validation_errors()
 
     @access("core_admin", "cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
