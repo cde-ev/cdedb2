@@ -414,8 +414,7 @@ class CdEFrontend(AbstractUserFrontend):
             'decided_search': False,
             'notes': None})
         merge_dicts(persona, PERSONA_DEFAULTS)
-        persona, problems = validate.check_persona(persona, "persona",
-                                                   creation=True)
+        persona, problems = validate.check_persona(persona, "persona", creation=True)
         try:
             if (persona['birthday'] >
                     deduct_years(now().date(), 10)):
@@ -440,15 +439,13 @@ class CdEFrontend(AbstractUserFrontend):
         if (datum['resolution'] == LineResolutions.create
                 and self.coreproxy.verify_existence(rs, persona['username'])):
             warnings.append(
-                ("persona",
-                 ValueError(n_("Email address already taken."))))
+                ("persona", ValueError(n_("Email address already taken."))))
         if persona:
             temp = copy.deepcopy(persona)
             temp['id'] = 1
             doppelgangers = self.coreproxy.find_doppelgangers(rs, temp)
         if doppelgangers:
-            warnings.append(("persona",
-                             ValueError(n_("Doppelgangers found."))))
+            warnings.append(("persona", ValueError(n_("Doppelgangers found."))))
         if (datum['resolution'] is not None and
                 (bool(datum['doppelganger_id'])
                  != datum['resolution'].is_modification())):
@@ -459,16 +456,13 @@ class CdEFrontend(AbstractUserFrontend):
         if datum['doppelganger_id']:
             if datum['doppelganger_id'] not in doppelgangers:
                 problems.append(
-                    ("doppelganger",
-                     KeyError(n_("Doppelganger unavailable."))))
+                    ("doppelganger", KeyError(n_("Doppelganger unavailable."))))
             else:
                 dg = doppelgangers[datum['doppelganger_id']]
                 if (dg['username'] != persona['username']
-                        and self.coreproxy.verify_existence(
-                            rs, persona['username'])):
+                        and self.coreproxy.verify_existence(rs, persona['username'])):
                     warnings.append(
-                        ("doppelganger",
-                         ValueError(n_("Email address already taken."))))
+                        ("doppelganger", ValueError(n_("Email address already taken."))))
                 if not dg['is_cde_realm']:
                     warnings.append(
                         ("doppelganger",
@@ -481,15 +475,12 @@ class CdEFrontend(AbstractUserFrontend):
                         else:
                             problems.append(
                                 ("doppelganger",
-                                 ValueError(n_(
-                                     "Missing data for realm upgrade."))))
+                                 ValueError(n_("Missing data for realm upgrade."))))
         if datum['doppelganger_id'] and pevent_id:
-            existing = self.pasteventproxy.list_participants(
-                rs, pevent_id=pevent_id)
+            existing = self.pasteventproxy.list_participants(rs, pevent_id=pevent_id)
             if (datum['doppelganger_id'], pcourse_id) in existing:
                 problems.append(
-                    ("pevent_id",
-                     KeyError(n_("Participation already recorded."))))
+                    ("pevent_id", KeyError(n_("Participation already recorded."))))
         datum.update({
             'persona': persona,
             'pevent_id': pevent_id,
@@ -719,19 +710,19 @@ class CdEFrontend(AbstractUserFrontend):
         for raw_entry in reader:
             dataset: CdEDBObject = {'raw': raw_entry}
             params = (
-                ("resolution{}".format(lineno), "enum_lineresolutions_or_None"),
-                ("doppelganger_id{}".format(lineno), "id_or_None"),
-                ("hash{}".format(lineno), "str_or_None"),
+                (f"resolution{lineno}", "enum_lineresolutions_or_None"),
+                (f"doppelganger_id{lineno}", "id_or_None"),
+                (f"hash{lineno}", "str_or_None"),
                 (f"is_orga{lineno}", "bool"),
                 (f"is_instructor{lineno}", "bool"))
             tmp = request_extractor(rs, params)
-            dataset['resolution'] = tmp["resolution{}".format(lineno)]
-            dataset['doppelganger_id'] = tmp["doppelganger_id{}".format(lineno)]
+            dataset['resolution'] = tmp[f"resolution{lineno}"]
+            dataset['doppelganger_id'] = tmp[f"doppelganger_id{lineno}"]
             dataset['is_orga'] = tmp[f"is_orga{lineno}"]
             dataset['is_instructor'] = tmp[f"is_instructor{lineno}"]
-            dataset['old_hash'] = tmp["hash{}".format(lineno)]
+            dataset['old_hash'] = tmp[f"hash{lineno}"]
             dataset['new_hash'] = get_hash(accountlines[lineno].encode())
-            rs.values["hash{}".format(lineno)] = dataset['new_hash']
+            rs.values[f"hash{lineno}"] = dataset['new_hash']
             lineno += 1
             dataset['lineno'] = lineno
             data.append(self.examine_for_admission(rs, dataset))
@@ -760,15 +751,13 @@ class CdEFrontend(AbstractUserFrontend):
                     and not dataset['old_hash']):
                 # automatically select resolution if this is an easy case
                 dataset['resolution'] = LineResolutions.create
-                rs.values['resolution{}'.format(dataset['lineno'] - 1)] = \
-                    LineResolutions.create.value
+                rs.values[f"resolution{dataset['lineno'] - 1}"] = LineResolutions.create.value
         if lineno != len(accountlines):
             rs.append_validation_error(
                 ("accounts", ValueError(n_("Lines didn’t match up."))))
         if not membership:
             rs.append_validation_error(
-                ("membership",
-                 ValueError(n_("Only member admission supported."))))
+                ("membership", ValueError(n_("Only member admission supported."))))
         open_issues = any(
             e['resolution'] is None
             or (e['problems'] and e['resolution'] != LineResolutions.skip)
@@ -810,7 +799,7 @@ class CdEFrontend(AbstractUserFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
-            [(event['id'] , event['title']) for event in events.values()],
+            [(event['id'], event['title']) for event in events.values()],
             key=lambda e: EntitySorter.event(events[e[0]]), reverse=True)
         params = {
             'params': params or None,
