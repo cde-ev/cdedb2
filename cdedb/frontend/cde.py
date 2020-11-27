@@ -570,9 +570,8 @@ class CdEFrontend(AbstractUserFrontend):
                 self.coreproxy.change_username(
                     rs, datum['doppelganger_id'],
                     datum['persona']['username'], password=None)
-                # TODO the following should be must_wait=True
                 self.coreproxy.change_persona(
-                    rs, update, may_wait=False,
+                    rs, update, may_wait=True, force_review=True,
                     change_note="Import aktualisierter Daten.")
         else:
             raise RuntimeError(n_("Impossible."))
