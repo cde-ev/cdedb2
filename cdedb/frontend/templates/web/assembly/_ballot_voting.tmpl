@@ -23,11 +23,14 @@
                                       entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('shortname', 'title'),
                                       radio=(ambience['ballot']['votes'] == 1), small=True) }}
         {% if ambience['ballot']['use_bar'] %}
-            {{ util.form_input_checkboxes(
-                "vote", label=gettext("Rejection"), entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("Against all Candidates"))],
-                small=True, radio=(ambience['ballot']['votes'] == 1),
-                info=gettext("With this option you reject all candidates. "
-                             "If this gets a majority the board may take additional measures.")) }}
+            <div style="margin-top: 13px">
+                {{ util.form_input_checkboxes(
+                   "vote", label='', entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("Against all Candidates"))],
+                   small=True, radio=(ambience['ballot']['votes'] == 1),
+                   info=gettext("With this option you reject all candidates. "
+                                "If this gets a majority the board may take additional measures.")) }}
+            </div>
+
         {% endif %}
         {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
     </form>
@@ -39,9 +42,9 @@
     </script>
 
     <div class="form-horizontal">
-        <div class="form-group">
+        <div class="form-group mosp">
             <div class="col-sm-2 control-label">
-                <strong>{% trans %}Additional Options{% endtrans %}</strong>
+                <strong>{% trans %}Additional{% endtrans %}</strong>
             </div>
             <div class="col-sm-10">
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
