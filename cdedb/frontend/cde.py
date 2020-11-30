@@ -262,8 +262,6 @@ class CdEFrontend(AbstractUserFrontend):
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
-            # TODO: Query should be sorted already
-            result = xsorted(result, key=EntitySorter.persona)
             count = len(result)
             if count == 1:
                 return self.redirect_show_user(rs, result[0]['id'],
