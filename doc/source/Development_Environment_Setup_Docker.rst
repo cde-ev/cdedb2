@@ -27,7 +27,8 @@ If you see the need to manually rebuild them you can do so using
 ``docker-compose build``.
 As the compose file is in a subdirectory you have to tell ``docker-compose``
 where it should look for it using ``--file`` flag.
-Another possibility is to simply change you working directory to the compose file.
+Another possibility is to simply change you working directory
+to the parent directory of the compose file.
 
 Starting the containers
 -----------------------
@@ -39,6 +40,10 @@ If you wish to run the containers in a detached mode you can append a ``-d``.
 Once the containers are running you can execute ``docker-compose ps``
 to check if everything went well and all containers are still alive.
 In this overview you are also able to see more information like port mappings.
+
+To shutdown the containers you can either press CTRL+C
+if you started the containers attached
+or run ``docker-compose down`` otherwise.
 
 Initializing the containers
 ---------------------------
@@ -75,10 +80,12 @@ or start an interactive session by executing bash inside a container
 To run commands in the postgres container
 you have to subtitute ``app`` with ``cdb``.
 
-Some development command like ``pylint`` are however not installed
+The web interface is exposed at `localhost:8443 <https://localhost:8443>`_.
+Additionally ``adminer``
+--- a tool which can be used to inspect the database ---
+can be reached using `localhost:8080 <https://localhost:8080>`_.
+
+Some development commands like ``pylint`` are however not installed
 inside the containers to keep them light and should be run locally.
-Having said that the compose file also includes ``adminer``
-which can be reached via port ``8080``
-and can be used to inspect the database.
 For more information refer to the ``docker``/``docker-compose`` documentation
 or execute ``docker-compose help``.

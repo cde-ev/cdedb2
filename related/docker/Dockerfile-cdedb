@@ -87,7 +87,6 @@ VOLUME /var/lib/cdedb
 COPY ./related/auto-build/files/stage3 /tmp/autobuild
 
 # put configuration files into correct positions
-# - store localconfig in /etc to allow mounting code seperately
 # - rewrite config to store logs inside of /var/log/cdedb
 # - add symlink to /cdedb2/cdedb directory so python can find it
 RUN a2enmod ssl wsgi headers \
@@ -105,7 +104,8 @@ RUN a2enmod ssl wsgi headers \
     \
     && rm -rf /tmp/autobuild
 
-# this does not currently work
+# this does not currently work:
+# - store localconfig in /etc to allow mounting code seperately
 # && sed -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
 #     -e 's|Path("/log/cdedb.log|Path("/var/log/cdedb/global.log|' \
 #     /tmp/autobuild/localconfig.py \
