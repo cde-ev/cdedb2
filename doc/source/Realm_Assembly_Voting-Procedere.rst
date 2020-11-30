@@ -4,8 +4,8 @@ Elektronisches Wahlverfahren
 .. This is linked to in the ballot tally emails, so it should stay German.
 
 
-Hier wird das elektronische Wahlverfahren, dass für die Abstimmungen in der
-CdE-Datenbank verwendet wird erklärt.
+Hier wird das elektronische Wahlverfahren, das für die Abstimmungen in der
+CdE-Datenbank verwendet wird, erklärt.
 
 Einleitung
 ----------
@@ -28,11 +28,11 @@ gespeichert. Das Geheimnis wird dann per Mail zugestellt.
 
 Die Stimmabgabe erfolgt via Webinterface. Die Stimme wird dann auf dem
 Server gespeichert, wobei die Zuordnung der Stimme zur Person nur unter
-Kenntnis des Geheimnis möglich ist.
+Kenntnis des Geheimnisses möglich ist.
 
 Sobald die Abstimmung beendet ist, erstellt die Datenbank eine
 Ergebnisdatei, die die gesamten Informationen zur Abstimmung enthält. Diese
-Datei, sowie das reine Ergebnis sind dann auf der Abstimmungsseite in der DB
+Datei sowie das reine Ergebnis sind dann auf der Abstimmungsseite in der DB
 verfügbar. Außerdem wird die Ergebnisdatei direkt nach der Erstellung auf
 eine spezielle Mailingliste [#bekanntmachungsliste]_ veröffentlicht. Dadurch
 wird ein Commitment erzeugt, sodass das Ergebnis nicht nachträglich
@@ -44,7 +44,7 @@ Zur Verifikation der Ergebnisdatei gibt es außerdem zwei Pythonskripte:
   Wahlausgang die in der Ergebnisdatei verzeichneten Stimmen ergeben.
 * mit [#stimmverifizierungsskript]_ kann überprüft werden, ob die eigene
   Stimme korrekt in der Ergebnisdatei verzeichnet wurde. Hierfür wird das
-  anfangs per Mail übermittelte Geheimnis benötigt um die Zuordnung
+  anfangs per Mail übermittelte Geheimnis benötigt, um die Zuordnung
   herstellen zu können.
 
 Beide Skripte benötigen als einzige Abhängigkeit Python 3.

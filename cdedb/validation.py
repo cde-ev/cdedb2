@@ -3644,6 +3644,7 @@ def _subscription_request_resolution(
 
 def _ASSEMBLY_COMMON_FIELDS(): return {
     'title': str,
+    'shortname': Identifier,
     'description': Optional[str],
     'signup_end': datetime.datetime,
     'notes': Optional[str],
@@ -3652,7 +3653,7 @@ def _ASSEMBLY_COMMON_FIELDS(): return {
 
 def _ASSEMBLY_OPTIONAL_FIELDS(): return {
     'is_active': bool,
-    'mail_address': Optional[str],
+    'presider_address': Optional[str],
     'presiders': Iterable
 }
 
@@ -4309,21 +4310,36 @@ def _enum_validator_maker(
         val: Any, argname: str = None, *,
         _convert: bool = True, **kwargs: Any
     ) -> E:
-        if _convert and not isinstance(val, anenum):
-            val = _int(val, argname=argname, _convert=_convert, **kwargs)
+        if isinstance(val, anenum):
+            return val
 
-        if not isinstance(val, anenum):
-            if isinstance(val, int):
+        if isinstance(val, int):
+            try:
+                return anenum(val)
+            except ValueError:
+                pass
+
+        elif _convert:
+            # first, try to convert if the enum member is given as "class.member"
+            if isinstance(val, str):
                 try:
-                    val = anenum(val)
+                    enum_name, enum_val = val.split(".", 1)
+                    if enum_name == anenum.__name__:
+                        return anenum[enum_val]
+                except (KeyError, ValueError):
+                    pass
+            else:
+                # second, try to convert if the enum member is given as str(int)
+                val = _int(val, argname=argname, _convert=_convert, **kwargs)
+                try:
+                    return anenum(val)
                 except ValueError as e:
                     raise ValidationSummary(ValueError(
                         argname, error_msg, {'enum': anenum})) from e
-            else:
-                raise ValidationSummary(TypeError(
-                    argname, n_("Must be a %(type)s."), {'type': anenum}))
 
-        return val
+        else:
+            raise ValidationSummary(TypeError(
+                argname, n_("Must be a %(type)s."), {'type': anenum}))
 
     the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())
 

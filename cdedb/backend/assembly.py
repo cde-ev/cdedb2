@@ -718,7 +718,7 @@ class AssemblyBackend(AbstractBackend):
                 if "log" in cascade:
                     ret *= self.sql_delete(rs, "assembly.log", blockers["log"])
                 if "mailinglists" in cascade:
-                    for ml_id in blockers["amilinglists"]:
+                    for ml_id in blockers["mailinglists"]:
                         deletor = {
                             'assembly_id': None,
                             'id': ml_id,

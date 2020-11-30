@@ -411,6 +411,7 @@ class TestValidation(unittest.TestCase):
             (stati.require_cde, stati.require_cde, None, True),
             (4, stati.require_cde, None, True),
             ("4", stati.require_cde, None, False),
+            (str(stati.require_cde), stati.require_cde, None, False),
             (-1, None, ValueError, False),
             ("alorecuh", None, ValueError, False),
         ))

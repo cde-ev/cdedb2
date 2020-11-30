@@ -848,8 +848,8 @@ etc;anything else""", f['entries_2'].value)
         f['kind_-1'].force_value("invalid")
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
-        self.assertValidationError("kind_-1",
-                                   "Ungültige Eingabe für eine Ganzzahl.")
+        self.assertValidationError(
+            "kind_-1", "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>.")
         f['create_-1'].checked = True
         f['field_name_-1'] = "invalid"
         f['association_-1'] = const.FieldAssociations.registration.value
@@ -2995,6 +2995,25 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/questionnaire/reorder'})
         f = self.response.forms['reorderquestionnaireform']
         self.assertEqual(f['order'].value, "0,1,2,3,4,5")
+        f['order'] = "Hallo, Kekse"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('order', "Ungültige Eingabe für eine Ganzzahl.")
+        # row index out of range
+        f = self.response.forms['reorderquestionnaireform']
+        f['order'] = "-1,6"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("order", "Jede Reihe darf nur genau einmal vorkommen.")
+        # row included twice
+        f = self.response.forms['reorderquestionnaireform']
+        f['order'] = "0,1,1,3,4,5"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("order", "Jede Reihe darf nur genau einmal vorkommen.")
+        # not all rows included
+        f = self.response.forms['reorderquestionnaireform']
+        f['order'] = "0,1,2"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("order", "Jede Reihe darf nur genau einmal vorkommen.")
+        f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
         self.submit(f)
         self.assertTitle("Fragebogen umordnen (Große Testakademie 2222)")

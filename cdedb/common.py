@@ -2071,8 +2071,8 @@ PRIVILEGE_MOD_REQUIRING_FIELDS = {
 PRIVILEGED_MOD_ALLOWED_FIELDS = MOD_ALLOWED_FIELDS | PRIVILEGE_MOD_REQUIRING_FIELDS
 
 #: Fields of an assembly
-ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
-                   "is_active", "notes")
+ASSEMBLY_FIELDS = ("id", "title", "shortname", "description", "presider_address",
+                   "signup_end", "is_active", "notes")
 
 #: Fields of a ballot
 BALLOT_FIELDS = (
