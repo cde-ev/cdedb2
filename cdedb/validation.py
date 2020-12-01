@@ -76,7 +76,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    get_type_hints, overload,
+    get_type_hints,
+    overload,
 )
 
 import magic
@@ -4322,7 +4323,11 @@ def _enum_validator_maker(
             return val
 
         if isinstance(val, int) and not _convert:
-            return anenum(val)
+            try:
+                return anenum(val)
+            except ValueError as e:
+                raise ValidationSummary(ValueError(
+                    argname, error_msg, {'enum': anenum})) from e
 
         if _convert:
             # first, try to convert if the enum member is given as "class.member"
@@ -4335,10 +4340,10 @@ def _enum_validator_maker(
                     pass
 
             # second, try to convert if the enum member is given as str(int)
-            val = _int(val, argname=argname, _convert=_convert, **kwargs)
             try:
+                val = _int(val, argname=argname, _convert=_convert, **kwargs)
                 return anenum(val)
-            except ValueError as e:
+            except (ValidationSummary, ValueError) as e:
                 raise ValidationSummary(ValueError(
                     argname, error_msg, {'enum': anenum})) from e
 

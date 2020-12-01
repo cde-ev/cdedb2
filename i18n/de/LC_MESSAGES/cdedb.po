@@ -14205,9 +14205,10 @@ msgstr "Ungültiger regulärer Ausdruck (Position %(pos)s)."
 #: cdedb/validation.py:3995
 #, python-format
 msgid ""
-"Must not contain any forbidden characters (which are %(forbidden_chars)s "
-"while .^$ are allowed)."
-msgstr ""
+"Must not contain any forbidden characters "
+"(which are %(forbidden_chars)s while .^$ are allowed)."
+msgstr "Darf keine verbotenen Zeichen enthalten "
+"(diese sind %(forbidden_chars)s) wohingegen .^$ erlaubt sind."
 
 #: cdedb/validation.py:4060
 msgid "Invalid operator for this field."
