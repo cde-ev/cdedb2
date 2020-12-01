@@ -1234,7 +1234,7 @@ class TestMlFrontend(FrontendTest):
                       {"description": "Sozialistischer Kampfbrief"},
                       {"description": "Erweiterte Verwaltung"})
         self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
-                            div="notifications")
+                            div="static-notifications")
         # they can neither add nor remove subscriptions.
         self.assertNotIn('addmodsubscriberform', self.response.forms)
         self.assertNotIn('removemodsubscriberform100', self.response.forms)

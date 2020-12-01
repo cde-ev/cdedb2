@@ -190,28 +190,25 @@
                     {% endif %}
 
                     <div id="notifications">
-                        {% with icontypes = {"success" : "check-circle", "info" : "info-circle", "question" : "question-circle",
-                                             "warning" : "exclamation-circle", "error" : "times-circle"},
-                                alerttypes = {"success" : "success", "info" : "info", "question" : "info",
-                                              "warning" : "warning", "error" : "danger"},
-                                messagetypes = {"success" : _("Success!"), "info" : _("Info!"), "question" : _("Question:"),
-                                                "warning" : _("Warning!"), "error" : _("Error!")} %}
-                            {% for ntype, message, params in notifications %}
-                                <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert">
-                                    {{ util.make_icon( icontypes[ntype] ) }}
-                                    <strong>{{ messagetypes[ntype]|s }}</strong>
-                                    <span class="notificationMessage">{{ gettext(message)|e|format(**params) }}</span>
-                                </div>
-                            {% endfor %}
-                            {% block static_notifications %}
-                            {% endblock %}
-                        {% endwith %}
+                        {% for ntype, message, params in notifications %}
+                            {% call util.notification(ntype) %}
+                                {{ gettext(message)|e|format(**params) }}
+                            {% endcall %}
+                        {% endfor %}
                     </div>
 
                     <div role="main">
                         {% block heading %}
                             <h1 class="title" id="title">{{ gettext(self.title()) }}</h1>
                         {% endblock %}
+
+                        <div id="static-notifications">
+                            {% block static_notifications %}
+                                {# For notifications indicating a state instead of the results of a user interaction.
+                                   Hence, they are shown below their respective heading. #}
+                            {% endblock %}
+                        </div>
+
 
                         <div id="content">
                             {% block content %}

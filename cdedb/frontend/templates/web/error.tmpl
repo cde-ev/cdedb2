@@ -1,10 +1,10 @@
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{{ error.code }}: {{ error.name }}{% endblock %}
-{% block content %}
-{% set maillink = util.href(util.mailto("cdedb@lists.cde-ev.de", gettext("CdE-Datenbank development team")), "cdedb@lists.cde-ev.de") %}
-    <div class="alert alert-danger">
-        {{ util.make_icon('times-circle') }}
+{% block title %}
+    {{ error.code }}: {{ error.name }}
+{% endblock %}
+{% block static_notifications %}
+    {% call util.notification('error') %}
         {% if error.code == 403 %}
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
             {{ gettext(error.description) }}
@@ -24,8 +24,10 @@
                 {{ (error.description|string)[:21] }}
             {% endif %}
         {% endif %}
-    </div>
-
+    {% endcall %}
+{% endblock %}
+{% block content %}
+    {% set maillink = util.href(util.mailto("cdedb@lists.cde-ev.de", gettext("CdE-Datenbank development team")), "cdedb@lists.cde-ev.de") %}
     {% if error.code == 403 %}
         {% if not help is none %}
             <p>{{ gettext(help) }}</p>
