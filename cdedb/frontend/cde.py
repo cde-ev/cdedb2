@@ -242,7 +242,7 @@ class CdEFrontend(AbstractUserFrontend):
         cutoff = self.conf["MAX_MEMBER_SEARCH_RESULTS"]
 
         if rs.has_validation_errors():
-            self._fix_validation_errors(rs)
+            self._fix_search_validation_error_references(rs)
         elif is_search and not query.constraints:
             rs.notify("error", n_("You have to specify some filters."))
         elif is_search:
@@ -288,7 +288,7 @@ class CdEFrontend(AbstractUserFrontend):
         count = 0
 
         if rs.has_validation_errors():
-            self._fix_validation_errors(rs)
+            self._fix_search_validation_error_references(rs)
         elif is_search and not query.constraints:
             rs.notify("error", n_("You have to specify some filters."))
         elif is_search:
@@ -305,15 +305,14 @@ class CdEFrontend(AbstractUserFrontend):
             'spec': spec, 'result': result, 'count': count})
 
     @staticmethod
-    def _fix_validation_errors(rs: RequestState) -> None:
+    def _fix_search_validation_error_references(rs: RequestState) -> None:
         """A little hack to fix displaying of errors for course and meber search:
 
         The form uses 'qval_<field>' as input name, the validation only returns the
         field's name.
         """
         current = tuple(rs.retrieve_validation_errors())
-        rs.retrieve_validation_errors().clear()
-        rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
+        rs.replace_validation_errors([('qval_' + k, v) for k, v in current])
         rs.ignore_validation_errors()
 
     @access("core_admin", "cde_admin")
