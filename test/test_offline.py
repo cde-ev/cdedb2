@@ -19,16 +19,14 @@ class TestOffline(FrontendTest):
             'password': "notthenormalpassword",
         }
         subprocess.run(
-            ['sudo', '-u', 'cdb', 'psql', '-U', 'cdb', '-d', 'cdb_test',
+            ['bin/execute_sql_script.py', '-U', 'cdb', '-d', 'cdb_test',
              '-f', 'test/ancillary_files/clean_data.sql'],
-            cwd=base, check=True, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL)
+            cwd=base, check=True, stdout=subprocess.DEVNULL)
         try:
             subprocess.run(
                 ['bin/make_offline_vm.py', '--test', '--no-extra-packages',
                  'test/ancillary_files/event_export.json'],
-                cwd=base, check=True, stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL)
+                cwd=base, check=True, stdout=subprocess.DEVNULL)
             # Reset web test app for changed configuration
             try:
                 del sys.modules['cdedb.localconfig']

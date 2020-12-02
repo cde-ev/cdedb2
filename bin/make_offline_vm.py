@@ -14,11 +14,10 @@ import pathlib
 import subprocess
 import sys
 
-import psycopg2
 import psycopg2.extras
-import psycopg2.extensions
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+
+from cdedb.script import setup
+
 
 # This is 'secret' the hashed
 PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
@@ -53,7 +52,7 @@ DEFAULTS = {
 }
 
 
-def populate_table(cur, table, data):
+def populate_table(cur, table, data, repopath):
     """Insert the passed data into the DB.
 
     :type cur: psycopg cursor
@@ -81,8 +80,8 @@ def populate_table(cur, table, data):
             table, max(int(id) for id in data) + 1000)
         # we need elevated privileges for sequences
         subprocess.run(
-            ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
-             query], stderr=subprocess.DEVNULL, check=True)
+            [str(repopath / "bin/execute_sql_script.py"),
+             "-U", "cdb", "-d", "cdb", "-c", query], check=True)
     else:
         print("No data for table found")
 
@@ -144,8 +143,9 @@ def work(args):
             sys.exit()
     clean_script = args.repopath / "test/ancillary_files/clean_data.sql"
     subprocess.run(
-        ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", db_name, "-f",
-         str(clean_script)], stderr=subprocess.DEVNULL, check=True)
+        [str(args.repopath / "bin/execute_sql_script.py"),
+         "-U", "cdb", "-d", db_name, "-f", str(clean_script)],
+        stderr=subprocess.DEVNULL, check=True)
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}
@@ -166,18 +166,12 @@ def work(args):
     print("Prepare database.")
     # Fix uneditable table
     subprocess.run(
-        ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", db_name, "-c",
+        [str(args.repopath / "bin/execute_sql_script.py"),
+         "-U", "cdb", "-d", db_name, "-c",
          """GRANT SELECT, INSERT, UPDATE ON core.meta_info TO cdb_anonymous;
             GRANT SELECT, UPDATE ON core.meta_info_id_seq TO cdb_anonymous;
             INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb);"""],
         stderr=subprocess.DEVNULL, check=True)
-
-    print("Connect to database")
-    connection_string = "dbname={} user={} password={} port={}".format(
-        db_name, 'cdb_admin', '9876543210abcdefghijklmnopqrst', 5432)
-    conn = psycopg2.connect(connection_string,
-                            cursor_factory=psycopg2.extras.RealDictCursor)
-    conn.set_client_encoding("UTF8")
 
     tables = (
         'core.personas', 'event.events', 'event.event_parts',
@@ -186,8 +180,18 @@ def work(args):
         'event.lodgements', 'event.registrations',
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log')
+
+    print("Connect to database")
+    conn = setup(
+        persona_id=-1,
+        dbuser="cdb_admin",
+        dbpassword="9876543210abcdefghijklmnopqrst",
+        dbname=db_name,
+        check_system_user=False,
+    )().conn
+
     with conn as con:
-        with con.cursor() as cur:
+        with conn.cursor() as cur:
             make_institution(
                 cur, data['event.events'][str(data['id'])]['institution'])
             make_meta_info(cur)
@@ -199,7 +203,7 @@ def work(args):
                     for key in ('lodge_field', 'camping_mat_field',
                                 'course_room_field'):
                         values[str(data['id'])][key] = None
-                populate_table(cur, table, values)
+                populate_table(cur, table, values, repopath=args.repopath)
             # Fix forward references
             update_event(cur, data['event.events'][str(data['id'])])
 

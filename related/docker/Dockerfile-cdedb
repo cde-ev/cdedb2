@@ -79,7 +79,9 @@ RUN mkdir /var/lib/cdedb \
     && ln -s /var/log/apache2/ssl_access.log /var/log/cdedb/ssl_access.log \
     && chown --recursive www-data:www-data /var/log/cdedb \
     \
-    && useradd --system cdedb
+    && useradd --system cdedb \
+    \
+    && touch /CONTAINER
 
 # make storage persistent
 VOLUME /var/lib/cdedb

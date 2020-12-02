@@ -32,7 +32,11 @@ doc:
 
 reload:
 	$(MAKE) i18n-compile
+ifeq ($(wildcard /CONTAINER),/CONTAINER)
+	@echo "'systemctl' not available in this container"
+else
 	sudo systemctl restart apache2
+endif
 
 i18n-refresh:
 	$(MAKE) i18n-extract
@@ -141,6 +145,9 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
+ifeq ($(wildcard /CONTAINER),/CONTAINER)
+	$(error This needs to be run inside the postgres container)
+endif
 	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
@@ -159,9 +166,9 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname cdb \
-                test/ancillary_files/sample_data.sql
+		-f test/ancillary_files/sample_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname cdb_test \
-                test/ancillary_files/sample_data.sql
+		-f test/ancillary_files/sample_data.sql
 
 sql:
 	$(MAKE) sql-schema
@@ -172,14 +179,14 @@ sql:
 # explicitly. This is due to the restrictions of the docker environment.
 sql-test:
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
-		cdedb/database/cdedb-tables.sql
+		-f cdedb/database/cdedb-tables.sql
 	$(MAKE) sql-test-shallow
 
 sql-test-shallow: test/ancillary_files/sample_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
-		test/ancillary_files/clean_data.sql
+		-f test/ancillary_files/clean_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
-		test/ancillary_files/sample_data.sql
+		-f test/ancillary_files/sample_data.sql
 
 sql-xss:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -190,9 +197,9 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 endif
 	$(MAKE) sql-schema
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb \
-		test/ancillary_files/sample_data_escaping.sql
+		-f test/ancillary_files/sample_data_escaping.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
-		test/ancillary_files/sample_data_escaping.sql
+		-f test/ancillary_files/sample_data_escaping.sql
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
