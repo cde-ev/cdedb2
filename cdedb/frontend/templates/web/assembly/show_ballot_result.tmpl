@@ -83,7 +83,7 @@
         </p>
         <p>
             {% trans name="<code>Own Vote Verification</code>"|s %}
-                If you had voted in this ballot, you can verify the correct count of your vote with the
+                If you voted in this ballot, you can verify the correct count of your vote with the
                 {{ name }} Script. Additionally, you need your personal secret you
                 received per mail when registering for this assembly.
                 In contrast, your vote displayed above is read from the information stored in the database,
@@ -106,11 +106,11 @@
             {% endtrans %}
         </p>
         <p>
-            {% trans code="<code>SHA512</code>"|s %}
+            {% trans algorithm="<code>SHA512</code>"|s %}
                 To ensure that the result file has not been modified on the CdE server,
-                we show the hash of the stored resultfile here, so you can compare those two.
+                we show the hash of the stored result file here, so you can compare those two.
                 Of course, you can also download the result file and calculate the
-                {{ code }} hash by yourself.
+                {{ algorithm }} hash by yourself.
             {% endtrans %}
         </p>
         <pre>{{ result_hash }}</pre>
