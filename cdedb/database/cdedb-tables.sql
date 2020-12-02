@@ -925,8 +925,9 @@ GRANT USAGE ON SCHEMA assembly TO cdb_persona;
 CREATE TABLE assembly.assemblies (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
+        shortname               varchar NOT NULL,
         description             varchar,
-        mail_address            varchar,
+        presider_address        varchar,
         -- after which time are you not allowed to sign up any more
         signup_end              timestamp WITH TIME ZONE NOT NULL,
         -- concluded assemblies get deactivated and all related secrets are

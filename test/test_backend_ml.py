@@ -141,7 +141,7 @@ class TestMlBackend(BackendTest):
         expectation = expectation[7]
         expectation.update(setter)
         expectation['ml_type_class'] = ml_type.MemberModeratedOptInMailinglist
-        expectation['address'] = ml_type.full_address(expectation)
+        expectation['address'] = ml_type.get_full_address(expectation)
         self.assertLess(0, self.ml.set_mailinglist(self.key, setter))
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))
 
@@ -184,7 +184,7 @@ class TestMlBackend(BackendTest):
         self.assertNotIn(new_id, oldlists)
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         new_data['id'] = new_id
-        new_data['address'] = ml_type.full_address(new_data)
+        new_data['address'] = ml_type.get_full_address(new_data)
         new_data['domain_str'] = str(new_data['domain'])
         new_data['ml_type_class'] = ml_type.get_type(new_data['ml_type'])
         self.assertEqual(new_data, self.ml.get_mailinglist(self.key, new_id))

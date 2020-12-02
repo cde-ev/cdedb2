@@ -10,11 +10,11 @@ from typing_extensions import Protocol
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.backend.assembly import AssemblyBackend
-from cdedb.backend.common import AbstractBackend, access
-from cdedb.backend.common import affirm_array_validation as affirm_array
-from cdedb.backend.common import affirm_set_validation as affirm_set
-from cdedb.backend.common import affirm_validation as affirm
-from cdedb.backend.common import internal, singularize
+from cdedb.backend.common import (
+    AbstractBackend, access, affirm_array_validation as affirm_array,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    internal, singularize,
+)
 from cdedb.backend.event import EventBackend
 from cdedb.common import (MAILINGLIST_FIELDS, CdEDBObject, CdEDBObjectMap,
                           DefaultReturnCode, DeletionBlockers, PrivilegeError,
@@ -681,7 +681,7 @@ class MlBackend(AbstractBackend):
         :rtype: str
         :returns: the id of the new mailinglist
         """
-        address = ml_type.full_address(data)
+        address = ml_type.get_full_address(data)
         addresses = self.list_mailinglist_addresses(rs)
         # address can either be free or taken by the current mailinglist
         if (address in addresses.values()

@@ -960,15 +960,14 @@ class FrontendTest(BackendTest):
         elements = self.response.lxml.xpath(
             "//div[@class='alert alert-info']/span/text()")
 
-        def _extract_path(s: str) -> str:
+        def _extract_path(s: str) -> Optional[str]:
             regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
-            result = re.match(regex, s)
+            result = re.match(regex, s.strip())
             if not result:
-                raise RuntimeError(
-                    f"Failed to extract debug email path from {s!r}.")
+                return None
             return result.group(1)
-        mails = [_extract_path(x)
-                 for x in elements if x.startswith("E-Mail als ")]
+
+        mails = list(filter(None, (map(_extract_path, elements))))
         ret = []
         for path in mails:
             with open(path) as f:

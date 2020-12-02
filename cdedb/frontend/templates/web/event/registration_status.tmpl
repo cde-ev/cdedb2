@@ -7,9 +7,9 @@
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration"), active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -17,15 +17,17 @@
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
-{% block content %}
+{% block static_notifications %}
+    {{ super() }}
     {% if ambience['event']['use_additional_questionnaire'] %}
-        <div class="alert alert-info">
-             {{ util.make_icon('info-circle') }}
-             {% trans link=util.href(cdedblink('event/additional_questionnaire_form'), gettext("questionnaire")) %}
+        {% call util.notification('info') %}
+            {% trans link=util.href(cdedblink('event/additional_questionnaire_form'), gettext("questionnaire")) %}
             	Please fill in the {{ link }} now.
             {% endtrans %}
-        </div>
+        {% endcall %}
     {% endif %}
+{% endblock %}
+{% block content %}
     {% if ambience['event']['registration_text'] %}
         {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
             {{ ambience['event']['registration_text']|md }}

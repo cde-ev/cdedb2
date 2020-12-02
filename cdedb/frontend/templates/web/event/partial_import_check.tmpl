@@ -98,36 +98,29 @@
     <h2>{% trans %}Summary of Changes{% endtrans %}</h2>
     <div id="duplication-warnings">
         {% if summary['deleted_registration_ids']|length > summary['real_deleted_registration_ids']|length %}
-             <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% call util.notification('warning') %}
                 {% trans %}There were double registration deletions. Did you already import this file?{% endtrans %}
-            </div>
+            {% endcall %}
         {% endif %}
         {% if summary['deleted_course_ids']|length > summary['real_deleted_course_ids']|length %}
-            <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% call util.notification('warning') %}
                 {% trans %}There were double course deletions. Did you already import this file?{% endtrans %}
-            </div>
+            {% endcall %}
         {% endif %}
         {% if summary['deleted_lodgement_ids']|length > summary['real_deleted_lodgement_ids']|length %}
-            <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% call util.notification('warning') %}
                 {% trans %}There were double lodgement deletions. Did you already import this file?{% endtrans %}
-            </div>
+            {% endcall %}
         {% endif %}
         {% if suspicious_courses %}
-            <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% call util.notification('warning') %}
                 {% trans %}There were hints at double course creations. Did you already import this file?{% endtrans %}
-            </div>
+            {% endcall %}
         {% endif %}
         {% if suspicious_lodgements %}
-            <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-                {% trans %}
-                    There were hints at double lodgement creations. Did you already import this file?
-                {% endtrans %}
-            </div>
+            {% call util.notification('warning') %}
+                {% trans %}There were hints at double lodgement creations. Did you already import this file?{% endtrans %}
+            {% endcall %}
         {% endif %}
     </div>
     {% if summary['changed_registrations'] or summary['new_registration_ids'] or summary['deleted_registration_ids'] %}

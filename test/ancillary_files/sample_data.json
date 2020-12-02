@@ -4858,8 +4858,9 @@
         {
             "id": 1,
             "title": "Internationaler Kongress",
+            "shortname": "kongress",
             "description": "Proletarier aller L\u00e4nder vereinigt Euch!",
-            "mail_address": "kongress@example.cde",
+            "presider_address": "kongress@example.cde",
             "signup_end": "2111-11-11T00:00:00+00:00",
             "is_active": true,
             "notes": null
@@ -4867,8 +4868,9 @@
         {
             "id": 2,
             "title": "Kanonische Beispielversammlung",
+            "shortname": "beispiel",
             "description": "Wenigstens darauf können wir uns einigen.",
-            "mail_address": null,
+            "presider_address": null,
             "signup_end": "2020-02-22T00:00:00+00:00",
             "is_active": false,
             "notes": null
@@ -4876,8 +4878,9 @@
         {
             "id": 3,
             "title": "Archiv-Sammlung",
+            "shortname": "archiv",
             "description": "Zum Aufbewahren von ganz viel Akten und Papier.",
-            "mail_address": null,
+            "presider_address": null,
             "signup_end": "2222-02-22T00:00:00+00:00",
             "is_active": true,
             "notes": null

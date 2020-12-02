@@ -20,19 +20,14 @@
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
-{% block content %}
+{% block static_notifications %}
+    {{ super() }}
     {% if not ambience['event']['is_course_list_visible'] %}
-        <div class="alert alert-info" role="alert" id="course-not-visible">
-            {{ util.make_icon('info-circle') }}
-            <strong>{% trans %}Caution!{% endtrans %}</strong>
-            <span class="notificationMessage">
-                {% trans %}The Courselist is currently only visible to Orgas and Admins.{% endtrans %}
-            </span>
-        </div>
+        {% call util.notification('info', id='course-not-visible') %}
+            {% trans %}The Courselist is currently only visible to Orgas and Admins.{% endtrans %}
+        {% endcall %}
     {% elif not ambience['event']['is_course_state_visible'] and ambience['event']['id'] in user.orga %}
-        <div class="alert alert-info" role="alert" id="cancelled-not-visible">
-            {{ util.make_icon('info-circle') }}
-            <strong>{% trans %}Caution!{% endtrans %}</strong>
+        {% call util.notification('info', id='cancelled-not-visible') %}
             {% if ambience['event']['tracks']|length > 1 %}
                 {% trans %}
                     Cancelled courses are only marked for orgas. Other users can currently only see in which course
@@ -43,15 +38,16 @@
                     Cancelled courses are only marked for orgas. Other users cannot see courses' state currently.
                 {% endtrans %}
             {% endif %}
-        </div>
+        {% endcall %}
     {% endif %}
+    {% if courses and "event" not in user.roles %}
+        {% call util.notification('info', id='instructors-not-visible') %}
+            {% trans %}The instructors for each course are only visible to logged in event users.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+{% block content %}
     {% if courses %}
-        {% if "event" not in user.roles %}
-            <div class="alert alert-info" role="alert" id="instructors-not-visible">
-                {{ util.make_icon('info-circle') }}
-                {% trans %}The instructors for each course are only visible to logged in event users.{% endtrans %}
-            </div>
-        {% endif %}
         <div id="list-courses">
         {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'] %}
             <div class="hide-hover-container">

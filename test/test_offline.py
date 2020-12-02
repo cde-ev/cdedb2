@@ -43,8 +43,8 @@ class TestOffline(FrontendTest):
 
             # Test that it's running
             self.get('/')
-            self.assertPresence(
-                'Dies ist eine Offline-Instanz der CdE-Datenbank')
+            self.assertPresence('Dies ist eine Offline-Instanz der CdE-Datenbank',
+                                div='static-notifications')
             self.login(user)
 
             # Basic event functionality
