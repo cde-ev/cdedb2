@@ -20,13 +20,14 @@ or have gained the proper permissions by other means like sudo.
 Building the images
 -------------------
 
-Before starting any containers you have to build the corresponding image.
-``docker-compose`` will do this for you if they do not exist.
+Before starting any containers you have to build the corresponding images.
+``docker-compose up`` will do this for you if they do not yet exist.
 
-If you see the need to manually rebuild them you can do so using
+Should you see the need to manually rebuild them you can do so using
 ``docker-compose build``.
 As the compose file is in a subdirectory you have to tell ``docker-compose``
-where it should look for it using ``--file`` flag.
+where it has to look for it using the ``--file`` flag.
+The flag needs to be places between ``docker-compose`` and the subcommand.
 Another possibility is to simply change you working directory
 to the parent directory of the compose file.
 
@@ -51,11 +52,12 @@ Initializing the containers
 Before you start using the containers you have to initialize a few things.
 Most importantly this includes seeding the postgres database.
 However if you have not yet run the ``i18n-compile`` and ``doc`` make targets
-these should also be executed (in the container).
+these should also be executed (from either inside or outside the container).
 To do this you can run the following:
 
 .. code-block:: console
 
+    $ # navigate to the repository root
     $ make i18n-compile
     $ make doc
     $ sed -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
@@ -65,8 +67,11 @@ To do this you can run the following:
     $ cd related/docker
     $ docker-compose exec app sudo -u www-data make sql-seed-database
 
-All off these command could also have been executed inside the docker folder
+The ``make`` and ``sed`` commands could also have been executed
+from inside the docker container
 but this would have lead to them being owned by root.
+
+.. todo:: Configure container to run commands unprivileged
 
 Using the containers
 --------------------
