@@ -13,7 +13,7 @@ import pathlib
 from typing import Mapping, Tuple, Collection, List, Dict, Union, Container
 
 
-def _schulze_winners(d: Mapping(Tuple[str, str], int),
+def _schulze_winners(d: Mapping[Tuple[str, str], int],
                      candidates: Collection[str]) -> List[str]:
     """This is the abstract part of the Schulze method doing the actual work.
 
