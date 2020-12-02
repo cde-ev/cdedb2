@@ -3312,8 +3312,7 @@ msgstr ""
 #, python-format
 msgid ""
 "Additionally the shortname %(abm)s shows where in the election the "
-"rejection limit was ranked. Should no candidate get more votes than the "
-"rejection limit, the board may take additional measures."
+"rejection limit was ranked."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:252
@@ -3395,8 +3394,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:31
 msgid ""
-"With this option you reject all candidates. If this gets a majority the "
-"board may take additional measures."
+"With this option you reject all candidates."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:34
@@ -3449,9 +3447,7 @@ msgid ""
 "Additionally you need to use the rejection bar %(abm)s in your "
 "preferencelist. Use it in your preferencelist like you would a candidate."
 " Put all candidates you deem suitable higher than %(abm)s and all "
-"candidates you reject lower, i. e. to the right of %(abm)s. Should no "
-"candidate get more votes than the bar, the board may take additional "
-"measures."
+"candidates you reject lower, i. e. to the right of %(abm)s."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:107
@@ -3551,8 +3547,7 @@ msgid ""
 "One of the boxes is marked as “Neutral”. Please place candidates cou deem"
 " suitable above this box (they will be highlighted in green) and "
 "candidates you want to reject below this box (they will be highlighted in"
-" red). Should all candidates be rejected, the board may take additional "
-"measures."
+" red)."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:203
