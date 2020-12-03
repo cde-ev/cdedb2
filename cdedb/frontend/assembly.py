@@ -1116,11 +1116,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         vote_dict = self._retrieve_own_vote(rs, ballot, secret=None)
         merge_dicts(rs.values, {'vote': vote_dict['vote']})
 
-        candidates = {e['shortname']: e for e in ballot['candidates'].values()}
-        if ballot['use_bar']:
-            candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
-                "bar (options below this are declined)")
-
         # this is used for the flux candidate table
         current = {
             f"{key}_{candidate_id}": value
@@ -1146,8 +1141,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "show_ballot", {
             'attachments': attachments,
             'attachment_histories': attachment_histories, 'result': result,
-            'candidates': candidates, 'attends': attends,
-            'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
+            'attends': attends, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot, **vote_dict
         })
 

@@ -536,6 +536,10 @@ p.textbox {
     text-decoration: none;
 }
 
+pre.result {
+    max-width: 500px;
+}
+
 /* query form */
 .queryform-fieldbox {
     padding: 0 8px;

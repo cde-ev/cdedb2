@@ -241,15 +241,16 @@
                     {% trans %}You voted against all candidates.{% endtrans %}
                 {% else %}
                     {% trans %}You voted for the following candidates:{% endtrans %}<br />
-                    {% for vote in split_vote[0] %}
-                        {{ candidates[vote]['title'] }}{% if not loop.last %},{% endif %}
-                    {% endfor %}
+                    <pre class="result">
+                        {%- for vote in split_vote[0] -%}
+                            {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
+                        {%- endfor -%}
+                    </pre>
                 {% endif %}
             {# Show own vote under result: Preferential vote #}
             {% else %}
-                {%- trans vote="<code>%(vote)s</code>"|s|format(vote=own_vote) %}
-                    You voted {{ vote }}.
-                {% endtrans -%}
+                {% trans %}You voted in the following preference:{% endtrans %}<br />
+                    <pre class="result">{{ own_vote }}</pre>
             {% endif %}
         {% else %}
             {% if secret %}
