@@ -8139,10 +8139,10 @@ msgstr "Veranstaltungs-Metadaten"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:32
 msgid ""
-"This description is visible publicly (without login), if “Visibility of "
+"This description is visible to all event users, if “Visibility of "
 "the Event” is set."
 msgstr ""
-"Die Beschreibung ist öffentlich (ohne Login) sichtbar, sofern "
+"Die Beschreibung ist für alle Veranstaltungsnutzer sichtbar, sofern "
 "„Sichtbarkeit der Veranstaltung“ aktiviert ist."
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:35

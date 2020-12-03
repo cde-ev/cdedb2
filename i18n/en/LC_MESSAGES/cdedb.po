@@ -7689,7 +7689,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:32
 msgid ""
-"This description is visible publicly (without login), if “Visibility of "
+"This description is visible  to all event users, if “Visibility of "
 "the Event” is set."
 msgstr ""
 

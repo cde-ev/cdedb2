@@ -86,7 +86,7 @@
             <dt>{% trans %}Orgas{% endtrans %}</dt>
             <dd id="orgas">
                 {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                    {{util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+                    {{ util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
                 {% endfor %}
             </dd>
         {% endif %}
