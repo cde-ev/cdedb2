@@ -290,7 +290,7 @@ class RequestState:
         It does not cause the validation tracking to register a
         successful check.
         """
-        self._errors = errors
+        self._errors = list(errors)
 
 
 if TYPE_CHECKING:
