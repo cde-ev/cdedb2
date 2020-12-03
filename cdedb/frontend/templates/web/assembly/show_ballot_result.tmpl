@@ -1,7 +1,7 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/assembly/_ballot_result.tmpl" as ballot_result with context %}
+{% import "web/assembly/_ballot_tallied.tmpl" as ballot_tallied with context %}
 
 {% block title %}
     {% trans title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
@@ -138,7 +138,7 @@
 
     <h2 class="mosp">{% trans %}Your Vote{% endtrans %}</h2>
 
-        {{ ballot_result.show_own_vote() }}
+        {{ ballot_tallied.show_own_vote() }}
 
 
     <h2 class="mosp">{% trans %}Voters{% endtrans %}</h2>

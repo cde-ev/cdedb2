@@ -2,7 +2,7 @@
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/assembly/_ballot_meta.tmpl" as ballot_meta with context %}
-{% import "web/assembly/_ballot_result.tmpl" as ballot_result with context %}
+{% import "web/assembly/_ballot_tallied.tmpl" as ballot_tallied with context %}
 {% import "web/assembly/_ballot_voting.tmpl" as ballot_voting with context %}
 
 {% block scripts %}
@@ -65,8 +65,8 @@
             {{ util.href(cdedblink("assembly/show_ballot_result"), gettext("More details"),
                          aclass="btn btn-info btn-sm pull-right", icon="book") }}
         </h3>
-        {{ ballot_result.show_result(ambience['ballot'], result) }}
-        {{ ballot_result.explain_result(classical=is_classical, preferential=is_preferential,
+        {{ ballot_tallied.show_result(ambience['ballot'], result) }}
+        {{ ballot_tallied.explain_result(classical=is_classical, preferential=is_preferential,
                                         use_bar=ambience['ballot']['use_bar']) }}
     {% else %}
         {% if edit_mode %}
