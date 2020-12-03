@@ -8,6 +8,9 @@ Test Suite
 Sample Data
 -----------
 
+Users
+^^^^^
+
 There is a default data set for the development it contains some users
 (according to the table below).
 
@@ -39,3 +42,17 @@ farin@example.cde       DB-32-9   secret     Member, corresponding to Finanzvors
 viktor@example.cde      DB-48-5   secret     assembly admin
 akira@example.cde       DB-100-7  secret     equal to Anton - to test sorting
 ======================= ========= ========== ================================================
+
+
+Secrets
+^^^^^^^
+
+Every attendee at an assembly got a personal secret to verify their votes afterwards.
+If an assembly is concluded, all secrets are deleted from the database.
+Here, we kept the secrets of those users of the sample data.
+
+======== ================== ==========
+Assembly User               Secret
+======== ================== ==========
+2        Rowena             asdgeargsd
+======== ================== ==========

@@ -4937,7 +4937,7 @@
             "id": 7,
             "persona_id": 18,
             "assembly_id": 2,
-            "secret": "asdgeargsd"
+            "secret": null
         }
     ],
     "assembly.ballots": [
