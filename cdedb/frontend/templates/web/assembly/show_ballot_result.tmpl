@@ -134,7 +134,7 @@
             <tbody>
                 {% for vote, count in vote_counts|dictsort %}
                     <tr>
-                        <td>{{ vote }}</td>
+                        <td><code>{{ vote }}</code></td>
                         <td>{{ count }}</td>
                     </tr>
                 {% endfor %}

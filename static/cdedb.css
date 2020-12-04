@@ -538,6 +538,7 @@ p.textbox {
 
 pre.result {
     max-width: 500px;
+    color: #c7254e;
 }
 
 /* query form */
