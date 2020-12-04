@@ -1180,7 +1180,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "show_ballot_result", {
             'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'result_hash': result_hash, 'secret': secret, **vote_dict,
-            'vote_counts': vote_counts})
+            'vote_counts': vote_counts,
+            'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"]})
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
                            secret: str = None) -> dict:

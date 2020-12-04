@@ -99,11 +99,17 @@
     <h2 class="mosp">{% trans %}Result file hash{% endtrans %}</h2>
 
         <p>
-            {% trans mllist="<b>Wahlbekanntmachungen</b>"|s %}
-                After a ballot has been tallied, the generated result file and its hash
-                will be sent to the mailinglist specified in the assembly configuration
-                and to the {{ mllist }} mailinglist.
-            {% endtrans %}
+            {% if ambience['assembly']['presider_address'] %}
+                {% trans presider_address=ambience['assembly']['presider_address'] %}
+                    After a ballot has been tallied, the generated result file and its hash
+                    will be sent to <b>{{ BALLOT_TALLY_ADDRESS }}</b> and <b>{{ presider_address }}</b>.
+                {% endtrans %}
+            {% else %}
+                {% trans %}
+                    After a ballot has been tallied, the generated result file and its hash
+                    will be sent to <b>{{ BALLOT_TALLY_ADDRESS }}</b>.
+                {% endtrans %}
+            {% endif %}
         </p>
         <p>
             {% trans algorithm="<code>SHA512</code>"|s %}
