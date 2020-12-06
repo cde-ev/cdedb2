@@ -66,7 +66,7 @@ To do this you can run the following:
         related/auto-build/files/stage3/localconfig.py \
         > cdedb/localconfig.py
     $ cd related/docker
-    $ docker-compose exec app sudo -u www-data make sql-seed-database
+    $ docker-compose exec app make sql-seed-database
 
 The ``make`` and ``sed`` commands could also have been executed
 from inside the docker container
