@@ -467,6 +467,7 @@ class TestCron(CronTest):
                           umcall('opt'),
                           umcall('werbung'),
                           umcall('aktivenforum'),
+                          umcall('aktivenforum2000'),
                           umcall('kongress'),
                           umcall('kongress-leitung'),
                           umcall('participants'),
