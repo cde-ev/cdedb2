@@ -183,9 +183,16 @@ class MailmanMixin(MlBaseFrontend):
 
         for address in new_whites:
             mm_list.add_role('nonmember', address)
-            white = mm_list.get_nonmember(address)
-            white.moderation_action = 'accept'
-            white.save()
+            # get_nonmember is only available in mailman 3.3
+            # white = mm_list.get_nonmember(address)
+        mm_updated_whitelist = {n.address.email: n for n in mm_list.nonmembers}
+        for address in new_whites:
+            # because of the unavailability of get_nonmember we do a
+            # different lookup
+            white = mm_updated_whitelist.get(address)
+            if white is not None:
+                white.moderation_action = 'accept'
+                white.save()
         for address in current_whites:
             white = mm_whitelist[address]
             if white.moderation_action != 'accept':
