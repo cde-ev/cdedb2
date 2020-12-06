@@ -183,7 +183,7 @@ class MailmanMixin(MlBaseFrontend):
 
         for address in new_whites:
             mm_list.add_role('nonmember', address)
-            white = mm_list.get_member(address)
+            white = mm_list.get_nonmember(address)
             white.moderation_action = 'accept'
             white.save()
         for address in current_whites:
