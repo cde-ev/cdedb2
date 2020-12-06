@@ -88,7 +88,7 @@ you have to subtitute ``app`` with ``cdb``.
 The web interface is exposed at `localhost:8443 <https://localhost:8443>`_.
 Additionally ``adminer``
 --- a tool which can be used to inspect the database ---
-can be reached using `localhost:8080 <https://localhost:8080>`_.
+can be reached using `localhost:8080 <http://localhost:8080>`_.
 
 Some development commands like ``pylint`` are however not installed
 inside the containers to keep them light and should be run locally.
