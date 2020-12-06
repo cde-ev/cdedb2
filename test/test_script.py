@@ -31,13 +31,12 @@ class TestScript(unittest.TestCase):
         self.assertEqual(-1, rs_factory().user.persona_id)
         self.assertEqual(23, rs_factory(23).user.persona_id)
 
+        # TODO replace with psycopg2.error.InvalidPassword in psycopg2 2.8
         with self.assertRaises(psycopg2.OperationalError) as cm:
             setup(-1, dbname="cdb_test", dbuser="cdb_admin", dbpassword="abc",
                   check_system_user=False)
-        self.assertIn(
-            "Passwort-Authentifizierung für Benutzer »cdb_admin«"
-            " fehlgeschlagen",
-            cm.exception.args[0])
+        self.assertEqual(
+            cm.exception.pgcode, psycopg2.errorcodes.INVALID_PASSWORD)
 
     def test_make_backend(self):
         core = make_backend("core", proxy=False)

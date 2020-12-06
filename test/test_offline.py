@@ -3,12 +3,12 @@
 import pathlib
 import subprocess
 import sys
+import shutil
+from test.common import FrontendTest
 
 import webtest
-
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.frontend.application import Application
-from test.common import FrontendTest
 
 
 class TestOffline(FrontendTest):
@@ -18,6 +18,11 @@ class TestOffline(FrontendTest):
             'username': "garcia@example.cde",
             'password': "notthenormalpassword",
         }
+        existing_config = base / "cdedb/localconfig.py"
+        config_backup = base / "cdedb/localconfig.copy"
+        if existing_config.exists():
+            shutil.copyfile(
+                existing_config, config_backup)
         subprocess.run(
             ['bin/execute_sql_script.py', '-U', 'cdb', '-d', 'cdb_test',
              '-f', 'test/ancillary_files/clean_data.sql'],
@@ -97,9 +102,13 @@ class TestOffline(FrontendTest):
             # Due to the expensive setup of this test these should not
             # be split out.
         finally:
-            subprocess.run(
-                ["cp", "related/auto-build/files/stage3/localconfig.py",
-                 "cdedb/localconfig.py"], check=True)
+            if config_backup.exists():
+                shutil.move(
+                    config_backup, existing_config)
+            else:
+                subprocess.run(
+                    ["cp", "related/auto-build/files/stage3/localconfig.py",
+                    "cdedb/localconfig.py"], check=True)
             subprocess.run(["sudo", "rm", "-f", "/OFFLINEVM"], check=True)
             subprocess.run(
                 ["make", "reload"], check=True, cwd=base,
