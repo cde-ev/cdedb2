@@ -226,7 +226,7 @@ class MailmanMixin(MlBaseFrontend):
             self.logger.exception("Mailman client connection failed!")
             return store
         db_lists = self.mlproxy.get_mailinglists(
-            rs, self.mlproxy.list_mailinglists(rs))
+            rs, self.mlproxy.list_mailinglists(rs, active_only=False))
         # Exclude CdE-München lists as they are not managed by our mail server
         db_lists = {lst['address']: lst for lst in db_lists.values()
                     if lst['domain'] != const.MailinglistDomain.cdemuenchen}
