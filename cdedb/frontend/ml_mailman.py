@@ -50,7 +50,7 @@ class MailmanMixin(MlBaseFrontend):
                                mm_list: MailingList) -> None:
         prefix = ""
         if db_list['subject_prefix']:
-            prefix = "[{}] ".format(db_list['subject_prefix'])
+            prefix = "[{}] ".format(db_list['subject_prefix'] or "")
         desired_settings = {
             'send_welcome_message': False,
             # Available only in mailman-3.3
@@ -70,9 +70,9 @@ class MailmanMixin(MlBaseFrontend):
             'advertised': True,
             'display_name': db_list['title'],
             'description': db_list['title'],
-            'info': db_list['description'],
+            'info': db_list['description'] or "",
             'subject_prefix': prefix,
-            'max_message_size': db_list['maxsize'],
+            'max_message_size': db_list['maxsize'] or 0,
             'default_member_action': POLICY_MEMBER_CONVERT[
                 db_list['mod_policy']],
             'default_nonmember_action': POLICY_OTHER_CONVERT[
