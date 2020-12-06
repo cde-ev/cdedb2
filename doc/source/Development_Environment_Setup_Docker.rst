@@ -22,14 +22,15 @@ Building the images
 
 Before starting any containers you have to build the corresponding images.
 ``docker-compose up`` will do this for you if they do not yet exist.
-
-Should you see the need to manually rebuild them you can do so using
-``docker-compose build``.
 As the compose file is in a subdirectory you have to tell ``docker-compose``
 where it has to look for it using the ``--file`` flag.
 The flag needs to be places between ``docker-compose`` and the subcommand.
 Another possibility is to simply change you working directory
 to the parent directory of the compose file.
+This applies to (almost) all subcommands.
+
+Should you see the need to manually rebuild them you can do so using
+``docker-compose build``.
 
 Starting the containers
 -----------------------
