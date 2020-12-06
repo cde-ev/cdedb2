@@ -146,7 +146,10 @@ class MailmanMixin(MlBaseFrontend):
             mm_list.subscribe(address, display_name=db_subscribers[address],
                               pre_verified=True, pre_confirmed=True,
                               pre_approved=True)
-        mm_list.mass_unsubscribe(delete_subs)
+        # The batch variant is only available in mailman 3.3
+        # mm_list.mass_unsubscribe(delete_subs)
+        for address in delete_subs:
+            mm_list.unsubscribe(address)
 
     def mailman_sync_list_mods(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,

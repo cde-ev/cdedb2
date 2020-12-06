@@ -504,8 +504,8 @@ class TestCron(CronTest):
                     display_name='Anton Armin A. Administrator',
                     pre_approved=True, pre_confirmed=True, pre_verified=True)])
         self.assertEqual(
-            mm_lists['witz'].mass_unsubscribe.call_args_list,
-            [umcall({'undead@example.cde'})])
+            mm_lists['witz'].unsubscribe.call_args_list,
+            [umcall('undead@example.cde')])
         self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 4)
         # Moderator update
         self.assertEqual(
