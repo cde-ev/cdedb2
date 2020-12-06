@@ -213,7 +213,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/member", methods=_GET,
                      endpoint="member_search"),
                 rule("/user", methods=_GET,
-                     endpoint="user_search"),)),
+                     endpoint="user_search"),
+                rule("/course", methods=_GET,
+                     endpoint="past_course_search"),)),
             rule("/i25p", methods=_GET,
                  endpoint="i25p_index"),
             sub("/lastschrift/", (

@@ -99,7 +99,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'})
         everyone = ["Mitglieder", "Übersicht"]
         past_event = ["Verg. Veranstaltungen"]
-        member = ["Sonstiges", "Datenschutzerklärung"]
+        member = ["Sonstiges", "Datenschutzerklärung", "Kurssuche"]
         searchable = ["CdE-Mitglied suchen"]
         cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
                      "Verg.-Veranstaltungen-Log"]
@@ -524,6 +524,84 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.assertNonPresence("weiblich")
+
+    @as_users("inga")
+    def test_past_course_search(self, user):
+        # by description
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Kurssuche'})
+        self.assertTitle("CdE-Kurssuche")
+        self.assertNonPresence("Ergebnis")
+        f = self.response.forms['coursesearchform']
+        f['qval_courses.description'] = "anfassen"
+        self.submit(f)
+        self.assertTitle("CdE-Kurssuche")
+        self.assertPresence("Ergebnis", div='result-count')
+        self.assertPresence("2 Kurse gefunden", div='result-count')
+        self.assertPresence("Goethe", div='result')
+        self.assertPresence("Swish", div='result')
+        self.assertPresence("PfingstAkademie 2014", div='result')
+        self.traverse({'description': 'Goethe'})
+        self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
+
+        # by course title
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Kurssuche'})
+        f = self.response.forms['coursesearchform']
+        f['qval_courses.title'] = "Goethe"
+        self.submit(f)
+        self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
+
+        # by course nr
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Kurssuche'})
+        f = self.response.forms['coursesearchform']
+        f['qval_courses.nr'] = "Ω"
+        self.submit(f)
+        self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
+
+        # by academy
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Kurssuche'})
+        self.assertTitle("CdE-Kurssuche")
+        f = self.response.forms['coursesearchform']
+        f['qval_events.title'] = "2014"
+        self.submit(f)
+        self.assertTitle("CdE-Kurssuche")
+        self.assertPresence("Ergebnis", div='result-count')
+        self.assertPresence("2 Kurse gefunden", div='result-count')
+
+        # way too specific
+        # no navigation, since we are still on the course search page
+        f = self.response.forms['coursesearchform']
+        f['qval_courses.title'] = "Goethe"
+        f['qval_courses.nr'] = "Ω"
+        f['qval_courses.description'] = "anfassen"
+        f['qval_events.title'] = "2014"
+        self.submit(f)
+        self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
+
+        # no results
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Kurssuche'})
+        f = self.response.forms['coursesearchform']
+        f['qval_courses.title'] = "Schiller"
+        self.assertTitle("CdE-Kurssuche")
+        self.submit(f)
+        self.assertPresence("Ergebnis", div='result-count')
+        self.assertPresence("Keine Kurse gefunden.")
+
+        # Test error displaying for invalid search input
+        f = self.response.forms['coursesearchform']
+        f['qval_courses.title'] = "[a]"
+        fields = [
+            "courses.title", "courses.nr", "events.title", "courses.description"]
+        for field in fields:
+            f['qval_' + field] = "[a]"
+        self.submit(f, check_notification=False)
+        for field in fields:
+            self.assertValidationError("qval_" + field,
+                                       "Darf keine verbotenen Zeichen enthalten")
 
     @as_users("vera")
     def test_user_search(self, user):

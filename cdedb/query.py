@@ -371,6 +371,17 @@ QUERY_SPECS = {
             ("lodgement_group.title", "int"),
             # This will be augmented with additional fields in the fly.
         ]),
+    "qview_pevent_course":
+        collections.OrderedDict([
+            ("courses.id", "id"),
+            ("courses.pcourse_id", "id"),
+            ("courses.pevent_id", "id"),
+            ("courses.nr", "str"),
+            ("courses.title", "str"),
+            ("courses.description", "str"),
+            ("events.title", "str"),
+            ("events.tempus", "date")
+        ]),
     "qview_core_user":  # query for a general user including past event infos
         collections.OrderedDict([
             ("personas.id", "id"),
@@ -456,6 +467,10 @@ QUERY_VIEWS = {
         "core.personas",
         "INNER JOIN event.registrations",
         "ON personas.id = registrations.persona_id"),
+    "qview_pevent_course": glue(
+        "past_event.courses",
+        "LEFT OUTER JOIN past_event.events",
+        "ON courses.pevent_id = events.id"),
     "qview_core_user": glue(
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
@@ -479,6 +494,7 @@ QUERY_PRIMARIES = {
     "qview_quick_registration": "registrations.id",
     "qview_event_course": "course.id",
     "qview_event_lodgement": "lodgement.id",
+    "qview_pevent_course": "courses.id",
     "qview_core_user": "personas.id",
     "qview_persona": "id",
     "qview_archived_persona": "personas.id",

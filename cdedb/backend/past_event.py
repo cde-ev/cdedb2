@@ -23,6 +23,7 @@ from cdedb.common import (
 )
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
+from cdedb.query import Query
 
 
 class PastEventBackend(AbstractBackend):
@@ -565,9 +566,6 @@ class PastEventBackend(AbstractBackend):
         This is mainly for batch admission, where we want to
         automatically resolve past events to their ids.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type shortname: str
-        :rtype: (int or None, [exception])
         :returns: The id of the past event or None if there were errors.
         """
         shortname = affirm("str_or_None", shortname)
@@ -733,7 +731,6 @@ class PastEventBackend(AbstractBackend):
         semantically the event parts mostly behave like separate events
         which happen to take place consecutively.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
         :returns: The first entry are the ids of the new past events or None
           if there were complications or create_past_events is False.
           If there were complications, the second entry is an error message.
@@ -756,3 +753,16 @@ class PastEventBackend(AbstractBackend):
                 new_ids = tuple(self.archive_one_part(rs, event, part_id)
                                 for part_id in xsorted(event['parts']))
         return new_ids, None
+
+    @access("member")
+    def submit_general_query(self, rs: RequestState,
+                             query: Query) -> Tuple[CdEDBObject, ...]:
+        """Realm specific wrapper around
+        :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
+        """
+        query = affirm("query", query)
+        if query.scope == "qview_pevent_course":
+           pass
+        else:
+            raise RuntimeError(n_("Bad scope."))
+        return self.general_query(rs, query)
