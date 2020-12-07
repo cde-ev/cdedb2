@@ -200,6 +200,8 @@ class MailinglistDomain(enum.IntEnum):
     cdemuenchen = 10
     dokuforge = 11
 
+    testmail = 100
+
     def __str__(self) -> str:
         if self not in _DOMAIN_STR_MAP:
             raise NotImplementedError(n_("This domain is not supported."))
@@ -214,6 +216,7 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
     MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
     MailinglistDomain.cdemuenchen: "cde-muenchen.de",
     MailinglistDomain.dokuforge: "dokuforge.de",
+    MailinglistDomain.testmail: "testmail.cde-ev.de",
 }
 
 
