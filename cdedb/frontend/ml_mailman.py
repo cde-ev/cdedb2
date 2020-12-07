@@ -137,7 +137,7 @@ class MailmanMixin(MlBaseFrontend):
                                     personas[pid]['family_name'])
             for pid, address in db_addresses.items() if address
         }
-        mm_subscribers = {m.address.email: m for m in mm_list.members}
+        mm_subscribers = {m.email: m for m in mm_list.members}
 
         new_subs = set(db_subscribers) - set(mm_subscribers)
         delete_subs = set(mm_subscribers) - set(db_subscribers)
@@ -161,7 +161,7 @@ class MailmanMixin(MlBaseFrontend):
                                                 persona['family_name'])
             for persona in personas.values() if persona['username']
         }
-        mm_moderators = {m.address.email: m for m in mm_list.moderators}
+        mm_moderators = {m.email: m for m in mm_list.moderators}
 
         new_mods = set(db_moderators) - set(mm_moderators)
         delete_mods = set(mm_moderators) - set(db_moderators)
@@ -175,7 +175,7 @@ class MailmanMixin(MlBaseFrontend):
                                  db_list: CdEDBObject,
                                  mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']
-        mm_whitelist = {n.address.email: n for n in mm_list.nonmembers}
+        mm_whitelist = {n.email: n for n in mm_list.nonmembers}
 
         new_whites = set(db_whitelist) - set(mm_whitelist)
         current_whites = set(mm_whitelist) - new_whites
@@ -185,7 +185,7 @@ class MailmanMixin(MlBaseFrontend):
             mm_list.add_role('nonmember', address)
             # get_nonmember is only available in mailman 3.3
             # white = mm_list.get_nonmember(address)
-        mm_updated_whitelist = {n.address.email: n for n in mm_list.nonmembers}
+        mm_updated_whitelist = {n.email: n for n in mm_list.nonmembers}
         for address in new_whites:
             # because of the unavailability of get_nonmember we do a
             # different lookup

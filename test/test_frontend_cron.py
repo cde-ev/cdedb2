@@ -438,10 +438,8 @@ class TestCron(CronTest):
                         mm_lists['zombie']]
         client.get_domain.return_value.create_list.side_effect = mm_lists.get
         mm_lists['witz'].members = [
-            unittest.mock.MagicMock(address=unittest.mock.MagicMock(
-                email='janis-spam@example.cde')),
-            unittest.mock.MagicMock(address=unittest.mock.MagicMock(
-                email='undead@example.cde'))]
+            unittest.mock.MagicMock(email='janis-spam@example.cde'),
+            unittest.mock.MagicMock(email='undead@example.cde')]
 
         #
         # Run
