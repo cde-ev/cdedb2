@@ -1166,6 +1166,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         vote_dict = self._retrieve_own_vote(rs, ballot, secret)
 
         result = self.get_online_result(rs, ballot)
+        assert result is not None
 
         # calculate the occurrence of each vote
         vote_set = {vote['vote'] for vote in result['votes']}
@@ -1184,7 +1185,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"]})
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
-                           secret: str = None) -> dict:
+                           secret: str = None) -> CdEDBObject:
         """Helper function to present the own vote
 
         This handles the personalised information of the current viewer interacting with

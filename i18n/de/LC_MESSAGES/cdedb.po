@@ -3384,6 +3384,9 @@ msgid ""
 "votes."
 msgstr ""
 
+msgid "More details"
+msgstr "Mehr Details"
+
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:225
 msgid ""
 "<a "
@@ -3392,6 +3395,9 @@ msgid ""
 msgstr ""
 "<a href='https://de.wikipedia.org/w/index.php?title=Schulze-"
 "Methode&oldid=188508194'>Schulze-Methode</a>"
+
+msgid "You voted in the following preference:"
+msgstr "Du hast mit der folgenden Präferenz abgestimmt:"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:232
 #, python-format

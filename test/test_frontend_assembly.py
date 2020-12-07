@@ -482,7 +482,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
-        self.assertPresence("Du hast mit 2>3>_bar_>1=4 abgestimmt.",
+        self.traverse({'description': 'Mehr Details'})
+        self.assertPresence("Du hast mit der folgenden Präferenz abgestimmt: 2>3>_bar_>1=4",
                             div='own-vote', exact=True)
 
     @as_users("garcia")
@@ -495,6 +496,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
+        self.traverse({'description': 'Mehr Details'})
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
 
@@ -505,6 +507,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
+        self.traverse({'description': 'Mehr Details'})
         self.assertPresence("Du nimmst nicht an der Versammlung teil.",
                             div='own-vote', exact=True)
 
@@ -808,9 +811,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 # Check tally and own vote.
                 time.sleep(wait_time)
                 self.traverse({'description': 'Abstimmungen'},
-                              {'description': bdata['title']})
+                              {'description': bdata['title']},
+                              {'description': 'Mehr Details'})
                 self.assertPresence("Du hast für die folgenden Kandidaten "
-                                    "gestimmt: Arthur Dent, Ford Prefect",
+                                    "gestimmt: arthur, ford",
                                     div='own-vote', exact=True)
 
     @as_users("werner", "inga", "kalif")
@@ -824,6 +828,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertIn('"Antwort auf die letzte aller Fragen"', text)
         self.assertIn('"Internationaler Kongress"', text)
         self.traverse({'description': 'Antwort auf die letzte aller Fragen'},
+                      {'description': 'Mehr Details'},
                       {'description': 'Ergebnisdatei herunterladen'},)
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
             self.assertEqual(json.load(f), json.loads(self.response.body))
@@ -908,7 +913,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Archiv-Sammlung'},
                       {'description': 'Abstimmungen'},
-                      {'description': 'Test-Abstimmung – bitte ignorieren'})
+                      {'description': 'Test-Abstimmung – bitte ignorieren'},
+                      {'description': 'Mehr Details'})
 
         self.assertPresence("Du nimmst nicht an der Versammlung teil.",
                             div='own-vote', exact=True)
@@ -918,7 +924,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # werner is no member, so he must signup external
         secret = self._external_signup(user)
         self.traverse({'description': 'Abstimmungen'},
-                      {'description': 'Test-Abstimmung – bitte ignorieren'})
+                      {'description': 'Test-Abstimmung – bitte ignorieren'},
+                      {'description': 'Mehr Details'})
 
         self.assertNonPresence("Du nimmst nicht an der Versammlung teil.")
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
@@ -960,12 +967,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # Check tally and own vote.
         time.sleep(wait_time)
         self.traverse({'description': 'Abstimmungen'},
-                      {'description': bdata['title']})
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
+                      {'description': bdata['title']},
+                      {'description': 'Mehr Details'})
+        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: ja",
                             div='own-vote', exact=True)
 
         self.traverse({'description': 'Abstimmungen'},
-                      {'description': 'Test-Abstimmung – bitte ignorieren'})
+                      {'description': 'Test-Abstimmung – bitte ignorieren'},
+                      {'description': 'Mehr Details'})
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
 
@@ -991,7 +1000,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': "Versammlung"},
                       {'description': 'Archiv-Sammlung'},
                       {'description': 'Abstimmungen'},
-                      {'description': 'Maximale Länge der Verfassung'})
+                      {'description': 'Maximale Länge der Verfassung'},
+                      {'description': 'Mehr Details'})
         s = ("Die Versammlung wurde beendet. Das Abstimmungsverhalten einzelner"
              " Nutzer ist nicht mehr aus der Datenbank auslesbar.")
         self.assertPresence(s)
@@ -1003,7 +1013,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f, check_notification=False)
         self.assertNonPresence("Die Versammlung wurde beendet und die "
                                "Stimmen sind nun verschlüsselt.")
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
+        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: ja",
                             div='own-vote', exact=True)
 
     def test_log(self):
