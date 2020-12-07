@@ -229,8 +229,8 @@ class MailmanMixin(MlBaseFrontend):
             rs, self.mlproxy.list_mailinglists(rs, active_only=False))
         # Exclude CdE-München and Dokuforge lists as they are not managed by
         # our mail server
-        external_domains = [const.MailinglistDomain.cdemuenchen,
-                            const.MailinglistDomain.dokuforge]
+        external_domains = {const.MailinglistDomain.cdemuenchen,
+                            const.MailinglistDomain.dokuforge}
         db_lists = {lst['address']: lst for lst in db_lists.values()
                     if lst['domain'] not in external_domains}
         mm_lists = {lst.fqdn_listname: lst for lst in mailman.lists}
