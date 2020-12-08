@@ -185,7 +185,9 @@ class MailinglistTypes(enum.IntEnum):
     assembly_opt_in = 31
     assembly_presider = 32
 
+    general_mandatory = 39
     general_opt_in = 40
+    general_moderators = 45
 
     semi_public = 50
 

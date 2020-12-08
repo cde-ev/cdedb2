@@ -271,7 +271,9 @@ I18N_STRINGS = (
     n_("MailinglistTypes.assembly_associated"),
     n_("MailinglistTypes.assembly_opt_in"),
     n_("MailinglistTypes.assembly_presider"),
+    n_("MailinglistTypes.general_mandatory"),
     n_("MailinglistTypes.general_opt_in"),
+    n_("MailinglistTypes.general_moderatirs"),
     n_("MailinglistTypes.semi_public"),
     n_("MailinglistTypes.cdelokal"),
 
