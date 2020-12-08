@@ -102,6 +102,7 @@ General Mailinglists
 
     The following subtypes are supported:
 
+    * Mandatory
     * Opt-in
 
 Semi-public Mailinglists
@@ -118,3 +119,11 @@ CdElokal Mailinglists
     * visible to: all users
     * additional admins: cdelokal
     * sortkey: cdelokal
+
+Moderator Mailinglists
+    Mailinglists that contain all moderators of the cdedb. Other users are not
+    allowed to subscribe.
+
+    * visible to: all users
+    * additional admins: None
+    * sortkey: other
