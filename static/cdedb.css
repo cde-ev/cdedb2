@@ -537,7 +537,8 @@ p.textbox {
 }
 
 pre.result {
-    max-width: 500px;
+    display: inline-block;
+    margin-bottom: 4px;
     color: #c7254e;
 }
 
