@@ -1193,11 +1193,25 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert result_bytes is not None
         result_hash = get_hash(result_bytes)
 
+        # show links to next and previous ballots
+        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
+        done, extended, current, future = self.group_ballots(ballots)
+
+        # we are only interested in done ballots
+        ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])
+
+        i = ballot_list.index(ballot_id)
+        length = len(ballot_list)
+        prev_ballot = ballots[ballot_list[i - 1]] if i > 0 else None
+        next_ballot = ballots[ballot_list[i + 1]] if i + 1 < length else None
+
         return self.render(rs, "show_ballot_result", {
             'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'result_hash': result_hash, 'secret': secret, **vote_dict,
             'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
-            'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"]})
+            'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
+            'prev_ballot': prev_ballot, 'next_ballot': next_ballot})
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
                            secret: str = None) -> CdEDBObject:

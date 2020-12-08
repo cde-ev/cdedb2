@@ -94,7 +94,7 @@
         {{ ballot_meta.show_attachments(edit_mode) }}
     {% endif %}
 
-    {{ ballot_meta.show_navigation() }}
+    {{ ballot_meta.show_navigation(page_name="assembly/show_ballot") }}
 
     {% if edit_mode %}
         {{ ballot_meta.ballot_action_panel() }}
