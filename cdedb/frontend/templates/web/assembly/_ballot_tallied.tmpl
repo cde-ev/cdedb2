@@ -235,14 +235,14 @@
         {% elif own_vote %}
             {# Show own vote under result: Classical vote #}
             {% if ambience['ballot']['votes'] %}
-                {% if split_vote|length == 1 %}
+                {% if own_vote == MAGIC_ABSTAIN %}
                     {% trans %}You abstained.{% endtrans %}
-                {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_SHORTNAME] %}
+                {% elif own_vote == ASSEMBLY_BAR_SHORTNAME %}
                     {% trans %}You voted against all candidates.{% endtrans %}
                 {% else %}
                     {% trans %}You voted for the following candidates:{% endtrans %}<br />
                     <pre class="result">
-                        {%- for vote in split_vote[0] -%}
+                        {%- for vote in own_vote -%}
                             {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
                         {%- endfor -%}
                     </pre>

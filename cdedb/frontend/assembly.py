@@ -1114,7 +1114,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
 
         vote_dict = self._retrieve_own_vote(rs, ballot, secret=None)
-        merge_dicts(rs.values, {'vote': vote_dict['vote']})
+        merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
 
         # this is used for the flux candidate table
         current = {
@@ -1139,7 +1139,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
-            'attachments': attachments,
+            'attachments': attachments, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
             'attachment_histories': attachment_histories, 'result': result,
             'attends': attends, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot, **vote_dict
@@ -1204,22 +1204,18 @@ class AssemblyFrontend(AbstractUserFrontend):
                     own_vote = self.assemblyproxy.get_vote(rs, ballot_id, secret=secret)
                 except ValueError:
                     own_vote = None
-        vote = own_vote
 
-        # lift up the vote for better display purpose
-        split_vote = None
-        if own_vote:
+        # lift up the classical vote for better display purpose
+        if own_vote and ballot['votes']:
             split_vote = tuple(x.split('=') for x in own_vote.split('>'))
-        if ballot['votes'] and split_vote:
             if len(split_vote) == 1:
                 # abstention
-                vote = MAGIC_ABSTAIN
+                own_vote = MAGIC_ABSTAIN
             else:
                 # select voted options
-                vote = split_vote[0]
+                own_vote = split_vote[0]
 
-        return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote,
-                'split_vote': split_vote, 'vote': vote}
+        return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
 
     def _update_ballot_state(self, rs: RequestState,
                              ballot: Dict[str, Any]) -> DefaultReturnCode:
