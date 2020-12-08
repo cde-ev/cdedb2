@@ -72,7 +72,7 @@
 
         <p>
             {% trans %}
-                We allow you to verify every voting which had taken place in the CdEDB. For this, we offer you a
+                We allow you to verify every voting which has taken place in the CdEDB. For this, we offer you a
                 download JSON file containing every information about a tallied ballot which is stored in the DB.
             {% endtrans %}
         </p>
@@ -82,15 +82,14 @@
                 actually correct. To obtain the result from the votes, we apply the {{ method }} internally.
             {% endtrans %}
         </p>
-        <p>
-            {% trans name="<code>Own Vote Verification</code>"|s %}
-                If you voted in this ballot, you can verify the correct count of your vote with the
-                {{ name }} Script. Additionally, you need your personal secret you
-                received per mail when registering for this assembly.
-                In contrast, your vote displayed above is read from the information stored in the database,
-                which will be deleted after the assembly got concluded.
-            {% endtrans %}
-        </p>
+        {% if has_voted %}
+            <p>
+                {% trans name="<code>Own Vote Verification</code>"|s %}
+                    With the {{ name }} Script, you can verify the correct count of your vote.
+                    Additionally, you need the personal secret you received per mail when registering for this assembly.
+                {% endtrans %}
+            </p>
+        {% endif %}
 
     <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
     <p>{{ util.href(staticurl("verify_result.py"), gettext("Download Result Verification Script"), icon="download") }}</p>
