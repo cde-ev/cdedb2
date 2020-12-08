@@ -132,10 +132,26 @@
                 </tr>
             </thead>
             <tbody>
-                {% for vote, count in vote_counts|dictsort %}
+                {% for vote, count in vote_counts|dictsort|reverse %}
                     <tr>
-                        <td><code>{{ vote }}</code></td>
-                        <td>{{ count }}</td>
+                        <td>
+                            {% if vote == MAGIC_ABSTAIN %}
+                                {% trans %}Abstained{% endtrans %}
+                            {% else %}
+                                <code>
+                                    {% if classical %}
+                                        {%- for vote in vote.split("=") -%}
+                                            {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
+                                        {%- endfor -%}
+                                    {% else %}
+                                        {{ vote }}
+                                    {% endif %}
+                                </code>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ count }}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

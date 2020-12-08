@@ -1169,9 +1169,24 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert result is not None
 
         # calculate the occurrence of each vote
-        vote_set = {vote['vote'] for vote in result['votes']}
-        vote_counts = {vote: sum((1 for v in result['votes'] if v.get('vote') == vote))
-                       for vote in vote_set}
+        if ballot['votes']:
+            # we actually voted in classical votes for the candidates before the first >
+            # if there are no >, it is an abstention which will be counted later
+            vote_set = {vote['vote'].split('>')[0] for vote in result['votes']
+                        if len(vote['vote'].split('>')) != 1}
+            vote_counts = {vote: sum((1 for v in result['votes']
+                                      if v.get('vote').split('>')[0] == vote))
+                           for vote in vote_set}
+            # count the abstentions, which have no >
+            vote_counts[MAGIC_ABSTAIN] = sum(1 for v in result['votes']
+                                             if len(v.get('vote').split('>')) == 1)
+            if vote_counts[MAGIC_ABSTAIN] == 0:
+                del vote_counts[MAGIC_ABSTAIN]
+        else:
+            vote_set = {vote['vote'] for vote in result['votes']}
+            vote_counts = {vote: sum((1 for v in result['votes']
+                                      if v.get('vote') == vote))
+                           for vote in vote_set}
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
@@ -1181,7 +1196,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "show_ballot_result", {
             'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'result_hash': result_hash, 'secret': secret, **vote_dict,
-            'vote_counts': vote_counts,
+            'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"]})
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
