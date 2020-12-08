@@ -264,7 +264,12 @@
 
    The form_input_* wraps the specific input macro and adds some divs, label and error output. These macros are meant to
    be used inside an form.form-horizontal. (If you want to use it in a non-horizontal form, you may pass the
-   horizontal=False parameter.) #}
+   horizontal=False parameter.)
+
+   Note that the readonly parameter of these macros sets the disabled flag. The HTML readonly attribute should only be
+   used for purely cosmetical changes, admin views in particular. Furthermore, it is not supported for all input types,
+   hence we fake it in some cases by introducing an additional hidden field while renaming the previous one.
+   To make a use of the readonly attribute a concious decision, we obsure it by the name actualreadonly. #}
 {% macro input_hidden(name, value=none, defaultvalue='', anid=none, aclass=none) %}
     <input{{ dict(
         type="hidden",
@@ -308,8 +313,6 @@
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid='', aclass='form-control',
         maxlength=none, type='text', placeholder='', arialabel='', attributes='') %}
-    {# The HTML readonly attribute should only be used for purely cosmetical changes, admin views in particular.
-       Furthermore, it is not supported for all input types. To make its use a concious decision, we obsure it here. #}
     <input{{ dict(
         type=type,
         name=name,
@@ -329,7 +332,6 @@
             value="{{ values.get(name, defaultvalue) }}"
         {%- endif %}
         {{ attributes }}/>
-        {# TODO use actual readonly and bootstrap styles #}
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
