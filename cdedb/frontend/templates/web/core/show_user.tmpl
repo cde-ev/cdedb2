@@ -420,6 +420,16 @@
             </tbody>
             </table>
         {% endif %}
+
+        {% if data['vcard'] %}
+            {{ util.href(cdedblink("core/download_vcard", {'vcard': data['vcard']}), "vcard") }}
+            {{ util.href(cdedblink('core/qr_vcard', {'vcard': data['vcard']}), "foto") }}
+            <div class="pull-right-responsive text-right-responsive" id="vcard-qr">
+                <img src="{{ cdedblink('core/qr_vcard', {'vcard': data['vcard']}) }}"
+                     alt="{{ gettext("Vcard") }}" class="img-thumbnail">
+            </div>
+        {% endif %}
+
         {% if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT and not ambience['persona']['is_purged'] %}
             <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">

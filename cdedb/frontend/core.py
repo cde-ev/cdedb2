@@ -11,6 +11,9 @@ import datetime
 import operator
 import decimal
 import itertools
+import vobject
+import qrcode
+from qrcode.image import svg as qrcode_svg
 
 import magic
 import werkzeug.exceptions
@@ -26,6 +29,7 @@ from cdedb.frontend.common import (
     request_dict_extractor, querytoparams_filter,
     csv_output, query_result_to_json, enum_entries_filter, periodic,
     calculate_db_logparams, calculate_loglinks, make_membership_fee_reference,
+    date_filter
 )
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
@@ -350,6 +354,92 @@ class CoreFrontend(AbstractFrontend):
             expires=now() + datetime.timedelta(days=10 * 365))
         return response
 
+    @access("member")
+    def download_vcard(self, rs: RequestState, vcard) -> Response:
+        rs.ignore_validation_errors()
+        return self.send_file(rs, data=vcard, mimetype='text/vcard', filename='vcard.vcf')
+
+    @access("member")
+    def qr_vcard(self, rs: RequestState, vcard) -> Response:
+        rs.ignore_validation_errors()
+        qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
+                           box_size=5, border=1)
+        qr.add_data(vcard)
+        qr.make(fit=True)
+        qr_image = qr.make_image(qrcode_svg.SvgPathFillImage)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = pathlib.Path(tmp_dir, "vcard")
+            qr_image.save(str(path))
+            with open(path, "rb") as f:
+                ret = f.read()
+
+        mimetype = magic.from_buffer(ret, mime=True)
+        return self.send_file(rs, data=ret, mimetype=mimetype)
+
+    def create_vcard(self, rs: RequestState, persona_id: int):
+        """
+        Generate a vCard string for a user to be delivered to a client
+
+        :return: The serialized vCard (as in a vcf file)
+        """
+        if 'member' not in rs.user.roles:
+            raise werkzeug.exceptions.Forbidden(n_("Not a member."))
+
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+
+        j = vobject.vCard()
+
+        # Name
+        j.add('n')
+        j.n.value = vobject.vcard.Name(
+            family=persona['family_name'] or '',
+            given=persona['given_names'] or '',
+            prefix=persona['title'] or '',
+            suffix=persona['name_supplement'] or '')
+        j.add('fn')
+        j.fn.value = f"{persona['given_names']} {persona['family_name']}"
+        j.add('nickname')
+        j.nickname.value = persona['display_name'] or ''
+
+        # Address data
+        if persona['address']:
+            j.add('adr')
+            j.adr.type_param = 'home'
+            j.adr.value = vobject.vcard.Address(
+                extended=persona['address_supplement'] or '',
+                street=persona['address'] or '',
+                city=persona['location'] or '',
+                code=persona['postal_code'] or '',
+                country=persona['country'] or '')
+
+        # Contact data
+        j.add('email')
+        j.email.value = persona['username']
+        j.email.type_param = 'INTERNET'
+        if persona['telephone']:
+            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'VOICE')], persona['telephone']))
+        if persona['mobile']:
+            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'CELL')], persona['mobile']))
+        if persona['weblink']:
+            # TODO include website
+            pass
+
+        # Photo
+        #if persona['foto']:
+        #    j.add(vobject.vcard.ContentLine('PHOTO',
+        #                                    [('TYPE', 'JPEG'), ('ENCODING', 'b')],
+        #                                    base64.b64encode(
+        #                                        user['jpegPhoto']).decode(),
+        #                                    encoded=True))
+
+        # Birthday
+        if persona['birthday']:
+            j.add('bday')
+            j.bday.value = date_filter(persona['birthday'])
+
+        return j.serialize()
+
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:
         """Convenience entry point for own data."""
@@ -430,6 +520,7 @@ class CoreFrontend(AbstractFrontend):
                     access_levels.add("core")
                     access_levels.add(realm)
         # Members see other members (modulo quota)
+        # TODO should we here check for "member" in rs.user.roles?
         if "searchable" in rs.user.roles and quote_me:
             if (not rs.ambience['persona']['is_searchable']
                     and "cde_admin" not in access_levels):
@@ -496,6 +587,8 @@ class CoreFrontend(AbstractFrontend):
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
+            if "member" in rs.user.roles:
+                data['vcard'] = self.create_vcard(rs, persona_id)
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
