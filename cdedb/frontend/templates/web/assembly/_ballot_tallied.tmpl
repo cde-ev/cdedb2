@@ -233,16 +233,16 @@
         {% elif not has_voted %}
                 {% trans %}You did not vote.{% endtrans %}
         {% elif own_vote %}
+            {% if own_vote == MAGIC_ABSTAIN %}
+                <p>{% trans %}You abstained.{% endtrans %}</p>
             {# Show own vote under result: Classical vote #}
-            {% if ambience['ballot']['votes'] %}
-                {% if own_vote == MAGIC_ABSTAIN %}
-                    <p>{% trans %}You abstained.{% endtrans %}</p>
-                {% elif own_vote == ASSEMBLY_BAR_SHORTNAME %}
+            {% elif ambience['ballot']['votes'] %}
+                {% if own_vote == ASSEMBLY_BAR_SHORTNAME %}
                     <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
                 {% else %}
                     <p>{% trans %}You voted for the following candidates:{% endtrans %}</p>
                     <pre class="result">
-                        {%- for vote in own_vote -%}
+                        {%- for vote in own_vote.split('=') -%}
                             {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
                         {%- endfor -%}
                     </pre>

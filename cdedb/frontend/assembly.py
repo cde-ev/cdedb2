@@ -1239,14 +1239,13 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ("secret", ValueError(n_("Entered invalid secret"))))
                     own_vote = None
 
-        # lift up the classical vote for better display purpose
-        if own_vote and ballot['votes']:
-            split_vote = tuple(x.split('=') for x in own_vote.split('>'))
+        if own_vote:
+            split_vote = own_vote.split('>')
             if len(split_vote) == 1:
                 # abstention
                 own_vote = MAGIC_ABSTAIN
-            else:
-                # select voted options
+            elif ballot['votes']:
+                # select voted options in classical votings
                 own_vote = split_vote[0]
 
         return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
