@@ -106,14 +106,15 @@
 
         <p>
             {% if ambience['assembly']['presider_address'] %}
-                {% trans presider_address=ambience['assembly']['presider_address'] %}
+                {% trans presider=util.href(util.mailto(ambience['assembly']['presider_address']), ambience['assembly']['presider_address']),
+                         tally=util.href(util.mailto(BALLOT_TALLY_ADDRESS), BALLOT_TALLY_ADDRESS) %}
                     After a ballot has been tallied, the generated result file and its hash
-                    will be sent to <b>{{ BALLOT_TALLY_ADDRESS }}</b> and <b>{{ presider_address }}</b>.
+                    will be sent to {{ tally }} and {{ presider }}.
                 {% endtrans %}
             {% else %}
-                {% trans %}
+                {% trans tally=util.href(util.mailto(BALLOT_TALLY_ADDRESS), BALLOT_TALLY_ADDRESS) %}
                     After a ballot has been tallied, the generated result file and its hash
-                    will be sent to <b>{{ BALLOT_TALLY_ADDRESS }}</b>.
+                    will be sent to {{ tally }}.
                 {% endtrans %}
             {% endif %}
         </p>
