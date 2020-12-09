@@ -1199,7 +1199,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # show links to next and previous ballots
         ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        done, extended, current, future = self.group_ballots(ballots)
+        done, _, _, _ = self.group_ballots(ballots)
 
         # we are only interested in done ballots
         ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])

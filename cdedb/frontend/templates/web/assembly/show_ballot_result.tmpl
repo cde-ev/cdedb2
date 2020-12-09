@@ -82,14 +82,20 @@
                 actually correct. To obtain the result from the votes, we apply the {{ method }} internally.
             {% endtrans %}
         </p>
-        {% if has_voted %}
-            <p>
+         <p>
+            {% if has_voted %}
                 {% trans name="<code>Own Vote Verification</code>"|s %}
                     With the {{ name }} Script, you can verify the correct count of your vote.
                     Additionally, you need the personal secret you received per mail when registering for this assembly.
                 {% endtrans %}
-            </p>
-        {% endif %}
+            {% else %}
+                {% trans name="<code>Own Vote Verification</code>"|s %}
+                    Voters of this ballot can verify their vote using the {{ name }} Script
+                    and the personal secret they received per mail when registering for this assembly.
+                {% endtrans %}
+            {% endif %}
+         </p>
+
 
     <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
     <p>{{ util.href(staticurl("verify_result.py"), gettext("Download Result Verification Script"), icon="download") }}</p>

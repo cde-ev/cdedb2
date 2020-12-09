@@ -236,11 +236,11 @@
             {# Show own vote under result: Classical vote #}
             {% if ambience['ballot']['votes'] %}
                 {% if own_vote == MAGIC_ABSTAIN %}
-                    {% trans %}You abstained.{% endtrans %}
+                    <p>{% trans %}You abstained.{% endtrans %}</p>
                 {% elif own_vote == ASSEMBLY_BAR_SHORTNAME %}
-                    {% trans %}You voted against all candidates.{% endtrans %}
+                    <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
                 {% else %}
-                    {% trans %}You voted for the following candidates:{% endtrans %}<br />
+                    <p>{% trans %}You voted for the following candidates:{% endtrans %}</p>
                     <pre class="result">
                         {%- for vote in own_vote -%}
                             {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
@@ -249,7 +249,7 @@
                 {% endif %}
             {# Show own vote under result: Preferential vote #}
             {% else %}
-                {% trans %}You voted in the following preference:{% endtrans %}<br />
+                <p>{% trans %}You voted in the following preference:{% endtrans %}</p>
                     <pre class="result">{{ own_vote }}</pre>
             {% endif %}
         {% else %}
