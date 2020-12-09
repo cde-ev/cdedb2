@@ -253,19 +253,10 @@
                     <pre class="result">{{ own_vote }}</pre>
             {% endif %}
         {% else %}
-            {% if secret %}
-                <p>
-                    {{ util.make_icon('info-circle') }}
-                    {% trans %}You entered an invalid secret.{% endtrans %}
-                    {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
-                </p>
-            {% else %}
-                <p>
-                    {{ util.make_icon('info-circle') }}
-                    {% trans %}The assembly concluded. The votes of specific users can no longer be extracted from the database in any way.{% endtrans %}
-                    {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
-                </p>
-            {% endif %}
+            <p>
+                {% trans %}The assembly concluded. The votes of specific users can no longer be extracted from the database in any way.{% endtrans %}
+                {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
+            </p>
             <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
                 {{ util.anti_csrf_token("assembly/show_old_vote") }}
                 <div class="input-group">

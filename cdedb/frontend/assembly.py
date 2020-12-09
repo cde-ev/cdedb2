@@ -1079,9 +1079,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     def show_old_vote(self, rs: RequestState, assembly_id: int, ballot_id: int,
                       secret: str) -> Response:
         """Show a vote in a ballot of an old assembly by providing secret."""
-        if (rs.has_validation_errors() or rs.ambience["assembly"]["is_active"]
-                or not rs.ambience["ballot"]["is_tallied"]):
+        if rs.ambience["assembly"]["is_active"] or not rs.ambience["ballot"]["is_tallied"]:
             return self.show_ballot(rs, assembly_id, ballot_id)
+        if rs.has_validation_errors():
+            return self.show_ballot_result(rs, assembly_id, ballot_id)
         return self.show_ballot_result(rs, assembly_id, ballot_id, secret.strip())
 
     @access("assembly")
@@ -1164,6 +1165,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_ballot")
 
         vote_dict = self._retrieve_own_vote(rs, ballot, secret)
+        # the validation errors resulting of an invalid secret will be returned only
+        rs.ignore_validation_errors()
 
         result = self.get_online_result(rs, ballot)
         assert result is not None
@@ -1232,6 +1235,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 try:
                     own_vote = self.assemblyproxy.get_vote(rs, ballot_id, secret=secret)
                 except ValueError:
+                    rs.append_validation_error(
+                        ("secret", ValueError(n_("Entered invalid secret"))))
                     own_vote = None
 
         # lift up the classical vote for better display purpose
