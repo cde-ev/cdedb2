@@ -97,18 +97,30 @@
 
     {# Profile photo/avatar #}
     {% if 'foto' in data %}
-        <div class="pull-right-responsive text-right-responsive" id="profile-foto">
-            {% if data['foto'] %}
-                <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']}) }}"
-                     alt="{{ gettext("Profile Picture") }}" class="profilepic img-thumbnail">
-            {%- else %}
-                <img src="{{ staticurl("generic-avatar.png") }}" alt="{{ gettext("Default Profile Picture") }}"
-                  class="profilepic img-thumbnail">
-            {%- endif -%}
-            {% if data['id'] == user.persona_id or is_relative_admin -%}
-                <br />
-                {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
-                        aclass="btn btn-xs btn-warning", icon="pen") }}
+        <div class="pull-right-responsive text-right-responsive">
+            <div id="profile-foto">
+                {% if data['foto'] %}
+                    <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']}) }}"
+                         alt="{{ gettext("Profile Picture") }}" class="profilepic img-thumbnail">
+                {%- else %}
+                    <img src="{{ staticurl("generic-avatar.png") }}" alt="{{ gettext("Default Profile Picture") }}"
+                         class="profilepic img-thumbnail">
+                {%- endif -%}
+                {% if data['id'] == user.persona_id or is_relative_admin -%}
+                    <br />
+                    {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
+                            aclass="btn btn-xs btn-warning", icon="pen") }}
+                {% endif %}
+            </div>
+
+            {% if data['vcard'] %}
+                <div>
+                    <svg class="img-thumbnail qrcode" version="1.1" viewBox="0 0 31.5 31.5">
+                        {{ data['vcard_qr']|s }}
+                    </svg>
+                </div>
+
+                {{ util.href(cdedblink("core/download_vcard", {'vcard': data['vcard']}), "VCard", icon='download') }}
             {% endif %}
         </div>
     {% endif %}
@@ -419,15 +431,6 @@
                 {% endfor %}
             </tbody>
             </table>
-        {% endif %}
-
-        {% if data['vcard'] %}
-            {{ util.href(cdedblink("core/download_vcard", {'vcard': data['vcard']}), "vcard") }}
-            {{ util.href(cdedblink('core/qr_vcard', {'vcard': data['vcard']}), "foto") }}
-            <div class="pull-right-responsive text-right-responsive" id="vcard-qr">
-                <img src="{{ cdedblink('core/qr_vcard', {'vcard': data['vcard']}) }}"
-                     alt="{{ gettext("Vcard") }}" class="img-thumbnail">
-            </div>
         {% endif %}
 
         {% if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT and not ambience['persona']['is_purged'] %}

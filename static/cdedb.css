@@ -495,6 +495,10 @@ a.headerlink {
 .profilepic {
     max-width: 150px;
 }
+
+.qrcode {
+    max-width: 150px;
+}
 p.textbox {
     padding: 4px 6px;
     border: dashed 1px #888;

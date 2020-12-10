@@ -14,6 +14,8 @@ import itertools
 import vobject
 import qrcode
 from qrcode.image import svg as qrcode_svg
+import lxml
+import re
 
 import magic
 import werkzeug.exceptions
@@ -357,10 +359,9 @@ class CoreFrontend(AbstractFrontend):
     @access("member")
     def download_vcard(self, rs: RequestState, vcard) -> Response:
         rs.ignore_validation_errors()
-        return self.send_file(rs, data=vcard, mimetype='text/vcard', filename='vcard.vcf')
+        return self.send_file(rs, data=vcard, mimetype='text/vCard', filename='vcard.vcf')
 
-    @access("member")
-    def qr_vcard(self, rs: RequestState, vcard) -> Response:
+    def qr_vcard(self, rs: RequestState, vcard) -> str:
         rs.ignore_validation_errors()
         qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
                            box_size=5, border=1)
@@ -368,14 +369,16 @@ class CoreFrontend(AbstractFrontend):
         qr.make(fit=True)
         qr_image = qr.make_image(qrcode_svg.SvgPathFillImage)
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            path = pathlib.Path(tmp_dir, "vcard")
-            qr_image.save(str(path))
-            with open(path, "rb") as f:
-                ret = f.read()
+        qr_image = qr.make_image(qrcode.image.svg.SvgPathFillImage)
+        # This is a bit hacky, since `qrcode` does not intend to return SVG image as string
+        qr_image._img.append(qr_image.make_path())
+        qr_svg = lxml.etree.tostring(qr_image._img, encoding='unicode')
 
-        mimetype = magic.from_buffer(ret, mime=True)
-        return self.send_file(rs, data=ret, mimetype=mimetype)
+        # remove the predefined svg tag to gain more control over it in the template
+        qr_svg = re.sub('<svg .*?>', '', qr_svg)
+        qr_svg = re.sub('</svg>', '', qr_svg)
+
+        return qr_svg
 
     def create_vcard(self, rs: RequestState, persona_id: int):
         """
@@ -589,6 +592,7 @@ class CoreFrontend(AbstractFrontend):
                 data['has_lastschrift'] = len(user_lastschrift) > 0
             if "member" in rs.user.roles:
                 data['vcard'] = self.create_vcard(rs, persona_id)
+                data['vcard_qr'] = self.qr_vcard(rs, data['vcard'])
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
