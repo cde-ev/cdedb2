@@ -359,6 +359,9 @@ class CoreFrontend(AbstractFrontend):
     @access("member")
     def download_vcard(self, rs: RequestState, vcard) -> Response:
         rs.ignore_validation_errors()
+        # since the vcard may contain '/', we have to quote and unquote the vcard string
+        vcard = werkzeug.url_unquote(vcard)
+
         return self.send_file(rs, data=vcard, mimetype='text/vCard', filename='vcard.vcf')
 
     def qr_vcard(self, rs: RequestState, vcard) -> str:
@@ -369,7 +372,6 @@ class CoreFrontend(AbstractFrontend):
         qr.make(fit=True)
         qr_image = qr.make_image(qrcode_svg.SvgPathFillImage)
 
-        qr_image = qr.make_image(qrcode.image.svg.SvgPathFillImage)
         # This is a bit hacky, since `qrcode` does not intend to return SVG image as string
         qr_image._img.append(qr_image.make_path())
         qr_svg = lxml.etree.tostring(qr_image._img, encoding='unicode')
@@ -591,8 +593,11 @@ class CoreFrontend(AbstractFrontend):
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
             if "member" in rs.user.roles:
-                data['vcard'] = self.create_vcard(rs, persona_id)
-                data['vcard_qr'] = self.qr_vcard(rs, data['vcard'])
+                vcard = self.create_vcard(rs, persona_id)
+                # since the vcard may contain '/', we have to quote and unquote the
+                # vcard string
+                data['vcard'] = werkzeug.url_quote(vcard, unsafe='/')
+                data['vcard_qr'] = self.qr_vcard(rs, vcard)
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
