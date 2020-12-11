@@ -66,7 +66,9 @@ def _create_connection(dbname: str, dbuser: str, password: str, port: int,
     }
     try: # TODO simply check if inside docker first
         conn = psycopg2.connect(**connection_parameters, port=port)
-    except psycopg2.OperationalError: # Docker uses 5432/tcp instead of sockets
+    except psycopg2.OperationalError as e: # Docker uses 5432/tcp instead of sockets
+        if "Passwort-Authentifizierung" in e.args[0]:
+            raise # fail fast if wrong password is the problem
         conn = psycopg2.connect(**connection_parameters, host="cdb", port=5432)
     conn.set_client_encoding("UTF8")
     conn.set_session(isolation_level)

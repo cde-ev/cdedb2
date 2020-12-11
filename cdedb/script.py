@@ -102,7 +102,9 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     }
     try:
         cdb = psycopg2.connect(**connection_parameters, host="localhost")
-    except psycopg2.OperationalError: # DB inside Docker listens on "cdb"
+    except psycopg2.OperationalError as e: # DB inside Docker listens on "cdb"
+        if "Passwort-Authentifizierung" in e.args[0]:
+            raise # fail fast if wrong password is the problem
         cdb = psycopg2.connect(**connection_parameters, host="cdb")
     cdb.set_client_encoding("UTF8")
 
