@@ -114,13 +114,14 @@
             </div>
 
             {% if data['vcard'] %}
-                <div>
-                    <svg class="img-thumbnail qrcode" version="1.1" viewBox="0 0 31.5 31.5">
-                        {{ data['vcard_qr']|s }}
-                    </svg>
+                <div id="vcard">
+                    <img src="{{ cdedblink('core/qr_vcard', {'vcard': data['vcard']}) }}"
+                         alt="{{ gettext("Vcard") }}" class="img-thumbnail qrcode">
+                    <br />
+                    {{ util.href(cdedblink("core/download_vcard", {'vcard': data['vcard']}), "VCard", icon='download') }}
                 </div>
 
-                {{ util.href(cdedblink("core/download_vcard", {'vcard': data['vcard']}), "VCard", icon='download') }}
+
             {% endif %}
         </div>
     {% endif %}

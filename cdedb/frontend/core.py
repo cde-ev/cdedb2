@@ -15,7 +15,6 @@ import vobject
 import qrcode
 from qrcode.image import svg as qrcode_svg
 import lxml
-import re
 
 import magic
 import werkzeug.exceptions
@@ -357,30 +356,30 @@ class CoreFrontend(AbstractFrontend):
         return response
 
     @access("member")
-    def download_vcard(self, rs: RequestState, vcard) -> Response:
+    def download_vcard(self, rs: RequestState, vcard: str) -> Response:
         rs.ignore_validation_errors()
         # since the vcard may contain '/', we have to quote and unquote the vcard string
         vcard = werkzeug.url_unquote(vcard)
 
         return self.send_file(rs, data=vcard, mimetype='text/vCard', filename='vcard.vcf')
 
-    def qr_vcard(self, rs: RequestState, vcard) -> str:
+    @access("member")
+    def qr_vcard(self, rs: RequestState, vcard: str) -> Response:
         rs.ignore_validation_errors()
+        # since the vcard may contain '/', we have to quote and unquote the vcard string
+        vcard = werkzeug.url_unquote(vcard)
+
         qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
                            box_size=5, border=1)
         qr.add_data(vcard)
         qr.make(fit=True)
         qr_image = qr.make_image(qrcode_svg.SvgPathFillImage)
 
-        # This is a bit hacky, since `qrcode` does not intend to return SVG image as string
+        # a bit hacky, since `qrcode` does not intend to return SVG image as string
         qr_image._img.append(qr_image.make_path())
-        qr_svg = lxml.etree.tostring(qr_image._img, encoding='unicode')
+        qr_svg = lxml.etree.tostring(qr_image.get_image(), encoding='unicode')
 
-        # remove the predefined svg tag to gain more control over it in the template
-        qr_svg = re.sub('<svg .*?>', '', qr_svg)
-        qr_svg = re.sub('</svg>', '', qr_svg)
-
-        return qr_svg
+        return self.send_file(rs, data=qr_svg, mimetype="image/svg+xml")
 
     def create_vcard(self, rs: RequestState, persona_id: int):
         """
@@ -597,7 +596,6 @@ class CoreFrontend(AbstractFrontend):
                 # since the vcard may contain '/', we have to quote and unquote the
                 # vcard string
                 data['vcard'] = werkzeug.url_quote(vcard, unsafe='/')
-                data['vcard_qr'] = self.qr_vcard(rs, vcard)
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona

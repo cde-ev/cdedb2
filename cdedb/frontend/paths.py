@@ -64,6 +64,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="get_foto"),
             rule("/vcard/<vcard>", methods=_GET,
                  endpoint="download_vcard"),
+            rule("/vcard/qr/<vcard>", methods=_GET,
+                 endpoint="qr_vcard"),
             rule("/debugemail/<token>", methods=_GET,
                  endpoint="debug_email"),
             sub('/self', (

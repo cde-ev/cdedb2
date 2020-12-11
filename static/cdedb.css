@@ -497,7 +497,7 @@ a.headerlink {
 }
 
 .qrcode {
-    max-width: 150px;
+    width: 150px;
 }
 p.textbox {
     padding: 4px 6px;
