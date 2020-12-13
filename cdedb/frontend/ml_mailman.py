@@ -171,6 +171,15 @@ class MailmanMixin(MlBaseFrontend):
         for address in delete_mods:
             mm_list.remove_moderator(address)
 
+        mm_owners = {m.email: m for m in mm_list.owners}
+        new_owners = set(db_moderators) - set(mm_owners)
+        delete_owners = set(mm_owners) - set(db_moderators)
+
+        for address in new_owners:
+            mm_list.add_owner(address)
+        for address in delete_owners:
+            mm_list.remove_owner(address)
+
     def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
                                  db_list: CdEDBObject,
                                  mm_list: MailingList) -> None:
