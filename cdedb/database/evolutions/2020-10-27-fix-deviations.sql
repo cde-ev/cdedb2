@@ -5,13 +5,13 @@
 
 BEGIN;
     ALTER TABLE core.changelog ALTER COLUMN is_finance_admin DROP NOT NULL;
-    ALTER TABLE core.cron_store ALTER COLUMN title DROP UNIQUE;
-    ALTER TABLE core.cron_store ALTER COLUMN title ADD UNIQUE;
+    ALTER TABLE core.cron_store DROP UNIQUE (title);
+    ALTER TABLE core.cron_store ADD UNIQUE (title);
     ALTER TABLE core.personas
         ADD CHECK(NOT is_cde_realm OR paper_expuls IS NOT NULL);
-    ALTER TABLE events.events ALTER COLUMN camping_mat_field DROP FOREIGN KEY;
-    ALTER TABLE events.events ALTER COLUMN camping_mat_field
-        ADD FOREIGN KEY event.field_definitions(id);
+    ALTER TABLE events.events DROP FOREIGN KEY (camping_mat_field);
+    ALTER TABLE events.events ADD FOREIGN KEY (camping_mat_field)
+        REFERENCES event.field_definitions(id);
     ALTER TABLE ml.mailinglists
         DROP CONSTRAINT mailinglists_domain_local_part_key;
     ALTER TABLE ml.mailinglists
