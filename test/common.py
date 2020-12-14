@@ -1021,22 +1021,29 @@ class FrontendTest(BackendTest):
         self.assertEqual(str(status), checkbox['data-checked'])
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
-                       exact: bool = False) -> None:
+                       exact: bool = False, condition: bool = True) -> None:
         """Assert that a string is present in the element with the given id.
 
         The checked content is whitespace-normalized before comparison.
 
         :param regex: If True, do a RegEx match of the given string.
         :param exact: If True, require an exact match.
+        :param condition: If True, assertPresent. If False, assertNonPresence
         """
         target = self.get_content(div)
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
-            self.assertTrue(re.search(s.strip(), normalized))
-        elif exact:
-            self.assertEqual(s.strip(), normalized.strip())
+            if condition:
+                self.assertTrue(re.search(s.strip(), normalized))
+            else:
+                self.assertFalse(re.search(s.strip(), normalized))
+        elif condition:
+            if exact:
+                self.assertEqual(s.strip(), normalized.strip())
+            else:
+                self.assertIn(s.strip(), normalized)
         else:
-            self.assertIn(s.strip(), normalized)
+            self.assertNonPresence(s=s, div=div, check_div=False)
 
     def assertNonPresence(self, s: str, *, div: str = "content",
                           check_div: bool = True) -> None:
