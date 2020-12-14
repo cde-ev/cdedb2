@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-11-23 09:09+0100\n"
+"POT-Creation-Date: 2020-12-14 23:36+0100\n"
 "PO-Revision-Date: 2020-11-15 19:04+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -43,7 +43,7 @@ msgstr "Unzulässiger Bereich."
 #: cdedb/backend/assembly.py:341 cdedb/backend/assembly.py:364
 #: cdedb/backend/assembly.py:1931 cdedb/backend/event.py:65
 #: cdedb/backend/event.py:96 cdedb/backend/past_event.py:551
-#: cdedb/frontend/common.py:1121
+#: cdedb/frontend/common.py:1139
 msgid "No input specified."
 msgstr "Keine Eingabe gemacht."
 
@@ -93,16 +93,17 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/backend/ml.py:1134 cdedb/backend/ml.py:1205 cdedb/backend/ml.py:1342
 #: cdedb/frontend/assembly.py:215 cdedb/frontend/assembly.py:610
 #: cdedb/frontend/assembly.py:693 cdedb/frontend/assembly.py:751
-#: cdedb/frontend/assembly.py:771 cdedb/frontend/assembly.py:1103
-#: cdedb/frontend/assembly.py:1315 cdedb/frontend/assembly.py:1413
-#: cdedb/frontend/assembly.py:1467 cdedb/frontend/core.py:725
-#: cdedb/frontend/core.py:728 cdedb/frontend/core.py:733
-#: cdedb/frontend/core.py:739 cdedb/frontend/core.py:747
-#: cdedb/frontend/core.py:753 cdedb/frontend/core.py:761
-#: cdedb/frontend/core.py:771 cdedb/frontend/core.py:1526
-#: cdedb/frontend/core.py:1540 cdedb/frontend/core.py:2147
-#: cdedb/frontend/core.py:2161 cdedb/frontend/core.py:2192
-#: cdedb/frontend/core.py:2216 cdedb/frontend/event.py:6270
+#: cdedb/frontend/assembly.py:771 cdedb/frontend/assembly.py:1101
+#: cdedb/frontend/assembly.py:1167 cdedb/frontend/assembly.py:1401
+#: cdedb/frontend/assembly.py:1499 cdedb/frontend/assembly.py:1553
+#: cdedb/frontend/core.py:725 cdedb/frontend/core.py:728
+#: cdedb/frontend/core.py:733 cdedb/frontend/core.py:739
+#: cdedb/frontend/core.py:747 cdedb/frontend/core.py:753
+#: cdedb/frontend/core.py:761 cdedb/frontend/core.py:771
+#: cdedb/frontend/core.py:1526 cdedb/frontend/core.py:1540
+#: cdedb/frontend/core.py:2147 cdedb/frontend/core.py:2161
+#: cdedb/frontend/core.py:2192 cdedb/frontend/core.py:2216
+#: cdedb/frontend/event.py:6270
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -138,7 +139,7 @@ msgid "Some of these users are not assembly users."
 msgstr "Einige dieser Nutzer sind keine Versammlungsnutzer."
 
 #: cdedb/backend/assembly.py:685 cdedb/frontend/assembly.py:480
-#: cdedb/frontend/assembly.py:1393
+#: cdedb/frontend/assembly.py:1479
 msgid "Unable to remove active ballot."
 msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 
@@ -172,7 +173,7 @@ msgstr "Kaskadierung für %(blocker)s nicht möglich."
 msgid "Must have privileged access to change ballot."
 msgstr "Fehlende Zugriffsrechte zur Änderung der Abstimmung."
 
-#: cdedb/backend/assembly.py:842 cdedb/frontend/assembly.py:1339
+#: cdedb/backend/assembly.py:842 cdedb/frontend/assembly.py:1425
 msgid "Unable to modify active ballot."
 msgstr "Eine aktive Abstimmung kann nicht mehr verändert werden."
 
@@ -358,7 +359,7 @@ msgstr "Kein Saldo für fehlgeschlagene Transaktion angegeben."
 
 #: cdedb/backend/cde.py:447 cdedb/backend/common.py:610
 #: cdedb/frontend/cde.py:587 cdedb/frontend/cde.py:752
-#: cdedb/frontend/common.py:1430
+#: cdedb/frontend/common.py:1448
 msgid "Impossible."
 msgstr "Unmöglich."
 
@@ -665,7 +666,7 @@ msgstr "Fehler bei verschachtelten Transaktionen."
 msgid "Preventing reset of admin."
 msgstr "Zurücksetzen von Admin-Account verhindert."
 
-#: cdedb/backend/core.py:2097 cdedb/frontend/common.py:2010
+#: cdedb/backend/core.py:2097 cdedb/frontend/common.py:2028
 msgid "Link expired."
 msgstr "Link abgelaufen."
 
@@ -694,7 +695,7 @@ msgid "No new password provided."
 msgstr "Kein neues Password angegeben."
 
 #: cdedb/backend/core.py:2198 cdedb/frontend/cde.py:1222
-#: cdedb/frontend/common.py:1343 cdedb/frontend/event.py:2288
+#: cdedb/frontend/common.py:1361 cdedb/frontend/event.py:2288
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
 
@@ -1273,7 +1274,7 @@ msgid "Assembly created."
 msgstr "Versammlung angelegt."
 
 #: cdedb/frontend/assembly.py:475 cdedb/frontend/assembly.py:638
-#: cdedb/frontend/assembly.py:1044 cdedb/frontend/assembly.py:1388
+#: cdedb/frontend/assembly.py:1044 cdedb/frontend/assembly.py:1474
 #: cdedb/frontend/cde.py:2523 cdedb/frontend/cde.py:2581
 #: cdedb/frontend/core.py:2336 cdedb/frontend/core.py:2369
 #: cdedb/frontend/event.py:1369 cdedb/frontend/event.py:4192
@@ -1346,27 +1347,31 @@ msgstr "Ungü"
 msgid "Unknown version."
 msgstr "Unbekannte Version angegeben."
 
-#: cdedb/frontend/assembly.py:1143
-msgid "bar (options below this are declined)"
-msgstr "Schwellwert (Kandidaten/Optionen unterhalb werden abgelehnt)"
+#: cdedb/frontend/assembly.py:1174
+msgid "Ballot has not been tallied."
+msgstr "Abstimmung wurde noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly.py:1368
+#: cdedb/frontend/assembly.py:1249
+msgid "Entered invalid secret"
+msgstr "Ungültiges Geheimniss eingegeben."
+
+#: cdedb/frontend/assembly.py:1454
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr "Forcieren eines Abstimmungsstarts ist nur im Entwicklermodus möglich."
 
-#: cdedb/frontend/assembly.py:1424
+#: cdedb/frontend/assembly.py:1510
 msgid "Option not available."
 msgstr "Option nicht verfügbar."
 
-#: cdedb/frontend/assembly.py:1433
+#: cdedb/frontend/assembly.py:1519
 msgid "Rejection is exclusive."
 msgstr "Ablehnung kann nur exklusiv gewählt werden."
 
-#: cdedb/frontend/assembly.py:1470
+#: cdedb/frontend/assembly.py:1556
 msgid "Ballot not yet tallied."
 msgstr "Abstimmung noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly.py:1499
+#: cdedb/frontend/assembly.py:1585
 msgid "Duplicate shortname."
 msgstr "Option doppelt gefunden."
 
@@ -1650,81 +1655,81 @@ msgstr "Einige dieser Nutzer sind keine Veranstaltungsnutzer."
 msgid "*Nothing here yet.*"
 msgstr "*Hier gibt es noch nichts.*"
 
-#: cdedb/frontend/common.py:185 cdedb/frontend/common.py:1221
+#: cdedb/frontend/common.py:185 cdedb/frontend/common.py:1239
 msgid "Failed validation."
 msgstr "Validierung fehlgeschlagen."
 
-#: cdedb/frontend/common.py:967 cdedb/frontend/common.py:977
+#: cdedb/frontend/common.py:985 cdedb/frontend/common.py:995
 msgid "Must not be used in web templates."
 msgstr "Darf nicht in Web-Templates verwendet werden."
 
-#: cdedb/frontend/common.py:1029
+#: cdedb/frontend/common.py:1047
 msgid "Given method is not callable."
 msgstr "Die fragliche Methode ist nicht aufrufbar."
 
-#: cdedb/frontend/common.py:1061
+#: cdedb/frontend/common.py:1079
 #, python-format
 msgid "Default values cannot be overridden: %(keys)s"
 msgstr "Standardwerte können nicht überschrieben werden: %(keys)s"
 
-#: cdedb/frontend/common.py:1074
+#: cdedb/frontend/common.py:1092
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
 msgstr "Angefordeter modus existiert nicht: %(modus)s"
 
-#: cdedb/frontend/common.py:1079
+#: cdedb/frontend/common.py:1097
 #, python-format
 msgid "Template not found: %(file)s"
 msgstr "Template nicht gefunden: %(file)s"
 
-#: cdedb/frontend/common.py:1123
+#: cdedb/frontend/common.py:1141
 msgid "Ambiguous input."
 msgstr "Uneindeutige Eingabe."
 
-#: cdedb/frontend/common.py:1139
+#: cdedb/frontend/common.py:1157
 msgid "Invalid datatype read from file."
 msgstr "Ungültiger Datentyp aus Datei eingelesen."
 
-#: cdedb/frontend/common.py:1146
+#: cdedb/frontend/common.py:1164
 msgid "Invalid input type."
 msgstr "Ungültiger Eingabetyp."
 
-#: cdedb/frontend/common.py:1185
+#: cdedb/frontend/common.py:1203
 msgid "Cannot download query result without fields of interest."
 msgstr ""
 "Download eines Abfrageergebnis nicht möglich ohne selektierte "
 "Ausgabefelder."
 
-#: cdedb/frontend/common.py:1200
+#: cdedb/frontend/common.py:1218
 msgid "Unknown download kind {kind}."
 msgstr "Unbekannte Downloadart {kind}."
 
-#: cdedb/frontend/common.py:1223
+#: cdedb/frontend/common.py:1241
 msgid "The database currently undergoes maintenance and is unavailable."
 msgstr ""
 "Es werden derzeit Wartungsarbeiten an der Datenbank vorgenommen und diese"
 " ist daher leider nicht verfügbar."
 
-#: cdedb/frontend/common.py:1278
+#: cdedb/frontend/common.py:1296
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
-#: cdedb/frontend/common.py:1409 cdedb/frontend/core.py:1292
+#: cdedb/frontend/common.py:1427 cdedb/frontend/core.py:1292
 #: cdedb/frontend/core.py:2325
 msgid "Change committed."
 msgstr "Die Änderung wurde übernommen."
 
-#: cdedb/frontend/common.py:1410 cdedb/frontend/core.py:874
+#: cdedb/frontend/common.py:1428 cdedb/frontend/core.py:874
 #: cdedb/frontend/core.py:1044
 msgid "Change pending."
 msgstr "Die Änderung wartet auf Bestätigung."
 
-#: cdedb/frontend/common.py:1411
+#: cdedb/frontend/common.py:1429
 msgid "Change failed."
 msgstr "Änderung fehlgeschlagen."
 
-#: cdedb/frontend/common.py:1470
+#: cdedb/frontend/common.py:1488
 msgid ""
 "LaTeX compilation failed. Try downloading the source files and compiling "
 "them manually."
@@ -1732,47 +1737,47 @@ msgstr ""
 "Der LaTeX-Code konnte nicht kompiliert werden. Du kannst die Quelldateien"
 " herunterladen und versuchen sie manuell zu kompilieren."
 
-#: cdedb/frontend/common.py:1661
+#: cdedb/frontend/common.py:1679
 msgid "Inconsistent request."
 msgstr "Inkonsistente Anfrage."
 
-#: cdedb/frontend/common.py:1739
+#: cdedb/frontend/common.py:1757
 msgid "Object {param}={value} not found"
 msgstr "Objekt {param}={value} wurde nicht gefunden."
 
-#: cdedb/frontend/common.py:1785
+#: cdedb/frontend/common.py:1803
 msgid "You must login."
 msgstr "Login benötigt."
 
-#: cdedb/frontend/common.py:1789
+#: cdedb/frontend/common.py:1807
 msgid "Access denied to {realm}/{endpoint}."
 msgstr "Zugriff auf {realm}/{endpoint} verweigert."
 
-#: cdedb/frontend/common.py:1876
+#: cdedb/frontend/common.py:1894
 msgid "Magic URL parameter replacement failed."
 msgstr "Ersetzung magischer URL-Parameter fehlgeschlagen."
 
-#: cdedb/frontend/common.py:2012
+#: cdedb/frontend/common.py:2030
 msgid "Link invalid."
 msgstr "Link ungültig."
 
-#: cdedb/frontend/common.py:2056
+#: cdedb/frontend/common.py:2074
 msgid "Invalid argtype {t} found."
 msgstr "Ungültiger Argumenttyp {t}."
 
-#: cdedb/frontend/common.py:2169
+#: cdedb/frontend/common.py:2187
 msgid "This page can only be accessed by orgas."
 msgstr "Auf diese Seite können nur Orgas zugreifen."
 
-#: cdedb/frontend/common.py:2174
+#: cdedb/frontend/common.py:2192
 msgid "This event is locked for offline usage."
 msgstr "Diese Veranstaltung ist für die Offline-Nutzung gesperrt."
 
-#: cdedb/frontend/common.py:2206
+#: cdedb/frontend/common.py:2224
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
 
-#: cdedb/frontend/common.py:2211
+#: cdedb/frontend/common.py:2229
 msgid ""
 "You do not have privileged moderator access and may not change "
 "subscriptions."
@@ -1780,11 +1785,11 @@ msgstr ""
 "Du hast keinen Zugriff als Privilegierter Moderator und darfst keine "
 "Abbonements ändern."
 
-#: cdedb/frontend/common.py:2216
+#: cdedb/frontend/common.py:2234
 msgid "This page can only be accessed by appropriate admins."
 msgstr "Auf diese Seite können nur Administratoren zugreifen."
 
-#: cdedb/frontend/common.py:2238
+#: cdedb/frontend/common.py:2256
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
@@ -2321,8 +2326,8 @@ msgid "Course Choices"
 msgstr "Kurswahlen"
 
 #: cdedb/frontend/event.py:3125 cdedb/frontend/event.py:3146
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:64
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:126
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:67
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:135
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:22
 #: cdedb/frontend/templates/web/core/show_history.tmpl:274
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:22
@@ -2716,7 +2721,7 @@ msgid "Lodgement ID"
 msgstr "Unterkunfts-ID"
 
 #: cdedb/frontend/event.py:5761
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:312
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:320
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:51
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:26
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:17
@@ -2987,7 +2992,7 @@ msgstr "Minimalgröße/Maximalgröße"
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:13
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:31
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:60
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:61
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:66
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:40
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:74
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:79
@@ -3145,45 +3150,45 @@ msgstr "Diese Abstimmung wird irreversibel mit allen Daten gelöscht."
 msgid "Deletes the ballot and all associated settings and candidates."
 msgstr "Löscht die Abstimmung und alle dazugehörigen Einstellungen und Kandidaten."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:35
-msgid "Voting Period"
-msgstr "Abstimmungszeitraum"
-
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:37
+msgid "Period"
+msgstr "Zeitraum"
+
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:39
 #, python-format
 msgid "From %(begin)s until %(end)s."
 msgstr "%(begin)s bis %(end)s"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:44
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:46
 #, python-format
 msgid "Extension until %(extension)s if %(quorum)s votes are not reached."
 msgstr ""
 "Verlängerung bis %(extension)s, falls %(quorum)s Stimmen nicht erreicht "
 "werden."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:52
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:54
 #, python-format
 msgid "Extended until %(extension)s because %(quorum)s votes were not reached."
 msgstr ""
 "Wurde bis %(extension)s verlängert, da %(quorum)s Stimmen nicht erreicht "
 "wurden."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:58
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:60
 #, python-format
 msgid "No extension neccessary, because %(quorum)s votes were reached."
 msgstr "Keine Verlängerung notwendig, da %(quorum)s Stimmen erreicht wurden."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:67
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:70
 msgid "This ballot has not yet begun."
 msgstr "Diese Abstimmung hat noch nicht begonnen."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:68
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:71
 msgid "Admins can still make changes to description, files and candidates."
 msgstr ""
 "Admins können noch Veränderungen an der Beschreibung, den angehängten "
 "Dateien und den Kandidaten vornehmen."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:70
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:73
 msgid ""
 "All CdE-Members and external assembly participants can already see this "
 "ballot and all associated information."
@@ -3192,39 +3197,39 @@ msgstr ""
 "Abstimmung und alle Details jedoch bereits jetzt sehen, um sich zu "
 "informieren."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:76
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:79
 msgid "This ballot has been concluded."
 msgstr "Die Abstimmung ist beendet."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:77
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:80
 msgid "You can see the results below."
 msgstr "Unten wird das Ergebnis angezeigt."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:79
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:82
 msgid ""
 "You are not participating in this assembly, therefore you cannot vote in "
 "this ballot."
 msgstr "Du nimmst nicht an der Versammlung teil. Daher kannst du nicht abstimmen."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:83
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:86
 msgid "This ballot is currently open for voting."
 msgstr "Die Abstimmung läuft."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:86
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:89
 msgid "You have abstained."
 msgstr "Du hast Dich enthalten."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:87
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:90
 msgid "You can make your choice below, during the voting period."
 msgstr ""
 "Du kannst unten bis zum Ende des Abstimmungszeitraums noch eine Auswahl "
 "treffen."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:89
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:92
 msgid "You already voted."
 msgstr "Du hast bereits abgestimmt."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:90
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:93
 msgid ""
 "You can check your vote below and change it before the end of the voting "
 "period."
@@ -3232,126 +3237,121 @@ msgstr ""
 "Du kannst Deine Auswahl unten überprüfen und bis zum Ende des "
 "Abstimmungszeitraums noch eine Auswahl treffen."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:98
-msgid "Voting Modality"
-msgstr "Abstimmungsmodalität"
-
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:102
+msgid "Modality"
+msgstr "Modalität"
+
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:106
 #, python-format
 msgid "Classical voting with %(votes)s vote and \"Against all\" option."
 msgstr ""
 "Klassiche Abstimmung mit %(votes)s Stimme und \"Gegen alle "
 "Kanididaten\"-Option."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:106
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:110
 #, python-format
 msgid "Classical voting with %(votes)s vote."
 msgstr "Klassiche Abstimmung mit %(votes)s Stimme."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:112
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:116
 #, python-format
 msgid "Classical voting with %(votes)s votes and \"Against all\" option."
 msgstr ""
 "Klassiche Abstimmung mit %(votes)s Stimmen und \"Gegen alle "
 "Kandidaten\"-Option."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:116
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:120
 #, python-format
 msgid "Classical voting with %(votes)s votes."
 msgstr "Klassiche Abstimmung mit %(votes)s Stimmen."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:122
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:126
 msgid "Preferential voting with bar option."
 msgstr "Präferenzwahl mit Ablehnungsoption."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:126
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:130
 msgid "Preferential voting without bar option."
 msgstr "Präferenzwahl ohne Ablehnungsoption."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:134
-msgid "Had voted"
-msgstr "Haben abgestimmt"
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:138
+msgid "Voted"
+msgstr "Abgestimmt"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:136
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:141
 #, python-format
 msgid "%(count)s attendees had given their vote for this ballot."
 msgstr "Es stimmten %(count)s Teilnehmer über diesen Punkt ab."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:141
-#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:41
-msgid "Already voted"
-msgstr "Bereits abgestimmt"
-
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:143
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:147
 #, python-format
 msgid "Until now, %(count)s attendees had given their vote for this ballot."
 msgstr "Bis jetzt haben %(count)s Teilnehmer über diesen Punkt abgestimmt."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:159
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:165
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:104
 msgid "Files"
 msgstr "Dateien"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:7
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:7
 msgid "Ranking"
 msgstr "Platzierung"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:10
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:10
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:5
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:24
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:62
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:309
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:316
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:22
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:64
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:317
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:324
 msgid "Candidates"
 msgstr "Kandidaten"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:13
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:13
 msgid "Pro-Votes"
 msgstr "Pro-Stimmen"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:17
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:17
 msgid "Contra-Votes"
 msgstr "Kontra-Stimmen"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:67
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:171
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:67
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:171
 #: cdedb/frontend/templates/web/core/show_user.tmpl:243
 #: cdedb/frontend/templates/web/event/course_list.tmpl:82
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:178
 msgid "and"
 msgstr "und"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:92
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:92
 msgid "Against all Candidates."
 msgstr "Gegen alle Kanidaten."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:96
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:96
 msgid "Rejection limit."
 msgstr "Ablehnungsgrenze."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:179
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:179
 #, python-format
 msgid "%(abstentions)s voters had abstained."
 msgstr "%(abstentions)s Wähler haben sich enthalten."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:185
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:188
 msgid "Help for tallying"
 msgstr "Hilfe zum Auszählen der Stimmen"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:187
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:191
 msgid "Classical vote"
 msgstr "Klassiche Wahl"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:191
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:196
 msgid ""
 "Pro votes are the sum of all votes in favor of this candidate. Votes "
-"against candidates are not possible in this voting system."
+"against single candidates are not possible in this voting system."
 msgstr ""
 "Die Pro-Stimmen sind die Summe aller Stimmen für diesen Kandidaten. "
 "Aufgrund des Wahlsystems kann es intrinsisch keine Kontra-Stimmen gegen "
 "einzelne Kandidaten geben."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:198
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:203
 msgid ""
 "Using the \"Against all candidates\" option it is possible to vote "
 "against all candidates. This option can only be exclusively chosen, "
@@ -3361,11 +3361,11 @@ msgstr ""
 "Kandidaten auszusprechen. Diese Option konnte nur allein gewählt werden, "
 "eventuell weitere abgegebene Stimmen verfielen."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:206
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:212
 msgid "Preferential vote"
 msgstr "Präferenzwahl"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:210
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:217
 msgid ""
 "Pro votes and Contra votes are valid for the given position and are "
 "relative to the next lower position. Multiple candidates can share the "
@@ -3375,69 +3375,31 @@ msgstr ""
 "und beziehen sich relativ auf die darunter liegende Platzierung. Dabei "
 "können mehrere Kandidaten gleich platziert sein."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:225
-#, python-format
-msgid ""
-"This vote was a preferential vote. Voters arranged the candidates "
-"according to their preference. The preferences of all participants were "
-"evaluated using the %(link)s, to determine the option with the most "
-"votes."
-msgstr ""
-
-msgid "More details"
-msgstr "Mehr Details"
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:225
-msgid ""
-"<a "
-"href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze"
-" method</a>"
-msgstr ""
-"<a href='https://de.wikipedia.org/w/index.php?title=Schulze-"
-"Methode&oldid=188508194'>Schulze-Methode</a>"
-
-msgid "You voted in the following preference:"
-msgstr "Du hast mit der folgenden Präferenz abgestimmt:"
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:232
-#, python-format
-msgid ""
-"The summary shows the combined preference list of all participant. The "
-"greater-than character %(gt)s means that the candidate, represented by "
-"their shortname, on the left has higher overall preference than the one "
-"on the right. The equals character %(eq)s means that two or more "
-"candidates have the same overall preference across all participants."
-msgstr ""
-"Die Zusammenfassung zeigt die kombinierte Präferenzliste aller "
-"Teilnehmer. Das Größer-als-Zeichen %(gt)s gibt an, dass der Kandidat auf "
-"der linken Seite des Zeichens insgesamt mit höherer Präferenz eingestuft "
-"wurde als der Kandidate auf der rechten Seite. Das Gleichheits-Zeichen "
-"%(eq)s gibt an, dass zwei oder mehr Kandidaten die gleiche gesamte "
-"Präferenz haben."
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:242
-#, python-format
-msgid ""
-"Additionally the shortname %(abm)s shows where in the election the "
-"rejection limit was ranked."
-msgstr ""
-"Außerdem gibt %(abm)s an, wo in der gesamten Präferenzliste die\n"
-"Ablehnungsgrenze eingeordnet wurde."
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:252
-msgid "Your Vote"
-msgstr "Deine Stimme"
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:256
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:232
 msgid "You are not participating in this assembly."
 msgstr "Du nimmst nicht an der Versammlung teil."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:259
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:292
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:234
 msgid "You did not vote."
 msgstr "Du hast nicht abgestimmt."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:264
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:237
+msgid "You abstained."
+msgstr "Du hast Dich enthalten."
+
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:241
+msgid "You voted against all candidates."
+msgstr "Du hast Dich gegen alle Kandidaten entschieden."
+
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:243
+msgid "You voted for the following candidates:"
+msgstr "Du hast für die folgenden Kandidaten gestimmt:"
+
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:252
+msgid "You voted in the following preference:"
+msgstr "Du hast mit der folgenden Präferenz abgestimmt:"
+
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:257
 msgid ""
 "The assembly concluded. The votes of specific users can no longer be "
 "extracted from the database in any way."
@@ -3445,8 +3407,7 @@ msgstr ""
 "Die Versammlung wurde beendet. Das Abstimmungsverhalten einzelner Nutzer "
 "ist nicht mehr aus der Datenbank auslesbar."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:265
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:271
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:258
 msgid ""
 "To show your vote, enter the secret you were sent when registering for "
 "the assembly."
@@ -3454,41 +3415,16 @@ msgstr ""
 "Um Deine Stimme anzuzeigen, gib hier Dein persönliches Geheimnis ein, das"
 " Dir beim Beginn der Versammlung mitgeteilt wurde."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:270
-msgid "You entered an invalid secret."
-msgstr "Es wurde ein ungültiges Geheimnis eingegeben."
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:278
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:264
 msgid "Secret"
 msgstr "Geheimnis"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:282
+#: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:268
 msgid "Show Vote"
 msgstr "Stimme anzeigen"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:290
-msgid "You have not voted yet."
-msgstr "Du hast noch nicht abgestimmt."
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:297
-msgid "You abstained."
-msgstr "Du hast Dich enthalten."
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:299
-msgid "You voted against all candidates."
-msgstr "Du hast Dich gegen alle Kandidaten entschieden."
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:301
-msgid "You voted for the following candidates:"
-msgstr "Du hast für die folgenden Kandidaten gestimmt:"
-
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:308
-#, python-format
-msgid "You voted %(vote)s."
-msgstr "Du hast mit %(vote)s abgestimmt."
-
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:17
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:215
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:19
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:221
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:27
 #: cdedb/frontend/templates/web/assembly/change_attachment_link.tmpl:24
 #: cdedb/frontend/templates/web/assembly/change_attachment_link.tmpl:59
@@ -3496,41 +3432,40 @@ msgstr "Du hast mit %(vote)s abgestimmt."
 msgid "Ballot"
 msgstr "Abstimmung"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:21
-#, python-format
-msgid "You have %(votes)s votes."
-msgstr "Du hast %(votes)s Stimmen."
-
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:29
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:28
 msgid "Against all Candidates"
 msgstr "Gegen alle Kandidaten"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:31
-msgid ""
-"With this option you reject all candidates."
-msgstr ""
-"Mit dieser Option kannst Du Deine Ablehnung aller Kandidaten ausdrücken."
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:30
+msgid "With this option you reject all candidates."
+msgstr "Mit dieser Option kannst Du Deine Ablehnung aller Kandidaten ausdrücken."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:34
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:241
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:264
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:247
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:270
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:137
 msgid "Vote"
 msgstr "Abstimmen"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:46
-msgid "Additional Options"
-msgstr "Weitere Optionen"
+msgid "Additional"
+msgstr "Zusätzlich"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:53
 msgid "Abstain"
 msgstr "Enthalten"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:68
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:70
 msgid "Short:"
 msgstr "Kurz:"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:80
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:170
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:82
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:173
+msgid "Help for voting"
+msgstr "Hilfe zum Abstimmen"
+
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:84
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:175
 #, python-format
 msgid ""
 "This vote is a preferential vote. You can arrange the candidates in the "
@@ -3538,15 +3473,19 @@ msgid ""
 " participants will be evaluated using the %(link)s, to determine the "
 "option with the most votes."
 msgstr ""
+"Diese Abstimmung ist eine Präferenzwahl. Plaziere die Kandidaten nach "
+"deiner persönlichen Präferenz im obigen Feld. Die Präferenz aller "
+"Teilnehmer wird nach der %(link)s ausgewertet, um die Option mit den "
+"meisten Stimmen zu ermitteln."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:80
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:170
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:84
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:175
 msgid "<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>"
 msgstr ""
 "<a href='https://de.wikipedia.org/wiki/Schulze-Methode'>Schulze-"
 "Methode</a>"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:87
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:91
 #, python-format
 msgid ""
 "To enter your preferencelist, use the shortnames given in the list of "
@@ -3563,7 +3502,7 @@ msgstr ""
 "Seite. Mit dem Gleichheitszeichen %(eq)s bewertest Du zwei Kandidaten "
 "gleich. In der Präferenzliste müssen alle Kandidaten genannt werden."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:97
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:101
 #, python-format
 msgid ""
 "Additionally you need to use the rejection bar %(abm)s in your "
@@ -3577,35 +3516,35 @@ msgstr ""
 "hältst, solltest Du höher als %(abm)s bewerten, Kandidaten, die Du "
 "ablehnst, niedriger, d. h. rechts von %(abm)s."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:107
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:110
 msgid "Examples"
 msgstr "Beispiele"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:108
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:111
 msgid "Take the following examplatory candidate list:"
 msgstr "Wir nehmen folgende beispielhafte Kandidatenliste an:"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:113
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:116
 msgid "Luke Skywalker, short: [Luke]"
 msgstr "Luke Skywalker, kurz: [Luke]"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:114
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:117
 msgid "Princess Leia Organa of Alderaan, short: [Leia]"
 msgstr "Prinzessin Leia Organa von Alderaan, kurz: [Leia]"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:115
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:118
 msgid "Han Solo, short: [Han]"
 msgstr "Han Solo, kurz: [Han]"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:116
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:119
 msgid "Obi-Wan “Ben” Kenobi, short: [ObiWan]"
 msgstr "Obi-Wan „Ben“ Kenobi, kurz: [ObiWan]"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:119
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:122
 msgid "Your Vote could look like this:"
 msgstr "Deine Wahl könnte dann z. B. so aussehen:"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:123
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:126
 msgid ""
 "You deem all candidates suitable, but you like Leia the best, with no "
 "difference between the other candidates."
@@ -3613,7 +3552,7 @@ msgstr ""
 "Du hältst alle Kandidaten für geeignet, aber Leia für die Beste, die "
 "anderen Kandidaten für gleichwertig."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:128
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:131
 msgid ""
 "You deem Leia and Obi-Wan (equally) suitable, you want to reject Luke and"
 " you absolutely can’t stand Han Solo."
@@ -3621,8 +3560,8 @@ msgstr ""
 "Du hältst nur Leia und Obi-Wan für (gleich) geeignet, Luke lehnst Du ab, "
 "Han Solo geht echt gar nicht."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:133
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:153
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:136
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:156
 msgid ""
 "You want to vote for Luke and if he doesn’t make it, you think Obi-Wan "
 "should. You don’t have an opinion about the others."
@@ -3630,18 +3569,18 @@ msgstr ""
 "Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. "
 "Zu den anderen hast Du keine Meinung."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:138
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:158
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:141
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:161
 msgid "You want to completely abstain."
 msgstr "Du möchtest Dich komplett enthalten."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:145
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:148
 msgid "You like Leia the most, but you see no difference between the others."
 msgstr ""
 "Du findest Leia am geeignetsten, bei den anderen gibt es keinen "
 "Unterschied."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:149
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:152
 msgid ""
 "You deem Leia and Obi-Wan (equally) suitable, Luke less so and Han Solo "
 "not at all."
@@ -3649,7 +3588,7 @@ msgstr ""
 "Du hältst Leia und Obi-Wan für (gleich) geeignet, Luke geht so und Han "
 "Solo eher nicht. "
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:177
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:182
 msgid ""
 "To arrange the candidates, move them into one of the shaded boxes. The "
 "higher up the box, the higher your preference for that candidate. "
@@ -3662,7 +3601,7 @@ msgstr ""
 " mit gleicher Präferenz gewertet. Bewegst Du einen Kandidaten in den "
 "Zwischenraum ober- und unterhalb der Boxen, entsteht dort eine neue Box."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:184
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:189
 #, python-format
 msgid ""
 "There are three ways of moving candidates: Drag’n’Drop them into a "
@@ -3677,19 +3616,19 @@ msgstr ""
 "%(space)s oder %(enter)s bestätigen und anschließend mit %(tab)s eine Box"
 " auswählen und wiederum mit %(space)s oder %(enter)s bestätigen."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:184
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:189
 msgid "TAB"
 msgstr "TAB"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:185
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:190
 msgid "ENTER"
 msgstr "Enter"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:186
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:191
 msgid "Space"
 msgstr "Leertaste"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:195
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:200
 msgid ""
 "One of the boxes is marked as “Neutral”. Please place candidates cou deem"
 " suitable above this box (they will be highlighted in green) and "
@@ -3701,27 +3640,27 @@ msgstr ""
 "werden grün hinterlegt) und Kandidaten die Du ablehnst unterhalb (Boxen "
 "werden rot hinterlegt)."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:203
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:207
 msgid "To abstain, place all candidates in the neutral box."
 msgstr "Um Dich zu enthalten, positioniere alle Kandidaten in der „Neutral“-Box."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:207
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:211
 msgid "To abstain, place all candidates in the same box."
 msgstr "Um Dich zu enthalten, positioniere alle Kandidaten in einer Box."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:222
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:228
 msgid "Text-based Voting"
 msgstr "Text-basierte Abstimmung"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:228
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:234
 msgid "Interactive Voting"
 msgstr "Interaktive Abstimmung"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:239
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:245
 msgid "Preferencelist"
 msgstr "Präferenzliste"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:252
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:258
 msgid ""
 "This is the interactive voting form. It is inconvenient to used with a "
 "keyboard only. Use the link above to switch to the text-based form."
@@ -3730,39 +3669,39 @@ msgstr ""
 "Tastatur nur mäßig gut zu bedienen. Verwende den obigen Link, um zum\n"
 "textbasierten Formular zu wechseln."
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:259
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:265
 msgid "Incr. Preference"
 msgstr "Steigende Präferenz"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:275
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:281
 msgid "neutral"
 msgstr "neutral"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:276
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:282
 msgid "Box {0}"
 msgstr "Box {0}"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:277
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:283
 msgid "Box {0}: highest priority"
 msgstr "Box {0}: höchste Priorität"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:278
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:284
 msgid "Box {0}: lowest priority"
 msgstr "Box {0}: niedrigste Priorität"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:279
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:285
 msgid "Between box {0} and {1}"
 msgstr "Zwischen Box {0} und {1}"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:280
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:286
 msgid "Above box with highest priority"
 msgstr "Über Box mit höchster Priorität"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:281
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:287
 msgid "Below box with lowest priority"
 msgstr "Unter Box mit niedrigster Priorität"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:311
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:319
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:52
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:29
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:22
@@ -3780,7 +3719,7 @@ msgstr "Unter Box mit niedrigster Priorität"
 msgid "Shortname"
 msgstr "Kurzname"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:324
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:332
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:29
 #: cdedb/frontend/templates/web/event/lodgement_group_summary.tmpl:38
 msgid "Delete line"
@@ -3820,7 +3759,8 @@ msgstr "Datei hinzufügen"
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:10
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:17
 #: cdedb/frontend/templates/web/assembly/show_attachment.tmpl:33
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:26
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:29
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:28
 msgid "Ballots"
 msgstr "Abstimmungen"
 
@@ -3958,7 +3898,7 @@ msgstr "Achtung: Die Versammlung ist sofort für alle CdE-Mitglieder sichtbar."
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:38
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:62
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:64
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:88
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:97
 #: cdedb/frontend/templates/web/event/create_event.tmpl:62
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:42
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:110
@@ -3981,7 +3921,6 @@ msgid "Overview"
 msgstr "Übersicht"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:16
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:64
 #: cdedb/frontend/templates/web/assembly/summary_ballots.tmpl:6
 #: cdedb/frontend/templates/web/assembly/summary_ballots.tmpl:9
 #: cdedb/frontend/templates/web/assembly/summary_ballots.tmpl:16
@@ -4083,11 +4022,11 @@ msgstr "%(ballot)s bearbeiten %(assembly)s"
 
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:14
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:50
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:40
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:44
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:19
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:16
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:12
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:39
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:44
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:29
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:23
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:40
@@ -4314,7 +4253,12 @@ msgstr "Laufende Abstimmungen"
 msgid "Past Ballots"
 msgstr "Abgeschlossene Abstimmungen"
 
+#: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:41
+msgid "Already voted"
+msgstr "Bereits abgestimmt"
+
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:43
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:146
 msgid "Abstained"
 msgstr "Enthalten"
 
@@ -4430,13 +4374,182 @@ msgstr "Datei-Details"
 msgid "Permanently deletes this attachment including all versions."
 msgstr "Löscht diese Datei inklusive aller Versionen."
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:46
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:50
 msgid "Start Voting"
 msgstr "Abstimmung starten"
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:68
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:65
+msgid "More details"
+msgstr "Mehr Details"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:8
+#, python-format
+msgid "Result (%(title)s)"
+msgstr "Ergebnis (%(title)s)"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:39
+msgid ""
+"On this page, we provide some further details about the tallied ballot "
+"mentioned above. Everybody participating at the assembly or who is an "
+"active member can view this page."
+msgstr ""
+"Auf dieser Seite erhälst du nähere Details über die oben erwähnte "
+"ausgezählte Abstimmung. Jeder Teilnehmer dieser Versammlung und jedes "
+"aktive Mitglied hat Zugriff auf diese Seite."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:46
+msgid ""
+"After evaluating all given votes, we obtain the following combined "
+"preference list of all participants:"
+msgstr ""
+"Nach Auszählen aller abgegebenen Stimmen wurde die folgende "
+"Präferenzliste aller"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:54
+#, python-format
+msgid ""
+"The greater-than character %(gt)s means that the candidate, represented "
+"by their shortname, on the left has higher overall preference than the "
+"one on the right. The equals character %(eq)s means that two or more "
+"candidates have the same overall preference across all participants."
+msgstr ""
+"Das Größer-als-Zeichen %(gt)s gibt an, dass der Kandidat auf der linken "
+"Seite des Zeichens insgesamt mit höherer Präferenz eingestuft wurde als "
+"der Kandidate auf der rechten Seite. Das Gleichheits-Zeichen %(eq)s gibt "
+"an, dass zwei oder mehr Kandidaten die gleiche gesamte Präferenz haben."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:64
+#, python-format
+msgid ""
+"Additionally the shortname %(abm)s shows where in the election the "
+"rejection limit was ranked."
+msgstr ""
+"Außerdem gibt %(abm)s an, wo in der gesamten Präferenzliste die\n"
+"Ablehnungsgrenze eingeordnet wurde."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:71
+msgid "Verify the result"
+msgstr "Verifiziere das Ergebnis"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:74
+msgid ""
+"We allow you to verify every voting which has taken place in the CdEDB. "
+"For this, we offer you a download JSON file containing every information "
+"about a tallied ballot which is stored in the DB."
+msgstr ""
+"Jede Abstimmung, die über die CdEDB durchgeführt werde, kann von euch "
+"verifiziert werden. Dazu stellen wir für jede ausgezählte Abstimmung eine"
+" JSON Datei zum Download bereit, die alle in der Datenbank gespeicherten "
+"Informationen über diese Abstimmung enthält."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:80
+#, python-format
+msgid ""
+"With our provided %(name)s Script, you can check that the result "
+"displayed in the DB is actually correct. To obtain the result from the "
+"votes, we apply the %(method)s internally."
+msgstr ""
+"Mit dem %(name)s Skript kannst du überprüfen, das das in der DB "
+"angezeigte Ergebnis tatsächlich korrekt ist. Um das Ergebnis aus den "
+"Stimmen zu erhalten, benutzen wir intern die %(method)s."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:80
+msgid ""
+"<a "
+"href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze"
+" method</a>"
+msgstr ""
+"<a href='https://de.wikipedia.org/w/index.php?title=Schulze-"
+"Methode&oldid=188508194'>Schulze-Methode</a>"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:87
+#, python-format
+msgid ""
+"With the %(name)s Script, you can verify the correct count of your vote. "
+"Additionally, you need the personal secret you received per mail when "
+"registering for this assembly."
+msgstr ""
+"Mit dem %(name)s Skript kannst du die Korrektheit deiner Stimme "
+"überprüfen. Dazu benötigst du zusätzlich dein persönliches Geheimnis, das"
+" du nach deiner Anmeldung zu dieser Versammlung per Mail erhalten hast."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:92
+#, python-format
+msgid ""
+"Voters of this ballot can verify their vote using the %(name)s Script and"
+" the personal secret they received per mail when registering for this "
+"assembly."
+msgstr ""
+"Teilnehmer, die in dieser Abstimmung gewählt haben, können ihre Stimme "
+"mittels des %(name)s Skript und ihrem persönlichen Geheimnis, welches sie"
+" nach ihrer Anmeldung für diese Versammlung per Mail erhalten haben, "
+"verifizieren."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:100
 msgid "Download Results"
 msgstr "Ergebnisdatei herunterladen"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:101
+msgid "Download Result Verification Script"
+msgstr "Skript zum Verifizieren des Ergebnis"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:102
+msgid "Download Own Vote Verification Script"
+msgstr "Skript zum Verifizieren der eigenen Stimme"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:105
+msgid "Result file hash"
+msgstr "Hash der Ergebnis Datei"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:109
+#, python-format
+msgid ""
+"After a ballot has been tallied, the generated result file and its hash "
+"will be sent to %(tally)s and %(presider)s."
+msgstr ""
+"Nachdem eine Abstimmung ausgezählt wurde, wird die generierte Ergebnis "
+"Datei und ihr Hash an %(tally)s und %(presider)s gesendet."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:115
+#, python-format
+msgid ""
+"After a ballot has been tallied, the generated result file and its hash "
+"will be sent to %(tally)s."
+msgstr ""
+"Nachdem eine Abstimmung ausgezählt wurde, wird die generierte Ergebnis "
+"Datei und ihr Hash an %(tally)s gesendet."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:122
+#, python-format
+msgid ""
+"To ensure that the result file has not been modified on the CdE server, "
+"we show the hash of the stored result file here, so you can compare those"
+" two. Of course, you can also download the result file and calculate the "
+"%(algorithm)s hash by yourself."
+msgstr ""
+"Um sicherzustellen das die Ergebnis Datei auf dem CdE Server nicht "
+"verändert wurde, wird hier der Hash der gespeicherten Ergebnis Datei "
+"angezeigt, damit ihr diesen mit dem verschickten Hash abgleichen könnt. "
+"Natürlich kannst du die Ergebnis Datei auch herunterladen und ihren "
+"%(algorithm)s Hash selbst berechnen."
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:132
+msgid "Votes"
+msgstr "Stimmen"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:138
+#: cdedb/frontend/templates/web/event/stats.tmpl:52
+#: cdedb/frontend/templates/web/event/stats.tmpl:102
+msgid "Count"
+msgstr "Anzahl"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:168
+msgid "Your Vote"
+msgstr "Deine Stimme"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:173
+msgid "Voters"
+msgstr "Wähler"
 
 #: cdedb/frontend/templates/web/assembly/summary_ballots.tmpl:31
 msgid "No ballots have been tallied yet."
@@ -5307,7 +5420,6 @@ msgid "View Your %(link)s."
 msgstr "Du kannst deine %(link)s ansehen."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:62
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:19
 msgid "existing Direct Debit Authorization"
 msgstr "bestehende Einzugsermächtigung"
 
@@ -5361,7 +5473,7 @@ msgid ""
 msgstr "Um Dein Guthaben aufzufüllen, überweise bitte Geld auf folgendes Konto:"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:117
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:72
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:81
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:48
 msgid "Account holder"
 msgstr "Kontoinhaber"
@@ -5369,7 +5481,7 @@ msgstr "Kontoinhaber"
 #: cdedb/frontend/templates/web/cde/index.tmpl:121
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:28
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:57
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:69
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:74
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:57
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:52
 msgid "IBAN"
@@ -5408,7 +5520,7 @@ msgstr "Einzugsermächtigung bearbeiten"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:24
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:139
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:53
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:58
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:23
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:41
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:83
@@ -5418,8 +5530,8 @@ msgstr "Mitglied"
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:26
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:55
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:141
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:66
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:127
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:71
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:136
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:55
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:29
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:25
@@ -5475,10 +5587,10 @@ msgstr ""
 "rückgängig gemacht werden."
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:19
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:28
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:29
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:33
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:34
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:38
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:39
 msgid "This action cannot be undone."
 msgstr "Diese Aktion kann nicht rückgängig gemacht werden."
 
@@ -5487,7 +5599,7 @@ msgid "Direct Debits will be created."
 msgstr "Lastschriften werden initialisiert."
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:23
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:31
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:36
 msgid "Direct Debit will be created."
 msgstr "Lastschrift wird initialisiert."
 
@@ -5514,17 +5626,17 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:59
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:88
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:100
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:109
 msgid "Create SEPA-PAIN-file"
 msgstr "SEPA-PAIN-Datei erstellen"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:67
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:107
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:116
 msgid "Perform Direct Debit"
 msgstr "Bankeinzug ausführen"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:75
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:114
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:123
 msgid "Skip Direct Debit"
 msgstr "Überspringen"
 
@@ -5597,17 +5709,17 @@ msgid "All selected:"
 msgstr "Alle ausgewählten:"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:183
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:155
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:164
 msgid "Success"
 msgstr "Erfolg"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:184
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:165
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:174
 msgid "Failed"
 msgstr "Geplatzt"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:185
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:175
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:184
 msgid "Cancelled"
 msgstr "Abbruch"
 
@@ -5619,66 +5731,66 @@ msgstr "Aktuell befinden sich keine Einzüge in der Schwebe."
 msgid "All active Authorizations"
 msgstr "Alle aktiven Einzugsermächtigungen"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:6
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:12
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:14
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:21
 #: cdedb/frontend/templates/web/core/show_user.tmpl:245
 msgid "Direct Debit Authorization"
 msgstr "Einzugsermächtigung"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:44
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:49
 msgid "Revoke Direct Debit Authorization"
 msgstr "Einzugsermächtigung widerrufen"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:50
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:55
 msgid "Active Direct Debit Authorization"
 msgstr "Aktive Einzugsermächtigung"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:56
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:61
 msgid "Submitted by"
 msgstr "Erteilt durch"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:77
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:86
 msgid "Acc. holder’s address"
 msgstr "Anschrift Kontoinhaber"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:82
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:91
 msgid "Granted"
 msgstr "Erteilt"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:87
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:96
 msgid "No active Direct Debit Authorization"
 msgstr "Keine aktive Einzugsermächtigung"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:93
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:102
 msgid "Transactions"
 msgstr "Getätigte Lastschriften"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:123
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:132
 msgid "Created"
 msgstr "Erstellt"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:124
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:133
 msgid "Finalized"
 msgstr "Finalisiert"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:125
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:134
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:214
 msgid "Semester"
 msgstr "Semester"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:128
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:137
 msgid "Transaction"
 msgstr "Buchung"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:129
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:138
 msgid "Creator"
 msgstr "Ersteller"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:185
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:194
 msgid "Donation receipt"
 msgstr "Spendenbescheinigung"
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:194
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:203
 msgid "Reverse"
 msgstr "Rückbuchung"
 
@@ -10567,11 +10679,6 @@ msgstr "Abgemeldet"
 msgid "Rejected"
 msgstr "Abgelehnt"
 
-#: cdedb/frontend/templates/web/event/stats.tmpl:52
-#: cdedb/frontend/templates/web/event/stats.tmpl:102
-msgid "Count"
-msgstr "Anzahl"
-
 #: cdedb/frontend/templates/web/event/stats.tmpl:84
 msgid "Course Statistics"
 msgstr "Kursstatistik"
@@ -11044,7 +11151,9 @@ msgstr "Gedruckter exPuls"
 msgid "Create User"
 msgstr "Nutzer anlegen"
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:60
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:64
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:16
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:30
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:34
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:61
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:33
@@ -11130,7 +11239,7 @@ msgstr "Mitgliedsbeitrag-Guthaben"
 msgid "Searchability Decided"
 msgstr "Suchbarkeit entschieden"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:152
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:156
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:59
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:40
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:31
@@ -11644,12 +11753,12 @@ msgstr "Log-Seitennavigation"
 msgid "First"
 msgstr "Erste"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:168
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:176
 #: cdedb/frontend/templates/web/logging.tmpl:150
 msgid "Previous"
 msgstr "Vorherige"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:172
+#: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:180
 #: cdedb/frontend/templates/web/logging.tmpl:178
 msgid "Next"
 msgstr "Nächste"
@@ -12205,9 +12314,6 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_result.tmpl:223
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:78
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:168
 #: cdedb/frontend/templates/web/util.tmpl:203
 msgid "Help"
 msgstr "Hilfe"
@@ -13490,7 +13596,7 @@ msgstr "Vorhersehbare Ersetzungen wie „@“ statt „a“ helfen nicht wirklic
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:317
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:325
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:67
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:44
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:34
@@ -14160,7 +14266,7 @@ msgstr "Muss angegeben werden falls das Quorum benutzt wird."
 msgid "Must specify a quorum if vote extension end is given."
 msgstr "Ein Quorum muss angegeben werden, wenn eine Verlängerung angegeben ist."
 
-#: cdedb/frontend/assembly.py:1494 cdedb/validation.py:4121
+#: cdedb/frontend/assembly.py:1580 cdedb/validation.py:4121
 msgid "Mustn’t be the bar shortname."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
