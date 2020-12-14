@@ -906,10 +906,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
             # redirect to show_ballot if the ballot has not been tallied yet
             if ballot_id in self.BALLOT_STATES['tallied']:
-                self.assertTitle(f"Result ({assembly['title']}/{ballot['title']})")
+                self.assertTitle(f"Ergebnis ({assembly['title']}/{ballot['title']})")
             else:
                 self.assertTitle(f"{ballot['title']} ({assembly['title']})")
-                self.assertPresence("Ballot has not been tallied.", div='notifications')
+                self.assertPresence("Abstimmung wurde noch nicht ausgezählt.", div='notifications')
                 continue
 
             save = self.response
@@ -938,13 +938,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             # check pagination
             if ballot_id == 7:
                 self.traverse({'description': 'Vorherige'})
-                self.assertTitle("Result (Kanonische Beispielversammlung/Eine damals wichtige Frage)")
+                self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Eine damals wichtige Frage)")
                 self.response = save
                 self.traverse({'description': 'Nächste'})
-                self.assertTitle("Result (Kanonische Beispielversammlung/Wahl des Finanzvorstands)")
+                self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wahl des Finanzvorstands)")
             elif ballot_id == 10:
                 self.traverse({'description': 'Vorherige'})
-                self.assertTitle("Result (Kanonische Beispielversammlung/Wahl des Finanzvorstands)")
+                self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wahl des Finanzvorstands)")
                 self.response = save
                 self.assertNonPresence("Nächste")
             elif ballot_id == 1:
