@@ -19,6 +19,34 @@ import cdedb.database.constants as const
 class AssemblyTestHelpers(FrontendTest):
     """This class contains only helpers and no tests."""
 
+    # order ballot ids in some semantic categories
+    BALLOT_TYPES = {
+        'classical': {3, 4, 6, 7, 8, 9, 11, 12},
+        'preferential': {1, 2, 5, 10, 13, 14, 15, 16}
+    }
+    BALLOT_STATES = {
+        'edit': {2, 16},
+        'voting': {3, 4, 5, 11, 12, 13, 14},
+        'extended': {8, 15},
+        'tallied': {1, 6, 7, 8, 9, 10},
+    }
+    BALLOTS_ARCHIVED = {7, 8, 9, 10}
+
+    # a mixture of ballot ids representing every combination of type and state,
+    # including archived
+    CANONICAL_BALLOTS = {
+        # TODO add classical ballot in edit state
+        3,  # voting, classical
+        8,  # extended, classical
+        6,  # tallied, classical
+        7,  # archived, classical
+        2,  # edit, preferential
+        5,  # voting, preferential
+        15,  # extended, preferential
+        1,  # tallied, preferential
+        10,  # archived, preferential
+    }
+
     def _create_assembly(self, adata=None, delta=None):
         if not adata:
             adata = {
