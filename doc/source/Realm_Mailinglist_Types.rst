@@ -102,7 +102,6 @@ General Mailinglists
 
     The following subtypes are supported:
 
-    * Mandatory
     * Opt-in
 
 Semi-public Mailinglists

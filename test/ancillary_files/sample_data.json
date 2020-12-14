@@ -6227,6 +6227,25 @@
             "assembly_id": null
         },
         {
+            "id": 12,
+            "title": "Moderatoren-Liste",
+            "address": "moderatoren@lists.cde-ev.de",
+            "local_part": "moderatoren",
+            "domain": 1,
+            "description": "Für alle Moderatoren von Mailinglisten.",
+            "mod_policy": 3,
+            "attachment_policy": 1,
+            "ml_type": 45,
+            "subject_prefix": "mod",
+            "maxsize": null,
+            "is_active": true,
+            "notes": "Moderatoren haben Spam verdient!",
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
             "id": 51,
             "title": "CdE-All",
             "address": "all@lists.cde-ev.de",
@@ -7077,6 +7096,76 @@
             "mailinglist_id": 11,
             "persona_id": 100,
             "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 4,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 10,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 11,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 12,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 23,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 27,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 100,
+            "subscription_state": 30
         },
         {
             "mailinglist_id": 51,

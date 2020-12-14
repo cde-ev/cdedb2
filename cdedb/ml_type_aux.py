@@ -53,7 +53,7 @@ class AllUsersImplicitMeta:
                                  mailinglist: CdEDBObject) -> Set[int]:
         """Return a set of all current members."""
         check_appropriate_type(mailinglist, cls)  # type: ignore
-        return bc.core.list_all_personas(rs, is_active=True)
+        return bc.core.list_all_personas(rs, is_active=False)
 
 
 class AllMembersImplicitMeta:
@@ -65,7 +65,7 @@ class AllMembersImplicitMeta:
                                  mailinglist: CdEDBObject) -> Set[int]:
         """Return a set of all current members."""
         check_appropriate_type(mailinglist, cls)  # type: ignore
-        return bc.core.list_current_members(rs, is_active=True)
+        return bc.core.list_current_members(rs, is_active=False)
 
 
 class EventAssociatedMeta:
@@ -706,7 +706,8 @@ TYPE_MAP = {
     MailinglistTypes.assembly_associated: AssemblyAssociatedMailinglist,
     MailinglistTypes.assembly_opt_in: AssemblyOptInMailinglist,
     MailinglistTypes.assembly_presider: AssemblyPresiderMailinglist,
-    MailinglistTypes.general_mandatory: GeneralMandatoryMailinglist,
+    # TODO This waits for some cleanup of ex-members
+    # MailinglistTypes.general_mandatory: GeneralMandatoryMailinglist,
     MailinglistTypes.general_opt_in: GeneralOptInMailinglist,
     MailinglistTypes.general_moderators: GeneralModeratorMailinglist,
     MailinglistTypes.semi_public: SemiPublicMailinglist,

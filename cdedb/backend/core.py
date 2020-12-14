@@ -561,8 +561,11 @@ class CoreBackend(AbstractBackend):
     @internal
     @access("ml")
     def list_all_moderators(self, rs: RequestState) -> Set[int]:
-        """List all moderators of any mailinglists. Due to architectural limitations,
-        this is found here instead of in the MlBackend."""
+        """List all moderators of any mailinglists.
+
+        Due to architectural limitations of the BackendContainer used for
+        mailinglist types, this is found here instead of in the MlBackend.
+        """
         query = "SELECT DISTINCT persona_id from ml.moderators"
         data = self.query_all(rs, query, params=tuple())
         return {e["persona_id"] for e in data}

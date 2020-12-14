@@ -13370,7 +13370,7 @@ msgid "MailinglistTypes.general_opt_in"
 msgstr "Öffentlich (Opt-in)"
 
 #: cdedb/i18n_additional.py:276
-msgid "MailinglistTypes.general_moderatirs"
+msgid "MailinglistTypes.general_moderators"
 msgstr "Alle Moderatoren"
 
 #: cdedb/i18n_additional.py:277
