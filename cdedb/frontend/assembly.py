@@ -1167,6 +1167,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
 
+        if self._update_ballot_state(rs, ballot):
+            return self.redirect(rs, "assembly/show_ballot_result")
+
         if not ballot['is_tallied']:
             rs.notify("error", n_("Ballot has not been tallied."))
             return self.redirect(rs, "assembly/show_ballot")
