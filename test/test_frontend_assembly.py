@@ -895,6 +895,66 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
             self.assertEqual(json.load(f), json.loads(self.response.body))
 
+    @as_users("anton")
+    def test_ballot_result_page(self, user):
+        for ballot_id in self.CANONICAL_BALLOTS:
+            ballot = self.sample_data['assembly.ballots'][ballot_id]
+            assembly = self.sample_data['assembly.assemblies'][ballot['assembly_id']]
+            self.get(f'/assembly/assembly/{assembly["id"]}/ballot/{ballot_id}/result')
+            # redirect in case of tallying, extending etc
+            self.follow()
+
+            # redirect to show_ballot if the ballot has not been tallied yet
+            if ballot_id in self.BALLOT_STATES['tallied']:
+                self.assertTitle(f"Result ({assembly['title']}/{ballot['title']})")
+            else:
+                self.assertTitle(f"{ballot['title']} ({assembly['title']})")
+                self.assertPresence("Ballot has not been tallied.", div='notifications')
+                continue
+
+            save = self.response
+
+            # check the download result file
+            self.traverse({'description': 'Ergebnisdatei herunterladen'})
+            self.assertPresence(f'"assembly": "{assembly["title"]}",')
+            #self.assertPresence(f'"ballot": "{ballot["title"]}",')
+            self.assertPresence('"result": ')
+            self.assertPresence('"candidates": ')
+            self.assertPresence('"use_bar": ')
+            self.assertPresence('"voters": ')
+            self.assertPresence('"votes": ')
+
+            # check if the verification scripts are present
+            # TODO expose the static files in our test suite
+            # self.response = save
+            # self.traverse({'description': 'Download Result Verification Script'})
+            # self.assertPresence("Skript um die Auszählung in Ergebnisdateien von Wahlen zu verifizieren.")
+            # self.response = save
+            # self.traverse({'description': 'Download Own Vote Verification Script'})
+            # self.assertPresence("Skript um Stimmen in Ergebnisdateien von Wahlen zu verifizieren.")
+
+            self.response = save
+
+            # check pagination
+            if ballot_id == 7:
+                self.traverse({'description': 'Vorherige'})
+                self.assertTitle("Result (Kanonische Beispielversammlung/Eine damals wichtige Frage)")
+                self.response = save
+                self.traverse({'description': 'Nächste'})
+                self.assertTitle("Result (Kanonische Beispielversammlung/Wahl des Finanzvorstands)")
+            elif ballot_id == 10:
+                self.traverse({'description': 'Vorherige'})
+                self.assertTitle("Result (Kanonische Beispielversammlung/Wahl des Finanzvorstands)")
+                self.response = save
+                self.assertNonPresence("Nächste")
+            elif ballot_id == 1:
+                # we dont have links to traverse to neighbour ballots, since no other
+                # is tallied
+                self.assertNonPresence("Vorherige")
+                self.assertNonPresence("Nächste")
+
+            self.response = save
+
     @as_users("werner")
     def test_extend(self, user):
         self.traverse({'description': 'Versammlungen'},
