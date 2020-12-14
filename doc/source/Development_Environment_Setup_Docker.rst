@@ -52,8 +52,8 @@ Initializing the containers
 
 Before you start using the containers you have to initialize a few things.
 Most importantly this includes seeding the postgres database.
-However if you have not yet run the ``i18n-compile`` and ``doc`` make targets
-these should also be executed (from either inside or outside the container).
+However if you have not run the ``i18n-compile`` and ``doc`` make targets yet,
+you should also call them to ensure everything is available.
 To do this you can run the following:
 
 .. code-block:: console
@@ -68,11 +68,22 @@ To do this you can run the following:
     $ cd related/docker
     $ docker-compose exec app make sql-seed-database
 
-The ``make`` and ``sed`` commands could also have been executed
-from inside the docker container
-but this would have lead to them being owned by root.
+.. note::
+    The ``make sample-data`` target is not available inside the container.
+    This is due to the container not having direct access to the database
+    and therefore not being able to reset the schema.
+    Instead ``make sql-seed-database`` is provided to clear and fill the DB.
+    If you want to fully reset the database including the schema
+    you should look under `Resetting the containers`_.
 
-.. todo:: Configure container to run commands unprivileged
+.. warning::
+
+    Currently is is advised to run make targets which generate files
+    from the host to ensure proper permissions on the files.
+    You may also experiment with executing them from within the containers
+    when running as another user however this is somewhat complicated.
+    Properly mapping the container user to the host user is a future TODO.
+
 
 Using the containers
 --------------------
@@ -95,3 +106,26 @@ Some development commands like ``pylint`` are however not installed
 inside the containers to keep them light and should be run locally.
 For more information refer to the ``docker``/``docker-compose`` documentation
 or execute ``docker-compose help``.
+
+
+Resetting the containers
+------------------------
+
+The containers store their state in two volumes.
+You can list these using ``docker volume ls``.
+When starting the containers using ``docker-compose`` they get a proper name
+which is generated from the name set in the ``docker-compose.yaml`` file
+and the parent folder of that file.
+
+The volumes used should therefore be named
+``docker_database`` and ``docker_files``.
+The former is attached to the postgres container and stores the database
+while the latter stores uploaded attachments and similar files.
+
+You can delete these volumes using ``docker volume rm VOLUME``.
+This can however only be done when the containers are not running.
+Execute ``docker-compose down`` to properly stop the containers.
+To remove all volumes you can simply run ``docker-compose down --volumes``.
+
+Upon start postgres will now regenerate the database scheme
+similar to running ``make sample-data``.
