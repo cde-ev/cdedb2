@@ -33,7 +33,7 @@
 
 
 {% macro show_status() -%}
-    <dl class="dl-horizontal mosp">
+    <dl class="dl-horizontal mosp" id="ballot-status">
         <dt>{% trans %}Period{% endtrans %}</dt>
         <dd id="voting-period">
             {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),

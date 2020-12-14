@@ -6,12 +6,14 @@ import time
 import webtest
 import unittest
 import json
+import datetime
 
 from test.common import as_users, USER_DICT, FrontendTest, MultiAppFrontendTest
 
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, now, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 )
+from cdedb.frontend.common import datetime_filter, staticurl
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
 
@@ -527,6 +529,38 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Mehr Details'})
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
+
+    @as_users("berta")
+    def test_show_ballot_status(self, user):
+        reference_time = now()
+        for ballot_id in self.CANONICAL_BALLOTS:
+            ballot = self.sample_data['assembly.ballots'][ballot_id]
+            assembly = self.sample_data['assembly.assemblies'][ballot['assembly_id']]
+            self.get(f'/assembly/assembly/{assembly["id"]}/ballot/{ballot_id}/show')
+            # redirect in case of tallying, extending etc
+            self.follow()
+            self.assertTitle(f"{ballot['title']} ({assembly['title']})")
+
+            # check ballot status
+            vote_begin = datetime_filter(reference_time if ballot['vote_begin'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_begin']), lang='de')
+            vote_end = datetime_filter(reference_time if ballot['vote_end'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_end']), lang='de')
+            # TODO how to use nearly_now here?
+            # self.assertPresence(f"{vote_begin} bis {vote_end}", div='ballot-status')
+            # # TODO process quorum right
+            # if ballot_id in self.BALLOT_STATES['extended']:
+            #     vote_extension_end = datetime_filter(reference_time if ballot['vote_extension_end'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_extension_end']), lang='de')
+            # else:
+            #     vote_extension_end = None
+            # self.assertPresence(
+            #     f"Wurde bis {vote_extension_end} verlängert, da {ballot['abs_quorum']} Stimmen nicht erreicht wurden.",
+            #     div='ballot-status', condition=ballot_id in self.BALLOT_STATES['extended'])
+            self.assertPresence(
+                "Diese Abstimmung hat noch nicht begonnen.", div='ballot-status',
+                condition=ballot_id in self.BALLOT_STATES['edit'])
+            self.assertPresence(
+                "Die Abstimmung läuft.", div='ballot-status',
+                condition=(ballot_id in self.BALLOT_STATES['voting']
+                           or ballot_id in self.BALLOT_STATES['extended']))
 
     @as_users("garcia")
     def test_show_ballot_without_attendance(self, user):
