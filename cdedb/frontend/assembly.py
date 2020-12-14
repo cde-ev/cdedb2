@@ -1115,7 +1115,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
 
         vote_dict = self._retrieve_own_vote(rs, ballot, secret=None)
-        merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
+        # convert the own_vote in a shape which can be consumed by the (classical or
+        # preferential) vote form
+        if ballot['votes']:
+            merge_dicts(rs.values, {'vote': vote_dict['own_vote'].split('=')
+                                            if vote_dict['own_vote'] else None})
+        else:
+            merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
+
 
         # this is used for the flux candidate table
         current = {
