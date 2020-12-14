@@ -722,7 +722,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
 
     @as_users("werner", "inga", "kalif")
-    def test_vote(self, user):
+    def test_preferential_vote(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},
