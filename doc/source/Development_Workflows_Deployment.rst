@@ -31,3 +31,8 @@ following steps to deploy a new revision.
   If commits with deployment relevance exist, the call to the script needs
   to be replaced by the commands inside the script interspersed with the
   server adjustments.
+
+  .. note:: Database evolutions should be applied via the following
+            invocation::
+
+                sudo -u cdb psql -U cdb -d cdb -f evolution.sql
