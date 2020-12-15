@@ -405,7 +405,7 @@ class CoreFrontend(AbstractFrontend):
             prefix=persona['title'] or '',
             suffix=persona['name_supplement'] or '')
         j.add('fn')
-        j.fn.value = f"{persona['given_names']} {persona['family_name']}"
+        j.fn.value = f"{persona['given_names'] or ''} {persona['family_name'] or ''}"
         j.add('nickname')
         j.nickname.value = persona['display_name'] or ''
 
@@ -421,9 +421,10 @@ class CoreFrontend(AbstractFrontend):
                 country=persona['country'] or '')
 
         # Contact data
-        j.add('email')
-        j.email.value = persona['username']
-        j.email.type_param = 'INTERNET'
+        if persona['username']:
+            j.add('email')
+            j.email.value = persona['username']
+            j.email.type_param = 'INTERNET'
         if persona['telephone']:
             j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'VOICE')], persona['telephone']))
         if persona['mobile']:
