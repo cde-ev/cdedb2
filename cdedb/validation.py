@@ -740,7 +740,7 @@ def _cdedbid(
 ) -> CdedbID:
     val = _str(val, argname, **kwargs).strip()  # TODO is strip necessary here?
     match = re.search('^DB-(?P<value>[0-9]*)-(?P<checkdigit>[0-9X])$', val)
-    if match is None:  # TODO should we always use is None or test for truthy?
+    if not match:
         raise ValidationSummary(ValueError(argname, n_("Wrong formatting.")))
 
     value = _id(match["value"], argname, **kwargs)
@@ -754,7 +754,7 @@ def _printable_ascii_type(
     val: Any, argname: str = None, **kwargs: Any
 ) -> PrintableASCIIType:
     val = _str_type(val, argname, **kwargs)
-    if re.search(r'^[ -~]*$', val) is None:
+    if not re.search(r'^[ -~]*$', val):
         raise ValidationSummary(ValueError(
             argname, n_("Must be printable ASCII.")))
     return PrintableASCIIType(val)
@@ -778,7 +778,7 @@ def _alphanumeric(
     val: Any, argname: str = None, **kwargs: Any
 ) -> Alphanumeric:
     val = _printable_ascii(val, argname, **kwargs)
-    if re.search(r'^[a-zA-Z0-9]+$', val) is None:
+    if not re.search(r'^[a-zA-Z0-9]+$', val):
         raise ValidationSummary(ValueError(
             argname, n_("Must be alphanumeric.")))
     return Alphanumeric(val)
@@ -789,7 +789,7 @@ def _csv_alphanumeric(
     val: Any, argname: str = None, **kwargs: Any
 ) -> CSVAlphanumeric:
     val = _printable_ascii(val, argname, **kwargs)
-    if re.search(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$', val) is None:
+    if not re.search(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$', val):
         raise ValidationSummary(ValueError(argname, n_(
             "Must be comma separated alphanumeric.")))
     return CSVAlphanumeric(val)
@@ -803,7 +803,7 @@ def _identifier(
     events.
     """
     val = _printable_ascii(val, argname, **kwargs)
-    if re.search(r'^[a-zA-Z0-9_.-]+$', val) is None:
+    if not re.search(r'^[a-zA-Z0-9_.-]+$', val):
         raise ValidationSummary(ValueError(argname, n_(
             "Must be an identifier (only letters,"
             " numbers, underscore, dot and hyphen).")))
@@ -820,7 +820,7 @@ def _restrictive_identifier(
     One example are sql column names.
     """
     val = _printable_ascii(val, argname, **kwargs)
-    if re.search(r'^[a-zA-Z0-9_]+$', val) is None:
+    if not re.search(r'^[a-zA-Z0-9_]+$', val):
         raise ValidationSummary(ValueError(argname, n_(
             "Must be a restrictive identifier (only letters,"
             " numbers and underscore).")))
@@ -832,7 +832,7 @@ def _csv_identifier(
         val: Any, argname: str = None, **kwargs: Any
 ) -> CSVIdentifier:
     val = _printable_ascii(val, argname, **kwargs)
-    if re.search(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$', val) is None:
+    if not re.search(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$', val):
         raise ValidationSummary(ValueError(argname, n_(
             "Must be comma separated identifiers.")))
     return CSVIdentifier(val)
@@ -947,7 +947,7 @@ def _email(
     # TODO why is this necessary
     # strip address and normalize to lower case
     val = val.strip().lower()
-    if re.search(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$', val) is None:
+    if not re.search(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$', val):
         raise ValidationSummary(ValueError(
             argname, n_("Must be a valid email address.")))
     return Email(val)
@@ -963,7 +963,7 @@ def _email_local_part(
     val = _printable_ascii(val, argname, **kwargs)
     # strip address and normalize to lower case
     val = val.strip().lower()
-    if not re.match(r'^[a-z0-9._+-]+$', val):  # TODO inspect match vs search
+    if not re.search(r'^[a-z0-9._+-]+$', val):
         raise ValidationSummary(ValueError(
             argname, n_("Must be a valid email local part.")))
     return EmailLocalPart(val)
