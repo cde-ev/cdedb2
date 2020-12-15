@@ -513,7 +513,7 @@ def _float(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> float:
     if _convert:
-        try:  # TODO why not test for string/bytes here like in _int
+        try:
             val = float(val)
         except (ValueError, TypeError) as e:
             raise ValidationSummary(ValueError(
