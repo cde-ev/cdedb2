@@ -362,7 +362,7 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
         vcard = self.create_vcard(rs, persona_id)
-        return self.send_file(rs, data=vcard, mimetype='text/vCard', filename='vcard.vcf')
+        return self.send_file(rs, data=vcard, mimetype='text/vcard', filename='vcard.vcf')
 
     @access("member")
     @REQUESTdata(("confirm_id", "#int"))
@@ -528,7 +528,6 @@ class CoreFrontend(AbstractFrontend):
                     access_levels.add("core")
                     access_levels.add(realm)
         # Members see other members (modulo quota)
-        # TODO should we here check for "member" in rs.user.roles?
         if "searchable" in rs.user.roles and quote_me:
             if (not rs.ambience['persona']['is_searchable']
                     and "cde_admin" not in access_levels):
@@ -603,9 +602,7 @@ class CoreFrontend(AbstractFrontend):
             data['username'] = total['username']
 
         # Determinate if vcard should be visible
-        data['show_vcard'] = False
-        if "cde" in access_levels and "cde" in roles:
-            data['show_vcard'] = True
+        data['show_vcard'] = "cde" in access_levels and "cde" in roles
 
         # Cull unwanted data
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
