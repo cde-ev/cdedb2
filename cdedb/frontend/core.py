@@ -433,14 +433,6 @@ class CoreFrontend(AbstractFrontend):
             # TODO include website
             pass
 
-        # Photo
-        #if persona['foto']:
-        #    j.add(vobject.vcard.ContentLine('PHOTO',
-        #                                    [('TYPE', 'JPEG'), ('ENCODING', 'b')],
-        #                                    base64.b64encode(
-        #                                        user['jpegPhoto']).decode(),
-        #                                    encoded=True))
-
         # Birthday
         if persona['birthday']:
             j.add('bday')
