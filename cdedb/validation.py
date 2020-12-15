@@ -625,13 +625,12 @@ def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
 @_add_typed_validator
 def _bytes(
     val: Any, argname: str = None, *,
-    _convert: bool = True, encoding: str = None, **kwargs: Any
+    _convert: bool = True, encoding: str = "utf-8", **kwargs: Any
 ) -> bytes:
     if _convert:
         if isinstance(val, str):
-            if not encoding:  # TODO are there cases where we do not use utf-8?
-                raise RuntimeError(  # TODO should this be a validation error?
-                    "Not encoding specified to convert str to bytes.")
+            if not encoding:
+                raise RuntimeError("Not encoding specified to convert str to bytes.")
             val = val.encode(encoding=encoding)
         else:
             try:
