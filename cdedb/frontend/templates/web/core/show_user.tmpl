@@ -95,9 +95,9 @@
         </div>
     {% endif %}
 
-    {# Profile photo/avatar #}
-    {% if 'foto' in data %}
-        <div class="pull-right-responsive text-right-responsive">
+    <div class="pull-right-responsive text-right-responsive">
+        {# Profile photo/avatar #}
+        {% if 'foto' in data %}
             <div id="profile-foto">
                 {% if data['foto'] %}
                     <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']}) }}"
@@ -112,19 +112,19 @@
                             aclass="btn btn-xs btn-warning", icon="pen") }}
                 {% endif %}
             </div>
+        {% endif %}
 
-            {% if data['vcard'] %}
-                <div id="vcard">
-                    <img src="{{ cdedblink('core/qr_vcard', {'vcard': data['vcard']}) }}"
-                         alt="{{ gettext("Vcard") }}" class="img-thumbnail qrcode">
-                    <br />
-                    {{ util.href(cdedblink("core/download_vcard", {'vcard': data['vcard']}), "VCard", icon='download') }}
-                </div>
-
-
-            {% endif %}
-        </div>
-    {% endif %}
+        {% if data['show_vcard'] %}
+            <div id="vcard">
+                {% set confirm_id = encode_parameter("core/qr_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
+                <img src="{{ cdedblink('core/qr_vcard', {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}"
+                     alt="{{ gettext("Vcard") }}" class="img-thumbnail qrcode">
+                <br />
+                {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
+                {{ util.href(cdedblink("core/download_vcard", {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}), "VCard", icon='download') }}
+            </div>
+        {% endif %}
+    </div>
 
     <div class="float-along">
         <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>

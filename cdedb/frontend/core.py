@@ -356,18 +356,21 @@ class CoreFrontend(AbstractFrontend):
         return response
 
     @access("member")
-    def download_vcard(self, rs: RequestState, vcard: str) -> Response:
-        rs.ignore_validation_errors()
-        # since the vcard may contain '/', we have to quote and unquote the vcard string
-        vcard = werkzeug.url_unquote(vcard)
+    @REQUESTdata(("confirm_id", "#int"))
+    def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
+        if persona_id != confirm_id or rs.has_validation_errors():
+            return self.index(rs)
 
+        vcard = self.create_vcard(rs, persona_id)
         return self.send_file(rs, data=vcard, mimetype='text/vCard', filename='vcard.vcf')
 
     @access("member")
-    def qr_vcard(self, rs: RequestState, vcard: str) -> Response:
-        rs.ignore_validation_errors()
-        # since the vcard may contain '/', we have to quote and unquote the vcard string
-        vcard = werkzeug.url_unquote(vcard)
+    @REQUESTdata(("confirm_id", "#int"))
+    def qr_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
+        if persona_id != confirm_id or rs.has_validation_errors():
+            return self.index(rs)
+
+        vcard = self.create_vcard(rs, persona_id)
 
         qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
                            box_size=5, border=1)
@@ -591,17 +594,17 @@ class CoreFrontend(AbstractFrontend):
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
-            if "member" in rs.user.roles:
-                vcard = self.create_vcard(rs, persona_id)
-                # since the vcard may contain '/', we have to quote and unquote the
-                # vcard string
-                data['vcard'] = werkzeug.url_quote(vcard, unsafe='/')
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
             total = self.coreproxy.get_total_persona(rs, persona_id)
             data['notes'] = total['notes']
             data['username'] = total['username']
+
+        # Determinate if vcard should be visible
+        data['show_vcard'] = False
+        if "cde" in access_levels and "cde" in roles:
+            data['show_vcard'] = True
 
         # Cull unwanted data
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
