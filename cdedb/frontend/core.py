@@ -11,14 +11,14 @@ import datetime
 import operator
 import decimal
 import itertools
-import vobject
-import qrcode
-from qrcode.image import svg as qrcode_svg
 import lxml
 
 import magic
 import werkzeug.exceptions
 from werkzeug import Response
+import vobject
+import qrcode
+from qrcode.image import svg as qrcode_svg
 
 from typing import (
     Optional, Collection, Set, cast, List, Tuple, Any, Dict,
