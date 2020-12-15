@@ -48,8 +48,6 @@ which might change externally like german postal codes.
 """
 
 import copy
-import datetime
-import decimal
 import distutils.util
 import functools
 import io
@@ -62,19 +60,13 @@ import string
 import sys
 from enum import Enum
 from typing import (
-    Any,
     Callable,
     Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
     Sequence,
     Set,
     Tuple,
     Type,
     TypeVar,
-    Union,
     cast,
     get_type_hints,
     overload,
@@ -83,6 +75,7 @@ from typing import (
 import magic
 import PIL.Image
 import pytz
+import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
 
@@ -93,7 +86,6 @@ from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     INFINITE_ENUM_MAGIC_NUMBER,
     REALM_SPECIFIC_GENESIS_FIELDS,
-    CdEDBObject,
     CdEDBObjectMap,
     Error,
     InfiniteEnum,
@@ -111,7 +103,6 @@ from cdedb.query import (
     MULTI_VALUE_OPERATORS,
     NO_VALUE_OPERATORS,
     VALID_QUERY_OPERATORS,
-    Query,
     QueryOperators,
 )
 from cdedb.validationdata import (
@@ -277,7 +268,7 @@ def _add_typed_validator(fun: F, return_type: Type[Any] = None) -> F:
         raise RuntimeError(f"Type {return_type} already registered")
     _ALL_TYPED[return_type] = fun
     allow_none = _allow_None(fun)
-    _ALL_TYPED[Optional[return_type]] = allow_none # type: ignore
+    _ALL_TYPED[Optional[return_type]] = allow_none  # type: ignore
     setattr(current_module, allow_none.__name__, allow_none)
 
     return fun
@@ -646,8 +637,9 @@ def _bytes(
             try:
                 val = bytes(val)
             except ValueError as e:
-                raise ValidationSummary(ValueError(argname, n_("Cannot convert {val} to bytes."),
-                                                   {'val': val})) from e
+                raise ValidationSummary(
+                    ValueError(argname, n_("Cannot convert {val_type} to bytes."),
+                               {'val_type': str(type(val))})) from e
     if not isinstance(val, bytes):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a bytes object.")))
@@ -657,7 +649,7 @@ def _bytes(
 @_add_typed_validator
 def _mapping(
     val: Any, argname: str = None, **kwargs: Any
-) -> Mapping: # type: ignore # type parameters would break this (for now)
+) -> Mapping:  # type: ignore # type parameters would break this (for now)
     """
     :param _convert: is ignored since no useful default conversion is available
     """
@@ -669,7 +661,7 @@ def _mapping(
 @_add_typed_validator
 def _iterable(
     val: Any, argname: str = None, **kwargs: Any
-) -> Iterable: # type: ignore # type parameters would break this (for now)
+) -> Iterable:  # type: ignore # type parameters would break this (for now)
     """
     :param _convert: is ignored since no useful default conversion is available
     """
@@ -681,7 +673,7 @@ def _iterable(
 @_add_typed_validator
 def _sequence(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
-) -> Sequence: # type: ignore # type parameters would break this (for now)
+) -> Sequence:  # type: ignore # type parameters would break this (for now)
     if _convert:
         try:
             val = tuple(val)
@@ -728,9 +720,8 @@ def _empty_list(
 ) -> EmptyList:
     if _convert:  # TODO why do we convert here but not for _empty_dict?
         val = list(_iterable(val, argname, _convert=_convert, **kwargs))
-    if val != []:
-        raise ValidationSummary(
-            ValueError(argname, n_("Must be an empty list.")))
+    if val:
+        raise ValidationSummary(ValueError(argname, n_("Must be an empty list.")))
     return EmptyList(val)
 
 
@@ -852,7 +843,7 @@ def _csv_identifier(
 # TODO manual handling of @_add_typed_validator inside decorator or storage?
 @_add_typed_validator
 def _list_of(
-    val: Any, type: Type[T],
+    val: Any, atype: Type[T],
     argname: str = None, *,
     _convert: bool = True, _allow_empty: bool = True, **kwargs: Any
 ) -> List[T]:
@@ -874,8 +865,7 @@ def _list_of(
     errs = ValidationSummary()
     for v in val:
         try:
-            vals.append(_ALL_TYPED[type](
-                v, argname, _convert=_convert, **kwargs))
+            vals.append(_ALL_TYPED[atype](v, argname, _convert=_convert, **kwargs))
         except ValidationSummary as e:
             errs.extend(e)
     if errs:
@@ -1039,7 +1029,7 @@ def _PERSONA_BASE_CREATION() -> Mapping[str, Any]: return {
 def _PERSONA_CDE_CREATION() -> Mapping[str, Any]: return {
     'title': Optional[str],
     'name_supplement': Optional[str],
-    'gender': _enum_genders, # type: ignore
+    'gender': _enum_genders,  # type: ignore
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1071,7 +1061,7 @@ def _PERSONA_CDE_CREATION() -> Mapping[str, Any]: return {
 def _PERSONA_EVENT_CREATION() -> Mapping[str, Any]: return {
     'title': Optional[str],
     'name_supplement': Optional[str],
-    'gender': _enum_genders, # type: ignore
+    'gender': _enum_genders,  # type: ignore
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1107,7 +1097,7 @@ def _PERSONA_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'family_name': str,
     'title': Optional[str],
     'name_supplement': Optional[str],
-    'gender': _enum_genders, # type: ignore
+    'gender': _enum_genders,  # type: ignore
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1302,12 +1292,11 @@ def parse_datetime(
             except ValueError:
                 pass
     if ret is None:
-        # TODO is isoformat not included above?
         ret = datetime.datetime.fromisoformat(val)
-    # TODO what if ret is still None?
     if ret.tzinfo is None:
-        timezone: pytz.BaseTzInfo = _BASICCONF["DEFAULT_TIMEZONE"]
+        timezone: pytz.tzinfo.DstTzInfo = _BASICCONF["DEFAULT_TIMEZONE"]
         ret = timezone.localize(ret)
+        assert ret is not None
     return ret.astimezone(pytz.utc)
 
 
@@ -1450,13 +1439,13 @@ def _GENESIS_CASE_COMMON_FIELDS() -> Mapping[str, Any]: return {
 
 
 def _GENESIS_CASE_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'case_status': _enum_genesisstati, # type: ignore
+    'case_status': _enum_genesisstati,  # type: ignore
     'reviewer': ID,
 }
 
 
 def _GENESIS_CASE_ADDITIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'gender': _enum_genders, # type: ignore
+    'gender': _enum_genders,  # type: ignore
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1518,7 +1507,7 @@ def _genesis_case(
 def _PRIVILEGE_CHANGE_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'persona_id': ID,
     'submitted_by': ID,
-    'status': _enum_privilegechangestati, # type: ignore
+    'status': _enum_privilegechangestati,  # type: ignore
     'notes': str,
 }
 
@@ -1670,6 +1659,7 @@ def _pair_of_int(
         raise ValidationSummary(ValueError(
             argname, n_("Must contain exactly two elements."))) from e
 
+    # noinspection PyRedundantParentheses
     return (a, b)
 
 
@@ -1695,7 +1685,7 @@ def _period(
     }
 
     return Period(_examine_dictionary_fields(
-        val, {'id': ID}, optional_fields, **kwargs)) # type: ignore
+        val, {'id': ID}, optional_fields, **kwargs))  # type: ignore
 
 
 @_add_typed_validator
@@ -1711,7 +1701,7 @@ def _expuls(
         'addresscheck_count': NonNegativeInt,
     }
     return ExPuls(_examine_dictionary_fields(
-        val, {'id': ID}, optional_fields, **kwargs)) # type: ignore
+        val, {'id': ID}, optional_fields, **kwargs))  # type: ignore
 
 
 def _LASTSCHRIFT_COMMON_FIELDS() -> Mapping[str, Any]: return {
@@ -1801,7 +1791,7 @@ def _iban(
 
 def _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'amount': PositiveDecimal,
-    'status': _enum_lastschrifttransactionstati, # type: ignore
+    'status': _enum_lastschrifttransactionstati,  # type: ignore
     'issued_at': datetime.datetime,
     'processed_at': Optional[datetime.datetime],
     'tally': Optional[decimal.Decimal],
@@ -1971,12 +1961,12 @@ def _safe_str(
     val: Any, argname: str = None, **kwargs: Any
 ) -> SafeStr:
     """This allows alpha-numeric, whitespace and known good others."""
-    ALLOWED = ".,-+()/"
+    allowed_characters = ".,-+()/"
     val = _str(val, argname, **kwargs)
     errs = ValidationSummary()
 
     for char in val:
-        if not (char.isalnum() or char.isspace() or char in ALLOWED):
+        if not (char.isalnum() or char.isspace() or char in allowed_characters):
             # TODO bundle these? e.g. forbidden chars: abc...
             errs.append(ValueError(argname, n_(
                 "Forbidden character (%(char)s)."), {'char': char}))
@@ -1994,7 +1984,7 @@ def _meta_info(
 
     optional_fields = {key: Optional[str] for key in keys}
     val = _examine_dictionary_fields(
-        val, {}, optional_fields, **kwargs) # type: ignore
+        val, {}, optional_fields, **kwargs)  # type: ignore
 
     return MetaInfo(val)
 
@@ -2204,12 +2194,11 @@ def _event(
         msg = n_("Must not have multiple fee modifiers linked to the same"
                  " field in one event part.")
 
-        e1: EventFeeModifier
-        e2: EventFeeModifier
-        for e1, e2 in itertools.combinations(
-                filter(None, val['fee_modifiers'].values()), 2):
-            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:  # type: ignore
-                if e1['part_id'] == e2['part_id']:  # type: ignore
+        aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
+        aniter = itertools.combinations(filter(None, val['fee_modifiers'].values()), 2)
+        for e1, e2 in aniter:
+            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
+                if e1['part_id'] == e2['part_id']:
                     errs.append(ValueError('fee_modifiers', msg))
 
     if errs:
@@ -2248,10 +2237,11 @@ def _event_part(
         optional_fields = _EVENT_PART_COMMON_FIELDS
 
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs) # type: ignore
+        val, mandatory_fields, optional_fields, **kwargs)  # type: ignore
 
     errs = ValidationSummary()
-    if ('part_begin' in val and 'part_end' in val and val['part_begin'] > val['part_end']):
+    if ('part_begin' in val and 'part_end' in val
+            and val['part_begin'] > val['part_end']):
         errs.append(ValueError("part_end", n_("Must be later than begin.")))
 
     if 'tracks' in val:
@@ -2312,7 +2302,8 @@ def _event_track(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if ('num_choices' in val and 'min_choices' in val and val['min_choices'] > val['num_choices']):
+    if ('num_choices' in val and 'min_choices' in val
+            and val['min_choices'] > val['num_choices']):
         raise ValidationSummary(ValueError("min_choices", n_(
             "Must be less or equal than total Course Choices.")))
 
@@ -2320,9 +2311,9 @@ def _event_track(
 
 
 def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    'kind{}'.format(extra_suffix): _enum_fielddatatypes, # type: ignore
-    'association{}'.format(extra_suffix): _enum_fieldassociations, # type: ignore
-    'entries{}'.format(extra_suffix): Any, # type: ignore
+    'kind{}'.format(extra_suffix): _enum_fielddatatypes,  # type: ignore
+    'association{}'.format(extra_suffix): _enum_fieldassociations,  # type: ignore
+    'entries{}'.format(extra_suffix): Any,  # type: ignore
 }
 
 
@@ -2341,8 +2332,8 @@ def _event_field(
 
     field_name_key = "field_name{}".format(extra_suffix)
     if creation:
-        spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix)}
-        spec[field_name_key] = RestrictiveIdentifier
+        spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
+                field_name_key: RestrictiveIdentifier}
         mandatory_fields = spec
         optional_fields: TypeMapping = {}
     else:
@@ -2641,7 +2632,8 @@ def _registration_part(
         'lodgement_id': Optional[ID],
         'is_camping_mat': bool,
     }
-    return RegistrationPart(_examine_dictionary_fields(val, {}, optional_fields, **kwargs))
+    return RegistrationPart(_examine_dictionary_fields(
+        val, {}, optional_fields, **kwargs))
 
 
 # TODO make type of kwargs to be bools only?
@@ -2881,8 +2873,8 @@ def _questionnaire(
 
                 if 'kind' in value:
                     if value['kind'] != k:
-                        errs.append(ValueError('kind',
-                                               n_("Incorrect kind for this part of the questionnaire")))
+                        msg = n_("Incorrect kind for this part of the questionnaire")
+                        errs.append(ValueError('kind', msg))
                 else:
                     value['kind'] = k
 
@@ -2903,11 +2895,12 @@ def _questionnaire(
                 field_id = value['field_id']
                 if field_id and field_id in fee_modifier_fields:
                     if not k.allow_fee_modifier():
-                        errs.append(ValueError('kind', n_("Inappropriate questionnaire usage for fee"
-                                                          " modifier field.")))
+                        msg = n_("Inappropriate questionnaire usage for fee"
+                                 " modifier field.")
+                        errs.append(ValueError('kind', msg))
                 if value['readonly'] and not k.allow_readonly():
-                    errs.append(ValueError('readonly', n_("Registration questionnaire rows may not be"
-                                                          " readonly.")))
+                    msg = n_("Registration questionnaire rows may not be readonly.")
+                    errs.append(ValueError('readonly', msg))
                 ret[k].append(value)
 
     all_rows = itertools.chain.from_iterable(ret.values())
@@ -3031,9 +3024,9 @@ def _serialized_event(
                           'is_active': bool}),
         'event.log': _augment_dict_validator(
             _empty_dict, {'id': ID, 'ctime': datetime.datetime, 'code': int,
-                          'submitted_by': ID, 'event_id': Optional[ID], # type: ignore
-                          'persona_id': Optional[ID], # type: ignore
-                          'change_note': Optional[str], }), # type: ignore
+                          'submitted_by': ID, 'event_id': Optional[ID],  # type: ignore
+                          'persona_id': Optional[ID],  # type: ignore
+                          'change_note': Optional[str], }),  # type: ignore
         'event.orgas': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'persona_id': ID}),
         'event.field_definitions': _augment_dict_validator(
@@ -3056,12 +3049,13 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'course_id': ID, 'track_id': ID,
                           'registration_id': ID, 'rank': int}),
         'event.questionnaire_rows': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID, 'pos': int,
-                          'field_id': Optional[ID], 'title': Optional[str], # type: ignore
-                          'info': Optional[str], 'input_size': Optional[int], # type: ignore
-                          'readonly': Optional[bool], # type: ignore
-                          'kind': _enum_questionnaireusages,  # type: ignore
-                          }),
+            _empty_dict, {
+                'id': ID, 'event_id': ID, 'pos': int,
+                'field_id': Optional[ID], 'title': Optional[str],  # type: ignore
+                'info': Optional[str], 'input_size': Optional[int],  # type: ignore
+                'readonly': Optional[bool],  # type: ignore
+                'kind': _enum_questionnaireusages,  # type: ignore
+            }),
         'event.fee_modifiers': _event_fee_modifier,
     }
 
@@ -3172,7 +3166,7 @@ def _serialized_partial_event(
 
             creation = (new_key < 0)
             try:
-                new_entry = _ALL_TYPED[type_]( # type: ignore
+                new_entry = _ALL_TYPED[type_](  # type: ignore
                     entry, domain, creation=creation, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
@@ -3502,8 +3496,8 @@ def _mailinglist(
     mandatory_validation_fields = [('moderators', '[id]'), ]
     optional_validation_fields = [('whitelist', '[email]'), ]
     if "ml_type" not in val:
-        raise ValidationSummary(ValueError("ml_type",
-                                           "Must provide ml_type for setting mailinglist."))
+        raise ValidationSummary(ValueError(
+            "ml_type", "Must provide ml_type for setting mailinglist."))
     atype = ml_type.get_type(val["ml_type"])
     mandatory_validation_fields.extend(atype.mandatory_validation_fields)
     optional_validation_fields.extend(atype.optional_validation_fields)
@@ -3989,8 +3983,8 @@ def _regex(
         # TODO maybe provide more precise feedback?
         raise ValidationSummary(
             ValueError(argname,
-                       n_("Invalid  regular expression (position %(pos)s)."), {
-                           'pos': e.pos})) from e  # type: ignore
+                       n_("Invalid  regular expression (position %(pos)s)."),
+                       {'pos': e.pos}))
         # TODO wait for mypy to ship updated typeshed
     return Regex(val)
 
@@ -4242,7 +4236,8 @@ def _query(
 
         try:
             operator = _enum_queryoperators(  # type: ignore
-                operator, "constraints/{}".format(field), **{**kwargs, '_convert': False})
+                operator, "constraints/{}".format(field),
+                **{**kwargs, '_convert': False})
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4266,7 +4261,8 @@ def _query(
         else:
             try:
                 getattr(current_module, "_{}".format(val.spec[field]))(
-                    value, "constraints/{}".format(field), **{**kwargs, '_convert': False})
+                    value, "constraints/{}".format(field),
+                    **{**kwargs, '_convert': False})
             except ValidationSummary as e:
                 errs.extend(e)
 
