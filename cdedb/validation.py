@@ -688,7 +688,6 @@ def _sequence(
 def _bool(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> bool:
-    # TODO why do we convert first if it may already be a subclass of bool?
     if _convert and val is not None:
         try:
             return bool(distutils.util.strtobool(val))
