@@ -14,11 +14,11 @@ import itertools
 import lxml.etree
 
 import magic
-import werkzeug.exceptions
-from werkzeug import Response
-import vobject
 import qrcode
 from qrcode.image import svg as qrcode_svg
+import vobject
+import werkzeug.exceptions
+from werkzeug import Response
 
 from typing import (
     Optional, Collection, Set, cast, List, Tuple, Any, Dict,
@@ -362,7 +362,7 @@ class CoreFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self.create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id)
         return self.send_file(rs, data=vcard, mimetype='text/vcard',
                               filename='vcard.vcf')
 
@@ -372,7 +372,7 @@ class CoreFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self.create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id)
 
         qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
                            box_size=5, border=1)
@@ -386,7 +386,7 @@ class CoreFrontend(AbstractFrontend):
 
         return self.send_file(rs, data=qr_svg, mimetype="image/svg+xml")
 
-    def create_vcard(self, rs: RequestState, persona_id: int) -> str:
+    def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
         Generate a vCard string for a user to be delivered to a client
 
