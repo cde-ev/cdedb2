@@ -1408,7 +1408,7 @@ def _phone(
 @_add_typed_validator
 def _german_postal_code(
     val: Any, argname: str = None, *,
-    aux: str = None, _ignore_warnings: bool = False, **kwargs: Any
+    aux: str = "", _ignore_warnings: bool = False, **kwargs: Any
 ) -> GermanPostalCode:
     """
     :param aux: Additional information. In this case the country belonging
@@ -1417,10 +1417,8 @@ def _german_postal_code(
     """
     val = _printable_ascii(
         val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
-    val = val.strip()  # TODO remove strip?
-    # TODO change aux? Optional[str] -> str with default of "" or
-    # "Deutschland"?
-    if not aux or aux == "Deutschland":
+    val = val.strip()
+    if not aux or aux.strip() == "Deutschland":
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
             raise ValidationSummary(
                 ValidationWarning(argname, n_("Invalid german postal code.")))
