@@ -1575,12 +1575,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             Defaults to error message for event downloads.
         """
         if not runs:
-            target = pathlib.Path(
-                tmp_dir, "{}.tar.gz".format(work_dir_name))
-            args = ("tar", "-vczf", str(target), work_dir_name)
-            self.logger.info("Invoking {}".format(args))
-            subprocess.check_call(args, stdout=subprocess.DEVNULL,
-                                  cwd=str(tmp_dir))
+            target = pathlib.Path(tmp_dir, work_dir_name)
+            shutil.make_archive(target, "gztar", work_dir_name, logger=self.logger)
             if tex_file_name.endswith('.tex'):
                 tex_file = "{}.tar.gz".format(tex_file_name[:-4])
             else:
