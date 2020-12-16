@@ -30,9 +30,15 @@ class TestValidation(unittest.TestCase):
                     self.assertLess(0,
                                     len(getattr(validate, "check" + name)(
                                         inval, **extraparams)[1]))
-                    with self.assertRaises(exception):
+                    exception_args = None
+                    if isinstance(exception, Exception):
+                        exception_args = exception.args
+                        exception = type(exception)
+                    with self.assertRaises(exception) as cm:
                         getattr(validate, "assert" +
                                 name)(inval, **extraparams)
+                    if exception_args:
+                        self.assertEqual(cm.exception.args, exception_args)
                 if verifies:
                     self.assertTrue(getattr(validate, "is" + name)(
                         inval, **extraparams))
@@ -578,3 +584,14 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(
             "\ufeff" + msg, msg.encode('utf-8-sig').decode('utf-8'))
         self.assertEqual(msg, msg.encode('utf-8-sig').decode('utf-8-sig'))
+
+    def test_safe_str(self):
+        spec = [
+            ("abc123 .,-+()/", "abc123 .,-+()/", None, True),
+            ("", None, ValueError, False),
+            (1, "1", None, False),
+            ((1, 2, 3), "(1, 2, 3)", None, False),
+            ("abc[]&def", None, ValueError(
+                "Forbidden characters (%(chars)s). (None)", {"chars": "&[]"}), False),
+        ]
+        self.do_validator_test("_safe_str", spec)
