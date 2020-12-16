@@ -762,7 +762,7 @@ class PastEventBackend(AbstractBackend):
         """
         query = affirm("query", query)
         if query.scope == "qview_pevent_course":
-           pass
+            pass
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
