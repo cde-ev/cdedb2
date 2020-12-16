@@ -326,4 +326,5 @@ mypy:
 	${MYPYBIN} cdedb/backend/ cdedb/frontend cdedb/__init__.py \
 		cdedb/common.py cdedb/enums.py cdedb/i18n_additional.py \
 		cdedb/ml_subscription_aux.py cdedb/ml_type_aux.py cdedb/query.py \
-		cdedb/script.py cdedb/validationdata.py test/common.py
+		cdedb/script.py cdedb/validationdata.py cdedb/validationtypes.py \
+		test/common.py

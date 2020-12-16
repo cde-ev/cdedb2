@@ -294,7 +294,7 @@ class TestCommon(unittest.TestCase):
                                         capture_output=True, env=env)
             except subprocess.CalledProcessError as cpe:
                 self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
-        pattern = re.compile(" (\d+) (?:unübersetzte Meldung|untranslated message)")
+        pattern = re.compile(r" (\d+) (?:unübersetzte Meldung|untranslated message)")
         match = re.search(pattern, result.stderr.decode().splitlines()[0])
         if match:
             self.fail(f"There are {match.group(1)} untranslated strings (German)."
