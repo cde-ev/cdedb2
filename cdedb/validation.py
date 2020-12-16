@@ -2446,9 +2446,9 @@ def _past_course(
         mandatory_fields = {'id': ID}
         optional_fields = _PAST_COURSE_COMMON_FIELDS()
 
-    # TODO make these consistent (w or w/o intermediate assignment)
-    return PastCourse(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
+
+    return PartialCourse(val)
 
 
 def _COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
@@ -2547,9 +2547,8 @@ def _REGISTRATION_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'payment': Optional[datetime.date],
     'amount_paid': NonNegativeDecimal,
     'checkin': Optional[datetime.datetime],
-    'fields': Mapping
+    'fields': Mapping,
 }
-# TODO make trailing comma consistent
 
 
 @_add_typed_validator
@@ -2733,10 +2732,9 @@ def _LODGEMENT_GROUP_FIELDS() -> Mapping[str, Any]: return {
 }
 
 
-# TODO should this be an underscore in the argname?
 @_add_typed_validator
 def _lodgement_group(
-    val: Any, argname: str = "lodgement group", *,
+    val: Any, argname: str = "lodgement_group", *,
     creation: bool = False, **kwargs: Any
 ) -> LodgementGroup:
     """
@@ -3587,10 +3585,9 @@ def _SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS() -> Mapping[str, Any]: return {
 }
 
 
-# TODO argname with space?
 @_add_typed_validator
 def _subscription_identifier(
-    val: Any, argname: str = "subscription identifier", **kwargs: Any
+    val: Any, argname: str = "subscription_identifier", **kwargs: Any
 ) -> SubscriptionIdentifier:
     val = _mapping(val, argname, **kwargs)
 
@@ -3921,11 +3918,10 @@ def _assembly_attachment_version(
     return AssemblyAttachmentVersion(val)
 
 
-# TODO replace ballot with CdEDBObject
 @_add_typed_validator
 def _vote(
     val: Any, argname: str = "vote",
-    ballot: Mapping[str, Any] = None, **kwargs: Any
+    ballot: CdEDBObject = None, **kwargs: Any
 ) -> Vote:
     """Validate a single voters intent.
 
