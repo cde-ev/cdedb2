@@ -11,7 +11,7 @@ import datetime
 import operator
 import decimal
 import itertools
-import lxml
+import lxml.etree
 
 import magic
 import werkzeug.exceptions
@@ -357,12 +357,14 @@ class CoreFrontend(AbstractFrontend):
 
     @access("member")
     @REQUESTdata(("confirm_id", "#int"))
-    def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
+    def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int
+                       ) -> Response:
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
         vcard = self.create_vcard(rs, persona_id)
-        return self.send_file(rs, data=vcard, mimetype='text/vcard', filename='vcard.vcf')
+        return self.send_file(rs, data=vcard, mimetype='text/vcard',
+                              filename='vcard.vcf')
 
     @access("member")
     @REQUESTdata(("confirm_id", "#int"))
@@ -384,7 +386,7 @@ class CoreFrontend(AbstractFrontend):
 
         return self.send_file(rs, data=qr_svg, mimetype="image/svg+xml")
 
-    def create_vcard(self, rs: RequestState, persona_id: int):
+    def create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
         Generate a vCard string for a user to be delivered to a client
 
@@ -426,9 +428,11 @@ class CoreFrontend(AbstractFrontend):
             j.email.value = persona['username']
             j.email.type_param = 'INTERNET'
         if persona['telephone']:
-            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'VOICE')], persona['telephone']))
+            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'VOICE')],
+                                            persona['telephone']))
         if persona['mobile']:
-            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'CELL')], persona['mobile']))
+            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'CELL')],
+                                            persona['mobile']))
         if persona['weblink']:
             # TODO include website
             pass
