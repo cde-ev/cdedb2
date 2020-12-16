@@ -34,10 +34,14 @@ class TestScript(unittest.TestCase):
         with self.assertRaises(psycopg2.OperationalError) as cm:
             setup(-1, dbname="cdb_test", dbuser="cdb_admin", dbpassword="abc",
                   check_system_user=False)
-        self.assertIn(
-            "Passwort-Authentifizierung für Benutzer »cdb_admin«"
-            " fehlgeschlagen",
-            cm.exception.args[0])
+        # the vm is german while the postgresql docker image is english
+        self.assertTrue(
+            ("Passwort-Authentifizierung für Benutzer"
+             " »cdb_admin« fehlgeschlagen" in cm.exception.args[0])
+            or
+            ("password authentication failed for user"
+             ' "cdb_admin"' in cm.exception.args[0])
+        )
 
     def test_make_backend(self):
         core = make_backend("core", proxy=False)

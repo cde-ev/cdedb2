@@ -57,11 +57,19 @@ def _create_connection(dbname: str, dbuser: str, password: str, port: int,
     :rtype: :py:class:`IrradiatedConnection`
     :returns: open database connection
     """
-    conn = psycopg2.connect(
-        "dbname={} user={} password={} port={}".format(
-            dbname, dbuser, password, port),
-        connection_factory=IrradiatedConnection,
-        cursor_factory=psycopg2.extras.RealDictCursor)
+    connection_parameters = {
+            "dbname": dbname,
+            "user": dbuser,
+            "password": password,
+            "connection_factory": IrradiatedConnection,
+            "cursor_factory": psycopg2.extras.RealDictCursor
+    }
+    try: # TODO simply check if inside docker first
+        conn = psycopg2.connect(**connection_parameters, port=port)
+    except psycopg2.OperationalError as e: # Docker uses 5432/tcp instead of sockets
+        if "Passwort-Authentifizierung" in e.args[0]:
+            raise # fail fast if wrong password is the problem
+        conn = psycopg2.connect(**connection_parameters, host="cdb", port=5432)
     conn.set_client_encoding("UTF8")
     conn.set_session(isolation_level)
     _LOGGER.debug("Created connection to {} as {}".format(dbname, dbuser))
