@@ -428,7 +428,7 @@ class CoreFrontend(AbstractFrontend):
             j.email.value = persona['username']
             j.email.type_param = 'INTERNET'
         if persona['telephone']:
-            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'VOICE')],
+            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'HOME')],
                                             persona['telephone']))
         if persona['mobile']:
             j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'CELL')],
