@@ -320,7 +320,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         save = "/"
 
-        count = 21
+        count = self.conf["QUOTA_VIEWS_PER_DAY"] // 2
         for search, title in itertools.cycle((
                 ("Anton Armin", "Anton Armin A. Administrator"),
                 ("Inga Iota", "Inga Iota"))):

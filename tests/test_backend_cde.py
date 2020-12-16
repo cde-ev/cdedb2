@@ -32,13 +32,19 @@ class TestCdEBackend(BackendTest):
     @as_users("berta")
     def test_quota(self, user):
         self.assertEqual(0, self.core.quota(self.key))
-        for i in range(1, 22):
-            if i % 2 == 0:
+        for i in range(1, self.conf["QUOTA_VIEWS_PER_DAY"]//2 + 1):
+            if i % 3 == 0:
                 self.assertEqual(i*2, self.core.quota(self.key, ids=(1, 2, 6)))
+                self.assertEqual(0, self.core.quota(self.key, ids=(1, 2, 6)))
+            elif i % 3 == 1:
+                self.assertEqual(i*2, self.core.quota(self.key, ids=(3, 4)))
+                self.assertEqual(0, self.core.quota(self.key, ids=(3, 4)))
             else:
                 self.assertEqual(i*2, self.core.quota(self.key, num=2))
+        self.core.get_cde_users(self.key, (1, 2, 6))
         with self.assertRaises(QuotaException):
-            self.core.get_cde_users(self.key, (1, 2, 6))
+            self.core.get_cde_users(self.key, (3, 4))
+        self.core.get_cde_users(self.key, (1, 6))
 
         query = Query(scope="qview_cde_member", spec={},
                       fields_of_interest=["id"], constraints=[], order=[])
