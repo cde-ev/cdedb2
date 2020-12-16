@@ -118,11 +118,15 @@
             {% if data['show_vcard'] %}
                 <div id="vcard">
                     {% set confirm_id = encode_parameter("core/qr_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
-                    <img src="{{ cdedblink('core/qr_vcard', {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}"
-                         alt="{{ gettext("Vcard") }}" class="img-thumbnail qrcode">
-                    <br />
+                    <a href="{{ cdedblink('core/qr_vcard', {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default" target="_blank">
+                        {{ util.make_icon('qrcode') }}
+                        {% trans %}QR{% endtrans %}
+                    </a>
                     {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
-                    {{ util.href(cdedblink("core/download_vcard", {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}), "VCard", icon='download') }}
+                    <a href="{{ cdedblink("core/download_vcard", {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default" target="_blank">
+                        {{ util.make_icon('download') }}
+                        {% trans %}VCard{% endtrans %}
+                    </a>
                 </div>
             {% endif %}
         </div>
