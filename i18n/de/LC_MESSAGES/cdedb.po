@@ -14028,8 +14028,8 @@ msgstr "Genau zwei Zeilen nötig."
 
 #: cdedb/validation.py:1972
 #, python-format
-msgid "Forbidden character (%(char)s)."
-msgstr "Verbotenes Zeichen (%(char)s)."
+msgid "Forbidden character (%(chars)s)."
+msgstr "Verbotene Zeichen (%(chars)s)."
 
 #: cdedb/validation.py:2121
 msgid "Must be before or equal to hard limit."

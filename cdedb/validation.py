@@ -1555,6 +1555,8 @@ def _csvfile(
     encoding: str = "utf-8-sig", **kwargs: Any
 ) -> CSVFile:
     """
+    Validate a CSV file.
+
     We default to 'utf-8-sig', since it behaves exactly like 'utf-8' if the
     file is 'utf-8' but it gets rid of the BOM if the file is 'utf-8-sig'.
     """
@@ -1957,15 +1959,15 @@ def _safe_str(
     val: Any, argname: str = None, **kwargs: Any
 ) -> SafeStr:
     """This allows alpha-numeric, whitespace and known good others."""
-    allowed_characters = ".,-+()/"
+    allowed_chars = ".,-+()/"
     val = _str(val, argname, **kwargs)
     errs = ValidationSummary()
 
-    for char in val:
-        if not (char.isalnum() or char.isspace() or char in allowed_characters):
-            # TODO bundle these? e.g. forbidden chars: abc...
-            errs.append(ValueError(argname, n_(
-                "Forbidden character (%(char)s)."), {'char': char}))
+    forbidden_chars = "".join(sorted({c for c in val if not (c.isalnum() or c.isspace()
+                                                             or c in allowed_chars)}))
+    if forbidden_chars:
+        errs.append(ValueError(argname, n_(
+            "Forbidden characters (%(chars)s)."), {'chars': forbidden_chars}))
     if errs:
         raise errs
 
