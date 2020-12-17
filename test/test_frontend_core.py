@@ -153,7 +153,7 @@ class TestCoreFrontend(FrontendTest):
                  "FN:Bertålotta Beispiel",
                  "N:Beispiel;Bertålotta;;Dr.;MdB",
                  "NICKNAME:Bertå",
-                 "TEL;TYPE=VOICE:+49 (5432) 987654321",
+                 "TEL;TYPE=HOME:+49 (5432) 987654321",
                  "TEL;TYPE=CELL:0163/123456789",
                  "END:VCARD"]
         for line in vcard:
