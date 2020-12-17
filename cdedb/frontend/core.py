@@ -374,8 +374,7 @@ class CoreFrontend(AbstractFrontend):
 
         vcard = self._create_vcard(rs, persona_id)
 
-        qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H,
-                           box_size=5, border=1)
+        qr = qrcode.QRCode()
         qr.add_data(vcard)
         qr.make(fit=True)
         qr_image = qr.make_image(qrcode_svg.SvgPathFillImage)
