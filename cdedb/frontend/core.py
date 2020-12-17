@@ -395,6 +395,10 @@ class CoreFrontend(AbstractFrontend):
         if 'member' not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not a member."))
 
+        roles = self.coreproxy.get_roles_single(rs, persona_id, introspection_only=True)
+        if 'member' not in roles:
+            raise werkzeug.exceptions.Forbidden(n_("Viewed persona is no member."))
+
         persona = self.coreproxy.get_cde_user(rs, persona_id)
 
         j = vobject.vCard()

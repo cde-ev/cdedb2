@@ -1911,7 +1911,6 @@ class CoreBackend(AbstractBackend):
     verify_id: _VerifyIDProtocol = singularize(
         verify_ids, "persona_ids", "persona_id", passthrough=True)
 
-    @internal
     @access("anonymous")
     def get_roles_multi(self, rs: RequestState, persona_ids: Collection[Optional[int]],
                         introspection_only: bool = False
