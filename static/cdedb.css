@@ -257,6 +257,9 @@ ul.nosp, ol.nosp {
 .form-group.mosp {
     margin-top: 16px;
 }
+.btn.mosp {
+    margin-top: 5px
+}
 .panel-body>:last-child {
     margin-bottom: 0;
 }
@@ -495,7 +498,6 @@ a.headerlink {
 .profilepic {
     max-width: 150px;
 }
-
 p.textbox {
     padding: 4px 6px;
     border: dashed 1px #888;

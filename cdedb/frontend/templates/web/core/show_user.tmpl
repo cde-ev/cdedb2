@@ -110,7 +110,7 @@
                     {% if data['id'] == user.persona_id or is_relative_admin -%}
                         <br />
                         {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
-                                aclass="btn btn-xs btn-warning", icon="pen") }}
+                                aclass="btn btn-xs btn-warning mosp", icon="pen") }}
                     {% endif %}
                 </div>
             {% endif %}
@@ -118,12 +118,12 @@
             {% if data['show_vcard'] %}
                 <div id="vcard">
                     {% set confirm_id = encode_parameter("core/qr_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
-                    <a href="{{ cdedblink('core/qr_vcard', {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default">
+                    <a href="{{ cdedblink('core/qr_vcard', {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default mosp">
                         {{ util.make_icon('qrcode') }}
                         {% trans %}QR{% endtrans %}
                     </a>
                     {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
-                    <a href="{{ cdedblink("core/download_vcard", {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default">
+                    <a href="{{ cdedblink("core/download_vcard", {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default mosp">
                         {{ util.make_icon('download') }}
                         {% trans %}VCard{% endtrans %}
                     </a>
