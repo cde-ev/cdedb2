@@ -33,7 +33,7 @@ doc:
 reload:
 	$(MAKE) i18n-compile
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	@echo "'systemctl' not available in this container"
+	apachectl restart
 else
 	sudo systemctl restart apache2
 endif
