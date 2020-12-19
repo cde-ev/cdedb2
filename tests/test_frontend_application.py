@@ -2,7 +2,7 @@
 
 import unittest
 import unittest.mock
-from test.common import FrontendTest, as_users
+from tests.common import FrontendTest, as_users
 
 
 class TestApplication(FrontendTest):
@@ -24,7 +24,7 @@ class TestApplication(FrontendTest):
     def test_500(self, hander_mock, config_mock):
         # Replace CoreFrontend.index() function with Mock that raises ValueError
         hander_mock.side_effect = ValueError("a really unexpected exception")
-        hander_mock.modi = {"GET", "HEAD"} # TODO set modi automatically 
+        hander_mock.modi = {"GET", "HEAD"} # TODO set modi automatically
 
         def config_mock_getitem(key):
             if key in ["CDEDB_DEV", "CDEDB_TEST"]:

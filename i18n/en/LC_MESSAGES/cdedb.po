@@ -1006,7 +1006,7 @@ msgstr ""
 msgid "Invalid notification type %(t)s found."
 msgstr ""
 
-#: cdedb/common.py:328 test/common.py:232
+#: cdedb/common.py:328 tests/common.py:232
 #, python-format
 msgid "Attribute %(name)s not public"
 msgstr ""

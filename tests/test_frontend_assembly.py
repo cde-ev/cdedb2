@@ -7,7 +7,7 @@ import webtest
 import unittest
 import json
 
-from test.common import as_users, USER_DICT, FrontendTest, MultiAppFrontendTest
+from tests.common import as_users, USER_DICT, FrontendTest, MultiAppFrontendTest
 
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, now, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
@@ -132,7 +132,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             ins = everyone + ["Nutzer verwalten", "Log"]
             out = []
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
@@ -304,7 +304,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             ins = attendee + admin
             out = []
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 

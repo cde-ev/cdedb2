@@ -4,7 +4,7 @@ import csv
 import re
 
 import cdedb.database.constants as const
-from test.common import as_users, USER_DICT, FrontendTest, prepsql
+from tests.common import as_users, USER_DICT, FrontendTest, prepsql
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.frontend.common import CustomCSVDialect
 
@@ -60,7 +60,7 @@ class TestMlFrontend(FrontendTest):
                    "Moderierte Mailinglisten", "Nutzer verwalten", "Log"]
             out = ["Übersicht"]
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
@@ -233,7 +233,7 @@ class TestMlFrontend(FrontendTest):
             ins = everyone
             out = moderator
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 

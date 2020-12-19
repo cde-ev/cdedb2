@@ -3,7 +3,7 @@ import csv
 
 import webtest
 
-from test.common import as_users, USER_DICT, FrontendTest
+from tests.common import as_users, USER_DICT, FrontendTest
 from cdedb.common import now
 import cdedb.frontend.parse_statement as parse
 from cdedb.frontend.common import CustomCSVDialect
@@ -115,7 +115,7 @@ class TestParseFrontend(FrontendTest):
         self.get("/cde/parse")
         self.assertTitle("Kontoauszug parsen")
         f = self.response.forms["statementform"]
-        with open("/cdedb2/test/ancillary_files/statement.csv", mode="br") as statementfile:
+        with open("/cdedb2/tests/ancillary_files/statement.csv", mode="br") as statementfile:
             f["statement_file"] = webtest.Upload(
                 "statement.csv", statementfile.read(), "text/csv")
         self.submit(f, check_notification=False, verbose=True)

@@ -3,7 +3,7 @@
 import os
 import unittest
 import sys
-from test.common import MyTextTestResult, check_test_setup
+from tests.common import MyTextTestResult, check_test_setup
 
 if __name__ == "__main__":
     check_test_setup()
@@ -20,7 +20,7 @@ if __name__ == "__main__":
         sys.exit()
     loader = unittest.TestLoader()
     # The TestLoader provides a TestSuite containing a TestSuite per test-file.
-    all_tests = loader.discover('./test/', pattern="test_*.py")
+    all_tests = loader.discover('./tests/', pattern="test_*.py")
     singular_tests = []
     for test_file in all_tests:
         # This test-file contains a TestSuite for each top-level subclass of

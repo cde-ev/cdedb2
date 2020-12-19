@@ -4,7 +4,7 @@ import copy
 import re
 
 import urllib.parse
-from test.common import USER_DICT, FrontendTest, as_users
+from tests.common import USER_DICT, FrontendTest, as_users
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, get_hash
 
 import cdedb.database.constants as const
@@ -120,7 +120,7 @@ class TestCoreFrontend(FrontendTest):
             ins = everyone + meta_admin
             out = genesis + core_admin
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 

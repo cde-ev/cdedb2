@@ -7,7 +7,7 @@ import re
 import datetime
 import webtest
 
-from test.common import as_users, USER_DICT, FrontendTest, prepsql
+from tests.common import as_users, USER_DICT, FrontendTest, prepsql
 
 from cdedb.query import QueryOperators
 from cdedb.common import now, ADMIN_VIEWS_COOKIE_NAME
@@ -72,7 +72,7 @@ class TestEventFrontend(FrontendTest):
             ins = everyone + admin + ["Nutzer verwalten"]
             out = []
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
@@ -368,7 +368,7 @@ class TestEventFrontend(FrontendTest):
             ins = everyone + not_registrated + orga
             out = registrated
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 

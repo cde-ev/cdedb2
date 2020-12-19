@@ -7,7 +7,7 @@ import re
 import unittest
 import datetime
 import decimal
-from test.common import USER_DICT, FrontendTest, as_users
+from tests.common import USER_DICT, FrontendTest, as_users
 
 import cdedb.database.constants as const
 import webtest
@@ -128,7 +128,7 @@ class TestCdEFrontend(FrontendTest):
             ins = everyone + past_event + cde_admin + finance_admin
             out = member + searchable
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 

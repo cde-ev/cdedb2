@@ -6,7 +6,7 @@ import decimal
 from pathlib import Path
 
 import cdedb.database.constants as const
-from test.common import (
+from tests.common import (
     BackendTest, as_users, USER_DICT, nearly_now, create_mock_image,
 )
 from cdedb.common import (

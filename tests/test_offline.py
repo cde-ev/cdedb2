@@ -8,7 +8,7 @@ import shutil
 import webtest
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.frontend.application import Application
-from test.common import FrontendTest
+from tests.common import FrontendTest
 
 
 class TestOffline(FrontendTest):
@@ -25,12 +25,12 @@ class TestOffline(FrontendTest):
                 existing_config, config_backup)
         subprocess.run(
             ['bin/execute_sql_script.py', '-U', 'cdb', '-d', 'cdb_test',
-             '-f', 'test/ancillary_files/clean_data.sql'],
+             '-f', 'tests/ancillary_files/clean_data.sql'],
             cwd=base, check=True, stdout=subprocess.DEVNULL)
         try:
             subprocess.run(
                 ['bin/make_offline_vm.py', '--test', '--no-extra-packages',
-                 'test/ancillary_files/event_export.json'],
+                 'tests/ancillary_files/event_export.json'],
                 cwd=base, check=True, stdout=subprocess.DEVNULL)
             # Reset web test app for changed configuration
             try:

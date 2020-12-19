@@ -141,7 +141,7 @@ def work(args):
         if input("Are you sure (type uppercase YES)? ").strip() != "YES":
             print("Aborting.")
             sys.exit()
-    clean_script = args.repopath / "test/ancillary_files/clean_data.sql"
+    clean_script = args.repopath / "tests/ancillary_files/clean_data.sql"
     subprocess.run(
         [str(args.repopath / "bin/execute_sql_script.py"),
          "-U", "cdb", "-d", db_name, "-f", str(clean_script)],

@@ -6,7 +6,7 @@ from cdedb.common import (
 )
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
 import cdedb.database.constants as const
-from test.common import BackendTest, as_users, USER_DICT, nearly_now
+from tests.common import BackendTest, as_users, USER_DICT, nearly_now
 import decimal
 import datetime
 import pytz

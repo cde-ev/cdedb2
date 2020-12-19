@@ -10,7 +10,7 @@ import unittest.mock
 import cdedb.database.constants as const
 from cdedb.common import now, xsorted
 
-from test.common import CronTest, prepsql
+from tests.common import CronTest, prepsql
 
 INSERT_TEMPLATE = """
 INSERT INTO {table} ({columns}) VALUES ({values});

@@ -4,7 +4,7 @@ import secrets
 from typing import Sequence, NamedTuple
 
 from cdedb.common import User, now
-from test.common import BackendTest, USER_DICT, MultiAppFrontendTest, prepsql, execsql
+from tests.common import BackendTest, USER_DICT, MultiAppFrontendTest, prepsql, execsql
 
 SessionEntry = NamedTuple(
     "SessionEntry", [("persona_id", int), ("is_active", bool), ("ip", str),
