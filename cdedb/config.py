@@ -16,15 +16,15 @@ import importlib.util
 import logging
 import pathlib
 import subprocess
-import pytz
-
 from typing import Any, Callable, Dict, Iterator, Mapping
 
-from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import (
-    n_, deduct_years, now, PathLike, EntitySorter, xsorted, CdEDBObject
-)
+import pytz
+
 import cdedb.database.constants as const
+from cdedb.common import (
+    CdEDBObject, EntitySorter, PathLike, deduct_years, n_, now, xsorted,
+)
+from cdedb.query import QUERY_SPECS, Query, QueryOperators
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -2,32 +2,32 @@
 
 """Base class providing fundamental ml services."""
 
+import collections
 import copy
 from datetime import datetime
-import collections
-from typing import Dict, Any, Optional, Collection, cast
+from typing import Any, Collection, Dict, Optional, cast
 
 import mailmanclient
 import werkzeug
 from werkzeug import Response
 
-from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
-    check_validation as check, mailinglist_guard,
-    cdedbid_filter as cdedbid, keydictsort_filter,
-    calculate_db_logparams, calculate_loglinks)
-from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, mangle_query_input, Query
-from cdedb.common import (
-    n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
-    RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap,
-    MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS,
-    PrivilegeError)
 import cdedb.database.constants as const
+from cdedb.common import (
+    MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS,
+    CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike, PrivilegeError, RequestState,
+    SubscriptionActions, SubscriptionError, merge_dicts, n_, now, unwrap,
+)
 from cdedb.config import SecretsConfig
-
+from cdedb.frontend.common import (
+    REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
+    cdedbid_filter as cdedbid, check_validation as check, csv_output,
+    keydictsort_filter, mailinglist_guard, periodic,
+)
+from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.ml_type_aux import (
-    MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type)
+    ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
+)
+from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 
 
 class MlBaseFrontend(AbstractUserFrontend):

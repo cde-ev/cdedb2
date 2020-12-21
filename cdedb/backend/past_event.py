@@ -5,24 +5,22 @@ concluded events.
 """
 
 import datetime
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
-from typing import (
-    Collection, Dict, Optional, Tuple, Union, List, Set, Any
-)
 from typing_extensions import Protocol
 
+import cdedb.database.constants as const
 from cdedb.backend.common import (
-    access, affirm_validation as affirm, Silencer, AbstractBackend,
-    affirm_set_validation as affirm_set, singularize)
+    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
+    affirm_validation as affirm, singularize,
+)
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    n_, glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
-    unwrap, now, make_proxy, INSTITUTION_FIELDS, xsorted, PathLike,
-    RequestState, CdEDBObject, CdEDBObjectMap, CdEDBLog, DefaultReturnCode,
-    DeletionBlockers, Error
+    INSTITUTION_FIELDS, PAST_COURSE_FIELDS, PAST_EVENT_FIELDS, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PathLike,
+    PrivilegeError, RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
-import cdedb.database.constants as const
 from cdedb.query import Query
 
 

@@ -6,6 +6,7 @@ import pytz
 
 from cdedb.config import BasicConfig, Config, SecretsConfig
 
+
 class TestConfig(unittest.TestCase):
     def test_override(self):
         basic = BasicConfig()

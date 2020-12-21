@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-import unittest
 import io
 import tempfile
+import unittest
 from contextlib import redirect_stdout
 
 import psycopg2.errorcodes
 
-from cdedb.common import unwrap
-from cdedb.script import setup, make_backend, Script, DryRunError
 from cdedb.backend.core import CoreBackend
+from cdedb.common import unwrap
+from cdedb.script import DryRunError, Script, make_backend, setup
 
 
 class TestScript(unittest.TestCase):

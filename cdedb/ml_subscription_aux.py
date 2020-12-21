@@ -24,9 +24,9 @@ These are be imported in `cdedb:common.py` and should be imported from there.
 """
 
 import enum
-from cdedb.database.constants import SubscriptionStates, MlLogCodes
-
 from typing import Any, Dict, Optional, Set
+
+from cdedb.database.constants import MlLogCodes, SubscriptionStates
 
 
 def n_(x: str) -> str:

@@ -10,14 +10,8 @@ from typing import Tuple, Type
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    Accounts,
-    AgeClasses,
-    CourseChoiceToolActions,
-    CourseFilterPositions,
-    LineResolutions,
-    LodgementsSortkeys,
-    SubscriptionActions,
-    TransactionType,
+    Accounts, AgeClasses, CourseChoiceToolActions, CourseFilterPositions,
+    LineResolutions, LodgementsSortkeys, SubscriptionActions, TransactionType,
 )
 from cdedb.query import QueryOperators
 

@@ -1,14 +1,14 @@
-import sys
-import json
 import datetime
-
+import json
+import sys
 from pprint import pprint
 
 sys.path.insert(0, "/cdedb2")
 
-from cdedb.script import setup, make_backend
-from cdedb.common import CustomJSONEncoder
 from test.common import nearly_now
+
+from cdedb.common import CustomJSONEncoder
+from cdedb.script import make_backend, setup
 
 rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
 

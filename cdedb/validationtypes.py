@@ -1,16 +1,6 @@
 import datetime
 import decimal
-from typing import (
-    Any,
-    AnyStr,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NewType,
-    Optional,
-    Union,
-)
+from typing import Any, AnyStr, Dict, Iterable, List, Mapping, NewType, Optional, Union
 
 from cdedb.common import CdEDBObject
 from cdedb.query import Query

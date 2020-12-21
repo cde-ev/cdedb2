@@ -2,14 +2,13 @@
 
 import csv
 import re
+from test.common import USER_DICT, FrontendTest, as_users, prepsql
 
 import cdedb.database.constants as const
-from test.common import as_users, USER_DICT, FrontendTest, prepsql
+import cdedb.ml_type_aux as ml_type
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.frontend.common import CustomCSVDialect
-
 from cdedb.query import QueryOperators
-import cdedb.ml_type_aux as ml_type
 
 
 class TestMlFrontend(FrontendTest):

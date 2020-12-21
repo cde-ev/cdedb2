@@ -9,8 +9,7 @@ eine gewisse unvermeidbare Duplikation haben.
 import argparse
 import json
 import pathlib
-
-from typing import Mapping, Tuple, Collection, List, Dict, Union, Container
+from typing import Collection, Container, Dict, List, Mapping, Tuple, Union
 
 
 def _schulze_winners(d: Mapping[Tuple[str, str], int],

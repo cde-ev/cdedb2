@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import json
-from cdedb.script import setup, make_backend
-from cdedb.common import SubscriptionActions
+
 import cdedb.database.constants as const
+from cdedb.common import SubscriptionActions
+from cdedb.script import make_backend, setup
 
 # Configuration
 

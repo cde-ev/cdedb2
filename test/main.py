@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import unittest
 import sys
+import unittest
 from test.common import MyTextTestResult, check_test_setup
 
 if __name__ == "__main__":

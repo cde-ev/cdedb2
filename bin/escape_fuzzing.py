@@ -29,10 +29,10 @@ this script, as follows:
    python3 -m bin.escape_fuzzing 2>/dev/null
 """
 import itertools
-import queue
 import logging
 import os
 import pathlib
+import queue
 
 import webtest
 
@@ -40,6 +40,7 @@ os.environ['CDEDB_TEST'] = "True"
 
 from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
+
 _BASICCONF = BasicConfig()
 
 outdir = pathlib.Path('./out')

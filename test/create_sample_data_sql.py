@@ -1,7 +1,7 @@
+import argparse
 import json
 import sys
 from itertools import chain
-import argparse
 
 
 def read_input(infile):
@@ -17,9 +17,9 @@ def prepare_aux(data):
     # Set up the database connection.
     sys.path.insert(0, "/cdedb2")
 
-    from cdedb.script import setup
-    from cdedb.backend.core import CoreBackend
     from cdedb.backend.common import PsycoJson
+    from cdedb.backend.core import CoreBackend
+    from cdedb.script import setup
 
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.

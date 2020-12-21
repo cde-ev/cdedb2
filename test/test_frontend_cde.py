@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 
 import csv
+import datetime
+import decimal
 import itertools
 import json
 import re
 import unittest
-import datetime
-import decimal
 from test.common import USER_DICT, FrontendTest, as_users
 
-import cdedb.database.constants as const
 import webtest
-from cdedb.common import now, extract_roles, ADMIN_VIEWS_COOKIE_NAME
+
+import cdedb.database.constants as const
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, extract_roles, now
 from cdedb.query import QueryOperators
+
 
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta")

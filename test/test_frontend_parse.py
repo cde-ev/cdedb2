@@ -1,13 +1,13 @@
-import re
 import csv
+import re
+from datetime import datetime
+from test.common import USER_DICT, FrontendTest, as_users
 
 import webtest
 
-from test.common import as_users, USER_DICT, FrontendTest
-from cdedb.common import now
 import cdedb.frontend.parse_statement as parse
+from cdedb.common import now
 from cdedb.frontend.common import CustomCSVDialect
-from datetime import datetime
 
 
 class TestParseFrontend(FrontendTest):

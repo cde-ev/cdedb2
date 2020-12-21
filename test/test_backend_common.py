@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import unittest
-from cdedb.config import BasicConfig
-from cdedb.common import make_proxy, PrivilegeError
+
 from cdedb.backend.core import CoreBackend
+from cdedb.common import PrivilegeError, make_proxy
+from cdedb.config import BasicConfig
 
 _BASICCONF = BasicConfig()
 

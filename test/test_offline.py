@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
 import pathlib
+import shutil
 import subprocess
 import sys
-import shutil
+from test.common import FrontendTest
 
 import webtest
+
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.frontend.application import Application
-from test.common import FrontendTest
 
 
 class TestOffline(FrontendTest):

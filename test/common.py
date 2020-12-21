@@ -1,35 +1,34 @@
 #!/usr/bin/env python3
 
 import collections.abc
+import copy
 import datetime
-import email.parser
+import decimal
 import email.message
+import email.parser
 import email.policy
 import enum
 import functools
 import gettext
+import io
+import json
 import os
 import pathlib
 import re
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 import urllib.parse
-import json
-import io
-import PIL.Image
-import time
-import copy
-import decimal
-
 from types import TracebackType
 from typing import (
-    TypeVar, cast, Dict, List, Optional, Type, Callable, AnyStr, Set, Union,
-    NamedTuple, MutableMapping, Any, no_type_check, Iterable, Tuple, TextIO, ClassVar,
-    Collection, Sequence
+    Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List, MutableMapping,
+    NamedTuple, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union, cast,
+    no_type_check,
 )
 
+import PIL.Image
 import pytz
 import webtest
 import webtest.utils
@@ -43,15 +42,15 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, PrivilegeError, RequestState, n_,
-    roles_to_db_role, PathLike, CdEDBObject, CdEDBObjectMap, now,
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
+    PrivilegeError, RequestState, n_, now, roles_to_db_role,
 )
-from cdedb.config import BasicConfig, SecretsConfig, Config
+from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.common import AbstractFrontend
+from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()

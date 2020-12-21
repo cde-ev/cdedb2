@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Set, Dict
+from typing import Dict, Set
 
 
 def n_(x: str) -> str:

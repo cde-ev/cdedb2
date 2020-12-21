@@ -11,12 +11,9 @@ up an environment for passing a query from frontend to backend.
 
 import collections
 import enum
+from typing import TYPE_CHECKING, Any, Collection, Dict, Tuple
 
-from typing import (
-    Any, Collection, Dict, Tuple, TYPE_CHECKING
-)
-
-from cdedb.common import glue, CdEDBObject, RequestState
+from cdedb.common import CdEDBObject, RequestState, glue
 
 
 @enum.unique

@@ -3,10 +3,11 @@
 import datetime
 import unittest
 import urllib.parse
+from test.common import (
+    ADMIN_VIEWS_COOKIE_NAME, USER_DICT, FrontendTest, admin_views, as_users,
+)
 
 from cdedb.common import encode_parameter
-from test.common import (
-    as_users, USER_DICT, FrontendTest, ADMIN_VIEWS_COOKIE_NAME, admin_views)
 
 # TODO Profilfoto
 
