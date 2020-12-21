@@ -56,6 +56,7 @@ class TestMlBackend(BackendTest):
             64: 'Das Leben, das Universum ...',
             65: 'Hogwarts',
             66: 'Versammlungsleitung Internationaler Kongress',
+            99: 'Mailman-Migration',
         }
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
         expectation[6] = 'Aktivenforum 2000'
@@ -1915,6 +1916,8 @@ class TestMlBackend(BackendTest):
                        {'address': 'hogwarts@cdelokal.cde-ev.de',
                         'is_active': True},
                        {'address': 'kongress-leitung@lists.cde-ev.de',
+                        'is_active': True},
+                       {'address': 'migration@testmail.cde-ev.de',
                         'is_active': True})
 
         self.assertEqual(
@@ -2049,7 +2052,11 @@ class TestMlBackend(BackendTest):
                        {'address': 'kongress-leitung@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
-                        'mime': False},)
+                        'mime': False},
+                       {'address': 'migration@testmail.cde-ev.de',
+                        'inactive': False,
+                        'maxsize': 1024,
+                        'mime': None},)
         self.assertEqual(
             expectation,
             self.ml.oldstyle_mailinglist_config_export(

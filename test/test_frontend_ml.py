@@ -213,7 +213,7 @@ class TestMlFrontend(FrontendTest):
                       {'description': 'Feriendorf Bau'})
         everyone = ["Mailinglisten-Übersicht", "Übersicht"]
         moderator = ["Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
-                     "Log"]
+                     "Nachrichtenmoderation", "Log"]
 
         # Moderators:
         if user['id'] in {USER_DICT['berta']['id']}:
@@ -992,6 +992,7 @@ class TestMlFrontend(FrontendTest):
                        {'address': '42@lists.cde-ev.de', 'is_active': True},
                        {'address': 'hogwarts@cdelokal.cde-ev.de', 'is_active': True},
                        {'address': 'kongress-leitung@lists.cde-ev.de', 'is_active': True},
+                       {'address': 'migration@testmail.cde-ev.de', 'is_active': True},
                        ]
         self.get("/ml/script/all", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
@@ -1122,7 +1123,11 @@ class TestMlFrontend(FrontendTest):
                        {'address': 'kongress-leitung@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
-                        'mime': False}]
+                        'mime': False},
+                       {'address': 'migration@testmail.cde-ev.de',
+                        'inactive': False,
+                        'maxsize': 1024,
+                        'mime': None}]
         self.get("/ml/script/all/compat", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
         expectation = {'address': 'werbung@lists.cde-ev.de',
