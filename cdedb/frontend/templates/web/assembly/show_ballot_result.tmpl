@@ -14,7 +14,7 @@
     {{ util.doclink('Realm_Assembly_Voting-Procedere') }}
     <h1 class="title">
         {% trans %}
-            Result
+            Detailed Results
         {% endtrans %}
         <small>
             {{ util.make_icon('thumbs-up') }}{{ nbsp }}{{ ambience['ballot']['title'] }}
@@ -27,7 +27,7 @@
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot_result"), gettext("Result"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot_result"), gettext("Detailed Results"), active=True) }}
 {% endblock %}
 
 {% block content %}
@@ -77,19 +77,19 @@
             {% endtrans %}
         </p>
         <p>
-            {% trans name="<code>Result Verification</code>"|s, method=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
+            {% trans name=gettext("<code>Result Verification</code>")|s, method=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
                 With our provided {{ name }} Script, you can check that the result displayed in the DB is
                 actually correct. To obtain the result from the votes, we apply the {{ method }} internally.
             {% endtrans %}
         </p>
          <p>
             {% if has_voted %}
-                {% trans name="<code>Own Vote Verification</code>"|s %}
+                {% trans name=gettext("<code>Own Vote Verification</code>")|s %}
                     With the {{ name }} Script, you can verify the correct count of your vote.
                     Additionally, you need the personal secret you received per mail when registering for this assembly.
                 {% endtrans %}
             {% else %}
-                {% trans name="<code>Own Vote Verification</code>"|s %}
+                {% trans name=gettext("<code>Own Vote Verification</code>")|s %}
                     Voters of this ballot can verify their vote using the {{ name }} Script
                     and the personal secret they received per mail when registering for this assembly.
                 {% endtrans %}

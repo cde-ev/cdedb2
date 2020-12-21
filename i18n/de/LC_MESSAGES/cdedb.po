@@ -4379,8 +4379,8 @@ msgid "Start Voting"
 msgstr "Abstimmung starten"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:65
-msgid "More details"
-msgstr "Mehr Details"
+msgid "Detailed results"
+msgstr "Ergebnisdetails"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:8
 #, python-format
@@ -4402,8 +4402,8 @@ msgid ""
 "After evaluating all given votes, we obtain the following combined "
 "preference list of all participants:"
 msgstr ""
-"Nach Auszählen aller abgegebenen Stimmen wurde die folgende "
-"Präferenzliste aller"
+"Nach dem Auszählen aller abgegebenen Stimmen wurde die folgende "
+"Präferenzliste aller Teilnehmer ermittelt:"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:54
 #, python-format
@@ -4449,7 +4449,7 @@ msgid ""
 "displayed in the DB is actually correct. To obtain the result from the "
 "votes, we apply the %(method)s internally."
 msgstr ""
-"Mit dem %(name)s Skript kannst du überprüfen, das das in der DB "
+"Mit dem Skript zum %(name)s kannst du überprüfen, das das in der DB "
 "angezeigte Ergebnis tatsächlich korrekt ist. Um das Ergebnis aus den "
 "Stimmen zu erhalten, benutzen wir intern die %(method)s."
 
@@ -4469,7 +4469,7 @@ msgid ""
 "Additionally, you need the personal secret you received per mail when "
 "registering for this assembly."
 msgstr ""
-"Mit dem %(name)s Skript kannst du die Korrektheit deiner Stimme "
+"Mit dem Skript zum %(name)s kannst du die Korrektheit deiner Stimme "
 "überprüfen. Dazu benötigst du zusätzlich dein persönliches Geheimnis, das"
 " du nach deiner Anmeldung zu dieser Versammlung per Mail erhalten hast."
 
@@ -4481,9 +4481,15 @@ msgid ""
 "assembly."
 msgstr ""
 "Teilnehmer, die in dieser Abstimmung gewählt haben, können ihre Stimme "
-"mittels des %(name)s Skript und ihrem persönlichen Geheimnis, welches sie"
+"mittels des Skript zum %(name)s und ihrem persönlichen Geheimnis, welches sie"
 " nach ihrer Anmeldung für diese Versammlung per Mail erhalten haben, "
 "verifizieren."
+
+msgid "<code>Result Verification</code>"
+msgstr "<code>Verifizieren des Ergebnis</code>"
+
+msgid "<code>Own Vote Verification</code>"
+msgstr "<code>Verifizieren der eigenen Stimme</code>"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:100
 msgid "Download Results"

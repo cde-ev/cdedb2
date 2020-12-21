@@ -62,7 +62,7 @@
     {% if ambience['ballot']['is_tallied'] %}
         <h3>
             {% trans %}Result{% endtrans %}
-            {{ util.href(cdedblink("assembly/show_ballot_result"), gettext("More details"),
+            {{ util.href(cdedblink("assembly/show_ballot_result"), gettext("Detailed Results"),
                          aclass="btn btn-info btn-sm pull-right", icon="book") }}
         </h3>
         {{ ballot_tallied.show_result(ambience['ballot'], result) }}
