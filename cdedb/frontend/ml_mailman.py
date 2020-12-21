@@ -98,10 +98,23 @@ class MailmanMixin(MlBaseFrontend):
             mm_list.settings.save()
 
         desired_templates = {
-            'list:member:regular:footer': (
-                "Dies ist eine Mailingliste des CdE e.V.\n"
-                "Zur Abo-Verwaltung benutze die Datenbank"
-                " (https://db.cde-ev.de/db/ml/)"),
+            # Funny split to protect trailing whitespace
+            'list:member:regular:footer': '-- ' + """
+Dies ist eine Mailingliste des CdE e.V.
+Zur Abo-Verwaltung benutze die Datenbank (https://db.cde-ev.de/db/ml/)""",
+            'list:admin:action:post': """
+As list moderator, your authorization is requested for the
+following mailing list posting:
+
+    List:    $listname
+    From:    $sender_email
+    Subject: $subject
+
+The message is being held because:
+
+$reasons
+
+At your convenience, visit the CdEDB to approve or deny the request.""".strip(),
         }
         store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
