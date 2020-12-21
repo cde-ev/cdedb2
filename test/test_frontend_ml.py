@@ -2,6 +2,7 @@
 
 import csv
 import re
+import unittest.mock
 
 import cdedb.database.constants as const
 from test.common import as_users, USER_DICT, FrontendTest, prepsql
@@ -1306,14 +1307,133 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
+    @unittest.mock.patch("mailmanclient.Client")
+    @as_users("anton")
+    def test_mailman_moderation(self, client_class, user):
+        #
+        # Prepare
+        #
+        messages = [unittest.mock.MagicMock() for _ in range(3)]
+        messages[0].request_id = 1
+        messages[0].sender = 'kassenwart@example.cde'
+        messages[0].subject = 'Finanzbericht'
+        messages[0].reason = 'Spam'
+        messages[1].request_id = 2
+        messages[1].sender = 'illuminati@example.cde'
+        messages[1].subject = 'Verschwurbelung'
+        messages[1].reason = 'Spam'
+        messages[2].request_id = 3
+        messages[2].sender = 'nigerian_prince@example.cde'
+        messages[2].subject = 'unerwartetes Erbe'
+        messages[2].reason = 'Spam'
+        for i in range(3):
+            messages[i].msg = """
+Received: from mail-il1-f180.google.com (mail-il1-f180.google.com [209.85.166.180])
+	by mail.cde-ev.de (Postfix) with ESMTP id D03062000E7
+	for <mailman-migration@testmail.cde-ev.de>; Tue, 15 Dec 2020 18:36:08 +0100 (CET)
+Received: by mail-il1-f180.google.com with SMTP id x15so20028263ilq.1
+        for <mailman-migration@testmail.cde-ev.de>; Tue, 15 Dec 2020 09:36:08 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=wxNIxkuiI0Hi2ZG/kqkcMfwGbfJ5LyA0tFjqoSn4zuA=;
+        b=AnaGVaqslVzu6nvKOibF2ATCvUzNwKkuDlRHNe3Q0V20xHvsfnyEb9V+lvFf4mXhWY
+         Cerg11qBWhpdKsk6rWlKBl5IPHY0wIRAM8N1h3vtKMfHuxyJ4U6k7LGEmlKXSuDl+QQk
+         DAgL1ZpTtTjToEiP7QmOAQSOcG5jryV7KhbBrQSujHYv6s62MnNHYQXFnfkKBWgVCekf
+         yFJ7oASV73GXZatnmDAAMhSRZBe39UjljlOCb4//S8G/XuSnponPrtdCzc4d67FTB4YL
+         KyNwRpRF1/jMmKLkjXKKfgMj42EpIOwl7kA1uiyRA88HER3b56+1049Gi1kLybTkl9i1
+         WFnA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=wxNIxkuiI0Hi2ZG/kqkcMfwGbfJ5LyA0tFjqoSn4zuA=;
+        b=SEKJe6BemekvQQ+NEIBJIvSvG2GlNUn123x98BYNqnBUlkVqxpQzIo5W1+44NHB6Yk
+         3FThiCdw3I9rT0FQUwrLYjZ1ZIBXCy7bWWmXvBONUAgIC196dVlCtsarDY/M7OJWmGqj
+         H3KG6BVCq+Dmz9rhEM77Zd4nu+KaoPwKrUnVfJzmN1kgignUdUZ1oJsoir/s9snipX2h
+         b94wF9FAmym3wQ3Z1wkLCsdlEyWy3H5GBnZMZmRJfgDc2dZi5lAE0puMhTyS1qw34P2J
+         9MrSaVrFpXb8P7v25nw881EvfG7vZJCEHj45tH6I3sTsRJV3ymHtxfEUXIiNgfgUopOQ
+         8U2w==
+X-Gm-Message-State: AOAM530lMaqnS52U4kQrOddMRG5Ad7SPgbJZSkMrqj7MiwK/RaJX8nCA
+	hn8iNHWPIJUlEHWiUmlwSxnN3wiIfzNwo2Ypr9c3QTbh
+X-Google-Smtp-Source: ABdhPJyjYmKYwkmrNjBO0lVYclFiACiQIwht7Fr8W3PGSof4Slav7pBgn4SnnOS97LLxbFcPV7dmsQHM4oBwwcdDHUg=
+X-Received: by 2002:a92:8404:: with SMTP id l4mr42107425ild.49.1608053767397;
+ Tue, 15 Dec 2020 09:36:07 -0800 (PST)
+MIME-Version: 1.0
+From: Lokalgruppenleitung Bonn CdE <lokalleiter.cde.bonn@gmail.com>
+Date: Tue, 15 Dec 2020 18:35:56 +0100
+Message-ID: <CAJBhFmopLy3XW=fZ-=jBzEhwfKhUZ9cPEThauX+JV+kWt_E_SA@mail.gmail.com>
+Subject: Test
+To: mailman-migration@testmail.cde-ev.de
+Content-Type: multipart/alternative; boundary="00000000000095e6f305b6843107"
+X-MailFrom: lokalleiter.cde.bonn@gmail.com
+X-Mailman-Rule-Hits: nonmember-moderation
+X-Mailman-Rule-Misses: dmarc-mitigation; no-senders; approved; emergency; loop; banned-address; member-moderation
+Message-ID-Hash: PRNZQCMT4PUEDIWYMIXGNRT4Y2I53NLK
+X-Message-ID-Hash: PRNZQCMT4PUEDIWYMIXGNRT4Y2I53NLK
+
+--00000000000095e6f305b6843107
+Content-Type: text/plain; charset="UTF-8"
+
+Test-Mail
+
+--00000000000095e6f305b6843107
+Content-Type: text/html; charset="UTF-8"
+
+<div dir="ltr">Test-Mail</div>
+
+--00000000000095e6f305b6843107--
+""".strip()
+        mmlist = unittest.mock.MagicMock()
+        mmlist.held = messages
+        client = client_class.return_value
+        client.get_list.return_value = mmlist
+
+        #
+        # Run
+        #
+        self.traverse({'href': '/ml/$'})
+        self.traverse({'href': '/ml/mailinglist/99'})
+        self.traverse({'href': '/ml/mailinglist/99/moderate'})
+        self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
+        self.assertPresence("Finanzbericht")
+        self.assertPresence("Verschwurbelung")
+        self.assertPresence("unerwartetes Erbe")
+        mmlist.held = messages[1:]
+        f = self.response.forms['acceptmsg1']
+        self.submit(f)
+        self.assertNonPresence("Finanzbericht")
+        self.assertPresence("Verschwurbelung")
+        self.assertPresence("unerwartetes Erbe")
+        mmlist.held = messages[2:]
+        f = self.response.forms['rejectmsg2']
+        self.submit(f)
+        self.assertNonPresence("Finanzbericht")
+        self.assertNonPresence("Verschwurbelung")
+        self.assertPresence("unerwartetes Erbe")
+        mmlist.held = messages[3:]
+        f = self.response.forms['discardmsg3']
+        self.submit(f)
+        self.assertNonPresence("Finanzbericht")
+        self.assertNonPresence("Verschwurbelung")
+        self.assertNonPresence("unerwartetes Erbe")
+
+        #
+        # Check
+        #
+        umcall = unittest.mock.call
+        # Creation
+        self.assertEqual(
+            mmlist.moderate_message.call_args_list,
+            [umcall(1, 'accept'), umcall(2, 'reject'), umcall(3, 'discard')])
+
     def test_log(self):
-        ## First: generate data
+        # First: generate data
         self.test_mailinglist_management()
         self.logout()
         self.test_create_mailinglist()
         self.logout()
 
-        ## Now check it
+        # Now check it
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
