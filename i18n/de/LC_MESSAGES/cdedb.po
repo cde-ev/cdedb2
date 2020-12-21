@@ -4379,7 +4379,7 @@ msgid "Start Voting"
 msgstr "Abstimmung starten"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:65
-msgid "Detailed results"
+msgid "Detailed Results"
 msgstr "Ergebnisdetails"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:8
