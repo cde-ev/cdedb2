@@ -542,8 +542,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertTitle(f"{ballot['title']} ({assembly['title']})")
 
             # check ballot status
-            vote_begin = datetime_filter(reference_time if ballot['vote_begin'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_begin']), lang='de')
-            vote_end = datetime_filter(reference_time if ballot['vote_end'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_end']), lang='de')
+            # TODO convert datestring into datetime.datetime
+            # vote_begin = datetime_filter(reference_time if ballot['vote_begin'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_begin']), lang='de')
+            # vote_end = datetime_filter(reference_time if ballot['vote_end'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_end']), lang='de')
             # TODO how to use nearly_now here?
             # self.assertPresence(f"{vote_begin} bis {vote_end}", div='ballot-status')
             # # TODO process quorum right
@@ -560,7 +561,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertPresence(
                 "Die Abstimmung läuft.", div='ballot-status',
                 condition=(ballot_id in self.BALLOT_STATES['voting']
-                           or ballot_id in self.BALLOT_STATES['extended']))
+                           or ballot_id in self.BALLOT_STATES['extended']
+                           and ballot_id not in self.BALLOT_STATES['tallied']))
 
     @as_users("garcia")
     def test_show_ballot_without_attendance(self, user):
