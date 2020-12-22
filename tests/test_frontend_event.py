@@ -6,6 +6,8 @@ import datetime
 import json
 import re
 
+import webtest
+
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, now
 from cdedb.frontend.common import CustomCSVDialect, iban_filter

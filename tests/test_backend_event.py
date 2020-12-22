@@ -9,6 +9,7 @@ import json
 import psycopg2
 import pytz
 
+import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.backend.event import EventBackend
 from cdedb.common import (

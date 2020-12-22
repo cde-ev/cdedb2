@@ -6,6 +6,8 @@ import re
 import time
 import unittest
 
+import webtest
+
 import cdedb.database.constants as const
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ASSEMBLY_BAR_SHORTNAME, now,

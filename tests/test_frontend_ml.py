@@ -4,6 +4,7 @@ import csv
 import re
 
 import cdedb.database.constants as const
+import cdedb.ml_type_aux as ml_type
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
