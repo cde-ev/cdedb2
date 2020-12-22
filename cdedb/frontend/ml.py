@@ -2,6 +2,7 @@
 
 """Services for the ml realm."""
 
+import urllib.error
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -56,7 +57,14 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
         elif dblist['domain'] in {const.MailinglistDomain.testmail}:
             mailman = self.mailman_connect()
             mmlist = mailman.get_list(dblist['address'])
-            response = mmlist.moderate_message(request_id, action)
-            # TODO notification depending on response
-            rs.notify("success", n_("Message moderated."))
+            try:
+                response = mmlist.moderate_message(request_id, action)
+            except urllib.error.HTTPError:
+                rs.notify("error", n_("Message unavailable."))
+            if response.status // 100 == 2:
+                rs.notify("success", n_("Message moderated."))
+            elif response.status // 100 == 4:
+                rs.notify("warning", n_("Message not moderated."))
+            else:
+                rs.notify("error", n_("Message not moderated."))
         return self.redirect(rs, "ml/message_moderation")
