@@ -7,13 +7,13 @@ import itertools
 import json
 import re
 import unittest
-from test.common import USER_DICT, FrontendTest, as_users
 
 import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, extract_roles, now
 from cdedb.query import QueryOperators
+from tests.common import USER_DICT, FrontendTest, as_users
 
 
 class TestCdEFrontend(FrontendTest):
@@ -130,7 +130,7 @@ class TestCdEFrontend(FrontendTest):
             ins = everyone + past_event + cde_admin + finance_admin
             out = member + searchable
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 

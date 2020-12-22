@@ -39,3 +39,21 @@ farin@example.cde       DB-32-9   secret     Member, corresponding to Finanzvors
 viktor@example.cde      DB-48-5   secret     assembly admin
 akira@example.cde       DB-100-7  secret     equal to Anton - to test sorting
 ======================= ========= ========== ================================================
+
+Running test
+------------
+
+We provide two scripts to run tests.
+These are ``bin/check.sh`` and ``bin/singlecheck.sh``.
+
+The first script will run all tests if called without arguments.
+It also accepts a filename (without ``.py`` ending and an optional ``test_`` prefix)
+and will then run all tests from that file.
+
+The ``singlecheck.py`` script allows one to run all tests matching a pattern.
+You can pass an arbitrary amount of patterns to ``singlecheck.sh``
+which will then get matched against the fully qualified test method name.
+Such a specifier looks like ``tests.test_frontend_event.TestEventFrontend.test_create_event``.
+
+Pattern matching is performed using ``fnmatch.fnmatchcase``.
+If a pattern without an asterisk is passed it will be wrapped with one on both ends.

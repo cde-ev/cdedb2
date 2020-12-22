@@ -4,7 +4,6 @@ import copy
 import datetime
 import decimal
 from pathlib import Path
-from test.common import USER_DICT, BackendTest, as_users, create_mock_image, nearly_now
 
 import cdedb.database.constants as const
 from cdedb.common import (
@@ -12,6 +11,7 @@ from cdedb.common import (
     PrivilegeError, get_hash, merge_dicts, now,
 )
 from cdedb.validation import _PERSONA_CDE_CREATION, _PERSONA_EVENT_CREATION
+from tests.common import USER_DICT, BackendTest, as_users, create_mock_image, nearly_now
 
 PERSONA_TEMPLATE = {
     'username': "zelda@example.cde",

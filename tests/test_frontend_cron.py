@@ -6,10 +6,10 @@ import decimal
 import json
 import numbers
 import unittest.mock
-from test.common import CronTest, prepsql
 
 import cdedb.database.constants as const
 from cdedb.common import now, xsorted
+from tests.common import CronTest, prepsql
 
 INSERT_TEMPLATE = """
 INSERT INTO {table} ({columns}) VALUES ({values});

@@ -2,13 +2,13 @@
 
 import csv
 import re
-from test.common import USER_DICT, FrontendTest, as_users, prepsql
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
+from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
 
 class TestMlFrontend(FrontendTest):
@@ -59,7 +59,7 @@ class TestMlFrontend(FrontendTest):
                    "Moderierte Mailinglisten", "Nutzer verwalten", "Log"]
             out = ["Übersicht"]
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
@@ -232,7 +232,7 @@ class TestMlFrontend(FrontendTest):
             ins = everyone
             out = moderator
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 

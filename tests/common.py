@@ -131,7 +131,7 @@ def json_keys_to_int(obj: T) -> T:
     return ret
 
 
-def read_sample_data(filename: PathLike = "/cdedb2/test/ancillary_files/"
+def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
                                           "sample_data.json"
                      ) -> Dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""

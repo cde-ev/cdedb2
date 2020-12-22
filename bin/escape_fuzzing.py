@@ -7,8 +7,8 @@ First, load manually the special sample data, which contains the magic
 token "<script>abcdef</script>" in every user definable string:
 
     make sample-data-test
-    sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
-    sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql
+    sudo -u cdb psql -U cdb -d cdb_test -f tests/ancillary_files/clean_data.sql
+    sudo -u cdb psql -U cdb -d cdb_test -f tests/ancillary_files/sample_data_escaping.sql
 
 This script logs in as Anton (our testing meta admin account) and traverses all
 links and forms it can find. In every response it checks for the magic string
