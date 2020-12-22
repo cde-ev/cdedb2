@@ -1614,15 +1614,13 @@ class CoreBackend(AbstractBackend):
         persona_id = rs.user.persona_id
         now_date = now().date()
 
-        query = ("SELECT last_access_hash FROM core.quota"
+        query = ("SELECT last_access_hash AS lah, queries AS q FROM core.quota"
                  " WHERE persona_id = %s AND qdate = %s")
-        last_access_hash = unwrap(self.query_one(rs, query, (persona_id, now_date)))
-        if last_access_hash is not None and last_access_hash == access_hash:
-            # Returning 0 here means that requerying the same data again is always
-            # allowed. This works, because the hash for the query that actually exceeds
-            # the limit is never actually saved because it causes an exception and
-            # is thus rolled back.
-            return 0
+        data = self.query_one(rs, query, (persona_id, now_date))
+        # If there was a previous access and the previous acces was the same as this
+        # one, dont count it. Instead return the precious count of queries.
+        if data is not None and data["lah"] is not None and data["lah"] == access_hash:
+            return data["q"]
 
         query = ("INSERT INTO core.quota (queries, persona_id, qdate, last_access_hash)"
                  " VALUES (%s, %s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
