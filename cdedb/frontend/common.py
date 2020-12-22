@@ -1570,7 +1570,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         if not runs:
             target = pathlib.Path(tmp_dir, work_dir_name)
-            shutil.make_archive(target, "gztar", work_dir_name, logger=self.logger)
+            shutil.make_archive(str(target), "gztar", work_dir_name, logger=self.logger)
             if tex_file_name.endswith('.tex'):
                 tex_file = "{}.tar.gz".format(tex_file_name[:-4])
             else:
