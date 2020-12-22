@@ -97,6 +97,21 @@ class MailmanMixin(MlBaseFrontend):
         if changed:
             mm_list.settings.save()
 
+        desired_header_matches = {
+            ('x-spam-flag', 'YES', 'hold'),
+        }
+        existing_header_matches = {
+            (match.rest_data['header'], match.rest_data['pattern'],
+             match.rest_data['action'])
+            for match in mm_list.header_matches
+        }
+        if desired_header_matches != existing_header_matches:
+            header_matches = mm_list.header_matches
+            for match in header_matches:
+                match.delete()
+            for header, pattern, action in desired_header_matches:
+                mm_list.header_matches.add(header, pattern, action)
+
         desired_templates = {
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + """
