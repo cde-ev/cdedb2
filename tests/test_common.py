@@ -281,19 +281,17 @@ class TestCommon(BasicTest):
             raise self.failureException(msg) from None
 
     def test_untranslated_strings(self):
-        i18n_path = pathlib.Path('/cdedb2/i18n')
-        msg_subdir = 'LC_MESSAGES'
-        pofile = 'cdedb.po'
+        i18n_path = self.conf["REPOSITORY_PATH"]
         env = os.environ.copy()
         with tempfile.TemporaryDirectory() as tempdir:
             env['I18NDIR'] = tempdir
             try:
                 temppath = pathlib.Path(tempdir)
                 for lang in ('de', 'en'):
-                    langdir = temppath / lang / msg_subdir
+                    langdir = temppath / lang / 'LC_MESSAGES'
                     langdir.mkdir(parents=True)
-                    temp_pofile = langdir / pofile
-                    orig_pofile = i18n_path / lang / msg_subdir / pofile
+                    temp_pofile = langdir / 'cdedb.po'
+                    orig_pofile = i18n_path / lang / 'LC_MESSAGES' / 'cdedb.po'
                     shutil.copy(orig_pofile, temp_pofile)
                 tmp = subprocess.run(["make", "i18n-refresh"], check=True, env=env,
                                      capture_output=True)
