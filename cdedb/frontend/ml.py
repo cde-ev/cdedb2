@@ -26,8 +26,7 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
             if (self.conf["CDEDB_DEV"] and not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
                     and dblist['domain'] in {const.MailinglistDomain.testmail}):
                 held = HELD_MESSAGE_SAMPLE
-            else:
-                self.logger.info("Skipping mailman query in dev/offline mode.")
+            self.logger.info("Skipping mailman query in dev/offline mode.")
         elif dblist['domain'] in {const.MailinglistDomain.testmail}:
             mailman = self.mailman_connect()
             mmlist = mailman.get_list(dblist['address'])
@@ -40,6 +39,14 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
     def message_moderation(self, rs: RequestState, mailinglist_id: int,
                            request_id: int, action: str) -> Response:
         """Moderate a held message."""
+        logcode = {
+            "accept": const.MlLogCodes.moderate_accept,
+            "reject": const.MlLogCodes.moderate_reject,
+            "discard": const.MlLogCodes.moderate_discard,
+        }.get(action)
+        if logcode is None:
+            rs.add_validation_error(
+                ("action", ValueError(n_("Invalid moderation action."))))
         if rs.has_validation_errors():
             return self.message_moderation_form(rs, mailinglist_id)
         dblist = rs.ambience['mailinglist']
