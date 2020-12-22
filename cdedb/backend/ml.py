@@ -1638,3 +1638,12 @@ class MlBackend(AbstractBackend):
             self.ml_log(rs, const.MlLogCodes.email_trouble, None,
                         persona_id=unwrap(data)['id'], change_note=line)
             return True
+
+    @access("ml")
+    def log_moderation(self, rs: RequestState, code: const.MlLogCodes,
+                       mailinglist_id: int, change_note: str) -> DefaultReturnCode:
+        """Log a moderation action (delegated to Mailman)."""
+        code = affirm("enum_mllogcodes", code)
+        mailinglist_id = affirm("int", mailinglist_id)
+        change_note = affirm("str", change_note)
+        return self.ml_log(rs, code, mailinglist_id, change_note=change_note)
