@@ -16,7 +16,7 @@ help:
 	@echo "lint -- run linters (mainly pylint)"
 	@echo "check -- run test suite"
 	@echo "         (TESTPATTERN specifies files, e.g. 'test_common.py')"
-	@echo "single-check -- run some test from the test suite"
+	@echo "single-check -- run some tests from the test suite"
 	@echo "                (PATTERNS specifies globs to match against the testnames like"
 	@echo "                tests.test_frontend_event.TestEventFrontend.test_create_event)"
 	@echo "coverage -- run coverage to determine test suite coverage"
