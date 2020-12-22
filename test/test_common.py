@@ -302,7 +302,7 @@ class TestCommon(unittest.TestCase):
             except subprocess.CalledProcessError as cpe:
                 self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
         pattern = re.compile(r" (\d+) (?:unübersetzte Meldung|untranslated message)")
-        match = re.search(pattern, " ".join(result.stderr.decode().splitlines()))
+        match = re.search(pattern, " ".join(result.stderr.decode().splitlines()[:-1]))
         if match:
             self.fail(f"There are {match.group(1)} untranslated strings (German)."
                       f" Make sure all strings are translated to German.")
