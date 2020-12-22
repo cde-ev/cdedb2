@@ -50,6 +50,7 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
                 ("action", ValueError(n_("Invalid moderation action."))))
         if rs.has_validation_errors():
             return self.message_moderation_form(rs, mailinglist_id)
+        assert logcode is not None
         dblist = rs.ambience['mailinglist']
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
