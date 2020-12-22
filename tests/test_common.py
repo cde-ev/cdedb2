@@ -8,7 +8,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import unittest
 
 import pytz
 
@@ -18,9 +17,10 @@ from cdedb.common import (
     extract_roles, int_to_words, mixed_existence_sorter, schulze_evaluate, unwrap,
     xsorted,
 )
+from tests.common import BasicTest
 
 
-class TestCommon(unittest.TestCase):
+class TestCommon(BasicTest):
     def test_mixed_existence_sorter(self):
         unsorted = [3, 8, -3, 5, 0, -4]
         self.assertEqual(list(mixed_existence_sorter(unsorted)),

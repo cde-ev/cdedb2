@@ -318,7 +318,7 @@ class MyTextTestResult(unittest.TextTestResult):
         self._subTestSkips.append(reason)
 
 
-class CdEDBTest(unittest.TestCase):
+class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
     testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
     _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
@@ -331,9 +331,6 @@ class CdEDBTest(unittest.TestCase):
         cls.conf = Config()
 
     def setUp(self) -> None:
-        subprocess.check_call(("make", "sample-data-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
         # Provide a fresh copy of clean sample data.
         self.sample_data = copy.deepcopy(self._clean_sample_data)
 
@@ -375,6 +372,18 @@ class CdEDBTest(unittest.TestCase):
                 ret[anid] = copy.deepcopy(self.sample_data[table][anid])
         return ret
 
+
+class CdEDBTest(BasicTest):
+    """Reset the DB for every test."""
+    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
+    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
+    conf: ClassVar[Config]
+
+    def setUp(self) -> None:
+        subprocess.check_call(("make", "sample-data-test-shallow"),
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
+        super(CdEDBTest, self).setUp()
 
 UserIdentifier = Union[CdEDBObject, str]
 
