@@ -22,6 +22,7 @@ help:
 
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
+COVERAGEBIN ?= coverage
 MYPYBIN ?= mypy
 TESTPREPARATION ?= automatic
 I18NDIR ?= ./i18n
@@ -290,10 +291,10 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard test/*.py)
 	$(MAKE) prepare-check
-	$(PYTHONBIN) /usr/bin/coverage run -m test.main
+	$(COVERAGEBIN) run -m test.main
 
 coverage: .coverage
-	$(PYTHONBIN) /usr/bin/coverage report -m --omit='test/*,related/*'
+	$(COVERAGEBIN) report --include 'cdedb/*' --show-missing
 
 test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json \
 		test/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
