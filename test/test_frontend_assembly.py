@@ -555,14 +555,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             # self.assertPresence(
             #     f"Wurde bis {vote_extension_end} verlängert, da {ballot['abs_quorum']} Stimmen nicht erreicht wurden.",
             #     div='ballot-status', condition=ballot_id in self.BALLOT_STATES['extended'])
-            self.assertPresence(
-                "Diese Abstimmung hat noch nicht begonnen.", div='ballot-status',
-                condition=ballot_id in self.BALLOT_STATES['edit'])
-            self.assertPresence(
-                "Die Abstimmung läuft.", div='ballot-status',
-                condition=(ballot_id in self.BALLOT_STATES['voting']
-                           or ballot_id in self.BALLOT_STATES['extended']
-                           and ballot_id not in self.BALLOT_STATES['tallied']))
+            msg = "Diese Abstimmung hat noch nicht begonnen."
+            if ballot_id in self.BALLOT_STATES['edit']:
+                self.assertPresence(msg, div='ballot-status')
+            else:
+                self.assertNonPresence(msg, div='ballot-status')
+            if (ballot_id in self.BALLOT_STATES['voting']
+                    or ballot_id in self.BALLOT_STATES['extended']
+                    and ballot_id not in self.BALLOT_STATES['tallied']):
+                self.assertPresence("Die Abstimmung läuft.", div='ballot-status')
+            else:
+                self.assertNonPresence("Die Abstimmung läuft.", div='ballot-status')
 
     @as_users("garcia")
     def test_show_ballot_without_attendance(self, user):
