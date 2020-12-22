@@ -114,7 +114,9 @@ The message is being held because:
 
 $reasons
 
-At your convenience, visit the CdEDB to approve or deny the request.""".strip(),
+At your convenience, visit the CdEDB to approve or deny the request. Note
+that the paragraph below about email moderation is wrong. Sending mails will
+do nothing.""".strip(),
         }
         store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
