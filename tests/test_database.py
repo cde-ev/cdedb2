@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-import unittest
-import psycopg2.extensions
 import os.path
-from cdedb.database.connection import (
-    connection_pool_factory, IrradiatedConnection, Atomizer)
+import unittest
+
+import psycopg2.extensions
+
 from cdedb.config import BasicConfig, Config, SecretsConfig
+from cdedb.database.connection import (
+    Atomizer, IrradiatedConnection, connection_pool_factory,
+)
 
 _BASICCONF = BasicConfig()
 _CONF = Config()

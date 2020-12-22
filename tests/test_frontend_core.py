@@ -2,14 +2,14 @@
 
 import copy
 import re
-
 import urllib.parse
-from tests.common import USER_DICT, FrontendTest, as_users
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, get_hash
+
+import webtest
 
 import cdedb.database.constants as const
-import webtest
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, get_hash
 from cdedb.query import QueryOperators
+from tests.common import USER_DICT, FrontendTest, as_users
 
 
 class TestCoreFrontend(FrontendTest):

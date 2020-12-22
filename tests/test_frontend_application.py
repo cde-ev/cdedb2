@@ -2,6 +2,7 @@
 
 import unittest
 import unittest.mock
+
 from tests.common import FrontendTest, as_users
 
 

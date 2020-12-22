@@ -2,17 +2,15 @@
 
 import copy
 import csv
+import datetime
 import json
 import re
-import datetime
-import webtest
 
-from tests.common import as_users, USER_DICT, FrontendTest, prepsql
-
-from cdedb.query import QueryOperators
-from cdedb.common import now, ADMIN_VIEWS_COOKIE_NAME
-from cdedb.frontend.common import CustomCSVDialect, iban_filter
 import cdedb.database.constants as const
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, now
+from cdedb.frontend.common import CustomCSVDialect, iban_filter
+from cdedb.query import QueryOperators
+from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
 
 class TestEventFrontend(FrontendTest):

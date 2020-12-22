@@ -32,26 +32,24 @@ import hmac
 import math
 from pathlib import Path
 from secrets import token_urlsafe
+from typing import Any, Collection, Dict, Optional, Set, Tuple, Union
 
-from typing import (
-    Any, Set, Dict, Tuple, Union, Collection, Optional
-)
 from typing_extensions import Protocol
 
-from cdedb.backend.common import (
-    access, affirm_validation as affirm, affirm_set_validation as affirm_set,
-    Silencer, singularize, AbstractBackend, internal)
-from cdedb.common import (
-    n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
-    ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
-    PrivilegeError, ASSEMBLY_BAR_SHORTNAME, json_serialize,
-    implying_realms, xsorted, RequestState, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-    get_hash, mixed_existence_sorter, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, DeletionBlockers, CdEDBLog,
-)
-from cdedb.query import QueryOperators, Query
-from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
+from cdedb.backend.common import (
+    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
+    affirm_validation as affirm, internal, singularize,
+)
+from cdedb.common import (
+    ASSEMBLY_ATTACHMENT_FIELDS, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
+    ASSEMBLY_BAR_SHORTNAME, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, CdEDBLog,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, EntitySorter,
+    PrivilegeError, RequestState, get_hash, glue, implying_realms, json_serialize,
+    mixed_existence_sorter, n_, now, schulze_evaluate, unwrap, xsorted,
+)
+from cdedb.database.connection import Atomizer
+from cdedb.query import Query, QueryOperators
 
 
 class AssemblyBackend(AbstractBackend):

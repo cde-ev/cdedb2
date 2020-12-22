@@ -8,39 +8,37 @@ import json
 import pathlib
 import sys
 import types
+from typing import Any, Callable, Dict, Optional, Set
 
 import jinja2
 import psycopg2.extensions
 import werkzeug
-import werkzeug.routing
 import werkzeug.exceptions
+import werkzeug.routing
 import werkzeug.wrappers
 
-from typing import (
-    Dict, Callable, Optional, Set, Any
-)
-
-from cdedb.frontend.core import CoreFrontend
-from cdedb.frontend.cde import CdEFrontend
-from cdedb.frontend.event import EventFrontend
-from cdedb.frontend.assembly import AssemblyFrontend
-from cdedb.frontend.ml import MlFrontend
+from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
-    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, make_proxy,
-    ADMIN_VIEWS_COOKIE_NAME, make_root_logger, PathLike, CdEDBObject
+    ADMIN_VIEWS_COOKIE_NAME, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBObject,
+    PathLike, QuotaException, RequestState, User, glue, make_proxy, make_root_logger,
+    n_, now, roles_to_db_role,
 )
-from cdedb.frontend.common import (
-    BaseApp, construct_redirect, Response, sanitize_None, staticurl,
-    docurl, JINJA_FILTERS)
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.frontend.assembly import AssemblyFrontend
+from cdedb.frontend.cde import CdEFrontend
+from cdedb.frontend.common import (
+    JINJA_FILTERS, BaseApp, Response, construct_redirect, docurl, sanitize_None,
+    staticurl,
+)
+from cdedb.frontend.core import CoreFrontend
+from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
-from cdedb.backend.session import SessionBackend
-from cdedb.backend.event import EventBackend
-from cdedb.backend.ml import MlBackend
-from cdedb.backend.assembly import AssemblyBackend
 
 
 class Application(BaseApp):

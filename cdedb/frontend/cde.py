@@ -3,54 +3,49 @@
 """Services for the cde realm."""
 
 import cgitb
-from collections import OrderedDict, defaultdict
 import copy
 import csv
+import datetime
+import decimal
 import itertools
+import operator
 import pathlib
 import random
 import re
+import shutil
 import string
 import sys
 import tempfile
-import operator
-import datetime
 import time
-import dateutil.easter
-import shutil
-import decimal
+from collections import OrderedDict, defaultdict
+from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 
+import dateutil.easter
 import psycopg2.extensions
 import werkzeug.exceptions
-from werkzeug import Response, FileStorage
-
-from typing import (
-    Tuple, Optional, List, Collection, Set, Dict, Sequence, cast
-)
+from werkzeug import FileStorage, Response
 
 import cdedb.database.constants as const
+import cdedb.frontend.parse_statement as parse
 import cdedb.validation as validate
-from cdedb.database.connection import Atomizer
 from cdedb.common import (
-    n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
-    int_to_words, deduct_years, determine_age_class, LineResolutions,
-    PERSONA_DEFAULTS, diacritic_patterns, asciificator, EntitySorter,
-    TransactionType, xsorted, get_hash, RequestState, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, Error
+    PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
+    Error, LineResolutions, RequestState, TransactionType, asciificator, deduct_years,
+    determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
+    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
+from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
-    check_validation as check, cdedbid_filter, request_extractor,
-    make_postal_address, make_membership_fee_reference, query_result_to_json,
-    enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
-    calculate_db_logparams, calculate_loglinks, process_dynamic_input,
-    Response, periodic,
+    CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile, Response, Worker,
+    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
+    check_validation as check, csv_output, enum_entries_filter,
+    make_membership_fee_reference, make_postal_address, money_filter, periodic,
+    process_dynamic_input, query_result_to_json, request_extractor,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
-    QUERY_SPECS, mangle_query_input, QueryOperators, Query, QueryConstraint
+    QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
-import cdedb.frontend.parse_statement as parse
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,

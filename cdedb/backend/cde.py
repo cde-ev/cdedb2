@@ -8,24 +8,23 @@ members are also possible.
 
 import datetime
 import decimal
+from typing import Any, Collection, Dict, List, Optional, Tuple
 
-from typing import (
-    Collection, Dict, Tuple, List, Any, Optional
-)
 from typing_extensions import Protocol
 
-from cdedb.backend.common import (
-    access, affirm_validation as affirm, AbstractBackend,
-    affirm_set_validation as affirm_set, singularize, batchify)
-from cdedb.common import (
-    n_, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
-    LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS,
-    implying_realms, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, CdEDBLog,
-    RequestState, DeletionBlockers, QuotaException,
-)
-from cdedb.query import QueryOperators, Query
-from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
+from cdedb.backend.common import (
+    AbstractBackend, access, affirm_set_validation as affirm_set,
+    affirm_validation as affirm, batchify, singularize,
+)
+from cdedb.common import (
+    EXPULS_PERIOD_FIELDS, LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS,
+    ORG_PERIOD_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    DeletionBlockers, PrivilegeError, QuotaException, RequestState, implying_realms,
+    merge_dicts, n_, now, unwrap,
+)
+from cdedb.database.connection import Atomizer
+from cdedb.query import Query, QueryOperators
 
 
 class CdEBackend(AbstractBackend):

@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
-from tests.common import BackendTest, as_users, USER_DICT, nearly_now, prepsql
-from cdedb.query import QUERY_SPECS, QueryOperators
-from cdedb.common import (
-    PrivilegeError, SubscriptionError, SubscriptionActions as SA)
-from cdedb.database.constants import (SubscriptionStates as SS,)
-import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
 import datetime
 import decimal
-import copy
+
+import cdedb.database.constants as const
+import cdedb.ml_type_aux as ml_type
 import cdedb.validation as validate
+from cdedb.common import PrivilegeError, SubscriptionActions as SA, SubscriptionError
+from cdedb.database.constants import SubscriptionStates as SS
+from cdedb.query import QUERY_SPECS, QueryOperators
+from tests.common import USER_DICT, BackendTest, as_users, nearly_now, prepsql
 
 
 class TestMlBackend(BackendTest):

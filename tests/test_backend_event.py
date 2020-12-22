@@ -5,19 +5,19 @@ import copy
 import datetime
 import decimal
 import json
-import pytz
-import psycopg2
 
-from tests.common import (
-    BackendTest, as_users, USER_DICT, nearly_now, json_keys_to_int)
-from cdedb.backend.event import EventBackend
+import psycopg2
+import pytz
+
 from cdedb.backend.common import cast_fields
-from cdedb.query import QUERY_SPECS, QueryOperators, Query
+from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PartialImportError, EVENT_SCHEMA_VERSION, now,
-    CDEDB_EXPORT_EVENT_VERSION, PrivilegeError)
+    CDEDB_EXPORT_EVENT_VERSION, EVENT_SCHEMA_VERSION, PERSONA_EVENT_FIELDS,
+    PartialImportError, PrivilegeError, now,
+)
 from cdedb.enums import ENUMS_DICT
-import cdedb.database.constants as const
+from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, nearly_now
 
 
 class TestEventBackend(BackendTest):

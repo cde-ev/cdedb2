@@ -11,25 +11,24 @@ with the production environment.
 
 import getpass
 import gettext
-import time
 import tempfile
+import time
+from types import TracebackType
+from typing import Any, Callable, Optional, Set, Type, cast
 
 import psycopg2
-import psycopg2.extras
 import psycopg2.extensions
+import psycopg2.extras
 
-from types import TracebackType
-from typing import Any, Callable, Optional, Type, Set, cast
-
+from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
-from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
-from cdedb.common import make_proxy, PathLike, ALL_ROLES, RequestState
-from cdedb.database.connection import IrradiatedConnection, Atomizer
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.common import ALL_ROLES, PathLike, RequestState, make_proxy
+from cdedb.database.connection import Atomizer, IrradiatedConnection
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)

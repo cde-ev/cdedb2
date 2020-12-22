@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import datetime
 import secrets
-from typing import Sequence, NamedTuple
+from typing import NamedTuple, Sequence
 
 from cdedb.common import User, now
-from tests.common import BackendTest, USER_DICT, MultiAppFrontendTest, prepsql, execsql
+from tests.common import USER_DICT, BackendTest, MultiAppFrontendTest, execsql, prepsql
 
 SessionEntry = NamedTuple(
     "SessionEntry", [("persona_id", int), ("is_active", bool), ("ip", str),

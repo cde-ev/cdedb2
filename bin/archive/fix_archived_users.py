@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # setup
 
-from cdedb.script import make_backend, setup, Script
 import cdedb.database.constants as const
 from cdedb.common import PERSONA_CORE_FIELDS
+from cdedb.script import Script, make_backend, setup
 
 core = make_backend("core", proxy=False)
 

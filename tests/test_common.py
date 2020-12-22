@@ -3,18 +3,21 @@
 import datetime
 import os
 import pathlib
-import pytz
 import random
 import re
 import subprocess
 import tempfile
 import unittest
 
-from cdedb.common import (
-    extract_roles, schulze_evaluate, int_to_words, xsorted,
-    mixed_existence_sorter, unwrap)
+import pytz
+
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+from cdedb.common import (
+    extract_roles, int_to_words, mixed_existence_sorter, schulze_evaluate, unwrap,
+    xsorted,
+)
+
 
 class TestCommon(unittest.TestCase):
     def test_mixed_existence_sorter(self):

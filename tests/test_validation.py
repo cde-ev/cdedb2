@@ -5,9 +5,10 @@ import datetime
 import decimal
 import unittest
 
+import pytz
+
 import cdedb.database.constants as const
 import cdedb.validation as validate
-import pytz
 from cdedb.common import ValidationWarning
 
 

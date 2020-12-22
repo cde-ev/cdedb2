@@ -9,31 +9,30 @@ template for all services.
 import abc
 import collections.abc
 import copy
+import datetime
 import enum
 import functools
 import logging
-import datetime
-import psycopg2.extras
-import psycopg2.extensions
 from types import TracebackType
 from typing import (
-    Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
-    Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict,
-    ClassVar, Type
+    Any, Callable, ClassVar, Collection, Dict, Iterable, KeysView, List, Mapping,
+    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
+
+import psycopg2.extensions
+import psycopg2.extras
 from typing_extensions import Literal
 
 import cdedb.validation as validate
 from cdedb.common import (
-    PrivilegeError, PsycoJson, diacritic_patterns, glue, make_proxy,
-    make_root_logger, n_, unwrap, RequestState, Role, Realm, PathLike,
-    CdEDBObject, CdEDBObjectMap, CdEDBLog, LOCALE
+    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
+    Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
+    n_, unwrap,
 )
-from cdedb.query import Query
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes
-from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, QueryOperators
+from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])

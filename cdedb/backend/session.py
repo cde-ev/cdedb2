@@ -10,17 +10,17 @@ special in here.
 """
 
 import logging
+from typing import Optional
+
 import psycopg2.extensions
 
-from typing import (
-    Optional
-)
-
-from cdedb.database.connection import connection_pool_factory
-from cdedb.common import (glue, make_root_logger, now, PERSONA_STATUS_FIELDS,
-                          User, extract_roles, droid_roles, PathLike)
-from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
+from cdedb.common import (
+    PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles, glue,
+    make_root_logger, now,
+)
+from cdedb.config import Config, SecretsConfig
+from cdedb.database.connection import connection_pool_factory
 
 
 class SessionBackend:

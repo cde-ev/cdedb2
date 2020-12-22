@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import pathlib
+import shutil
 import subprocess
 import sys
-import shutil
 
 import webtest
+
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.frontend.application import Application
 from tests.common import FrontendTest

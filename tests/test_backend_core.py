@@ -6,13 +6,12 @@ import decimal
 from pathlib import Path
 
 import cdedb.database.constants as const
-from tests.common import (
-    BackendTest, as_users, USER_DICT, nearly_now, create_mock_image,
-)
 from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now, merge_dicts,
-    PERSONA_CDE_FIELDS, get_hash, ArchiveError)
-from cdedb.validation import (_PERSONA_CDE_CREATION, _PERSONA_EVENT_CREATION)
+    PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, ArchiveError,
+    PrivilegeError, get_hash, merge_dicts, now,
+)
+from cdedb.validation import _PERSONA_CDE_CREATION, _PERSONA_EVENT_CREATION
+from tests.common import USER_DICT, BackendTest, as_users, create_mock_image, nearly_now
 
 PERSONA_TEMPLATE = {
     'username': "zelda@example.cde",

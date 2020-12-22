@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 
 import datetime
+import json
 import re
 import time
-import webtest
 import unittest
-import json
 
-from tests.common import as_users, USER_DICT, FrontendTest, MultiAppFrontendTest
-
+import cdedb.database.constants as const
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, now, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ASSEMBLY_BAR_SHORTNAME, now,
 )
 from cdedb.query import QueryOperators
-import cdedb.database.constants as const
+from tests.common import USER_DICT, FrontendTest, MultiAppFrontendTest, as_users
 
 
 class AssemblyTestHelpers(FrontendTest):

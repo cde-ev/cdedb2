@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # author: Dimitri Scheftelowitsch
 # coding: utf-8
+import typing
+from optparse import OptionParser
+
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webdriver import WebDriver
-from optparse import OptionParser
-import typing
 
 """
 This script is designed for creating of LOTS AND LOTS of members

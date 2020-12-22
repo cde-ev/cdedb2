@@ -24,19 +24,20 @@ import sys
 import time
 
 import psycopg2
-import psycopg2.extras
 import psycopg2.extensions
+import psycopg2.extras
+
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 import pytz
 
-from cdedb.common import n_, json_serialize
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.common import json_serialize, n_
 from cdedb.database.connection import IrradiatedConnection
 
 ##

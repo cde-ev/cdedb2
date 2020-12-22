@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
-import unittest
 import sys
+import unittest
+
 from tests.common import MyTextTestResult, check_test_setup
 
 if __name__ == "__main__":
     check_test_setup()
     loader = unittest.TestLoader()
     unittest.installHandler()
-    testRunner = unittest.runner.TextTestRunner(
+    testRunner = unittest.TextTestRunner(
         verbosity=2, resultclass=MyTextTestResult)
     suite = unittest.TestSuite()
     if any(sys.argv[1:]):
