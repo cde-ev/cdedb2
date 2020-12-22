@@ -60,9 +60,16 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-mailmanclient \
     python3-requests \
     python3-typing-extensions \
+    \
+    flake8 \
+    isort \
+    pylint3 \
+    \
     && rm -rf /var/lib/apt/lists/* \
     \
-    && python3 -m pip --no-cache-dir install mypy==0.790
+    && python3 -m pip --no-cache-dir install \
+    mypy==0.790 \
+    coverage
 
 # TODO check wether it is sensible to lower privileges to cdedb user
 # create and configure directories for the apache user
