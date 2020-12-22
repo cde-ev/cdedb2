@@ -1322,6 +1322,9 @@ class TestMlFrontend(FrontendTest):
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()
         mmlist.held = messages
+        moderation_response = unittest.mock.MagicMock()
+        moderation_response.status = 204
+        mmlist.moderate_message.return_value = moderation_response
         client = client_class.return_value
         client.get_list.return_value = mmlist
 
