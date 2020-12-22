@@ -1614,13 +1614,14 @@ class CoreBackend(AbstractBackend):
         persona_id = rs.user.persona_id
         now_date = now().date()
 
-        query = ("SELECT last_access_hash AS lah, queries AS q FROM core.quota"
+        query = ("SELECT last_access_hash, queries FROM core.quota"
                  " WHERE persona_id = %s AND qdate = %s")
         data = self.query_one(rs, query, (persona_id, now_date))
         # If there was a previous access and the previous access was the same as this
         # one, don't count it. Instead return the previous count of queries.
-        if data is not None and data["lah"] is not None and data["lah"] == access_hash:
-            return data["q"]
+        if data is not None and data["last_access_hash"] is not None:
+            if data["last_access_hash"] == access_hash:
+                return data["queries"]
 
         query = ("INSERT INTO core.quota (queries, persona_id, qdate, last_access_hash)"
                  " VALUES (%s, %s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
