@@ -26,35 +26,22 @@
         {% if held %}
             <ul>
                 {% for email in held %}
-                    <li>
+                    <li class="hide-hover-container clearfix-after">
                         {{ email.sender }} / {{ email.subject }}
-                        <form action="{{ cdedblink('ml/message_moderation') }}"
-                              method="POST"
-                              id="acceptmsg{{ email.request_id }}"
-                              class="hide-hover display-inline">
-                            {{ util.anti_csrf_token('ml/message_moderation') }}
-                            {{ util.input_hidden(name="request_id", value=email.request_id) }}
-                            {{ util.input_hidden(name="action", value="accept") }}
-                            {{ util.input_submit(value=gettext("Accept"), aclass="btn btn-success") }}
-                        </form>
-                        <form action="{{ cdedblink('ml/message_moderation') }}"
-                              method="POST"
-                              id="rejectmsg{{ email.request_id }}"
-                              class="hide-hover display-inline">
-                            {{ util.anti_csrf_token('ml/message_moderation') }}
-                            {{ util.input_hidden(name="request_id", value=email.request_id) }}
-                            {{ util.input_hidden(name="action", value="reject") }}
-                            {{ util.input_submit(value=gettext("Reject"), aclass="btn btn-warning") }}
-                        </form>
-                        <form action="{{ cdedblink('ml/message_moderation') }}"
-                              method="POST"
-                              id="discardmsg{{ email.request_id }}"
-                              class="hide-hover display-inline">
-                            {{ util.anti_csrf_token('ml/message_moderation') }}
-                            {{ util.input_hidden(name="request_id", value=email.request_id) }}
-                            {{ util.input_hidden(name="action", value="discard") }}
-                            {{ util.input_submit(value=gettext("Discard"), aclass="btn btn-danger") }}
-                        </form>
+                        {% for action, coloring, icon in (('accept', 'success', 'check'),
+                                                          ('reject', 'warning', 'reply'),
+                                                          ('discard', 'danger', 'trash-alt')) %}
+                            <form action="{{ cdedblink('ml/message_moderation') }}"
+                                  method="POST"
+                                  id="{{ action }}msg{{ email.request_id }}"
+                                  class="hide-hover display-inline">
+                                {{ util.anti_csrf_token('ml/message_moderation') }}
+                                {{ util.input_hidden(name="request_id", value=email.request_id) }}
+                                {{ util.input_hidden(name="action", value=action) }}
+                                {{ util.input_submit(value=gettext(action.capitalize()), icon=icon,
+                                                     aclass=("btn btn-xs btn-" + coloring)) }}
+                            </form>
+                        {% endfor %}
                         <br />
                         <details>
                             <summary>{% trans %}Message details{% endtrans %}</summary>
