@@ -1617,8 +1617,8 @@ class CoreBackend(AbstractBackend):
         query = ("SELECT last_access_hash AS lah, queries AS q FROM core.quota"
                  " WHERE persona_id = %s AND qdate = %s")
         data = self.query_one(rs, query, (persona_id, now_date))
-        # If there was a previous access and the previous acces was the same as this
-        # one, dont count it. Instead return the precious count of queries.
+        # If there was a previous access and the previous access was the same as this
+        # one, don't count it. Instead return the previous count of queries.
         if data is not None and data["lah"] is not None and data["lah"] == access_hash:
             return data["q"]
 
