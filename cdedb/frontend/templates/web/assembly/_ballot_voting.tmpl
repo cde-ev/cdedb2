@@ -12,24 +12,24 @@
     </ul>
 {%- endmacro %}
 
+
+
 {# Classical voting: Voting form #}
 {% macro show_classical_voting() -%}
     <h3>{% trans %}Ballot{% endtrans %}</h3>
     <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/vote') }}
-        {% if ambience['ballot']['votes'] > 1 %}
-            {{ util.form_input_static(value=gettext("You have %(votes)s votes.")|
-                                            format(votes=ambience['ballot']['votes']), small=True) }}
-        {% endif %}
         {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
                                       entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('shortname', 'title'),
                                       radio=(ambience['ballot']['votes'] == 1), small=True) }}
         {% if ambience['ballot']['use_bar'] %}
-            {{ util.form_input_checkboxes(
-                "vote", label="", entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("Against all Candidates"))],
-                small=True, radio=(ambience['ballot']['votes'] == 1),
-                info=gettext("With this option you reject all candidates. "
-                             "If this gets a majority the board may take additional measures.")) }}
+            <div style="margin-top: 13px">
+                {{ util.form_input_checkboxes(
+                   "vote", label='', entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("Against all Candidates"))],
+                   small=True, radio=(ambience['ballot']['votes'] == 1),
+                   info=gettext("With this option you reject all candidates.")) }}
+            </div>
+
         {% endif %}
         {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
     </form>
@@ -41,9 +41,9 @@
     </script>
 
     <div class="form-horizontal">
-        <div class="form-group">
+        <div class="form-group mosp">
             <div class="col-sm-2 control-label">
-                <strong>{% trans %}Additional Options{% endtrans %}</strong>
+                <strong>{% trans %}Additional{% endtrans %}</strong>
             </div>
             <div class="col-sm-10">
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
@@ -56,6 +56,8 @@
         </div>
     </div>
 {%- endmacro %}
+
+
 
 {# Preferential voting: Presentation of candidates #}
 {% macro show_preferential_candidates() -%}
@@ -74,8 +76,10 @@
     </ul>
 {%- endmacro %}
 
+
+
 {% macro show_manual_for_text_preferential_voting() -%}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
@@ -99,7 +103,6 @@
                     Use it in your preferencelist like you would a candidate. Put all
                     candidates you deem suitable higher than {{ abm }} and all
                     candidates you reject lower, i. e. to the right of {{ abm }}.
-                    Should no candidate get more votes than the bar, the board may take additional measures.
                 {% endtrans %}
             </p>
         {% endif %}
@@ -164,8 +167,10 @@
     {% endcall %}
 {%- endmacro %}
 
+
+
 {% macro show_manual_for_js_preferential_voting() -%}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
@@ -195,8 +200,7 @@
                 {% trans %}
                     One of the boxes is marked as “Neutral”. Please place candidates cou deem suitable
                     above this box (they will be highlighted in green) and candidates you want to reject
-                    below this box (they will be highlighted in red). Should all candidates be rejected,
-                    the board may take additional measures.
+                    below this box (they will be highlighted in red).
                 {% endtrans %}
             </p>
             <p>
@@ -210,9 +214,11 @@
     {% endcall %}
 {%- endmacro %}
 
+
+
 {# Preferential voting: Voting form #}
 {% macro show_preferential_voting() -%}
-    <h3>{% trans %}Ballot{% endtrans %}</h3>
+    <h3 class="mosp">{% trans %}Ballot{% endtrans %}</h3>
 
     {# Tab controls to switch to javascript preferential voting form #}
     <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
@@ -304,6 +310,8 @@
         </div>
     </div>
 {%- endmacro %}
+
+
 
 {% macro add_candidate_form() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>

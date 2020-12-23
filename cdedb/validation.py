@@ -3682,7 +3682,7 @@ def _BALLOT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'vote_extension_end': Optional[datetime.datetime],
     'abs_quorum': int,
     'rel_quorum': int,
-    'votes': Optional[int],
+    'votes': Optional[PositiveInt],
     'use_bar': bool,
     'is_tallied': bool,
     'candidates': Mapping

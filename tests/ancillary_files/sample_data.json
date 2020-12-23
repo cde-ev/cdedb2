@@ -4937,7 +4937,7 @@
             "id": 7,
             "persona_id": 18,
             "assembly_id": 2,
-            "secret": "asdgeargsd"
+            "secret": null
         }
     ],
     "assembly.ballots": [
@@ -5039,7 +5039,7 @@
             "vote_begin": "2010-11-11T22:00:00+00:00",
             "vote_end": "2015-03-20T23:00:00+00:00",
             "vote_extension_end": null,
-            "extended": null,
+            "extended": false,
             "use_bar": false,
             "abs_quorum": 0,
             "votes": 1,
