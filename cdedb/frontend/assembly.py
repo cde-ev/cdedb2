@@ -2,34 +2,32 @@
 
 """Services for the assembly realm."""
 
+import collections
 import copy
+import datetime
+import io
 import json
 import pathlib
-import collections
-import datetime
 import time
-import io
-from typing import (
-    Any, Dict, Tuple, Union, Optional, Collection, List, cast, Set
-)
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
 
-from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
-    check_validation as check, request_extractor, calculate_db_logparams,
-    calculate_loglinks, process_dynamic_input, periodic, cdedburl
-)
-from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import Query, QUERY_SPECS, mangle_query_input
-from cdedb.common import (
-    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_SHORTNAME, EntitySorter,
-    schulze_evaluate, xsorted, RequestState, get_hash, CdEDBObject,
-    DefaultReturnCode, CdEDBObjectMap,
-)
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+from cdedb.common import (
+    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    EntitySorter, RequestState, get_hash, merge_dicts, n_, now, schulze_evaluate,
+    unwrap, xsorted,
+)
+from cdedb.frontend.common import (
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
+    calculate_db_logparams, calculate_loglinks, cdedburl, check_validation as check,
+    periodic, process_dynamic_input, request_extractor,
+)
+from cdedb.frontend.uncommon import AbstractUserFrontend
+from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a shortname since it contains

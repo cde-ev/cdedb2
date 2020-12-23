@@ -10,19 +10,18 @@ import gettext
 import inspect
 import pathlib
 import sys
+from typing import Any, Callable, Collection, Dict, Iterator
 
-from typing import Collection, Iterator, Callable, Dict, Any
-
-from cdedb.frontend.core import CoreFrontend
-from cdedb.frontend.cde import CdEFrontend
-from cdedb.frontend.event import EventFrontend
-from cdedb.frontend.assembly import AssemblyFrontend
-from cdedb.frontend.ml import MlFrontend
-from cdedb.common import n_, glue, now, RequestState, User, PathLike, ALL_ROLES
-from cdedb.frontend.common import BaseApp, AbstractFrontend, PeriodicJob
+from cdedb.common import ALL_ROLES, PathLike, RequestState, User, glue, n_, now
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.frontend.assembly import AssemblyFrontend
+from cdedb.frontend.cde import CdEFrontend
+from cdedb.frontend.common import AbstractFrontend, BaseApp, PeriodicJob
+from cdedb.frontend.core import CoreFrontend
+from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 
 

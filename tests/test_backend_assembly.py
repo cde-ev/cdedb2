@@ -2,15 +2,15 @@
 
 import datetime
 import decimal
-import time
 import json
+import time
 
 import pytz
 
-from test.common import BackendTest, as_users, USER_DICT, nearly_now, prepsql
-from cdedb.query import QUERY_SPECS, QueryOperators
-from cdedb.common import PrivilegeError, FUTURE_TIMESTAMP, now, get_hash
 import cdedb.database.constants as const
+from cdedb.common import FUTURE_TIMESTAMP, PrivilegeError, get_hash, now
+from cdedb.query import QUERY_SPECS, QueryOperators
+from tests.common import USER_DICT, BackendTest, as_users, nearly_now, prepsql
 
 
 class TestAssemblyBackend(BackendTest):
@@ -550,7 +550,7 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("werner")
     def test_entity_attachments(self, user):
-        with open("/cdedb2/test/ancillary_files/rechen.pdf", "rb") as f:
+        with open("/cdedb2/tests/ancillary_files/rechen.pdf", "rb") as f:
             self.assertEqual(f.read(), self.assembly.get_attachment_content(self.key, attachment_id=1))
         expectation = set()
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))

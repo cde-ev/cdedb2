@@ -3,12 +3,13 @@
 import copy
 import datetime
 import decimal
+
 import pytz
 
-from test.common import BackendTest, as_users, USER_DICT, nearly_now
-from cdedb.query import QUERY_SPECS, QueryOperators, Query
-from cdedb.common import PERSONA_EVENT_FIELDS, xsorted
 import cdedb.database.constants as const
+from cdedb.common import PERSONA_EVENT_FIELDS, xsorted
+from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from tests.common import USER_DICT, BackendTest, as_users, nearly_now
 
 
 class TestPastEventBackend(BackendTest):

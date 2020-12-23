@@ -1,7 +1,7 @@
+import argparse
 import json
 import sys
 from itertools import chain
-import argparse
 
 
 def read_input(infile):
@@ -17,9 +17,9 @@ def prepare_aux(data):
     # Set up the database connection.
     sys.path.insert(0, "/cdedb2")
 
-    from cdedb.script import setup
-    from cdedb.backend.core import CoreBackend
     from cdedb.backend.common import PsycoJson
+    from cdedb.backend.core import CoreBackend
+    from cdedb.script import setup
 
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
@@ -159,7 +159,7 @@ def main():
                     "JSON-file.")
     parser.add_argument(
         "-i", "--infile",
-        default="/cdedb2/test/ancillary_files/sample_data.json")
+        default="/cdedb2/tests/ancillary_files/sample_data.json")
     parser.add_argument(
         "-o", "--outfile", default="/tmp/sample_data.sql")
     args = parser.parse_args()

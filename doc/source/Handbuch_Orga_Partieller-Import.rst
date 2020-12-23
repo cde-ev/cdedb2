@@ -145,7 +145,7 @@ aus jeder der Kategorien Kurs, Unterkunft und Anmeldung. Außerdem wird eine
 neue Unterkunftgruppe angelegt. Die verwendeten
 nutzerdefinierten Felder müssen vorher definiert sein.
 
-.. literalinclude:: ../../test/ancillary_files/partial_event_import.json
+.. literalinclude:: ../../tests/ancillary_files/partial_event_import.json
     :language: json
 
 Changelog

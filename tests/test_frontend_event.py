@@ -2,17 +2,17 @@
 
 import copy
 import csv
+import datetime
 import json
 import re
-import datetime
+
 import webtest
 
-from test.common import as_users, USER_DICT, FrontendTest, prepsql
-
-from cdedb.query import QueryOperators
-from cdedb.common import now, ADMIN_VIEWS_COOKIE_NAME
-from cdedb.frontend.common import CustomCSVDialect, iban_filter
 import cdedb.database.constants as const
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, now
+from cdedb.frontend.common import CustomCSVDialect, iban_filter
+from cdedb.query import QueryOperators
+from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
 
 class TestEventFrontend(FrontendTest):
@@ -72,7 +72,7 @@ class TestEventFrontend(FrontendTest):
             ins = everyone + admin + ["Nutzer verwalten"]
             out = []
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
@@ -368,7 +368,7 @@ class TestEventFrontend(FrontendTest):
             ins = everyone + not_registrated + orga
             out = registrated
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 

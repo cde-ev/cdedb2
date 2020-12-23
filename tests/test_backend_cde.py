@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
-from cdedb.common import (
-    QuotaException, PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS,
-    PERSONA_EVENT_FIELDS,
-)
-from cdedb.query import QUERY_SPECS, QueryOperators, Query
-import cdedb.database.constants as const
-from test.common import BackendTest, as_users, USER_DICT, nearly_now
-import decimal
-import datetime
-import pytz
 import copy
+import datetime
+import decimal
+
+import pytz
+
+import cdedb.database.constants as const
+from cdedb.common import (
+    PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, QuotaException,
+)
+from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from tests.common import USER_DICT, BackendTest, as_users, nearly_now
 
 
 class TestCdEBackend(BackendTest):

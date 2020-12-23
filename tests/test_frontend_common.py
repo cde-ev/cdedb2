@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 
-import unittest
+import datetime
 import random
 import string
-import datetime
+import unittest
+
 import pytz
+
 from cdedb.frontend.common import (
-    encode_parameter, decode_parameter, date_filter, datetime_filter,
-    cdedbid_filter, tex_escape_filter)
+    cdedbid_filter, date_filter, datetime_filter, decode_parameter, encode_parameter,
+    tex_escape_filter,
+)
+
 
 def rand_str(chars, exclude=''):
     pool = string.printable

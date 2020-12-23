@@ -18,7 +18,6 @@ import psycopg2.extras
 
 from cdedb.script import setup
 
-
 # This is 'secret' the hashed
 PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
          "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/")
@@ -141,7 +140,7 @@ def work(args):
         if input("Are you sure (type uppercase YES)? ").strip() != "YES":
             print("Aborting.")
             sys.exit()
-    clean_script = args.repopath / "test/ancillary_files/clean_data.sql"
+    clean_script = args.repopath / "tests/ancillary_files/clean_data.sql"
     subprocess.run(
         [str(args.repopath / "bin/execute_sql_script.py"),
          "-U", "cdb", "-d", db_name, "-f", str(clean_script)],

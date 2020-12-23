@@ -5,19 +5,20 @@ import copy
 import datetime
 import decimal
 import json
-import pytz
-import psycopg2
 
-from test.common import (
-    BackendTest, as_users, USER_DICT, nearly_now, json_keys_to_int)
-from cdedb.backend.event import EventBackend
-from cdedb.backend.common import cast_fields
-from cdedb.query import QUERY_SPECS, QueryOperators, Query
-from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PartialImportError, EVENT_SCHEMA_VERSION, now,
-    CDEDB_EXPORT_EVENT_VERSION, PrivilegeError)
-from cdedb.enums import ENUMS_DICT
+import psycopg2
+import pytz
+
 import cdedb.database.constants as const
+from cdedb.backend.common import cast_fields
+from cdedb.backend.event import EventBackend
+from cdedb.common import (
+    CDEDB_EXPORT_EVENT_VERSION, EVENT_SCHEMA_VERSION, PERSONA_EVENT_FIELDS,
+    PartialImportError, PrivilegeError, now,
+)
+from cdedb.enums import ENUMS_DICT
+from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, nearly_now
 
 
 class TestEventBackend(BackendTest):
@@ -383,7 +384,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_change_minor_form(self, user):
         event_id = 1
-        with open("/cdedb2/test/ancillary_files/form.pdf", "rb") as f:
+        with open("/cdedb2/tests/ancillary_files/form.pdf", "rb") as f:
             minor_form = f.read()
         self.assertIsNone(self.event.get_minor_form(self.key, event_id))
         self.assertLess(0, self.event.change_minor_form(self.key, event_id, minor_form))

@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 
 import datetime
+import json
 import re
 import time
-import webtest
 import unittest
-import json
-import datetime
 
-from test.common import as_users, USER_DICT, FrontendTest, MultiAppFrontendTest
+import webtest
 
+import cdedb.database.constants as const
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, now, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ASSEMBLY_BAR_SHORTNAME, now,
 )
 from cdedb.frontend.common import datetime_filter, staticurl
 from cdedb.query import QueryOperators
-import cdedb.database.constants as const
+from tests.common import USER_DICT, FrontendTest, MultiAppFrontendTest, as_users
 
 
 class AssemblyTestHelpers(FrontendTest):
@@ -162,7 +161,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             ins = everyone + ["Nutzer verwalten", "Log"]
             out = []
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
@@ -334,7 +333,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             ins = attendee + admin
             out = []
         else:
-            self.fail("Please adjust users for this test.")
+            self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
