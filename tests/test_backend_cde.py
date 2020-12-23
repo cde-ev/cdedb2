@@ -32,6 +32,7 @@ class TestCdEBackend(BackendTest):
     @as_users("berta")
     def test_quota(self, user):
         self.assertEqual(0, self.core.quota(self.key))
+        # Do two quotable accesses per loop, a number of times equal to half the limit.
         for i in range(1, self.conf["QUOTA_VIEWS_PER_DAY"]//2 + 1):
             if i % 3 == 0:
                 self.assertEqual(i*2, self.core.quota(self.key, ids=(1, 2, 6)))
