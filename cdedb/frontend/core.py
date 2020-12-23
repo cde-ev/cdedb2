@@ -395,25 +395,25 @@ class CoreFrontend(AbstractFrontend):
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
 
-        j = vobject.vCard()
+        vcard = vobject.vCard()
 
         # Name
-        j.add('n')
-        j.n.value = vobject.vcard.Name(
+        vcard.add('n')
+        vcard.n.value = vobject.vcard.Name(
             family=persona['family_name'] or '',
             given=persona['given_names'] or '',
             prefix=persona['title'] or '',
             suffix=persona['name_supplement'] or '')
-        j.add('fn')
-        j.fn.value = f"{persona['given_names'] or ''} {persona['family_name'] or ''}"
-        j.add('nickname')
-        j.nickname.value = persona['display_name'] or ''
+        vcard.add('fn')
+        vcard.fn.value = f"{persona['given_names'] or ''} {persona['family_name'] or ''}"
+        vcard.add('nickname')
+        vcard.nickname.value = persona['display_name'] or ''
 
         # Address data
         if persona['address']:
-            j.add('adr')
-            j.adr.type_param = 'home'
-            j.adr.value = vobject.vcard.Address(
+            vcard.add('adr')
+            vcard.adr.type_param = 'home'
+            vcard.adr.value = vobject.vcard.Address(
                 extended=persona['address_supplement'] or '',
                 street=persona['address'] or '',
                 city=persona['location'] or '',
@@ -422,25 +422,25 @@ class CoreFrontend(AbstractFrontend):
 
         # Contact data
         if persona['username']:
-            j.add('email')
-            j.email.value = persona['username']
-            j.email.type_param = 'INTERNET'
+            vcard.add('email')
+            vcard.email.value = persona['username']
+            vcard.email.type_param = 'INTERNET'
         if persona['telephone']:
-            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'HOME')],
-                                            persona['telephone']))
+            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'HOME')],
+                                                persona['telephone']))
         if persona['mobile']:
-            j.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'CELL')],
-                                            persona['mobile']))
+            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'CELL')],
+                                                persona['mobile']))
         if persona['weblink']:
             # TODO include website
             pass
 
         # Birthday
         if persona['birthday']:
-            j.add('bday')
-            j.bday.value = date_filter(persona['birthday'])
+            vcard.add('bday')
+            vcard.bday.value = date_filter(persona['birthday'])
 
-        return j.serialize()
+        return vcard.serialize()
 
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:
