@@ -60,6 +60,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-mailmanclient \
     python3-requests \
     python3-typing-extensions \
+    python3-qrcode \
+    python3-vobject \
     \
     flake8 \
     isort \
