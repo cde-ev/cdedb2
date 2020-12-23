@@ -348,4 +348,9 @@ I18N_STRINGS = (
     n_("banner_after_login"),
     n_("banner_genesis"),
     n_("cde_misc"),
+
+    #
+    # Programmatically hidden string
+    #
+    n_("Discard"),
 )
