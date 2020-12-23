@@ -593,7 +593,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             'vote_end': "2222-5-1 00:00:00",
             'votes': "",
             'notes': "Kein Aprilscherz!",
-
         }
         self._create_ballot(bdata, atitle="Internationaler Kongress")
         self.traverse({'description': 'Bearbeiten'},)
@@ -602,6 +601,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['notes'] = "April, April!"
         f['vote_begin'] = "2222-4-1 00:00:00"
         f['vote_end'] = "2222-4-1 00:00:01"
+        self.submit(f)
+        # votes must be empty or a positive int
+        self.traverse({'description': 'Bearbeiten'}, )
+        f = self.response.forms['changeballotform']
+        f['votes'] = 0
+        self.submit(f, check_notification=False)
+        self.assertValidationError('votes', message="Muss positiv sein.")
+        f['votes'] = 1
         self.submit(f)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
         self.traverse({'description': 'Bearbeiten'},)
