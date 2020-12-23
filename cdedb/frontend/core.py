@@ -381,8 +381,10 @@ class CoreFrontend(AbstractFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             temppath = pathlib.Path(tmp_dir, f"vcard-{persona_id}")
             qr_image.save(str(temppath))
-            with open(temppath) as tmpfile:
-                return self.send_file(rs, afile=tmpfile, mimetype="image/svg+xml")
+            with open(temppath) as f:
+                data = f.read()
+
+        return self.send_file(rs, data=data, mimetype="image/svg+xml")
 
     def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
