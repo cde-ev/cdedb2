@@ -60,7 +60,16 @@ import string
 import sys
 from enum import Enum
 from typing import (
-    Callable, Dict, Sequence, Set, Tuple, Type, TypeVar, cast, get_type_hints, overload,
+    Callable,
+    Dict,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+    get_type_hints,
+    overload,
 )
 
 import magic
@@ -72,18 +81,36 @@ import zxcvbn
 
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum,
-    ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
+    ASSEMBLY_BAR_SHORTNAME,
+    EPSILON,
+    EVENT_SCHEMA_VERSION,
+    INFINITE_ENUM_MAGIC_NUMBER,
+    REALM_SPECIFIC_GENESIS_FIELDS,
+    CdEDBObjectMap,
+    Error,
+    InfiniteEnum,
+    ValidationWarning,
+    asciificator,
+    compute_checkdigit,
+    extract_roles,
+    n_,
+    now,
 )
 from cdedb.config import BasicConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
-    MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
+    MULTI_VALUE_OPERATORS,
+    NO_VALUE_OPERATORS,
+    VALID_QUERY_OPERATORS,
+    QueryOperators,
 )
 from cdedb.validationdata import (
-    FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES, IBAN_LENGTHS, ITU_CODES,
+    FREQUENCY_LISTS,
+    GERMAN_PHONE_CODES,
+    GERMAN_POSTAL_CODES,
+    IBAN_LENGTHS,
+    ITU_CODES,
 )
 from cdedb.validationtypes import *
 
