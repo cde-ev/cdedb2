@@ -23,6 +23,7 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     make \
     gettext \
     apache2 \
+    python3 \
     libapache2-mod-wsgi-py3 \
     slapd \
     ldap-utils \
@@ -34,10 +35,7 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     texlive-luatex \
     && rm -rf /var/lib/apt/lists/*
 
-# TODO maybe add pylint, mypy?
-# split these into two so adding a library will not trigger latex reinstallation
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    python3 \
     python3-pip \
     python3-psycopg2 \
     python3-dateutil \
