@@ -383,7 +383,11 @@ class CoreFrontend(AbstractFrontend):
 
     def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
-        Generate a vCard string for a user to be delivered to a client
+        Generate a vCard string for a user to be delivered to a client.
+
+        The vcard is a vcard3, following https://tools.ietf.org/html/rfc2426
+        Where reasonable, we should consider the new RFC of vcard4, to increase
+        compability, see https://tools.ietf.org/html/rfc6350
 
         :return: The serialized vCard (as in a vcf file)
         """
@@ -398,23 +402,26 @@ class CoreFrontend(AbstractFrontend):
         vcard = vobject.vCard()
 
         # Name
-        vcard.add('n')
+        vcard.add('N')
         vcard.n.value = vobject.vcard.Name(
             family=persona['family_name'] or '',
             given=persona['given_names'] or '',
             prefix=persona['title'] or '',
             suffix=persona['name_supplement'] or '')
-        vcard.add('fn')
+        vcard.add('FN')
         vcard.fn.value = f"{persona['given_names'] or ''} {persona['family_name'] or ''}"
-        vcard.add('nickname')
+        vcard.add('NICKNAME')
         vcard.nickname.value = persona['display_name'] or ''
 
         # Address data
         if persona['address']:
             vcard.add('adr')
-            vcard.adr.type_param = 'home'
+            # see https://tools.ietf.org/html/rfc2426#section-3.2.1
+            vcard.adr.type_param = 'intl,postal,parcel,home'
+            # extended should be empty because of compability issues, see
+            # https://tools.ietf.org/html/rfc6350#section-6.3.1
             vcard.adr.value = vobject.vcard.Address(
-                extended=persona['address_supplement'] or '',
+                extended='',
                 street=persona['address'] or '',
                 city=persona['location'] or '',
                 code=persona['postal_code'] or '',
@@ -422,23 +429,23 @@ class CoreFrontend(AbstractFrontend):
 
         # Contact data
         if persona['username']:
-            vcard.add('email')
-            vcard.email.value = persona['username']
-            vcard.email.type_param = 'INTERNET'
+            # see https://tools.ietf.org/html/rfc2426#section-3.3.2
+            vcard.add(vobject.vcard.ContentLine('EMAIL', [('TYPE', 'internet')],
+                                                persona['username']))
         if persona['telephone']:
-            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'HOME')],
+            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
+            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'home,voice')],
                                                 persona['telephone']))
         if persona['mobile']:
-            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'CELL')],
+            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
+            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'cell,voice')],
                                                 persona['mobile']))
-        if persona['weblink']:
-            # TODO include website
-            pass
 
         # Birthday
         if persona['birthday']:
             vcard.add('bday')
-            vcard.bday.value = date_filter(persona['birthday'])
+            # see https://tools.ietf.org/html/rfc2426#section-3.1.5
+            vcard.bday.value = date_filter(persona['birthday'], formatstr="%Y-%m-%d")
 
         return vcard.serialize()
 
