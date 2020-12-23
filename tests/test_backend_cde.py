@@ -44,6 +44,8 @@ class TestCdEBackend(BackendTest):
         self.core.get_cde_users(self.key, (1, 2, 6))
         with self.assertRaises(QuotaException):
             self.core.get_cde_users(self.key, (3, 4))
+        # The missing 2 does not create a new kind of access as it's Berta's
+        # ID and not counted in general.
         self.core.get_cde_users(self.key, (1, 6))
 
         query = Query(scope="qview_cde_member", spec={},
