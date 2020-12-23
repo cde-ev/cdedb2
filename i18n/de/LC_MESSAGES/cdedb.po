@@ -3447,6 +3447,9 @@ msgstr "Mit dieser Option kannst Du Deine Ablehnung aller Kandidaten ausdrücken
 msgid "Vote"
 msgstr "Abstimmen"
 
+msgid "Vote_singular_of_Votes"
+msgstr "Stimme"
+
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:46
 msgid "Additional"
 msgstr "Zusätzlich"

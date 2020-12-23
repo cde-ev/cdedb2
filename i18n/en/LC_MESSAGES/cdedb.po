@@ -3350,6 +3350,9 @@ msgstr ""
 msgid "Vote"
 msgstr ""
 
+msgid "Vote_singular_of_Votes"
+msgstr "Vote"
+
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:46
 msgid "Additional"
 msgstr ""
