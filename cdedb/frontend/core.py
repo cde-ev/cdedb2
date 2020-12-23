@@ -11,11 +11,10 @@ import datetime
 import operator
 import decimal
 import itertools
-import lxml.etree
 
 import magic
 import qrcode
-from qrcode.image import svg as qrcode_svg
+import qrcode.image.svg
 import vobject
 import werkzeug.exceptions
 from werkzeug import Response
@@ -377,13 +376,13 @@ class CoreFrontend(AbstractFrontend):
         qr = qrcode.QRCode()
         qr.add_data(vcard)
         qr.make(fit=True)
-        qr_image = qr.make_image(qrcode_svg.SvgPathFillImage)
+        qr_image = qr.make_image(qrcode.image.svg.SvgPathFillImage)
 
-        # a bit hacky, since `qrcode` does not intend to return SVG image as string
-        qr_image._img.append(qr_image.make_path())
-        qr_svg = lxml.etree.tostring(qr_image.get_image(), encoding='unicode')
-
-        return self.send_file(rs, data=qr_svg, mimetype="image/svg+xml")
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            temppath = pathlib.Path(tmp_dir, f"vcard-{persona_id}")
+            qr_image.save(str(temppath))
+            with open(temppath) as tmpfile:
+                return self.send_file(rs, afile=tmpfile, mimetype="image/svg+xml")
 
     def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
