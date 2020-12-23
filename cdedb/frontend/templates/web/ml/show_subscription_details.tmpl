@@ -30,13 +30,12 @@
 {% endblock %}
 {% block static_notifications %}
     {% if not privileged %}
-        <div class="alert alert-info">
-            {{ util.make_icon('info-circle') }}
+        {% call util.notification('info') %}
             {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
                                       gettext("privileged moderator access"))|s %}
                 You do not have %(link)s and may not change subscriptions.
             {% endtrans %}
-        </div>
+        {% endcall %}
     {% endif %}
 {% endblock %}
 {% block content %}

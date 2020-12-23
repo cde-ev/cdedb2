@@ -1825,7 +1825,9 @@ class CoreBackend(AbstractBackend):
         if rs.conn.is_contaminated:
             raise RuntimeError(n_("Atomized – impossible to escalate."))
 
-        # TODO: What do we need this distinction for?
+        # TODO: This is needed because of an implementation detail of the login in the
+        #  frontend. Namely wanting to check consent decision status for cde users.
+        #  Maybe rework this somehow.
         is_cde = unwrap(self.sql_select_one(rs, "core.personas",
                                             ("is_cde_realm",), data["id"]))
         if is_cde:

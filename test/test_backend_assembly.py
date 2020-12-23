@@ -376,7 +376,7 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("viktor")
     def test_relative_quorum(self, user):
-        delta = 0.1
+        delta = 0.3
         future = now() + datetime.timedelta(seconds=delta)
 
         assembly_data = {

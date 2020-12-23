@@ -34,7 +34,8 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("aka@example.cde", div="orga-address")
         self.assertPresence("Erste Hälfte", div="timeframe-parts")
         self.assertNonPresence("Everybody come!")
-        self.assertPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar")
+        self.assertPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar",
+                            div='static-notifications')
 
         self.traverse({'description': 'Kursliste'})
         self.assertPresence("α. Planetenretten für Anfänger", div='list-courses')
@@ -262,7 +263,8 @@ class TestEventFrontend(FrontendTest):
                             "Zweite Hälfte: 11.11.2222 – 30.11.2222",
                             div='timeframe-parts')
         self.assertPresence("Everybody come!", div='description')
-        self.assertNonPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar")
+        self.assertNonPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar",
+                               div='notifications')
         self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
                             div='timeframe-registration')
         self.assertPresence("aka@example.cde", div='orga-address')
@@ -575,14 +577,15 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'})
         self.assertPresence("fällt aus")
-        self.assertPresence("Achtung! Ausfallende Kurse werden nur für Orgas "
-                            "hier markiert.")
+        self.assertPresence("Info! Ausfallende Kurse werden nur für Orgas "
+                            "hier markiert.", div='static-notifications')
         self.traverse({'href': '/event/event/1/change'})
         f = self.response.forms['changeeventform']
         f['is_course_state_visible'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/course/list'})
-        self.assertNonPresence("Cancelled courses are only marked for orgas")
+        self.assertNonPresence("Ausfallende Kurse werden nur für Orgas",
+                               div='static-notifications')
 
         self.logout()
         self.login(USER_DICT['charly'])
@@ -1663,7 +1666,7 @@ etc;anything else""", f['entries_2'].value)
         self.get('/event/event/1/registration/list')
         self.follow()
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Fehler! Die Teilnehmer Liste ist noch nicht "
+        self.assertPresence("Fehler! Die Teilnehmerliste ist noch nicht "
                             "veröffentlicht.", div='notifications')
         self.logout()
 
@@ -1674,7 +1677,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': 'event/event/1/registration/list'})
         self.assertTitle("Teilnehmerliste Große Testakademie 2222")
         self.assertPresence("Die Teilnehmerliste ist aktuell nur für Orgas und "
-                            "Admins sichtbar.")
+                            "Admins sichtbar.", div='static-notifications')
         self.assertPresence("Übersicht")
         self.assertPresence("Administrator")
         self.assertPresence("emilia@example.cde")
@@ -1726,7 +1729,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/list'})
         self.assertTitle("Teilnehmerliste Große Testakademie 2222")
         self.assertNonPresence("Die Teilnehmerliste ist aktuell nur für Orgas "
-                               "und Admins sichtbar.")
+                               "und Admins sichtbar.", div='static-notifications')
         self.assertPresence("Warmup")
         self.assertPresence("Zweite Hälfte")
         self.traverse({'description': 'Zweite Hälfte'},)
@@ -1871,6 +1874,7 @@ etc;anything else""", f['entries_2'].value)
 
         self.traverse({'href': '/event/event/1/show'})
         self.assertNonPresence("abgesagt", div="notifications")
+        self.assertNonPresence("abgesagt", div="static-notifications")
 
         self.traverse({'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
@@ -1881,10 +1885,10 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Diese Veranstaltung wurde abgesagt.",
-                            div="notifications")
+                            div="static-notifications")
         self.traverse({'href': '/event/event/1/course/list'})
         self.assertPresence("Diese Veranstaltung wurde abgesagt.",
-                            div="notifications")
+                            div="static-notifications")
 
         if user['display_name'] == "annika":
             # Make sure the index shows it as cancelled.
@@ -3368,7 +3372,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
-                            div="notifications")
+                            div="static-notifications")
         self.assertNotIn("archiveeventform", self.response.forms)
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/past/event/list'})
@@ -3379,7 +3383,7 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT["emilia"])
         self.get("/event/event/1/show")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
-                            div="notifications")
+                            div="static-notifications")
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertNonPresence("Bearbeiten")
         self.get("/event/event/1/registration/amend")
@@ -3415,7 +3419,7 @@ etc;anything else""", f['entries_2'].value)
 
         self.assertTitle("CdE-Party 2050")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
-                            div="notifications")
+                            div="static-notifications")
 
         # check that there is no past event
         self.traverse({'description': 'Mitglieder'},
@@ -3434,7 +3438,7 @@ etc;anything else""", f['entries_2'].value)
 
         self.assertTitle("CyberTestAkademie")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
-                            div="notifications")
+                            div="static-notifications")
 
         # check that there is no past event
         self.traverse({'description': 'Mitglieder'},

@@ -591,17 +591,13 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         'abbr': ['title'],
         'acronym': ['title'],
         # customizations
-        '*': ['class'],
+        '*': ['class', 'id'],
         'col': ['width'],
         'thead': ['valign'],
         'tbody': ['valign'],
         'table': ['border'],
         'th': ['colspan', 'rowspan'],
         'td': ['colspan', 'rowspan'],
-        'div': ['id'],
-        'h4': ['id'],
-        'h5': ['id'],
-        'h6': ['id'],
         'details': ['open'],
     }
     cleaner = bleach.sanitizer.Cleaner(tags=tags, attributes=attributes)

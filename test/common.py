@@ -221,6 +221,7 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
         """
         Wrap calls to the backend in a access check and provide a RequestState.
         """
+
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
             if any([
@@ -706,16 +707,15 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
     path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
-    chmod = ("chmod", "0644")
-    psql = ("sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb_test", "-f")
+    psql = ("/cdedb2/bin/execute_sql_script.py",
+            "--username", "cdb", "--dbname", "cdb_test")
     null = subprocess.DEVNULL
     mode = "w"
     if isinstance(sql, bytes):
         mode = "wb"
     with open(path, mode) as f:
         f.write(sql)
-    subprocess.check_call(chmod + (str(path),), stdout=null)
-    subprocess.check_call(psql + (str(path),), stdout=null)
+    subprocess.check_call(psql + ("--file", str(path)), stdout=null)
 
 
 class FrontendTest(BackendTest):
@@ -959,14 +959,14 @@ class FrontendTest(BackendTest):
         elements = self.response.lxml.xpath(
             "//div[@class='alert alert-info']/span/text()")
 
-        def _extract_path(s: str) -> str:
+        def _extract_path(s: str) -> Optional[str]:
             regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
-            result = re.match(regex, s)
+            result = re.match(regex, s.strip())
             if not result:
-                raise RuntimeError(f"Failed to extract debug email path from {s!r}.")
+                return None
             return result.group(1)
-        mails = [_extract_path(x)
-                 for x in elements if x.startswith("E-Mail als ")]
+
+        mails = list(filter(None, (map(_extract_path, elements))))
         ret = []
         for path in mails:
             with open(path) as f:

@@ -8,21 +8,21 @@
     {% trans %}
     	CdE-Datenbank
     {% endtrans %}{% endblock %}
+
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
 {% endblock %}
-{% block content %}
+
+{% block static_notifications %}
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
-        <div class="alert alert-info">
-            <p>
-                {{ util.make_icon('info-circle') }} <strong>{% trans %}Info{% endtrans %}</strong>
-                {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
-            </p>
-
-            <p class=nosp>{# TODO Erklärtext #}</p>
-        </div>
+        {% call util.notification('info') %}
+            {% trans %}This is an Offline-Instance of the CdEDB{% endtrans %}
+            {# TODO Erklärtext #}
+        {% endcall %}
     {% endif %}
+{% endblock %}
 
+{% block content %}
     {{ util.meta_info_banner('banner_after_login') }}
 
     <div class="row">

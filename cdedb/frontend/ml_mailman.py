@@ -50,17 +50,19 @@ class MailmanMixin(MlBaseFrontend):
                                mm_list: MailingList) -> None:
         prefix = ""
         if db_list['subject_prefix']:
-            prefix = "[{}] ".format(db_list['subject_prefix'])
+            prefix = "[{}] ".format(db_list['subject_prefix'] or "")
         desired_settings = {
             'send_welcome_message': False,
+            # Available only in mailman-3.3
+            # 'send_goodbye_message': False,
             # block the usage of the self-service facilities which should
             # not be used to prevent synchronisation issues
             'subscription_policy': 'moderate',
-            'unsubscription_policy': 'moderate',
+            # Available only in mailman-3.3
+            # 'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
-            'filter_content': True,
             'convert_html_to_plaintext': True,
-            'dmarc_mitigations': 'wrap_message',
+            'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
             'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
             'administrivia': True,
@@ -68,14 +70,18 @@ class MailmanMixin(MlBaseFrontend):
             'advertised': True,
             'display_name': db_list['title'],
             'description': db_list['title'],
-            'info': db_list['description'],
+            'info': db_list['description'] or "",
             'subject_prefix': prefix,
-            'max_message_size': db_list['maxsize'],
+            'max_message_size': db_list['maxsize'] or 0,
             'default_member_action': POLICY_MEMBER_CONVERT[
                 db_list['mod_policy']],
             'default_nonmember_action': POLICY_OTHER_CONVERT[
                 db_list['mod_policy']],
-            # TODO handle attachment_policy
+            # TODO handle attachment_policy, only available in mailman-3.3
+            # 'filter_content': True,
+            # 'filter_action': 'forward',
+            # 'pass_extensions': ['pdf'],
+            # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
         if not db_list['is_active']:
             desired_settings.update({
@@ -131,7 +137,7 @@ class MailmanMixin(MlBaseFrontend):
                                     personas[pid]['family_name'])
             for pid, address in db_addresses.items() if address
         }
-        mm_subscribers = {m.address: m for m in mm_list.members}
+        mm_subscribers = {m.email: m for m in mm_list.members}
 
         new_subs = set(db_subscribers) - set(mm_subscribers)
         delete_subs = set(mm_subscribers) - set(db_subscribers)
@@ -140,7 +146,10 @@ class MailmanMixin(MlBaseFrontend):
             mm_list.subscribe(address, display_name=db_subscribers[address],
                               pre_verified=True, pre_confirmed=True,
                               pre_approved=True)
-        mm_list.mass_unsubscribe(delete_subs)
+        # The batch variant is only available in mailman 3.3
+        # mm_list.mass_unsubscribe(delete_subs)
+        for address in delete_subs:
+            mm_list.unsubscribe(address)
 
     def mailman_sync_list_mods(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
@@ -152,7 +161,7 @@ class MailmanMixin(MlBaseFrontend):
                                                 persona['family_name'])
             for persona in personas.values() if persona['username']
         }
-        mm_moderators = {m.address: m for m in mm_list.moderators}
+        mm_moderators = {m.email: m for m in mm_list.moderators}
 
         new_mods = set(db_moderators) - set(mm_moderators)
         delete_mods = set(mm_moderators) - set(db_moderators)
@@ -162,20 +171,37 @@ class MailmanMixin(MlBaseFrontend):
         for address in delete_mods:
             mm_list.remove_moderator(address)
 
+        mm_owners = {m.email: m for m in mm_list.owners}
+        new_owners = set(db_moderators) - set(mm_owners)
+        delete_owners = set(mm_owners) - set(db_moderators)
+
+        for address in new_owners:
+            mm_list.add_owner(address)
+        for address in delete_owners:
+            mm_list.remove_owner(address)
+
     def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
                                  db_list: CdEDBObject,
                                  mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']
-        mm_whitelist = {n.address: n for n in mm_list.nonmembers}
+        mm_whitelist = {n.email: n for n in mm_list.nonmembers}
 
         new_whites = set(db_whitelist) - set(mm_whitelist)
         current_whites = set(mm_whitelist) - new_whites
         delete_whites = set(mm_whitelist) - set(db_whitelist)
 
         for address in new_whites:
-            white = mm_list.add_role('nonmember', address)
-            white.moderation_action = 'accept'
-            white.save()
+            mm_list.add_role('nonmember', address)
+            # get_nonmember is only available in mailman 3.3
+            # white = mm_list.get_nonmember(address)
+        mm_updated_whitelist = {n.email: n for n in mm_list.nonmembers}
+        for address in new_whites:
+            # because of the unavailability of get_nonmember we do a
+            # different lookup
+            white = mm_updated_whitelist.get(address)
+            if white is not None:
+                white.moderation_action = 'accept'
+                white.save()
         for address in current_whites:
             white = mm_whitelist[address]
             if white.moderation_action != 'accept':
@@ -197,9 +223,9 @@ class MailmanMixin(MlBaseFrontend):
 
         This has an @periodic decorator in the frontend.
         """
-        if (self.conf["CDEDB_TEST"] or self.conf["CDEDB_DEV"]
-                or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]):
-            self.logger.debug("Skipping mailman sync in test/dev/offline mode.")
+        if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
+                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
+            self.logger.debug("Skipping mailman sync in dev/offline mode.")
             return store
         mailman = self.mailman_connect()
         # noinspection PyBroadException
@@ -209,8 +235,13 @@ class MailmanMixin(MlBaseFrontend):
             self.logger.exception("Mailman client connection failed!")
             return store
         db_lists = self.mlproxy.get_mailinglists(
-            rs, self.mlproxy.list_mailinglists(rs))
-        db_lists = {lst['address']: lst for lst in db_lists.values()}
+            rs, self.mlproxy.list_mailinglists(rs, active_only=False))
+        # Exclude CdE-München and Dokuforge lists as they are not managed by
+        # our mail server
+        external_domains = {const.MailinglistDomain.cdemuenchen,
+                            const.MailinglistDomain.dokuforge}
+        db_lists = {lst['address']: lst for lst in db_lists.values()
+                    if lst['domain'] not in external_domains}
         mm_lists = {lst.fqdn_listname: lst for lst in mailman.lists}
         new_lists = set(db_lists) - set(mm_lists)
         current_lists = set(db_lists) - new_lists

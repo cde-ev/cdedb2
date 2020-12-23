@@ -283,6 +283,15 @@ class RequestState:
         """
         return self._errors
 
+    def replace_validation_errors(self, errors: Collection[Error]) -> None:
+        """Replace validation errors by another collection of errors.
+
+        This is used for post-processing of some forms related to the Query class.
+        It does not cause the validation tracking to register a
+        successful check.
+        """
+        self._errors = list(errors)
+
 
 if TYPE_CHECKING:
     from cdedb.backend.common import AbstractBackend

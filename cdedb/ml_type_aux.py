@@ -280,6 +280,7 @@ class CdEMailinglist(GeneralMailinglist):
     """Base class for CdE-Mailinglists."""
 
     sortkey = MailinglistGroup.cde
+    domains = [MailinglistDomain.lists, MailinglistDomain.testmail]
     viewer_roles = {"cde"}
     relevant_admins = {"cde_admin"}
 

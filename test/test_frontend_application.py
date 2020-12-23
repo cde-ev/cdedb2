@@ -34,7 +34,7 @@ class TestApplication(FrontendTest):
 
         self.get('/', status=500)
         self.assertTitle("500: Internal Server Error")
-        self.assertPresence("ValueError")
+        self.assertPresence("ValueError", div='static-notifications')
 
 
     def test_error_catching(self):

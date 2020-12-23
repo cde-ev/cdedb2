@@ -377,9 +377,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         else:
             assembly_entries = []
         merge_dicts(rs.values, rs.ambience['mailinglist'])
-        if not self.mlproxy.is_relevant_admin(
-                rs, mailinglist=rs.ambience['mailinglist']):
-            rs.notify("info", n_("Some fields may only be changed by admins."))
         # privileged is only set if there are actually fields,
         # requiring privileged access
         privileged = (self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)

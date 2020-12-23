@@ -357,22 +357,27 @@ class TestCron(CronTest):
     @unittest.mock.patch("mailmanclient.Client")
     def test_mailman_sync(self, client_class):
         self._run_periodics.add('mailman_sync')
-        self.skipTest("Mailman currently not implemented.")
         #
         # Prepare
         #
+
         class SaveDict(dict):
             def save(self):
                 pass
 
+        # Commented items will be available in mailman 3.3
         base_settings = {
             'send_welcome_message': False,
+            # 'send_goodbye_message': False,
             'subscription_policy': 'moderate',
-            'unsubscription_policy': 'moderate',
+            # 'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
-            'filter_content': True,
+            # 'filter_content': True,
+            # 'filter_action': 'forward',
+            # 'pass_extensions': ['pdf'],
+            # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
             'convert_html_to_plaintext': True,
-            'dmarc_mitigations': 'wrap_message',
+            'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
             'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
             'administrivia': True,
@@ -392,8 +397,8 @@ class TestCron(CronTest):
                        'subject_prefix': "[ann] ",
                        'max_message_size': 1024,
                        'default_member_action': 'hold',
-                       'default_nonmember_action': 'hold',}
-                )),
+                       'default_nonmember_action': 'hold',
+                       })),
             'witz': unittest.mock.MagicMock(
                 fqdn_listname='witz@lists.cde-ev.de',
                 settings=SaveDict(
@@ -404,13 +409,15 @@ class TestCron(CronTest):
                        'subject_prefix': "[witz] ",
                        'max_message_size': 512,
                        'default_member_action': 'hold',
-                       'default_nonmember_action': 'hold',}
-                )),
+                       'default_nonmember_action': 'hold',
+                       })),
             'klatsch': unittest.mock.MagicMock(),
+            'aktivenforum2000': unittest.mock.MagicMock(),
             'aktivenforum': unittest.mock.MagicMock(),
             'wait': unittest.mock.MagicMock(),
             'participants': unittest.mock.MagicMock(),
             'kongress': unittest.mock.MagicMock(),
+            'kongress-leitung': unittest.mock.MagicMock(),
             'werbung': unittest.mock.MagicMock(),
             'aka': unittest.mock.MagicMock(),
             'opt': unittest.mock.MagicMock(),
@@ -436,8 +443,8 @@ class TestCron(CronTest):
                         mm_lists['zombie']]
         client.get_domain.return_value.create_list.side_effect = mm_lists.get
         mm_lists['witz'].members = [
-            unittest.mock.MagicMock(address='janis-spam@example.cde'),
-            unittest.mock.MagicMock(address='undead@example.cde')]
+            unittest.mock.MagicMock(email='janis-spam@example.cde'),
+            unittest.mock.MagicMock(email='undead@example.cde')]
 
         #
         # Run
@@ -458,7 +465,9 @@ class TestCron(CronTest):
                           umcall('opt'),
                           umcall('werbung'),
                           umcall('aktivenforum'),
+                          umcall('aktivenforum2000'),
                           umcall('kongress'),
+                          umcall('kongress-leitung'),
                           umcall('participants'),
                           umcall('party50-all'),
                           umcall('party50'),
@@ -496,8 +505,8 @@ class TestCron(CronTest):
                     display_name='Anton Armin A. Administrator',
                     pre_approved=True, pre_confirmed=True, pre_verified=True)])
         self.assertEqual(
-            mm_lists['witz'].mass_unsubscribe.call_args_list,
-            [umcall({'undead@example.cde'})])
+            mm_lists['witz'].unsubscribe.call_args_list,
+            [umcall('undead@example.cde')])
         self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 4)
         # Moderator update
         self.assertEqual(
