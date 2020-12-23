@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Set, Dict
+from typing import Dict, Set
 
 
 def n_(x: str) -> str:
@@ -201,6 +201,8 @@ class MailinglistDomain(enum.IntEnum):
     cdemuenchen = 10
     dokuforge = 11
 
+    testmail = 100
+
     def __str__(self) -> str:
         if self not in _DOMAIN_STR_MAP:
             raise NotImplementedError(n_("This domain is not supported."))
@@ -215,6 +217,7 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
     MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
     MailinglistDomain.cdemuenchen: "cde-muenchen.de",
     MailinglistDomain.dokuforge: "dokuforge.de",
+    MailinglistDomain.testmail: "testmail.cde-ev.de",
 }
 
 
@@ -454,3 +457,6 @@ class MlLogCodes(enum.IntEnum):
     request_cancelled = 32  #:
     request_blocked = 33  #:
     email_trouble = 40  #:
+    moderate_accept = 50  #:
+    moderate_reject = 51  #:
+    moderate_discard = 52  #:

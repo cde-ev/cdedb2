@@ -11,12 +11,9 @@ up an environment for passing a query from frontend to backend.
 
 import collections
 import enum
+from typing import TYPE_CHECKING, Any, Collection, Dict, Tuple
 
-from typing import (
-    Any, Collection, Dict, Tuple, TYPE_CHECKING
-)
-
-from cdedb.common import glue, CdEDBObject, RequestState
+from cdedb.common import CdEDBObject, RequestState, glue
 
 
 @enum.unique
@@ -49,7 +46,7 @@ class QueryOperators(enum.IntEnum):
 _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
-VALID_QUERY_OPERATORS = {
+VALID_QUERY_OPERATORS: Dict[str, Tuple[QueryOperators, ...]] = {
     "str": (_ops.match, _ops.unmatch, _ops.equal, _ops.unequal,
             _ops.equalornull, _ops.unequalornull, _ops.containsall,
             _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,

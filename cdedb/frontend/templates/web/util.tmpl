@@ -198,7 +198,7 @@
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
 {% macro doclink(topic, anchor=none) %}
-    <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
+    <a href="{{ docurl(topic, anchor) }}" class="btn btn-info pull-right" target="_blank">
         {{ make_icon('question-circle') }}
         {% trans %}Help{% endtrans %}
         <span class="sr-only">{% trans %}for this site{% endtrans %}</span>
@@ -264,7 +264,12 @@
 
    The form_input_* wraps the specific input macro and adds some divs, label and error output. These macros are meant to
    be used inside an form.form-horizontal. (If you want to use it in a non-horizontal form, you may pass the
-   horizontal=False parameter.) #}
+   horizontal=False parameter.)
+
+   Note that the readonly parameter of these macros sets the disabled flag. The HTML readonly attribute should only be
+   used for purely cosmetical changes, admin views in particular. Furthermore, it is not supported for all input types,
+   hence we fake it in some cases by introducing an additional hidden field while renaming the previous one.
+   To make a use of the readonly attribute a concious decision, we obsure it by the name actualreadonly. #}
 {% macro input_hidden(name, value=none, defaultvalue='', anid=none, aclass=none) %}
     <input{{ dict(
         type="hidden",
@@ -306,8 +311,8 @@
     </div>
 {%- endmacro %}
 
-{% macro input_text(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=none, type='text',
-        placeholder='', arialabel='', attributes='') %}
+{% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid='', aclass='form-control',
+        maxlength=none, type='text', placeholder='', arialabel='', attributes='') %}
     <input{{ dict(
         type=type,
         name=name,
@@ -316,6 +321,7 @@
         maxlength=maxlength,
         placeholder=placeholder,
         disabled="disabled" if readonly,
+        readonly="readonly" if actualreadonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
         {%- if type == 'date' %}
@@ -326,17 +332,16 @@
             value="{{ values.get(name, defaultvalue) }}"
         {%- endif %}
         {{ attributes }}/>
-        {# TODO use actual readonly and bootstrap styles #}
 {%- endmacro %}
 
-{% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-    maxlength=none, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', addon='',
-    differentiate_warnings=True) %}
+{% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
+    defaultvalue='', anid='', maxlength=none, type='text', placeholder='', small=False, horizontal=True, aclass="",
+    attributes='', addon='', differentiate_warnings=True) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
                                 differentiate_warnings=differentiate_warnings) %}
-        {{- input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
-                aclass="form-control " + aclass, attributes=attributes) }}
+        {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
+                placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes) }}
     {%- endcall %}
 {%- endmacro %}
 
@@ -388,25 +393,29 @@
 {%- endmacro %}
 
 {# list as default value is not supported yet #}
-{% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, anid='', aclass='', inline=False,
-        radio=False, arialabel='', attributes='') -%}
+{% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, actualreadonly=False, anid='',
+        aclass='', inline=False, radio=False, arialabel='', attributes='') -%}
     <label{% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
             type="radio" if radio else "checkbox",
-            name=name,
+            name=name if not actualreadonly else ("readonly" + name),
             id=anid,
             class=aclass,
             value=value,
             checked="checked" if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue),
-            disabled="disabled" if readonly,
+            disabled="disabled" if readonly or actualreadonly,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }}/>
         {{ label -}}
     </label>
+    {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
+    {% if actualreadonly %}
+        {{ util.input_hidden(name) }}
+    {% endif %}
 {%- endmacro %}
 
-{% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
-        arialabeledby="", sort=False) %}
+{% macro input_checkboxes(name, entries, readonly=False, actualreadonly=False, defaultvalue='', inline=False,
+        radio=False, aclass='', arialabeledby="", sort=False) %}
     <div{{ dict(
         role="radiogroup" if radio else "group",
         **{'aria-labelledby': arialabeledby}
@@ -420,12 +429,17 @@
                 {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
                                   aclass=aclass) }}
             {%- if not inline %}</div>{% endif %}
+            {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
+            {%- if actualreadonly -%}
+                {{ util.input_hidden(name) }}
+            {%- endif -%}
         {%- endfor %}
     </div>
 {%- endmacro %}
 
-{% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False, defaultvalue='',
-        anid='', horizontal=True, small=False, attributes='', differentiate_warnings=True) %}
+{% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False,
+        actualreadonly=False, defaultvalue='', anid='', horizontal=True, small=False, attributes='',
+        differentiate_warnings=True) %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
     <div class="form-group
@@ -435,7 +449,8 @@
             {{ "col-sm-6 col-sm-offset-2" if small else "col-sm-8 col-sm-offset-4" }}
         "{% endif %}>
             <div class="checkbox{{ " disabled" if readonly }}">
-                {{ input_checkbox(name, label, value, defaultvalue, readonly, anid, attributes=attributes) }}
+                {{ input_checkbox(name, label, value, defaultvalue, readonly, actualreadonly, anid,
+                                  attributes=attributes) }}
             </div>
             {{- output_errors(name, displayerrors) }}
             {{- output_info(info) }}
@@ -445,24 +460,25 @@
 
 {#- This is the version for multiple checkboxes as opposed to input_checkbox().
     entries is of type [(str, str)]. #}
-{% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-        small=False, radio=False, horizontal=True, aclass='', labelid='', differentiate_warnings=True, sort=False) %}
+{% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False,
+        actualreadonly=False, defaultvalue='', small=False, radio=False, horizontal=True, aclass='', labelid='',
+        differentiate_warnings=True, sort=False) %}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
     {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid,
                                 differentiate_warnings=differentiate_warnings) %}
-        {{- input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass,
-                arialabeledby=labelid, sort=sort) }}
+        {{- input_checkboxes(name, entries, readonly=readonly, actualreadonly=actualreadonly, defaultvalue=defaultvalue,
+                             radio=radio, aclass=aclass, arialabeledby=labelid, sort=sort) }}
     {%- endcall %}
 {%- endmacro %}
 
 
-{% macro input_select(name, entries, readonly=False, defaultvalue=none, anid='', aclass='form-control',
-        nulloption=none, arialabel='', attributes="", sort=False) %}
+{% macro input_select(name, entries, readonly=False, actualreadonly=False, defaultvalue=none, anid='',
+        aclass='form-control', nulloption=none, arialabel='', attributes="", sort=False) %}
     <select{{ dict(
-        name=name,
+        name=name if not actualreadonly else ("readonly" + name),
         id=anid,
         class=aclass,
-        disabled="disabled" if readonly,
+        disabled="disabled" if readonly or actualreadonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
@@ -478,15 +494,19 @@
             </option>
         {%- endfor %}
     </select>
+    {# select tags do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
+    {% if actualreadonly %}
+        {{ util.input_hidden(name) }}
+    {% endif %}
 {%- endmacro %}
 
-{% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=none,
-        nulloption=none, anid='', small=False, horizontal=True, aclass="", attributes="", differentiate_warnings=True,
-        sort=False) %}
+{% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, actualreadonly=False,
+        defaultvalue=none, nulloption=none, anid='', small=False, horizontal=True, aclass="", attributes="",
+        differentiate_warnings=True, sort=False) %}
     {%- set anid = anid or "input-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal,
                                 differentiate_warnings=differentiate_warnings) %}
-        {{- input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
+        {{- input_select(name, entries, readonly, actualreadonly, defaultvalue, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
     {%- endcall %}
 {%- endmacro%}

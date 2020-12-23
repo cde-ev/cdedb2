@@ -9,38 +9,33 @@ import collections
 import copy
 import datetime
 import decimal
-from passlib.hash import sha512_crypt
 from pathlib import Path
 from secrets import token_hex
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast, overload
 
-
-from typing import (
-    Optional, Collection, Dict, Tuple, Set, List, Any, cast, overload
-)
+from passlib.hash import sha512_crypt
 from typing_extensions import Protocol
 
-from cdedb.backend.common import AbstractBackend
+import cdedb.database.constants as const
+import cdedb.validation as validate
 from cdedb.backend.common import (
-    access, internal, singularize, affirm_validation as affirm,
-    affirm_set_validation as affirm_set)
+    AbstractBackend, access, affirm_set_validation as affirm_set,
+    affirm_validation as affirm, internal, singularize,
+)
 from cdedb.common import (
-    n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
-    PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
-    PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException, PathLike,
-    PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
-    ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter, GENESIS_REALM_OVERRIDE, xsorted, Role, Realm, Error,
-    CdEDBObject, CdEDBObjectMap, CdEDBLog, DefaultReturnCode, RequestState,
-    DeletionBlockers, get_hash, ADMIN_KEYS
+    ADMIN_KEYS, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE, PERSONA_ALL_FIELDS,
+    PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_DEFAULTS,
+    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
+    PRIVILEGE_CHANGE_FIELDS, ArchiveError, CdEDBLog, CdEDBObject, CdEDBObjectMap,
+    DefaultReturnCode, DeletionBlockers, Error, PathLike, PrivilegeError, PsycoJson,
+    QuotaException, Realm, RequestState, Role, User, decode_parameter, encode_parameter,
+    extract_realms, extract_roles, get_hash, glue, implied_realms, merge_dicts, n_, now,
+    privilege_tier, unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
-from cdedb.database.connection import Atomizer
-import cdedb.validation as validate
-import cdedb.database.constants as const
-from cdedb.query import QueryOperators, Query
 from cdedb.database import DATABASE_ROLES
-from cdedb.database.connection import connection_pool_factory
+from cdedb.database.connection import Atomizer, connection_pool_factory
+from cdedb.query import Query, QueryOperators
 
 
 class CoreBackend(AbstractBackend):
@@ -1825,7 +1820,9 @@ class CoreBackend(AbstractBackend):
         if rs.conn.is_contaminated:
             raise RuntimeError(n_("Atomized – impossible to escalate."))
 
-        # TODO: What do we need this distinction for?
+        # TODO: This is needed because of an implementation detail of the login in the
+        #  frontend. Namely wanting to check consent decision status for cde users.
+        #  Maybe rework this somehow.
         is_cde = unwrap(self.sql_select_one(rs, "core.personas",
                                             ("is_cde_realm",), data["id"]))
         if is_cde:

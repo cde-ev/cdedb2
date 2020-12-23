@@ -182,6 +182,9 @@ I18N_STRINGS = (
     n_("MlLogCodes.request_cancelled"),
     n_("MlLogCodes.request_blocked"),
     n_("MlLogCodes.cron_removed"),
+    n_("MlLogCodes.moderate_accept"),
+    n_("MlLogCodes.moderate_reject"),
+    n_("MlLogCodes.moderate_discard"),
 
     n_("ModerationPolicy.unmoderated"),
     n_("ModerationPolicy.non_subscribers"),
@@ -345,4 +348,9 @@ I18N_STRINGS = (
     n_("banner_after_login"),
     n_("banner_genesis"),
     n_("cde_misc"),
+
+    #
+    # Programmatically hidden string
+    #
+    n_("Discard"),
 )

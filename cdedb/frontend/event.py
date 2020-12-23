@@ -3,10 +3,10 @@
 """Services for the event realm."""
 
 import cgitb
-from collections import OrderedDict, Counter
 import collections.abc
 import copy
 import csv
+import datetime
 import decimal
 import functools
 import itertools
@@ -14,44 +14,42 @@ import json
 import operator
 import pathlib
 import re
+import shutil
 import sys
 import tempfile
-import datetime
-import shutil
+from collections import Counter, OrderedDict
+from typing import (
+    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set,
+    Tuple, Union, cast,
+)
 
 import psycopg2.extensions
 import werkzeug.exceptions
 from werkzeug import Response
-from typing import (
-    Sequence, Dict, Any, Collection, Mapping, List, Tuple, Callable, Optional,
-    Union, cast, Set, NamedTuple
-)
 
+import cdedb.database.constants as const
+import cdedb.ml_type_aux as ml_type
+import cdedb.validation as validate
+from cdedb.common import (
+    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, AgeClasses, CdEDBObject,
+    CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions, CourseFilterPositions,
+    DefaultReturnCode, EntitySorter, Error, InfiniteEnum, KeyFunction,
+    LodgementsSortkeys, PartialImportError, RequestState, Sortkey, asciificator,
+    deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
+    json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
+)
+from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
-    REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
-    enum_entries_filter, safe_filter, cdedburl, RequestConstraint,
-    CustomCSVDialect, keydictsort_filter, calculate_db_logparams,
-    calculate_loglinks, process_dynamic_input, make_event_fee_reference,
+    CustomCSVDialect, RequestConstraint, REQUESTdata, REQUESTdatadict, REQUESTfile,
+    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter, cdedburl,
+    check_validation as check, enum_entries_filter, event_guard, keydictsort_filter,
+    make_event_fee_reference, process_dynamic_input, querytoparams_filter,
+    request_extractor, safe_filter,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
-    QUERY_SPECS, QueryOperators, mangle_query_input, Query, QueryConstraint
+    QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
-from cdedb.common import (
-    n_, merge_dicts, determine_age_class, deduct_years, AgeClasses,
-    unwrap, now, json_serialize, glue, CourseChoiceToolActions,
-    CourseFilterPositions, diacritic_patterns, PartialImportError,
-    DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
-    LodgementsSortkeys, xsorted, get_hash, RequestState,
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
-    InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC, asciificator
-)
-from cdedb.database.connection import Atomizer
-import cdedb.database.constants as const
-import cdedb.validation as validate
-import cdedb.ml_type_aux as ml_type
-
 
 LodgementProblem = NamedTuple(
     "LodgementProblem", [("description", str), ("lodgement_id", int),

@@ -11,25 +11,24 @@ with the production environment.
 
 import getpass
 import gettext
-import time
 import tempfile
+import time
+from types import TracebackType
+from typing import Any, Callable, Optional, Set, Type, cast
 
 import psycopg2
-import psycopg2.extras
 import psycopg2.extensions
+import psycopg2.extras
 
-from types import TracebackType
-from typing import Any, Callable, Optional, Type, Set, cast
-
+from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
-from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
-from cdedb.common import make_proxy, PathLike, ALL_ROLES, RequestState
-from cdedb.database.connection import IrradiatedConnection, Atomizer
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.common import ALL_ROLES, PathLike, RequestState, make_proxy
+from cdedb.database.connection import Atomizer, IrradiatedConnection
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
@@ -91,11 +90,21 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     """
     if check_system_user and getpass.getuser() != "www-data":
         raise RuntimeError("Must be run as user www-data.")
-    cstring = "dbname={} user={} password={} port=5432 host=localhost".format(
-        dbname, dbuser, dbpassword)
-    cdb = psycopg2.connect(cstring,
-                           connection_factory=IrradiatedConnection,
-                           cursor_factory=psycopg2.extras.RealDictCursor)
+
+    connection_parameters = {
+            "dbname": dbname,
+            "user": dbuser,
+            "password": dbpassword,
+            "port": 5432,
+            "connection_factory": IrradiatedConnection,
+            "cursor_factory": psycopg2.extras.RealDictCursor
+    }
+    try:
+        cdb = psycopg2.connect(**connection_parameters, host="localhost")
+    except psycopg2.OperationalError as e: # DB inside Docker listens on "cdb"
+        if "Passwort-Authentifizierung" in e.args[0]:
+            raise # fail fast if wrong password is the problem
+        cdb = psycopg2.connect(**connection_parameters, host="cdb")
     cdb.set_client_encoding("UTF8")
 
     def rs(pid: int = persona_id) -> MockRequestState:

@@ -1,0 +1,129 @@
+FROM debian:buster-20200607
+
+# TODO replace with mount from host, snakeoil or first-run script?
+RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
+    && mkdir /etc/ssl/apache2 \
+    && openssl req \
+        -x509 \
+        -newkey rsa:4096 \
+        -out /etc/ssl/apache2/server.pem \
+        -keyout /etc/ssl/apache2/server.key \
+        -days 365 \
+        -nodes \
+        -subj "/C=DE/O=CdE e.V./CN=cdedb.local/emailAddress=cdedb@lists.cde-ev.de" \
+    && apt-get purge --yes --autoremove openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+# texlive-plain-generic is needed for iftex - can be removed in next debian
+RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
+    && echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections \
+    \
+    && apt-get update && apt-get install --yes --no-install-recommends \
+    sudo \
+    make \
+    gettext \
+    apache2 \
+    libapache2-mod-wsgi-py3 \
+    slapd \
+    ldap-utils \
+    \
+    texlive \
+    texlive-plain-generic \
+    texlive-latex-extra \
+    texlive-lang-german \
+    texlive-luatex \
+    && rm -rf /var/lib/apt/lists/*
+
+# TODO maybe add pylint, mypy?
+# split these into two so adding a library will not trigger latex reinstallation
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-psycopg2 \
+    python3-dateutil \
+    python3-babel \
+    python3-icu \
+    python3-jinja2 \
+    python3-tz \
+    python3-sphinx \
+    python3-lxml \
+    python3-pil \
+    python3-webtest \
+    python3-werkzeug \
+    python3-ldap3 \
+    python3-passlib \
+    python3-bleach \
+    python3-magic \
+    python3-sphinx-rtd-theme \
+    python3-zxcvbn \
+    python3-markdown \
+    python3-mailmanclient \
+    python3-requests \
+    python3-typing-extensions \
+    \
+    flake8 \
+    isort \
+    pylint3 \
+    python3-coverage \
+    \
+    && rm -rf /var/lib/apt/lists/* \
+    \
+    && python3 -m pip --no-cache-dir install \
+    mypy==0.790
+
+# TODO check wether it is sensible to lower privileges to cdedb user
+# create and configure directories for the apache user
+RUN mkdir /var/lib/cdedb \
+    && mkdir /var/lib/cdedb/foto \
+    && mkdir /var/lib/cdedb/minor_form \
+    && mkdir /var/lib/cdedb/ballot_result \
+    && mkdir /var/lib/cdedb/assembly_attachment \
+    && mkdir /var/lib/cdedb/mailman_templates \
+    && chown --recursive www-data:www-data /var/lib/cdedb \
+    \
+    && mkdir /var/log/cdedb \
+    && ln -s /var/log/apache2/ssl_error.log /var/log/cdedb/ssl_error.log \
+    && ln -s /var/log/apache2/ssl_access.log /var/log/cdedb/ssl_access.log \
+    && chown --recursive www-data:www-data /var/log/cdedb \
+    \
+    && useradd --system cdedb \
+    \
+    && touch /CONTAINER
+
+# make storage persistent
+VOLUME /var/lib/cdedb
+
+COPY ./related/auto-build/files/stage3 /tmp/autobuild
+
+# put configuration files into correct positions
+# - rewrite config to store logs inside of /var/log/cdedb
+# - add symlink to /cdedb2/cdedb directory so python can find it
+RUN a2enmod ssl wsgi headers \
+    && a2dissite 000-default \
+    && echo "" > /etc/apache2/ports.conf \
+    && cp /tmp/autobuild/cdedb-site.conf /etc/apache2/sites-available \
+    && a2ensite cdedb-site \
+    && cp /tmp/autobuild/index.html /var/www/html/ \
+    \
+    && cp /tmp/autobuild/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
+    && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
+    && chmod 640 /etc/cdedb-mailman-htpasswd \
+    \
+    && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
+    \
+    && rm -rf /tmp/autobuild
+
+# this does not currently work:
+# - store localconfig in /etc to allow mounting code seperately
+# && sed -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
+#     -e 's|Path("/log/cdedb.log|Path("/var/log/cdedb/global.log|' \
+#     /tmp/autobuild/localconfig.py \
+#     > /etc/cdedb-application-config.py \
+# \
+
+EXPOSE 443
+
+# mount the code here
+WORKDIR /cdedb2
+
+CMD ["apachectl", "-DFOREGROUND"]

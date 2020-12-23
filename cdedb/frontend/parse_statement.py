@@ -1,20 +1,17 @@
-import datetime
-import enum
-import re
-import decimal
 import collections
+import datetime
+import decimal
+import enum
 import json
+import re
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
-from typing import (
-    Tuple, Optional, List, Union, Dict, Callable
-)
-
+import cdedb.validation as validate
 from cdedb.common import (
-    diacritic_patterns, Accounts, TransactionType, now, n_, CdEDBObject, Error,
-    CdEDBObjectMap
+    Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
+    n_, now,
 )
 from cdedb.frontend.common import cdedbid_filter
-import cdedb.validation as validate
 
 # This is the specification of the order of the fields in the input.
 # This could be changed in the online banking, but we woud lose backwards

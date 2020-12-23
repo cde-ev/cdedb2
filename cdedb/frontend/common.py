@@ -9,6 +9,7 @@ import collections
 import copy
 import csv
 import datetime
+import decimal
 import email
 import email.charset
 import email.encoders
@@ -18,9 +19,9 @@ import email.mime.application
 import email.mime.audio
 import email.mime.image
 import email.mime.multipart
-from email.mime.nonmultipart import MIMENonMultipart
 import email.mime.text
 import email.utils
+import enum
 import functools
 import io
 import json
@@ -33,39 +34,30 @@ import subprocess
 import tempfile
 import threading
 import urllib.parse
-import decimal
-import enum
+from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
+from typing import (
+    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Container, Dict,
+    Generator, ItemsView, Iterable, List, Mapping, MutableMapping, Optional, Sequence,
+    Set, Tuple, Type, TypeVar, Union, cast, overload,
+)
 
-import markdown
-import markdown.extensions.toc
 import babel.dates
 import babel.numbers
 import bleach
 import jinja2
+import markdown
+import markdown.extensions.toc
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
+from typing_extensions import Literal, Protocol
 
-from typing import (
-    Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
-    Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO, ItemsView,
-    Type
-)
-from typing_extensions import Protocol, Literal
-
-from cdedb.common import (
-    n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
-    roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
-    encode_parameter, decode_parameter, make_proxy, EntitySorter,
-    REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap, CdEDBMultiDict,
-    CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User,
-    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, _tdelta
-)
+import cdedb.database.constants as const
+import cdedb.query as query_mod
+import cdedb.validation as validate
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -73,13 +65,19 @@ from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
+from cdedb.common import (
+    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject,
+    CustomJSONEncoder, EntitySorter, Error, Notification, NotificationType, PathLike,
+    RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
+    compute_checkdigit, decode_parameter, encode_parameter, glue, json_serialize,
+    make_proxy, make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
+    xsorted,
+)
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
-import cdedb.query as query_mod
-import cdedb.database.constants as const
-import cdedb.validation as validate
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -591,17 +589,13 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         'abbr': ['title'],
         'acronym': ['title'],
         # customizations
-        '*': ['class'],
+        '*': ['class', 'id'],
         'col': ['width'],
         'thead': ['valign'],
         'tbody': ['valign'],
         'table': ['border'],
         'th': ['colspan', 'rowspan'],
         'td': ['colspan', 'rowspan'],
-        'div': ['id'],
-        'h4': ['id'],
-        'h5': ['id'],
-        'h6': ['id'],
         'details': ['open'],
     }
     cleaner = bleach.sanitizer.Cleaner(tags=tags, attributes=attributes)
@@ -1575,18 +1569,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             Defaults to error message for event downloads.
         """
         if not runs:
-            target = pathlib.Path(
-                tmp_dir, "{}.tar.gz".format(work_dir_name))
-            args = ("tar", "-vczf", str(target), work_dir_name)
-            self.logger.info("Invoking {}".format(args))
-            subprocess.check_call(args, stdout=subprocess.DEVNULL,
-                                  cwd=str(tmp_dir))
+            target = pathlib.Path(tmp_dir, work_dir_name)
+            archive = shutil.make_archive(
+                str(target), "gztar", base_dir=work_dir_name, root_dir=tmp_dir,
+                logger=self.logger)
             if tex_file_name.endswith('.tex'):
                 tex_file = "{}.tar.gz".format(tex_file_name[:-4])
             else:
                 tex_file = "{}.tar.gz".format(tex_file_name)
             return self.send_file(
-                rs, path=target, inline=False,
+                rs, path=archive, inline=False,
                 filename=tex_file)
         else:
             work_dir = pathlib.Path(tmp_dir, work_dir_name)

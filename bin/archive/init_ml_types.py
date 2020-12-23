@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from cdedb.script import setup, make_backend
 import cdedb.database.constants as const
+from cdedb.script import make_backend, setup
 
 # Configuration
 

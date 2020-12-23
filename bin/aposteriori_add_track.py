@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from cdedb.script import setup, make_backend
+from cdedb.script import make_backend, setup
 
 # Configuration
 

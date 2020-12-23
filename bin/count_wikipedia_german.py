@@ -25,17 +25,18 @@
 # Modified version for german language specifics by Michael Thies <mail@mhthies.de>
 #
 
-import sys
+import datetime
+import multiprocessing
+import operator
 import os
 import re
-import operator
-import datetime
-import warnings
-import multiprocessing
+import sys
 import time
+import warnings
 
 import nltk
 from unidecode import unidecode
+
 
 def usage():
     print('''

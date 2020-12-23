@@ -16,12 +16,14 @@ help:
 	@echo "lint -- run linters (mainly pylint)"
 	@echo "check -- run test suite"
 	@echo "         (TESTPATTERN specifies files, e.g. 'test_common.py')"
-	@echo "single-check -- run a single test from the test suite"
-	@echo "                (specified via TESTNAME and TESTFILE)"
+	@echo "single-check -- run some tests from the test suite"
+	@echo "                (PATTERNS specifies globs to match against the testnames like"
+	@echo "                tests.test_frontend_event.TestEventFrontend.test_create_event)"
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
+COVERAGEBIN ?= python3-coverage
 MYPYBIN ?= mypy
 TESTPREPARATION ?= automatic
 I18NDIR ?= ./i18n
@@ -32,7 +34,11 @@ doc:
 
 reload:
 	$(MAKE) i18n-compile
+ifeq ($(wildcard /CONTAINER),/CONTAINER)
+	apachectl restart
+else
 	sudo systemctl restart apache2
+endif
 
 i18n-refresh:
 	$(MAKE) i18n-extract
@@ -86,23 +92,23 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-	sudo rm -rf "/var/lib/cdedb/"
-	sudo mkdir -p "/var/lib/cdedb/foto/"
-	sudo mkdir -p "/var/lib/cdedb/minor_form/"
-	sudo mkdir -p "/var/lib/cdedb/event_logo/"
-	sudo mkdir -p "/var/lib/cdedb/course_logo/"
-	sudo mkdir -p "/var/lib/cdedb/ballot_result/"
-	sudo mkdir -p "/var/lib/cdedb/assembly_attachment/"
-	sudo mkdir -p "/var/lib/cdedb/mailman_templates/"
-	sudo mkdir -p "/var/lib/cdedb/genesis_attachment/"
-	sudo cp test/ancillary_files/$(TESTFOTONAME) /var/lib/cdedb/foto/
-	sudo cp test/ancillary_files/rechen.pdf \
+	sudo rm -rf -- /var/lib/cdedb/*
+	sudo mkdir /var/lib/cdedb/foto/
+	sudo mkdir /var/lib/cdedb/minor_form/
+	sudo mkdir /var/lib/cdedb/event_logo/
+	sudo mkdir /var/lib/cdedb/course_logo/
+	sudo mkdir /var/lib/cdedb/ballot_result/
+	sudo mkdir /var/lib/cdedb/assembly_attachment/
+	sudo mkdir /var/lib/cdedb/mailman_templates/
+	sudo mkdir /var/lib/cdedb/genesis_attachment/
+	sudo cp tests/ancillary_files/$(TESTFOTONAME) /var/lib/cdedb/foto/
+	sudo cp tests/ancillary_files/rechen.pdf \
 		/var/lib/cdedb/assembly_attachment/1_v1
-	sudo cp test/ancillary_files/kassen.pdf \
+	sudo cp tests/ancillary_files/kassen.pdf \
 		/var/lib/cdedb/assembly_attachment/2_v1
-	sudo cp test/ancillary_files/kassen2.pdf \
+	sudo cp tests/ancillary_files/kassen2.pdf \
 		/var/lib/cdedb/assembly_attachment/2_v3
-	sudo cp test/ancillary_files/kandidaten.pdf \
+	sudo cp tests/ancillary_files/kandidaten.pdf \
 		/var/lib/cdedb/assembly_attachment/3_v1
 	sudo chown --recursive www-data:www-data /var/lib/cdedb
 
@@ -113,26 +119,26 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf$\
 		,TestAka_partial_export_event.json
 
 storage-test:
-	rm -rf "/tmp/cdedb-store/"
-	mkdir -p "/tmp/cdedb-store/foto/"
-	cp test/ancillary_files/$(TESTFOTONAME) /tmp/cdedb-store/foto/
-	mkdir -p "/tmp/cdedb-store/minor_form/"
-	mkdir -p "/tmp/cdedb-store/event_logo/"
-	mkdir -p "/tmp/cdedb-store/course_logo/"
-	mkdir -p "/tmp/cdedb-store/ballot_result/"
-	mkdir -p "/tmp/cdedb-store/assembly_attachment/"
-	mkdir -p "/tmp/cdedb-store/genesis_attachment/"
-	mkdir -p "/tmp/cdedb-store/mailman_templates/"
-	mkdir -p "/tmp/cdedb-store/testfiles/"
-	cp test/ancillary_files/rechen.pdf \
+	rm -rf -- /tmp/cdedb-store/*
+	mkdir -p /tmp/cdedb-store/foto/
+	cp tests/ancillary_files/$(TESTFOTONAME) /tmp/cdedb-store/foto/
+	mkdir -p /tmp/cdedb-store/minor_form/
+	mkdir -p /tmp/cdedb-store/event_logo/
+	mkdir -p /tmp/cdedb-store/course_logo/
+	mkdir -p /tmp/cdedb-store/ballot_result/
+	mkdir -p /tmp/cdedb-store/assembly_attachment/
+	mkdir -p /tmp/cdedb-store/genesis_attachment/
+	mkdir -p /tmp/cdedb-store/mailman_templates/
+	mkdir -p /tmp/cdedb-store/testfiles/
+	cp tests/ancillary_files/rechen.pdf \
 		/tmp/cdedb-store/assembly_attachment/1_v1
-	cp test/ancillary_files/kassen.pdf \
+	cp tests/ancillary_files/kassen.pdf \
 		/tmp/cdedb-store/assembly_attachment/2_v1
-	cp test/ancillary_files/kassen2.pdf \
+	cp tests/ancillary_files/kassen2.pdf \
 		/tmp/cdedb-store/assembly_attachment/2_v3
-	cp test/ancillary_files/kandidaten.pdf \
+	cp tests/ancillary_files/kandidaten.pdf \
 		/tmp/cdedb-store/assembly_attachment/3_v1
-	cp -t /tmp/cdedb-store/testfiles/ test/ancillary_files/{$(TESTFILES)}
+	cp -t /tmp/cdedb-store/testfiles/ tests/ancillary_files/{$(TESTFILES)}
 
 sql-schema:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -140,6 +146,9 @@ ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
+endif
+ifeq ($(wildcard /CONTAINER),/CONTAINER)
+	$(error This needs to be run inside the postgres container)
 endif
 	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
@@ -151,32 +160,35 @@ endif
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
 	sudo systemctl start pgbouncer
 
-sql: test/ancillary_files/sample_data.sql
+sql-seed-database: tests/ancillary_files/sample_data.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname cdb \
+		-f tests/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname cdb_test \
+		-f tests/ancillary_files/sample_data.sql
+
+sql:
 	$(MAKE) sql-schema
-	$(PYTHONBIN) bin/execute_sql_script.py \
-		test/ancillary_files/sample_data.sql
-	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
-		test/ancillary_files/sample_data.sql
+	$(MAKE) sql-seed-database
 
 # This does not recurse to sql-schema, so in the very rare circumstance that
 # you want to completely reset the test database it has to be executed
 # explicitly. This is due to the restrictions of the docker environment.
 sql-test:
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
-		cdedb/database/cdedb-tables.sql
+		-f cdedb/database/cdedb-tables.sql
 	$(MAKE) sql-test-shallow
 
-sql-test-shallow: test/ancillary_files/sample_data.sql
+sql-test-shallow: tests/ancillary_files/sample_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
-		test/ancillary_files/clean_data.sql
+		-f tests/ancillary_files/clean_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
-		test/ancillary_files/sample_data.sql
+		-f tests/ancillary_files/sample_data.sql
 
 sql-xss:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -186,10 +198,10 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
 	$(MAKE) sql-schema
-	$(PYTHONBIN) bin/execute_sql_script.py \
-		test/ancillary_files/sample_data_escaping.sql
+	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb \
+		-f tests/ancillary_files/sample_data_escaping.sql
 	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
-		test/ancillary_files/sample_data_escaping.sql
+		-f tests/ancillary_files/sample_data_escaping.sql
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
@@ -232,20 +244,20 @@ endif
 check: export CDEDB_TEST=True
 check:
 	$(MAKE) prepare-check
-	$(PYTHONBIN) -m test.main "$${TESTPATTERN}"
+	$(PYTHONBIN) -m tests.main "$${TESTPATTERN}"
 
 single-check: export CDEDB_TEST=True
 single-check:
 	$(MAKE) prepare-check
-	$(PYTHONBIN) -m test.singular "$${TESTNAME}" "$${TESTFILE}"
+	$(PYTHONBIN) -m tests.singular "$${PATTERNS}"
 
 xss-check: export CDEDB_TEST=True
 xss-check:
 	$(MAKE) prepare-check
 	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/clean_data.sql &>/dev/null
+		-f tests/ancillary_files/clean_data.sql &>/dev/null
 	sudo -u cdb psql -U cdb -d cdb_test \
-		-f test/ancillary_files/sample_data_escaping.sql &>/dev/null
+		-f tests/ancillary_files/sample_data_escaping.sql &>/dev/null
 	$(PYTHONBIN) -m bin.escape_fuzzing 2>/dev/null
 
 dump-html: export SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend
@@ -278,22 +290,22 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 .coverage: export CDEDB_TEST=True
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) \
 		$(wildcard cdedb/frontend/*.py) \
-		$(wildcard cdedb/backend/*.py) $(wildcard test/*.py)
+		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
 	$(MAKE) prepare-check
-	$(PYTHONBIN) /usr/bin/coverage run -m test.main
+	$(COVERAGEBIN) run -m tests.main
 
 coverage: .coverage
-	$(PYTHONBIN) /usr/bin/coverage report -m --omit='test/*,related/*'
+	$(COVERAGEBIN) report --include 'cdedb/*' --show-missing
 
-test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json \
-		test/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
+tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
+		tests/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo -u www-data $(PYTHONBIN) \
-			test/create_sample_data_sql.py \
-			-i test/ancillary_files/sample_data.json \
+			tests/create_sample_data_sql.py \
+			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
-		&& cp "$${SQLTEMPFILE}" test/ancillary_files/sample_data.sql \
+		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
 .PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql \
@@ -307,13 +319,14 @@ mypy-frontend:
 	${MYPYBIN} cdedb/frontend/
 
 mypy-test:
-	${MYPYBIN} test/__init__.py test/common.py \
-		test/create_sample_data_json.py test/create_sample_data_sql.py \
-		test/main.py test/singular.py
+	${MYPYBIN} tests/__init__.py tests/common.py \
+		tests/create_sample_data_json.py tests/create_sample_data_sql.py \
+		tests/main.py tests/singular.py
 
 mypy:
 	# Do not provide cdedb/validation.py on purpose.
 	${MYPYBIN} cdedb/backend/ cdedb/frontend cdedb/__init__.py \
 		cdedb/common.py cdedb/enums.py cdedb/i18n_additional.py \
 		cdedb/ml_subscription_aux.py cdedb/ml_type_aux.py cdedb/query.py \
-		cdedb/script.py cdedb/validationdata.py test/common.py
+		cdedb/script.py cdedb/validationdata.py cdedb/validationtypes.py \
+		tests/common.py

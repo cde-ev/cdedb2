@@ -4,13 +4,14 @@
 
 import collections
 import copy
+import datetime
+import decimal
+import itertools
+import operator
 import pathlib
 import quopri
 import tempfile
-import datetime
-import operator
-import decimal
-import itertools
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast
 
 import magic
 import qrcode
@@ -19,34 +20,28 @@ import vobject
 import werkzeug.exceptions
 from werkzeug import Response
 
-from typing import (
-    Optional, Collection, Set, cast, List, Tuple, Any, Dict,
-)
-
-from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
-    check_validation as check, request_extractor, REQUESTfile,
-    request_dict_extractor, querytoparams_filter,
-    csv_output, query_result_to_json, enum_entries_filter, periodic,
-    calculate_db_logparams, calculate_loglinks, make_membership_fee_reference,
-    date_filter
-)
-from cdedb.common import (
-    n_, pairwise, extract_roles, unwrap, PrivilegeError,
-    now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
-    REALM_INHERITANCE, EntitySorter, REALM_SPECIFIC_GENESIS_FIELDS,
-    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, xsorted, RequestState,
-    CdEDBObject, PathLike, Realm, DefaultReturnCode,
-    get_persona_fields_by_realm, ADMIN_KEYS,
-)
-from cdedb.config import SecretsConfig
-from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
-from cdedb.database.connection import Atomizer
-from cdedb.validation import (
-    _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS)
 import cdedb.database.constants as const
 import cdedb.validation as validate
+from cdedb.common import (
+    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
+    REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
+    EntitySorter, PathLike, PrivilegeError, Realm, RequestState, SubscriptionActions,
+    extract_roles, get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now,
+    pairwise, unwrap, xsorted,
+)
+from cdedb.config import SecretsConfig
+from cdedb.database.connection import Atomizer
+from cdedb.frontend.common import (
+    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
+    calculate_db_logparams, calculate_loglinks, check_validation as check, date_filter,
+    enum_entries_filter, make_membership_fee_reference, periodic, query_result_to_json,
+    querytoparams_filter, request_dict_extractor, request_extractor
+)
+from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
+from cdedb.validation import (
+    _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
+)
 
 # Name of each realm
 USER_REALM_NAMES = {

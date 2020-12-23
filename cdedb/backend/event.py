@@ -6,36 +6,36 @@ variant for external participants.
 
 import collections
 import copy
-import decimal
 import datetime
+import decimal
 from pathlib import Path
-
 from typing import (
-    Dict, Set, Collection, Callable, Tuple, Optional, List, Sequence, Any,
-    Mapping, Iterable
+    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Set,
+    Tuple,
 )
+
 from typing_extensions import Protocol
 
+import cdedb.database.constants as const
 from cdedb.backend.common import (
-    access, affirm_validation as affirm, AbstractBackend, Silencer,
-    affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
-    cast_fields, internal,
+    PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, access,
+    affirm_set_validation as affirm_set, affirm_validation as affirm, cast_fields,
+    internal, singularize,
 )
 from cdedb.common import (
-    n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
-    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_GROUP_FIELDS,
-    LODGEMENT_FIELDS, COURSE_SEGMENT_FIELDS, unwrap, now,
-    PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
-    COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
-    json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
-    xsorted, RequestState, CdEDBObject, CdEDBObjectMap, CdEDBLog,
-    DefaultReturnCode, DeletionBlockers, InfiniteEnum, get_hash, PathLike,
-    EVENT_SCHEMA_VERSION, CdEDBOptionalMap, EVENT_FIELD_SPEC
+    CDEDB_EXPORT_EVENT_VERSION, COURSE_FIELDS, COURSE_SEGMENT_FIELDS,
+    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_FIELDS, EVENT_PART_FIELDS,
+    EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,
+    LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
+    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
+    REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
+    CourseFilterPositions, DefaultReturnCode, DeletionBlockers, InfiniteEnum,
+    PartialImportError, PathLike, PrivilegeError, PsycoJson, RequestState, get_hash,
+    glue, implying_realms, json_serialize, mixed_existence_sorter, n_, now, unwrap,
+    xsorted,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import QueryOperators, Query
-import cdedb.database.constants as const
+from cdedb.query import Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
 

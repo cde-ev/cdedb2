@@ -4,7 +4,8 @@
 event and assembly realm in the form of specific mailing lists.
 """
 from datetime import datetime
-from typing import (Collection, Dict, List, Optional, Set, Tuple, overload, Any, cast)
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast, overload
+
 from typing_extensions import Protocol
 
 import cdedb.database.constants as const
@@ -12,16 +13,16 @@ import cdedb.ml_type_aux as ml_type
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set, affirm_validation as affirm,
-    internal, singularize,
+    affirm_set_validation as affirm_set, affirm_validation as affirm, internal,
+    singularize,
 )
 from cdedb.backend.event import EventBackend
-from cdedb.common import (MAILINGLIST_FIELDS, CdEDBObject, CdEDBObjectMap,
-                          DefaultReturnCode, DeletionBlockers, PrivilegeError,
-                          make_proxy, RequestState, SubscriptionActions,
-                          SubscriptionError, glue, implying_realms, n_, now,
-                          unwrap, PathLike, CdEDBLog, MOD_ALLOWED_FIELDS,
-                          PRIVILEGED_MOD_ALLOWED_FIELDS, mixed_existence_sorter)
+from cdedb.common import (
+    MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBLog,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
+    PrivilegeError, RequestState, SubscriptionActions, SubscriptionError, glue,
+    implying_realms, make_proxy, mixed_existence_sorter, n_, now, unwrap,
+)
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
@@ -1638,3 +1639,12 @@ class MlBackend(AbstractBackend):
             self.ml_log(rs, const.MlLogCodes.email_trouble, None,
                         persona_id=unwrap(data)['id'], change_note=line)
             return True
+
+    @access("ml")
+    def log_moderation(self, rs: RequestState, code: const.MlLogCodes,
+                       mailinglist_id: int, change_note: str) -> DefaultReturnCode:
+        """Log a moderation action (delegated to Mailman)."""
+        code = affirm("enum_mllogcodes", code)
+        mailinglist_id = affirm("int", mailinglist_id)
+        change_note = affirm("str", change_note)
+        return self.ml_log(rs, code, mailinglist_id, change_note=change_note)

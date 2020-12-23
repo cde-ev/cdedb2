@@ -8,10 +8,9 @@ on the mail VM from within the CdEDB.
 from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
-from cdedb.common import RequestState, CdEDBObject
+from cdedb.common import CdEDBObject, RequestState
 from cdedb.frontend.common import periodic
 from cdedb.frontend.ml_base import MlBaseFrontend
-
 
 POLICY_MEMBER_CONVERT = {
     const.ModerationPolicy.unmoderated: 'accept',
@@ -97,11 +96,41 @@ class MailmanMixin(MlBaseFrontend):
         if changed:
             mm_list.settings.save()
 
+        desired_header_matches = {
+            ('x-spam-flag', 'YES', 'hold'),
+        }
+        existing_header_matches = {
+            (match.rest_data['header'], match.rest_data['pattern'],
+             match.rest_data['action'])
+            for match in mm_list.header_matches
+        }
+        if desired_header_matches != existing_header_matches:
+            header_matches = mm_list.header_matches
+            for match in header_matches:
+                match.delete()
+            for header, pattern, action in desired_header_matches:
+                mm_list.header_matches.add(header, pattern, action)
+
         desired_templates = {
-            'list:member:regular:footer': (
-                "Dies ist eine Mailingliste des CdE e.V.\n"
-                "Zur Abo-Verwaltung benutze die Datenbank"
-                " (https://db.cde-ev.de/db/ml/)"),
+            # Funny split to protect trailing whitespace
+            'list:member:regular:footer': '-- ' + """
+Dies ist eine Mailingliste des CdE e.V.
+Zur Abo-Verwaltung benutze die Datenbank (https://db.cde-ev.de/db/ml/)""",
+            'list:admin:action:post': """
+As list moderator, your authorization is requested for the
+following mailing list posting:
+
+    List:    $listname
+    From:    $sender_email
+    Subject: $subject
+
+The message is being held because:
+
+$reasons
+
+At your convenience, visit the CdEDB to approve or deny the request. Note
+that the paragraph below about email moderation is wrong. Sending mails will
+do nothing.""".strip(),
         }
         store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
@@ -171,6 +200,15 @@ class MailmanMixin(MlBaseFrontend):
         for address in delete_mods:
             mm_list.remove_moderator(address)
 
+        mm_owners = {m.email: m for m in mm_list.owners}
+        new_owners = set(db_moderators) - set(mm_owners)
+        delete_owners = set(mm_owners) - set(db_moderators)
+
+        for address in new_owners:
+            mm_list.add_owner(address)
+        for address in delete_owners:
+            mm_list.remove_owner(address)
+
     def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
                                  db_list: CdEDBObject,
                                  mm_list: MailingList) -> None:
@@ -227,9 +265,12 @@ class MailmanMixin(MlBaseFrontend):
             return store
         db_lists = self.mlproxy.get_mailinglists(
             rs, self.mlproxy.list_mailinglists(rs, active_only=False))
-        # Exclude CdE-München lists as they are not managed by our mail server
+        # Exclude CdE-München and Dokuforge lists as they are not managed by
+        # our mail server
+        external_domains = {const.MailinglistDomain.cdemuenchen,
+                            const.MailinglistDomain.dokuforge}
         db_lists = {lst['address']: lst for lst in db_lists.values()
-                    if lst['domain'] != const.MailinglistDomain.cdemuenchen}
+                    if lst['domain'] not in external_domains}
         mm_lists = {lst.fqdn_listname: lst for lst in mailman.lists}
         new_lists = set(db_lists) - set(mm_lists)
         current_lists = set(db_lists) - new_lists
