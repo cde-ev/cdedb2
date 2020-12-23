@@ -2,10 +2,12 @@
 
 import csv
 import re
+import unittest.mock
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
@@ -211,7 +213,7 @@ class TestMlFrontend(FrontendTest):
                       {'description': 'Feriendorf Bau'})
         everyone = ["Mailinglisten-Übersicht", "Übersicht"]
         moderator = ["Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
-                     "Log"]
+                     "Nachrichtenmoderation", "Log"]
 
         # Moderators:
         if user['id'] in {USER_DICT['berta']['id']}:
@@ -990,6 +992,7 @@ class TestMlFrontend(FrontendTest):
                        {'address': '42@lists.cde-ev.de', 'is_active': True},
                        {'address': 'hogwarts@cdelokal.cde-ev.de', 'is_active': True},
                        {'address': 'kongress-leitung@lists.cde-ev.de', 'is_active': True},
+                       {'address': 'migration@testmail.cde-ev.de', 'is_active': True},
                        ]
         self.get("/ml/script/all", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
@@ -1120,7 +1123,11 @@ class TestMlFrontend(FrontendTest):
                        {'address': 'kongress-leitung@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
-                        'mime': False}]
+                        'mime': False},
+                       {'address': 'migration@testmail.cde-ev.de',
+                        'inactive': False,
+                        'maxsize': 1024,
+                        'mime': None}]
         self.get("/ml/script/all/compat", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
         expectation = {'address': 'werbung@lists.cde-ev.de',
@@ -1305,14 +1312,67 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
+    @unittest.mock.patch("mailmanclient.Client")
+    @as_users("anton")
+    def test_mailman_moderation(self, client_class, user):
+        #
+        # Prepare
+        #
+        messages = HELD_MESSAGE_SAMPLE
+        mmlist = unittest.mock.MagicMock()
+        mmlist.held = messages
+        moderation_response = unittest.mock.MagicMock()
+        moderation_response.status = 204
+        mmlist.moderate_message.return_value = moderation_response
+        client = client_class.return_value
+        client.get_list.return_value = mmlist
+
+        #
+        # Run
+        #
+        self.traverse({'href': '/ml/$'})
+        self.traverse({'href': '/ml/mailinglist/99'})
+        self.traverse({'href': '/ml/mailinglist/99/moderate'})
+        self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
+        self.assertPresence("Finanzbericht")
+        self.assertPresence("Verschwurbelung")
+        self.assertPresence("unerwartetes Erbe")
+        mmlist.held = messages[1:]
+        f = self.response.forms['acceptmsg1']
+        self.submit(f)
+        self.assertNonPresence("Finanzbericht")
+        self.assertPresence("Verschwurbelung")
+        self.assertPresence("unerwartetes Erbe")
+        mmlist.held = messages[2:]
+        f = self.response.forms['rejectmsg2']
+        self.submit(f)
+        self.assertNonPresence("Finanzbericht")
+        self.assertNonPresence("Verschwurbelung")
+        self.assertPresence("unerwartetes Erbe")
+        mmlist.held = messages[3:]
+        f = self.response.forms['discardmsg3']
+        self.submit(f)
+        self.assertNonPresence("Finanzbericht")
+        self.assertNonPresence("Verschwurbelung")
+        self.assertNonPresence("unerwartetes Erbe")
+
+        #
+        # Check
+        #
+        umcall = unittest.mock.call
+        # Creation
+        self.assertEqual(
+            mmlist.moderate_message.call_args_list,
+            [umcall(1, 'accept'), umcall(2, 'reject'), umcall(3, 'discard')])
+
     def test_log(self):
-        ## First: generate data
+        # First: generate data
         self.test_mailinglist_management()
         self.logout()
         self.test_create_mailinglist()
         self.logout()
 
-        ## Now check it
+        # Now check it
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})

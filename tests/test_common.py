@@ -281,7 +281,7 @@ class TestCommon(BasicTest):
             raise self.failureException(msg) from None
 
     def test_untranslated_strings(self):
-        i18n_path = self.conf["REPOSITORY_PATH"]
+        i18n_path = self.conf["REPOSITORY_PATH"] / 'i18n'
         env = os.environ.copy()
         with tempfile.TemporaryDirectory() as tempdir:
             env['I18NDIR'] = tempdir

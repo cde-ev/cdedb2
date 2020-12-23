@@ -6533,6 +6533,25 @@
             "event_id": null,
             "registration_stati": [],
             "assembly_id": 1
+        },
+        {
+            "id": 99,
+            "title": "Mailman-Migration",
+            "address": "migration@testmail.cde-ev.de",
+            "local_part": "migration",
+            "domain": 100,
+            "description": null,
+            "mod_policy": 2,
+            "attachment_policy": 2,
+            "ml_type": 3,
+            "subject_prefix": "migcation",
+            "maxsize": 1024,
+            "is_active": true,
+            "notes": null,
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
         }
     ],
     "ml.moderators": [
@@ -6703,6 +6722,10 @@
         {
             "mailinglist_id": 66,
             "persona_id": 23
+        },
+        {
+            "mailinglist_id": 99,
+            "persona_id": 1
         }
     ],
     "ml.whitelist": [

@@ -435,6 +435,7 @@ class TestCron(CronTest):
             'platin': unittest.mock.MagicMock(),
             'geheim': unittest.mock.MagicMock(),
             'hogwarts': unittest.mock.MagicMock(),
+            'migration': unittest.mock.MagicMock(),
         }
 
         client = client_class.return_value
@@ -483,6 +484,7 @@ class TestCron(CronTest):
                           umcall('platin'),
                           umcall('geheim'),
                           umcall('hogwarts'),
+                          umcall('migration'),
                           ])))
         # Meta update
         expectation = {
@@ -496,7 +498,7 @@ class TestCron(CronTest):
         }
         for key, value in expectation.items():
             self.assertEqual(mm_lists['witz'].settings[key], value)
-        self.assertEqual(mm_lists['werbung'].set_template.call_count, 1)
+        self.assertEqual(mm_lists['werbung'].set_template.call_count, 2)
         # Subscriber update
         self.assertEqual(
             mm_lists['witz'].subscribe.call_args_list,
