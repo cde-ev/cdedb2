@@ -1121,7 +1121,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
 
-
         # this is used for the flux candidate table
         current = {
             f"{key}_{candidate_id}": value
@@ -1161,6 +1160,9 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         However, we provide them also online for the sake of laziness.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, "assembly/show_ballot_result")
+
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
@@ -1173,7 +1175,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_ballot")
 
         vote_dict = self._retrieve_own_vote(rs, ballot, secret)
-        # the validation errors resulting of an invalid secret will be returned only
+        # we may get a validation error from an invalid secret, which will be handled by
+        # the user and we may ignore here
         rs.ignore_validation_errors()
 
         result = self.get_online_result(rs, ballot)
@@ -1253,7 +1256,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 # abstention
                 own_vote = MAGIC_ABSTAIN
             elif ballot['votes']:
-                # select voted options in classical votings
+                # select voted options in classical voting
                 own_vote = split_vote[0]
 
         return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
