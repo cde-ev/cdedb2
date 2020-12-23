@@ -3,7 +3,6 @@
 import copy
 import datetime
 import decimal
-from test.common import USER_DICT, BackendTest, as_users, nearly_now
 
 import pytz
 
@@ -12,6 +11,7 @@ from cdedb.common import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, QuotaException,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from tests.common import USER_DICT, BackendTest, as_users, nearly_now
 
 
 class TestCdEBackend(BackendTest):

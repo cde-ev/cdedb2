@@ -7,8 +7,9 @@ cd /cdedb2 && make reload
 
 # run (part of the) test suite; leave out the filename to run everything
 /cdedb2/bin/check.sh test_backend_core
-# run a single test (the filename is optional and only to disambiguate)
-/cdedb2/bin/singlecheck.sh test_json_fields_with_dates test_backend_event
+# run tests matching the given patterns
+# (the filename can be included in the pattern but does not have to)
+/cdedb2/bin/singlecheck.sh test_backend_event*test_json_fields_with_dates
 
 # list CdEDB log files (most recently changed first)
 ls -lht /log/

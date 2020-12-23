@@ -5,7 +5,6 @@ import copy
 import datetime
 import decimal
 import json
-from test.common import USER_DICT, BackendTest, as_users, json_keys_to_int, nearly_now
 
 import psycopg2
 import pytz
@@ -19,6 +18,7 @@ from cdedb.common import (
 )
 from cdedb.enums import ENUMS_DICT
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, nearly_now
 
 
 class TestEventBackend(BackendTest):
@@ -384,7 +384,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_change_minor_form(self, user):
         event_id = 1
-        with open("/cdedb2/test/ancillary_files/form.pdf", "rb") as f:
+        with open("/cdedb2/tests/ancillary_files/form.pdf", "rb") as f:
             minor_form = f.read()
         self.assertIsNone(self.event.get_minor_form(self.key, event_id))
         self.assertLess(0, self.event.change_minor_form(self.key, event_id, minor_form))

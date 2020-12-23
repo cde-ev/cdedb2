@@ -1,0 +1,57 @@
+{% set sidenav_active='ml_moderation' %}
+{% extends "web/ml/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/ml/generic.tmpl" as generic_ml with context %}
+{% block title %}
+    {% trans title=ambience['mailinglist']['title'] %}{{ title }} – Message Moderation
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {% if is_admin %}
+        {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/message_moderation"), gettext("Message Moderation"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    {% if held is none %}
+        <p>
+            {% trans %}
+                This mailing list is not moderated via CdEDB.
+            {% endtrans %}
+        </p>
+    {% else %}
+        {% if held %}
+            <ul>
+                {% for email in held %}
+                    <li class="hide-hover-container clearfix-after">
+                        {{ email.sender }} / {{ email.subject }}
+                        {% for action, coloring, icon in (('accept', 'success', 'check'),
+                                                          ('reject', 'warning', 'reply'),
+                                                          ('discard', 'danger', 'trash-alt')) %}
+                            <form action="{{ cdedblink('ml/message_moderation') }}"
+                                  method="POST"
+                                  id="{{ action }}msg{{ email.request_id }}"
+                                  class="hide-hover display-inline">
+                                {{ util.anti_csrf_token('ml/message_moderation') }}
+                                {{ util.input_hidden(name="request_id", value=email.request_id) }}
+                                {{ util.input_hidden(name="action", value=action) }}
+                                {{ util.input_submit(value=gettext(action.capitalize()), icon=icon,
+                                                     aclass=("btn btn-xs btn-" + coloring)) }}
+                            </form>
+                        {% endfor %}
+                        <br />
+                        <details>
+                            <summary>{% trans %}Message details{% endtrans %}</summary>
+                            <pre>{{ email.msg }}</pre>
+                        </details>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>{% trans %}No held messages.{% endtrans %}</p>
+        {% endif %}
+    {% endif %}
+{% endblock %}
