@@ -23,7 +23,7 @@ help:
 
 PYTHONBIN ?= python3
 PYLINTBIN ?= pylint3
-COVERAGEBIN ?= coverage
+COVERAGEBIN ?= python3-coverage
 MYPYBIN ?= mypy
 TESTPREPARATION ?= automatic
 I18NDIR ?= ./i18n
