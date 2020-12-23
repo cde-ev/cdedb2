@@ -457,3 +457,6 @@ class MlLogCodes(enum.IntEnum):
     request_cancelled = 32  #:
     request_blocked = 33  #:
     email_trouble = 40  #:
+    moderate_accept = 50  #:
+    moderate_reject = 51  #:
+    moderate_discard = 52  #:
