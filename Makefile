@@ -292,7 +292,7 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
 	$(MAKE) prepare-check
-	$(COVERAGEBIN) run -m test.main
+	$(COVERAGEBIN) run -m tests.main
 
 coverage: .coverage
 	$(COVERAGEBIN) report --include 'cdedb/*' --show-missing
