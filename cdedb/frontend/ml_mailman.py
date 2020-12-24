@@ -113,7 +113,7 @@ class MailmanMixin(MlBaseFrontend):
 
         desired_templates = {
             # Funny split to protect trailing whitespace
-            'list:member:regular:footer': '-- ' + """
+            'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
 Zur Abo-Verwaltung benutze die Datenbank (https://db.cde-ev.de/db/ml/)""",
             'list:admin:action:post': """
@@ -128,9 +128,15 @@ The message is being held because:
 
 $reasons
 
-At your convenience, visit the CdEDB to approve or deny the request. Note
+At your convenience, visit the CdEDB [1] to approve or deny the request. Note
 that the paragraph below about email moderation is wrong. Sending mails will
-do nothing.""".strip(),
+do nothing.
+
+[1] { cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}) }
+""".strip(),
+        }
+        existing_templates = {
+            t.name: t for t in mm_list.templates
         }
         store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
@@ -144,6 +150,11 @@ do nothing.""".strip(),
                     current_text = f.read()
                 if current_text != text:
                     todo = True
+            url = template_url(file_name)
+            if name not in existing_templates:
+                todo = True
+            elif existing_templates[name].uri != url:
+                todo = True
             if todo:
                 with open(file_path, 'w') as f:
                     f.write(text)
@@ -151,6 +162,8 @@ do nothing.""".strip(),
                     name, template_url(file_name),
                     username=self.conf["MAILMAN_BASIC_AUTH_USER"],
                     password=self.mailman_template_password())
+        for name in set(existing_templates) - set(desired_templates):
+            existing_templates[name].delete()
 
     def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
