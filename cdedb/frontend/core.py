@@ -19,7 +19,6 @@ from werkzeug import Response
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as validationtypes
-from cdedb.validation import validate_check
 from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
     REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
@@ -38,7 +37,7 @@ from cdedb.frontend.common import (
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
     _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
+    _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
 )
 
 # Name of each realm

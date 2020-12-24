@@ -7,12 +7,12 @@ import re
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cdedb.validationtypes as validationtypes
-from cdedb.validation import validate_check
 from cdedb.common import (
     Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
     n_, now,
 )
 from cdedb.frontend.common import cdedbid_filter
+from cdedb.validation import validate_check
 
 # This is the specification of the order of the fields in the input.
 # This could be changed in the online banking, but we woud lose backwards

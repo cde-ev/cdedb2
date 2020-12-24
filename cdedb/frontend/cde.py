@@ -28,7 +28,6 @@ from werkzeug import FileStorage, Response
 import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as validationtypes
-from cdedb.validation import validate_check, validate_check_optional
 from cdedb.common import (
     PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
     Error, LineResolutions, RequestState, TransactionType, asciificator, deduct_years,
@@ -47,6 +46,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
+from cdedb.validation import validate_check, validate_check_optional
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,

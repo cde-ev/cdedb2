@@ -18,7 +18,6 @@ from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as validationtypes
-from cdedb.validation import validate_is, validate_check
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, internal, singularize,
@@ -37,6 +36,7 @@ from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.query import Query, QueryOperators
+from cdedb.validation import validate_check, validate_is
 
 
 class CoreBackend(AbstractBackend):

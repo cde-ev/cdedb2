@@ -30,7 +30,6 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as validationtypes
-from cdedb.validation import validate_check
 from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, AgeClasses, CdEDBObject,
     CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions, CourseFilterPositions,
@@ -51,6 +50,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
+from cdedb.validation import validate_check
 
 LodgementProblem = NamedTuple(
     "LodgementProblem", [("description", str), ("lodgement_id", int),
