@@ -114,7 +114,7 @@ class MailmanMixin(MlBaseFrontend):
 
         desired_templates = {
             # Funny split to protect trailing whitespace
-            'list:member:regular:footer': '-- ' + """
+            'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
 Zur Abo-Verwaltung benutze die Datenbank (https://db.cde-ev.de/db/ml/)""",
             'list:admin:action:post': """
@@ -129,9 +129,12 @@ The message is being held because:
 
 $reasons
 
-At your convenience, visit the CdEDB to approve or deny the request. Note
+At your convenience, visit the CdEDB [1] to approve or deny the request. Note
 that the paragraph below about email moderation is wrong. Sending mails will
-do nothing.""".strip(),
+do nothing.
+
+[1] { cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}) }
+""".strip(),
         }
         store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
