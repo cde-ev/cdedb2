@@ -9,7 +9,7 @@ from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, CdEDBObject
-from cdedb.frontend.common import periodic
+from cdedb.frontend.common import periodic, cdedburl
 from cdedb.frontend.ml_base import MlBaseFrontend
 
 
@@ -117,7 +117,7 @@ class MailmanMixin(MlBaseFrontend):
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
 Zur Abo-Verwaltung benutze die Datenbank (https://db.cde-ev.de/db/ml/)""",
-            'list:admin:action:post': """
+            'list:admin:action:post': f"""
 As list moderator, your authorization is requested for the
 following mailing list posting:
 
