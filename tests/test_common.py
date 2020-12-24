@@ -5,9 +5,9 @@ import os
 import pathlib
 import random
 import re
+import shutil
 import subprocess
 import tempfile
-import unittest
 
 import pytz
 
@@ -17,9 +17,10 @@ from cdedb.common import (
     extract_roles, int_to_words, mixed_existence_sorter, schulze_evaluate, unwrap,
     xsorted,
 )
+from tests.common import BasicTest
 
 
-class TestCommon(unittest.TestCase):
+class TestCommon(BasicTest):
     def test_mixed_existence_sorter(self):
         unsorted = [3, 8, -3, 5, 0, -4]
         self.assertEqual(list(mixed_existence_sorter(unsorted)),
@@ -280,25 +281,26 @@ class TestCommon(unittest.TestCase):
             raise self.failureException(msg) from None
 
     def test_untranslated_strings(self):
+        i18n_path = self.conf["REPOSITORY_PATH"] / 'i18n'
+        env = os.environ.copy()
         with tempfile.TemporaryDirectory() as tempdir:
+            env['I18NDIR'] = tempdir
             try:
                 temppath = pathlib.Path(tempdir)
-                env = os.environ.copy()
-                env['I18NDIR'] = tempdir
                 for lang in ('de', 'en'):
                     langdir = temppath / lang / 'LC_MESSAGES'
                     langdir.mkdir(parents=True)
-                    pofile = langdir / 'cdedb.po'
-                    pofile.touch()
-                subprocess.run(["make", "i18n-refresh"], check=True, env=env,
-                               stdout=subprocess.DEVNULL,
-                               stderr=subprocess.DEVNULL)
+                    temp_pofile = langdir / 'cdedb.po'
+                    orig_pofile = i18n_path / lang / 'LC_MESSAGES' / 'cdedb.po'
+                    shutil.copy(orig_pofile, temp_pofile)
+                tmp = subprocess.run(["make", "i18n-refresh"], check=True, env=env,
+                                     capture_output=True)
                 result = subprocess.run(["make", "i18n-check"], check=True,
                                         capture_output=True, env=env)
             except subprocess.CalledProcessError as cpe:
                 self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
         pattern = re.compile(r" (\d+) (?:unübersetzte Meldung|untranslated message)")
-        match = re.search(pattern, result.stderr.decode().splitlines()[0])
+        match = re.search(pattern, " ".join(result.stderr.decode().splitlines()[:-1]))
         if match:
             self.fail(f"There are {match.group(1)} untranslated strings (German)."
                       f" Make sure all strings are translated to German.")

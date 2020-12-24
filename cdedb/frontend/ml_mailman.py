@@ -96,11 +96,41 @@ class MailmanMixin(MlBaseFrontend):
         if changed:
             mm_list.settings.save()
 
+        desired_header_matches = {
+            ('x-spam-flag', 'YES', 'hold'),
+        }
+        existing_header_matches = {
+            (match.rest_data['header'], match.rest_data['pattern'],
+             match.rest_data['action'])
+            for match in mm_list.header_matches
+        }
+        if desired_header_matches != existing_header_matches:
+            header_matches = mm_list.header_matches
+            for match in header_matches:
+                match.delete()
+            for header, pattern, action in desired_header_matches:
+                mm_list.header_matches.add(header, pattern, action)
+
         desired_templates = {
-            'list:member:regular:footer': (
-                "Dies ist eine Mailingliste des CdE e.V.\n"
-                "Zur Abo-Verwaltung benutze die Datenbank"
-                " (https://db.cde-ev.de/db/ml/)"),
+            # Funny split to protect trailing whitespace
+            'list:member:regular:footer': '-- ' + """
+Dies ist eine Mailingliste des CdE e.V.
+Zur Abo-Verwaltung benutze die Datenbank (https://db.cde-ev.de/db/ml/)""",
+            'list:admin:action:post': """
+As list moderator, your authorization is requested for the
+following mailing list posting:
+
+    List:    $listname
+    From:    $sender_email
+    Subject: $subject
+
+The message is being held because:
+
+$reasons
+
+At your convenience, visit the CdEDB to approve or deny the request. Note
+that the paragraph below about email moderation is wrong. Sending mails will
+do nothing.""".strip(),
         }
         store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():

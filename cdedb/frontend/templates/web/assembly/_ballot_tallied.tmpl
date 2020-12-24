@@ -1,18 +1,18 @@
 {% macro show_result(ballot, result, short=False) -%}
-    {% set is_classical_vote = ballot['votes'] %}
+    {% set is_classical = ballot['votes'] %}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
                 <th class="col-sm-1">
                     {{ util.make_icon('sort-amount-down-alt', title=gettext("Ranking"), fixed_width=False) }}
                 </th>
-                <th class="col-sm-{% if is_classical_vote %}10{% else %}9{% endif %}">
+                <th class="col-sm-{% if is_classical %}10{% else %}9{% endif %}">
                     {% trans %}Candidates{% endtrans %}
                 </th>
                 <th class="col-sm-1">
                     {{ util.make_icon('plus', title=gettext("Pro-Votes"), fixed_width=False) }}
                 </th>
-            {% if not is_classical_vote %}
+            {% if not is_classical %}
                 <th class="col-sm-1">
                     {{ util.make_icon('minus', title=gettext("Contra-Votes"), fixed_width=False) }}
                 </th>
@@ -41,7 +41,7 @@
                                 </span>
                             {% endif %}
                         </td>
-                    {% if is_classical_vote %}
+                    {% if is_classical %}
                         <td>
                             {% if first_candidate %}
                                 {{ result['counts'][candidate_shortname] }}
@@ -88,7 +88,7 @@
                     {# We do not count bar as candidate, imagine bar to be an infinitisimal border between candidates. #}
                 </td>
                 <td class="text-info">
-                    {% if is_classical_vote %}
+                    {% if is_classical %}
                         {% trans %}
                             Against all Candidates.
                         {% endtrans %}
@@ -98,7 +98,7 @@
                         {% endtrans %}
                     {% endif %}
                 </td>
-            {% if is_classical_vote %}
+            {% if is_classical %}
                 {# this are the votes for the 'against all' choice #}
                 <td>
                     {{ result['counts'][ASSEMBLY_BAR_SHORTNAME] }}
@@ -145,7 +145,7 @@
                                 </span>
                             {% endif %}
                         </td>
-                    {% if is_classical_vote %}
+                    {% if is_classical %}
                         <td>
                             {% if first_candidate %}
                                 {{ result['counts'][candidate_shortname] }}
@@ -181,16 +181,21 @@
     {% endtrans %}
 {%- endmacro %}
 
+
+
+{# Print an explanation text for the result. If both classical and preferential is given, both are printed. #}
 {% macro explain_result(classical=false, preferential=false, use_bar=false) %}
-    {% call util.bootstrap_panel(title=gettext("Help for tallying"), icon='info-circle', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help for tallying"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
+
         {% if classical and preferential %}
             <b>{% trans %}Classical vote{% endtrans %}</b><br />
         {% endif %}
+
         {% if classical %}
             <p>
                 {% trans %}
-                    Pro votes are the sum of all votes in favor of this candidate. Votes against candidates are not
-                    possible in this voting system.
+                    Pro votes are the sum of all votes in favor of this candidate.
+                    Votes against single candidates are not possible in this voting system.
                 {% endtrans %}
             </p>
             {% if use_bar %}
@@ -202,9 +207,11 @@
                 </p>
             {% endif %}
         {% endif %}
+
         {% if classical and preferential %}
             <b>{% trans %}Preferential vote{% endtrans %}</b><br />
         {% endif %}
+
         {% if preferential %}
             <p>
                 {% trans %}
@@ -213,101 +220,56 @@
                 {% endtrans %}
             </p>
         {% endif %}
+
     {% endcall %}
 {% endmacro %}
 
-{% macro show_summary() -%}
-    <pre style="max-width: 500px;">{{ result['result'] }}</pre>
 
-    {# info box for preferential votes #}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
-        <p>
-            {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
-                This vote was a preferential vote. Voters arranged the candidates according to their preference.
-                The preferences of all participants were evaluated using the {{ link }},
-                to determine the option with the most votes.
-            {% endtrans %}
-        </p>
-        <p>
-            {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s %}
-                The summary shows the combined preference list of all participant.
-                The greater-than character {{ gt }} means that the candidate, represented by their
-                shortname, on the left has higher overall preference than the one on the right.
-                The equals character {{ eq }} means that two or more candidates have the same overall
-                preference across all participants.
-            {% endtrans %}
-        </p>
-        {% if ambience['ballot']['use_bar'] %}
-            <p>
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
-                    Additionally the shortname {{ abm }} shows where in the election the rejection limit was ranked.
-                    Should no candidate get more votes than the rejection limit, the board may take additional measures.
-                {% endtrans %}
-            </p>
-        {% endif %}
-    {% endcall %}
-{%- endmacro %}
 
 {% macro show_own_vote() -%}
-    <h3>{% trans %}Your Vote{% endtrans %}</h3>
     <div id="own-vote">
-        {% set is_active = ambience["assembly"]["is_active"] %}
         {% if not attends %}
             {% trans %}You are not participating in this assembly.{% endtrans %}
-        {% elif not is_active and not own_vote %}
-            {% if not has_voted %}
+        {% elif not has_voted %}
                 {% trans %}You did not vote.{% endtrans %}
-            {% else %}
-                {% if not secret %}
-                    <p>
-                        {{ util.make_icon('info-circle') }}
-                        {% trans %}The assembly concluded. The votes of specific users can no longer be extracted from the database in any way.{% endtrans %}
-                        {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
-                    </p>
-                {% else %}
-                    <p>
-                        {{ util.make_icon('info-circle') }}
-                        {% trans %}You entered an invalid secret.{% endtrans %}
-                        {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
-                    </p>
-                {% endif %}
-                <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
-                    {{ util.anti_csrf_token("assembly/show_old_vote") }}
-                    <div class="input-group">
-                        <span class="input-group-addon"><label for="input-secret">
-                            {% trans %}Secret{% endtrans %}
-                        </label></span>
-                        {{ util.input_text(name="secret", anid="input-secret") }}
-                        <div class="input-group-btn">
-                            {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
-                        </div>
-                    </div>
-                    {{ util.output_errors('secret', wrapper=True) }}
-                </form>
-            {% endif %}
-        {% elif not own_vote %}
-            {% if ambience['ballot']['is_voting'] %}
-                {% trans %}You have not voted yet.{% endtrans %}
-            {% else %}
-                {% trans %}You did not vote.{% endtrans %}
-            {% endif %}
-        {% elif ambience['ballot']['votes'] %}
+        {% elif own_vote %}
+            {% if own_vote == MAGIC_ABSTAIN %}
+                <p>{% trans %}You abstained.{% endtrans %}</p>
             {# Show own vote under result: Classical vote #}
-            {% if split_vote|length == 1 %}
-                {% trans %}You abstained.{% endtrans %}
-            {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_SHORTNAME] %}
-                {% trans %}You voted against all candidates.{% endtrans %}
+            {% elif ambience['ballot']['votes'] %}
+                {% if own_vote == ASSEMBLY_BAR_SHORTNAME %}
+                    <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
+                {% else %}
+                    <p>{% trans %}You voted for the following candidates:{% endtrans %}</p>
+                    <pre class="result">
+                        {%- for vote in own_vote.split('=') -%}
+                            {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
+                        {%- endfor -%}
+                    </pre>
+                {% endif %}
+            {# Show own vote under result: Preferential vote #}
             {% else %}
-                {% trans %}You voted for the following candidates:{% endtrans %}<br />
-                {% for vote in split_vote[0] %}
-                    {{ candidates[vote]['title'] }}{% if not loop.last %},{% endif %}
-                {% endfor %}
+                <p>{% trans %}You voted in the following preference:{% endtrans %}</p>
+                    <pre class="result">{{ own_vote }}</pre>
             {% endif %}
         {% else %}
-            {# Show own vote under result: Preferential vote #}
-            {%- trans vote="<code>%(vote)s</code>"|s|format(vote=own_vote) %}
-                You voted {{ vote }}.
-            {% endtrans -%}
+            <p>
+                {% trans %}The assembly concluded. The votes of specific users can no longer be extracted from the database in any way.{% endtrans %}
+                {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
+            </p>
+            <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
+                {{ util.anti_csrf_token("assembly/show_old_vote") }}
+                <div class="input-group">
+                    <span class="input-group-addon"><label for="input-secret">
+                        {% trans %}Secret{% endtrans %}
+                    </label></span>
+                    {{ util.input_text(name="secret", anid="input-secret") }}
+                    <div class="input-group-btn">
+                        {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
+                    </div>
+                </div>
+                {{ util.output_errors('secret', wrapper=True) }}
+            </form>
         {% endif %}
     </div>
 {%- endmacro %}

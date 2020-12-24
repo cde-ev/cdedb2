@@ -198,7 +198,7 @@
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
 {% macro doclink(topic, anchor=none) %}
-    <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
+    <a href="{{ docurl(topic, anchor) }}" class="btn btn-info pull-right" target="_blank">
         {{ make_icon('question-circle') }}
         {% trans %}Help{% endtrans %}
         <span class="sr-only">{% trans %}for this site{% endtrans %}</span>

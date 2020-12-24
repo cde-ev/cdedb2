@@ -1703,7 +1703,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", message)
         else:
             self.do_mail(
-                rs, "reset_password",
+                rs, "admin_reset_password",
                 {'To': (email,), 'Subject': "Passwort zurücksetzen"},
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email,
