@@ -227,8 +227,7 @@ lint:
 	@echo $(BANNERLINE)
 	@echo ""
 	$(PYLINTBIN) --rcfile='./lint.rc' --output-format=text cdedb \
-		| grep -E '^(\*\*\*\*|E:|W:)' \
-		| grep -E -v "'cdedb.validation' has no '[a-zA-Z_]*' member"
+		| grep -E '^(\*\*\*\*|E:|W:)'
 
 
 prepare-check:
