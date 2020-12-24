@@ -9,7 +9,7 @@ from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
-from cdedb.frontend.common import periodic
+from cdedb.frontend.common import periodic, cdedburl
 from cdedb.frontend.ml_base import MlBaseFrontend
 
 POLICY_MEMBER_CONVERT = {
@@ -115,8 +115,8 @@ class MailmanMixin(MlBaseFrontend):
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
-Zur Abo-Verwaltung benutze die Datenbank (https://db.cde-ev.de/db/ml/)""",
-            'list:admin:action:post': """
+Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)})""",
+            'list:admin:action:post': f"""
 As list moderator, your authorization is requested for the
 following mailing list posting:
 
@@ -132,7 +132,7 @@ At your convenience, visit the CdEDB [1] to approve or deny the request. Note
 that the paragraph below about email moderation is wrong. Sending mails will
 do nothing.
 
-[1] { cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}) }
+[1] { cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True) }
 """.strip(),
         }
         existing_templates = {
