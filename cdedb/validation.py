@@ -191,7 +191,6 @@ def _create_assert_valid(fun: Callable[..., T]) -> Callable[..., T]:
 
     return assert_valid
 
-
 def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
     @functools.wraps(fun)
     def is_valid(*args: Any, **kwargs: Any) -> bool:
@@ -203,6 +202,15 @@ def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
             return False
 
     return is_valid
+
+
+def validate_is(type: Type[T], value: Any, **kwargs: Any) -> bool:
+    kwargs['_convert'] = False
+    try:
+        _ALL_TYPED[type](value, **kwargs)
+        return True
+    except ValidationSummary as errs:
+        return False
 
 
 def _create_check_valid(fun: Callable[..., T]
@@ -222,6 +230,27 @@ def _create_check_valid(fun: Callable[..., T]
 
     return check_valid
 
+def validate_check(
+    type: Type[T], value: Any, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+        try:
+            val = _ALL_TYPED[type](value, **kwargs)
+            return val, []
+        except ValidationSummary as errs:
+            old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
+            _LOGGER.debug(
+                f"{old_format} for '{str(type)}'"
+                f" with input {value}, {kwargs}."
+            )
+            return None, old_format
+
+def validate_check_optional(
+    type: Type[T], value: Any, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    validation = _ALL_TYPED[type]
+    # as long as we cannot handle Optional in ValidatorStorage.__getitem__
+    # we have to resort to this somewhat ugly workaround
+    return validate_check(_allow_None(validation), value, **kwargs) # type: ignore
 
 def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     """Wrap a validator to allow ``None`` as valid input.
@@ -1195,7 +1224,7 @@ def _persona(
             try:
                 postal_code = _german_postal_code(
                     val['postal_code' + suffix], 'postal_code' + suffix,
-                    aux=val.get('country' + suffix), **kwargs)
+                    aux=val.get('country' + suffix, ""), **kwargs)
                 val['postal_code' + suffix] = postal_code
             except ValidationSummary as e:
                 errs.extend(e)
@@ -1494,7 +1523,7 @@ def _genesis_case(
 
     if val.get('postal_code'):
         postal_code = _german_postal_code(
-            val['postal_code'], 'postal_code', aux=val.get('country'), **kwargs)
+            val['postal_code'], 'postal_code', aux=val.get('country', ""), **kwargs)
         val['postal_code'] = postal_code
 
     return GenesisCase(val)
@@ -2448,7 +2477,7 @@ def _past_course(
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
-    return PartialCourse(val)
+    return PastCourse(val)
 
 
 def _COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {

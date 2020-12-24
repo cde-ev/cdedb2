@@ -9,12 +9,14 @@ the infrastructure, since we are providing it. Everything is a bit
 special in here.
 """
 
+from cdedb.validationtypes import PrintableASCII
 import logging
 from typing import Optional
 
 import psycopg2.extensions
 
-import cdedb.validation as validate
+import cdedb.validationtypes as validationtypes
+from cdedb.validation import validate_is
 from cdedb.common import (
     PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles, glue,
     make_root_logger, now,
@@ -68,8 +70,8 @@ class SessionBackend:
         """
         persona_id = None
         data = None
-        if (validate.is_printable_ascii(sessionkey)
-                and validate.is_printable_ascii(ip) and sessionkey):
+        if (validate_is(validationtypes.PrintableASCII, sessionkey)
+                and validate_is(validationtypes.PrintableASCII, ip) and sessionkey):
             query = ("SELECT persona_id, ip, is_active, atime, ctime"
                      " FROM core.sessions WHERE sessionkey = %s")
             with self.connpool["cdb_anonymous"] as conn:

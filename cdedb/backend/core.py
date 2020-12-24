@@ -17,7 +17,8 @@ from passlib.hash import sha512_crypt
 from typing_extensions import Protocol
 
 import cdedb.database.constants as const
-import cdedb.validation as validate
+import cdedb.validationtypes as validationtypes
+from cdedb.validation import validate_is, validate_check
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, internal, singularize,
@@ -2134,7 +2135,7 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        if not validate.is_password_strength(new_password):
+        if not validate_is(validationtypes.PasswordStrength, new_password):
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
@@ -2178,9 +2179,10 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("anonymous")
-    def check_password_strength(self, rs: RequestState, password: str, *,
-                                email: str = None, persona_id: int = None,
-                                argname: str = None) -> Tuple[str, List[Error]]:
+    def check_password_strength(
+        self, rs: RequestState, password: str, *,
+        email: str = None, persona_id: int = None, argname: str = None
+    ) -> Tuple[Optional[validationtypes.PasswordStrength], List[Error]]:
         """Check the password strength using some additional userdate.
 
         This escalates database connection privileges in the case of an
@@ -2237,8 +2239,8 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate.check_password_strength(
-            password, argname, admin=admin, inputs=inputs)
+        password, errs = validate_check(validationtypes.PasswordStrength,
+            password, argname=argname, admin=admin, inputs=inputs)
 
         return password, errs
 
@@ -2410,7 +2412,7 @@ class CoreBackend(AbstractBackend):
         params = (email, const.GenesisStati.unconfirmed)
         data = self.query_one(rs, query, params)
         return unwrap(data) if data else None
-    
+
     @access("anonymous")
     def genesis_verify(self, rs: RequestState, case_id: int) -> Tuple[int, str]:
         """Confirm the new email address and proceed to the next stage.

@@ -27,7 +27,8 @@ from werkzeug import FileStorage, Response
 
 import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
-import cdedb.validation as validate
+import cdedb.validationtypes as validationtypes
+from cdedb.validation import validate_check, validate_check_optional
 from cdedb.common import (
     PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
     Error, LineResolutions, RequestState, TransactionType, asciificator, deduct_years,
@@ -457,8 +458,10 @@ class CdEFrontend(AbstractUserFrontend):
             'decided_search': False,
             'notes': None})
         merge_dicts(persona, PERSONA_DEFAULTS)
-        persona, problems = validate.check_persona(persona, "persona",
-                                                   creation=True)
+        persona, problems = validate_check(validationtypes.Persona,
+            persona, argname="persona", creation=True)
+        if persona is None:
+            return {"problems": problems}
         try:
             if (persona['birthday'] >
                     deduct_years(now().date(), 10)):
@@ -1102,19 +1105,19 @@ class CdEFrontend(AbstractUserFrontend):
         :rtype: {str: object}
         :returns: The processed input datum.
         """
-        amount, problems = validate.check_positive_decimal(
-            datum['raw']['amount'], "amount")
-        persona_id, p = validate.check_cdedbid(
-            datum['raw']['persona_id'].strip(), "persona_id")
+        amount, problems = validate_check(validationtypes.PositiveDecimal,
+            datum['raw']['amount'], argname="amount")
+        persona_id, p = validate_check(validationtypes.CdedbID,
+            datum['raw']['persona_id'].strip(), argname="persona_id")
         problems.extend(p)
-        family_name, p = validate.check_str(
-            datum['raw']['family_name'], "family_name")
+        family_name, p = validate_check(str,
+            datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = validate.check_str(
-            datum['raw']['given_names'], "given_names")
+        given_names, p = validate_check(str,
+            datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        note, p = validate.check_str_or_None(
-            datum['raw']['note'], "note")
+        note, p = validate_check_optional(str,
+            datum['raw']['note'], argname="note")
         problems.extend(p)
 
         if persona_id:
@@ -1133,16 +1136,22 @@ class CdEFrontend(AbstractUserFrontend):
                     problems.append((
                         'persona_id',
                         ValueError(n_("Persona is not in CdE realm."))))
-                if not re.search(diacritic_patterns(re.escape(family_name)),
-                                 persona['family_name'], flags=re.IGNORECASE):
-                    problems.append(('family_name',
-                                     ValueError(
-                                         n_("Family name doesn’t match."))))
-                if not re.search(diacritic_patterns(re.escape(given_names)),
-                                 persona['given_names'], flags=re.IGNORECASE):
-                    problems.append(('given_names',
-                                     ValueError(
-                                         n_("Given names don’t match."))))
+
+                if family_name is not None and not re.search(
+                    diacritic_patterns(re.escape(family_name)),
+                    persona['family_name'],
+                    flags=re.IGNORECASE
+                ):
+                    problems.append(('family_name', ValueError(
+                        n_("Family name doesn’t match."))))
+
+                if given_names is not None and not re.search(
+                    diacritic_patterns(re.escape(given_names)),
+                    persona['given_names'],
+                    flags=re.IGNORECASE
+                ):
+                    problems.append(('given_names', ValueError(
+                        n_("Given names don’t match."))))
         datum.update({
             'persona_id': persona_id,
             'amount': amount,

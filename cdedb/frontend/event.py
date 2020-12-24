@@ -29,7 +29,8 @@ from werkzeug import Response
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-import cdedb.validation as validate
+import cdedb.validationtypes as validationtypes
+from cdedb.validation import validate_check
 from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, AgeClasses, CdEDBObject,
     CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions, CourseFilterPositions,
@@ -2113,19 +2114,20 @@ class EventFrontend(AbstractUserFrontend):
         warnings = []
         infos = []
         # Allow an amount of zero to allow non-modification of amount_paid.
-        amount, problems = validate.check_non_negative_decimal(
-            datum['raw']['amount'].strip(), "amount")
-        persona_id, p = validate.check_cdedbid(
-            datum['raw']['id'].strip(), "persona_id")
+        amount: Optional[decimal.Decimal]
+        amount, problems = validate_check(validationtypes.NonNegativeDecimal,
+            datum['raw']['amount'].strip(), argname="amount")
+        persona_id, p = validate_check(validationtypes.CdedbID,
+            datum['raw']['id'].strip(), argname="persona_id")
         problems.extend(p)
-        family_name, p = validate.check_str(
-            datum['raw']['family_name'], "family_name")
+        family_name, p = validate_check(str,
+            datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = validate.check_str(
-            datum['raw']['given_names'], "given_names")
+        given_names, p = validate_check(str,
+            datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        date, p = validate.check_date(
-            datum['raw']['date'].strip(), "date")
+        date, p = validate_check(datetime.date,
+            datum['raw']['date'].strip(), argname="date")
         problems.extend(p)
 
         registration_id = None
@@ -2161,16 +2163,22 @@ class EventFrontend(AbstractUserFrontend):
                 else:
                     problems.append(('persona_id',
                                      ValueError(n_("No registration found."))))
-                if not re.search(diacritic_patterns(re.escape(family_name)),
-                                 persona['family_name'], flags=re.IGNORECASE):
-                    warnings.append(('family_name',
-                                     ValueError(
-                                         n_("Family name doesn’t match."))))
-                if not re.search(diacritic_patterns(re.escape(given_names)),
-                                 persona['given_names'], flags=re.IGNORECASE):
-                    warnings.append(('given_names',
-                                     ValueError(
-                                         n_("Given names don’t match."))))
+                
+                if family_name is not None and not re.search(
+                    diacritic_patterns(re.escape(family_name)),
+                    persona['family_name'],
+                    flags=re.IGNORECASE
+                ):
+                    warnings.append(('family_name', ValueError(
+                        n_("Family name doesn’t match."))))
+                
+                if given_names is not None and not re.search(
+                    diacritic_patterns(re.escape(given_names)),
+                    persona['given_names'],
+                    flags=re.IGNORECASE
+                ):
+                    warnings.append(('given_names', ValueError(
+                        n_("Given names don’t match."))))
         datum.update({
             'persona_id': persona_id,
             'registration_id': registration_id,
@@ -6263,8 +6271,9 @@ class EventFrontend(AbstractUserFrontend):
 
         data = None
 
-        anid, errs = validate.check_id(phrase, "phrase")
+        anid, errs = validate_check(validationtypes.ID, phrase, argname="phrase")
         if not errs:
+            assert anid is not None
             tmp = self.eventproxy.get_registrations(rs, (anid,))
             if tmp:
                 reg = unwrap(tmp)
@@ -6280,7 +6289,7 @@ class EventFrontend(AbstractUserFrontend):
             terms = [t.strip() for t in phrase.split(' ') if t]
             valid = True
             for t in terms:
-                _, errs = validate.check_non_regex(t, "phrase")
+                _, errs = validate_check(validationtypes.NonRegex, t, argname="phrase")
                 if errs:
                     valid = False
             if not valid:
@@ -6347,7 +6356,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        anid, errs = validate.check_cdedbid(phrase, "phrase")
+        anid, errs = validate_check(validationtypes.CdedbID, phrase, argname="phrase")
         if not errs:
             reg_ids = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=anid)
@@ -6356,8 +6365,9 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': reg_id})
 
-        anid, errs = validate.check_id(phrase, "phrase")
+        anid, errs = validate_check(validationtypes.ID, phrase, argname="phrase")
         if not errs:
+            assert anid is not None
             regs = self.eventproxy.get_registrations(rs, (anid,))
             if regs:
                 reg = unwrap(regs)
@@ -6368,7 +6378,7 @@ class EventFrontend(AbstractUserFrontend):
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         valid = True
         for t in terms:
-            _, errs = validate.check_non_regex(t, "phrase")
+            _, errs = validate_check(validationtypes.NonRegex, t, argname="phrase")
             if errs:
                 valid = False
         if not valid:

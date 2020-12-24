@@ -11,14 +11,15 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast
 
 import magic
 import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.database.constants as const
-import cdedb.validation as validate
+import cdedb.validationtypes as validationtypes
+from cdedb.validation import validate_check
 from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
     REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
@@ -628,12 +629,14 @@ class CoreFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        anid, errs = validate.check_cdedbid(phrase, "phrase")
+        anid, errs = validate_check(validationtypes.CdedbID, phrase, argname="phrase")
         if not errs:
+            assert anid is not None
             if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
                 return self.redirect_show_user(rs, anid)
-        anid, errs = validate.check_id(phrase, "phrase")
+        anid, errs = validate_check(validationtypes.ID, phrase, argname="phrase")
         if not errs:
+            assert anid is not None
             if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
                 return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
@@ -774,14 +777,19 @@ class CoreFrontend(AbstractFrontend):
 
         # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
-            anid, errs = validate.check_cdedbid(phrase, "phrase")
+            anid: Optional[Union[validationtypes.CdedbID, validationtypes.ID]]
+            anid, errs = validate_check(
+                validationtypes.CdedbID, phrase, argname="phrase")
             if not errs:
+                assert anid is not None
                 tmp = self.coreproxy.get_personas(rs, (anid,))
                 if tmp:
                     data = (unwrap(tmp),)
             else:
-                anid, errs = validate.check_id(phrase, "phrase")
+                anid, errs = validate_check(
+                    validationtypes.ID, phrase, argname="phrase")
                 if not errs:
+                    assert anid is not None
                     tmp = self.coreproxy.get_personas(rs, (anid,))
                     if tmp:
                         data = (unwrap(tmp),)
@@ -795,7 +803,7 @@ class CoreFrontend(AbstractFrontend):
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             valid = True
             for t in terms:
-                _, errs = validate.check_non_regex(t, "phrase")
+                _, errs = validate_check(validationtypes.NonRegex, t, argname="phrase")
                 if errs:
                     valid = False
             if not valid:
@@ -1602,6 +1610,8 @@ class CoreFrontend(AbstractFrontend):
                    for name, _ in rs.retrieve_validation_errors()):
                 rs.notify("error", n_("Password too weak."))
             return self.change_password_form(rs)
+        assert new_password is not None
+
         code, message = self.coreproxy.change_password(
             rs, old_password, new_password)
         self.notify_return_code(rs, code, success=n_("Password changed."),
@@ -1762,6 +1772,8 @@ class CoreFrontend(AbstractFrontend):
                 rs.notify("error", n_("Password too weak."))
             return self.do_password_reset_form(rs, email=email, cookie=cookie,
                                                internal=True)
+        assert new_password is not None
+
         code, message = self.coreproxy.reset_password(rs, email, new_password,
                                                       cookie=cookie)
         self.notify_return_code(rs, code, success=n_("Password reset."),

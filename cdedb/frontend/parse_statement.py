@@ -6,7 +6,8 @@ import json
 import re
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import cdedb.validation as validate
+import cdedb.validationtypes as validationtypes
+from cdedb.validation import validate_check
 from cdedb.common import (
     Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
     n_, now,
@@ -227,7 +228,7 @@ def parse_amount(amount: str) -> decimal.Decimal:
     return ret
 
 
-def _reconstruct_cdedbid(db_id: str) -> Tuple[int, List[Error]]:
+def _reconstruct_cdedbid(db_id: str) -> Tuple[Optional[int], List[Error]]:
     """
     Uninlined code from `Transaction._find_cdedb_ids`.
 
@@ -241,8 +242,8 @@ def _reconstruct_cdedbid(db_id: str) -> Tuple[int, List[Error]]:
     checkdigit = db_id[-1].upper()
 
     # Check the DB-ID
-    p_id, p = validate.check_cdedbid(
-        "DB-{}-{}".format(value, checkdigit), "persona_id")
+    p_id, p = validate_check(validationtypes.CdedbID,
+        "DB-{}-{}".format(value, checkdigit), argname="persona_id")
 
     return p_id, p
 
@@ -469,6 +470,7 @@ class Transaction:
                             p_id, p = _reconstruct_cdedbid(db_id)
 
                             if not p:
+                                assert p_id is not None
                                 if p_id not in ret:
                                     ret[p_id] = confidence
 
