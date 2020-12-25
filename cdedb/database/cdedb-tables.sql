@@ -282,12 +282,13 @@ CREATE TABLE core.quota (
         id                      bigserial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         qdate                   date NOT NULL DEFAULT current_date,
-        queries                 integer NOT NULL DEFAULT 0
+        queries                 integer NOT NULL DEFAULT 0,
+        last_access_hash        varchar
 );
 CREATE UNIQUE INDEX idx_quota_persona_id_qdate ON core.quota(qdate, persona_id);
 GRANT SELECT, INSERT ON core.quota TO cdb_member;
 GRANT SELECT, UPDATE ON core.quota_id_seq TO cdb_member;
-GRANT UPDATE (queries) ON core.quota TO cdb_member;
+GRANT UPDATE (queries, last_access_hash) ON core.quota TO cdb_member;
 GRANT DELETE ON core.quota TO cdb_admin;
 
 -- This table is designed to hold just a single row. Additionally the

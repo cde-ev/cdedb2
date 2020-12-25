@@ -1603,16 +1603,32 @@ class CoreBackend(AbstractBackend):
         """
         if ids is not None and num is not None:
             raise ValueError(n_("May not provide more than one input."))
+        access_hash: Optional[str] = None
         if ids is not None:
-            ids = affirm_set("id", ids or set())
-            num = len(ids - {rs.user.persona_id})
+            ids = affirm_set("id", ids or set()) - {rs.user.persona_id}
+            num = len(ids)
+            access_hash = get_hash(str(sorted(ids)).encode())
         else:
             num = affirm("non_negative_int", num or 0)
-        query = ("INSERT INTO core.quota (queries, persona_id, qdate)"
-                 " VALUES (%s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
-                 " UPDATE SET queries = core.quota.queries + EXCLUDED.queries"
+
+        persona_id = rs.user.persona_id
+        now_date = now().date()
+
+        query = ("SELECT last_access_hash, queries FROM core.quota"
+                 " WHERE persona_id = %s AND qdate = %s")
+        data = self.query_one(rs, query, (persona_id, now_date))
+        # If there was a previous access and the previous access was the same as this
+        # one, don't count it. Instead return the previous count of queries.
+        if data is not None and data["last_access_hash"] is not None:
+            if data["last_access_hash"] == access_hash:
+                return data["queries"]
+
+        query = ("INSERT INTO core.quota (queries, persona_id, qdate, last_access_hash)"
+                 " VALUES (%s, %s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
+                 " UPDATE SET queries = core.quota.queries + EXCLUDED.queries,"
+                 " last_access_hash = EXCLUDED.last_access_hash"
                  " RETURNING core.quota.queries")
-        params = (num, rs.user.persona_id, now().date())
+        params = (num, persona_id, now_date, access_hash)
         return unwrap(self.query_one(rs, query, params)) or 0
 
     @overload
@@ -2410,7 +2426,7 @@ class CoreBackend(AbstractBackend):
         params = (email, const.GenesisStati.unconfirmed)
         data = self.query_one(rs, query, params)
         return unwrap(data) if data else None
-    
+
     @access("anonymous")
     def genesis_verify(self, rs: RequestState, case_id: int) -> Tuple[int, str]:
         """Confirm the new email address and proceed to the next stage.
