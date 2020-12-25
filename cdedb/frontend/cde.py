@@ -23,7 +23,7 @@ from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 import dateutil.easter
 import psycopg2.extensions
 import werkzeug.exceptions
-from werkzeug import FileStorage, Response
+from werkzeug import FileStorage
 
 import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
@@ -40,7 +40,7 @@ from cdedb.frontend.common import (
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, csv_output, enum_entries_filter,
     make_membership_fee_reference, make_postal_address, money_filter, periodic,
-    process_dynamic_input, query_result_to_json, request_extractor,
+    process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
@@ -167,7 +167,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         return self.render(rs, "consent_decision", {
             'decided_search': data['decided_search'],
-            'verwaltung': self.conf["MANAGEMENT_ADDRESS"] })
+            'verwaltung': self.conf["MANAGEMENT_ADDRESS"]})
 
     @access("member", modi={"POST"})
     @REQUESTdata(("ack", "bool"))
@@ -458,8 +458,8 @@ class CdEFrontend(AbstractUserFrontend):
             'decided_search': False,
             'notes': None})
         merge_dicts(persona, PERSONA_DEFAULTS)
-        persona, problems = validate_check(validationtypes.Persona,
-            persona, argname="persona", creation=True)
+        persona, problems = validate_check(
+            validationtypes.Persona, persona, argname="persona", creation=True)
         if persona is None:
             return {"problems": problems}
         try:
@@ -853,7 +853,7 @@ class CdEFrontend(AbstractUserFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
-            [(event['id'] , event['title']) for event in events.values()],
+            [(event['id'], event['title']) for event in events.values()],
             key=lambda e: EntitySorter.event(events[e[0]]), reverse=True)
         params = {
             'params': params or None,
@@ -1105,19 +1105,19 @@ class CdEFrontend(AbstractUserFrontend):
         :rtype: {str: object}
         :returns: The processed input datum.
         """
-        amount, problems = validate_check(validationtypes.PositiveDecimal,
-            datum['raw']['amount'], argname="amount")
-        persona_id, p = validate_check(validationtypes.CdedbID,
-            datum['raw']['persona_id'].strip(), argname="persona_id")
+        amount, problems = validate_check(
+            validationtypes.PositiveDecimal, datum['raw']['amount'], argname="amount")
+        persona_id, p = validate_check(
+            validationtypes.CdedbID, datum['raw']['persona_id'].strip(),
+            argname="persona_id")
         problems.extend(p)
-        family_name, p = validate_check(str,
-            datum['raw']['family_name'], argname="family_name")
+        family_name, p = validate_check(
+            str, datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = validate_check(str,
-            datum['raw']['given_names'], argname="given_names")
+        given_names, p = validate_check(
+            str, datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        note, p = validate_check_optional(str,
-            datum['raw']['note'], argname="note")
+        note, p = validate_check_optional(str, datum['raw']['note'], argname="note")
         problems.extend(p)
 
         if persona_id:
@@ -2656,11 +2656,13 @@ class CdEFrontend(AbstractUserFrontend):
 
         # Check presence of valid event users for the given ids
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
-            rs.append_validation_error(("persona_ids",
-                ValueError(n_("Some of these users do not exist."))))
+            rs.append_validation_error(
+                ("persona_ids",
+                 ValueError(n_("Some of these users do not exist."))))
         if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
-            rs.append_validation_error(("persona_ids",
-                ValueError(n_("Some of these users are not event users."))))
+            rs.append_validation_error(
+                ("persona_ids",
+                 ValueError(n_("Some of these users are not event users."))))
         if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
@@ -2670,8 +2672,8 @@ class CdEFrontend(AbstractUserFrontend):
         code = 1
         # TODO: Check if participants are already present.
         for persona_id in persona_ids:
-            code *= self.pasteventproxy.add_participant(rs, pevent_id,
-                pcourse_id, persona_id, is_instructor, is_orga)
+            code *= self.pasteventproxy.add_participant(
+                rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
         self.notify_return_code(rs, code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course",

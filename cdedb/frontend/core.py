@@ -22,16 +22,16 @@ import cdedb.validationtypes as validationtypes
 from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
     REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
-    EntitySorter, PathLike, PrivilegeError, Realm, RequestState, SubscriptionActions,
-    extract_roles, get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now,
-    pairwise, unwrap, xsorted,
+    EntitySorter, PathLike, PrivilegeError, Realm, RequestState, extract_roles,
+    get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise,
+    unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
-    calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
-    enum_entries_filter, make_membership_fee_reference, periodic, query_result_to_json,
+    calculate_db_logparams, calculate_loglinks, check_validation as check,
+    enum_entries_filter, make_membership_fee_reference, periodic,
     querytoparams_filter, request_dict_extractor, request_extractor,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
@@ -631,12 +631,12 @@ class CoreFrontend(AbstractFrontend):
         anid, errs = validate_check(validationtypes.CdedbID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
-            if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
+            if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
         anid, errs = validate_check(validationtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
-            if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
+            if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         search = [("username,family_name,given_names,display_name",
@@ -1602,9 +1602,9 @@ class CoreFrontend(AbstractFrontend):
         new_password, errs = self.coreproxy.check_password_strength(
             rs, new_password, persona_id=rs.user.persona_id,
             argname="new_password")
-        rs.extend_validation_errors(errs)
 
-        if rs.has_validation_errors():
+        if errs:
+            rs.extend_validation_errors(errs)
             if any(name == "new_password"
                    for name, _ in rs.retrieve_validation_errors()):
                 rs.notify("error", n_("Password too weak."))
@@ -1763,9 +1763,9 @@ class CoreFrontend(AbstractFrontend):
             return self.change_password_form(rs)
         new_password, errs = self.coreproxy.check_password_strength(
             rs, new_password, email=email, argname="new_password")
-        rs.extend_validation_errors(errs)
 
-        if rs.has_validation_errors():
+        if errs:
+            rs.extend_validation_errors(errs)
             if any(name == "new_password"
                    for name, _ in rs.retrieve_validation_errors()):
                 rs.notify("error", n_("Password too weak."))
