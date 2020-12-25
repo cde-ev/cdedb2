@@ -147,14 +147,14 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'VCard'})
         vcard = ["BEGIN:VCARD",
                  "VERSION:3.0",
-                 "ADR;TYPE=home:;bei Spielmanns;Im Garten 77;Utopia;;34576;",
+                 "ADR:;;Im Garten 77;Utopia;;34576;",
                  "BDAY:1981-02-11",
-                 "EMAIL;TYPE=INTERNET:berta@example.cde",
+                 "EMAIL:berta@example.cde",
                  "FN:Bertålotta Beispiel",
                  "N:Beispiel;Bertålotta;;Dr.;MdB",
                  "NICKNAME:Bertå",
-                 "TEL;TYPE=HOME:+49 (5432) 987654321",
-                 "TEL;TYPE=CELL:0163/123456789",
+                 "TEL;TYPE=\"home,voice\":+49 (5432) 987654321",
+                 "TEL;TYPE=\"cell,voice\":0163/123456789",
                  "END:VCARD"]
         for line in vcard:
             self.assertIn(line, self.response.text)
