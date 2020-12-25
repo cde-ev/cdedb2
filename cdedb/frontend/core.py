@@ -416,8 +416,6 @@ class CoreFrontend(AbstractFrontend):
         # Address data
         if persona['address']:
             vcard.add('adr')
-            # see https://tools.ietf.org/html/rfc2426#section-3.2.1
-            vcard.adr.type_param = 'intl,postal,parcel,home'
             # extended should be empty because of compability issues, see
             # https://tools.ietf.org/html/rfc6350#section-6.3.1
             vcard.adr.value = vobject.vcard.Address(
@@ -430,8 +428,8 @@ class CoreFrontend(AbstractFrontend):
         # Contact data
         if persona['username']:
             # see https://tools.ietf.org/html/rfc2426#section-3.3.2
-            vcard.add(vobject.vcard.ContentLine('EMAIL', [('TYPE', 'internet')],
-                                                persona['username']))
+            vcard.add('email')
+            vcard.email.value = persona['username'] or ''
         if persona['telephone']:
             # see https://tools.ietf.org/html/rfc2426#section-3.3.1
             vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'home,voice')],
