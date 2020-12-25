@@ -40,11 +40,6 @@ def template_url(name: str) -> str:
 
 
 class MailmanMixin(MlBaseFrontend):
-    def mailman_connect(self) -> Client:
-        """Create a Mailman REST client."""
-        url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
-        return self.mailman_create_client(url, self.conf["MAILMAN_USER"])
-
     def mailman_sync_list_meta(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
                                mm_list: MailingList) -> None:

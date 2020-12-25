@@ -35,11 +35,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
-        secrets = SecretsConfig(configpath)
-        self.mailman_create_client = lambda url, user: mailmanclient.Client(
-            url, user, secrets["MAILMAN_PASSWORD"])
-        self.mailman_template_password = (
-            lambda: secrets["MAILMAN_BASIC_AUTH_PASSWORD"])
+
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -168,8 +164,14 @@ class MlBaseFrontend(AbstractUserFrontend):
                 self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id)
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
-        for ml_id in subs:
+        for ml_id in mailinglists:
             mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
+            held_mails = self.mailman_get_held_messages(mailinglist_infos[ml_id])
+            if held_mails is None:
+                mailinglist_infos[ml_id]['held_mails'] = None
+            else:
+                mailinglist_infos[ml_id]['held_mails'] = len(held_mails)
+
         return self.render(rs, endpoint, {
             'groups': MailinglistGroup,
             'mailinglists': grouped,

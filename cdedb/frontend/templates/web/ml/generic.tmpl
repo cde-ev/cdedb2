@@ -22,7 +22,7 @@
                 <span class="small">{% trans %}inactive{% endtrans %}</span>
             {% endif %}
         </div>
-        <div class="col-sm-6 small">
+        <div class="col-sm-5 small">
             {{ gettext( enums['MailinglistTypes'](ml['ml_type'])|string) -}}
             {% if ml['event_id'] -%}
                 {%- if events[ml['event_id']]['is_visible'] -%}
@@ -45,6 +45,17 @@
                     ; linked with {{ link }}
                 {% endtrans %}
             {%- endif %}
+        </div>
+        <div class="col-sm-1 small" style="text-align:right;">
+            {% if ml['held_mails'] is none %}
+                —
+            {% else %}
+                <a href="{{ cdedblink('ml/message_moderation_form', {'mailinglist_id': ml['id']}) }}"
+                   title="{{ gettext("Mails awaiting moderation") }}">
+                    {{ ml['held_mails'] }}
+                    {{ util.make_icon('envelope', light=(ml['held_mails'] == 0)) }}
+                </a>
+            {% endif %}
         </div>
         <div class="col-sm-3 small">
             {% trans count=ml['num_subscribers'] %}

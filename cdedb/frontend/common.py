@@ -43,6 +43,8 @@ import babel.dates
 import babel.numbers
 import bleach
 import jinja2
+import mailmanclient
+
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -76,6 +78,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
 import cdedb.query as query_mod
 import cdedb.database.constants as const
@@ -933,6 +936,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = make_proxy(EventBackend(configpath))
         self.mlproxy = make_proxy(MlBackend(configpath))
         self.pasteventproxy = make_proxy(PastEventBackend(configpath))
+        # There are multiple frontends which require mailman access
+        secrets = SecretsConfig(configpath)
+        self.mailman_create_client = lambda url, user: mailmanclient.Client(
+            url, user, secrets["MAILMAN_PASSWORD"])
+        self.mailman_template_password = (
+            lambda: secrets["MAILMAN_BASIC_AUTH_PASSWORD"])
 
     @classmethod
     @abc.abstractmethod
@@ -1604,6 +1613,31 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     filename=pdf_file)
             else:
                 return None
+
+    def mailman_connect(self) -> mailmanclient.Client:
+        """Create a Mailman REST client."""
+        url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
+        return self.mailman_create_client(url, self.conf["MAILMAN_USER"])
+
+    def mailman_get_held_messages(self, dblist: CdEDBObject
+                                  ) -> Union[List[mailmanclient.restobjects.held_message.HeldMessage],None]:
+        """Returns all held messages for mailman lists.
+
+        If the list is not managed by mailman, this function returns None instead.
+        """
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
+            self.logger.info("Skipping mailman query in dev/offline mode.")
+            if self.conf["CDEDB_DEV"]:
+                if dblist['domain'] in {const.MailinglistDomain.testmail}:
+                    return HELD_MESSAGE_SAMPLE
+                else:
+                    return None
+        elif dblist['domain'] in {const.MailinglistDomain.testmail}:
+            mailman = self.mailman_connect()
+            mmlist = mailman.get_list(dblist['address'])
+            return mmlist.held or []
+        else:
+            return None
 
 
 class Worker(threading.Thread):
