@@ -23,7 +23,7 @@ from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 import dateutil.easter
 import psycopg2.extensions
 import werkzeug.exceptions
-from werkzeug import FileStorage, Response # FIXME
+from werkzeug import FileStorage, Response  # FIXME
 
 import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
@@ -939,6 +939,7 @@ class CdEFrontend(AbstractUserFrontend):
                                "statement_file", encoding="latin-1")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
+        assert statement_file is not None
         statementlines = statement_file.splitlines()
 
         event_list = self.eventproxy.list_events(rs)
@@ -1431,6 +1432,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = check(rs, "lastschrift", data)
         if rs.has_validation_errors():
             return self.lastschrift_change_form(rs, lastschrift_id)
+        assert data is not None
         code = self.cdeproxy.set_lastschrift(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/lastschrift_show", {
@@ -1453,6 +1455,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = check(rs, "lastschrift", data, creation=True)
         if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
+        assert data is not None
         if self.cdeproxy.list_lastschrift(
                 rs, persona_ids=(persona_id,), active=True):
             rs.notify("error", n_("Multiple active permits are disallowed."))
@@ -1547,6 +1550,7 @@ class CdEFrontend(AbstractUserFrontend):
         sanitized_transactions = check(rs, "sepa_transactions", transactions)
         if rs.has_validation_errors():
             return None
+        assert sanitized_transactions is not None
         sorted_transactions: Dict[str, List[CdEDBObject]] = {}
         for transaction in sanitized_transactions:
             sorted_transactions.setdefault(transaction['type'], []).append(
@@ -2517,6 +2521,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = check(rs, "past_event", data)
         if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
+        assert data is not None
         code = self.pasteventproxy.set_past_event(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/show_past_event")
@@ -2544,10 +2549,12 @@ class CdEFrontend(AbstractUserFrontend):
                 courselines, fieldnames=("nr", "title", "description"),
                 dialect=CustomCSVDialect())
             lineno = 0
+            pcourse: Optional[CdEDBObject]
             for pcourse in reader:
                 lineno += 1
                 # This is a placeholder for validation and will be substituted
                 # later. The typechecker expects a str here.
+                assert pcourse is not None
                 pcourse['pevent_id'] = "1"
                 pcourse = check(rs, "past_course", pcourse, creation=True)
                 if pcourse:
@@ -2557,6 +2564,7 @@ class CdEFrontend(AbstractUserFrontend):
                               {'lineno': lineno})
         if rs.has_validation_errors():
             return self.create_past_event_form(rs)
+        assert data is not None
         with Atomizer(rs):
             new_id = self.pasteventproxy.create_past_event(rs, data)
             for course in thecourses:
@@ -2597,6 +2605,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = check(rs, "past_course", data)
         if rs.has_validation_errors():
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
+        assert data is not None
         code = self.pasteventproxy.set_past_course(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/show_past_course")
@@ -2616,6 +2625,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = check(rs, "past_course", data, creation=True)
         if rs.has_validation_errors():
             return self.create_past_course_form(rs, pevent_id)
+        assert data is not None
         new_id = self.pasteventproxy.create_past_course(rs, data)
         self.notify_return_code(rs, new_id, success=n_("Course created."))
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': new_id})

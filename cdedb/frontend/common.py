@@ -2254,7 +2254,7 @@ def assembly_guard(fun: F) -> F:
 
 
 def check_validation(rs: RequestState, assertion: str, value: T,
-                     name: str = None, **kwargs: Any) -> T:
+                     name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
     :param assertion: name of validation routine to call
@@ -2262,7 +2262,7 @@ def check_validation(rs: RequestState, assertion: str, value: T,
       out how to nicely get rid of this -- python has huge introspection
       capabilities, but I didn't see how this should be done).
     """
-    checker: Callable[..., Tuple[T, List[Error]]] = getattr(
+    checker: Callable[..., Tuple[Optional[T], List[Error]]] = getattr(
         validate, "check_{}".format(assertion))
     if name is not None:
         ret, errs = checker(value, name, **kwargs)

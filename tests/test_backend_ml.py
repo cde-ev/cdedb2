@@ -5,7 +5,6 @@ import decimal
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-import cdedb.validation as validate
 from cdedb.common import PrivilegeError, SubscriptionActions as SA, SubscriptionError
 from cdedb.database.constants import SubscriptionStates as SS
 from cdedb.query import QUERY_SPECS, QueryOperators

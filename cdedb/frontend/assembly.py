@@ -321,6 +321,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         data = check(rs, "assembly", data)
         if rs.has_validation_errors():
             return self.change_assembly_form(rs, assembly_id)
+        assert data is not None
         code = self.assemblyproxy.set_assembly(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
@@ -413,6 +414,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         data = check(rs, "assembly", data, creation=True)
         if rs.has_validation_errors():
             return self.create_assembly_form(rs)
+        assert data is not None
         presider_ml_data = None
         if create_presider_list:
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
@@ -441,6 +443,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                         n_("Must not be empty in order to create a mailinglist."))))
         if rs.has_validation_errors():
             return self.create_assembly_form(rs)
+        assert data is not None
         new_id = self.assemblyproxy.create_assembly(rs, data)
         if presider_ml_data:
             presider_ml_data['assembly_id'] = new_id
@@ -734,6 +737,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         data = check(rs, "ballot", data, creation=True)
         if rs.has_validation_errors():
             return self.create_ballot_form(rs, assembly_id)
+        assert data is not None
         new_id = self.assemblyproxy.create_ballot(rs, data)
         self.notify_return_code(rs, new_id)
         return self.redirect(rs, "assembly/show_ballot", {
@@ -1440,6 +1444,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         data = check(rs, "ballot", data)
         if rs.has_validation_errors():
             return self.change_ballot_form(rs, assembly_id, ballot_id)
+        assert data is not None
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
@@ -1501,6 +1506,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot = rs.ambience['ballot']
         candidates = tuple(e['shortname']
                            for e in ballot['candidates'].values())
+        vote: Optional[str]
         if ballot['votes']:
             voted = unwrap(
                 request_extractor(rs, (("vote", "[str]"),)))
@@ -1542,6 +1548,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         vote = check(rs, "vote", vote, "vote", ballot=ballot)
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
+        assert vote is not None
         code = self.assemblyproxy.vote(rs, ballot_id, vote, secret=None)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")

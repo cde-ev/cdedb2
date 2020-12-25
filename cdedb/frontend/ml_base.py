@@ -239,6 +239,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
+        assert data is not None
         # Check if mailinglist address is unique
         try:
             self.mlproxy.validate_address(rs, data)
@@ -247,6 +248,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
+        assert data is not None
 
         new_id = self.mlproxy.create_mailinglist(rs, data)
         self.notify_return_code(rs, new_id)
@@ -415,6 +417,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         data = check(rs, "mailinglist", data)
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
+        assert data is not None
 
         # Check if mailinglist address is unique
         try:
@@ -457,6 +460,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         data = check(rs, 'mailinglist', data)
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
+        assert data is not None
 
         code = self.mlproxy.set_mailinglist(rs, data)
         self.notify_return_code(rs, code)

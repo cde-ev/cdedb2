@@ -23,16 +23,16 @@ from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
     REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
     EntitySorter, PathLike, PrivilegeError, Realm, RequestState, extract_roles,
-    get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise,
-    unwrap, xsorted,
+    get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise, unwrap,
+    xsorted,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
     calculate_db_logparams, calculate_loglinks, check_validation as check,
-    enum_entries_filter, make_membership_fee_reference, periodic,
-    querytoparams_filter, request_dict_extractor, request_extractor,
+    enum_entries_filter, make_membership_fee_reference, periodic, querytoparams_filter,
+    request_dict_extractor, request_extractor,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
@@ -205,6 +205,7 @@ class CoreFrontend(AbstractFrontend):
         data = check(rs, "meta_info", data, keys=info.keys())
         if rs.has_validation_errors():
             return self.meta_info_form(rs)
+        assert data is not None
         code = self.coreproxy.set_meta_info(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "core/meta_info_form")
@@ -898,6 +899,7 @@ class CoreFrontend(AbstractFrontend):
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.change_user_form(rs)
+        assert data is not None
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note,
@@ -1071,7 +1073,7 @@ class CoreFrontend(AbstractFrontend):
         data = check(rs, "persona", data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
-
+        assert data is not None
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note,
             ignore_warnings=bool(ignore_warnings))
@@ -1402,6 +1404,7 @@ class CoreFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.promote_user_form(  # type: ignore
                 rs, persona_id, internal=True)
+        assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
         if code > 0 and target_realm == "cde":
@@ -1965,6 +1968,7 @@ class CoreFrontend(AbstractFrontend):
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
+        assert data is not None
         if len(data['notes']) > self.conf["MAX_RATIONALE"]:
             rs.append_validation_error(
                 ("notes", ValueError(n_("Rationale too long."))))
@@ -2193,6 +2197,7 @@ class CoreFrontend(AbstractFrontend):
         data = check(rs, "genesis_case", data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
+        assert data is not None
         case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):

@@ -413,6 +413,8 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, "event", data)
         if rs.has_validation_errors():
             return self.change_event_form(rs, event_id)
+        assert data is not None
+
         code = self.eventproxy.set_event(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
@@ -994,7 +996,7 @@ class EventFrontend(AbstractUserFrontend):
                                ("entries_{}".format(anid), "str_or_None"))
         for field_id in fields:
             if field_id not in deletes:
-                tmp = request_extractor(rs, params(field_id))
+                tmp: Optional[CdEDBObject] = request_extractor(rs, params(field_id))
                 if rs.has_validation_errors():
                     break
                 tmp = check(rs, "event_field", tmp,
@@ -1202,6 +1204,8 @@ class EventFrontend(AbstractUserFrontend):
                 )
         if rs.has_validation_errors():
             return self.create_event_form(rs)
+        assert data is not None
+
         new_id = self.eventproxy.create_event(rs, data)
         if orga_ml_data:
             orga_ml_data['event_id'] = new_id
@@ -1306,6 +1310,7 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, "course", data)
         if rs.has_validation_errors():
             return self.change_course_form(rs, event_id, course_id)
+        assert data is not None
         code = self.eventproxy.set_course(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_course")
@@ -1345,6 +1350,8 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, "course", data, creation=True)
         if rs.has_validation_errors():
             return self.create_course_form(rs, event_id)
+        assert data is not None
+
         new_id = self.eventproxy.create_course(rs, data)
         self.notify_return_code(rs, new_id, success=n_("Course created."))
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
@@ -2163,7 +2170,7 @@ class EventFrontend(AbstractUserFrontend):
                 else:
                     problems.append(('persona_id',
                                      ValueError(n_("No registration found."))))
-                
+
                 if family_name is not None and not re.search(
                     diacritic_patterns(re.escape(family_name)),
                     persona['family_name'],
@@ -2171,7 +2178,7 @@ class EventFrontend(AbstractUserFrontend):
                 ):
                     warnings.append(('family_name', ValueError(
                         n_("Family name doesn’t match."))))
-                
+
                 if given_names is not None and not re.search(
                     diacritic_patterns(re.escape(given_names)),
                     persona['given_names'],
@@ -2897,6 +2904,7 @@ class EventFrontend(AbstractUserFrontend):
             data = check(rs, "serialized_partial_event_upload", json_file)
         if rs.has_validation_errors():
             return self.partial_import_form(rs, event_id)
+        assert data is not None
         if event_id != data['id']:
             rs.notify("error", n_("Data from wrong event."))
             return self.partial_import_form(rs, event_id)
@@ -4758,6 +4766,7 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, "lodgement", data, creation=True)
         if rs.has_validation_errors():
             return self.create_lodgement_form(rs, event_id)
+        assert data is not None
 
         new_id = self.eventproxy.create_lodgement(rs, data)
         self.notify_return_code(rs, new_id)
@@ -4798,6 +4807,7 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, "lodgement", data)
         if rs.has_validation_errors():
             return self.change_lodgement_form(rs, event_id, lodgement_id)
+        assert data is not None
 
         code = self.eventproxy.set_lodgement(rs, data)
         self.notify_return_code(rs, code)
