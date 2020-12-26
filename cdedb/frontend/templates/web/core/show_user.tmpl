@@ -65,31 +65,31 @@
                 {% if is_relative_admin %}
                     {% if data['id'] == user.persona_id %}
                         {{ util.href(cdedblink('core/change_user_form'), gettext("Edit (normal)"),
-                                aclass="btn btn-warning btn-sm", icon="pen") }}
+                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit (as Admin)"),
-                                aclass="btn btn-warning btn-sm", icon="pen") }}
+                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
                     {% else %}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit"),
-                                aclass="btn btn-warning btn-sm", icon="pen") }}
+                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
                     {% endif %}
                 {% else %}
                     {{ util.href(cdedblink('core/change_user_form'), gettext("Edit"),
-                            aclass="btn btn-warning btn-sm", icon="pen") }}
+                            aclass="btn btn-warning btn-sm mosp", icon="pen") }}
                 {% endif %}
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink("core/change_password_form"), gettext("Change Password"),
-                            aclass="btn btn-warning btn-sm", icon="edit") }}
+                            aclass="btn btn-warning btn-sm mosp", icon="edit") }}
                     <form action="{{ cdedblink("core/logout_all") }}" method="POST" id="logoutallform"
                           class="display-inline">
                         {{ util.anti_csrf_token('core/logout_all') }}
                         {{ util.input_submit(value=gettext("Logout Everywhere"), title=gettext("Logout Everywhere"),
-                                             icon="power-off", aclass="btn btn-danger btn-sm") }}
+                                             icon="power-off", aclass="btn btn-danger btn-sm mosp") }}
                     </form>
-                    {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-circle") }}
+                    {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right mosp", icon="question-circle") }}
                 {% endif %}
                 {% if is_relative_admin %}
-                    {{ util.href(cdedblink("core/show_history"), gettext("Change History"), aclass="btn btn-info btn-sm",
-                            icon="clock") }}
+                    {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
+                            aclass="btn btn-info btn-sm mosp", icon="clock") }}
                 {% endif %}
             {% endif %}
         </div>
@@ -102,10 +102,10 @@
                 <div id="profile-foto">
                     {% if data['foto'] %}
                         <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']}) }}"
-                             alt="{{ gettext("Profile Picture") }}" class="profilepic img-thumbnail">
+                             alt="{{ gettext("Profile Picture") }}" class="profilepic img-thumbnail mosp">
                     {%- else %}
                         <img src="{{ staticurl("generic-avatar.png") }}" alt="{{ gettext("Default Profile Picture") }}"
-                             class="profilepic img-thumbnail">
+                             class="profilepic img-thumbnail mosp">
                     {%- endif -%}
                     {% if data['id'] == user.persona_id or is_relative_admin -%}
                         <br />
