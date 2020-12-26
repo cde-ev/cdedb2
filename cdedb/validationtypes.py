@@ -92,11 +92,11 @@ LodgementGroup = NewType("LodgementGroup", CdEDBObject)
 Lodgement = NewType("Lodgement", CdEDBObject)
 Questionnaire = NewType("Questionnaire", Dict[int, Any]) # TODO maybe cast keys to str
 
-SerializedEventUpload = NewType("SerializedEventUpload", CdEDBObject)
 SerializedEvent = NewType("SerializedEvent", CdEDBObject)
-SerializedPartialEventUpload = NewType(
-    "SerializedPartialEventUpload", CdEDBObject)
+SerializedEventUpload = NewType("SerializedEventUpload", SerializedEvent)
 SerializedPartialEvent = NewType("SerializedPartialEvent", CdEDBObject)
+SerializedPartialEventUpload = NewType(
+    "SerializedPartialEventUpload", SerializedPartialEvent)
 
 PartialCourse = NewType("PartialCourse", CdEDBObject)
 PartialLodgementGroup = NewType("PartialLodgementGroup", CdEDBObject)

@@ -42,9 +42,9 @@ from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     CustomCSVDialect, RequestConstraint, REQUESTdata, REQUESTdatadict, REQUESTfile,
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter, cdedburl,
-    check_validation as check, enum_entries_filter, event_guard, keydictsort_filter,
-    make_event_fee_reference, process_dynamic_input, querytoparams_filter,
-    request_extractor, safe_filter,
+    check_validation_typed as check, check_validation_typed_optional as check_optional,
+    enum_entries_filter, event_guard, keydictsort_filter, make_event_fee_reference,
+    process_dynamic_input, querytoparams_filter, request_extractor, safe_filter,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
@@ -163,8 +163,8 @@ class EventFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, validationtypes.QueryInput,
+                query_input, "query", spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
@@ -410,7 +410,7 @@ class EventFrontend(AbstractUserFrontend):
                      ) -> Response:
         """Modify an event organized via DB."""
         data['id'] = event_id
-        data = check(rs, "event", data)
+        data = check(rs, validationtypes.Event, data)
         if rs.has_validation_errors():
             return self.change_event_form(rs, event_id)
         assert data is not None
@@ -445,8 +445,8 @@ class EventFrontend(AbstractUserFrontend):
         This somewhat clashes with our usual naming convention, it is
         about the 'minor form' and not about changing minors.
         """
-        minor_form = cast(
-            bytes, check(rs, 'pdffile_or_None', minor_form, "minor_form"))
+        minor_form = check_optional(
+            rs, validationtypes.PDFFile, minor_form, "minor_form")
         if not minor_form and not delete:
             rs.append_validation_error(
                 ("minor_form", ValueError(n_("Must not be empty."))))
@@ -999,7 +999,7 @@ class EventFrontend(AbstractUserFrontend):
                 tmp: Optional[CdEDBObject] = request_extractor(rs, params(field_id))
                 if rs.has_validation_errors():
                     break
-                tmp = check(rs, "event_field", tmp,
+                tmp = check(rs, validationtypes.EventField, tmp,
                             extra_suffix="_{}".format(field_id))
                 if tmp:
                     temp = {
@@ -1023,7 +1023,7 @@ class EventFrontend(AbstractUserFrontend):
                 if rs.has_validation_errors():
                     marker += 1
                     break
-                tmp = check(rs, "event_field", tmp, creation=True,
+                tmp = check(rs, validationtypes.EventField, tmp, creation=True,
                             extra_suffix="_-{}".format(marker))
                 if tmp:
                     temp = {
@@ -1178,7 +1178,7 @@ class EventFrontend(AbstractUserFrontend):
         else:
             data['orga_address'] = None
 
-        data = check(rs, "event", data, creation=True)
+        data = check(rs, validationtypes.Event, data, creation=True)
         if orga_ids:
             if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
                 rs.append_validation_error(
@@ -1307,7 +1307,7 @@ class EventFrontend(AbstractUserFrontend):
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
-        data = check(rs, "course", data)
+        data = check(rs, validationtypes.Course, data)
         if rs.has_validation_errors():
             return self.change_course_form(rs, event_id, course_id)
         assert data is not None
@@ -1347,7 +1347,7 @@ class EventFrontend(AbstractUserFrontend):
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
         }
-        data = check(rs, "course", data, creation=True)
+        data = check(rs, validationtypes.Course, data, creation=True)
         if rs.has_validation_errors():
             return self.create_course_form(rs, event_id)
         assert data is not None
@@ -2274,9 +2274,8 @@ class EventFrontend(AbstractUserFrontend):
                    checksum: Optional[str], send_notifications: bool,
                    full_payment: bool) -> Response:
         """Allow orgas to add lots paid of participant fee at once."""
-        fee_data_file = cast(
-            Optional[str], check(rs, "csvfile_or_None", fee_data_file,
-                                 "fee_data_file"))
+        fee_data_file = check_optional(
+            rs, validationtypes.CSVFile, fee_data_file, "fee_data_file")
         if rs.has_validation_errors():
             return self.batch_fees_form(rs, event_id)
 
@@ -2898,10 +2897,10 @@ class EventFrontend(AbstractUserFrontend):
         in further iterations it is embedded in the page.
         """
         if partial_import_data:
-            data = check(rs, "serialized_partial_event",
+            data = check(rs, validationtypes.SerializedPartialEvent,
                          json.loads(partial_import_data))
         else:
-            data = check(rs, "serialized_partial_event_upload", json_file)
+            data = check(rs, validationtypes.SerializedPartialEventUpload, json_file)
         if rs.has_validation_errors():
             return self.partial_import_form(rs, event_id)
         assert data is not None
@@ -3796,9 +3795,8 @@ class EventFrontend(AbstractUserFrontend):
             if data[dv_key] is None or field_id is None:
                 data[dv_key] = None
                 continue
-            data[dv_key] = check(rs, "by_field_datatype_or_None",
-                                 data[dv_key], dv_key,
-                                 kind=reg_fields[field_id]['kind'])
+            data[dv_key] = check_optional(rs, validationtypes.ByFieldDatatype,
+                data[dv_key], dv_key, kind=reg_fields[field_id]['kind'])
         questionnaire = {
             kind: list(
                 {key: data["{}_{}".format(key, i)] for key in spec}
@@ -4763,7 +4761,7 @@ class EventFrontend(AbstractUserFrontend):
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
         }
-        data = check(rs, "lodgement", data, creation=True)
+        data = check(rs, validationtypes.Lodgement, data, creation=True)
         if rs.has_validation_errors():
             return self.create_lodgement_form(rs, event_id)
         assert data is not None
@@ -4804,7 +4802,7 @@ class EventFrontend(AbstractUserFrontend):
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
-        data = check(rs, "lodgement", data)
+        data = check(rs, validationtypes.Lodgement, data)
         if rs.has_validation_errors():
             return self.change_lodgement_form(rs, event_id, lodgement_id)
         assert data is not None
@@ -5495,8 +5493,8 @@ class EventFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, validationtypes.QueryInput,
+                query_input, "query", spec=spec, allow_empty=False)
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -5653,8 +5651,8 @@ class EventFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, validationtypes.QueryInput,
+                query_input, "query", spec=spec, allow_empty=False)
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -5816,8 +5814,8 @@ class EventFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, validationtypes.QueryInput,
+                query_input, "query", spec=spec, allow_empty=False)
 
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -6148,9 +6146,10 @@ class EventFrontend(AbstractUserFrontend):
                      json: werkzeug.FileStorage) -> Response:
         """Unlock an event after offline usage and incorporate the offline
         changes."""
-        data = cast(CdEDBObject, check(rs, "serialized_event_upload", json))
+        data = check(rs, validationtypes.SerializedEventUpload, json)
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
+        assert data is not None
         if event_id != data['id']:
             rs.notify("error", n_("Data from wrong event."))
             return self.show_event(rs, event_id)

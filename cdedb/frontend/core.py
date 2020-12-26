@@ -30,8 +30,9 @@ from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
-    calculate_db_logparams, calculate_loglinks, check_validation as check,
-    enum_entries_filter, make_membership_fee_reference, periodic, querytoparams_filter,
+    calculate_db_logparams, calculate_loglinks, check_validation_typed as check,
+    check_validation_typed_optional as check_optional, enum_entries_filter,
+    make_membership_fee_reference, periodic, querytoparams_filter,
     request_dict_extractor, request_extractor,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
@@ -202,7 +203,7 @@ class CoreFrontend(AbstractFrontend):
         info = self.coreproxy.get_meta_info(rs)
         data_params = tuple((key, "str_or_None") for key in info)
         data = request_extractor(rs, data_params)
-        data = check(rs, "meta_info", data, keys=info.keys())
+        data = check(rs, validationtypes.MetaInfo, data, keys=info.keys())
         if rs.has_validation_errors():
             return self.meta_info_form(rs)
         assert data is not None
@@ -895,7 +896,7 @@ class CoreFrontend(AbstractFrontend):
         attributes = get_persona_fields_by_realm(rs.user.roles, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
-        data = check(rs, "persona", data, "persona",
+        data = check(rs, validationtypes.Persona, data, "persona",
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.change_user_form(rs)
@@ -926,12 +927,12 @@ class CoreFrontend(AbstractFrontend):
         """
         spec = copy.deepcopy(QUERY_SPECS['qview_core_user'])
         if query:
-            query = check(rs, "query", query, "query")
+            query = check(rs, validationtypes.Query, query, "query")
         elif is_search:
             # mangle the input, so we can prefill the form
             query_input = mangle_query_input(rs, spec)
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, validationtypes.QueryInput,
+                query_input, "query", spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -986,8 +987,8 @@ class CoreFrontend(AbstractFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, validationtypes.QueryInput,
+                query_input, "query", spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -1070,7 +1071,7 @@ class CoreFrontend(AbstractFrontend):
         attributes = get_persona_fields_by_realm(roles, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
-        data = check(rs, "persona", data, _ignore_warnings=ignore_warnings)
+        data = check(rs, validationtypes.Persona, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
         assert data is not None
@@ -1400,7 +1401,7 @@ class CoreFrontend(AbstractFrontend):
         data['is_{}_realm'.format(target_realm)] = True
         for realm in implied_realms(target_realm):
             data['is_{}_realm'.format(realm)] = True
-        data = check(rs, "persona", data, transition=True)
+        data = check(rs, validationtypes.Persona, data, transition=True)
         if rs.has_validation_errors():
             return self.promote_user_form(  # type: ignore
                 rs, persona_id, internal=True)
@@ -1544,8 +1545,7 @@ class CoreFrontend(AbstractFrontend):
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        foto = cast(Optional[bytes],
-                    check(rs, 'profilepic_or_None', foto, "foto"))
+        foto = check_optional(rs, validationtypes.ProfilePicture, foto, "foto")
         if not foto and not delete:
             rs.append_validation_error(
                 ("foto", ValueError("Must not be empty.")))
@@ -1945,8 +1945,8 @@ class CoreFrontend(AbstractFrontend):
         attachment_data = None
         if attachment:
             attachment_filename = attachment.filename
-            attachment_data = cast(
-                Optional[bytes], check(rs, 'pdffile', attachment, 'attachment'))
+            attachment_data = check(
+                rs, validationtypes.PDFFile, attachment, 'attachment')
         attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
         if attachment_data:
             myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
@@ -1964,7 +1964,7 @@ class CoreFrontend(AbstractFrontend):
                 rs.append_validation_error(e)
             else:
                 data['attachment'] = attachment_hash
-        data = check(rs, "genesis_case", data, creation=True,
+        data = check(rs, validationtypes.GenesisCase, data, creation=True,
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
@@ -2194,7 +2194,8 @@ class CoreFrontend(AbstractFrontend):
                        ) -> Response:
         """Edit a case to fix potential issues before creation."""
         data['id'] = genesis_case_id
-        data = check(rs, "genesis_case", data, _ignore_warnings=ignore_warnings)
+        data = check(
+            rs, validationtypes.GenesisCase, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None

@@ -38,9 +38,9 @@ from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile, Response, Worker,
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
-    check_validation as check, csv_output, enum_entries_filter,
-    make_membership_fee_reference, make_postal_address, money_filter, periodic,
-    process_dynamic_input, request_extractor,
+    check_validation_typed as check, check_validation_typed_optional as check_optional,
+    csv_output, enum_entries_filter, make_membership_fee_reference, make_postal_address,
+    money_filter, periodic, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
@@ -218,9 +218,9 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
-        query = cast(Query, check(
-            rs, "query_input", mangle_query_input(rs, spec, defaults),
-            "query", spec=spec, allow_empty=not is_search, separator=" "))
+        query = check(rs, validationtypes.QueryInput,
+            mangle_query_input(rs, spec, defaults), "query", spec=spec,
+            allow_empty=not is_search, separator=" ")
 
         events = self.pasteventproxy.list_past_events(rs)
         pevent_id = None
@@ -239,32 +239,34 @@ class CdEFrontend(AbstractUserFrontend):
 
         if rs.has_validation_errors():
             self._fix_search_validation_error_references(rs)
-        elif is_search and not query.constraints:
-            rs.notify("error", n_("You have to specify some filters."))
-        elif is_search:
+        else:
+            assert query is not None
+            if is_search and not query.constraints:
+                rs.notify("error", n_("You have to specify some filters."))
+            elif is_search:
 
-            def restrict(constraint: QueryConstraint) -> QueryConstraint:
-                field, operation, value = constraint
-                if field == 'fulltext':
-                    value = [r"\m{}\M".format(val) if len(val) <= 3 else val
-                             for val in value]
-                elif len(str(value)) <= 3:
-                    operation = QueryOperators.equal
-                constraint = (field, operation, value)
-                return constraint
+                def restrict(constraint: QueryConstraint) -> QueryConstraint:
+                    field, operation, value = constraint
+                    if field == 'fulltext':
+                        value = [r"\m{}\M".format(val) if len(val) <= 3 else val
+                                for val in value]
+                    elif len(str(value)) <= 3:
+                        operation = QueryOperators.equal
+                    constraint = (field, operation, value)
+                    return constraint
 
-            query.constraints = [restrict(constrain)
-                                 for constrain in query.constraints]
-            query.scope = "qview_cde_member"
-            query.fields_of_interest.append('personas.id')
-            result = self.cdeproxy.submit_general_query(rs, query)
-            count = len(result)
-            if count == 1:
-                return self.redirect_show_user(rs, result[0]['id'],
-                                               quote_me=True)
-            if count > cutoff:
-                result = result[:cutoff]
-                rs.notify("info", n_("Too many query results."))
+                query.constraints = [restrict(constrain)
+                                    for constrain in query.constraints]
+                query.scope = "qview_cde_member"
+                query.fields_of_interest.append('personas.id')
+                result = self.cdeproxy.submit_general_query(rs, query)
+                count = len(result)
+                if count == 1:
+                    return self.redirect_show_user(rs, result[0]['id'],
+                                                quote_me=True)
+                if count > cutoff:
+                    result = result[:cutoff]
+                    rs.notify("info", n_("Too many query results."))
 
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
@@ -277,25 +279,27 @@ class CdEFrontend(AbstractUserFrontend):
         """Search for past courses."""
         defaults = copy.deepcopy(COURSESEARCH_DEFAULTS)
         spec = copy.deepcopy(QUERY_SPECS['qview_pevent_course'])
-        query = cast(Query, check(
-            rs, "query_input", mangle_query_input(rs, spec, defaults),
-            "query", spec=spec, allow_empty=not is_search, separator=" "))
+        query = check(rs, validationtypes.QueryInput,
+            mangle_query_input(rs, spec, defaults), "query", spec=spec,
+            allow_empty=not is_search, separator=" ")
         result: Optional[Sequence[CdEDBObject]] = None
         count = 0
 
         if rs.has_validation_errors():
             self._fix_search_validation_error_references(rs)
-        elif is_search and not query.constraints:
-            rs.notify("error", n_("You have to specify some filters."))
-        elif is_search:
-            query.scope = "qview_pevent_course"
-            query.fields_of_interest.append('courses.id')
-            result = self.pasteventproxy.submit_general_query(rs, query)
-            count = len(result)
-            if count == 1:
-                return self.redirect(rs, "cde/show_past_course", {
-                    'pevent_id': result[0]['courses.pevent_id'],
-                    'pcourse_id': result[0]['courses.id']})
+        else:
+            assert query is not None
+            if is_search and not query.constraints:
+                rs.notify("error", n_("You have to specify some filters."))
+            elif is_search:
+                query.scope = "qview_pevent_course"
+                query.fields_of_interest.append('courses.id')
+                result = self.pasteventproxy.submit_general_query(rs, query)
+                count = len(result)
+                if count == 1:
+                    return self.redirect(rs, "cde/show_past_course", {
+                        'pevent_id': result[0]['courses.pevent_id'],
+                        'pcourse_id': result[0]['courses.id']})
 
         return self.render(rs, "past_course_search", {
             'spec': spec, 'result': result, 'count': count})
@@ -321,8 +325,8 @@ class CdEFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, validationtypes.QueryInput, query_input, "query",
+                                      spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
@@ -935,7 +939,7 @@ class CdEFrontend(AbstractUserFrontend):
         filename = pathlib.Path(statement_file.filename).parts[-1]
         start, end, timestamp = parse.dates_from_filename(filename)
         # The statements from BFS are encoded in latin-1
-        statement_file = check(rs, "csvfile", statement_file,
+        statement_file = check(rs, validationtypes.CSVFile, statement_file,
                                "statement_file", encoding="latin-1")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
@@ -1258,8 +1262,8 @@ class CdEFrontend(AbstractUserFrontend):
         corruption and to explicitly signal at what point the data will
         be committed (for the second purpose it works like a boolean).
         """
-        transfers_file = cast(str, check(rs, "csvfile_or_None", transfers_file,
-                                         "transfers_file"))
+        transfers_file = check_optional(
+            rs, validationtypes.CSVFile, transfers_file, "transfers_file")
         if rs.has_validation_errors():
             return self.money_transfers_form(rs)
         if transfers_file and transfers:
@@ -1429,7 +1433,7 @@ class CdEFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Modify one permit."""
         data['id'] = lastschrift_id
-        data = check(rs, "lastschrift", data)
+        data = check(rs, validationtypes.Lastschrift, data)
         if rs.has_validation_errors():
             return self.lastschrift_change_form(rs, lastschrift_id)
         assert data is not None
@@ -1452,7 +1456,7 @@ class CdEFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Create a new permit."""
         data['persona_id'] = persona_id
-        data = check(rs, "lastschrift", data, creation=True)
+        data = check(rs, validationtypes.Lastschrift, data, creation=True)
         if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
         assert data is not None
@@ -1547,7 +1551,8 @@ class CdEFrontend(AbstractUserFrontend):
           some additional attributes which are necessary.
         :rtype: str
         """
-        sanitized_transactions = check(rs, "sepa_transactions", transactions)
+        sanitized_transactions = check(
+            rs, validationtypes.SepaTransactions, transactions)
         if rs.has_validation_errors():
             return None
         assert sanitized_transactions is not None
@@ -1574,7 +1579,7 @@ class CdEFrontend(AbstractUserFrontend):
             },
             'payment_date': self._calculate_payment_date(),
         }
-        meta = check(rs, "sepa_meta", meta)
+        meta = check(rs, validationtypes.SepaMeta, meta)
         if rs.has_validation_errors():
             return None
         sepapain_file = self.fill_template(rs, "other", "pain.008.003.02", {
@@ -2518,7 +2523,7 @@ class CdEFrontend(AbstractUserFrontend):
                           data: CdEDBObject) -> Response:
         """Modify a concluded event."""
         data['id'] = pevent_id
-        data = check(rs, "past_event", data)
+        data = check(rs, validationtypes.PastEvent, data)
         if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
         assert data is not None
@@ -2541,7 +2546,7 @@ class CdEFrontend(AbstractUserFrontend):
     def create_past_event(self, rs: RequestState, courses: Optional[str],
                           data: CdEDBObject) -> Response:
         """Add new concluded event."""
-        data = check(rs, "past_event", data, creation=True)
+        data = check(rs, validationtypes.PastEvent, data, creation=True)
         thecourses: List[CdEDBObject] = []
         if courses:
             courselines = courses.split('\n')
@@ -2556,7 +2561,7 @@ class CdEFrontend(AbstractUserFrontend):
                 # later. The typechecker expects a str here.
                 assert pcourse is not None
                 pcourse['pevent_id'] = "1"
-                pcourse = check(rs, "past_course", pcourse, creation=True)
+                pcourse = check(rs, validationtypes.PastCourse, pcourse, creation=True)
                 if pcourse:
                     thecourses.append(pcourse)
                 else:
@@ -2602,7 +2607,7 @@ class CdEFrontend(AbstractUserFrontend):
                            pcourse_id: int, data: CdEDBObject) -> Response:
         """Modify a concluded course."""
         data['id'] = pcourse_id
-        data = check(rs, "past_course", data)
+        data = check(rs, validationtypes.PastCourse, data)
         if rs.has_validation_errors():
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
         assert data is not None
@@ -2622,7 +2627,7 @@ class CdEFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Add new concluded course."""
         data['pevent_id'] = pevent_id
-        data = check(rs, "past_course", data, creation=True)
+        data = check(rs, validationtypes.PastCourse, data, creation=True)
         if rs.has_validation_errors():
             return self.create_past_course_form(rs, pevent_id)
         assert data is not None
