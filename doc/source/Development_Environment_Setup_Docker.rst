@@ -61,10 +61,7 @@ To do this you can run the following:
     $ # navigate to the repository root
     $ make i18n-compile
     $ make doc
-    $ sed -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
-        -e 's|Path("/log/cdedb.log|Path("/var/log/cdedb/global.log|' \
-        related/auto-build/files/stage3/localconfig.py \
-        > cdedb/localconfig.py
+    $ cp related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
     $ cd related/docker
     $ docker-compose exec app make sql-seed-database
 

@@ -12,7 +12,7 @@ cd /cdedb2 && make reload
 /cdedb2/bin/singlecheck.sh test_backend_event*test_json_fields_with_dates
 
 # list CdEDB log files (most recently changed first)
-ls -lht /log/
+ls -lht /var/log/cdedb
 
 # reset database (DESTROYS ALL DATA)
 cd /cdedb2 && make sample-data

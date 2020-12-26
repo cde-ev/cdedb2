@@ -80,9 +80,7 @@ RUN mkdir /var/lib/cdedb \
     && chown --recursive www-data:www-data /var/lib/cdedb \
     \
     && mkdir /var/log/cdedb \
-    && ln -s /var/log/apache2/ssl_error.log /var/log/cdedb/ssl_error.log \
-    && ln -s /var/log/apache2/ssl_access.log /var/log/cdedb/ssl_access.log \
-    && chown --recursive www-data:www-data /var/log/cdedb \
+    && chown www-data:www-data /var/log/cdedb \
     \
     && useradd --system cdedb \
     \
@@ -94,8 +92,7 @@ VOLUME /var/lib/cdedb
 COPY ./related/auto-build/files/stage3 /tmp/autobuild
 
 # put configuration files into correct positions
-# - rewrite config to store logs inside of /var/log/cdedb
-# - add symlink to /cdedb2/cdedb directory so python can find it
+# and add symlink to /cdedb2/cdedb directory so python can find it
 RUN a2enmod ssl wsgi headers \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
@@ -110,14 +107,6 @@ RUN a2enmod ssl wsgi headers \
     && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
     \
     && rm -rf /tmp/autobuild
-
-# this does not currently work:
-# - store localconfig in /etc to allow mounting code seperately
-# && sed -e 's|Path("/log/cdedb-|Path("/var/log/cdedb/|' \
-#     -e 's|Path("/log/cdedb.log|Path("/var/log/cdedb/global.log|' \
-#     /tmp/autobuild/localconfig.py \
-#     > /etc/cdedb-application-config.py \
-# \
 
 EXPOSE 443
 

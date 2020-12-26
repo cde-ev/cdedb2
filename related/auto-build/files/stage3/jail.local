@@ -2,19 +2,19 @@
 enabled = true
 port    = http,https
 filter  = cdedb-login
-logpath  = /log/cdedb-backend-core.log
+logpath  = /var/log/cdedb/backend-core.log
 maxretry = 42
 
 [cdedb-sessionkey]
 enabled = true
 port    = http,https
 filter  = cdedb-sessionkey
-logpath  = /log/cdedb-backend-session.log
+logpath  = /var/log/cdedb/backend-session.log
 maxretry = 5
 
 [cdedb-apitoken]
 enabled = true
 port    = http,https
 filter  = cdedb-apitoken
-logpath  = /log/cdedb-backend-session.log
+logpath  = /var/log/cdedb/backend-session.log
 maxretry = 5
