@@ -2928,26 +2928,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("success", n_("Changes applied."))
             return self.redirect(rs, "event/show_event")
 
-        # Fourth look for double creations
-        all_current_data = self.eventproxy.partial_export_event(rs, data['id'])
-        for course_id, course in delta.get('courses', {}).items():
-            if course_id < 0:
-                if any(current == course
-                       for current in all_current_data['courses'].values()):
-                    rs.notify('warning',
-                              "There were hints at double course creations."
-                              " Did you already import this file?")
-                    break
-        for lodgement_id, lodgement in delta.get('lodgements', {}).items():
-            if lodgement_id < 0:
-                if any(current == lodgement
-                       for current in all_current_data['lodgements'].values()):
-                    rs.notify('warning',
-                              "There were hints at double lodgement creations."
-                              " Did you already import this file?")
-                    break
-
-        # Fifth prepare
+        # Fourth prepare
         rs.values['token'] = new_token
         rs.values['partial_import_data'] = json_serialize(data)
         for course in courses.values():
@@ -2956,7 +2937,7 @@ class EventFrontend(AbstractUserFrontend):
                 for id in course['segments']
             }
 
-        # Sixth prepare summary
+        # Fifth prepare summary
         def flatten_recursive_delta(data: Mapping[Any, Any],
                                     old: Mapping[Any, Any],
                                     prefix: str = "") -> CdEDBObject:
@@ -3044,6 +3025,7 @@ class EventFrontend(AbstractUserFrontend):
          lodgement_titles) = self._make_partial_import_diff_aux(
             rs, rs.ambience['event'], courses, lodgements)
 
+        # Sixth look for double deletions/creations
         if (len(summary['deleted_registration_ids'])
                 > len(summary['real_deleted_registration_ids'])):
             rs.notify('warning',
@@ -3058,6 +3040,23 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify('warning',
                       "There were double lodgement deletions."
                       " Did you already import this file?")
+        all_current_data = self.eventproxy.partial_export_event(rs, data['id'])
+        for course_id, course in delta.get('courses', {}).items():
+            if course_id < 0:
+                if any(current == course
+                       for current in all_current_data['courses'].values()):
+                    rs.notify('warning',
+                              "There were hints at double course creations."
+                              " Did you already import this file?")
+                    break
+        for lodgement_id, lodgement in delta.get('lodgements', {}).items():
+            if lodgement_id < 0:
+                if any(current == lodgement
+                       for current in all_current_data['lodgements'].values()):
+                    rs.notify('warning',
+                              "There were hints at double lodgement creations."
+                              " Did you already import this file?")
+                    break
 
         # Seventh render diff
         template_data = {
