@@ -2930,20 +2930,22 @@ class EventFrontend(AbstractUserFrontend):
 
         # Fourth look for double creations
         all_current_data = self.eventproxy.partial_export_event(rs, data['id'])
-        suspicious_courses = []
         for course_id, course in delta.get('courses', {}).items():
             if course_id < 0:
-                for current in all_current_data['courses'].values():
-                    if current == course:
-                        suspicious_courses.append(course_id)
-                        break
-        suspicious_lodgements = []
+                if any(current == course
+                       for current in all_current_data['courses'].values()):
+                    rs.notify('warning',
+                              "There were hints at double course creations."
+                              " Did you already import this file?")
+                    break
         for lodgement_id, lodgement in delta.get('lodgements', {}).items():
             if lodgement_id < 0:
-                for current in all_current_data['lodgements'].values():
-                    if current == lodgement:
-                        suspicious_lodgements.append(lodgement_id)
-                        break
+                if any(current == lodgement
+                       for current in all_current_data['lodgements'].values()):
+                    rs.notify('warning',
+                              "There were hints at double lodgement creations."
+                              " Did you already import this file?")
+                    break
 
         # Fifth prepare
         rs.values['token'] = new_token
@@ -3042,15 +3044,28 @@ class EventFrontend(AbstractUserFrontend):
          lodgement_titles) = self._make_partial_import_diff_aux(
             rs, rs.ambience['event'], courses, lodgements)
 
+        if (len(summary['deleted_registration_ids'])
+                > len(summary['real_deleted_registration_ids'])):
+            rs.notify('warning',
+                      "There were double registration deletions."
+                      " Did you already import this file?")
+        if len(summary['deleted_course_ids']) > len(summary['real_deleted_course_ids']):
+            rs.notify('warning',
+                      "There were double course deletions."
+                      " Did you already import this file?")
+        if (len(summary['deleted_lodgement_ids'])
+                > len(summary['real_deleted_lodgement_ids'])):
+            rs.notify('warning',
+                      "There were double lodgement deletions."
+                      " Did you already import this file?")
+
         # Seventh render diff
         template_data = {
             'delta': delta,
             'registrations': registrations,
             'lodgements': lodgements,
             'lodgement_groups': lodgement_groups,
-            'suspicious_lodgements': suspicious_lodgements,
             'courses': courses,
-            'suspicious_courses': suspicious_courses,
             'personas': personas,
             'summary': summary,
             'reg_titles': reg_titles,
