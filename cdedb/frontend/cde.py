@@ -464,16 +464,10 @@ class CdEFrontend(AbstractUserFrontend):
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
             validationtypes.Persona, persona, argname="persona", creation=True)
-        if persona is None:
-            return {"problems": problems}
-        try:
-            if (persona['birthday'] >
-                    deduct_years(now().date(), 10)):
-                problems.extend([('birthday', ValueError(
-                    n_("Persona is younger than 10 years.")))])
-        except TypeError:
-            # Errors like this are already handled by check_persona
-            pass
+        if persona and (persona['birthday'] > deduct_years(now().date(), 10)):
+            problems.extend([('birthday', ValueError(
+                n_("Persona is younger than 10 years.")))])
+
         pevent_id, w, p = self.pasteventproxy.find_past_event(
             rs, datum['raw']['event'])
         warnings.extend(w)
@@ -487,12 +481,12 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             warnings.append(("course", ValueError(n_("No course available."))))
         doppelgangers: CdEDBObjectMap = {}
-        if (datum['resolution'] == LineResolutions.create
-                and self.coreproxy.verify_existence(rs, persona['username'])):
-            warnings.append(
-                ("persona",
-                 ValueError(n_("Email address already taken."))))
         if persona:
+            if (datum['resolution'] == LineResolutions.create
+                    and self.coreproxy.verify_existence(rs, persona['username'])):
+                warnings.append(
+                    ("persona",
+                    ValueError(n_("Email address already taken."))))
             temp = copy.deepcopy(persona)
             temp['id'] = 1
             doppelgangers = self.coreproxy.find_doppelgangers(rs, temp)
@@ -513,9 +507,11 @@ class CdEFrontend(AbstractUserFrontend):
                      KeyError(n_("Doppelganger unavailable."))))
             else:
                 dg = doppelgangers[datum['doppelganger_id']]
-                if (dg['username'] != persona['username']
-                        and self.coreproxy.verify_existence(
-                            rs, persona['username'])):
+                if (
+                    persona
+                    and dg['username'] != persona['username']
+                    and self.coreproxy.verify_existence(rs, persona['username'])
+                ):
                     warnings.append(
                         ("doppelganger",
                          ValueError(n_("Email address already taken."))))
