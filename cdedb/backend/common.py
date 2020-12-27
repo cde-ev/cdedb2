@@ -24,6 +24,7 @@ import psycopg2.extras
 from typing_extensions import Literal
 
 import cdedb.validation as validate
+from cdedb import validationtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
     Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
@@ -671,16 +672,18 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         codes = affirm_set_validation(code_validator, codes, allow_None=True)
         entity_ids = affirm_set_validation("id", entity_ids, allow_None=True)
-        offset = affirm_validation("non_negative_int_or_None", offset)
-        length = affirm_validation("positive_int_or_None", length)
+        offset: Optional[int] = affirm_validation_typed_optional(
+            validationtypes.NonNegativeInt, offset)
+        length: Optional[int] = affirm_validation_typed_optional(
+            validationtypes.PositiveInt, length)
         additional_columns = affirm_set_validation(
             "restrictive_identifier", additional_columns, allow_None=True)
-        persona_id = affirm_validation("id_or_None", persona_id)
-        submitted_by = affirm_validation("id_or_None", submitted_by)
-        reviewed_by = affirm_validation("id_or_None", reviewed_by)
-        change_note = affirm_validation("regex_or_None", change_note)
-        time_start = affirm_validation("datetime_or_None", time_start)
-        time_stop = affirm_validation("datetime_or_None", time_stop)
+        persona_id = affirm_validation_typed_optional(validationtypes.ID, persona_id)
+        submitted_by = affirm_validation_typed_optional(validationtypes.ID, submitted_by)
+        reviewed_by = affirm_validation_typed_optional(validationtypes.ID, reviewed_by)
+        change_note = affirm_validation_typed_optional(validationtypes.Regex, change_note)
+        time_start = affirm_validation_typed_optional(datetime.datetime, time_start)
+        time_stop = affirm_validation_typed_optional(datetime.datetime, time_stop)
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         additional_columns: List[str] = list(additional_columns or [])
@@ -731,7 +734,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         # The first query determines the absolute number of logs existing
         # matching the given criteria
         query = f"SELECT COUNT(*) AS count FROM {table} {condition}"
-        total = unwrap(self.query_one(rs, query, params)) or 0
+        total: int = unwrap(self.query_one(rs, query, params)) or 0
         if offset and offset > total:
             # Why you do this
             return total, tuple()
@@ -776,10 +779,22 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
+def _affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
+
+
+def affirm_validation_typed(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
+    return validate.validate_assert(assertion, value, **kwargs)
+
+
+def affirm_validation_typed_optional(
+    assertion: Type[T], value: Any, **kwargs: Any
+) -> Optional[T]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
+    return validate.validate_assert_optional(assertion, value, **kwargs)
 
 
 # Ignore the parameter name allow_None
