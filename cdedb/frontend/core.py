@@ -1611,6 +1611,7 @@ class CoreFrontend(AbstractFrontend):
             if any(name == "new_password"
                    for name, _ in rs.retrieve_validation_errors()):
                 rs.notify("error", n_("Password too weak."))
+            rs.ignore_validation_errors()
             return self.change_password_form(rs)
         assert new_password is not None
 
