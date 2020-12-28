@@ -41,9 +41,9 @@
                 participants.
             {% endtrans %}
         </p>
-        <div style="clear: both;"></div>
+        <div style="clear: both"></div>
     {% else %}
-        <div class="text-info bg-info" style="padding: 15px; margin-bottom: 18px;">
+        <div class="alert alert-info">
             <p>
                 {{ util.make_icon('info-circle') }}
                 {% trans %}
@@ -52,7 +52,7 @@
                     “Waitlist” and “Applied”).
                 {% endtrans %}
             </p>
-            <p class="nosp">
+            <p>
                 {{ util.href(cdedblink("event/course_stats"), gettext('Only show participants'),
                              aclass='btn btn-default btn-sm', icon='arrow-left') }}
             </p>
