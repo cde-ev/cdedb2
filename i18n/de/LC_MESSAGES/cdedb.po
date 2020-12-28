@@ -6636,7 +6636,7 @@ msgid ""
 "text search terms of up to three characters have to match an entire word."
 msgstr ""
 "Sucheingaben, die bis zu drei Zeichen lang sind, müssen genau auf den zu "
-"suchenden Eintrag passen. In der Volltext Suche wird jede Eingabe bis zu "
+"suchenden Eintrag passen. In der Volltextsuche wird jede Eingabe bis zu "
 "drei Zeichen als ein vollständiges Wort behandelt."
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:142

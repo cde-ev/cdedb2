@@ -92,7 +92,7 @@ Hinweise
 --------
 
 * Ein server-seitig nur schwer abzufangender Fehler ist, wenn eine
-  Import-Datei, die die Erstellung von Einträgen enthält mehrfach
+  Import-Datei, die die Erstellung von Einträgen enthält, mehrfach
   hochgeladen wird. Dies wird versucht zu detektieren, kann aber nicht mit
   Sicherheit abgefangen werden.
 
