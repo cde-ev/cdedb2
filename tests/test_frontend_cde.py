@@ -336,11 +336,11 @@ class TestCdEFrontend(FrontendTest):
                 self.assertTitle(title)
             else:
                 # After some iterations, the query will fail due to quota limit.
-                self.response = f.submit(status=403)
+                self.response = f.submit(status=429)
                 self.assertPresence("Limit für Zugriffe")
                 self.assertPresence("automatisch zurückgesetzt")
                 # Check that the redirect from a previous search now also fails.
-                self.get(save, status=403)
+                self.get(save, status=429)
                 self.assertPresence("Limit für Zugriffe")
                 self.assertPresence("automatisch zurückgesetzt")
                 break

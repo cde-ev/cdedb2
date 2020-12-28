@@ -29,6 +29,7 @@ import icu
 import psycopg2.extras
 import pytz
 import werkzeug
+import werkzeug.exceptions
 import werkzeug.routing
 
 import cdedb.database.constants as const
@@ -446,7 +447,7 @@ def now() -> datetime.datetime:
     return datetime.datetime.now(pytz.utc)
 
 
-class QuotaException(RuntimeError):
+class QuotaException(werkzeug.exceptions.TooManyRequests):
     """
     Exception for signalling a quota excess. This is thrown in
     :py:mod:`cdedb.backend.cde` and caught in
