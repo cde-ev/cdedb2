@@ -3028,18 +3028,15 @@ class EventFrontend(AbstractUserFrontend):
         # Sixth look for double deletions/creations
         if (len(summary['deleted_registration_ids'])
                 > len(summary['real_deleted_registration_ids'])):
-            rs.notify('warning',
-                      n_("There were double registration deletions."
-                         " Did you already import this file?"))
+            rs.notify('warning', n_("There were double registration deletions."
+                                    " Did you already import this file?"))
         if len(summary['deleted_course_ids']) > len(summary['real_deleted_course_ids']):
-            rs.notify('warning',
-                      n_("There were double course deletions."
-                         " Did you already import this file?"))
+            rs.notify('warning', n_("There were double course deletions."
+                                    " Did you already import this file?"))
         if (len(summary['deleted_lodgement_ids'])
                 > len(summary['real_deleted_lodgement_ids'])):
-            rs.notify('warning',
-                      n_("There were double lodgement deletions."
-                         " Did you already import this file?"))
+            rs.notify('warning', n_("There were double lodgement deletions."
+                                    " Did you already import this file?"))
         all_current_data = self.eventproxy.partial_export_event(rs, data['id'])
         for course_id, course in delta.get('courses', {}).items():
             if course_id < 0:
