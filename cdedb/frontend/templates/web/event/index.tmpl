@@ -123,10 +123,10 @@
             {% endfor %}
         </ul>
     {% endif %}
-        <h3>{% trans %}Past Events (long){% endtrans %}</h3>
+        <h3>{% trans %}Past Events_[[long form]]{% endtrans %}</h3>
         <p id="past-events">
             {% if 'cde' in user.roles %}
-                {% trans link=util.href(cdedblink('cde/list_past_events'), gettext('Past Events (long)'))|s,
+                {% trans link=util.href(cdedblink('cde/list_past_events'), gettext('Past Events_[[long form]]'))|s,
                          list=util.href(cdedblink('event/list_events'), gettext('list'))|s %}
                     Previous CdE events, including their courses and participants, can be found at {{ link }} – together with Junior- and SchülerAkademien.
                     Furthermore, there is a {{ list }} of all events which have not been cleansed yet.

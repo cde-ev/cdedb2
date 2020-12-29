@@ -6267,7 +6267,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/list_past_events.tmpl:4
 #: cdedb/frontend/templates/web/event/index.tmpl:126
 #: cdedb/frontend/templates/web/event/index.tmpl:129
-msgid "Past Events (long)"
+msgid "Past Events_[[long form]]"
 msgstr "Past Events"
 
 #: cdedb/frontend/templates/web/cde/list_past_events.tmpl:40
