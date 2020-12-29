@@ -387,7 +387,7 @@ class CoreFrontend(AbstractFrontend):
 
         The vcard is a vcard3, following https://tools.ietf.org/html/rfc2426
         Where reasonable, we should consider the new RFC of vcard4, to increase
-        compability, see https://tools.ietf.org/html/rfc6350
+        compatibility, see https://tools.ietf.org/html/rfc6350
 
         :return: The serialized vCard (as in a vcf file)
         """
@@ -416,7 +416,7 @@ class CoreFrontend(AbstractFrontend):
         # Address data
         if persona['address']:
             vcard.add('adr')
-            # extended should be empty because of compability issues, see
+            # extended should be empty because of compatibility issues, see
             # https://tools.ietf.org/html/rfc6350#section-6.3.1
             vcard.adr.value = vobject.vcard.Address(
                 extended='',
@@ -429,7 +429,7 @@ class CoreFrontend(AbstractFrontend):
         if persona['username']:
             # see https://tools.ietf.org/html/rfc2426#section-3.3.2
             vcard.add('email')
-            vcard.email.value = persona['username'] or ''
+            vcard.email.value = persona['username']
         if persona['telephone']:
             # see https://tools.ietf.org/html/rfc2426#section-3.3.1
             vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'home,voice')],
