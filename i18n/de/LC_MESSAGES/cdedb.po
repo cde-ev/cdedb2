@@ -3227,6 +3227,9 @@ msgstr "Unterkunfts-ID"
 msgid "Title"
 msgstr "Bezeichnung"
 
+msgid "Title_[[of a persona]]"
+msgstr "Titel"
+
 #: cdedb/frontend/event.py:5762
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:29
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:29
