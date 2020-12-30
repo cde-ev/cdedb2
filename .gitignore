@@ -10,6 +10,9 @@
 # auto-generated test data
 tests/ancillary_files/sample_data.sql
 
+# HTML coverage reports
+htmlcov/
+
 # generated documentation files
 doc/build/**
 doc/source/emails/
