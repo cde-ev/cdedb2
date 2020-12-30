@@ -3936,7 +3936,7 @@ msgstr ""
 msgid "Vote"
 msgstr ""
 
-msgid "Vote_[[singular of Votes]]"
+msgid "Vote_[[on a voting paper]]"
 msgstr "Vote"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:46
