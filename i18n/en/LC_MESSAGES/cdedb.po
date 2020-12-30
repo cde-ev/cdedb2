@@ -14363,7 +14363,7 @@ msgstr ""
 
 #: cdedb/validation.py:1318 cdedb/validation.py:1258 cdedb/validation.py:1228
 msgid "A birthday must be in the past."
-msgstr "Ein Geburtsdatum muss in der Vergangenheit liegen."
+msgstr ""
 
 #: cdedb/validation.py:1382 cdedb/validation.py:1320 cdedb/validation.py:1289
 msgid "Invalid input for datetime."
