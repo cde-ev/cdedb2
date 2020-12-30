@@ -5748,7 +5748,7 @@ class EventFrontend(AbstractUserFrontend):
         titles: Dict[str, str] = {
             "lodgement.id": gettext(n_("Lodgement ID")),
             "lodgement.lodgement_id": gettext(n_("Lodgement")),
-            "lodgement.title": gettext(n_("Title")),
+            "lodgement.title": gettext(n_("Title_[[name of an entity]]")),
             "lodgement.regular_capacity": gettext(n_("Regular Capacity")),
             "lodgement.camping_mat_capacity":
                 gettext(n_("Camping Mat Capacity")),

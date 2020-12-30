@@ -2727,7 +2727,7 @@ msgstr "Unterkunfts-ID"
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:61
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:34
 #: cdedb/frontend/templates/web/util.tmpl:809
-msgid "Title"
+msgid "Title_[[name of an entity]]"
 msgstr "Bezeichnung"
 
 #: cdedb/frontend/event.py:5752
@@ -3434,7 +3434,7 @@ msgstr "Mit dieser Option kannst Du Deine Ablehnung aller Kandidaten ausdrücken
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:34
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:247
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:270
-msgid "Vote"
+msgid "Vote_[[to vote in a ballot]]"
 msgstr "Abstimmen"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:46

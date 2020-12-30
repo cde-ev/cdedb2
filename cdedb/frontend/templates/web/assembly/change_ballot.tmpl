@@ -23,7 +23,7 @@
     <form action="{{ cdedblink('assembly/change_ballot') }}" method="POST" id="changeballotform"
             class="form-horizontal">
         {{ util.anti_csrf_token('assembly/change_ballot') }}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=util.markdownhint) }}
         {{ util.form_input_text(name="vote_begin", label=gettext("Start of voting period"), type="datetime-local",

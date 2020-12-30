@@ -2660,8 +2660,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:61
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:34
 #: cdedb/frontend/templates/web/util.tmpl:809
-msgid "Title"
-msgstr ""
+msgid "Title_[[name of an entity]]"
+msgstr "Title"
 
 #: cdedb/frontend/event.py:5752
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:29
@@ -3337,8 +3337,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:34
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:247
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:270
-msgid "Vote"
-msgstr ""
+msgid "Vote_[[to vote in a ballot]]"
+msgstr "Vote"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:46
 msgid "Additional"

@@ -14,7 +14,7 @@
 {% block content %}
     <form action="{{ cdedblink('assembly/create_ballot') }}" method="POST" id="createballotform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/create_ballot') }}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=util.markdownhint) }}
         {{ util.form_input_text(name="vote_begin", label=gettext("Start of voting period"), type="datetime-local",
