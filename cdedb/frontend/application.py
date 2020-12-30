@@ -349,17 +349,11 @@ class Application(BaseApp):
 
         :return: Language code of the requested locale
         """
-        if 'locale' in request.cookies \
-                and request.cookies['locale'] in self.conf["I18N_LANGUAGES"]:
+        if request.cookies.get('locale') in self.conf["I18N_LANGUAGES"]:
             return request.cookies['locale']
 
-        if 'Accept-Language' in request.headers:
-            for lang in request.headers['Accept-Language'].split(','):
-                lang_code = lang.split('-')[0].split(';')[0].strip()
-                if lang_code in self.conf["I18N_LANGUAGES"]:
-                    return lang_code
-
-        return 'de'
+        return request.accept_languages.best_match(
+            self.conf["I18N_LANGUAGES"], default="de")
 
 
 def check_anti_csrf(rs: RequestState, component: str, action: str
