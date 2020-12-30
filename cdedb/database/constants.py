@@ -263,17 +263,6 @@ class AttachmentPolicy(enum.IntEnum):
     forbid = 3  #:
 
 
-# This is deprecated and will be removed soon. Do not use.
-@enum.unique
-class AudiencePolicy(enum.IntEnum):
-    """Regulate who may subscribe to a mailing list by status."""
-    everybody = 1  #:
-    require_assembly = 2  #:
-    require_event = 3  #:
-    require_cde = 4  #:
-    require_member = 5  #:
-
-
 @enum.unique
 class LastschriftTransactionStati(enum.IntEnum):
     """Basically store the outcome (if it exists) of a transaction."""
