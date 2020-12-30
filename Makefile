@@ -296,6 +296,8 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 
 coverage: .coverage
 	$(COVERAGEBIN) report --include 'cdedb/*' --show-missing
+	$(COVERAGEBIN) html --include 'cdedb/*'
+	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		tests/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
