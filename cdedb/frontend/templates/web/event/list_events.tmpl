@@ -61,7 +61,8 @@
     <h3>{% trans %}Current Events{% endtrans %}</h3>
     <div class="list-group list-group-hover list-group-condensed" id="current-events">
         {% for event_id, entry in events|keydictsort(EntitySorter.event) %}
-            {% if not entry['is_archived'] and (is_admin or user.persona_id in entry['orgas'] or entry['is_visible']) %}
+            {% if not entry['is_archived'] and
+                    ('event_mgmt' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
                 {{ format_entry(entry) }}
             {% endif %}
         {% endfor %}
@@ -70,7 +71,8 @@
     <h3>{% trans %}Archived Events{% endtrans %}</h3>
     <div class="list-group list-group-hover list-group-condensed" id="archived-events">
         {% for event_id, entry in events|keydictsort(EntitySorter.event) %}
-            {% if entry['is_archived'] and (is_admin or user.persona_id in entry['orgas'] or entry['is_visible']) %}
+            {% if entry['is_archived'] and
+                    ('event_mgmt' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
                 {{ format_entry(entry) }}
             {% endif %}
         {% endfor %}
