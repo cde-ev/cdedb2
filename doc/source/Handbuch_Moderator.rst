@@ -14,6 +14,15 @@ Alle Notwendigen Informationen hierzu findet ihr direkt auf den Seiten
 Wenn ihr wissen wollt, wie das Datenmodell hinter der Abbonenntenverwaltung
 aussieht, schaut euch am Besten die :doc:`Realm_Mailinglist_Management` Seite an.
 
+Nachrichtenmoderation
+---------------------
+
+Die Mailinglisten des CdE werden von verschiedener Listensoftware verwaltet
+(mit dem Plan das zu vereinheitlichen). Wenn eine eine Nachricht für eine
+Liste zu moderieren ist, so bekomment ihr als Moderatoren eine Email in der
+steht wie die Moderation erfolgt. Entweder via Webinterface in der DB oder
+per Antwort auf die Email.
+
 Privilegierte Moderatoren
 -------------------------
 
