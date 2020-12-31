@@ -248,7 +248,7 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/list'})
         self.assertTitle("Alle Veranstaltungen")
         self.assertPresence("Große Testakademie 2222", div='current-events')
-        self.assertPresence("CdE-Party 2050", div='current-events')
+        self.assertNonPresence("CdE-Party 2050")
         self.assertNonPresence("PfingstAkademie 2014")
         self.assertNonPresence("Orgas")
         self.assertNonPresence("Anmeldungen")
