@@ -778,7 +778,7 @@ class CoreFrontend(AbstractFrontend):
 
         # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
-            anid: validationtypes.ID
+            anid: Optional[validationtypes.ID]
             anid, errs = validate_check(
                 validationtypes.CdedbID, phrase, argname="phrase")
             if not errs:

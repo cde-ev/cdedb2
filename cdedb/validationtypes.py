@@ -13,9 +13,9 @@ from cdedb.query import Query
 NonNegativeInt = NewType("NonNegativeInt", int)
 PositiveInt = NewType("PositiveInt", int)
 ID = NewType("ID", int)
+CdedbID = NewType("CdedbID", ID)  # subtype of ID as it also uses that validator
 PartialImportID = NewType("PartialImportID", int)
 SingleDigitInt = NewType("SingleDigitInt", int)
-CdedbID = NewType("CdedbID", int)
 
 NonNegativeDecimal = NewType("NonNegativeDecimal", decimal.Decimal)
 NonNegativeLargeDecimal = NewType(
