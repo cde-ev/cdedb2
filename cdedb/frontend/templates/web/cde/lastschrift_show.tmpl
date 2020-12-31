@@ -147,7 +147,7 @@
                     <td>{{ transaction['period_id'] }}</td>
                     <td>{{ gettext(transaction['status']|enum(enums['LastschriftTransactionStati'])) }}</td>
                     <td>{{ transaction['amount'] }}€</td>
-                    <td>{{ transaction['tally'] }}€</td>
+                    <td>{{ transaction['tally'] }}{% if transaction['tally'] is not none %}€{% endif %}</td>
                     <td>{{ util.persona_anchor(personas[transaction['submitted_by']]) }}</td>
                     <td class="button-par">
                         {% if transaction['status'] == enums['LastschriftTransactionStati'].issued %}
@@ -183,6 +183,15 @@
                                                          value=enums['LastschriftTransactionStati'].cancelled.value) }}
                                     {{ util.input_submit(value=gettext("Cancelled"), aclass="btn btn-xs btn-warning", icon="times-circle") }}
                                 </form>
+                                {% if not active_permit %}
+                                    <br />
+                                    <b class="text-danger">
+                                        {{ util.make_icon('exclamation-triangle') }}
+                                        {% trans %}
+                                            This transaction needs to be cancelled!
+                                        {% endtrans %}
+                                    </b>
+                                {% endif %}
                             {% endif %}
                         {% elif transaction['status'] == enums['LastschriftTransactionStati'].success %}
                             {% if "finance" in user.admin_views %}
