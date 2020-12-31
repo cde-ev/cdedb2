@@ -273,6 +273,9 @@ ul.nosp, ol.nosp {
 .form-group.mosp {
     margin-top: 16px;
 }
+.btn.mosp, img.mosp {
+    margin-bottom: 5px
+}
 .panel-body>:last-child {
     margin-bottom: 0;
 }

@@ -133,6 +133,32 @@ class TestCoreFrontend(FrontendTest):
                                         user['family_name']))
         self.assertPresence(user['given_names'], div='title')
 
+    @as_users("inga")
+    def test_vcard(self, user):
+        # we test here only if the presented vcard is kind of correct. *When* a vcard
+        # should be present is tested in the privacy tests.
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        f = self.response.forms['membersearchform']
+        f['qval_given_names,display_name'] = "Berta"
+        self.submit(f)
+
+        self.assertTitle("Bertålotta Beispiel")
+        self.traverse({'description': 'VCard'})
+        vcard = ["BEGIN:VCARD",
+                 "VERSION:3.0",
+                 "ADR:;;Im Garten 77;Utopia;;34576;",
+                 "BDAY:1981-02-11",
+                 "EMAIL:berta@example.cde",
+                 "FN:Bertålotta Beispiel",
+                 "N:Beispiel;Bertålotta;;Dr.;MdB",
+                 "NICKNAME:Bertå",
+                 "TEL;TYPE=\"home,voice\":+49 (5432) 987654321",
+                 "TEL;TYPE=\"cell,voice\":0163/123456789",
+                 "END:VCARD"]
+        for line in vcard:
+            self.assertIn(line, self.response.text)
+
     @as_users("vera")
     def test_toggle_admin_views(self, user):
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')

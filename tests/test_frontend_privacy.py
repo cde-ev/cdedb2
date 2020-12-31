@@ -28,7 +28,8 @@ class TestPrivacyFrontend(FrontendTest):
         "Zweitadresse": 'address-information',
         "Fachgebiet": 'additional', "Schule, Uni, …": 'additional',
         "Jahrgang, Matrikel, …": 'additional', "Interessen": 'additional',
-        "Sonstiges": 'additional', "Verg. Veranstaltungen": 'past-events'
+        "Sonstiges": 'additional', "Verg. Veranstaltungen": 'past-events',
+        "VCard": 'vcard'
     }
 
     ALL_FIELDS = set(FIELD_TO_DIV.keys())
@@ -84,7 +85,7 @@ class TestPrivacyFrontend(FrontendTest):
             "Geburtsname", "Geburtsdatum", "Telefon", "Mobiltelefon", "WWW",
             "Adresse", "Zweitadresse", "Fachgebiet", "Schule, Uni, …",
             "Jahrgang, Matrikel, …", "Interessen", "Sonstiges",
-            "Verg. Veranstaltungen"
+            "Verg. Veranstaltungen", "VCard"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -152,7 +153,7 @@ class TestPrivacyFrontend(FrontendTest):
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
-            "Geschlecht", "Geburtsdatum"
+            "Geschlecht", "Geburtsdatum", "VCard"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])

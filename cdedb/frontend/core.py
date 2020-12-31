@@ -14,6 +14,9 @@ import tempfile
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast
 
 import magic
+import qrcode
+import qrcode.image.svg
+import vobject
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -30,9 +33,9 @@ from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
-    calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
+    calculate_db_logparams, calculate_loglinks, check_validation as check, date_filter,
     enum_entries_filter, make_membership_fee_reference, periodic, query_result_to_json,
-    querytoparams_filter, request_dict_extractor, request_extractor,
+    querytoparams_filter, request_dict_extractor, request_extractor
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
@@ -346,6 +349,104 @@ class CoreFrontend(AbstractFrontend):
             expires=now() + datetime.timedelta(days=10 * 365))
         return response
 
+    @access("member")
+    @REQUESTdata(("confirm_id", "#int"))
+    def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int
+                       ) -> Response:
+        if persona_id != confirm_id or rs.has_validation_errors():
+            return self.index(rs)
+
+        vcard = self._create_vcard(rs, persona_id)
+        return self.send_file(rs, data=vcard, mimetype='text/vcard',
+                              filename='vcard.vcf')
+
+    @access("member")
+    @REQUESTdata(("confirm_id", "#int"))
+    def qr_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
+        if persona_id != confirm_id or rs.has_validation_errors():
+            return self.index(rs)
+
+        vcard = self._create_vcard(rs, persona_id)
+
+        qr = qrcode.QRCode()
+        qr.add_data(vcard)
+        qr.make(fit=True)
+        qr_image = qr.make_image(qrcode.image.svg.SvgPathFillImage)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            temppath = pathlib.Path(tmp_dir, f"vcard-{persona_id}")
+            qr_image.save(str(temppath))
+            with open(temppath) as f:
+                data = f.read()
+
+        return self.send_file(rs, data=data, mimetype="image/svg+xml")
+
+    def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
+        """
+        Generate a vCard string for a user to be delivered to a client.
+
+        The vcard is a vcard3, following https://tools.ietf.org/html/rfc2426
+        Where reasonable, we should consider the new RFC of vcard4, to increase
+        compatibility, see https://tools.ietf.org/html/rfc6350
+
+        :return: The serialized vCard (as in a vcf file)
+        """
+        if 'member' not in rs.user.roles:
+            raise werkzeug.exceptions.Forbidden(n_("Not a member."))
+
+        if not self.coreproxy.verify_persona(rs, persona_id, required_roles=['member']):
+            raise werkzeug.exceptions.Forbidden(n_("Viewed persona is no member."))
+
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+
+        vcard = vobject.vCard()
+
+        # Name
+        vcard.add('N')
+        vcard.n.value = vobject.vcard.Name(
+            family=persona['family_name'] or '',
+            given=persona['given_names'] or '',
+            prefix=persona['title'] or '',
+            suffix=persona['name_supplement'] or '')
+        vcard.add('FN')
+        vcard.fn.value = f"{persona['given_names'] or ''} {persona['family_name'] or ''}"
+        vcard.add('NICKNAME')
+        vcard.nickname.value = persona['display_name'] or ''
+
+        # Address data
+        if persona['address']:
+            vcard.add('adr')
+            # extended should be empty because of compatibility issues, see
+            # https://tools.ietf.org/html/rfc6350#section-6.3.1
+            vcard.adr.value = vobject.vcard.Address(
+                extended='',
+                street=persona['address'] or '',
+                city=persona['location'] or '',
+                code=persona['postal_code'] or '',
+                country=persona['country'] or '')
+
+        # Contact data
+        if persona['username']:
+            # see https://tools.ietf.org/html/rfc2426#section-3.3.2
+            vcard.add('email')
+            vcard.email.value = persona['username']
+        if persona['telephone']:
+            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
+            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'home,voice')],
+                                                persona['telephone']))
+        if persona['mobile']:
+            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
+            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'cell,voice')],
+                                                persona['mobile']))
+
+        # Birthday
+        if persona['birthday']:
+            vcard.add('bday')
+            # see https://tools.ietf.org/html/rfc2426#section-3.1.5
+            vcard.bday.value = date_filter(persona['birthday'], formatstr="%Y-%m-%d")
+
+        return vcard.serialize()
+
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:
         """Convenience entry point for own data."""
@@ -498,6 +599,9 @@ class CoreFrontend(AbstractFrontend):
             total = self.coreproxy.get_total_persona(rs, persona_id)
             data['notes'] = total['notes']
             data['username'] = total['username']
+
+        # Determinate if vcard should be visible
+        data['show_vcard'] = "cde" in access_levels and "cde" in roles
 
         # Cull unwanted data
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
