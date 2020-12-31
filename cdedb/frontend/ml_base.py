@@ -12,7 +12,7 @@ import werkzeug
 from werkzeug import Response
 
 import cdedb.database.constants as const
-import cdedb.validationtypes as validationtypes
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
     MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS,
     CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike, PrivilegeError, RequestState,
@@ -102,7 +102,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = check(rs, validationtypes.QueryInput,
+            query = check(rs, vtypes.QueryInput,
                 query_input, "query", spec=spec, allow_empty=False)
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_ml_user']
         params = {
@@ -229,7 +229,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Make a new list."""
         data["moderators"] = moderators
         data['ml_type'] = ml_type
-        data = check(rs, validationtypes.Mailinglist, data, creation=True)
+        data = check(rs, vtypes.Mailinglist, data, creation=True)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
@@ -415,7 +415,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         for key in set(data) - allowed:
             data[key] = rs.ambience['mailinglist'][key]
 
-        data = check(rs, validationtypes.Mailinglist, data)
+        data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         assert data is not None
@@ -458,7 +458,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         new_type = get_type(data['ml_type'])
         if ml['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
-        data = check(rs, validationtypes.Mailinglist, data)
+        data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
         assert data is not None

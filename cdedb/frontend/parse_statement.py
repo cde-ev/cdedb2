@@ -6,7 +6,7 @@ import json
 import re
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import cdedb.validationtypes as validationtypes
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
     Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
     n_, now,
@@ -242,7 +242,7 @@ def _reconstruct_cdedbid(db_id: str) -> Tuple[Optional[int], List[Error]]:
     checkdigit = db_id[-1].upper()
 
     # Check the DB-ID
-    p_id, p = validate_check(validationtypes.CdedbID,
+    p_id, p = validate_check(vtypes.CdedbID,
         "DB-{}-{}".format(value, checkdigit), argname="persona_id")
 
     return p_id, p
@@ -356,7 +356,7 @@ class Transaction:
     def from_csv(cls, raw: CdEDBObject) -> "Transaction":
         """
         Convert DictReader line of BFS import to Transaction.
-        
+
         :param raw: DictReader line of parse_statement input.
         """
         data = {}
@@ -594,7 +594,7 @@ class Transaction:
     def _match_members(self, get_persona: BackendGetter) -> None:
         """
         Assign all matching members to self.member_matches.
-        
+
         Assign the best match to self.best_member_match and it's Confidence to
         self.best_member_confidence.
         """

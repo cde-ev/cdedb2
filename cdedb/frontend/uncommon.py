@@ -15,7 +15,7 @@ import werkzeug
 
 from cdedb.common import PERSONA_DEFAULTS, CdEDBObject, RequestState, merge_dicts, n_
 from cdedb.frontend.common import AbstractFrontend, check_validation_typed as check
-import cdedb.validationtypes as validationtypes
+import cdedb.validationtypes as vtypes
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
@@ -42,7 +42,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                     ignore_warnings: bool = False) -> werkzeug.Response:
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
-        data = check(rs, validationtypes.Persona, data,
+        data = check(rs, vtypes.Persona, data,
             creation=True, _ignore_warnings=ignore_warnings)
         if data:
             exists = self.coreproxy.verify_existence(rs, data['username'])

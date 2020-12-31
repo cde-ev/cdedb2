@@ -24,7 +24,7 @@ import psycopg2.extras
 from typing_extensions import Literal
 
 import cdedb.validation as validate
-from cdedb import validationtypes
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
     Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
@@ -673,15 +673,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         codes = affirm_set_validation(code_validator, codes, allow_None=True)
         entity_ids = affirm_set_validation("id", entity_ids, allow_None=True)
         offset: Optional[int] = affirm_validation_typed_optional(
-            validationtypes.NonNegativeInt, offset)
+            vtypes.NonNegativeInt, offset)
         length: Optional[int] = affirm_validation_typed_optional(
-            validationtypes.PositiveInt, length)
+            vtypes.PositiveInt, length)
         additional_columns = affirm_set_validation(
             "restrictive_identifier", additional_columns, allow_None=True)
-        persona_id = affirm_validation_typed_optional(validationtypes.ID, persona_id)
-        submitted_by = affirm_validation_typed_optional(validationtypes.ID, submitted_by)
-        reviewed_by = affirm_validation_typed_optional(validationtypes.ID, reviewed_by)
-        change_note = affirm_validation_typed_optional(validationtypes.Regex, change_note)
+        persona_id = affirm_validation_typed_optional(vtypes.ID, persona_id)
+        submitted_by = affirm_validation_typed_optional(vtypes.ID, submitted_by)
+        reviewed_by = affirm_validation_typed_optional(vtypes.ID, reviewed_by)
+        change_note = affirm_validation_typed_optional(vtypes.Regex, change_note)
         time_start = affirm_validation_typed_optional(datetime.datetime, time_start)
         time_stop = affirm_validation_typed_optional(datetime.datetime, time_stop)
 

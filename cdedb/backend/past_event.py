@@ -10,7 +10,7 @@ from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 from typing_extensions import Protocol
 
 import cdedb.database.constants as const
-import cdedb.validationtypes as validationtypes
+import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
     affirm_validation_typed as affirm,
@@ -112,7 +112,7 @@ class PastEventBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        pevent_id = affirm_optional(validationtypes.ID, pevent_id)
+        pevent_id = affirm_optional(vtypes.ID, pevent_id)
         pevent_ids = [pevent_id] if pevent_id else None
         return self.generic_retrieve_log(
             rs, "enum_pasteventlogcodes", "pevent", "past_event.log",
@@ -149,7 +149,7 @@ class PastEventBackend(AbstractBackend):
     def set_institution(self, rs: RequestState, data: CdEDBObject
                         ) -> DefaultReturnCode:
         """Update some keys of an institution."""
-        data = affirm(validationtypes.Institution, data)
+        data = affirm(vtypes.Institution, data)
         ret = self.sql_update(rs, "past_event.institutions", data)
         current = unwrap(self.get_institutions(rs, (data['id'],)))
         self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
@@ -160,7 +160,7 @@ class PastEventBackend(AbstractBackend):
     def create_institution(self, rs: RequestState, data: CdEDBObject
                            ) -> DefaultReturnCode:
         """Make a new institution."""
-        data = affirm(validationtypes.Institution, data, creation=True)
+        data = affirm(vtypes.Institution, data, creation=True)
         ret = self.sql_insert(rs, "past_event.institutions", data)
         self.past_event_log(rs, const.PastEventLogCodes.institution_created,
                             pevent_id=None, change_note=data['title'])
@@ -176,7 +176,7 @@ class PastEventBackend(AbstractBackend):
 
         :param cascade: Must be False.
         """
-        institution_id = affirm(validationtypes.ID, institution_id)
+        institution_id = affirm(vtypes.ID, institution_id)
         cascade = affirm(bool, cascade)
         if cascade:
             raise NotImplementedError(n_("Not available."))
@@ -265,7 +265,7 @@ class PastEventBackend(AbstractBackend):
     def set_past_event(self, rs: RequestState, data: CdEDBObject
                        ) -> DefaultReturnCode:
         """Update some keys of a concluded event."""
-        data = affirm(validationtypes.PastEvent, data)
+        data = affirm(vtypes.PastEvent, data)
         ret = self.sql_update(rs, "past_event.events", data)
         self.past_event_log(rs, const.PastEventLogCodes.event_changed,
                             data['id'])
@@ -275,7 +275,7 @@ class PastEventBackend(AbstractBackend):
     def create_past_event(self, rs: RequestState, data: CdEDBObject
                           ) -> DefaultReturnCode:
         """Make a new concluded event."""
-        data = affirm(validationtypes.PastEvent, data, creation=True)
+        data = affirm(vtypes.PastEvent, data, creation=True)
         ret = self.sql_insert(rs, "past_event.events", data)
         self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
         return ret
@@ -295,7 +295,7 @@ class PastEventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        pevent_id = affirm(validationtypes.ID, pevent_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
         blockers = {}
 
         participants = self.sql_select(rs, "past_event.participants", ("id",),
@@ -324,7 +324,7 @@ class PastEventBackend(AbstractBackend):
             remove or ignore. If None or empty, cascade none.
         """
 
-        pevent_id = affirm(validationtypes.ID, pevent_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
         blockers = self.delete_past_event_blockers(rs, pevent_id)
         if not cascade:
             cascade = set()
@@ -373,7 +373,7 @@ class PastEventBackend(AbstractBackend):
 
         :returns: Mapping of course ids to titles.
         """
-        pevent_id = affirm(validationtypes.ID, pevent_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
         data = self.sql_select(rs, "past_event.courses", ("id", "title"),
                                (pevent_id,), entity_key="pevent_id")
         return {e['id']: e['title'] for e in data}
@@ -399,7 +399,7 @@ class PastEventBackend(AbstractBackend):
     def set_past_course(self, rs: RequestState, data: CdEDBObject
                         ) -> DefaultReturnCode:
         """Update some keys of a concluded course."""
-        data = affirm(validationtypes.PastCourse, data)
+        data = affirm(vtypes.PastCourse, data)
         current = self.sql_select_one(rs, "past_event.courses",
                                       ("title", "pevent_id"), data['id'])
         # TODO do more checking here?
@@ -416,7 +416,7 @@ class PastEventBackend(AbstractBackend):
     def create_past_course(self, rs: RequestState, data: CdEDBObject
                            ) -> DefaultReturnCode:
         """Make a new concluded course."""
-        data = affirm(validationtypes.PastCourse, data, creation=True)
+        data = affirm(vtypes.PastCourse, data, creation=True)
         ret = self.sql_insert(rs, "past_event.courses", data)
         self.past_event_log(rs, const.PastEventLogCodes.course_created,
                             data['pevent_id'], change_note=data['title'])
@@ -434,7 +434,7 @@ class PastEventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        pcourse_id = affirm(validationtypes.ID, pcourse_id)
+        pcourse_id = affirm(vtypes.ID, pcourse_id)
         blockers = {}
 
         participants = self.sql_select(rs, "past_event.participants", ("id",),
@@ -453,7 +453,7 @@ class PastEventBackend(AbstractBackend):
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        pcourse_id = affirm(validationtypes.ID, pcourse_id)
+        pcourse_id = affirm(vtypes.ID, pcourse_id)
         blockers = self.delete_past_course_blockers(rs, pcourse_id)
         if not cascade:
             cascade = set()
@@ -496,9 +496,9 @@ class PastEventBackend(AbstractBackend):
         :param pcourse_id: If None the persona participated in the event, but
           not in a course (this should be common for orgas).
         """
-        data = {'persona_id': affirm(validationtypes.ID, persona_id),
-                'pevent_id': affirm(validationtypes.ID, pevent_id),
-                'pcourse_id': affirm_optional(validationtypes.ID, pcourse_id),
+        data = {'persona_id': affirm(vtypes.ID, persona_id),
+                'pevent_id': affirm(vtypes.ID, pevent_id),
+                'pcourse_id': affirm_optional(vtypes.ID, pcourse_id),
                 'is_instructor': affirm(bool, is_instructor),
                 'is_orga': affirm(bool, is_orga)}
         ret = self.sql_insert(rs, "past_event.participants", data)
@@ -517,9 +517,9 @@ class PastEventBackend(AbstractBackend):
         participated multiple times (for example in different courses) we
         are able to delete an exact instance.
         """
-        pevent_id = affirm(validationtypes.ID, pevent_id)
-        pcourse_id = affirm_optional(validationtypes.ID, pcourse_id)
-        persona_id = affirm(validationtypes.ID, persona_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
+        pcourse_id = affirm_optional(vtypes.ID, pcourse_id)
+        persona_id = affirm(vtypes.ID, persona_id)
         query = glue("DELETE FROM past_event.participants WHERE pevent_id = %s",
                      "AND persona_id = %s AND pcourse_id {} %s")
         query = query.format("IS" if pcourse_id is None else "=")
@@ -543,10 +543,10 @@ class PastEventBackend(AbstractBackend):
         if pevent_id is not None and pcourse_id is not None:
             raise ValueError(n_("Too many inputs specified."))
         elif pevent_id is not None:
-            anid = affirm(validationtypes.ID, pevent_id)
+            anid = affirm(vtypes.ID, pevent_id)
             entity_key = "pevent_id"
         elif pcourse_id is not None:
-            anid = affirm(validationtypes.ID, pcourse_id)
+            anid = affirm(vtypes.ID, pcourse_id)
             entity_key = "pcourse_id"
         else:  # pevent_id is None and pcourse_id is None:
             raise ValueError(n_("No input specified."))
@@ -614,7 +614,7 @@ class PastEventBackend(AbstractBackend):
         if not phrase:
             return None, [], [("pcourse_id",
                                ValueError(n_("No input supplied.")))]
-        pevent_id = affirm(validationtypes.ID, pevent_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
         query = "SELECT id FROM past_event.courses WHERE pevent_id = %s"
         q1 = query + " AND nr = %s"
         q2 = query + " AND title ~* %s"
@@ -735,7 +735,7 @@ class PastEventBackend(AbstractBackend):
           if there were complications or create_past_events is False.
           If there were complications, the second entry is an error message.
         """
-        event_id = affirm(validationtypes.ID, event_id)
+        event_id = affirm(vtypes.ID, event_id)
         if ("cde_admin" not in rs.user.roles
                 or "event_admin" not in rs.user.roles):
             raise PrivilegeError(n_("Needs both admin privileges."))

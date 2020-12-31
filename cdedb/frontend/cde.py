@@ -27,7 +27,7 @@ from werkzeug import FileStorage, Response  # FIXME
 
 import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
-import cdedb.validationtypes as validationtypes
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
     PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
     Error, LineResolutions, RequestState, TransactionType, asciificator, deduct_years,
@@ -218,7 +218,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
-        query = check(rs, validationtypes.QueryInput,
+        query = check(rs, vtypes.QueryInput,
             mangle_query_input(rs, spec, defaults), "query", spec=spec,
             allow_empty=not is_search, separator=" ")
 
@@ -279,7 +279,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Search for past courses."""
         defaults = copy.deepcopy(COURSESEARCH_DEFAULTS)
         spec = copy.deepcopy(QUERY_SPECS['qview_pevent_course'])
-        query = check(rs, validationtypes.QueryInput,
+        query = check(rs, vtypes.QueryInput,
             mangle_query_input(rs, spec, defaults), "query", spec=spec,
             allow_empty=not is_search, separator=" ")
         result: Optional[Sequence[CdEDBObject]] = None
@@ -325,7 +325,7 @@ class CdEFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = check(rs, validationtypes.QueryInput, query_input, "query",
+            query = check(rs, vtypes.QueryInput, query_input, "query",
                                       spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
@@ -463,7 +463,7 @@ class CdEFrontend(AbstractUserFrontend):
             'notes': None})
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
-            validationtypes.Persona, persona, argname="persona", creation=True)
+            vtypes.Persona, persona, argname="persona", creation=True)
         if persona and (persona['birthday'] > deduct_years(now().date(), 10)):
             problems.extend([('birthday', ValueError(
                 n_("Persona is younger than 10 years.")))])
@@ -935,7 +935,7 @@ class CdEFrontend(AbstractUserFrontend):
         filename = pathlib.Path(statement_file.filename).parts[-1]
         start, end, timestamp = parse.dates_from_filename(filename)
         # The statements from BFS are encoded in latin-1
-        statement_file = check(rs, validationtypes.CSVFile, statement_file,
+        statement_file = check(rs, vtypes.CSVFile, statement_file,
                                "statement_file", encoding="latin-1")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
@@ -1107,9 +1107,9 @@ class CdEFrontend(AbstractUserFrontend):
         :returns: The processed input datum.
         """
         amount, problems = validate_check(
-            validationtypes.PositiveDecimal, datum['raw']['amount'], argname="amount")
+            vtypes.PositiveDecimal, datum['raw']['amount'], argname="amount")
         persona_id, p = validate_check(
-            validationtypes.CdedbID, datum['raw']['persona_id'].strip(),
+            vtypes.CdedbID, datum['raw']['persona_id'].strip(),
             argname="persona_id")
         problems.extend(p)
         family_name, p = validate_check(
@@ -1259,7 +1259,7 @@ class CdEFrontend(AbstractUserFrontend):
         be committed (for the second purpose it works like a boolean).
         """
         transfers_file = check_optional(
-            rs, validationtypes.CSVFile, transfers_file, "transfers_file")
+            rs, vtypes.CSVFile, transfers_file, "transfers_file")
         if rs.has_validation_errors():
             return self.money_transfers_form(rs)
         if transfers_file and transfers:
@@ -1429,7 +1429,7 @@ class CdEFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Modify one permit."""
         data['id'] = lastschrift_id
-        data = check(rs, validationtypes.Lastschrift, data)
+        data = check(rs, vtypes.Lastschrift, data)
         if rs.has_validation_errors():
             return self.lastschrift_change_form(rs, lastschrift_id)
         assert data is not None
@@ -1452,7 +1452,7 @@ class CdEFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Create a new permit."""
         data['persona_id'] = persona_id
-        data = check(rs, validationtypes.Lastschrift, data, creation=True)
+        data = check(rs, vtypes.Lastschrift, data, creation=True)
         if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
         assert data is not None
@@ -1548,7 +1548,7 @@ class CdEFrontend(AbstractUserFrontend):
         :rtype: str
         """
         sanitized_transactions = check(
-            rs, validationtypes.SepaTransactions, transactions)
+            rs, vtypes.SepaTransactions, transactions)
         if rs.has_validation_errors():
             return None
         assert sanitized_transactions is not None
@@ -1575,7 +1575,7 @@ class CdEFrontend(AbstractUserFrontend):
             },
             'payment_date': self._calculate_payment_date(),
         }
-        meta = check(rs, validationtypes.SepaMeta, meta)
+        meta = check(rs, vtypes.SepaMeta, meta)
         if rs.has_validation_errors():
             return None
         sepapain_file = self.fill_template(rs, "other", "pain.008.003.02", {
@@ -2519,7 +2519,7 @@ class CdEFrontend(AbstractUserFrontend):
                           data: CdEDBObject) -> Response:
         """Modify a concluded event."""
         data['id'] = pevent_id
-        data = check(rs, validationtypes.PastEvent, data)
+        data = check(rs, vtypes.PastEvent, data)
         if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
         assert data is not None
@@ -2542,7 +2542,7 @@ class CdEFrontend(AbstractUserFrontend):
     def create_past_event(self, rs: RequestState, courses: Optional[str],
                           data: CdEDBObject) -> Response:
         """Add new concluded event."""
-        data = check(rs, validationtypes.PastEvent, data, creation=True)
+        data = check(rs, vtypes.PastEvent, data, creation=True)
         thecourses: List[CdEDBObject] = []
         if courses:
             courselines = courses.split('\n')
@@ -2557,7 +2557,7 @@ class CdEFrontend(AbstractUserFrontend):
                 # later. The typechecker expects a str here.
                 assert pcourse is not None
                 pcourse['pevent_id'] = "1"
-                pcourse = check(rs, validationtypes.PastCourse, pcourse, creation=True)
+                pcourse = check(rs, vtypes.PastCourse, pcourse, creation=True)
                 if pcourse:
                     thecourses.append(pcourse)
                 else:
@@ -2603,7 +2603,7 @@ class CdEFrontend(AbstractUserFrontend):
                            pcourse_id: int, data: CdEDBObject) -> Response:
         """Modify a concluded course."""
         data['id'] = pcourse_id
-        data = check(rs, validationtypes.PastCourse, data)
+        data = check(rs, vtypes.PastCourse, data)
         if rs.has_validation_errors():
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
         assert data is not None
@@ -2623,7 +2623,7 @@ class CdEFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Add new concluded course."""
         data['pevent_id'] = pevent_id
-        data = check(rs, validationtypes.PastCourse, data, creation=True)
+        data = check(rs, vtypes.PastCourse, data, creation=True)
         if rs.has_validation_errors():
             return self.create_past_course_form(rs, pevent_id)
         assert data is not None

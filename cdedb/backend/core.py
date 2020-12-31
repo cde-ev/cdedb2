@@ -17,7 +17,7 @@ from passlib.hash import sha512_crypt
 from typing_extensions import Protocol
 
 import cdedb.database.constants as const
-import cdedb.validationtypes as validationtypes
+import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation_typed as affirm,
@@ -110,7 +110,7 @@ class CoreBackend(AbstractBackend):
                                 persona_id: int) -> bool:
         """Helper to retrieve a personas password hash and verify the password.
         """
-        persona_id = affirm(validationtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID, persona_id)
         password_hash = unwrap(self.sql_select_one(
             rs, "core.personas", ("password_hash",), persona_id))
         if password_hash is None:
@@ -488,7 +488,7 @@ class CoreBackend(AbstractBackend):
 
         :parameter generations: generations to retrieve, all if None
         """
-        persona_id = affirm(validationtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID, persona_id)
         if (persona_id != rs.user.persona_id
                 and not self.is_relative_admin(
                 rs, persona_id, allow_meta_admin=True)):
@@ -693,7 +693,7 @@ class CoreBackend(AbstractBackend):
         :param change_note: Descriptive line for changelog
         :param ignore_warnings: Ignore errors of type ValidationWarning.
         """
-        data = affirm(validationtypes.Persona, data, _ignore_warnings=ignore_warnings)
+        data = affirm(vtypes.Persona, data, _ignore_warnings=ignore_warnings)
         generation = affirm_optional(int, generation)
         may_wait = affirm(bool, may_wait)
         change_note = affirm_optional(str, change_note)
@@ -704,7 +704,7 @@ class CoreBackend(AbstractBackend):
     def change_persona_realms(self, rs: RequestState,
                               data: CdEDBObject) -> DefaultReturnCode:
         """Special modification function for realm transitions."""
-        data = affirm(validationtypes.Persona, data, transition=True)
+        data = affirm(vtypes.Persona, data, transition=True)
         with Atomizer(rs):
             if data.get('is_cde_realm'):
                 # Fix balance
@@ -731,8 +731,8 @@ class CoreBackend(AbstractBackend):
 
         Return 1 on successful change, -1 on successful removal, 0 otherwise.
         """
-        persona_id = affirm(validationtypes.ID, persona_id)
-        foto = affirm_optional(validationtypes.ProfilePicture, foto, file_storage=False)
+        persona_id = affirm(vtypes.ID, persona_id)
+        foto = affirm_optional(vtypes.ProfilePicture, foto, file_storage=False)
         data: CdEDBObject
         if foto is None:
             with Atomizer(rs):
@@ -794,7 +794,7 @@ class CoreBackend(AbstractBackend):
         """
         data['submitted_by'] = rs.user.persona_id
         data['status'] = const.PrivilegeChangeStati.pending
-        data = affirm(validationtypes.PrivilegeChange, data)
+        data = affirm(vtypes.PrivilegeChange, data)
 
         with Atomizer(rs):
             if ("is_meta_admin" in data
@@ -855,7 +855,7 @@ class CoreBackend(AbstractBackend):
         :returns: default return code. A negative return indicates, that the
             users password was invalidated and will need to be changed.
         """
-        privilege_change_id = affirm(validationtypes.ID, privilege_change_id)
+        privilege_change_id = affirm(vtypes.ID, privilege_change_id)
         case_status = affirm(const.PrivilegeChangeStati, case_status)
 
         data = {
@@ -895,7 +895,7 @@ class CoreBackend(AbstractBackend):
                     if case[key] is not None:
                         data[key] = case[key]
 
-                data = affirm(validationtypes.Persona, data)
+                data = affirm(vtypes.Persona, data)
                 note = ("Admin-Privilegien geändert."
                         if not case["notes"] else case["notes"])
                 ret *= self.set_persona(
@@ -940,7 +940,7 @@ class CoreBackend(AbstractBackend):
         :returns: dict mapping case ids to dicts containing information about
             the change
         """
-        persona_id = affirm_optional(validationtypes.ID, persona_id)
+        persona_id = affirm_optional(vtypes.ID, persona_id)
         stati = stati or set()
         stati = affirm_set("enum_privilegechangestati", stati)
 
@@ -1016,8 +1016,8 @@ class CoreBackend(AbstractBackend):
 
         :param trial_member: If not None, set trial membership to this.
         """
-        persona_id = affirm(validationtypes.ID, persona_id)
-        balance = affirm(validationtypes.NonNegativeDecimal, balance)
+        persona_id = affirm(vtypes.ID, persona_id)
+        balance = affirm(vtypes.NonNegativeDecimal, balance)
         log_code = affirm(const.FinanceLogCodes, log_code)
         trial_member = affirm_optional(bool, trial_member)
         change_note = affirm_optional(str, change_note)
@@ -1050,7 +1050,7 @@ class CoreBackend(AbstractBackend):
     def change_membership(self, rs: RequestState, persona_id: int,
                           is_member: bool) -> DefaultReturnCode:
         """Special modification function for membership."""
-        persona_id = affirm(validationtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm(bool, is_member)
         update: CdEDBObject = {
             'id': persona_id,
@@ -1092,7 +1092,7 @@ class CoreBackend(AbstractBackend):
         not previously had any, hence we allow backend access for all
         meta_admins.
         """
-        persona_id = affirm(validationtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID, persona_id)
 
         # modified version of hash for 'secret' and thus
         # safe/unknown plaintext
@@ -1138,7 +1138,7 @@ class CoreBackend(AbstractBackend):
         * events: to ensure consistency, events are only deleted en bloc
         * assemblies: these we keep to make the decisions traceable
         """
-        persona_id = affirm(validationtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID, persona_id)
         note = affirm(str, note)
         with Atomizer(rs):
             persona = unwrap(self.get_total_personas(rs, (persona_id,)))
@@ -1362,7 +1362,7 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        persona_id = affirm(validationtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
             update = {
                 'id': persona_id,
@@ -1391,7 +1391,7 @@ class CoreBackend(AbstractBackend):
         :returns: default return code
 
         """
-        persona_id = affirm(validationtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
             persona = unwrap(self.get_total_personas(rs, (persona_id,)))
             if not persona['is_archived']:
@@ -1450,8 +1450,8 @@ class CoreBackend(AbstractBackend):
         :returns: The bool signals whether the change was successful, the str
             is an error message or the new username on success.
         """
-        persona_id = affirm(validationtypes.ID, persona_id)
-        new_username = affirm_optional(validationtypes.Email, new_username)
+        persona_id = affirm(vtypes.ID, persona_id)
+        new_username = affirm_optional(vtypes.Email, new_username)
         password = affirm_optional(str, password)
         if new_username is None and not self.is_relative_admin(rs, persona_id):
             return False, n_("Only admins may unset an email address.")
@@ -1519,7 +1519,7 @@ class CoreBackend(AbstractBackend):
             to query for other participants of the same event by their ids.
         """
         persona_ids = affirm_set("id", persona_ids)
-        event_id = affirm_optional(validationtypes.ID, event_id)
+        event_id = affirm_optional(vtypes.ID, event_id)
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
         # The event user view on a cde user contains lots of personal
         # data. So we require the requesting user to be orga (to get access to
@@ -1609,7 +1609,7 @@ class CoreBackend(AbstractBackend):
             ids = affirm_set("id", ids or set())
             num = len(ids - {rs.user.persona_id})
         else:
-            num = affirm(validationtypes.NonNegativeInt, num or 0)
+            num = affirm(vtypes.NonNegativeInt, num or 0)
         query = ("INSERT INTO core.quota (queries, persona_id, qdate)"
                  " VALUES (%s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
                  " UPDATE SET queries = core.quota.queries + EXCLUDED.queries"
@@ -1712,9 +1712,9 @@ class CoreBackend(AbstractBackend):
         :param submitted_by: Allow to override the submitter for genesis.
         :returns: The id of the newly created persona.
         """
-        data = affirm(validationtypes.Persona, data,
+        data = affirm(vtypes.Persona, data,
             creation=True, _ignore_warnings=ignore_warnings)
-        submitted_by = affirm_optional(validationtypes.ID, submitted_by)
+        submitted_by = affirm_optional(vtypes.ID, submitted_by)
         # zap any admin attempts
         data.update({
             'is_meta_admin': False,
@@ -1773,9 +1773,9 @@ class CoreBackend(AbstractBackend):
 
         :returns: the session-key for the new session
         """
-        username = affirm(validationtypes.PrintableASCII, username)
+        username = affirm(vtypes.PrintableASCII, username)
         password = affirm(str, password)
-        ip = affirm(validationtypes.PrintableASCII, ip)
+        ip = affirm(vtypes.PrintableASCII, ip)
         # note the lower-casing for email addresses
         query = ("SELECT id, is_meta_admin, is_core_admin FROM core.personas"
                  " WHERE username = lower(%s) AND is_active = True")
@@ -1974,7 +1974,7 @@ class CoreBackend(AbstractBackend):
     def genesis_set_attachment(self, rs: RequestState, attachment: bytes
                                ) -> str:
         """Store a file for genesis usage. Returns the file hash."""
-        attachment = affirm(validationtypes.PDFFile, attachment, file_storage=False)
+        attachment = affirm(vtypes.PDFFile, attachment, file_storage=False)
         myhash = get_hash(attachment)
         path = self.genesis_attachment_dir / myhash
         if not path.exists():
@@ -2028,7 +2028,7 @@ class CoreBackend(AbstractBackend):
     @access("anonymous")
     def verify_existence(self, rs: RequestState, email: str) -> bool:
         """Check wether a certain email belongs to any persona."""
-        email = affirm(validationtypes.Email, email)
+        email = affirm(vtypes.Email, email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
         num1 = unwrap(self.query_one(rs, query, (email,))) or 0
         query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
@@ -2136,7 +2136,7 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        if not validate_is(validationtypes.PasswordStrength, new_password):
+        if not validate_is(vtypes.PasswordStrength, new_password):
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
@@ -2183,7 +2183,7 @@ class CoreBackend(AbstractBackend):
     def check_password_strength(
         self, rs: RequestState, password: str, *,
         email: str = None, persona_id: int = None, argname: str = None
-    ) -> Tuple[Optional[validationtypes.PasswordStrength], List[Error]]:
+    ) -> Tuple[Optional[vtypes.PasswordStrength], List[Error]]:
         """Check the password strength using some additional userdate.
 
         This escalates database connection privileges in the case of an
@@ -2191,7 +2191,7 @@ class CoreBackend(AbstractBackend):
         """
         password = affirm(str, password)
         email = affirm_optional(str, email)
-        persona_id = affirm_optional(validationtypes.ID, persona_id)
+        persona_id = affirm_optional(vtypes.ID, persona_id)
         argname = affirm_optional(str, argname)
 
         if email is None and persona_id is None:
@@ -2240,7 +2240,7 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate_check(validationtypes.PasswordStrength,
+        password, errs = validate_check(vtypes.PasswordStrength,
             password, argname=argname, admin=admin, inputs=inputs)
 
         return password, errs
@@ -2259,7 +2259,7 @@ class CoreBackend(AbstractBackend):
           either the reset cookie or an error message.
         """
         timeout = timeout or self.conf["PARAMETER_TIMEOUT"]
-        email = affirm(validationtypes.Email, email)
+        email = affirm(vtypes.Email, email)
         data = self.sql_select_one(rs, "core.personas", ("id", "is_active"),
                                    email, entity_key="username")
         if not data:
@@ -2279,7 +2279,7 @@ class CoreBackend(AbstractBackend):
 
         :returns: see :py:meth:`modify_password`
         """
-        email = affirm(validationtypes.Email, email)
+        email = affirm(vtypes.Email, email)
         new_password = affirm(str, new_password)
         cookie = affirm(str, cookie)
         data = self.sql_select_one(rs, "core.personas", ("id",), email,
@@ -2307,7 +2307,7 @@ class CoreBackend(AbstractBackend):
         :returns: id of the new request or None if the username is already
           taken
         """
-        data = affirm(validationtypes.GenesisCase, data,
+        data = affirm(vtypes.GenesisCase, data,
             creation=True, _ignore_warnings=ignore_warnings)
 
         if self.verify_existence(rs, data['username']):
@@ -2337,7 +2337,7 @@ class CoreBackend(AbstractBackend):
             are the ids of the blockers.
         """
 
-        case_id = affirm(validationtypes.ID, case_id)
+        case_id = affirm(vtypes.ID, case_id)
         blockers: DeletionBlockers = {}
 
         case = self.genesis_get_case(rs, case_id)
@@ -2357,7 +2357,7 @@ class CoreBackend(AbstractBackend):
                             ) -> DefaultReturnCode:
         """Remove a genesis case."""
 
-        case_id = affirm(validationtypes.ID, case_id)
+        case_id = affirm(vtypes.ID, case_id)
         blockers = self.delete_genesis_case_blockers(rs, case_id)
         if "unconfirmed" in blockers.keys():
             raise ValueError(n_("Unable to remove unconfirmed genesis case "
@@ -2426,7 +2426,7 @@ class CoreBackend(AbstractBackend):
             A zero return code means the case was not found or another error
             occured.
         """
-        case_id = affirm(validationtypes.ID, case_id)
+        case_id = affirm(vtypes.ID, case_id)
         with Atomizer(rs):
             data = self.sql_select_one(
                 rs, "core.genesis_cases", ("realm", "username", "case_status"),
@@ -2508,7 +2508,7 @@ class CoreBackend(AbstractBackend):
 
         :param ignore_warnings: Ignore errors with kind ValidationWarning
         """
-        data = affirm(validationtypes.GenesisCase, data,
+        data = affirm(vtypes.GenesisCase, data,
             _ignore_warnings=ignore_warnings)
 
         with Atomizer(rs):
@@ -2545,7 +2545,7 @@ class CoreBackend(AbstractBackend):
         This is the final step in the genesis process and actually creates
         the account.
         """
-        case_id = affirm(validationtypes.ID, case_id)
+        case_id = affirm(vtypes.ID, case_id)
         with Atomizer(rs):
             case = unwrap(self.genesis_get_cases(rs, (case_id,)))
             data = {k: v for k, v in case.items()
@@ -2554,7 +2554,7 @@ class CoreBackend(AbstractBackend):
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(GENESIS_REALM_OVERRIDE[case['realm']])
-            data = affirm(validationtypes.Persona, data,
+            data = affirm(vtypes.Persona, data,
                 creation=True, _ignore_warnings=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
@@ -2582,7 +2582,7 @@ class CoreBackend(AbstractBackend):
 
         :returns: A dict of possibly matching account data.
         """
-        persona = affirm(validationtypes.Persona, persona)
+        persona = affirm(vtypes.Persona, persona)
         scores: Dict[int, int] = collections.defaultdict(lambda: 0)
         queries: List[Tuple[int, str, Tuple[Any, ...]]] = [
             (10, "given_names = %s OR display_name = %s",
@@ -2632,7 +2632,7 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             meta_info = self.get_meta_info(rs)
             # Late validation since we need to know the keys
-            data = affirm(validationtypes.MetaInfo, data, keys=meta_info.keys())
+            data = affirm(vtypes.MetaInfo, data, keys=meta_info.keys())
             meta_info.update(data)
             query = "UPDATE core.meta_info SET info = %s"
             return self.query_exec(rs, query, (PsycoJson(meta_info),))

@@ -18,7 +18,7 @@ import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.database.constants as const
-import cdedb.validationtypes as validationtypes
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
     REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
@@ -203,7 +203,7 @@ class CoreFrontend(AbstractFrontend):
         info = self.coreproxy.get_meta_info(rs)
         data_params = tuple((key, "str_or_None") for key in info)
         data = request_extractor(rs, data_params)
-        data = check(rs, validationtypes.MetaInfo, data, keys=info.keys())
+        data = check(rs, vtypes.MetaInfo, data, keys=info.keys())
         if rs.has_validation_errors():
             return self.meta_info_form(rs)
         assert data is not None
@@ -630,12 +630,12 @@ class CoreFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        anid, errs = validate_check(validationtypes.CdedbID, phrase, argname="phrase")
+        anid, errs = validate_check(vtypes.CdedbID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
-        anid, errs = validate_check(validationtypes.ID, phrase, argname="phrase")
+        anid, errs = validate_check(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
@@ -778,9 +778,9 @@ class CoreFrontend(AbstractFrontend):
 
         # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
-            anid: Optional[validationtypes.ID]
+            anid: Optional[vtypes.ID]
             anid, errs = validate_check(
-                validationtypes.CdedbID, phrase, argname="phrase")
+                vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
                 assert anid is not None
                 tmp = self.coreproxy.get_personas(rs, (anid,))
@@ -788,7 +788,7 @@ class CoreFrontend(AbstractFrontend):
                     data = (unwrap(tmp),)
             else:
                 anid, errs = validate_check(
-                    validationtypes.ID, phrase, argname="phrase")
+                    vtypes.ID, phrase, argname="phrase")
                 if not errs:
                     assert anid is not None
                     tmp = self.coreproxy.get_personas(rs, (anid,))
@@ -804,7 +804,7 @@ class CoreFrontend(AbstractFrontend):
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             valid = True
             for t in terms:
-                _, errs = validate_check(validationtypes.NonRegex, t, argname="phrase")
+                _, errs = validate_check(vtypes.NonRegex, t, argname="phrase")
                 if errs:
                     valid = False
             if not valid:
@@ -896,7 +896,7 @@ class CoreFrontend(AbstractFrontend):
         attributes = get_persona_fields_by_realm(rs.user.roles, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
-        data = check(rs, validationtypes.Persona, data, "persona",
+        data = check(rs, vtypes.Persona, data, "persona",
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.change_user_form(rs)
@@ -927,11 +927,11 @@ class CoreFrontend(AbstractFrontend):
         """
         spec = copy.deepcopy(QUERY_SPECS['qview_core_user'])
         if query:
-            query = check(rs, validationtypes.Query, query, "query")
+            query = check(rs, vtypes.Query, query, "query")
         elif is_search:
             # mangle the input, so we can prefill the form
             query_input = mangle_query_input(rs, spec)
-            query = check(rs, validationtypes.QueryInput,
+            query = check(rs, vtypes.QueryInput,
                 query_input, "query", spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
@@ -987,7 +987,7 @@ class CoreFrontend(AbstractFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = check(rs, validationtypes.QueryInput,
+            query = check(rs, vtypes.QueryInput,
                 query_input, "query", spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
@@ -1071,7 +1071,7 @@ class CoreFrontend(AbstractFrontend):
         attributes = get_persona_fields_by_realm(roles, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
-        data = check(rs, validationtypes.Persona, data, _ignore_warnings=ignore_warnings)
+        data = check(rs, vtypes.Persona, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
         assert data is not None
@@ -1401,7 +1401,7 @@ class CoreFrontend(AbstractFrontend):
         data['is_{}_realm'.format(target_realm)] = True
         for realm in implied_realms(target_realm):
             data['is_{}_realm'.format(realm)] = True
-        data = check(rs, validationtypes.Persona, data, transition=True)
+        data = check(rs, vtypes.Persona, data, transition=True)
         if rs.has_validation_errors():
             return self.promote_user_form(  # type: ignore
                 rs, persona_id, internal=True)
@@ -1545,7 +1545,7 @@ class CoreFrontend(AbstractFrontend):
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        foto = check_optional(rs, validationtypes.ProfilePicture, foto, "foto")
+        foto = check_optional(rs, vtypes.ProfilePicture, foto, "foto")
         if not foto and not delete:
             rs.append_validation_error(
                 ("foto", ValueError("Must not be empty.")))
@@ -1947,7 +1947,7 @@ class CoreFrontend(AbstractFrontend):
         if attachment:
             attachment_filename = attachment.filename
             attachment_data = check(
-                rs, validationtypes.PDFFile, attachment, 'attachment')
+                rs, vtypes.PDFFile, attachment, 'attachment')
         attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
         if attachment_data:
             myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
@@ -1965,7 +1965,7 @@ class CoreFrontend(AbstractFrontend):
                 rs.append_validation_error(e)
             else:
                 data['attachment'] = attachment_hash
-        data = check(rs, validationtypes.GenesisCase, data, creation=True,
+        data = check(rs, vtypes.GenesisCase, data, creation=True,
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
@@ -2196,7 +2196,7 @@ class CoreFrontend(AbstractFrontend):
         """Edit a case to fix potential issues before creation."""
         data['id'] = genesis_case_id
         data = check(
-            rs, validationtypes.GenesisCase, data, _ignore_warnings=ignore_warnings)
+            rs, vtypes.GenesisCase, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None

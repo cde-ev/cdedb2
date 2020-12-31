@@ -13,7 +13,7 @@ from typing import Any, Collection, Dict, List, Optional, Tuple
 from typing_extensions import Protocol
 
 import cdedb.database.constants as const
-import cdedb.validationtypes as validationtypes
+import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation_typed as affirm,
@@ -147,7 +147,7 @@ class CdEBackend(AbstractBackend):
     def set_lastschrift(self, rs: RequestState,
                         data: CdEDBObject) -> DefaultReturnCode:
         """Modify a direct debit permit."""
-        data = affirm(validationtypes.Lastschrift, data)
+        data = affirm(vtypes.Lastschrift, data)
         with Atomizer(rs):
             # First check whether we revoke a lastschrift
             log_code = const.FinanceLogCodes.modify_lastschrift
@@ -167,7 +167,7 @@ class CdEBackend(AbstractBackend):
     def create_lastschrift(self, rs: RequestState,
                            data: CdEDBObject) -> DefaultReturnCode:
         """Make a new direct debit permit."""
-        data = affirm(validationtypes.Lastschrift, data, creation=True)
+        data = affirm(vtypes.Lastschrift, data, creation=True)
         data['submitted_by'] = rs.user.persona_id
         with Atomizer(rs):
             if self.list_lastschrift(rs, persona_ids=(data['persona_id'],),
@@ -190,7 +190,7 @@ class CdEBackend(AbstractBackend):
         * 'active_transactions': Cannot delete a lastschrift that still has
             open transactions.
         """
-        lastschrift_id = affirm(validationtypes.ID, lastschrift_id)
+        lastschrift_id = affirm(vtypes.ID, lastschrift_id)
         blockers: CdEDBObject = {}
 
         with Atomizer(rs):
@@ -228,7 +228,7 @@ class CdEBackend(AbstractBackend):
         Only possible after the lastschrift has been revoked for at least 18
         months.
         """
-        lastschrift_id = affirm(validationtypes.ID, lastschrift_id)
+        lastschrift_id = affirm(vtypes.ID, lastschrift_id)
         cascade = affirm_set("str", cascade or [])
 
         ret = 1
@@ -341,7 +341,7 @@ class CdEBackend(AbstractBackend):
         :returns: The id of the new transaction.
         """
         stati = const.LastschriftTransactionStati
-        data = affirm(validationtypes.LastschriftTransaction, data, creation=True)
+        data = affirm(vtypes.LastschriftTransaction, data, creation=True)
         with Atomizer(rs):
             lastschrift = unwrap(self.get_lastschrifts(
                 rs, (data['lastschrift_id'],)))
@@ -388,7 +388,7 @@ class CdEBackend(AbstractBackend):
           success the balance of the persona is increased by the yearly
           membership fee.
         """
-        transaction_id = affirm(validationtypes.ID, transaction_id)
+        transaction_id = affirm(vtypes.ID, transaction_id)
         status = affirm(const.LastschriftTransactionStati, status)
         if not status.is_finalized():
             raise RuntimeError(n_("Non-final target state."))
@@ -462,7 +462,7 @@ class CdEBackend(AbstractBackend):
 
         :param tally: The fee incurred by the revokation.
         """
-        transaction_id = affirm(validationtypes.ID, transaction_id)
+        transaction_id = affirm(vtypes.ID, transaction_id)
         tally = affirm(decimal.Decimal, tally)
         stati = const.LastschriftTransactionStati
         with Atomizer(rs):
@@ -528,7 +528,7 @@ class CdEBackend(AbstractBackend):
         long, since the permit is invalidated if it stays unused for
         three years.
         """
-        lastschrift_id = affirm(validationtypes.ID, lastschrift_id)
+        lastschrift_id = affirm(vtypes.ID, lastschrift_id)
         with Atomizer(rs):
             lastschrift = unwrap(self.get_lastschrifts(rs, (lastschrift_id,)))
             if not self.lastschrift_may_skip(rs, lastschrift):
@@ -601,7 +601,7 @@ class CdEBackend(AbstractBackend):
     @access("cde")
     def get_period(self, rs: RequestState, period_id: int) -> CdEDBObject:
         """Get data for a semester."""
-        period_id = affirm(validationtypes.ID, period_id)
+        period_id = affirm(vtypes.ID, period_id)
         ret = self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS,
                                   period_id)
         if not ret:
@@ -614,7 +614,7 @@ class CdEBackend(AbstractBackend):
     def set_period(self, rs: RequestState,
                    period: CdEDBObject) -> DefaultReturnCode:
         """Set data for the current semester."""
-        period = affirm(validationtypes.Period, period)
+        period = affirm(vtypes.Period, period)
         with Atomizer(rs):
             current_id = self.current_period(rs)
             if period['id'] != current_id:
@@ -748,7 +748,7 @@ class CdEBackend(AbstractBackend):
     @access("cde")
     def get_expuls(self, rs: RequestState, expuls_id: int) -> CdEDBObject:
         """Get data for the an expuls."""
-        expuls_id = affirm(validationtypes.ID, expuls_id)
+        expuls_id = affirm(vtypes.ID, expuls_id)
         ret = self.sql_select_one(rs, "cde.expuls_period",
                                   EXPULS_PERIOD_FIELDS, expuls_id)
         if not ret:
@@ -759,7 +759,7 @@ class CdEBackend(AbstractBackend):
     def set_expuls(self, rs: RequestState,
                    expuls: CdEDBObject) -> DefaultReturnCode:
         """Set data for the an expuls."""
-        expuls = affirm(validationtypes.ExPuls, expuls)
+        expuls = affirm(vtypes.ExPuls, expuls)
         with Atomizer(rs):
             current_id = self.current_expuls(rs)
             if expuls['id'] != current_id:
