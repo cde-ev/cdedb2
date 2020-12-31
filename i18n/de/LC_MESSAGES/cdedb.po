@@ -13650,26 +13650,6 @@ msgstr "Nur Text-E-Mails mit PDF-Anhängen erlaubt"
 msgid "AttachmentPolicy.forbid"
 msgstr "Nur Text-E-Mails ohne Anhänge erlaubt"
 
-#: cdedb/i18n_additional.py:42
-msgid "AudiencePolicy.everybody"
-msgstr "Alle"
-
-#: cdedb/i18n_additional.py:43
-msgid "AudiencePolicy.require_assembly"
-msgstr "Nur Versammlungsnutzer"
-
-#: cdedb/i18n_additional.py:44
-msgid "AudiencePolicy.require_cde"
-msgstr "Nur CdE-Nutzer"
-
-#: cdedb/i18n_additional.py:45
-msgid "AudiencePolicy.require_event"
-msgstr "Nur Veranstaltungsnutzer"
-
-#: cdedb/i18n_additional.py:46
-msgid "AudiencePolicy.require_member"
-msgstr "Nur CdE-Mitglieder"
-
 #: cdedb/i18n_additional.py:48
 msgid "CdeLogCodes.semester_bill"
 msgstr "Zahlungsaufforderung versendet"

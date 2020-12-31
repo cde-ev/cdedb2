@@ -26,7 +26,6 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.MailinglistInteractionPolicy,
     const.ModerationPolicy,
     const.AttachmentPolicy,
-    const.AudiencePolicy,
     const.LastschriftTransactionStati,
     const.CoreLogCodes,
     const.CdeLogCodes,

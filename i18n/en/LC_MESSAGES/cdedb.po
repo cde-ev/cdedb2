@@ -12955,26 +12955,6 @@ msgstr "Only plain text emails with PDF files allowed"
 msgid "AttachmentPolicy.forbid"
 msgstr "Only plain text emails without attachments allowed"
 
-#: cdedb/i18n_additional.py:42
-msgid "AudiencePolicy.everybody"
-msgstr "Everybody"
-
-#: cdedb/i18n_additional.py:43
-msgid "AudiencePolicy.require_assembly"
-msgstr "Assembly-Users only"
-
-#: cdedb/i18n_additional.py:44
-msgid "AudiencePolicy.require_cde"
-msgstr "CdE-Users only"
-
-#: cdedb/i18n_additional.py:45
-msgid "AudiencePolicy.require_event"
-msgstr "Event-Users only"
-
-#: cdedb/i18n_additional.py:46
-msgid "AudiencePolicy.require_member"
-msgstr "CdE-Members only"
-
 #: cdedb/i18n_additional.py:48
 msgid "CdeLogCodes.semester_bill"
 msgstr "Payment request sent"

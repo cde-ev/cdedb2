@@ -39,12 +39,6 @@ I18N_STRINGS = (
     n_("AttachmentPolicy.pdf_only"),
     n_("AttachmentPolicy.forbid"),
 
-    n_("AudiencePolicy.everybody"),
-    n_("AudiencePolicy.require_assembly"),
-    n_("AudiencePolicy.require_cde"),
-    n_("AudiencePolicy.require_event"),
-    n_("AudiencePolicy.require_member"),
-
     n_("CdeLogCodes.semester_bill"),
     n_("CdeLogCodes.semester_bill_with_addresscheck"),
     n_("CdeLogCodes.semester_ejection"),
