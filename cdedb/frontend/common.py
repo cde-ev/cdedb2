@@ -44,6 +44,7 @@ import babel.numbers
 import bleach
 import jinja2
 import mailmanclient
+import urllib.error
 
 import werkzeug
 import werkzeug.datastructures
@@ -936,12 +937,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = make_proxy(EventBackend(configpath))
         self.mlproxy = make_proxy(MlBackend(configpath))
         self.pasteventproxy = make_proxy(PastEventBackend(configpath))
-        # There are multiple frontends which require mailman access
-        secrets = SecretsConfig(configpath)
-        self.mailman_create_client = lambda url, user: mailmanclient.Client(
-            url, user, secrets["MAILMAN_PASSWORD"])
-        self.mailman_template_password = (
-            lambda: secrets["MAILMAN_BASIC_AUTH_PASSWORD"])
 
     @classmethod
     @abc.abstractmethod
@@ -1614,13 +1609,32 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 return None
 
-    def mailman_connect(self) -> mailmanclient.Client:
-        """Create a Mailman REST client."""
-        url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
-        return self.mailman_create_client(url, self.conf["MAILMAN_USER"])
 
-    def mailman_get_held_messages(self, dblist: CdEDBObject
-                                  ) -> Union[List[mailmanclient.restobjects.held_message.HeldMessage],None]:
+class CdEMailmanClient(mailmanclient.Client):
+    def __init__(self, conf: Config, logger: logging.Logger):
+        # Replaces mailman_connect.
+        # We just instantiate this class whenever needed.
+        self.logger = logger
+        self.conf = conf
+        secrets = SecretsConfig(conf._configpath)
+        url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
+        super().__init__(url, self.conf["MAILMAN_USER"], secrets["MAILMAN_PASSWORD"])
+
+    def get_list_safe(self, address: str):
+        """Return list with standard error handling.
+
+        In contrast to the original function, this does not raise if no list has been
+        found, but returns None instead."""
+        try:
+            return self.get_list(address)
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+            else:
+                return None
+
+    def get_held_messages(self, dblist: CdEDBObject) -> Union[
+        List[mailmanclient.restobjects.held_message.HeldMessage], None]:
         """Returns all held messages for mailman lists.
 
         If the list is not managed by mailman, this function returns None instead.
@@ -1628,14 +1642,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
-                if dblist['domain'] in {const.MailinglistDomain.testmail}:
+                if dblist['domain'] in const.MailinglistDomain.mailman_domains():
                     return HELD_MESSAGE_SAMPLE
                 else:
                     return None
-        elif dblist['domain'] in {const.MailinglistDomain.testmail}:
-            mailman = self.mailman_connect()
-            mmlist = mailman.get_list(dblist['address'])
-            return mmlist.held or []
+        elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
+            mmlist = self.get_list(dblist['address'])
+            return mmlist.held if mmlist else None
         else:
             return None
 

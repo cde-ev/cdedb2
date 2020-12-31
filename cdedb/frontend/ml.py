@@ -7,7 +7,8 @@ from werkzeug import Response
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, n_
-from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard
+from cdedb.frontend.common import (
+    REQUESTdata, CdEMailmanClient, access, mailinglist_guard)
 from cdedb.frontend.ml_base import MlBaseFrontend
 from cdedb.frontend.ml_mailman import MailmanMixin
 from cdedb.frontend.ml_rklists import RKListsMixin
@@ -19,7 +20,8 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
     def message_moderation_form(self, rs: RequestState, mailinglist_id: int
                                 ) -> Response:
         """Render form."""
-        held = self.mailman_get_held_messages(rs.ambience['mailinglist'])
+        held = (CdEMailmanClient(self.conf, self.logger)
+                .get_held_messages(rs.ambience['mailinglist']))
         return self.render(rs, "message_moderation", {'held': held})
 
     @access("ml", modi={"POST"})
@@ -44,7 +46,7 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.info("Skipping mailman request in dev/offline mode.")
         elif dblist['domain'] in {const.MailinglistDomain.testmail}:
-            mailman = self.mailman_connect()
+            mailman = CdEMailmanClient(self.conf, self.logger)
             mmlist = mailman.get_list(dblist['address'])
             try:
                 held = mmlist.get_held_message(request_id)

@@ -208,6 +208,10 @@ class MailinglistDomain(enum.IntEnum):
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
 
+    @classmethod
+    def mailman_domains(cls) -> Set['MailinglistDomain']:
+        return {MailinglistDomain.testmail}
+
 
 # Instead of importing this, call str() on a MailinglistDomain.
 _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {

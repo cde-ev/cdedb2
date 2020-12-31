@@ -21,8 +21,8 @@ from typing import (
 )
 
 from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
-    check_validation as check, request_extractor, REQUESTfile,
+    AbstractFrontend, REQUESTdata, REQUESTdatadict, CdEMailmanClient, access,
+    basic_redirect, check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, querytoparams_filter,
     csv_output, query_result_to_json, enum_entries_filter, periodic,
     calculate_db_logparams, calculate_loglinks, make_membership_fee_reference,
@@ -145,7 +145,8 @@ class CoreFrontend(AbstractFrontend):
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, mailinglist_id, states=(sub_request,))
-                    held_mails = self.mailman_get_held_messages(mailinglist)
+                    held_mails = (CdEMailmanClient(self.conf, self.logger)
+                                  .get_held_messages(mailinglist))
                     mailinglist['requests'] = len(requests)
                     mailinglist['held_mails'] = len(held_mails or [])
                 dashboard['moderator'] = {k: v for k, v in moderator.items()

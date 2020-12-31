@@ -7,15 +7,13 @@ from datetime import datetime
 import collections
 from typing import Dict, Any, Optional, Collection, cast
 
-import mailmanclient
 import werkzeug
 from werkzeug import Response
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
-    check_validation as check, mailinglist_guard,
-    cdedbid_filter as cdedbid, keydictsort_filter,
-    calculate_db_logparams, calculate_loglinks)
+    REQUESTdata, REQUESTdatadict, CdEMailmanClient, access, csv_output, periodic,
+    check_validation as check, mailinglist_guard, cdedbid_filter as cdedbid,
+    keydictsort_filter, calculate_db_logparams, calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query
 from cdedb.common import (
@@ -24,7 +22,6 @@ from cdedb.common import (
     MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS,
     PrivilegeError)
 import cdedb.database.constants as const
-from cdedb.config import SecretsConfig
 
 from cdedb.ml_type_aux import (
     MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type)
@@ -166,7 +163,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs, mailinglist_ids=mailinglists, states=sub_states)
         for ml_id in mailinglists:
             mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
-            held_mails = self.mailman_get_held_messages(mailinglist_infos[ml_id])
+            held_mails = (CdEMailmanClient(self.conf, self.logger)
+                          .get_held_messages(mailinglist_infos[ml_id]))
             if held_mails is None:
                 mailinglist_infos[ml_id]['held_mails'] = None
             else:
