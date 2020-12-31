@@ -42,5 +42,5 @@ they are then extracted. This applies especially to human-readable descriptions 
 enum members.
 
 Some english words have multiple (semantically different) meanings, which may
-corresponde to different words in other languages. Our approach to handle such
+correspond to different words in other languages. Our approach to handle such
 homonyms is described in the Design section :doc:`Design_Internationalisation`.
