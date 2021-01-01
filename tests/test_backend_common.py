@@ -10,7 +10,7 @@ _BASICCONF = BasicConfig()
 
 
 class TestBackendCommon(unittest.TestCase):
-    def test_make_proxy(self):
+    def test_make_proxy(self) -> None:
         backend = CoreBackend()
         proxy = make_proxy(backend)
         self.assertTrue(callable(proxy.get_persona))

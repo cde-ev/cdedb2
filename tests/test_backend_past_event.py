@@ -7,7 +7,7 @@ import decimal
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import PERSONA_EVENT_FIELDS, xsorted
+from cdedb.common import CdEDBObject, PERSONA_EVENT_FIELDS, xsorted
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
 from tests.common import USER_DICT, BackendTest, as_users, nearly_now
 
@@ -16,7 +16,7 @@ class TestPastEventBackend(BackendTest):
     used_backends = ("core", "event", "pastevent")
 
     @as_users("vera", "berta")
-    def test_participation_infos(self, user):
+    def test_participation_infos(self, user: CdEDBObject) -> None:
         participation_infos = self.pastevent.participation_infos(self.key, (1, 2))
         expectation = {
             1: dict(),
@@ -40,7 +40,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(participation_infos[1], participation_info)
 
     @as_users("vera")
-    def test_entity_past_event(self, user):
+    def test_entity_past_event(self, user: CdEDBObject) -> None:
         old_events = self.pastevent.list_past_events(self.key)
         data = {
             'title': "New Link Academy",
@@ -66,21 +66,21 @@ class TestPastEventBackend(BackendTest):
         self.assertIn(new_id, new_events)
 
     @as_users("vera")
-    def test_delete_past_course_cascade(self, user):
+    def test_delete_past_course_cascade(self, user: CdEDBObject) -> None:
         self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
         self.pastevent.delete_past_course(
             self.key, 1, cascade=("participants",))
         self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
 
     @as_users("vera")
-    def test_delete_past_event_cascade(self, user):
+    def test_delete_past_event_cascade(self, user: CdEDBObject) -> None:
         self.assertIn(1, self.pastevent.list_past_events(self.key))
         self.pastevent.delete_past_event(
             self.key, 1, cascade=("courses", "participants", "log"))
         self.assertNotIn(1, self.pastevent.list_past_events(self.key))
 
     @as_users("vera")
-    def test_entity_past_course(self, user):
+    def test_entity_past_course(self, user: CdEDBObject) -> None:
         pevent_id = 1
         old_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         data = {
@@ -108,7 +108,7 @@ class TestPastEventBackend(BackendTest):
         self.assertNotIn(new_id, newer_courses)
 
     @as_users("vera")
-    def test_entity_participant(self, user):
+    def test_entity_participant(self, user: CdEDBObject) -> None:
         expectation = {(2, 1): {'pcourse_id': 1, 'is_instructor': True,
                                 'is_orga': False, 'persona_id': 2},
                        (3, None): {'pcourse_id': None, 'is_instructor': False,
@@ -148,7 +148,7 @@ class TestPastEventBackend(BackendTest):
                          self.pastevent.list_participants(self.key, pevent_id=1))
 
     @as_users("vera")
-    def test_past_log(self, user):
+    def test_past_log(self, user: CdEDBObject) -> None:
         ## first generate some data
         data = {
             'title': "New Link Academy",
@@ -231,7 +231,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation, self.pastevent.retrieve_past_log(self.key))
 
     @as_users("anton")
-    def test_archive(self, user):
+    def test_archive(self, user: CdEDBObject) -> None:
         update = {
             'id': 1,
             'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0, tzinfo=pytz.utc),
@@ -253,6 +253,7 @@ class TestPastEventBackend(BackendTest):
         }
         self.event.set_event(self.key, update)
         new_ids, _ = self.pastevent.archive_event(self.key, 1)
+        assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = xsorted(
             (self.pastevent.get_past_event(self.key, new_id)
@@ -285,9 +286,8 @@ class TestPastEventBackend(BackendTest):
             'tempus': datetime.date(2003, 11, 11),
             'notes': None, }
         self.assertEqual(expectation, pevent_data[2])
-        expectation = set()
         self.assertEqual(
-            expectation,
+            set(),
             set(self.pastevent.list_past_courses(
                 self.key, pevent_data[0]['id']).values()))
         expectation = {'Lustigsein für Fortgeschrittene'}

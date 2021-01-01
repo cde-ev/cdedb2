@@ -13,7 +13,7 @@ from tests.common import FrontendTest
 
 
 class TestOffline(FrontendTest):
-    def test_offline_vm(self):
+    def test_offline_vm(self) -> None:
         base = pathlib.Path(__file__).parent.parent
         user = {
             'username': "garcia@example.cde",
@@ -39,10 +39,8 @@ class TestOffline(FrontendTest):
             except AttributeError:
                 pass
             new_app = Application()
-            self.app = webtest.TestApp(new_app, extra_environ={
-                'REMOTE_ADDR': "127.0.0.0",
-                'SERVER_PROTOCOL': "HTTP/1.1",
-                'wsgi.url_scheme': 'https'})
+            self.app = webtest.TestApp(  # type: ignore
+                new_app, extra_environ=self.app_extra_environ)
             self.app.reset()
             self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME,
                                 ",".join(ALL_ADMIN_VIEWS))
@@ -104,8 +102,7 @@ class TestOffline(FrontendTest):
             # be split out.
         finally:
             if config_backup.exists():
-                shutil.move(
-                    config_backup, existing_config)
+                shutil.move(str(config_backup), existing_config)
             else:
                 subprocess.run(
                     ["cp", "related/auto-build/files/stage3/localconfig.py",

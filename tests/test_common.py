@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from typing import Dict, List, Optional, Tuple
 
 import pytz
 
@@ -16,20 +17,20 @@ from cdedb.common import (
     extract_roles, int_to_words, mixed_existence_sorter, schulze_evaluate, unwrap,
     xsorted,
 )
-from tests.common import BasicTest
+from tests.common import ANONYMOUS, BasicTest
 
 
 class TestCommon(BasicTest):
-    def test_mixed_existence_sorter(self):
+    def test_mixed_existence_sorter(self) -> None:
         unsorted = [3, 8, -3, 5, 0, -4]
         self.assertEqual(list(mixed_existence_sorter(unsorted)),
                          [0, 3, 5, 8, -3, -4])
         self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))
 
-    def test_extract_roles(self):
+    def test_extract_roles(self) -> None:
         self.assertEqual({
             "anonymous", "persona", "cde", "member", "searchable",
-            "ml", "assembly", "event",},
+            "ml", "assembly", "event", },
             extract_roles({
                 'is_active': True,
                 'is_cde_realm': True,
@@ -40,13 +41,15 @@ class TestCommon(BasicTest):
                 'is_searchable': True,
                 }))
 
-    def test_schulze_ordinary(self):
+    def test_schulze_ordinary(self) -> None:
         bar = '0'
-        def _ordinary_votes(spec, candidates):
+
+        def _ordinary_votes(spec: Dict[Optional[Tuple[str, ...]], int],
+                            candidates: Tuple[str, ...]) -> List[str]:
             votes = []
             for winners, number in spec.items():
                 if winners is None:
-                    ## abstention
+                    # abstention
                     vote = '='.join(candidates + (bar,))
                 elif not winners:
                     vote = bar + '>' + '='.join(candidates)
@@ -56,7 +59,7 @@ class TestCommon(BasicTest):
                 votes += [vote] * number
             return votes
         candidates = (bar, '1', '2', '3', '4', '5')
-        tests = (
+        tests: Tuple[Tuple[str, Dict[Optional[Tuple[str, ...]], int]], ...] = (
             ("0=1>2>3>4=5", {('1',): 3, ('2',): 2, ('3',): 1, ('4',): 0,
                              ('5',): 0, tuple(): 0, None: 0}),
             ("0>1>5>3>4>2", {('1',): 9, ('2',): 0, ('3',): 2, ('4',): 1,
@@ -72,23 +75,23 @@ class TestCommon(BasicTest):
                     _ordinary_votes(spec, candidates), candidates)
                 self.assertEqual(expectation, condensed)
 
-    def test_schulze(self):
+    def test_schulze(self) -> None:
         candidates = ('0', '1', '2', '3', '4')
-        ## this base set is designed to have a nearly homogeneous
-        ## distribution (meaning all things are preferred by at most one
-        ## vote)
+        # this base set is designed to have a nearly homogeneous
+        # distribution (meaning all things are preferred by at most one
+        # vote)
         base = ("0>1>2>3>4",
                 "4>3>2>1>0",
                 "4=0>1=3>2",
                 "3>0>2=4>1",
                 "1>2=3>4=0",
                 "2>1>4>0>3")
-        ## the advanced set causes an even more perfect equilibrium
+        # the advanced set causes an even more perfect equilibrium
         advanced = ("4>2>3>1=0",
                     "0>1=3>2=4",
                     "1=2>0=3=4",
                     "0=3=4>1=2")
-        tests = (
+        tests: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
             ("0=1>3>2>4", tuple()),
             ("2=4>3>0>1", ("4>2>3>0>1",)),
             ("2=4>1=3>0", ("4>2>3>1=0",)),
@@ -117,10 +120,10 @@ class TestCommon(BasicTest):
                 condensed, detailed = schulze_evaluate(base+addons, candidates)
                 self.assertEqual(expectation, condensed)
 
-    def test_schulze_runtime(self):
-        ## silly test, since I just realized, that the algorithm runtime is
-        ## linear in the number of votes, but a bit more scary in the number
-        ## of candidates
+    def test_schulze_runtime(self) -> None:
+        # silly test, since I just realized, that the algorithm runtime is
+        # linear in the number of votes, but a bit more scary in the number
+        # of candidates
         candidates = ('0', '1', '2', '3', '4')
         votes = []
         for _ in range(2000):
@@ -141,7 +144,7 @@ class TestCommon(BasicTest):
         for num, delta in times.items():
             self.assertGreater(num*reference, delta)
 
-    def test_number_to_words(self):
+    def test_number_to_words(self) -> None:
         cases = {
             0: "null",
             1: "ein",
@@ -192,7 +195,7 @@ class TestCommon(BasicTest):
             with self.subTest(case=case):
                 self.assertEqual(cases[case], int_to_words(case, "de"))
 
-    def test_collation(self):
+    def test_collation(self) -> None:
         # Test correct plain string sorting
         names = [
             "",
@@ -233,10 +236,14 @@ class TestCommon(BasicTest):
             }
         ]
         shuffled_dicts = random.sample(dicts, len(dicts))
-        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['string']))
-        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['id'], reverse=True))
-        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['neg'], reverse=False))
-        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: str(x['neg']), reverse=True))
+        self.assertEqual(
+            dicts, xsorted(shuffled_dicts, key=lambda x: x['string']))
+        self.assertEqual(
+            dicts, xsorted(shuffled_dicts, key=lambda x: x['id'], reverse=True))
+        self.assertEqual(
+            dicts, xsorted(shuffled_dicts, key=lambda x: x['neg'], reverse=False))
+        self.assertEqual(
+            dicts, xsorted(shuffled_dicts, key=lambda x: str(x['neg']), reverse=True))
 
         # Test correct sorting of tuples, which would be sorted differently as string
         tuples = [
@@ -246,7 +253,7 @@ class TestCommon(BasicTest):
         self.assertEqual(list(reversed(tuples)), xsorted(tuples))
         self.assertEqual(tuples, xsorted(tuples, key=lambda x: str(x)))
 
-    def test_unwrap(self):
+    def test_unwrap(self) -> None:
         self.assertIsInstance(unwrap([1]), int)
         self.assertIsInstance(unwrap((1.0,)), float)
         self.assertIsInstance(unwrap({"a"}), str)
@@ -256,21 +263,22 @@ class TestCommon(BasicTest):
         self.assertIsInstance(unwrap(unwrap({1: {"a": 1.0}})), float)
 
         for item in ("a", b"b"):
-            with self.assertRaises(TypeError) as cm:
+            assert  isinstance(item, (str, bytes))
+            with self.assertRaises(TypeError) as cmt:
                 unwrap(item)
-            self.assertIn("Cannot unwrap str or bytes.", cm.exception.args[0])
+            self.assertIn("Cannot unwrap str or bytes.", cmt.exception.args[0])
         for col in ([1, 1.0], (1, "a"), {1.0, "a"}, {1: 1.0, "a": b"b"}):
-            with self.assertRaises(ValueError) as cm:
+            with self.assertRaises(ValueError) as cmv:
                 unwrap(col)
             self.assertIn("Can only unwrap collections with one element.",
-                          cm.exception.args[0])
+                          cmv.exception.args[0])
         for ncol in (1, 1.0, (i for i in range(1))):
             with self.subTest(ncol=ncol):
-                with self.assertRaises(TypeError) as cm:
-                    unwrap(ncol)
-                self.assertIn("Can only unwrap collections.", cm.exception.args[0])
+                with self.assertRaises(TypeError) as cmt:
+                    unwrap(ncol)  # type: ignore
+                self.assertIn("Can only unwrap collections.", cmt.exception.args[0])
 
-    def test_mypy(self):
+    def test_mypy(self) -> None:
         try:
             result = subprocess.run(["make", "mypy"], check=True, capture_output=True)
         except subprocess.CalledProcessError as cpe:
@@ -279,7 +287,7 @@ class TestCommon(BasicTest):
             msg = f"There are {count} mypy errors. Run `make mypy` for more details."
             raise self.failureException(msg) from None
 
-    def test_untranslated_strings(self):
+    def test_untranslated_strings(self) -> None:
         i18n_path = self.conf["REPOSITORY_PATH"] / 'i18n'
         with tempfile.TemporaryDirectory() as tempdir:
             tmppath = pathlib.Path(tempdir, 'i18n')
@@ -311,28 +319,32 @@ class TestCommon(BasicTest):
         )
 
         with self.subTest("untranslated"):
+            assert matches_de is not None
             self.assertIsNone(matches_de["untranslated"],
                               f"There are untranslated strings (de)."
                               f" Make sure all strings are translated to German.")
         with self.subTest("fuzzy-de"):
+            assert matches_de is not None
             self.assertIsNone(matches_de["fuzzy"],
                               f"There are fuzzy translations (de). Double check these"
                               f" and remove the '#, fuzzy' marker afterwards.")
         with self.subTest("fuzzy-en"):
+            assert matches_en is not None
             self.assertIsNone(matches_en["fuzzy"],
                               f"There are fuzzy translations (en). Double check these"
                               f" and remove the '#, fuzzy' marker afterwards.")
 
-    def test_ml_type_mismatch(self):
+    def test_ml_type_mismatch(self) -> None:
         pseudo_mailinglist = {"ml_type": const.MailinglistTypes.event_associated}
+        bc = ml_type.BackendContainer()
         with self.assertRaises(RuntimeError):
             # Cannot use method of a non-parent-non-child class
             ml_type.AssemblyAssociatedMailinglist.get_implicit_subscribers(
-                None, None, pseudo_mailinglist)
+                ANONYMOUS, bc, pseudo_mailinglist)
         with self.assertRaises(RuntimeError):
             # Cannot use method of a child class
             ml_type.AssemblyAssociatedMailinglist.get_implicit_subscribers(
-                None, None, {"ml_type": const.MailinglistTypes.general_opt_in})
+                ANONYMOUS, bc, {"ml_type": const.MailinglistTypes.general_opt_in})
         # Can use method of a parent class
         ml_type.GeneralMailinglist.get_implicit_subscribers(
-            None, None, pseudo_mailinglist)
+            ANONYMOUS, bc, pseudo_mailinglist)

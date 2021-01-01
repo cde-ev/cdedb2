@@ -4,28 +4,30 @@ import io
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from typing import Callable
 
 import psycopg2.errorcodes
 
 from cdedb.backend.core import CoreBackend
 from cdedb.common import unwrap
-from cdedb.script import DryRunError, Script, make_backend, setup
+from cdedb.script import DryRunError, Script, _RSFactory, make_backend, setup
 
 
 class TestScript(unittest.TestCase):
-    @staticmethod
-    def get_rs():
-        return setup(persona_id=-1, dbname="cdb_test", dbuser="cdb_admin",
-                           dbpassword="9876543210abcdefghijklmnopqrst",
-                           check_system_user=False)
 
     @staticmethod
-    def check_buffer(buffer, assertion, value):
+    def get_rs() -> _RSFactory:
+        return setup(persona_id=-1, dbname="cdb_test", dbuser="cdb_admin",
+                     dbpassword="9876543210abcdefghijklmnopqrst",
+                     check_system_user=False)
+
+    @staticmethod
+    def check_buffer(buffer: io.StringIO, assertion: Callable[[str, str], None], value: str) -> None:
         buffer.seek(0)
         assertion(value, buffer.read())
         buffer.seek(0)
 
-    def test_setup(self):
+    def test_setup(self) -> None:
         rs_factory = self.get_rs()
         self.assertTrue(callable(rs_factory))
         self.assertEqual(-1, rs_factory().user.persona_id)
@@ -43,7 +45,7 @@ class TestScript(unittest.TestCase):
              ' "cdb_admin"' in cm.exception.args[0])
         )
 
-    def test_make_backend(self):
+    def test_make_backend(self) -> None:
         core = make_backend("core", proxy=False)
         self.assertTrue(isinstance(core, CoreBackend))
         coreproxy = make_backend("core", proxy=True)
@@ -59,7 +61,7 @@ class TestScript(unittest.TestCase):
                 make_backend("core", proxy=False,
                              configpath=f.name).conf["LOCKDOWN"], 42)
 
-    def test_script_atomizer(self):
+    def test_script_atomizer(self) -> None:
         rs = self.get_rs()()
         buffer = io.StringIO()
         with redirect_stdout(buffer):

@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
 import datetime
-import decimal
 import json
 import time
+from typing import Collection, Optional, Set, Tuple
 
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import FUTURE_TIMESTAMP, PrivilegeError, get_hash, now
-from cdedb.query import QUERY_SPECS, QueryOperators
+from cdedb.common import CdEDBObject, CdEDBObjectMap, FUTURE_TIMESTAMP, get_hash, now
 from tests.common import USER_DICT, BackendTest, as_users, nearly_now, prepsql
 
 
@@ -17,7 +16,7 @@ class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
 
     @as_users("kalif")
-    def test_basics(self, user):
+    def test_basics(self, user: CdEDBObject) -> None:
         data = self.core.get_assembly_user(self.key, user['id'])
         data['display_name'] = "Zelda"
         data['family_name'] = "Lord von und zu Hylia"
@@ -28,18 +27,18 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(data, new_data)
 
     @as_users("anton", "berta", "charly", "kalif")
-    def test_does_attend(self, user):
+    def test_does_attend(self, user: CdEDBObject) -> None:
         self.assertEqual(user['id'] != 3, self.assembly.does_attend(
             self.key, assembly_id=1))
         self.assertEqual(user['id'] != 3, self.assembly.does_attend(
             self.key, ballot_id=3))
 
     @as_users("charly")
-    def test_list_attendees(self, user):
+    def test_list_attendees(self, user: CdEDBObject) -> None:
         expectation = {1, 2, 9, 11, 23, 100}
         self.assertEqual(expectation, self.assembly.list_attendees(self.key, 1))
 
-    def test_entity_assembly(self):
+    def test_entity_assembly(self) -> None:
         self.login("werner")
         expectation = {
             1: {
@@ -96,7 +95,7 @@ class TestAssemblyBackend(BackendTest):
         }
         self.login("viktor")
         new_id = self.assembly.create_assembly(self.key, new_assembly)
-        expectation = new_assembly
+        expectation: CdEDBObject = new_assembly
         expectation['id'] = new_id
         expectation['presider_address'] = None
         expectation['is_active'] = True
@@ -117,7 +116,7 @@ class TestAssemblyBackend(BackendTest):
                                "presiders", "log", "mailinglists")))
 
     @as_users("viktor")
-    def test_ticket_176(self, user):
+    def test_ticket_176(self, user: CdEDBObject) -> None:
         data = {
             'description': None,
             'notes': None,
@@ -129,7 +128,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
     @as_users("werner")
-    def test_entity_ballot(self, user):
+    def test_entity_ballot(self, user: CdEDBObject) -> None:
         assembly_id = 1
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
@@ -219,7 +218,7 @@ class TestAssemblyBackend(BackendTest):
         }
         with self.assertRaises(ValueError):
             self.assembly.set_ballot(self.key, data)
-        expectation = {
+        expectation: CdEDBObject = {
             'assembly_id': 1,
             'use_bar': False,
             'candidates': {6: {'ballot_id': 2,
@@ -252,7 +251,7 @@ class TestAssemblyBackend(BackendTest):
             'vote_extension_end': None,
             'votes': None}
         self.assertEqual(expectation, self.assembly.get_ballot(self.key, 2))
-        data = {
+        data: CdEDBObject = {
             'id': 2,
             'use_bar': True,
             'candidates': {
@@ -327,7 +326,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
 
     @as_users("werner")
-    def test_quorum(self, user):
+    def test_quorum(self, user: CdEDBObject) -> None:
         data = {
             'assembly_id': 1,
             'use_bar': False,
@@ -375,7 +374,7 @@ class TestAssemblyBackend(BackendTest):
         self.assembly.set_ballot(self.key, data)
 
     @as_users("viktor")
-    def test_relative_quorum(self, user):
+    def test_relative_quorum(self, user: CdEDBObject) -> None:
         delta = 0.3
         future = now() + datetime.timedelta(seconds=delta)
 
@@ -432,7 +431,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
 
 
-    def test_extension(self):
+    def test_extension(self) -> None:
         self.login(USER_DICT['werner'])
         future = now() + datetime.timedelta(seconds=.5)
         farfuture = now() + datetime.timedelta(seconds=1)
@@ -457,35 +456,37 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
 
     @as_users("charly")
-    def test_signup(self, user):
+    def test_signup(self, user: CdEDBObject) -> None:
         self.assertEqual(False, self.assembly.does_attend(
             self.key, assembly_id=1))
         secret = self.assembly.signup(self.key, 1)
+        assert secret is not None
         self.assertLess(0, len(secret))
         self.assertEqual(True, self.assembly.does_attend(
             self.key, assembly_id=1))
 
-    def test_get_vote(self):
-        tests = (
-            {'user': 'anton', 'ballot_id': 1, 'secret': 'aoeuidhtns', 'expectation': '2>3>_bar_>1=4'},
-            {'user': 'berta', 'ballot_id': 1, 'secret': 'snthdiueoa', 'expectation': '3>2=4>_bar_>1'},
-            {'user': 'inga', 'ballot_id': 1, 'secret': 'asonetuhid', 'expectation': '_bar_>4>3>2>1'},
-            {'user': 'kalif', 'ballot_id': 1, 'secret': 'bxronkxeud', 'expectation': '1>2=3=4>_bar_'},
-            {'user': 'anton', 'ballot_id': 1, 'secret': None, 'expectation': '2>3>_bar_>1=4'},
-            {'user': 'berta', 'ballot_id': 1, 'secret': None, 'expectation': '3>2=4>_bar_>1'},
-            {'user': 'inga', 'ballot_id': 1, 'secret': None, 'expectation': '_bar_>4>3>2>1'},
-            {'user': 'kalif', 'ballot_id': 1, 'secret': None, 'expectation': '1>2=3=4>_bar_'},
-            {'user': 'berta', 'ballot_id': 2, 'secret': None, 'expectation': None},
-            {'user': 'berta', 'ballot_id': 3, 'secret': None, 'expectation': 'Lo>Li=St=Fi=Bu=Go=_bar_'},
-            {'user': 'berta', 'ballot_id': 4, 'secret': None, 'expectation': None},
+    def test_get_vote(self) -> None:
+        tests: Collection[Tuple[str, int, Optional[str], Optional[str]]] = (
+            ('anton', 1, 'aoeuidhtns', '2>3>_bar_>1=4'),
+            ('berta', 1, 'snthdiueoa', '3>2=4>_bar_>1'),
+            ('inga', 1, 'asonetuhid', '_bar_>4>3>2>1'),
+            ('kalif', 1, 'bxronkxeud', '1>2=3=4>_bar_'),
+            ('anton', 1, None, '2>3>_bar_>1=4'),
+            ('berta', 1, None, '3>2=4>_bar_>1'),
+            ('inga', 1, None, '_bar_>4>3>2>1'),
+            ('kalif', 1, None, '1>2=3=4>_bar_'),
+            ('berta', 2, None, None),
+            ('berta', 3, None, 'Lo>Li=St=Fi=Bu=Go=_bar_'),
+            ('berta', 4, None, None),
         )
         for case in tests:
+            user, ballot_id, secret, expectation = case
             with self.subTest(case=case):
-                self.login(USER_DICT[case['user']])
-                self.assertEqual(case['expectation'],
-                                 self.assembly.get_vote(self.key, case['ballot_id'], case['secret']))
+                self.login(USER_DICT[user])
+                self.assertEqual(
+                    expectation, self.assembly.get_vote(self.key, ballot_id, secret))
 
-    def test_vote(self):
+    def test_vote(self) -> None:
         self.login(USER_DICT['anton'])
         self.assertEqual(None, self.assembly.get_vote(self.key, 3, secret=None))
         self.assertLess(0, self.assembly.vote(self.key, 3, 'Go>Li=St=Fi=Bu=Lo=_bar_', secret=None))
@@ -496,14 +497,14 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual('St>Li=Go=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
 
     @as_users("kalif")
-    def test_tally(self, user):
+    def test_tally(self, user: CdEDBObject) -> None:
         self.assertEqual(False, self.assembly.get_ballot(self.key, 1)['is_tallied'])
         self.assertTrue(self.assembly.tally_ballot(self.key, 1))
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
             with open("/tmp/cdedb-store/ballot_result/1", 'rb') as g:
                 self.assertEqual(json.load(f), json.load(g))
 
-    def test_conclusion(self):
+    def test_conclusion(self) -> None:
         self.login("viktor")
         data = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
@@ -513,11 +514,13 @@ class TestAssemblyBackend(BackendTest):
             'shortname': 'amgv',
         }
         new_id = self.assembly.create_assembly(self.key, data)
+        non_member_id = USER_DICT["werner"]["id"]
+        assert isinstance(non_member_id, int)
         self.assertTrue(self.assembly.set_assembly_presiders(
-            self.key, new_id, {USER_DICT["werner"]["id"]}))
-        self.login("werner")
+            self.key, new_id, {non_member_id}))
+        self.login(non_member_id)
         # werner is no member, so he must use the external signup function
-        self.assembly.external_signup(self.key, new_id, USER_DICT["werner"]['id'])
+        self.assembly.external_signup(self.key, new_id, non_member_id)
         future = now() + datetime.timedelta(seconds=.5)
         farfuture = now() + datetime.timedelta(seconds=1)
         data = {
@@ -549,12 +552,11 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
     @as_users("werner")
-    def test_entity_attachments(self, user):
+    def test_entity_attachments(self, user: CdEDBObject) -> None:
         with open("/cdedb2/tests/ancillary_files/rechen.pdf", "rb") as f:
             self.assertEqual(f.read(), self.assembly.get_attachment_content(self.key, attachment_id=1))
-        expectation = set()
-        self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
-        self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=2))
+        self.assertEqual(set(), self.assembly.list_attachments(self.key, assembly_id=1))
+        self.assertEqual(set(), self.assembly.list_attachments(self.key, ballot_id=2))
         data = {
             "ballot_id": 2,
             "title": "Rechenschaftsbericht",
@@ -659,7 +661,7 @@ class TestAssemblyBackend(BackendTest):
             "dtime": None,
             "file_hash": get_hash(b'1234'),
         })
-        history_expectation = {
+        history_expectation: CdEDBObjectMap = {
             1: {
                 "attachment_id": new_id,
                 "version": 1,
@@ -716,10 +718,8 @@ class TestAssemblyBackend(BackendTest):
             "dtime": None,
             "file_hash": get_hash(b'super secret'),
         })
-        expectation = {1001,1002}
-        self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
-        expectation = {1003}
-        self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=2))
+        self.assertEqual({1001, 1002}, self.assembly.list_attachments(self.key, assembly_id=1))
+        self.assertEqual({1003}, self.assembly.list_attachments(self.key, ballot_id=2))
         expectation = {
             1001: {
                 'assembly_id': 1,
@@ -754,7 +754,7 @@ class TestAssemblyBackend(BackendTest):
         (title, shortname, description, presider_address, signup_end) VALUES
         ('Umfrage', 'umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
          date '2111-11-11');""")
-    def test_prepsql(self, user):
+    def test_prepsql(self, user: CdEDBObject) -> None:
         expectation = {
             1: {'id': 1, 'is_active': True,
                 'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
@@ -771,7 +771,7 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
 
-    def test_log(self):
+    def test_log(self) -> None:
         # first generate some data
         self.test_entity_assembly()
         self.test_vote()
