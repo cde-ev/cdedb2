@@ -82,12 +82,21 @@ class MailmanMixin(MlBaseFrontend):
             # 'pass_extensions': ['pdf'],
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
+        desired_templates = {}
         if not db_list['is_active']:
             desired_settings.update({
                 'advertised': False,
                 'default_member_action': 'reject',
                 'default_nonmember_action': 'reject',
             })
+            desired_templates['list:user:notice:rejected'] = """
+Your message to the $listname mailing-list was rejected for the following
+reasons:
+
+The list is currently inactive and does not process messages.
+
+The original message as received by Mailman is attached.
+""".strip()
         changed = False
         for key, val in desired_settings.items():
             if mm_list.settings[key] != val:
@@ -111,7 +120,7 @@ class MailmanMixin(MlBaseFrontend):
             for header, pattern, action in desired_header_matches:
                 mm_list.header_matches.add(header, pattern, action)
 
-        desired_templates = {
+        desired_templates.update({
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
@@ -134,7 +143,7 @@ do nothing.
 
 [1] { cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True) }
 """.strip(),
-        }
+        })
         existing_templates = {
             t.name: t for t in mm_list.templates
         }
