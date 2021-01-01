@@ -1420,6 +1420,35 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({"description": "Änderungshistorie"})
         self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € "
                             "(Überwiesen am 17.03.2019)")
+        self.admin_view_profile("ferdinand")
+        self.traverse("Änderungshistorie")
+        self.assertPresence("Guthabenänderung um 25,00 € auf 47,20 €"
+                            " (Überwiesen am 15.03.2019)")
+        self.assertPresence("Guthabenänderung um 13,75 € auf 60,95 €"
+                            " (Überwiesen am 16.03.2019)")
+
+        # Test for correctly applying duplicate transfer with same amount.
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Überweisungen eintragen'})
+        self.assertTitle("Überweisungen eintragen")
+        f = self.response.forms['transfersform']
+        f['transfers'] = """"10";"DB-1-9";"Administrator";"Anton Armin A.";"15.03.2019"
+"10";"DB-1-9";"Administrator";"Anton Armin A.";"16.03.2019"
+""".strip()
+        self.submit(f, check_notification=False)
+        self.assertPresence("Mehrere Überweisungen für diesen Account"
+                            " (Zeilen 1 und 2).")
+        f = self.response.forms['transfersform']
+        self.assertTrue(f['checksum'].value)
+        self.submit(f)
+        self.assertPresence("2 Überweisungen gebucht. 0 neue Mitglieder",
+                            div="notifications")
+        self.admin_view_profile("anton")
+        self.traverse("Änderungshistorie")
+        self.assertPresence("Guthabenänderung um 10,00 € auf 27,50 €"
+                            " (Überwiesen am 15.03.2019)")
+        self.assertPresence("Guthabenänderung um 10,00 € auf 37,50 €"
+                            " (Überwiesen am 16.03.2019)")
 
     @as_users("farin")
     def test_money_transfers_regex(self, user):
