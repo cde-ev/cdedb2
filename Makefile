@@ -54,6 +54,10 @@ i18n-update:
 		--ignore-obsolete
 	pybabel update -i $(I18NDIR)/cdedb.pot -d $(I18NDIR)/ -l en -D cdedb \
 		--ignore-obsolete
+	# get .po files through GNU msgcat for the benefit of smaller diffs
+	# against changes done by our custom merge driver
+	msgcat -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/de/LC_MESSAGES/cdedb.po
+	msgcat -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/en/LC_MESSAGES/cdedb.po
 
 i18n-compile:
 	pybabel compile -d $(I18NDIR)/ -l de -D cdedb
