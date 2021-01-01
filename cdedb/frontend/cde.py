@@ -1179,20 +1179,12 @@ class CdEFrontend(AbstractUserFrontend):
             with Atomizer(rs):
                 count = 0
                 memberships_gained = 0
-                persona_ids = set(e['persona_id'] for e in data)
+                persona_ids = tuple(e['persona_id'] for e in data)
                 personas = self.coreproxy.get_total_personas(rs, persona_ids)
                 for index, datum in enumerate(data):
                     assert isinstance(datum['amount'], decimal.Decimal)
-                    persona_id = datum['persona_id']
-                    if persona_id in persona_ids:
-                        # Keep track of which persona was already updated.
-                        persona = personas[persona_id]
-                        persona_ids.remove(persona_id)
-                    else:
-                        # Make sure to use an up to date dataset if there is a second
-                        # transfer for the same persona.
-                        persona = self.coreproxy.get_total_persona(rs, persona_id)
-                    new_balance = (persona['balance'] + datum['amount'])
+                    persona = personas[datum['persona_id']]
+                    persona['balance'] += datum['amount']
                     note = datum['note']
                     if note:
                         try:
@@ -1204,13 +1196,13 @@ class CdEFrontend(AbstractUserFrontend):
                             # This is the default case and makes it pretty
                             note = note_template.format(
                                 amount=money_filter(datum['amount']),
-                                new_balance=money_filter(new_balance),
+                                new_balance=money_filter(persona['balance']),
                                 date=date.strftime(parse.OUTPUT_DATEFORMAT))
                     count += self.coreproxy.change_persona_balance(
-                        rs, datum['persona_id'], new_balance,
+                        rs, datum['persona_id'], persona['balance'],
                         const.FinanceLogCodes.increase_balance,
                         change_note=note)
-                    if new_balance >= self.conf["MEMBERSHIP_FEE"]:
+                    if persona['balance'] >= self.conf["MEMBERSHIP_FEE"]:
                         memberships_gained += self.coreproxy.change_membership(
                             rs, datum['persona_id'], is_member=True)
         except psycopg2.extensions.TransactionRollbackError:
@@ -1233,15 +1225,13 @@ class CdEFrontend(AbstractUserFrontend):
         if sendmail:
             for datum in data:
                 persona = personas[datum['persona_id']]
-                address = make_postal_address(persona)
-                new_balance = (personas[datum['persona_id']]['balance']
-                               + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
                               'Subject': "Überweisung eingegangen",
                               },
-                             {'persona': persona, 'address': address,
-                              'new_balance': new_balance})
+                             {'persona': persona,
+                              'address': make_postal_address(persona),
+                              'new_balance': persona['balance']})
         return True, count, memberships_gained
 
     @access("finance_admin", modi={"POST"})
