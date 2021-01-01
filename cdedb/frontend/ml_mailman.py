@@ -157,7 +157,7 @@ do nothing.
                 mm_list.set_template(
                     name, template_url(file_name),
                     username=self.conf["MAILMAN_BASIC_AUTH_USER"],
-                    password=self.mailman_template_password())
+                    password=mailman.template_password)
         for name in set(existing_templates) - set(desired_templates):
             existing_templates[name].delete()
 

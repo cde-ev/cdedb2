@@ -1627,6 +1627,7 @@ class CdEMailmanClient(mailmanclient.Client):
         secrets = SecretsConfig(conf._configpath)
         url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
         super().__init__(url, self.conf["MAILMAN_USER"], secrets["MAILMAN_PASSWORD"])
+        self.template_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
 
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"
@@ -1666,6 +1667,8 @@ class CdEMailmanClient(mailmanclient.Client):
                     return HELD_MESSAGE_SAMPLE
                 else:
                     return None
+            else:
+                return None
         elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
             mmlist = self.get_list_safe(dblist['address'])
             return mmlist.held if mmlist else None
