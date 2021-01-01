@@ -1179,12 +1179,20 @@ class CdEFrontend(AbstractUserFrontend):
             with Atomizer(rs):
                 count = 0
                 memberships_gained = 0
-                persona_ids = tuple(e['persona_id'] for e in data)
+                persona_ids = set(e['persona_id'] for e in data)
                 personas = self.coreproxy.get_total_personas(rs, persona_ids)
                 for index, datum in enumerate(data):
                     assert isinstance(datum['amount'], decimal.Decimal)
-                    new_balance = (personas[datum['persona_id']]['balance']
-                                   + datum['amount'])
+                    persona_id = datum['persona_id']
+                    if persona_id in persona_ids:
+                        # Keep track of which persona was already updated.
+                        persona = personas[persona_id]
+                        persona_ids.remove(persona_id)
+                    else:
+                        # Make sure to use an up to date dataset if there is a second
+                        # transfer for the same persona.
+                        persona = self.coreproxy.get_total_persona(rs, persona_id)
+                    new_balance = (persona['balance'] + datum['amount'])
                     note = datum['note']
                     if note:
                         try:
