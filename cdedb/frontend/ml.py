@@ -50,16 +50,17 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
             mmlist = mailman.get_list(dblist['address'])
             try:
                 held = mmlist.get_held_message(request_id)
+                change_note = f'{held.sender} / {held.subject}'
                 response = mmlist.moderate_message(request_id, action)
             except urllib.error.HTTPError:
                 rs.notify("error", n_("Message unavailable."))
-            if response.status // 100 == 2:
-                rs.notify("success", n_("Message moderated."))
-                self.mlproxy.log_moderation(
-                    rs, logcode, mailinglist_id,
-                    change_note=f'{held.sender} / {held.subject}')
-            elif response.status // 100 == 4:
-                rs.notify("warning", n_("Message not moderated."))
             else:
-                rs.notify("error", n_("Message not moderated."))
+                if response.status // 100 == 2:
+                    rs.notify("success", n_("Message moderated."))
+                    self.mlproxy.log_moderation(
+                        rs, logcode, mailinglist_id, change_note=change_note)
+                elif response.status // 100 == 4:
+                    rs.notify("warning", n_("Message not moderated."))
+                else:
+                    rs.notify("error", n_("Message not moderated."))
         return self.redirect(rs, "ml/message_moderation")
