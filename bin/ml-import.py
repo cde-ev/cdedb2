@@ -4,8 +4,7 @@ import json
 
 import cdedb.database.constants as const
 from cdedb.common import SubscriptionActions
-from cdedb.database.connection import Atomizer
-from cdedb.script import make_backend, setup
+from cdedb.script import make_backend, setup, Script
 
 # Configuration
 
@@ -23,7 +22,7 @@ ml = make_backend("ml")
 
 # Execution
 
-with Atomizer(rs()):
+with Script(rs(), dry_run=DRY_RUN):
     print("Fetching current state from database")
 
     existing_lists = ml.get_mailinglists(rs(), tuple(ml.list_mailinglists(rs())))
@@ -175,6 +174,3 @@ with Atomizer(rs()):
             else:
                 print("Adding {} with default address {}".format(persona_id,
                                                                  sub_address))
-    if DRY_RUN:
-        raise ValueError("Aborting due to dry run,"
-                         " please ignore the following exception.")
