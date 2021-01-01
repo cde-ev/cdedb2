@@ -309,7 +309,17 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list'})
         self.assertTitle("Alle Mailinglisten")
-        self.assertPresence("Mitglieder (Moderiertes Opt-in)")
+        # Exemplarily, test mailinglist 54 in detail.
+        self.assertPresence("Gutscheine", div="mailinglist-54-row")
+        self.assertPresence("Mitglieder (Moderiertes Opt-in)", div="mailinglist-54-row")
+        self.assertPresence("—", div="mailinglist-54-row")
+        self.assertPresence("2 Abonnenten. 1 Moderator.", div="mailinglist-54-row")
+        # Test if moderation hints work
+        self.assertPresence("Mailman-Migration", div="mailinglist-99-row")
+        self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-99-row")
+        self.assertPresence("3", div="mailinglist-99-row")
+        self.assertPresence("0 Abonnenten. 1 Moderator.", div="mailinglist-99-row")
+        # Test that events are shown
         self.assertPresence("Große Testakademie 2222")
         self.assertPresence("CdE-Party 2050")
         # not yet published
@@ -342,7 +352,10 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Moderierte Mailinglisten")
         # Moderated mailinglists
         self.assertPresence("Allgemeine Mailinglisten")
-        self.assertPresence("Aktivenforum 2001")
+        self.assertPresence("Aktivenforum 2001", div="mailinglist-7-row")
+        self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-7-row")
+        self.assertPresence("—", div="mailinglist-7-row")
+        self.assertPresence("1 Abonnent. 2 Moderatoren.", div="mailinglist-7-row")
         if user['id'] == USER_DICT['berta']['id']:
             self.assertPresence("Veranstaltungslisten")
             self.assertPresence("CdE-Party 2050 Orgateam")
@@ -1313,6 +1326,7 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
+    @unittest.expectedFailure
     @unittest.mock.patch("mailmanclient.Client")
     @as_users("anton")
     def test_mailman_moderation(self, client_class, user):

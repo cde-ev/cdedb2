@@ -41,6 +41,7 @@ ML_BACKEND_LOG = pathlib.Path("/log/cdedb-backend-ml.log")
 ASSEMBLY_BACKEND_LOG = pathlib.Path("/log/cdedb-backend-assembly.log")
 CRON_FRONTEND_LOG = pathlib.Path("/log/cdedb-frontend-cron.log")
 WORKER_LOG = pathlib.Path("/log/cdedb-frontend-worker.log")
+MAILMAN_LOG = pathlib.Path("/log/cdedb-frontend-mailman.log")
 
 if CDEDB_TEST:
     DB_PORT = 6432
@@ -63,3 +64,4 @@ if CDEDB_TEST:
     ASSEMBLY_FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend-assembly.log")
     ASSEMBLY_BACKEND_LOG = pathlib.Path("/tmp/test-cdedb-backend-assembly.log")
     WORKER_LOG = pathlib.Path("/tmp/test-cdedb-frontend-worker.log")
+    MAILMAN_LOG = pathlib.Path("/tmp/test-cdedb-frontend-mailman.log")

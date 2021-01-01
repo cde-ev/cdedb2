@@ -1611,30 +1611,50 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
 
 class CdEMailmanClient(mailmanclient.Client):
-    def __init__(self, conf: Config, logger: logging.Logger):
-        # Replaces mailman_connect.
-        # We just instantiate this class whenever needed.
-        self.logger = logger
+    """Custom wrapper around mailmanclient.Client.
+
+    This custom wrapper provides additional functionality needed in multiple frontends.
+    Whenever access to the mailman server is needed, this class should be used.
+    """
+    def __init__(self, conf: Config):
+        """Automatically initializes a client with our custom parameters.
+
+        :param conf: Usually, he config used where this class is instantiated.
+        """
         self.conf = conf
+
+        # Initialize base class
         secrets = SecretsConfig(conf._configpath)
         url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
         super().__init__(url, self.conf["MAILMAN_USER"], secrets["MAILMAN_PASSWORD"])
 
-    def get_list_safe(self, address: str):
+        # Initialize logger. This needs the base class initialization to be done.
+        logger_name = "cdedb.frontend.mailmanclient"
+        make_root_logger(
+            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
+        self.logger = logging.getLogger(logger_name)
+        self.logger.debug("Instantiated {} with configpath {}.".format(
+            self, conf._configpath))
+
+    def get_list_safe(self, address: str) -> Optional[
+        mailmanclient.restobjects.mailinglist.MailingList]:
         """Return list with standard error handling.
 
         In contrast to the original function, this does not raise if no list has been
-        found, but returns None instead."""
+        found, but returns None instead. This is particularly important since list
+        creation and deletion are not synced immediately."""
         try:
             return self.get_list(address)
         except urllib.error.HTTPError as e:
-            if e.code != 404:
-                raise
-            else:
+            if e.code == 404:
                 return None
+            else:
+                raise
 
-    def get_held_messages(self, dblist: CdEDBObject) -> Union[
-        List[mailmanclient.restobjects.held_message.HeldMessage], None]:
+    def get_held_messages(self, dblist: CdEDBObject) -> Optional[
+        List[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
         If the list is not managed by mailman, this function returns None instead.
@@ -1647,7 +1667,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 else:
                     return None
         elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
-            mmlist = self.get_list(dblist['address'])
+            mmlist = self.get_list_safe(dblist['address'])
             return mmlist.held if mmlist else None
         else:
             return None

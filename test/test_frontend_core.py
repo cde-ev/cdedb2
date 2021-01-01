@@ -70,7 +70,7 @@ class TestCoreFrontend(FrontendTest):
             self.assertPresence("Aktivenforum 2001", div='moderator-box')
             # Check if there is actually the correct request
             self.traverse({'href': '/ml/mailinglist/7/management',
-                           'description': "1 Anfrage"})
+                           'description': "1 Abonnement-Anfrage"})
             self.traverse({'href': '/'})
             self.assertTitle("CdE-Datenbank")
         else:
@@ -79,6 +79,12 @@ class TestCoreFrontend(FrontendTest):
             self.assertPresence("Nutzer verwalten", div='sidebar')
             self.assertPresence("Nutzer verwalten", div='adminshowuser-box')
             self.assertPresence("Platin-Lounge", div='moderator-box')
+            # Check moderation notification
+            self.assertPresence("Mailman-Migration", div='moderator-box')
+            self.traverse({'href': '/ml/mailinglist/99/moderate',
+                           'description': "3 Mails"})
+            self.traverse({'href': '/'})
+            self.assertTitle("CdE-Datenbank")
         self.assertPresence("Moderierte Mailinglisten", div='moderator-box')
         self.assertPresence("CdE-Party 2050", div='orga-box')
         self.assertNonPresence("Große Testakademie 2222", div='orga-box')

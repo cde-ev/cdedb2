@@ -9,7 +9,7 @@ from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, CdEDBObject
-from cdedb.frontend.common import CdEMailmanClient. periodic
+from cdedb.frontend.common import CdEMailmanClient, periodic
 from cdedb.frontend.ml_base import MlBaseFrontend
 
 
@@ -252,7 +252,7 @@ do nothing.""".strip(),
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
             return store
-        mailman = CdEMailmanClient(self.conf, self.logger)
+        mailman = CdEMailmanClient(self.conf)
         # noinspection PyBroadException
         try:
             _ = mailman.system  # cause the client to connect

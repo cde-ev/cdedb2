@@ -142,11 +142,11 @@ class CoreFrontend(AbstractFrontend):
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
                 sub_request = const.SubscriptionStates.pending
+                mailman = CdEMailmanClient(self.conf)
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, mailinglist_id, states=(sub_request,))
-                    held_mails = (CdEMailmanClient(self.conf, self.logger)
-                                  .get_held_messages(mailinglist))
+                    held_mails = mailman.get_held_messages(mailinglist)
                     mailinglist['requests'] = len(requests)
                     mailinglist['held_mails'] = len(held_mails or [])
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
