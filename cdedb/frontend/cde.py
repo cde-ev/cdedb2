@@ -1205,6 +1205,8 @@ class CdEFrontend(AbstractUserFrontend):
                     if new_balance >= self.conf["MEMBERSHIP_FEE"]:
                         memberships_gained += self.coreproxy.change_membership(
                             rs, datum['persona_id'], is_member=True)
+                    # Remember the changed balance in case of multiple transfers.
+                    personas[datum['persona_id']]['balance'] = new_balance
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
@@ -1225,15 +1227,13 @@ class CdEFrontend(AbstractUserFrontend):
         if sendmail:
             for datum in data:
                 persona = personas[datum['persona_id']]
-                address = make_postal_address(persona)
-                new_balance = (personas[datum['persona_id']]['balance']
-                               + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
                               'Subject': "Überweisung eingegangen",
                               },
-                             {'persona': persona, 'address': address,
-                              'new_balance': new_balance})
+                             {'persona': persona,
+                              'address': make_postal_address(persona),
+                              'new_balance': persona['balance']})
         return True, count, memberships_gained
 
     @access("finance_admin", modi={"POST"})
