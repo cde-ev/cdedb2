@@ -1183,8 +1183,8 @@ class CdEFrontend(AbstractUserFrontend):
                 personas = self.coreproxy.get_total_personas(rs, persona_ids)
                 for index, datum in enumerate(data):
                     assert isinstance(datum['amount'], decimal.Decimal)
-                    persona = personas[datum['persona_id']]
-                    persona['balance'] += datum['amount']
+                    new_balance = (personas[datum['persona_id']]['balance']
+                                   + datum['amount'])
                     note = datum['note']
                     if note:
                         try:
@@ -1196,15 +1196,17 @@ class CdEFrontend(AbstractUserFrontend):
                             # This is the default case and makes it pretty
                             note = note_template.format(
                                 amount=money_filter(datum['amount']),
-                                new_balance=money_filter(persona['balance']),
+                                new_balance=money_filter(new_balance),
                                 date=date.strftime(parse.OUTPUT_DATEFORMAT))
                     count += self.coreproxy.change_persona_balance(
-                        rs, datum['persona_id'], persona['balance'],
+                        rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
                         change_note=note)
-                    if persona['balance'] >= self.conf["MEMBERSHIP_FEE"]:
+                    if new_balance >= self.conf["MEMBERSHIP_FEE"]:
                         memberships_gained += self.coreproxy.change_membership(
                             rs, datum['persona_id'], is_member=True)
+                    # Remember the changed balance in case of multiple transfers.
+                    personas[datum['persona_id']]['balance'] = new_balance
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
