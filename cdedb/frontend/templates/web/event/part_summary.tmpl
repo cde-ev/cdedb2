@@ -79,7 +79,7 @@
             {% call util.output_errors("track_title_{}_{}".format(part_id, track_id), wrapper=True) %}
                 {{ util.input_text(
                         name="track_title_{}_{}".format(part_id, track_id),
-                        aclass='drow-input1 form-control', placeholder=gettext("Title"),
+                        aclass='drow-input1 form-control', placeholder=gettext("Title_[[name of an entity]]"),
                         arialabel=gettext("Name of Coursetrack"),
                         attributes=('data-basename="track_title_" data-basename1="_"'|s if newrow else '')) }}
             {% endcall %}

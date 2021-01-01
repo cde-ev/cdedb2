@@ -7,7 +7,7 @@
       class="form-horizontal">
         {{ util.anti_csrf_token('{}/create_user'.format(realm)) }}
         <h4 class="heading-underline">{{ gettext("Personal Information") }}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if realm == "cde" %}
@@ -111,7 +111,7 @@
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
         "display_name": gettext("First Given Name"),
-        "title": gettext("Title"),
+        "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),
         "birthday": gettext("Birthday"),
@@ -182,7 +182,7 @@
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
         "display_name": gettext("First Given Name"),
-        "title": gettext("Title"),
+        "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),
         "birthday": gettext("Birthday"),

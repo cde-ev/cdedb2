@@ -31,7 +31,7 @@
             </div>
 
         {% endif %}
-        {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
+        {{ util.form_input_submit(value=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         {% if ambience['ballot']['votes'] > 1 %}
@@ -244,7 +244,7 @@
                 {{ util.anti_csrf_token('assembly/vote') }}
                 {{ util.form_input_text(name="vote", label=gettext("Preferencelist"), small=True,
                                         anid='input-preferencelist') }}
-                {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
+                {{ util.form_input_submit(value=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
             </form>
             <script nonce="{{ csp_nonce }}">
                 $('#voteform').cdedbProtectChanges();
@@ -267,7 +267,7 @@
             </div>
             <div class="p clearfix">
                 <button class="btn btn-primary" id="button-jsvote">
-                    {{ util.make_icon('check') }} {% trans %}Vote{% endtrans %}
+                    {{ util.make_icon('check') }} {% trans %}Vote_[[to vote in a ballot]]{% endtrans %}
                 </button>
             </div>
             <script nonce="{{ csp_nonce }}">
@@ -317,7 +317,7 @@
     <h3>{% trans %}Candidates{% endtrans %}</h3>
 
     {% set columns =  [dict(name="shortname", label=gettext("Shortname"), func=util.input_text),
-                       dict(name="title", label=gettext("Title"), func=util.input_text)] %}
+                       dict(name="title", label=gettext("Title_[[name of an entity]]"), func=util.input_text)] %}
 
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}

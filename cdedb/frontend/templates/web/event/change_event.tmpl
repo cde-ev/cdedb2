@@ -26,7 +26,7 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", info=util.markdownhint) }}
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=(util.markdownhint + " " +
                                           gettext("This description is visible to all event users, if “Visibility "

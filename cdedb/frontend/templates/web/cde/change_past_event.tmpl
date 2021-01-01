@@ -25,7 +25,7 @@
     <form action="{{ cdedblink('cde/change_past_event') }}" method="POST" id="changeeventform"
             class="form-horizontal">
         {{ util.anti_csrf_token('cde/change_past_event') }}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"),
                                   entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}

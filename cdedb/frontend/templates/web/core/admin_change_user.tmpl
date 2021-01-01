@@ -25,7 +25,7 @@
         {{ util.anti_csrf_token('core/admin_change_user') }}
         {{ util.input_hidden(name="generation") }}
         <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if "birth_name" in shown_fields and 'cde' in admin_bits %}

@@ -806,7 +806,7 @@
         <div class="panel-body">
             <div class="row">
                 <div class="col-md-6">
-                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title"),
+                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title_[[name of an entity]]"),
                                             attributes=('data-basename="title_"'|s if newrow else ''),
                                             aclass='input-title drow-input', horizontal=false) }}
                     {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),

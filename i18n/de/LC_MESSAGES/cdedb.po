@@ -39,7 +39,7 @@ msgstr "Keine Zugriffsrechte auf Veranstaltungs-Log."
 #: cdedb/backend/ml.py:343 cdedb/backend/past_event.py:767
 #: cdedb/backend/assembly.py:291 cdedb/backend/cde.py:864
 #: cdedb/backend/core.py:2675 cdedb/backend/ml.py:344
-#: cdedb/backend/past_event.py:765
+#: cdedb/backend/past_event.py:765 cdedb/backend/core.py:2691
 msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
 
@@ -146,7 +146,9 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/frontend/core.py:871 cdedb/frontend/core.py:1626
 #: cdedb/frontend/core.py:1640 cdedb/frontend/core.py:2247
 #: cdedb/frontend/core.py:2261 cdedb/frontend/core.py:2292
-#: cdedb/frontend/core.py:2316
+#: cdedb/frontend/core.py:2316 cdedb/backend/core.py:2477
+#: cdedb/backend/core.py:2480 cdedb/backend/core.py:2508
+#: cdedb/backend/core.py:2534 cdedb/backend/core.py:2538
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -218,7 +220,8 @@ msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 #: cdedb/backend/cde.py:239 cdedb/backend/cde.py:265 cdedb/backend/core.py:2369
 #: cdedb/backend/core.py:2392 cdedb/backend/ml.py:772 cdedb/backend/ml.py:808
 #: cdedb/backend/past_event.py:332 cdedb/backend/past_event.py:363
-#: cdedb/backend/past_event.py:461
+#: cdedb/backend/past_event.py:461 cdedb/backend/core.py:2385
+#: cdedb/backend/core.py:2408
 #, python-format
 msgid "Deletion of %(type)s blocked by %(block)s."
 msgstr "Löschen von %(type)s wird verhindert von %(block)s."
@@ -228,7 +231,8 @@ msgstr "Löschen von %(type)s wird verhindert von %(block)s."
 #: cdedb/backend/core.py:2383 cdedb/backend/core.py:2386
 #: cdedb/backend/assembly.py:698 cdedb/backend/assembly.py:1468
 #: cdedb/backend/assembly.py:1471 cdedb/backend/cde.py:245
-#: cdedb/backend/core.py:2380
+#: cdedb/backend/core.py:2380 cdedb/backend/core.py:2396
+#: cdedb/backend/core.py:2399
 #, python-format
 msgid "Unable to cascade %(blocker)s."
 msgstr "Kaskadierung für %(blocker)s nicht möglich."
@@ -515,7 +519,7 @@ msgid "Addresscheck already done for this expuls."
 msgstr "Adressabfrage für diesen ExPuls bereits durchgeführt."
 
 #: cdedb/backend/cde.py:828 cdedb/backend/core.py:1650 cdedb/backend/cde.py:827
-#: cdedb/backend/core.py:1645
+#: cdedb/backend/core.py:1645 cdedb/backend/core.py:1661
 msgid "Too many queries."
 msgstr "Zu viele Anfragen."
 
@@ -563,7 +567,8 @@ msgstr "Modifikation fehlgeschlagen."
 #: cdedb/backend/core.py:2288 cdedb/frontend/core.py:1648
 #: cdedb/backend/core.py:571 cdedb/backend/core.py:2263
 #: cdedb/backend/core.py:2285 cdedb/frontend/core.py:1644
-#: cdedb/frontend/core.py:1748
+#: cdedb/frontend/core.py:1748 cdedb/backend/core.py:2279
+#: cdedb/backend/core.py:2301
 msgid "Nonexistent user."
 msgstr "Nutzer existiert nicht."
 
@@ -571,6 +576,8 @@ msgstr "Nutzer existiert nicht."
 #: cdedb/backend/core.py:2092 cdedb/backend/core.py:2223
 #: cdedb/backend/core.py:616 cdedb/backend/core.py:2060
 #: cdedb/backend/core.py:2089 cdedb/backend/core.py:2220
+#: cdedb/backend/core.py:2076 cdedb/backend/core.py:2105
+#: cdedb/backend/core.py:2236
 msgid "Persona does not exist."
 msgstr "Person existiert nicht."
 
@@ -742,67 +749,82 @@ msgid "May not provide more than one input."
 msgstr "Es können nicht mehrere Eingaben gleichzeitig gemacht werden."
 
 #: cdedb/backend/core.py:1653 cdedb/backend/core.py:1648
+#: cdedb/backend/core.py:1664
 msgid "Not a CdE user."
 msgstr "Account ist nicht im CdE-Bereich."
 
 #: cdedb/backend/core.py:1659 cdedb/backend/core.py:1654
+#: cdedb/backend/core.py:1670
 msgid "Improper access to member data."
 msgstr "Unbefugter Zugriff auf Mitgliedsdaten."
 
 #: cdedb/backend/core.py:1671 cdedb/backend/core.py:1666
+#: cdedb/backend/core.py:1682
 msgid "Not an ml user."
 msgstr "Account ist nicht im Mailinglistenbereich."
 
 #: cdedb/backend/core.py:1683 cdedb/backend/core.py:1678
+#: cdedb/backend/core.py:1694
 msgid "Not an assembly user."
 msgstr "Account ist nicht im Versammlungsbereich."
 
 #: cdedb/backend/core.py:1700 cdedb/backend/core.py:1695
+#: cdedb/backend/core.py:1711
 msgid "Must be privileged."
 msgstr "Zugriffsberechtigung benötigt."
 
 #: cdedb/backend/core.py:1738 cdedb/backend/core.py:1733
+#: cdedb/backend/core.py:1749
 msgid "Unable to create this sort of persona."
 msgstr "Unzulässige Accountart für Erstellung ausgewählt."
 
 #: cdedb/backend/core.py:1826 cdedb/backend/core.py:2148
 #: cdedb/backend/core.py:2217 cdedb/backend/core.py:1821
 #: cdedb/backend/core.py:2145 cdedb/backend/core.py:2214
+#: cdedb/backend/core.py:1837 cdedb/backend/core.py:2161
+#: cdedb/backend/core.py:2230
 msgid "Atomized – impossible to escalate."
 msgstr "Fehler bei verschachtelten Transaktionen."
 
 #: cdedb/backend/core.py:2058 cdedb/backend/core.py:2055
+#: cdedb/backend/core.py:2071
 msgid "Preventing reset of admin."
 msgstr "Zurücksetzen von Admin-Account verhindert."
 
 #: cdedb/backend/core.py:2097 cdedb/frontend/common.py:2028
 #: cdedb/backend/core.py:2094 cdedb/frontend/common.py:2018
-#: cdedb/frontend/common.py:2020
+#: cdedb/frontend/common.py:2020 cdedb/backend/core.py:2110
 msgid "Link expired."
 msgstr "Link abgelaufen."
 
 #: cdedb/backend/core.py:2099 cdedb/backend/core.py:2101
 #: cdedb/backend/core.py:2096 cdedb/backend/core.py:2098
+#: cdedb/backend/core.py:2112 cdedb/backend/core.py:2114
 msgid "Link invalid or already used."
 msgstr "Link ist ungültig oder wurde bereits verwendet."
 
 #: cdedb/backend/core.py:2124 cdedb/backend/core.py:2121
+#: cdedb/backend/core.py:2137
 msgid "Selecting persona allowed for reset only."
 msgstr "Passwörter anderer Accounts können nur zurückgesetzt werden."
 
 #: cdedb/backend/core.py:2127 cdedb/backend/core.py:2124
+#: cdedb/backend/core.py:2140
 msgid "Could not determine persona to reset."
 msgstr "Konnte Account für Zurücksetzen nicht finden."
 
 #: cdedb/backend/core.py:2129 cdedb/backend/core.py:2126
+#: cdedb/backend/core.py:2142
 msgid "No authorization provided."
 msgstr "Kein Authentifizierung geliefert."
 
 #: cdedb/backend/core.py:2132 cdedb/backend/core.py:2129
+#: cdedb/backend/core.py:2145
 msgid "Password verification failed."
 msgstr "Passwort ist falsch."
 
 #: cdedb/backend/core.py:2139 cdedb/backend/core.py:2136
+#: cdedb/backend/core.py:2152
 msgid "No new password provided."
 msgstr "Kein neues Password angegeben."
 
@@ -811,39 +833,48 @@ msgstr "Kein neues Password angegeben."
 #: cdedb/frontend/event.py:2280 cdedb/frontend/cde.py:1273
 #: cdedb/backend/core.py:2195 cdedb/frontend/cde.py:1265
 #: cdedb/frontend/common.py:1355 cdedb/frontend/event.py:2278
+#: cdedb/backend/core.py:2211
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
 
 #: cdedb/backend/core.py:2200 cdedb/backend/core.py:2197
+#: cdedb/backend/core.py:2213
 msgid "More than one input provided."
 msgstr "Mehrere Eingabewerte angegeben."
 
 #: cdedb/backend/core.py:2268 cdedb/backend/core.py:2265
+#: cdedb/backend/core.py:2281
 msgid "Inactive user."
 msgstr "Inaktiver Account."
 
 #: cdedb/backend/core.py:2290 cdedb/backend/core.py:2287
+#: cdedb/backend/core.py:2303
 msgid "Lockdown active."
 msgstr "Datenbank für Wartungsarbeiten gesperrt."
 
 #: cdedb/backend/core.py:2363 cdedb/backend/core.py:2360
+#: cdedb/backend/core.py:2376
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
 "Accountanfrage kann vor Ablauf der Verifizierung nicht gelöscht werden."
 
 #: cdedb/backend/core.py:2366 cdedb/backend/core.py:2363
+#: cdedb/backend/core.py:2379
 msgid "Unable to remove genesis case with status {}."
 msgstr "Kann Accountanfrage mit Status {} nicht löschen."
 
 #: cdedb/backend/core.py:2518 cdedb/backend/core.py:2515
+#: cdedb/backend/core.py:2531
 msgid "Genesis case does not exist."
 msgstr "Accountanfrage existiert nicht."
 
 #: cdedb/backend/core.py:2558 cdedb/backend/core.py:2555
+#: cdedb/backend/core.py:2571
 msgid "Invalid genesis state."
 msgstr "Ungültiger Zustand für Accountanfrage."
 
 #: cdedb/backend/core.py:2562 cdedb/backend/core.py:2559
+#: cdedb/backend/core.py:2575
 msgid "Wrong target realm."
 msgstr "Falscher Zielbereich."
 
@@ -15204,6 +15235,7 @@ msgstr "Muss eine kommagetrennte Liste von zulässigen Bezeichnern sein."
 #: cdedb/backend/core.py:2138 cdedb/frontend/core.py:1603
 #: cdedb/frontend/core.py:1762 cdedb/validation.py:899
 #: cdedb/frontend/core.py:1707 cdedb/frontend/core.py:1866
+#: cdedb/backend/core.py:2154
 msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
@@ -15841,15 +15873,16 @@ msgstr "Verbotene Zeichen (%(chars)s)."
 msgid "Invalid moderation action."
 msgstr "Ungültige Moderationsaktion."
 
-#: cdedb/frontend/ml.py:65
+#: cdedb/frontend/ml.py:65 cdedb/frontend/ml.py:66
 msgid "Message unavailable."
 msgstr "Nachricht nicht verfügbar."
 
-#: cdedb/frontend/ml.py:67
+#: cdedb/frontend/ml.py:67 cdedb/frontend/ml.py:69
 msgid "Message moderated."
 msgstr "Nachricht moderiert."
 
-#: cdedb/frontend/ml.py:72 cdedb/frontend/ml.py:74
+#: cdedb/frontend/ml.py:72 cdedb/frontend/ml.py:74 cdedb/frontend/ml.py:73
+#: cdedb/frontend/ml.py:75
 msgid "Message not moderated."
 msgstr "Nachricht moderiert."
 
@@ -15926,3 +15959,53 @@ msgstr "Nur Veranstaltungsnutzer"
 #: cdedb/i18n_additional.py:46
 msgid "AudiencePolicy.require_member"
 msgstr "Nur CdE-Mitglieder"
+
+#: cdedb/frontend/event.py:5751
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:320
+#: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:51
+#: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:26
+#: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:17
+#: cdedb/frontend/templates/web/cde/change_past_course.tmpl:31
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:28
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:29
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:21
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:33
+#: cdedb/frontend/templates/web/event/change_event.tmpl:29
+#: cdedb/frontend/templates/web/event/change_lodgement.tmpl:28
+#: cdedb/frontend/templates/web/event/create_event.tmpl:21
+#: cdedb/frontend/templates/web/event/create_lodgement.tmpl:28
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:82
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:83
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:61
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:34
+#: cdedb/frontend/templates/web/util.tmpl:809
+msgid "Title_[[name of an entity]]"
+msgstr "Bezeichnung"
+
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:34
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:247
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:270
+msgid "Vote_[[to vote in a ballot]]"
+msgstr "Abstimmen"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:137
+msgid "Vote_[[on a voting paper]]"
+msgstr "Stimme"
+
+#: cdedb/frontend/templates/web/cde/list_past_events.tmpl:4
+#: cdedb/frontend/templates/web/event/index.tmpl:126
+#: cdedb/frontend/templates/web/event/index.tmpl:129
+msgid "Past Events_[[long form]]"
+msgstr "Vergangene Veranstaltungen"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:28
+#: cdedb/frontend/templates/web/core/change_user.tmpl:28
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:52
+#: cdedb/frontend/templates/web/core/promote_user.tmpl:76
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:57
+#: cdedb/frontend/templates/web/generic.tmpl:10
+#: cdedb/frontend/templates/web/generic.tmpl:114
+#: cdedb/frontend/templates/web/generic.tmpl:185
+msgid "Title_[[of a persona]]"
+msgstr "Titel"
