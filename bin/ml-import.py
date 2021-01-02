@@ -35,7 +35,7 @@ with Script(rs(), dry_run=DRY_RUN):
             rs(), e['id'], persona_ids=None, explicits_only=True)
         for persona_id, address in addresses.items():
             if address:
-                if persona_addresses.get(address) != persona_id:
+                if persona_addresses.get(address, persona_id) != persona_id:
                     print("Non-unique persona "
                           f"({persona_addresses[address]}, {persona_id}) "
                           f"for address {address}.")
@@ -49,7 +49,8 @@ with Script(rs(), dry_run=DRY_RUN):
             break
         persona = core.get_persona(rs(), persona_id)
         if persona['username']:
-            if persona_addresses.get(persona['username']) != persona['id']:
+            if (persona_addresses.get(persona['username'], persona['id'])
+                    != persona['id']):
                 print("Non-unique persona "
                       f"({persona_addresses[persona['username']]}, {persona['id']}) "
                       f"for address {persona['username']}.")
