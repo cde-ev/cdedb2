@@ -1,17 +1,13 @@
 import enum
 from collections import OrderedDict
-from typing import (
-    Type, Union, Set, Tuple, Dict, Collection, TYPE_CHECKING, List
-)
+from typing import TYPE_CHECKING, Collection, Dict, List, Set, Tuple, Type, Union
 
-from cdedb.common import (
-    extract_roles, n_, CdEDBObject, RequestState, User
+import cdedb.database.constants as const
+from cdedb.common import CdEDBObject, RequestState, User, extract_roles, n_
+from cdedb.database.constants import (
+    MailinglistDomain, MailinglistInteractionPolicy, MailinglistTypes,
 )
 from cdedb.query import Query, QueryOperators
-import cdedb.database.constants as const
-from cdedb.database.constants import (
-    MailinglistTypes, MailinglistDomain, MailinglistInteractionPolicy)
-
 
 MIPol = Union[MailinglistInteractionPolicy, None]
 MIPolMap = Dict[int, MIPol]

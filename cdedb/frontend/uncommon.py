@@ -9,16 +9,12 @@ dependencies.
 """
 
 import abc
+from typing import Callable, Mapping
+
 import werkzeug
 
-from typing import Mapping, Callable
-
-from cdedb.common import (
-    n_, merge_dicts, PERSONA_DEFAULTS, RequestState, CdEDBObject
-)
-from cdedb.frontend.common import (
-    AbstractFrontend, check_validation as check
-)
+from cdedb.common import PERSONA_DEFAULTS, CdEDBObject, RequestState, merge_dicts, n_
+from cdedb.frontend.common import AbstractFrontend, check_validation as check
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):

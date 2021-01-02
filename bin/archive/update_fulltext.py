@@ -3,9 +3,9 @@
 
 import time
 
-from cdedb.script import make_backend, setup
-from cdedb.database.connection import Atomizer
 from cdedb.common import PERSONA_ALL_FIELDS
+from cdedb.database.connection import Atomizer
+from cdedb.script import make_backend, setup
 
 # config
 

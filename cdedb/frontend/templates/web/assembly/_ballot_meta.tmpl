@@ -30,9 +30,11 @@
     {% endcall %}
 {%- endmacro %}
 
+
+
 {% macro show_status() -%}
-<dl class="dl-horizontal">
-    <dt>{% trans %}Voting Period{% endtrans %}</dt>
+    <dl class="dl-horizontal mosp" id="ballot-status">
+        <dt>{% trans %}Period{% endtrans %}</dt>
         <dd id="voting-period">
             {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
                      end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
@@ -61,6 +63,7 @@
                 {% endif %}
             {% endif %}
         </dd>
+
         <dt>{% trans %}Status{% endtrans %}</dt>
         <dd id="status">
             {% if now() < ambience['ballot']['vote_begin'] %}
@@ -82,7 +85,7 @@
             {% elif ambience['ballot']['is_voting'] %}
                 <strong>{% trans %}This ballot is currently open for voting.{% endtrans %}</strong><br />
                 {% if own_vote %}
-                    {% if split_vote|length == 1 %}
+                    {% if own_vote == MAGIC_ABSTAIN %}
                         <span class='text-warning'>{% trans %}You have abstained.{% endtrans %}</span>
                         {% trans %}You can make your choice below, during the voting period.{% endtrans %}
                     {% else %}
@@ -95,7 +98,8 @@
                 {% endif %}
             {% endif %}
         </dd>
-        <dt>{% trans %}Voting Modality{% endtrans %}</dt>
+
+        <dt>{% trans %}Modality{% endtrans %}</dt>
         <dd>
             {% if ambience['ballot']['votes'] == 1 %}
                 {% if ambience['ballot']['use_bar'] %}
@@ -129,16 +133,16 @@
                 {% endif %}
             {% endif %}
         </dd>
+
         {% if ambience['ballot']['vote_begin'] < now() %}
+            <dt>{% trans %}Voted{% endtrans %}</dt>
             {% if ambience['ballot']['is_tallied'] %}
-                <dt>{% trans %}Had voted{% endtrans %}</dt>
                 <dd id="had-voted">
                     {% trans count=ambience['ballot']['vote_count'] %}
                         {{ count }} attendees had given their vote for this ballot.
                     {% endtrans %}
                 </dd>
             {% else %}
-                <dt>{% trans %}Already voted{% endtrans %}</dt>
                 <dd id="already-voted">
                     {% trans count=ambience['ballot']['vote_count'] %}
                         Until now, {{ count }} attendees had given their vote for this ballot.
@@ -155,20 +159,24 @@
     {% endif %}
 {%- endmacro %}
 
+
+
 {% macro show_attachments(edit_mode) -%}
     {{ assembly_util.attachment_box(attachments, attachment_histories, edit=edit_mode, title=gettext("Files"),
                                     ballot=ambience['ballot'], new_attachment_button=True, full_history=False) }}
 {%- endmacro %}
 
-{% macro show_navigation() -%}
+
+
+{% macro show_navigation(page_name) -%}
     <nav>
         <ul class="pager">
             {% if prev_ballot %}
-                <li class="previous">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": prev_ballot["id"]}),
+                <li class="previous">{{ util.href(cdedblink(page_name, {"ballot_id": prev_ballot["id"]}),
                          '<span aria-hidden="true">&larr;</span> '|s + gettext("Previous"), title=prev_ballot["title"]) }}</li>
             {% endif %}
             {%  if next_ballot %}
-                <li class="next">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": next_ballot["id"]}),
+                <li class="next">{{ util.href(cdedblink(page_name, {"ballot_id": next_ballot["id"]}),
                          gettext("Next") + ' <span aria-hidden="true">&rarr;</span>'|s, title=next_ballot["title"]) }}</li>
             {% endif %}
         </ul>

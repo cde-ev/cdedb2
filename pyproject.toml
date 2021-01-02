@@ -1,0 +1,5 @@
+[tool.isort]
+profile = "black"
+src_paths = ["cdedb", "tests"]
+multi_line_output = 5
+combine_as_imports = true

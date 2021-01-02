@@ -18,7 +18,7 @@
     <form action="{{ cdedblink('cde/create_past_event') }}" method="POST" id="createeventform"
         class="form-horizontal">
         {{ util.anti_csrf_token('cde/create_past_event') }}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"),
                                   entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
@@ -30,7 +30,7 @@
                                                     "http authentification information encoded")|escape)) }}
         {{ util.form_input_textarea(name="courses", label=gettext("Courses"),
                                info=gettext('Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”.')|
-                                    format(number=gettext("Number"), title=gettext("Title"), desc=gettext("Description"))) }}
+                                    format(number=gettext("Number"), title=gettext("Title_[[name of an entity]]"), desc=gettext("Description"))) }}
 
         {{ util.form_input_static(aclass='text-info', icon='info-circle',
                           value=gettext("Warning: The new Event will be immediately visible to all CdE-Members "

@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{% trans %}Past Events (long){% endtrans %}{% endblock %}
+{% block title %}{% trans %}Past Events_[[long form]]{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active="True") }}

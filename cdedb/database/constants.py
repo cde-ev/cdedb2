@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Set, Dict
+from typing import Dict, Set
 
 
 def n_(x: str) -> str:
@@ -265,17 +265,6 @@ class AttachmentPolicy(enum.IntEnum):
     #: allow the mime-type application/pdf but nothing else
     pdf_only = 2
     forbid = 3  #:
-
-
-# This is deprecated and will be removed soon. Do not use.
-@enum.unique
-class AudiencePolicy(enum.IntEnum):
-    """Regulate who may subscribe to a mailing list by status."""
-    everybody = 1  #:
-    require_assembly = 2  #:
-    require_event = 3  #:
-    require_cde = 4  #:
-    require_member = 5  #:
 
 
 @enum.unique

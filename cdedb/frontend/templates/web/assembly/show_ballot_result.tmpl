@@ -1,0 +1,190 @@
+{% set sidenav_active='assembly_ballots' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/_ballot_tallied.tmpl" as ballot_tallied with context %}
+{% import "web/assembly/_ballot_meta.tmpl" as ballot_meta with context %}
+
+{% block title %}
+    {% trans title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
+        Result ({{ title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block heading %}
+    {{ util.doclink('Realm_Assembly_Voting-Procedere') }}
+    <h1 class="title">
+        {% trans %}
+            Detailed Results
+        {% endtrans %}
+        <small>
+            {{ util.make_icon('thumbs-up') }}{{ nbsp }}{{ ambience['ballot']['title'] }}
+        </small>
+    </h1>
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot_result"), gettext("Detailed Results"), active=True) }}
+{% endblock %}
+
+{% block content %}
+
+    {% set classical = ambience['ballot']['votes'] %}
+    {% set preferential = not ambience['ballot']['votes'] %}
+
+    <p>
+        {% trans %}
+            On this page, we provide some further details about the tallied ballot mentioned above.
+            Everybody participating at the assembly or who is an active member can view this page.
+        {% endtrans %}
+    </p>
+
+    <p>
+        {% trans %}
+            After evaluating all given votes, we obtain the following combined preference list of all participants:
+        {% endtrans %}
+    </p>
+
+    <pre class="result">{{ result['result'] }}</pre>
+
+    <p>
+        {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s %}
+            The greater-than character {{ gt }} means that the candidate, represented by their
+            shortname, on the left has higher overall preference than the one on the right.
+            The equals character {{ eq }} means that two or more candidates have the same overall
+            preference across all participants.
+        {% endtrans %}
+    </p>
+
+    {% if ambience['ballot']['use_bar'] %}
+        <p>
+            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
+                Additionally the shortname {{ abm }} shows where in the election the rejection limit was ranked.
+            {% endtrans %}
+        </p>
+    {% endif %}
+
+
+    <h2 class="mosp">{% trans %}Verify the result{% endtrans %}</h2>
+
+        <p>
+            {% trans %}
+                We allow you to verify every voting which has taken place in the CdEDB. For this, we offer you a
+                download JSON file containing every information about a tallied ballot which is stored in the DB.
+            {% endtrans %}
+        </p>
+        <p>
+            {% trans name=gettext("<code>Result Verification</code>")|s, method=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
+                With our provided {{ name }} Script, you can check that the result displayed in the DB is
+                actually correct. To obtain the result from the votes, we apply the {{ method }} internally.
+            {% endtrans %}
+        </p>
+         <p>
+            {% if has_voted %}
+                {% trans name=gettext("<code>Own Vote Verification</code>")|s %}
+                    With the {{ name }} Script, you can verify the correct count of your vote.
+                    Additionally, you need the personal secret you received per mail when registering for this assembly.
+                {% endtrans %}
+            {% else %}
+                {% trans name=gettext("<code>Own Vote Verification</code>")|s %}
+                    Voters of this ballot can verify their vote using the {{ name }} Script
+                    and the personal secret they received per mail when registering for this assembly.
+                {% endtrans %}
+            {% endif %}
+         </p>
+
+
+    <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
+    <p>{{ util.href(staticurl("verify_result.py"), gettext("Download Result Verification Script"), icon="download") }}</p>
+    <p>{{ util.href(staticurl("verify_vote.py"), gettext("Download Own Vote Verification Script"), icon="download") }}</p>
+
+
+    <h2 class="mosp">{% trans %}Result file hash{% endtrans %}</h2>
+
+        <p>
+            {% if ambience['assembly']['presider_address'] %}
+                {% trans presider=util.href(util.mailto(ambience['assembly']['presider_address']), ambience['assembly']['presider_address']),
+                         tally=util.href(util.mailto(BALLOT_TALLY_ADDRESS), BALLOT_TALLY_ADDRESS) %}
+                    After a ballot has been tallied, the generated result file and its hash
+                    will be sent to {{ tally }} and {{ presider }}.
+                {% endtrans %}
+            {% else %}
+                {% trans tally=util.href(util.mailto(BALLOT_TALLY_ADDRESS), BALLOT_TALLY_ADDRESS) %}
+                    After a ballot has been tallied, the generated result file and its hash
+                    will be sent to {{ tally }}.
+                {% endtrans %}
+            {% endif %}
+        </p>
+        <p>
+            {% trans algorithm="<code>SHA512</code>"|s %}
+                To ensure that the result file has not been modified on the CdE server,
+                we show the hash of the stored result file here, so you can compare those two.
+                Of course, you can also download the result file and calculate the
+                {{ algorithm }} hash by yourself.
+            {% endtrans %}
+        </p>
+        <pre>{{ result_hash }}</pre>
+
+
+    <h2 class="mosp">{% trans %}Votes{% endtrans %}</h2>
+
+        <table class="table table-condensed table-hover">
+            <thead>
+                <tr>
+                    <th class="col-sm-11">{% trans %}Vote_[[on a voting paper]]{% endtrans %}</th>
+                    <th class="col-sm-push-1">{% trans %}Count{% endtrans %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vote, count in vote_counts|dictsort|reverse %}
+                    <tr>
+                        <td>
+                            {% if vote == MAGIC_ABSTAIN %}
+                                {% trans %}Abstained{% endtrans %}
+                            {% else %}
+                                <code>
+                                    {% if classical %}
+                                        {%- for vote in vote.split("=") -%}
+                                            {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
+                                        {%- endfor -%}
+                                    {% else %}
+                                        {{ vote }}
+                                    {% endif %}
+                                </code>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ count }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+
+    <h2 class="mosp">{% trans %}Your Vote{% endtrans %}</h2>
+
+        {{ ballot_tallied.show_own_vote() }}
+
+
+    <h2 class="mosp">{% trans %}Voters{% endtrans %}</h2>
+
+        <div class="row" id="voters-list">
+            {% for list in result['voters'] | slice((3 if result['voters']|length > 20 else 2)
+                                                       if result['voters']|length > 10 else 1) %}
+                <div class="col-sm-4">
+                    <ul class="slim nosp">
+                        {% for voter in list %}
+                            <li>{{ voter }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+
+    {{ ballot_meta.show_navigation(page_name="assembly/show_ballot_result") }}
+
+{% endblock %}

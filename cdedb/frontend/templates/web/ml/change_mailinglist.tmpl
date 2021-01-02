@@ -58,7 +58,7 @@
     <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly, info=gettext(
             "Due to limitations of our current mailinglist infrastructure, disabling can not be undone.")) }}
-        {{ util.form_input_text(name="title", label=gettext("Title"), actualreadonly=readonly) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]"), actualreadonly=readonly) }}
         {{ util.form_input_text(name="local_part", label=gettext("Address"), actualreadonly=readonly,
                                 addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
         {{ util.form_input_select(name="domain", label=gettext("Domain"), actualreadonly=readonly, defaultvalue=ambience['mailinglist']['domain'].value,

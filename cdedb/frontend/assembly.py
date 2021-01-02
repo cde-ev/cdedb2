@@ -2,34 +2,32 @@
 
 """Services for the assembly realm."""
 
+import collections
 import copy
+import datetime
+import io
 import json
 import pathlib
-import collections
-import datetime
 import time
-import io
-from typing import (
-    Any, Dict, Tuple, Union, Optional, Collection, List, cast, Set
-)
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
 
-from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
-    check_validation as check, request_extractor, calculate_db_logparams,
-    calculate_loglinks, process_dynamic_input, periodic, cdedburl
-)
-from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import Query, QUERY_SPECS, mangle_query_input
-from cdedb.common import (
-    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_SHORTNAME, EntitySorter,
-    schulze_evaluate, xsorted, RequestState, get_hash, CdEDBObject,
-    DefaultReturnCode, CdEDBObjectMap,
-)
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+from cdedb.common import (
+    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    EntitySorter, RequestState, get_hash, merge_dicts, n_, now, schulze_evaluate,
+    unwrap, xsorted,
+)
+from cdedb.frontend.common import (
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
+    calculate_db_logparams, calculate_loglinks, cdedburl, check_validation as check,
+    periodic, process_dynamic_input, request_extractor,
+)
+from cdedb.frontend.uncommon import AbstractUserFrontend
+from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a shortname since it contains
@@ -1079,14 +1077,15 @@ class AssemblyFrontend(AbstractUserFrontend):
     def show_old_vote(self, rs: RequestState, assembly_id: int, ballot_id: int,
                       secret: str) -> Response:
         """Show a vote in a ballot of an old assembly by providing secret."""
-        if (rs.has_validation_errors() or rs.ambience["assembly"]["is_active"]
-                or not rs.ambience["ballot"]["is_tallied"]):
+        if rs.ambience["assembly"]["is_active"] or not rs.ambience["ballot"]["is_tallied"]:
             return self.show_ballot(rs, assembly_id, ballot_id)
-        return self.show_ballot(rs, assembly_id, ballot_id, secret.strip())
+        if rs.has_validation_errors():
+            return self.show_ballot_result(rs, assembly_id, ballot_id)
+        return self.show_ballot_result(rs, assembly_id, ballot_id, secret.strip())
 
     @access("assembly")
-    def show_ballot(self, rs: RequestState, assembly_id: int, ballot_id: int,
-                    secret: str = None) -> Response:
+    def show_ballot(self, rs: RequestState, assembly_id: int, ballot_id: int
+                    ) -> Response:
         """Present a ballot.
 
         This has pretty expansive functionality. It especially checks
@@ -1095,9 +1094,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         This does a bit of extra work to accomodate the compatability mode
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
-
-        If a secret is provided, this will fetch the vote belonging to that
-        secret.
         """
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -1115,33 +1111,16 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
         result = self.get_online_result(rs, ballot)
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
-        has_voted = False
-        own_vote = None
-        if attends:
-            has_voted = self.assemblyproxy.has_voted(rs, ballot_id)
-            if has_voted:
-                try:
-                    own_vote = self.assemblyproxy.get_vote(
-                        rs, ballot_id, secret=secret)
-                except ValueError:
-                    own_vote = None
-        merge_dicts(rs.values, {'vote': own_vote})
-        split_vote = None
-        if own_vote:
-            split_vote = tuple(x.split('=') for x in own_vote.split('>'))
-        if ballot['votes'] and split_vote:
-            if len(split_vote) == 1:
-                # abstention
-                rs.values['vote'] = MAGIC_ABSTAIN
-            else:
-                # select voted options
-                rs.values.setlist('vote', split_vote[0])
 
-        candidates = {e['shortname']: e
-                      for e in ballot['candidates'].values()}
-        if ballot['use_bar']:
-            candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
-                "bar (options below this are declined)")
+        vote_dict = self._retrieve_own_vote(rs, ballot, secret=None)
+        # convert the own_vote in a shape which can be consumed by the (classical or
+        # preferential) vote form
+        if ballot['votes']:
+            merge_dicts(rs.values, {'vote': vote_dict['own_vote'].split('=')
+                                            if vote_dict['own_vote'] else None})
+        else:
+            merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
+
         # this is used for the flux candidate table
         current = {
             f"{key}_{candidate_id}": value
@@ -1165,14 +1144,122 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
-            'attachments': attachments,
-            'attachment_histories': attachment_histories,
-            'split_vote': split_vote, 'own_vote': own_vote, 'result': result,
-            'candidates': candidates, 'attends': attends,
-            'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
-            'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
-            'secret': secret, 'has_voted': has_voted,
+            'attachments': attachments, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
+            'attachment_histories': attachment_histories, 'result': result,
+            'attends': attends, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
+            'prev_ballot': prev_ballot, 'next_ballot': next_ballot, **vote_dict
         })
+
+    @access("assembly")
+    def show_ballot_result(self, rs: RequestState, assembly_id: int, ballot_id: int,
+                           secret: str = None) -> Response:
+        """This shows a more detailed result of a tallied ballot.
+
+        All information provided on this side is constructable from the downloadable
+        json result file and the verification scripts.
+
+        However, we provide them also online for the sake of laziness.
+        """
+        if rs.has_validation_errors():
+            return self.redirect(rs, "assembly/show_ballot_result")
+
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        ballot = rs.ambience['ballot']
+
+        if self._update_ballot_state(rs, ballot):
+            return self.redirect(rs, "assembly/show_ballot_result")
+
+        if not ballot['is_tallied']:
+            rs.notify("error", n_("Ballot has not been tallied."))
+            return self.redirect(rs, "assembly/show_ballot")
+
+        vote_dict = self._retrieve_own_vote(rs, ballot, secret)
+        # we may get a validation error from an invalid secret, which will be handled by
+        # the user and we may ignore here
+        rs.ignore_validation_errors()
+
+        result = self.get_online_result(rs, ballot)
+        assert result is not None
+
+        # calculate the occurrence of each vote
+        if ballot['votes']:
+            # we actually voted in classical votes for the candidates before the first >
+            # if there are no >, it is an abstention which will be counted later
+            vote_set = {vote['vote'].split('>')[0] for vote in result['votes']
+                        if len(vote['vote'].split('>')) != 1}
+            vote_counts = {vote: sum((1 for v in result['votes']
+                                      if v.get('vote').split('>')[0] == vote))
+                           for vote in vote_set}
+            # count the abstentions, which have no >
+            vote_counts[MAGIC_ABSTAIN] = sum(1 for v in result['votes']
+                                             if len(v.get('vote').split('>')) == 1)
+            if vote_counts[MAGIC_ABSTAIN] == 0:
+                del vote_counts[MAGIC_ABSTAIN]
+        else:
+            vote_set = {vote['vote'] for vote in result['votes']}
+            vote_counts = {vote: sum((1 for v in result['votes']
+                                      if v.get('vote') == vote))
+                           for vote in vote_set}
+
+        # calculate the hash of the result file
+        result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
+        assert result_bytes is not None
+        result_hash = get_hash(result_bytes)
+
+        # show links to next and previous ballots
+        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
+        done, _, _, _ = self.group_ballots(ballots)
+
+        # we are only interested in done ballots
+        ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])
+
+        i = ballot_list.index(ballot_id)
+        length = len(ballot_list)
+        prev_ballot = ballots[ballot_list[i - 1]] if i > 0 else None
+        next_ballot = ballots[ballot_list[i + 1]] if i + 1 < length else None
+
+        return self.render(rs, "show_ballot_result", {
+            'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
+            'result_hash': result_hash, 'secret': secret, **vote_dict,
+            'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
+            'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
+            'prev_ballot': prev_ballot, 'next_ballot': next_ballot})
+
+    def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
+                           secret: str = None) -> CdEDBObject:
+        """Helper function to present the own vote
+
+        This handles the personalised information of the current viewer interacting with
+        the ballot.
+        """
+        ballot_id = ballot['id']
+
+        # fetches the vote from the database
+        attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
+        has_voted = False
+        own_vote = None
+        if attends:
+            has_voted = self.assemblyproxy.has_voted(rs, ballot_id)
+            if has_voted:
+                try:
+                    own_vote = self.assemblyproxy.get_vote(rs, ballot_id, secret=secret)
+                except ValueError:
+                    rs.append_validation_error(
+                        ("secret", ValueError(n_("Entered invalid secret"))))
+                    own_vote = None
+
+        if own_vote:
+            split_vote = own_vote.split('>')
+            if len(split_vote) == 1:
+                # abstention
+                own_vote = MAGIC_ABSTAIN
+            elif ballot['votes']:
+                # select voted options in classical voting
+                own_vote = split_vote[0]
+
+        return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
 
     def _update_ballot_state(self, rs: RequestState,
                              ballot: Dict[str, Any]) -> DefaultReturnCode:

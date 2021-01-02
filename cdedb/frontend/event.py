@@ -3,10 +3,10 @@
 """Services for the event realm."""
 
 import cgitb
-from collections import OrderedDict, Counter
 import collections.abc
 import copy
 import csv
+import datetime
 import decimal
 import functools
 import itertools
@@ -14,44 +14,42 @@ import json
 import operator
 import pathlib
 import re
+import shutil
 import sys
 import tempfile
-import datetime
-import shutil
+from collections import Counter, OrderedDict
+from typing import (
+    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set,
+    Tuple, Union, cast,
+)
 
 import psycopg2.extensions
 import werkzeug.exceptions
 from werkzeug import Response
-from typing import (
-    Sequence, Dict, Any, Collection, Mapping, List, Tuple, Callable, Optional,
-    Union, cast, Set, NamedTuple
-)
 
+import cdedb.database.constants as const
+import cdedb.ml_type_aux as ml_type
+import cdedb.validation as validate
+from cdedb.common import (
+    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, AgeClasses, CdEDBObject,
+    CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions, CourseFilterPositions,
+    DefaultReturnCode, EntitySorter, Error, InfiniteEnum, KeyFunction,
+    LodgementsSortkeys, PartialImportError, RequestState, Sortkey, asciificator,
+    deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
+    json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
+)
+from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
-    REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
-    enum_entries_filter, safe_filter, cdedburl, RequestConstraint,
-    CustomCSVDialect, keydictsort_filter, calculate_db_logparams,
-    calculate_loglinks, process_dynamic_input, make_event_fee_reference,
+    CustomCSVDialect, RequestConstraint, REQUESTdata, REQUESTdatadict, REQUESTfile,
+    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter, cdedburl,
+    check_validation as check, enum_entries_filter, event_guard, keydictsort_filter,
+    make_event_fee_reference, process_dynamic_input, querytoparams_filter,
+    request_extractor, safe_filter,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
-    QUERY_SPECS, QueryOperators, mangle_query_input, Query, QueryConstraint
+    QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
-from cdedb.common import (
-    n_, merge_dicts, determine_age_class, deduct_years, AgeClasses,
-    unwrap, now, json_serialize, glue, CourseChoiceToolActions,
-    CourseFilterPositions, diacritic_patterns, PartialImportError,
-    DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
-    LodgementsSortkeys, xsorted, get_hash, RequestState,
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, Error, KeyFunction, Sortkey,
-    InfiniteEnum, DefaultReturnCode, EVENT_FIELD_SPEC, asciificator
-)
-from cdedb.database.connection import Atomizer
-import cdedb.database.constants as const
-import cdedb.validation as validate
-import cdedb.ml_type_aux as ml_type
-
 
 LodgementProblem = NamedTuple(
     "LodgementProblem", [("description", str), ("lodgement_id", int),
@@ -2930,24 +2928,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("success", n_("Changes applied."))
             return self.redirect(rs, "event/show_event")
 
-        # Fourth look for double creations
-        all_current_data = self.eventproxy.partial_export_event(rs, data['id'])
-        suspicious_courses = []
-        for course_id, course in delta.get('courses', {}).items():
-            if course_id < 0:
-                for current in all_current_data['courses'].values():
-                    if current == course:
-                        suspicious_courses.append(course_id)
-                        break
-        suspicious_lodgements = []
-        for lodgement_id, lodgement in delta.get('lodgements', {}).items():
-            if lodgement_id < 0:
-                for current in all_current_data['lodgements'].values():
-                    if current == lodgement:
-                        suspicious_lodgements.append(lodgement_id)
-                        break
-
-        # Fifth prepare
+        # Fourth prepare
         rs.values['token'] = new_token
         rs.values['partial_import_data'] = json_serialize(data)
         for course in courses.values():
@@ -2956,7 +2937,7 @@ class EventFrontend(AbstractUserFrontend):
                 for id in course['segments']
             }
 
-        # Sixth prepare summary
+        # Fifth prepare summary
         def flatten_recursive_delta(data: Mapping[Any, Any],
                                     old: Mapping[Any, Any],
                                     prefix: str = "") -> CdEDBObject:
@@ -3044,15 +3025,43 @@ class EventFrontend(AbstractUserFrontend):
          lodgement_titles) = self._make_partial_import_diff_aux(
             rs, rs.ambience['event'], courses, lodgements)
 
+        # Sixth look for double deletions/creations
+        if (len(summary['deleted_registration_ids'])
+                > len(summary['real_deleted_registration_ids'])):
+            rs.notify('warning', n_("There were double registration deletions."
+                                    " Did you already import this file?"))
+        if len(summary['deleted_course_ids']) > len(summary['real_deleted_course_ids']):
+            rs.notify('warning', n_("There were double course deletions."
+                                    " Did you already import this file?"))
+        if (len(summary['deleted_lodgement_ids'])
+                > len(summary['real_deleted_lodgement_ids'])):
+            rs.notify('warning', n_("There were double lodgement deletions."
+                                    " Did you already import this file?"))
+        all_current_data = self.eventproxy.partial_export_event(rs, data['id'])
+        for course_id, course in delta.get('courses', {}).items():
+            if course_id < 0:
+                if any(current == course
+                       for current in all_current_data['courses'].values()):
+                    rs.notify('warning',
+                              n_("There were hints at double course creations."
+                                 " Did you already import this file?"))
+                    break
+        for lodgement_id, lodgement in delta.get('lodgements', {}).items():
+            if lodgement_id < 0:
+                if any(current == lodgement
+                       for current in all_current_data['lodgements'].values()):
+                    rs.notify('warning',
+                              n_("There were hints at double lodgement creations."
+                                 " Did you already import this file?"))
+                    break
+
         # Seventh render diff
         template_data = {
             'delta': delta,
             'registrations': registrations,
             'lodgements': lodgements,
             'lodgement_groups': lodgement_groups,
-            'suspicious_lodgements': suspicious_lodgements,
             'courses': courses,
-            'suspicious_courses': suspicious_courses,
             'personas': personas,
             'summary': summary,
             'reg_titles': reg_titles,
@@ -5750,7 +5759,7 @@ class EventFrontend(AbstractUserFrontend):
         titles: Dict[str, str] = {
             "lodgement.id": gettext(n_("Lodgement ID")),
             "lodgement.lodgement_id": gettext(n_("Lodgement")),
-            "lodgement.title": gettext(n_("Title")),
+            "lodgement.title": gettext(n_("Title_[[name of an entity]]")),
             "lodgement.regular_capacity": gettext(n_("Regular Capacity")),
             "lodgement.camping_mat_capacity":
                 gettext(n_("Camping Mat Capacity")),

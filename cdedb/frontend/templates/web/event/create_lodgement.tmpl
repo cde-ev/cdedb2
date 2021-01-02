@@ -25,7 +25,7 @@
           class="form-horizontal">
         {{ util.anti_csrf_token('event/create_lodgement') }}
         <h4 class="heading-underline">{% trans %}Lodgement{% endtrans %}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity"), type="number") }}
         {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity"), type="number") }}
         {{ util.form_input_select(name="group_id", entries=groups.items(),

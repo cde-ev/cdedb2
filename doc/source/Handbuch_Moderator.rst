@@ -14,6 +14,20 @@ Alle Notwendigen Informationen hierzu findet ihr direkt auf den Seiten
 Wenn ihr wissen wollt, wie das Datenmodell hinter der Abbonenntenverwaltung
 aussieht, schaut euch am Besten die :doc:`Realm_Mailinglist_Management` Seite an.
 
+Nachrichtenmoderation
+---------------------
+
+Mailinglisten können eingehende Nachrichten von Nichtabonnenten oder sogar
+von allen Nutzern zurückhalten, sodass diese erst durch Moderatoren
+genehmigt werden müssen.
+
+Wenn eine eine Nachricht für eine Liste zu moderieren ist, so bekomment ihr
+als Moderatoren eine Email in der steht, wie die Moderation
+erfolgt. Abhängig davon, welche Listensoftware auf dem Server für eure
+Mailingliste zuständig ist, erfolgt die Moderation entweder via Webinterface
+in der DB oder per Antwort auf die Email. In Zukunft sollen alle
+Mailinglisten auf eine Moderation via Datenbank umgestellt werden.
+
 Privilegierte Moderatoren
 -------------------------
 

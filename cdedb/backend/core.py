@@ -9,38 +9,33 @@ import collections
 import copy
 import datetime
 import decimal
-from passlib.hash import sha512_crypt
 from pathlib import Path
 from secrets import token_hex
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast, overload
 
-
-from typing import (
-    Optional, Collection, Dict, Tuple, Set, List, Any, cast, overload
-)
+from passlib.hash import sha512_crypt
 from typing_extensions import Protocol
 
-from cdedb.backend.common import AbstractBackend
+import cdedb.database.constants as const
+import cdedb.validation as validate
 from cdedb.backend.common import (
-    access, internal, singularize, affirm_validation as affirm,
-    affirm_set_validation as affirm_set)
+    AbstractBackend, access, affirm_set_validation as affirm_set,
+    affirm_validation as affirm, internal, singularize,
+)
 from cdedb.common import (
-    n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
-    PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
-    PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException, PathLike,
-    PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
-    ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter, GENESIS_REALM_OVERRIDE, xsorted, Role, Realm, Error,
-    CdEDBObject, CdEDBObjectMap, CdEDBLog, DefaultReturnCode, RequestState,
-    DeletionBlockers, get_hash, ADMIN_KEYS
+    ADMIN_KEYS, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE, PERSONA_ALL_FIELDS,
+    PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_DEFAULTS,
+    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
+    PRIVILEGE_CHANGE_FIELDS, ArchiveError, CdEDBLog, CdEDBObject, CdEDBObjectMap,
+    DefaultReturnCode, DeletionBlockers, Error, PathLike, PrivilegeError, PsycoJson,
+    QuotaException, Realm, RequestState, Role, User, decode_parameter, encode_parameter,
+    extract_realms, extract_roles, get_hash, glue, implied_realms, merge_dicts, n_, now,
+    privilege_tier, unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
-from cdedb.database.connection import Atomizer
-import cdedb.validation as validate
-import cdedb.database.constants as const
-from cdedb.query import QueryOperators, Query
 from cdedb.database import DATABASE_ROLES
-from cdedb.database.connection import connection_pool_factory
+from cdedb.database.connection import Atomizer, connection_pool_factory
+from cdedb.query import Query, QueryOperators
 
 
 class CoreBackend(AbstractBackend):
@@ -54,12 +49,14 @@ class CoreBackend(AbstractBackend):
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
             secrets, self.conf["DB_PORT"])
+        # local variable to prevent closure over secrets
+        reset_salt = secrets["RESET_SALT"]
         self.generate_reset_cookie = (
             lambda rs, persona_id, timeout: self._generate_reset_cookie(
-                rs, persona_id, secrets["RESET_SALT"], timeout=timeout))
+                rs, persona_id, reset_salt, timeout=timeout))
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
-                rs, persona_id, secrets["RESET_SALT"], cookie))
+                rs, persona_id, reset_salt, cookie))
         self.foto_dir: Path = self.conf['STORAGE_DIR'] / 'foto'
         self.genesis_attachment_dir: Path = (
                 self.conf['STORAGE_DIR'] / 'genesis_attachment')
@@ -1608,16 +1605,32 @@ class CoreBackend(AbstractBackend):
         """
         if ids is not None and num is not None:
             raise ValueError(n_("May not provide more than one input."))
+        access_hash: Optional[str] = None
         if ids is not None:
-            ids = affirm_set("id", ids or set())
-            num = len(ids - {rs.user.persona_id})
+            ids = affirm_set("id", ids or set()) - {rs.user.persona_id}
+            num = len(ids)
+            access_hash = get_hash(str(sorted(ids)).encode())
         else:
             num = affirm("non_negative_int", num or 0)
-        query = ("INSERT INTO core.quota (queries, persona_id, qdate)"
-                 " VALUES (%s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
-                 " UPDATE SET queries = core.quota.queries + EXCLUDED.queries"
+
+        persona_id = rs.user.persona_id
+        now_date = now().date()
+
+        query = ("SELECT last_access_hash, queries FROM core.quota"
+                 " WHERE persona_id = %s AND qdate = %s")
+        data = self.query_one(rs, query, (persona_id, now_date))
+        # If there was a previous access and the previous access was the same as this
+        # one, don't count it. Instead return the previous count of queries.
+        if data is not None and data["last_access_hash"] is not None:
+            if data["last_access_hash"] == access_hash:
+                return data["queries"]
+
+        query = ("INSERT INTO core.quota (queries, persona_id, qdate, last_access_hash)"
+                 " VALUES (%s, %s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
+                 " UPDATE SET queries = core.quota.queries + EXCLUDED.queries,"
+                 " last_access_hash = EXCLUDED.last_access_hash"
                  " RETURNING core.quota.queries")
-        params = (num, rs.user.persona_id, now().date())
+        params = (num, persona_id, now_date, access_hash)
         return unwrap(self.query_one(rs, query, params)) or 0
 
     @overload
@@ -1825,7 +1838,9 @@ class CoreBackend(AbstractBackend):
         if rs.conn.is_contaminated:
             raise RuntimeError(n_("Atomized – impossible to escalate."))
 
-        # TODO: What do we need this distinction for?
+        # TODO: This is needed because of an implementation detail of the login in the
+        #  frontend. Namely wanting to check consent decision status for cde users.
+        #  Maybe rework this somehow.
         is_cde = unwrap(self.sql_select_one(rs, "core.personas",
                                             ("is_cde_realm",), data["id"]))
         if is_cde:
@@ -2413,7 +2428,7 @@ class CoreBackend(AbstractBackend):
         params = (email, const.GenesisStati.unconfirmed)
         data = self.query_one(rs, query, params)
         return unwrap(data) if data else None
-    
+
     @access("anonymous")
     def genesis_verify(self, rs: RequestState, case_id: int) -> Tuple[int, str]:
         """Confirm the new email address and proceed to the next stage.

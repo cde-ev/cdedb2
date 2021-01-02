@@ -92,7 +92,7 @@ Hinweise
 --------
 
 * Ein server-seitig nur schwer abzufangender Fehler ist, wenn eine
-  Import-Datei, die die Erstellung von Einträgen enthält mehrfach
+  Import-Datei, die die Erstellung von Einträgen enthält, mehrfach
   hochgeladen wird. Dies wird versucht zu detektieren, kann aber nicht mit
   Sicherheit abgefangen werden.
 
@@ -145,7 +145,7 @@ aus jeder der Kategorien Kurs, Unterkunft und Anmeldung. Außerdem wird eine
 neue Unterkunftgruppe angelegt. Die verwendeten
 nutzerdefinierten Felder müssen vorher definiert sein.
 
-.. literalinclude:: ../../test/ancillary_files/partial_event_import.json
+.. literalinclude:: ../../tests/ancillary_files/partial_event_import.json
     :language: json
 
 Changelog

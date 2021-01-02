@@ -25,7 +25,7 @@
     <form action="{{ cdedblink('event/change_lodgement') }}" method="POST" id="changelodgementform"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_lodgement') }}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity")) }}
         {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity")) }}
         {{ util.form_input_select(name="group_id", entries=groups.items(), label=gettext("Lodgement Group"),

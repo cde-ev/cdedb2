@@ -3,9 +3,10 @@
 """Evaluate performance data logged by test suite. """
 
 import argparse
-import dateutil.parser
 import datetime
 import statistics
+
+import dateutil.parser
 
 parser = argparse.ArgumentParser(
     description='Analyze timing info from test run.')

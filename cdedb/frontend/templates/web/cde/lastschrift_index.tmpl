@@ -151,7 +151,7 @@
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': persona['id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                             {% if all_lastschrifts[transaction['lastschrift_id']]['revoked_at'] %}
-                                <b class="alert-danger">
+                                <b class="text-danger">
                                 {{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}
                                     This transaction needs to be cancelled!

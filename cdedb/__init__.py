@@ -8,8 +8,9 @@ coordination component as well as some other functionality to the CdE.
 
 import os
 import stat
-from cdedb.config import BasicConfig
+
 from cdedb.common import make_root_logger
+from cdedb.config import BasicConfig
 
 _BASICCONF = BasicConfig()
 

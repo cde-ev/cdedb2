@@ -199,7 +199,7 @@
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
 {% macro doclink(topic, anchor=none) %}
-    <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
+    <a href="{{ docurl(topic, anchor) }}" class="btn btn-info pull-right" target="_blank">
         {{ make_icon('question-circle') }}
         {% trans %}Help{% endtrans %}
         <span class="sr-only">{% trans %}for this site{% endtrans %}</span>
@@ -807,7 +807,7 @@
         <div class="panel-body">
             <div class="row">
                 <div class="col-md-6">
-                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title"),
+                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title_[[name of an entity]]"),
                                             attributes=('data-basename="title_"'|s if newrow else ''),
                                             aclass='input-title drow-input', horizontal=false) }}
                     {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),
