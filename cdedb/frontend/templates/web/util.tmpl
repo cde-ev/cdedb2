@@ -40,7 +40,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon=none, aclass=none, active=False, title=none, rel=none) -%}
+{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none) -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {{ dict(
     class=" ".join([
@@ -65,10 +65,10 @@
               This is also used as arialabel, if you don't provide one explicitly.
    arialabel  A screenreader-only text to append to the icon.
               Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
-{% macro make_icon(icon, fixed_width=True, aclass="", title=none, arialabel=none) -%}
+{% macro make_icon(icon, fixed_width=True, aclass=none, title=none, arialabel=none) -%}
     <span{{ dict(
         class=" ".join([
-            aclass,
+            aclass or '',
             "fas fa-{}".format(icon) if " " not in icon else icon,
             "fa-fw" if fixed_width else "",
         ]),
@@ -358,11 +358,11 @@
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept=none, anid=none,
-        aclass="", small=False, horizontal=True, differentiate_warnings=True) %}
+        aclass=none, small=False, horizontal=True, differentiate_warnings=True) %}
     {%- set anid = anid or "input-file-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal,
                                 differentiate_warnings=differentiate_warnings) %}
-        {{- input_file(name, readonly, defaultvalue, anid, accept=accept, aclass='form-control ' + aclass) }}
+        {{- input_file(name, readonly, defaultvalue, anid, accept=accept, aclass='form-control ' + (aclass or '')) }}
     {%- endcall %}
 {%- endmacro %}
 
@@ -388,7 +388,7 @@
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
-                          aclass='form-control '+aclass) }}
+                          aclass='form-control ' + (aclass or '')) }}
     {%- endcall %}
 {%- endmacro %}
 
