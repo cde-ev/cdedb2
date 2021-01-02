@@ -49,12 +49,14 @@ class CoreBackend(AbstractBackend):
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
             secrets, self.conf["DB_PORT"])
+        # local variable to prevent closure over secrets
+        reset_salt = secrets["RESET_SALT"]
         self.generate_reset_cookie = (
             lambda rs, persona_id, timeout: self._generate_reset_cookie(
-                rs, persona_id, secrets["RESET_SALT"], timeout=timeout))
+                rs, persona_id, reset_salt, timeout=timeout))
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
-                rs, persona_id, secrets["RESET_SALT"], cookie))
+                rs, persona_id, reset_salt, cookie))
         self.foto_dir: Path = self.conf['STORAGE_DIR'] / 'foto'
         self.genesis_attachment_dir: Path = (
                 self.conf['STORAGE_DIR'] / 'genesis_attachment')
