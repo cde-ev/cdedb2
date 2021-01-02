@@ -210,7 +210,7 @@ class MailinglistDomain(enum.IntEnum):
 
     @classmethod
     def mailman_domains(cls) -> Set['MailinglistDomain']:
-        return {MailinglistDomain.testmail}
+        return {cls.aka, cls.testmail}
 
 
 # Instead of importing this, call str() on a MailinglistDomain.
