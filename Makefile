@@ -140,7 +140,7 @@ storage-test:
 		/tmp/cdedb-store/assembly_attachment/3_v1
 	cp -t /tmp/cdedb-store/testfiles/ tests/ancillary_files/{$(TESTFILES)}
 
-sql-schema:
+sql: tests/ancillary_files/sample_data.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
@@ -148,60 +148,46 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	$(error This needs to be run inside the postgres container)
-endif
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-users.sql
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+else
 	sudo systemctl stop pgbouncer
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=cdb_test
-	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
+	sudo -u postgres psql -f cdedb/database/cdedb-users.sql
+	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
 	sudo systemctl start pgbouncer
-
-sql-seed-database: tests/ancillary_files/sample_data.sql
-ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(error Refusing to touch live instance)
 endif
-ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
-	$(error Refusing to touch orga instance)
-endif
-	$(PYTHONBIN) bin/execute_sql_script.py --dbname cdb \
-		-f tests/ancillary_files/sample_data.sql
-	$(PYTHONBIN) bin/execute_sql_script.py --dbname cdb_test \
-		-f tests/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb
+	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=cdb
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
 
-sql:
-	$(MAKE) sql-schema
-	$(MAKE) sql-seed-database
-
-# This does not recurse to sql-schema, so in the very rare circumstance that
-# you want to completely reset the test database it has to be executed
-# explicitly. This is due to the restrictions of the docker environment.
 sql-test:
-	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
-		-f cdedb/database/cdedb-tables.sql
+ifeq ($(wildcard /CONTAINER),/CONTAINER)
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+else
+	sudo systemctl stop pgbouncer
+	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	sudo systemctl start pgbouncer
+endif
+	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb_test 
 	$(MAKE) sql-test-shallow
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
-	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test \
-		-f tests/ancillary_files/clean_data.sql
-	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
-		-f tests/ancillary_files/sample_data.sql
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/clean_data.sql --dbname=cdb_test 
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=cdb_test 
 
-sql-xss:
+sql-xss: tests/ancillary_files/sample_data_escaping.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-	$(MAKE) sql-schema
-	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb \
-		-f tests/ancillary_files/sample_data_escaping.sql
-	$(PYTHONBIN) bin/execute_sql_script.py --dbname=cdb_test\
-		-f tests/ancillary_files/sample_data_escaping.sql
+	$(MAKE) sql
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data_escaping.sql --dbname=cdb
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data_escaping.sql --dbname=cdb_test
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py

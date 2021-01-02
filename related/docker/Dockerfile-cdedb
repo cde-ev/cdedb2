@@ -22,9 +22,13 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     sudo \
     make \
     gettext \
+    \
     apache2 \
     python3 \
     libapache2-mod-wsgi-py3 \
+    \
+    postgresql-client \
+    \
     slapd \
     ldap-utils \
     \
