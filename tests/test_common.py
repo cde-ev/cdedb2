@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import datetime
-import os
 import pathlib
 import random
 import re
@@ -286,12 +285,12 @@ class TestCommon(BasicTest):
             tmppath = pathlib.Path(tempdir, 'i18n')
             shutil.copytree(i18n_path, tmppath)
             subprocess.run(["make", f"I18NDIR={tmppath}" "i18n-refresh"],
-                check=True, capture_output=True)
+                           check=True, capture_output=True)
             try:
                 result = subprocess.run(
                     ["make", f"I18NDIR={tmppath}", "i18n-compile"],
                     check=True, capture_output=True, text=True,
-                    env={"LC_MESSAGES": "en"} # makes parsing easier
+                    env={"LC_MESSAGES": "en"}  # makes parsing easier
                 )
             except subprocess.CalledProcessError as e:
                 self.fail(f"Translation check failed:\n{e.stderr}")
@@ -311,15 +310,18 @@ class TestCommon(BasicTest):
             result.stderr
         )
 
-        self.assertIsNone(matches_de["untranslated"],
-            f"There are untranslated strings (de)."
-            f" Make sure all strings are translated to German.")
-        self.assertIsNone(matches_de["fuzzy"],
-            f"There are fuzzy translations (de)."
-            f" Double check these and remove the '#, fuzzy' marker afterwards.")
-        self.assertIsNone(matches_en["fuzzy"],
-            f"There are fuzzy translations (en)."
-            f" Double check these and remove the '#, fuzzy' marker afterwards.")
+        with self.subTest("untranslated"):
+            self.assertIsNone(matches_de["untranslated"],
+                              f"There are untranslated strings (de)."
+                              f" Make sure all strings are translated to German.")
+        with self.subTest("fuzzy-de"):
+            self.assertIsNone(matches_de["fuzzy"],
+                              f"There are fuzzy translations (de). Double check these"
+                              f" and remove the '#, fuzzy' marker afterwards.")
+        with self.subTest("fuzzy-en"):
+            self.assertIsNone(matches_en["fuzzy"],
+                              f"There are fuzzy translations (en). Double check these"
+                              f" and remove the '#, fuzzy' marker afterwards.")
 
     def test_ml_type_mismatch(self):
         pseudo_mailinglist = {"ml_type": const.MailinglistTypes.event_associated}
