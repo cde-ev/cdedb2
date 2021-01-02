@@ -61,17 +61,8 @@ To do this you can run the following:
     $ # navigate to the repository root
     $ make i18n-compile
     $ make doc
-    $ cp related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
     $ cd related/docker
-    $ docker-compose exec app make sql-seed-database
-
-.. note::
-    The ``make sample-data`` target is not available inside the container.
-    This is due to the container not having direct access to the database
-    and therefore not being able to reset the schema.
-    Instead ``make sql-seed-database`` is provided to clear and fill the DB.
-    If you want to fully reset the database including the schema
-    you should look under `Resetting the containers`_.
+    $ docker-compose exec app make sql
 
 .. warning::
 
@@ -123,6 +114,3 @@ You can delete these volumes using ``docker volume rm VOLUME``.
 This can however only be done when the containers are not running.
 Execute ``docker-compose down`` to properly stop the containers.
 To remove all volumes you can simply run ``docker-compose down --volumes``.
-
-Upon start postgres will now regenerate the database scheme
-similar to running ``make sample-data``.
