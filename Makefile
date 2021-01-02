@@ -27,6 +27,8 @@ COVERAGEBIN ?= python3-coverage
 MYPYBIN ?= mypy
 TESTPREPARATION ?= automatic
 I18NDIR ?= ./i18n
+I18NPO_DE ?= $(I18NDIR)/de/LC_MESSAGES/cdedb.po
+I18NPO_EN ?= $(I18NDIR)/en/LC_MESSAGES/cdedb.po
 
 doc:
 	bin/create_email_template_list.sh .
@@ -45,28 +47,25 @@ i18n-refresh:
 	$(MAKE) i18n-update
 
 i18n-extract:
-	pybabel extract \
+	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		-F ./babel.cfg  --sort-by-file -o $(I18NDIR)/cdedb.pot \
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
 
 i18n-update:
-	pybabel update -i $(I18NDIR)/cdedb.pot -d $(I18NDIR)/ -l de -D cdedb \
-		--ignore-obsolete
-	pybabel update -i $(I18NDIR)/cdedb.pot -d $(I18NDIR)/ -l en -D cdedb \
-		--ignore-obsolete
-	# get .po files through GNU msgcat for the benefit of smaller diffs
-	# against changes done by our custom merge driver
-	msgcat -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/de/LC_MESSAGES/cdedb.po
-	msgcat -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/en/LC_MESSAGES/cdedb.po
+	msgmerge --no-fuzzy-matching --lang=de -U $(I18NPO_DE) $(I18NDIR)/cdedb.pot
+	msgattrib --no-obsolete -o $(I18NPO_DE) $(I18NPO_DE)
+	msgmerge --no-fuzzy-matching --lang=en -U $(I18NPO_EN) $(I18NDIR)/cdedb.pot
+	msgattrib --no-obsolete -o $(I18NPO_EN) $(I18NPO_EN)
+	# TODO: do we want to use msgattrs -i option for prettier (indented) output files?
 
 i18n-compile:
-	pybabel compile -d $(I18NDIR)/ -l de -D cdedb
-	pybabel compile -d $(I18NDIR)/ -l en -D cdedb
+	msgfmt -o $(I18NDIR)/de/LC_MESSAGES/cdedb.mo $(I18NPO_DE) -c --statistics
+	msgfmt -o $(I18NDIR)/en/LC_MESSAGES/cdedb.mo $(I18NPO_EN) -c --statistics
 
 i18n-check:
-	msgfmt -c $(I18NDIR)/de/LC_MESSAGES/cdedb.po --statistics \
+	msgfmt -c $(I18NPO_DE) --statistics \
 		--output /dev/null
-	msgfmt -c $(I18NDIR)/en/LC_MESSAGES/cdedb.po --statistics \
+	msgfmt -c $(I18NPO_EN) --statistics \
 		--output /dev/null
 
 sample-data:
