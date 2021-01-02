@@ -587,12 +587,14 @@ class AssemblyOptInMailinglist(AssemblyMailinglist):
         ("assembly", MailinglistInteractionPolicy.opt_in)
     ])
 
+
 class GeneralMandatoryMailinglist(AllUsersImplicitMeta, GeneralMailinglist):
     role_map = OrderedDict([
         ("persona", MailinglistInteractionPolicy.mandatory)
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
+
 
 class GeneralOptInMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
@@ -610,6 +612,7 @@ class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", MailinglistInteractionPolicy.invitation_only)
     ])
+
 
 class GeneralModeratorMailinglist(GeneralMailinglist):
     # For mandatory lists, ignore all unsubscriptions.
@@ -706,8 +709,7 @@ TYPE_MAP = {
     MailinglistTypes.assembly_associated: AssemblyAssociatedMailinglist,
     MailinglistTypes.assembly_opt_in: AssemblyOptInMailinglist,
     MailinglistTypes.assembly_presider: AssemblyPresiderMailinglist,
-    # TODO This waits for some cleanup of ex-members
-    # MailinglistTypes.general_mandatory: GeneralMandatoryMailinglist,
+    MailinglistTypes.general_mandatory: GeneralMandatoryMailinglist,
     MailinglistTypes.general_opt_in: GeneralOptInMailinglist,
     MailinglistTypes.general_moderators: GeneralModeratorMailinglist,
     MailinglistTypes.semi_public: SemiPublicMailinglist,

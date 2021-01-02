@@ -185,9 +185,7 @@ class MailinglistTypes(enum.IntEnum):
     assembly_opt_in = 31
     assembly_presider = 32
 
-    # TODO This waits for some cleanup of ex-members
-    # general_mandatory = 39
-
+    general_mandatory = 38
     general_opt_in = 40
     general_moderators = 45
 
