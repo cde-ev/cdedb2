@@ -48,13 +48,13 @@ i18n-refresh:
 
 i18n-extract:
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
-		-F ./babel.cfg  --sort-by-file -o $(I18NDIR)/cdedb.pot \
+		-F ./babel.cfg -o $(I18NDIR)/cdedb.pot \
 		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
 
 i18n-update:
-	msgmerge --no-fuzzy-matching --lang=de -U $(I18NPO_DE) $(I18NDIR)/cdedb.pot
+	msgmerge -NF --lang=de -U $(I18NPO_DE) $(I18NDIR)/cdedb.pot
 	msgattrib --no-obsolete -o $(I18NPO_DE) $(I18NPO_DE)
-	msgmerge --no-fuzzy-matching --lang=en -U $(I18NPO_EN) $(I18NDIR)/cdedb.pot
+	msgmerge -NF --lang=en -U $(I18NPO_EN) $(I18NDIR)/cdedb.pot
 	msgattrib --no-obsolete -o $(I18NPO_EN) $(I18NPO_EN)
 	# TODO: do we want to use msgattrs -i option for prettier (indented) output files?
 
