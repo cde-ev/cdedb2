@@ -55,6 +55,10 @@ from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()
 
+ExceptionInfo = Union[
+    Tuple[Type[BaseException], BaseException, TracebackType],
+    Tuple[None, None, None]
+]
 
 def check_test_setup() -> None:
     """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
@@ -244,9 +248,21 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-ExceptionInfo = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None], None]
+class MyTextTestRunner(unittest.TextTestRunner):
+    stream: TextIO
+
+    def run(
+        self, test: Union[unittest.TestSuite, unittest.TestCase]
+    ) -> unittest.TestResult:
+        result = super().run(test)
+        failed = map(
+            lambda error: error[0].id(),
+            result.errors + result.failures + result.unexpectedSuccesses
+        )
+        if not result.wasSuccessful():
+            print("To rerun failed tests execute the following:", file=self.stream)
+            print(f"/cdedb2/bin/singlecheck.sh {' '.join(failed)}", file=self.stream)
+        return result
 
 
 class MyTextTestResult(unittest.TextTestResult):
@@ -260,8 +276,8 @@ class MyTextTestResult(unittest.TextTestResult):
         self.showAll: bool
         self.stream: TextIO
         super().__init__(stream, descriptions, verbosity)
-        self._subTestErrors: List[ExceptionInfo] = []
-        self._subTestFailures: List[ExceptionInfo] = []
+        self._subTestErrors: List[Optional[ExceptionInfo]] = []
+        self._subTestFailures: List[Optional[ExceptionInfo]] = []
         self._subTestSkips: List[str] = []
 
     def startTest(self, test: unittest.TestCase) -> None:
@@ -271,7 +287,7 @@ class MyTextTestResult(unittest.TextTestResult):
         self._subTestSkips = []
 
     def addSubTest(self, test: unittest.TestCase, subtest: unittest.TestCase,
-                   err: Optional[ExceptionInfo]) -> None:
+                   err: Optional[Optional[ExceptionInfo]]) -> None:
         super().addSubTest(test, subtest, err)
         if err is not None and err[0] is not None:
             if issubclass(err[0], subtest.failureException):
