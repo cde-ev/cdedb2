@@ -33,11 +33,10 @@ from cdedb.common import (
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, CdEMailmanClient,
-    access, basic_redirect, calculate_db_logparams, calculate_loglinks,
-    check_validation as check, date_filter, enum_entries_filter,
-    make_membership_fee_reference, periodic, query_result_to_json, querytoparams_filter,
-    request_dict_extractor, request_extractor
+    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
+    calculate_db_logparams, calculate_loglinks, check_validation as check, date_filter,
+    enum_entries_filter, make_membership_fee_reference, periodic, query_result_to_json,
+    querytoparams_filter, request_dict_extractor, request_extractor
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
@@ -137,7 +136,7 @@ class CoreFrontend(AbstractFrontend):
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
                 sub_request = const.SubscriptionStates.pending
-                mailman = CdEMailmanClient(self.conf)
+                mailman = self.get_mailman()
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, mailinglist_id, states=(sub_request,))

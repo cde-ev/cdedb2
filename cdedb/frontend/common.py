@@ -932,6 +932,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = make_proxy(EventBackend(configpath))
         self.mlproxy = make_proxy(MlBackend(configpath))
         self.pasteventproxy = make_proxy(PastEventBackend(configpath))
+        # Provide mailman access
+        secrets = SecretsConfig(configpath)
+        # local variables to prevent closure over secrets
+        mailman_password = secrets["MAILMAN_PASSWORD"]
+        mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
+        self.get_mailman = lambda: CdEMailmanClient(self.conf, mailman_password,
+                                                    mailman_basic_auth_password)
 
     @classmethod
     @abc.abstractmethod
@@ -1609,7 +1616,8 @@ class CdEMailmanClient(mailmanclient.Client):
     This custom wrapper provides additional functionality needed in multiple frontends.
     Whenever access to the mailman server is needed, this class should be used.
     """
-    def __init__(self, conf: Config):
+    def __init__(self, conf: Config, mailman_password: str,
+                 mailman_basic_auth_password: str):
         """Automatically initializes a client with our custom parameters.
 
         :param conf: Usually, he config used where this class is instantiated.
@@ -1617,10 +1625,9 @@ class CdEMailmanClient(mailmanclient.Client):
         self.conf = conf
 
         # Initialize base class
-        secrets = SecretsConfig(conf._configpath)
         url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
-        super().__init__(url, self.conf["MAILMAN_USER"], secrets["MAILMAN_PASSWORD"])
-        self.template_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
+        super().__init__(url, self.conf["MAILMAN_USER"], mailman_password)
+        self.template_password = mailman_basic_auth_password
 
         # Initialize logger. This needs the base class initialization to be done.
         logger_name = "cdedb.frontend.mailmanclient"

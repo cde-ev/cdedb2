@@ -17,9 +17,9 @@ from cdedb.common import (
     SubscriptionActions, SubscriptionError, merge_dicts, n_, now, unwrap,
 )
 from cdedb.frontend.common import (
-    CdEMailmanClient, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
-    calculate_loglinks, cdedbid_filter as cdedbid, check_validation as check,
-    csv_output, keydictsort_filter, mailinglist_guard, periodic,
+    REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
+    cdedbid_filter as cdedbid, check_validation as check, csv_output,
+    keydictsort_filter, mailinglist_guard, periodic,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.ml_type_aux import (
@@ -161,7 +161,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id)
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
-        mailman = CdEMailmanClient(self.conf)
+        mailman = self.get_mailman()
         for ml_id in mailinglists:
             mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
             held_mails = mailman.get_held_messages(mailinglist_infos[ml_id])

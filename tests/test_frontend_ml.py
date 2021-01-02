@@ -1325,7 +1325,7 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
-    @unittest.mock.patch("cdedb.frontend.ml.CdEMailmanClient")
+    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
     def test_mailman_moderation(self, client_class, user):
         #
