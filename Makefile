@@ -59,17 +59,17 @@ i18n-update:
 		$(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
 	msgmerge --sort-by-file --lang=en --update \
 		$(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgattrib --no-obsolete --output-file=$(I18NDIR)/de/LC_MESSAGES/cdedb.po \
+	msgattrib --no-obsolete -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
-	msgattrib --no-obsolete --output-file=$(I18NDIR)/en/LC_MESSAGES/cdedb.po \
+	msgattrib --no-obsolete -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
 	# TODO: do we want to use msgattribs --indent option for prettier po files?
 
 i18n-compile:
-	msgfmt --check --output-file=$(I18NDIR)/de/LC_MESSAGES/cdedb.mo \
-		$(I18NDIR)/de/LC_MESSAGES/cdedb.po --statistics
-	msgfmt --check --output-file=$(I18NDIR)/en/LC_MESSAGES/cdedb.mo \
-		$(I18NDIR)/en/LC_MESSAGES/cdedb.po --statistics
+	msgfmt --verbose --check --statistics -o $(I18NDIR)/de/LC_MESSAGES/cdedb.mo \
+		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
+	msgfmt --verbose --check --statistics -o $(I18NDIR)/en/LC_MESSAGES/cdedb.mo \
+		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
 
 sample-data:
 	$(MAKE) storage > /dev/null

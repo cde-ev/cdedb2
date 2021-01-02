@@ -282,30 +282,44 @@ class TestCommon(BasicTest):
 
     def test_untranslated_strings(self):
         i18n_path = self.conf["REPOSITORY_PATH"] / 'i18n'
-        env = os.environ.copy()
         with tempfile.TemporaryDirectory() as tempdir:
-            env['I18NDIR'] = tempdir
+            tmppath = pathlib.Path(tempdir, 'i18n')
+            shutil.copytree(i18n_path, tmppath)
+            subprocess.run(["make", f"I18NDIR={tmppath}" "i18n-refresh"],
+                check=True, capture_output=True)
             try:
-                temppath = pathlib.Path(tempdir)
-                for lang in ('de', 'en'):
-                    langdir = temppath / lang / 'LC_MESSAGES'
-                    langdir.mkdir(parents=True)
-                    temp_pofile = langdir / 'cdedb.po'
-                    orig_pofile = i18n_path / lang / 'LC_MESSAGES' / 'cdedb.po'
-                    shutil.copy(orig_pofile, temp_pofile)
-                tmp = subprocess.run(["make", "i18n-refresh"], check=True, env=env,
-                                     capture_output=True)
-                result = subprocess.run(["make", "i18n-compile"], check=True,
-                                        capture_output=True, env=env)
-            except subprocess.CalledProcessError as cpe:
-                self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
-        pattern = re.compile(r" (\d+) (?:unübersetzte Meldung|untranslated message)")
-        match = re.search(pattern, " ".join(result.stderr.decode().splitlines()[:-1]))
-        # TODO: check also for fuzzy tranlations and give hint to view them
-        #  and remove marker
-        if match:
-            self.fail(f"There are {match.group(1)} untranslated strings (German)."
-                      f" Make sure all strings are translated to German.")
+                result = subprocess.run(
+                    ["make", f"I18NDIR={tmppath}", "i18n-compile"],
+                    check=True, capture_output=True, text=True,
+                    env={"LC_MESSAGES": "en"} # makes parsing easier
+                )
+            except subprocess.CalledProcessError as e:
+                self.fail(f"Translation check failed:\n{e.stderr}")
+
+        matches_de = re.search(
+            r".*/de/LC_MESSAGES/cdedb.po: \d+ translated messages"
+            r"(, (?P<fuzzy>\d+) fuzzy translations?)?"
+            r"(, (?P<untranslated>\d+) untranslated messages?)?"
+            r"\.",
+            result.stderr
+        )
+        matches_en = re.search(
+            r".*/en/LC_MESSAGES/cdedb.po: \d+ translated messages"
+            r"(, (?P<fuzzy>\d+) fuzzy translations?)?"
+            r", \d+ untranslated messages"
+            r"\.",
+            result.stderr
+        )
+
+        self.assertIsNone(matches_de["untranslated"],
+            f"There are untranslated strings (de)."
+            f" Make sure all strings are translated to German.")
+        self.assertIsNone(matches_de["fuzzy"],
+            f"There are fuzzy translations (de)."
+            f" Double check these and remove the '#, fuzzy' marker afterwards.")
+        self.assertIsNone(matches_en["fuzzy"],
+            f"There are fuzzy translations (en)."
+            f" Double check these and remove the '#, fuzzy' marker afterwards.")
 
     def test_ml_type_mismatch(self):
         pseudo_mailinglist = {"ml_type": const.MailinglistTypes.event_associated}
