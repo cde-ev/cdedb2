@@ -1,5 +1,10 @@
 SHELL := /bin/bash
 
+.PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql \
+	sql-test sql-test-shallow lint check single-check .coverage coverage \
+	dump-html validate-html \
+	i18n-extract i18n-update i18n-compile i18n-refresh
+
 help:
 	@echo "doc -- build documentation"
 	@echo "reload -- re-compile GNU gettext data and trigger WSGI worker reload"
@@ -27,8 +32,6 @@ COVERAGEBIN ?= python3-coverage
 MYPYBIN ?= mypy
 TESTPREPARATION ?= automatic
 I18NDIR ?= ./i18n
-I18NPO_DE ?= $(I18NDIR)/de/LC_MESSAGES/cdedb.po
-I18NPO_EN ?= $(I18NDIR)/en/LC_MESSAGES/cdedb.po
 
 doc:
 	bin/create_email_template_list.sh .
@@ -48,19 +51,25 @@ i18n-refresh:
 
 i18n-extract:
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
-		-F ./babel.cfg -o $(I18NDIR)/cdedb.pot \
-		-k "rs.gettext" -k "rs.ngettext" -k "n_" .
+		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
+		--output=$(I18NDIR)/cdedb.pot --input-dirs=.
 
 i18n-update:
-	msgmerge -NF --lang=de -U $(I18NPO_DE) $(I18NDIR)/cdedb.pot
-	msgattrib --no-obsolete -o $(I18NPO_DE) $(I18NPO_DE)
-	msgmerge -NF --lang=en -U $(I18NPO_EN) $(I18NDIR)/cdedb.pot
-	msgattrib --no-obsolete -o $(I18NPO_EN) $(I18NPO_EN)
-	# TODO: do we want to use msgattrs -i option for prettier (indented) output files?
+	msgmerge --sort-by-file --lang=de --update \
+		$(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgmerge --sort-by-file --lang=en --update \
+		$(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgattrib --no-obsolete --output-file=$(I18NDIR)/de/LC_MESSAGES/cdedb.po \
+		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
+	msgattrib --no-obsolete --output-file=$(I18NDIR)/en/LC_MESSAGES/cdedb.po \
+		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
+	# TODO: do we want to use msgattribs --indent option for prettier po files?
 
 i18n-compile:
-	msgfmt -c --statistics -o $(I18NDIR)/de/LC_MESSAGES/cdedb.mo $(I18NPO_DE)
-	msgfmt -c --statistics -o $(I18NDIR)/en/LC_MESSAGES/cdedb.mo $(I18NPO_EN)
+	msgfmt --check --output-file=$(I18NDIR)/de/LC_MESSAGES/cdedb.mo \
+		$(I18NDIR)/de/LC_MESSAGES/cdedb.po --statistics
+	msgfmt --check --output-file=$(I18NDIR)/en/LC_MESSAGES/cdedb.mo \
+		$(I18NDIR)/en/LC_MESSAGES/cdedb.po --statistics
 
 sample-data:
 	$(MAKE) storage > /dev/null
@@ -306,10 +315,6 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
 		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
-
-.PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql \
-	sql-test sql-test-shallow lint check single-check .coverage coverage \
-	dump-html validate-html
 
 mypy-backend:
 	${MYPYBIN} cdedb/backend/

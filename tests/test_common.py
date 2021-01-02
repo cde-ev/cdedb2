@@ -301,6 +301,8 @@ class TestCommon(BasicTest):
                 self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
         pattern = re.compile(r" (\d+) (?:unübersetzte Meldung|untranslated message)")
         match = re.search(pattern, " ".join(result.stderr.decode().splitlines()[:-1]))
+        # TODO: check also for fuzzy tranlations and give hint to view them
+        #  and remove marker
         if match:
             self.fail(f"There are {match.group(1)} untranslated strings (German)."
                       f" Make sure all strings are translated to German.")
