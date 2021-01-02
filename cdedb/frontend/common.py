@@ -1633,7 +1633,7 @@ class CdEMailmanClient(mailmanclient.Client):
             self, conf._configpath))
 
     def get_list_safe(self, address: str) -> Optional[
-        mailmanclient.restobjects.mailinglist.MailingList]:
+            mailmanclient.restobjects.mailinglist.MailingList]:
         """Return list with standard error handling.
 
         In contrast to the original function, this does not raise if no list has been
@@ -1648,7 +1648,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 raise
 
     def get_held_messages(self, dblist: CdEDBObject) -> Optional[
-        List[mailmanclient.restobjects.held_message.HeldMessage]]:
+            List[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
         If the list is not managed by mailman, this function returns None instead.
