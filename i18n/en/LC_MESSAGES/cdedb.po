@@ -12565,19 +12565,16 @@ msgid "MlLogCodes.cron_removed"
 msgstr "Automatically unsubscribed"
 
 #: cdedb/i18n_additional.py:179
-#, fuzzy
 msgid "MlLogCodes.moderate_accept"
-msgstr "Moderator added"
+msgstr "Message accepted"
 
 #: cdedb/i18n_additional.py:180
-#, fuzzy
 msgid "MlLogCodes.moderate_reject"
-msgstr "Moderator removed"
+msgstr "Message rejected"
 
 #: cdedb/i18n_additional.py:181
-#, fuzzy
 msgid "MlLogCodes.moderate_discard"
-msgstr "Moderator added"
+msgstr "Message discarded"
 
 #: cdedb/i18n_additional.py:183
 msgid "ModerationPolicy.unmoderated"
