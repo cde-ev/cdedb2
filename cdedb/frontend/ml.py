@@ -47,20 +47,23 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
             self.logger.info("Skipping mailman request in dev/offline mode.")
         elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
             mailman = CdEMailmanClient(self.conf)
-            mmlist = mailman.get_list(dblist['address'])
-            try:
-                held = mmlist.get_held_message(request_id)
-                change_note = f'{held.sender} / {held.subject}'
-                response = mmlist.moderate_message(request_id, action)
-            except urllib.error.HTTPError:
-                rs.notify("error", n_("Message unavailable."))
+            mmlist = mailman.get_list_safe(dblist['address'])
+            if mmlist is None:
+                rs.notify("error", n_("List unavailable."))
             else:
-                if response.status // 100 == 2:
-                    rs.notify("success", n_("Message moderated."))
-                    self.mlproxy.log_moderation(
-                        rs, logcode, mailinglist_id, change_note=change_note)
-                elif response.status // 100 == 4:
-                    rs.notify("warning", n_("Message not moderated."))
+                try:
+                    held = mailman.get_held_message(request_id)
+                    change_note = f'{held.sender} / {held.subject}'
+                    response = mmlist.moderate_message(request_id, action)
+                except urllib.error.HTTPError:
+                    rs.notify("error", n_("Message unavailable."))
                 else:
-                    rs.notify("error", n_("Message not moderated."))
+                    if response.status // 100 == 2:
+                        rs.notify("success", n_("Message moderated."))
+                        self.mlproxy.log_moderation(
+                            rs, logcode, mailinglist_id, change_note=change_note)
+                    elif response.status // 100 == 4:
+                        rs.notify("warning", n_("Message not moderated."))
+                    else:
+                        rs.notify("error", n_("Message not moderated."))
         return self.redirect(rs, "ml/message_moderation")

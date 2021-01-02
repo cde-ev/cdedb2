@@ -354,7 +354,7 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('deactivate_old_sessions', 'clean_session_log')
 
-    @unittest.mock.patch("mailmanclient.Client")
+    @unittest.mock.patch("cdedb.frontend.ml_mailman.CdEMailmanClient")
     def test_mailman_sync(self, client_class):
         self._run_periodics.add('mailman_sync')
         #

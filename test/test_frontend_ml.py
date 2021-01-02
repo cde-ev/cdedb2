@@ -1326,8 +1326,7 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
-    @unittest.expectedFailure
-    @unittest.mock.patch("mailmanclient.Client")
+    @unittest.mock.patch("cdedb.frontend.ml.CdEMailmanClient")
     @as_users("anton")
     def test_mailman_moderation(self, client_class, user):
         #
@@ -1335,12 +1334,12 @@ class TestMlFrontend(FrontendTest):
         #
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()
-        mmlist.held = messages
         moderation_response = unittest.mock.MagicMock()
         moderation_response.status = 204
         mmlist.moderate_message.return_value = moderation_response
         client = client_class.return_value
-        client.get_list.return_value = mmlist
+        client.get_held_messages.return_value = messages
+        client.get_list_safe.return_value = mmlist
 
         #
         # Run
@@ -1352,19 +1351,19 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
-        mmlist.held = messages[1:]
+        client.get_held_messages.return_value = messages[1:]
         f = self.response.forms['acceptmsg1']
         self.submit(f)
         self.assertNonPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
-        mmlist.held = messages[2:]
+        client.get_held_messages.return_value = messages[2:]
         f = self.response.forms['rejectmsg2']
         self.submit(f)
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
-        mmlist.held = messages[3:]
+        client.get_held_messages.return_value = messages[3:]
         f = self.response.forms['discardmsg3']
         self.submit(f)
         self.assertNonPresence("Finanzbericht")
