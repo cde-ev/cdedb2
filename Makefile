@@ -59,14 +59,8 @@ i18n-update:
 	# TODO: do we want to use msgattrs -i option for prettier (indented) output files?
 
 i18n-compile:
-	msgfmt -o $(I18NDIR)/de/LC_MESSAGES/cdedb.mo $(I18NPO_DE) -c --statistics
-	msgfmt -o $(I18NDIR)/en/LC_MESSAGES/cdedb.mo $(I18NPO_EN) -c --statistics
-
-i18n-check:
-	msgfmt -c $(I18NPO_DE) --statistics \
-		--output /dev/null
-	msgfmt -c $(I18NPO_EN) --statistics \
-		--output /dev/null
+	msgfmt -c --statistics -o $(I18NDIR)/de/LC_MESSAGES/cdedb.mo $(I18NPO_DE)
+	msgfmt -c --statistics -o $(I18NDIR)/en/LC_MESSAGES/cdedb.mo $(I18NPO_EN)
 
 sample-data:
 	$(MAKE) storage > /dev/null

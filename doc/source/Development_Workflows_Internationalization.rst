@@ -28,7 +28,7 @@ internationalization.
 * Ultimately pybabel needs to be compiled(``make i18n-compile``) and the apache
   restarted (for the changes to take effect in the browser).
   This can both be done via one command: ``make reload``.
-* The ``make i18n-check`` command performs some basic checks on the po-files.
+* The ``make i18n-compile`` command also performs some basic checks on the po-files.
   For example it will tell you if a format specifier is missing in a translation.
   It will also tell you how many untranslated strings there are.
   For the german translation file, there should not be any untranslated strings

@@ -295,7 +295,7 @@ class TestCommon(BasicTest):
                     shutil.copy(orig_pofile, temp_pofile)
                 tmp = subprocess.run(["make", "i18n-refresh"], check=True, env=env,
                                      capture_output=True)
-                result = subprocess.run(["make", "i18n-check"], check=True,
+                result = subprocess.run(["make", "i18n-compile"], check=True,
                                         capture_output=True, env=env)
             except subprocess.CalledProcessError as cpe:
                 self.fail(f"Translation check failed:\n{cpe.stderr.decode()}")
