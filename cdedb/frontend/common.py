@@ -1665,15 +1665,10 @@ class CdEMailmanClient(mailmanclient.Client):
             if self.conf["CDEDB_DEV"]:
                 if dblist['domain'] in const.MailinglistDomain.mailman_domains():
                     return HELD_MESSAGE_SAMPLE
-                else:
-                    return None
-            else:
-                return None
         elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
             mmlist = self.get_list_safe(dblist['address'])
             return mmlist.held if mmlist else None
-        else:
-            return None
+        return None
 
 
 class Worker(threading.Thread):
