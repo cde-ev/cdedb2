@@ -54,7 +54,7 @@
                 <a href="{{ cdedblink('ml/message_moderation_form', {'mailinglist_id': ml['id']}) }}"
                    title="{{ gettext("Mails awaiting moderation") }}">
                     {{ ml['held_mails'] }}
-                    {{ util.make_icon('{% if ml["held_mails"] == 0 -%} far {%- else -%} fas {%- endif %} fa-envelope') }}
+                    {{ util.make_icon(("far" if ml["held_mails"] == 0 else "fas") + " fa-envelope") }}
                 </a>
             {% endif %}
         </div>

@@ -178,7 +178,7 @@
                             {% if mailinglist['held_mails'] %}
                                 <br />
                                 {{ util.href(cdedblink('ml/message_moderation', {'mailinglist_id' : mailinglist_id}),
-                                             ngettext("%(count)s Mail awating moderation", "%(count)s Mails awaiting moderation",
+                                             ngettext("%(count)s email awaiting moderation", "%(count)s emails awaiting moderation",
                                                       mailinglist['held_mails'])
                                                  |format(count=mailinglist['held_mails'])) }}
                             {% endif %}
