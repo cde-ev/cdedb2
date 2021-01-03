@@ -49,7 +49,7 @@ class PastEventBackend(AbstractBackend):
 
         :returns: First keys are the ids, second are the pevent_ids.
         """
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         query = glue(
             "SELECT p.persona_id, e.id, e.title, e.tempus, p.is_orga",
             "FROM past_event.participants AS p",
@@ -115,7 +115,7 @@ class PastEventBackend(AbstractBackend):
         pevent_id = affirm_optional(vtypes.ID, pevent_id)
         pevent_ids = [pevent_id] if pevent_id else None
         return self.generic_retrieve_log(
-            rs, "enum_pasteventlogcodes", "pevent", "past_event.log",
+            rs, const.PastEventLogCodes, "pevent", "past_event.log",
             codes=codes, entity_ids=pevent_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             change_note=change_note, time_start=time_start,
@@ -135,7 +135,7 @@ class PastEventBackend(AbstractBackend):
     def get_institutions(self, rs: RequestState, institution_ids: Collection[int]
                          ) -> CdEDBObjectMap:
         """Retrieve data for some institutions."""
-        institution_ids = affirm_set("id", institution_ids)
+        institution_ids = affirm_set(vtypes.ID, institution_ids)
         data = self.sql_select(rs, "past_event.institutions",
                                INSTITUTION_FIELDS, institution_ids)
         return {e['id']: e for e in data}
@@ -251,7 +251,7 @@ class PastEventBackend(AbstractBackend):
     def get_past_events(self, rs: RequestState, pevent_ids: Collection[int]
                         ) -> CdEDBObjectMap:
         """Retrieve data for some concluded events."""
-        pevent_ids = affirm_set("id", pevent_ids)
+        pevent_ids = affirm_set(vtypes.ID, pevent_ids)
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS,
                                pevent_ids)
         return {e['id']: e for e in data}
@@ -328,7 +328,7 @@ class PastEventBackend(AbstractBackend):
         blockers = self.delete_past_event_blockers(rs, pevent_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -385,7 +385,7 @@ class PastEventBackend(AbstractBackend):
 
         They do not need to be associated to the same event.
         """
-        pcourse_ids = affirm_set("id", pcourse_ids)
+        pcourse_ids = affirm_set(vtypes.ID, pcourse_ids)
         data = self.sql_select(
             rs, "past_event.courses", PAST_COURSE_FIELDS, pcourse_ids)
         return {e['id']: e for e in data}
@@ -457,7 +457,7 @@ class PastEventBackend(AbstractBackend):
         blockers = self.delete_past_course_blockers(rs, pcourse_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),

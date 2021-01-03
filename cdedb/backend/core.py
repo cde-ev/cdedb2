@@ -217,7 +217,7 @@ class CoreBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
         return self.generic_retrieve_log(
-            rs, "enum_corelogcodes", "persona", "core.log", codes=codes,
+            rs, const.CoreLogCodes, "persona", "core.log", codes=codes,
             offset=offset, length=length, persona_id=persona_id,
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
@@ -237,7 +237,7 @@ class CoreBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
         return self.generic_retrieve_log(
-            rs, "enum_memberchangestati", "persona", "core.changelog",
+            rs, const.MemberChangeStati, "persona", "core.changelog",
             codes=stati, offset=offset, length=length, persona_id=persona_id,
             submitted_by=submitted_by, reviewed_by=reviewed_by,
             change_note=change_note, time_start=time_start,
@@ -472,7 +472,7 @@ class CoreBackend(AbstractBackend):
                               stati: Collection[const.MemberChangeStati]
                               ) -> CdEDBObjectMap:
         """Retrieve changes in the changelog."""
-        stati = affirm_set("enum_memberchangestati", stati)
+        stati = affirm_set(const.MemberChangeStati, stati)
         query = glue("SELECT id, persona_id, given_names, family_name,",
                      "generation, ctime",
                      "FROM core.changelog WHERE code = ANY(%s)")
@@ -493,7 +493,7 @@ class CoreBackend(AbstractBackend):
                 and not self.is_relative_admin(
                 rs, persona_id, allow_meta_admin=True)):
             raise PrivilegeError(n_("Not privileged."))
-        generations = affirm_set("int", generations, allow_None=True)
+        generations = affirm_set(int, generations or set())
         fields = list(PERSONA_ALL_FIELDS)
         fields.remove('id')
         fields.append("persona_id AS id")
@@ -942,7 +942,7 @@ class CoreBackend(AbstractBackend):
         """
         persona_id = affirm_optional(vtypes.ID, persona_id)
         stati = stati or set()
-        stati = affirm_set("enum_privilegechangestati", stati)
+        stati = affirm_set(const.PrivilegeChangeStati, stati)
 
         query = "SELECT id, persona_id, status FROM core.privilege_changes"
         constraints = []
@@ -963,7 +963,7 @@ class CoreBackend(AbstractBackend):
     def get_privilege_changes(self, rs: RequestState,
                               privilege_change_ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve datasets for priviledge changes."""
-        privilege_change_ids = affirm_set("id", privilege_change_ids)
+        privilege_change_ids = affirm_set(vtypes.ID, privilege_change_ids)
         data = self.sql_select(
             rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, privilege_change_ids)
         return {e["id"]: e for e in data}
@@ -1496,7 +1496,7 @@ class CoreBackend(AbstractBackend):
     def get_personas(self, rs: RequestState, persona_ids: Collection[int]
                      ) -> CdEDBObjectMap:
         """Acquire data sets for specified ids."""
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         return self.retrieve_personas(rs, persona_ids, columns=PERSONA_CORE_FIELDS)
 
     class _GetPersonaProtocol(Protocol):
@@ -1518,7 +1518,7 @@ class CoreBackend(AbstractBackend):
         :param event_id: allows all users which are registered to this event
             to query for other participants of the same event by their ids.
         """
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         event_id = affirm_optional(vtypes.ID, event_id)
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
         # The event user view on a cde user contains lots of personal
@@ -1606,7 +1606,7 @@ class CoreBackend(AbstractBackend):
         if ids is not None and num is not None:
             raise ValueError(n_("May not provide more than one input."))
         if ids is not None:
-            ids = affirm_set("id", ids or set())
+            ids = affirm_set(vtypes.ID, ids or set())
             num = len(ids - {rs.user.persona_id})
         else:
             num = affirm(vtypes.NonNegativeInt, num or 0)
@@ -1641,7 +1641,7 @@ class CoreBackend(AbstractBackend):
     def get_cde_users(self, rs: RequestState, persona_ids: Collection[int]
                       ) -> CdEDBObjectMap:
         """Get an cde view on some data sets."""
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         with Atomizer(rs):
             if self.check_quota(rs, ids=persona_ids):
                 raise QuotaException(n_("Too many queries."))
@@ -1662,7 +1662,7 @@ class CoreBackend(AbstractBackend):
     def get_ml_users(self, rs: RequestState, persona_ids: Collection[int]
                      ) -> CdEDBObjectMap:
         """Get an ml view on some data sets."""
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_ML_FIELDS)
         if any(not e['is_ml_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an ml user."))
@@ -1674,7 +1674,7 @@ class CoreBackend(AbstractBackend):
     def get_assembly_users(self, rs: RequestState, persona_ids: Collection[int]
                            ) -> CdEDBObjectMap:
         """Get an assembly view on some data sets."""
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_ASSEMBLY_FIELDS)
         if any(not e['is_assembly_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an assembly user."))
@@ -1690,7 +1690,7 @@ class CoreBackend(AbstractBackend):
         This includes all attributes regardless of which realm they
         pertain to.
         """
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         if (persona_ids != {rs.user.persona_id} and not self.is_admin(rs)
                 and any(not self.is_relative_admin(rs, anid, allow_meta_admin=True)
                         for anid in persona_ids)):
@@ -1888,7 +1888,7 @@ class CoreBackend(AbstractBackend):
 
         :param is_archived: If given, check the given archival status.
         """
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         is_archived = affirm_optional(bool, is_archived)
         if persona_ids == {rs.user.persona_id}:
             return True
@@ -1934,7 +1934,7 @@ class CoreBackend(AbstractBackend):
                          introspection_only: bool = False
                          ) -> Dict[Optional[int], Set[Realm]]:
         """Resolve persona ids into realms (only for active users)."""
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         roles = self.get_roles_multi(rs, persona_ids, introspection_only)
         all_realms = {"cde", "event", "assembly", "ml"}
         return {key: value & all_realms for key, value in roles.items()}
@@ -1956,9 +1956,9 @@ class CoreBackend(AbstractBackend):
         :param required_roles: If given check that all personas have
           these roles.
         """
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         required_roles = required_roles or tuple()
-        required_roles = affirm_set("str", required_roles)
+        required_roles = affirm_set(str, required_roles)
         roles = self.get_roles_multi(rs, persona_ids, introspection_only)
         return len(roles) == len(persona_ids) and all(
             value >= required_roles for value in roles.values())
@@ -2367,7 +2367,7 @@ class CoreBackend(AbstractBackend):
                              .format(blockers["case_status"]))
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade) & blockers.keys()
+        cascade = affirm_set(str, cascade) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -2457,9 +2457,9 @@ class CoreBackend(AbstractBackend):
         Restrict to certain stati and certain target realms.
         """
         realms = realms or []
-        realms = affirm_set("str", realms)
+        realms = affirm_set(str, realms)
         stati = stati or set()
-        stati = affirm_set("enum_genesisstati", stati)
+        stati = affirm_set(const.GenesisStati, stati)
         if not realms and "core_admin" not in rs.user.roles:
             raise PrivilegeError(n_("Not privileged."))
         elif not all({"{}_admin".format(realm), "core_admin"} & rs.user.roles
@@ -2486,7 +2486,7 @@ class CoreBackend(AbstractBackend):
     def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int]
                           ) -> CdEDBObjectMap:
         """Retrieve datasets for persona creation cases."""
-        genesis_case_ids = affirm_set("id", genesis_case_ids)
+        genesis_case_ids = affirm_set(vtypes.ID, genesis_case_ids)
         data = self.sql_select(rs, "core.genesis_cases", GENESIS_CASE_FIELDS,
                                genesis_case_ids)
         if ("core_admin" not in rs.user.roles

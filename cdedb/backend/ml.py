@@ -202,7 +202,7 @@ class MlBackend(AbstractBackend):
             allowed_pols
         """
         affirm(vtypes.Mailinglist, ml, _allow_readonly=True)
-        affirm_set("enum_mailinglistinteractionpolicy", allowed_pols)
+        affirm_set(const.MailinglistInteractionPolicy, allowed_pols)
 
         # persona_ids are validated inside get_personas
         persona_ids = tuple(e['id'] for e in data)
@@ -230,7 +230,7 @@ class MlBackend(AbstractBackend):
     def moderator_infos(self, rs: RequestState, persona_ids: Collection[int]
                         ) -> Dict[int, Set[int]]:
         """List mailing lists moderated by specific personas."""
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         data = self.sql_select(
             rs, "ml.moderators", ("persona_id", "mailinglist_id"), persona_ids,
             entity_key="persona_id")
@@ -305,13 +305,13 @@ class MlBackend(AbstractBackend):
         :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
-        mailinglist_ids = affirm_set("id", mailinglist_ids, allow_None=True)
+        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
         if not (self.is_admin(rs) or (mailinglist_ids
                 and all(self.may_manage(rs, ml_id)
                         for ml_id in mailinglist_ids))):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
-            rs, "enum_mllogcodes", "mailinglist", "ml.log", codes=codes,
+            rs, const.MlLogCodes, "mailinglist", "ml.log", codes=codes,
             entity_ids=mailinglist_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             change_note=change_note, time_start=time_start,
@@ -418,7 +418,7 @@ class MlBackend(AbstractBackend):
         * moderators,
         * whitelist.
         """
-        mailinglist_ids = affirm_set("id", mailinglist_ids)
+        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
                                    mailinglist_ids)
@@ -470,7 +470,7 @@ class MlBackend(AbstractBackend):
         :returns: default return code
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
-        moderators = affirm_set("id", moderators)
+        moderators = affirm_set(vtypes.ID, moderators)
         if not moderators:
             raise ValueError(n_("Cannot remove all moderators."))
 
@@ -525,7 +525,7 @@ class MlBackend(AbstractBackend):
         :returns: default return code
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
-        whitelist = affirm_set("str", whitelist)
+        whitelist = affirm_set(str, whitelist)
 
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -767,7 +767,7 @@ class MlBackend(AbstractBackend):
         blockers = self.delete_mailinglist_blockers(rs, mailinglist_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -826,7 +826,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: Number of affected rows.
         """
-        data = affirm_array("subscription_state", data)
+        data = affirm_array(vtypes.SubscriptionState, data)
 
         if not all(datum['persona_id'] == rs.user.persona_id
                    or self.may_manage(rs, datum['mailinglist_id'], privileged=True)
@@ -868,7 +868,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: Number of affected rows.
         """
-        data = affirm_array("subscription_identifier", data)
+        data = affirm_array(vtypes.SubscriptionIdentifier, data)
 
         if not all(datum['persona_id'] == rs.user.persona_id
                    or self.may_manage(rs, datum['mailinglist_id'])
@@ -1074,9 +1074,9 @@ class MlBackend(AbstractBackend):
             given mailinglists.
             If states were given, limit this to personas with those states.
         """
-        mailinglist_ids = affirm_set("id", mailinglist_ids)
+        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         states = states or set()
-        states = affirm_array("enum_subscriptionstates", states)
+        states = affirm_array(const.SubscriptionStates, states)
 
         if not all(self.may_manage(rs, ml_id) for ml_id in mailinglist_ids):
             raise PrivilegeError(n_("Not privileged."))
@@ -1127,8 +1127,8 @@ class MlBackend(AbstractBackend):
         """
         persona_id = affirm(vtypes.ID, persona_id or rs.user.persona_id)
         states = states or set()
-        states = affirm_set("enum_subscriptionstates", states)
-        mailinglist_ids = affirm_set("id", mailinglist_ids or set())
+        states = affirm_set(const.SubscriptionStates, states)
+        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
         if (not self.is_admin(rs) and rs.user.persona_id != persona_id
                 and (not mailinglist_ids
                      or any(not self.may_manage(rs, ml_id)
@@ -1213,7 +1213,7 @@ class MlBackend(AbstractBackend):
                 # Default to all subscribers.
                 persona_ids = set(subscribers)
             else:
-                persona_ids = affirm_set("id", persona_ids)
+                persona_ids = affirm_set(vtypes.ID, persona_ids)
                 # Limit to actual subscribers.
                 persona_ids = {p_id for p_id in persona_ids
                                if p_id in subscribers}

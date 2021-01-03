@@ -72,7 +72,7 @@ class CdEBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
         return self.generic_retrieve_log(
-            rs, "enum_cdelogcodes", "persona", "cde.log", codes=codes,
+            rs, const.CdeLogCodes, "persona", "cde.log", codes=codes,
             offset=offset, length=length, persona_id=persona_id,
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
@@ -92,7 +92,7 @@ class CdEBackend(AbstractBackend):
         """
         additional_columns = ["delta", "new_balance", "members", "total"]
         return self.generic_retrieve_log(
-            rs, "enum_financelogcodes", "persona", "cde.finance_log",
+            rs, const.FinanceLogCodes, "persona", "cde.finance_log",
             codes=codes, offset=offset, length=length, persona_id=persona_id,
             submitted_by=submitted_by, additional_columns=additional_columns,
             change_note=change_note, time_start=time_start,
@@ -106,16 +106,16 @@ class CdEBackend(AbstractBackend):
 
         :returns: Mapping of lastschrift_ids to their respecive persona_ids.
         """
-        persona_ids = affirm_set("id", persona_ids, allow_None=True)
+        persona_ids = affirm_set(vtypes.ID, persona_ids or set())
         if (not ({"cde_admin", "core_admin"} & rs.user.roles)
-            and (persona_ids is None
+            and (not persona_ids
                  or any(p_id != rs.user.persona_id for p_id in persona_ids))):
             raise PrivilegeError(n_("Not privileged."))
         active = affirm_optional(bool, active)
         query = "SELECT id, persona_id FROM cde.lastschrift"
         params = []
         constraints = []
-        if persona_ids is not None:
+        if persona_ids:
             constraints.append("persona_id = ANY(%s)")
             params.append(persona_ids)
         if active is not None:
@@ -130,7 +130,7 @@ class CdEBackend(AbstractBackend):
     def get_lastschrifts(self, rs: RequestState, lastschrift_ids: Collection[int]
                          ) -> CdEDBObjectMap:
         """Retrieve direct debit permits."""
-        lastschrift_ids = affirm_set("id", lastschrift_ids)
+        lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
         data = self.sql_select(
             rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, lastschrift_ids)
         if ("cde_admin" not in rs.user.roles
@@ -229,7 +229,7 @@ class CdEBackend(AbstractBackend):
         months.
         """
         lastschrift_id = affirm(vtypes.ID, lastschrift_id)
-        cascade = affirm_set("str", cascade or [])
+        cascade = affirm_set(str, cascade or [])
 
         ret = 1
         with Atomizer(rs):
@@ -282,7 +282,7 @@ class CdEBackend(AbstractBackend):
           the specified periods.
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
-        lastschrift_ids = affirm_set("id", lastschrift_ids, allow_None=True)
+        lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids or set())
         if "cde_admin" not in rs.user.roles:
             # Don't allow None for non admins.
             if lastschrift_ids is None:
@@ -290,9 +290,8 @@ class CdEBackend(AbstractBackend):
             # Otherwise pass this to get_lastschrift, which does access check.
             else:
                 _ = self.get_lastschrifts(rs, lastschrift_ids)
-        stati = affirm_set("enum_lastschrifttransactionstati", stati,
-                           allow_None=True)
-        periods = affirm_set("id", periods, allow_None=True)
+        stati = affirm_set(const.LastschriftTransactionStati, stati or set())
+        periods = affirm_set(vtypes.ID, periods or set())
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
         params: List[Any] = []
         constraints = []
@@ -314,7 +313,7 @@ class CdEBackend(AbstractBackend):
     def get_lastschrift_transactions(self, rs: RequestState,
                                      ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve direct debit transactions."""
-        ids = affirm_set("id", ids)
+        ids = affirm_set(vtypes.ID, ids)
         data = self.sql_select(rs, "cde.lastschrift_transactions",
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
         # We only need these for access checking, which is done inside.
