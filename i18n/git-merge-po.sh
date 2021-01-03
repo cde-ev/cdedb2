@@ -11,11 +11,6 @@
 #     name = Gettext merge driver
 #     driver = i18n/get-merge-po.sh %O %A %B
 #
-# Then add the following line to your .git/info/attributes file:
-#
-#  *.po merge=pomerge
-#  *.pot merge=pomerge
-#
 # Attention: This driver may silently drop duplicate messages in one of the po files to be merged. Even if these
 # duplicate definitions are in the block of commented, old message definitions at the end of the file. So, make sure to
 # delete all duplicte message defintions before trying to merge branches.
@@ -88,9 +83,9 @@ echo "Using custom PO merge driver (`show_file ${LOCAL}`; $TEMP)"
 sed -e '/^$/q' < $LOCAL > ${TEMP}.header
 
 # clean input files
-msguniq --force-po -o ${TEMP}.base   --unique ${BASE}
-msguniq --force-po -o ${TEMP}.local  --unique ${LOCAL}
-msguniq --force-po -o ${TEMP}.remote --unique ${REMOTE}
+msguniq --force-po -o ${TEMP}.base ${BASE}
+msguniq --force-po -o ${TEMP}.local ${LOCAL}
+msguniq --force-po -o ${TEMP}.remote ${REMOTE}
 
 # messages changed on local
 extract_changes ${TEMP}.local ${TEMP}.base > ${TEMP}.local-changes
@@ -109,7 +104,7 @@ m_msgcat -o - ${TEMP}.remote-changes ${TEMP}.local-changes \
   > ${TEMP}.conflicts
 
 # messages changed on local, not on remote; and vice-versa
-m_msgcat -o ${TEMP}.local-only  --unique ${TEMP}.local-changes  ${TEMP}.conflicts
+m_msgcat -o ${TEMP}.local-only --unique ${TEMP}.local-changes  ${TEMP}.conflicts
 m_msgcat -o ${TEMP}.remote-only --unique ${TEMP}.remote-changes ${TEMP}.conflicts
 
 # the big merge
