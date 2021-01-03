@@ -14973,19 +14973,16 @@ msgid "No held messages."
 msgstr ""
 
 #: cdedb/i18n_additional.py:185
-#, fuzzy
 msgid "MlLogCodes.moderate_accept"
-msgstr "Moderator added"
+msgstr "Message accepted"
 
 #: cdedb/i18n_additional.py:186
-#, fuzzy
 msgid "MlLogCodes.moderate_reject"
-msgstr "Moderator removed"
+msgstr "Message rejected"
 
 #: cdedb/i18n_additional.py:187
-#, fuzzy
 msgid "MlLogCodes.moderate_discard"
-msgstr "Moderator added"
+msgstr "Message discarded"
 
 #: cdedb/i18n_additional.py:355
 msgid "Discard"
