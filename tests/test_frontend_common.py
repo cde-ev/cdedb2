@@ -134,7 +134,6 @@ class TestFrontendCommon(FrontendTest):
             cdedb.enums.LodgementsSortkeys,
             cdedb.enums.Accounts,
             cdedb.enums.CourseChoiceToolActions,
-            cdedb.enums.const.MlLogCodes,
             cdedb.enums.CourseFilterPositions,
         }
         for lang, translation in self.app.app.translations.items():
