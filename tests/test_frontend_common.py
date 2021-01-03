@@ -7,10 +7,12 @@ import unittest
 
 import pytz
 
+import cdedb.enums
 from cdedb.frontend.common import (
     cdedbid_filter, date_filter, datetime_filter, decode_parameter, encode_parameter,
     tex_escape_filter,
 )
+from tests.common import FrontendTest
 
 
 def rand_str(chars, exclude=''):
@@ -18,7 +20,7 @@ def rand_str(chars, exclude=''):
     pool = "".join(c for c in pool if c not in exclude)
     return "".join(random.choice(pool) for _ in range(chars))
 
-class TestFrontendCommon(unittest.TestCase):
+class TestFrontendCommon(FrontendTest):
     def test_parameter_encoding(self):
         rounds = 100
         for _ in range(rounds):
@@ -81,7 +83,6 @@ class TestFrontendCommon(unittest.TestCase):
             (False, None),
             decode_parameter(salt, target, name, wrong_encoded, None))
 
-
     def test_date_filters(self):
         dt_naive = datetime.datetime(2010, 5, 22, 4, 55)
         dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=pytz.utc)
@@ -123,3 +124,22 @@ class TestFrontendCommon(unittest.TestCase):
         self.assertEqual(r"a\&b", tex_escape_filter(r"a&b"))
         self.assertEqual(r"a\$b", tex_escape_filter(r"a$b"))
         self.assertEqual(r"a''b", tex_escape_filter(r'a"b'))
+
+    def test_enum_member_translations(self):
+        ignored_enums = {
+            cdedb.enums.TransactionType,
+            cdedb.enums.const.SubscriptionStates,
+            cdedb.enums.const.MailinglistDomain,
+            cdedb.enums.SubscriptionActions,
+            cdedb.enums.LodgementsSortkeys,
+            cdedb.enums.Accounts,
+            cdedb.enums.CourseChoiceToolActions,
+            cdedb.enums.const.MlLogCodes,
+            cdedb.enums.CourseFilterPositions,
+        }
+        for lang, translation in self.app.app.translations.items():
+            for enum in set(cdedb.enums.ENUMS_DICT.values()).difference(ignored_enums):
+                with self.subTest(lang=lang, enum=enum):
+                    for member in enum:
+                        self.assertNotEqual(
+                            translation.gettext(str(member)), str(member))
