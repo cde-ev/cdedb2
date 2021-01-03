@@ -36,10 +36,12 @@ class MlBaseFrontend(AbstractUserFrontend):
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
+        # local variables to prevent closure over secrets
+        mailman_password = secrets["MAILMAN_PASSWORD"]
+        mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
         self.mailman_create_client = lambda url, user: mailmanclient.Client(
-            url, user, secrets["MAILMAN_PASSWORD"])
-        self.mailman_template_password = (
-            lambda: secrets["MAILMAN_BASIC_AUTH_PASSWORD"])
+            url, user, mailman_password)
+        self.mailman_template_password = lambda: mailman_basic_auth_password
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

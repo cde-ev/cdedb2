@@ -28,8 +28,18 @@ Mailingliste zuständig ist, erfolgt die Moderation entweder via Webinterface
 in der DB oder per Antwort auf die Email. In Zukunft sollen alle
 Mailinglisten auf eine Moderation via Datenbank umgestellt werden.
 
+Technische Details
+------------------
+
+Synchronisation
+^^^^^^^^^^^^^^^
+
+Die Änderungen in der DB werden teilweise nur mit einer gewissen Verzögerung
+wirksam, da die Mailinglistensoftware erst noch synchronisiert werden
+muss. Dies sollte in der Regel innerhalb einer Viertelstunde passieren.
+
 Privilegierte Moderatoren
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Bei manchen Mailinglisten braucht es zusätzliche Berechtigungen in der Datenbank,
 um deren Abbonenten verwalten zu können.

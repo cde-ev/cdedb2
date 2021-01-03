@@ -104,6 +104,8 @@ def connection_pool_factory(dbname: str, roles: Collection[Role],
     :returns: dict-like object with semantics {str :
                 :py:class:`IrradiatedConnection`}
     """
+    # local variable to prevent closure over secrets
+    db_passwords = secrets["CDB_DATABASE_ROLES"]
 
     class InstantConnectionPool(Mapping[Role, "IrradiatedConnection"]):
         """Dict-like for providing database connections."""
@@ -116,8 +118,7 @@ def connection_pool_factory(dbname: str, roles: Collection[Role],
                 raise ValueError(n_("role %(role)s not available"),
                                  {'role': role})
             return _create_connection(
-                dbname, role, secrets["CDB_DATABASE_ROLES"][role], port,
-                isolation_level)
+                dbname, role, db_passwords[role], port, isolation_level)
 
         def __delitem__(self, key: Any) -> NoReturn:
             raise NotImplementedError(n_("Not available for instant pool"))

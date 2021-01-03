@@ -55,13 +55,23 @@ echo "--------------------------------------------"
 echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
 echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
 
-apt-get -y install                                                  \
+# this is categorized into
+# - devtools
+# - runtime dependencies (app, ldap, postgres, latex)
+# - python libraries
+apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
-    apache2 libapache2-mod-wsgi-py3 fail2ban                        \
+    \
+    apache2 python3 libapache2-mod-wsgi-py3 fail2ban                \
+    \
     slapd ldap-utils                                                \
+    \
     postgresql-client postgresql postgresql-contrib pgbouncer       \
-    texlive texlive-latex-extra texlive-lang-german texlive-luatex  \
-    python3 python3-psycopg2 python3-dateutil python3-babel         \
+    \
+    texlive texlive-plain-generic texlive-latex-extra               \
+    texlive-lang-german texlive-luatex                              \
+    \
+    python3-psycopg2 python3-dateutil python3-babel                 \
     python3-icu python3-jinja2 python3-tz python3-sphinx            \
     python3-lxml python3-pil python3-webtest python3-werkzeug       \
     python3-ldap3 python3-passlib python3-bleach python3-magic      \
@@ -70,7 +80,7 @@ apt-get -y install                                                  \
     python3-typing-extensions python3-pip python3-coverage          \
     python3-qrcode python3-vobject
 
-python3 -m pip install mypy==0.790
+python3 -m pip install --no-cache-dir mypy==0.790
 
 for file in /var/cache/apt/archives/*.deb
 do

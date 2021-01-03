@@ -123,16 +123,18 @@ class BaseApp(metaclass=abc.ABCMeta):
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
         self.logger.debug("Instantiated {} with configpath {}.".format(
             self, configpath))
+        # local variable to prevent closure over secrets
+        url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = (
             lambda target, name, param, persona_id: decode_parameter(
-                secrets["URL_PARAMETER_SALT"], target, name, param,
+                url_parameter_salt, target, name, param,
                 persona_id))
 
         def local_encode(
                 target: str, name: str, param: str, persona_id: Optional[int],
                 timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"]
         ) -> str:
-            return encode_parameter(secrets["URL_PARAMETER_SALT"], target, name,
+            return encode_parameter(url_parameter_salt, target, name,
                                     param, persona_id, timeout)
 
         self.encode_parameter = local_encode

@@ -12903,7 +12903,7 @@ msgstr "Public ([Moderated] Opt-in)"
 
 #: cdedb/i18n_additional.py:273
 msgid "MailinglistTypes.cdelokal"
-msgstr "CdElokal (Opt-in)"
+msgstr "CdElokal ([Moderated] Opt-in)"
 
 #: cdedb/i18n_additional.py:278
 msgid "day is out of range for month"
@@ -13651,17 +13651,17 @@ msgstr ""
 msgid "Must specify ballot in order to validate vote."
 msgstr ""
 
-#: cdedb/validation.py:3918
-msgid "Superfluous candidates."
-msgstr ""
+#: cdedb/i18n_additional.py:185
+msgid "MlLogCodes.moderate_accept"
+msgstr "Message accepted"
 
-#: cdedb/validation.py:3920
-msgid "Missing candidates."
-msgstr ""
+#: cdedb/i18n_additional.py:186
+msgid "MlLogCodes.moderate_reject"
+msgstr "Message rejected"
 
-#: cdedb/validation.py:3928
-msgid "Too many levels."
-msgstr ""
+#: cdedb/i18n_additional.py:187
+msgid "MlLogCodes.moderate_discard"
+msgstr "Message discarded"
 
 #: cdedb/validation.py:3930
 msgid "Too many votes."

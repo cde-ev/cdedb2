@@ -13598,7 +13598,7 @@ msgstr "Öffentlich ([Moderiertes] Opt-in)"
 
 #: cdedb/i18n_additional.py:273
 msgid "MailinglistTypes.cdelokal"
-msgstr "CdElokal (Opt-in)"
+msgstr "CdElokal ([Moderiertes] Opt-in)"
 
 #: cdedb/i18n_additional.py:278
 msgid "day is out of range for month"

@@ -25,10 +25,12 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             if (self.conf["CDEDB_DEV"] and not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
-                    and dblist['domain'] in {const.MailinglistDomain.testmail}):
+                    and dblist['domain'] in {const.MailinglistDomain.testmail,
+                                             const.MailinglistDomain.aka}):
                 held = HELD_MESSAGE_SAMPLE
             self.logger.info("Skipping mailman query in dev/offline mode.")
-        elif dblist['domain'] in {const.MailinglistDomain.testmail}:
+        elif dblist['domain'] in {const.MailinglistDomain.testmail,
+                                  const.MailinglistDomain.aka}:
             mailman = self.mailman_connect()
             mmlist = mailman.get_list(dblist['address'])
             held = mmlist.held
@@ -55,7 +57,8 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.info("Skipping mailman request in dev/offline mode.")
-        elif dblist['domain'] in {const.MailinglistDomain.testmail}:
+        elif dblist['domain'] in {const.MailinglistDomain.testmail,
+                                  const.MailinglistDomain.aka}:
             mailman = self.mailman_connect()
             mmlist = mailman.get_list(dblist['address'])
             try:

@@ -66,12 +66,6 @@ class CoreFrontend(AbstractFrontend):
     anonymous access and personas. """
     realm = "core"
 
-    def __init__(self, configpath: PathLike = None) -> None:
-        super().__init__(configpath)
-        secrets = SecretsConfig(configpath)
-        self.resolve_api_token_check = (
-            lambda x: x == secrets["RESOLVE_API_TOKEN"])
-
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)

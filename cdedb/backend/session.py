@@ -36,6 +36,7 @@ class SessionBackend:
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
 
+        # local variable also to prevent closure over secrets
         lookup = {v: k for k, v in secrets['API_TOKENS'].items()}
         self.api_token_lookup = lambda token: lookup.get(token)
 
