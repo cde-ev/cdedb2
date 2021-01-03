@@ -257,7 +257,7 @@ class MyTextTestRunner(unittest.TextTestRunner):
         result = super().run(test)
         failed = map(
             lambda error: error[0].id(),
-            result.errors + result.failures + result.unexpectedSuccesses
+            result.errors + result.failures + result.unexpectedSuccesses  # type: ignore
         )
         if not result.wasSuccessful():
             print("To rerun failed tests execute the following:", file=self.stream)
@@ -276,8 +276,8 @@ class MyTextTestResult(unittest.TextTestResult):
         self.showAll: bool
         self.stream: TextIO
         super().__init__(stream, descriptions, verbosity)
-        self._subTestErrors: List[Optional[ExceptionInfo]] = []
-        self._subTestFailures: List[Optional[ExceptionInfo]] = []
+        self._subTestErrors: List[ExceptionInfo] = []
+        self._subTestFailures: List[ExceptionInfo] = []
         self._subTestSkips: List[str] = []
 
     def startTest(self, test: unittest.TestCase) -> None:
@@ -287,7 +287,7 @@ class MyTextTestResult(unittest.TextTestResult):
         self._subTestSkips = []
 
     def addSubTest(self, test: unittest.TestCase, subtest: unittest.TestCase,
-                   err: Optional[Optional[ExceptionInfo]]) -> None:
+                   err: Optional[ExceptionInfo]) -> None:
         super().addSubTest(test, subtest, err)
         if err is not None and err[0] is not None:
             if issubclass(err[0], subtest.failureException):
