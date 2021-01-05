@@ -158,6 +158,9 @@ with Script(rs(), dry_run=DRY_RUN):
                 print(f"Created account {new_id} for subscriber {sub_address}")
         print("Assemble infos for list creation")
         local_part, domain = ml_address.split('@')
+        ml_type = SUB_POLICY_MAP[entry['subscribing']]
+        if domain == 'cdelokal.cde-ev.de':
+            ml_type = const.MailinglistTypes.cdelokal
         new_list = {
             'title': ml_address,
             'local_part': local_part,
@@ -165,7 +168,7 @@ with Script(rs(), dry_run=DRY_RUN):
             'description': None,
             'mod_policy': MOD_POLICY_MAP[entry['posting']],
             'attachment_policy': const.AttachmentPolicy.pdf_only,
-            'ml_type': SUB_POLICY_MAP[entry['subscribing']],
+            'ml_type': ml_type,
             'subject_prefix': entry['prefix'],
             'maxsize': 2048,
             'is_active': True,
