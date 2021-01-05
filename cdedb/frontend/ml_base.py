@@ -7,7 +7,6 @@ import copy
 from datetime import datetime
 from typing import Any, Collection, Dict, Optional, cast
 
-import mailmanclient
 import werkzeug
 from werkzeug import Response
 
@@ -17,7 +16,6 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike, PrivilegeError, RequestState,
     SubscriptionActions, SubscriptionError, merge_dicts, n_, now, unwrap,
 )
-from cdedb.config import SecretsConfig
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter as cdedbid, check_validation as check, csv_output,
@@ -35,13 +33,6 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
-        secrets = SecretsConfig(configpath)
-        # local variables to prevent closure over secrets
-        mailman_password = secrets["MAILMAN_PASSWORD"]
-        mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
-        self.mailman_create_client = lambda url, user: mailmanclient.Client(
-            url, user, mailman_password)
-        self.mailman_template_password = lambda: mailman_basic_auth_password
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -170,8 +161,15 @@ class MlBaseFrontend(AbstractUserFrontend):
                 self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id)
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
-        for ml_id in subs:
+        mailman = self.get_mailman()
+        for ml_id in mailinglists:
             mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
+            held_mails = mailman.get_held_messages(mailinglist_infos[ml_id])
+            if held_mails is None:
+                mailinglist_infos[ml_id]['held_mails'] = None
+            else:
+                mailinglist_infos[ml_id]['held_mails'] = len(held_mails)
+
         return self.render(rs, endpoint, {
             'groups': MailinglistGroup,
             'mailinglists': grouped,

@@ -7,7 +7,6 @@ from werkzeug import Response
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, n_
-from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard
 from cdedb.frontend.ml_base import MlBaseFrontend
 from cdedb.frontend.ml_mailman import MailmanMixin
@@ -20,20 +19,7 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
     def message_moderation_form(self, rs: RequestState, mailinglist_id: int
                                 ) -> Response:
         """Render form."""
-        dblist = rs.ambience['mailinglist']
-        held = None
-        if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
-                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
-            if (self.conf["CDEDB_DEV"] and not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
-                    and dblist['domain'] in {const.MailinglistDomain.testmail,
-                                             const.MailinglistDomain.aka}):
-                held = HELD_MESSAGE_SAMPLE
-            self.logger.info("Skipping mailman query in dev/offline mode.")
-        elif dblist['domain'] in {const.MailinglistDomain.testmail,
-                                  const.MailinglistDomain.aka}:
-            mailman = self.mailman_connect()
-            mmlist = mailman.get_list(dblist['address'])
-            held = mmlist.held
+        held = self.get_mailman().get_held_messages(rs.ambience['mailinglist'])
         return self.render(rs, "message_moderation", {'held': held})
 
     @access("ml", modi={"POST"})
@@ -57,23 +43,25 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.info("Skipping mailman request in dev/offline mode.")
-        elif dblist['domain'] in {const.MailinglistDomain.testmail,
-                                  const.MailinglistDomain.aka}:
-            mailman = self.mailman_connect()
-            mmlist = mailman.get_list(dblist['address'])
-            try:
-                held = mmlist.get_held_message(request_id)
-                change_note = f'{held.sender} / {held.subject}'
-                response = mmlist.moderate_message(request_id, action)
-            except urllib.error.HTTPError:
-                rs.notify("error", n_("Message unavailable."))
+        elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
+            mailman = self.get_mailman()
+            mmlist = mailman.get_list_safe(dblist['address'])
+            if mmlist is None:
+                rs.notify("error", n_("List unavailable."))
             else:
-                if response.status // 100 == 2:
-                    rs.notify("success", n_("Message moderated."))
-                    self.mlproxy.log_moderation(
-                        rs, logcode, mailinglist_id, change_note=change_note)
-                elif response.status // 100 == 4:
-                    rs.notify("warning", n_("Message not moderated."))
+                try:
+                    held = mailman.get_held_message(request_id)
+                    change_note = f'{held.sender} / {held.subject}'
+                    response = mmlist.moderate_message(request_id, action)
+                except urllib.error.HTTPError:
+                    rs.notify("error", n_("Message unavailable."))
                 else:
-                    rs.notify("error", n_("Message not moderated."))
+                    if response.status // 100 == 2:
+                        rs.notify("success", n_("Message moderated."))
+                        self.mlproxy.log_moderation(
+                            rs, logcode, mailinglist_id, change_note=change_note)
+                    elif response.status // 100 == 4:
+                        rs.notify("warning", n_("Message not moderated."))
+                    else:
+                        rs.notify("error", n_("Message not moderated."))
         return self.redirect(rs, "ml/message_moderation")

@@ -308,7 +308,17 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list'})
         self.assertTitle("Alle Mailinglisten")
-        self.assertPresence("Mitglieder (Moderiertes Opt-in)")
+        # Exemplarily, test mailinglist 54 in detail.
+        self.assertPresence("Gutscheine", div="mailinglist-54-row")
+        self.assertPresence("Mitglieder (Moderiertes Opt-in)", div="mailinglist-54-row")
+        self.assertPresence("—", div="mailinglist-54-row")
+        self.assertPresence("2 Abonnenten. 1 Moderator.", div="mailinglist-54-row")
+        # Test if moderation hints work
+        self.assertPresence("Mailman-Migration", div="mailinglist-99-row")
+        self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-99-row")
+        self.assertPresence("3", div="mailinglist-99-row")
+        self.assertPresence("0 Abonnenten. 1 Moderator.", div="mailinglist-99-row")
+        # Test that events are shown
         self.assertPresence("Große Testakademie 2222")
         self.assertPresence("CdE-Party 2050")
         # not yet published
@@ -341,7 +351,10 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Moderierte Mailinglisten")
         # Moderated mailinglists
         self.assertPresence("Allgemeine Mailinglisten")
-        self.assertPresence("Aktivenforum 2001")
+        self.assertPresence("Aktivenforum 2001", div="mailinglist-7-row")
+        self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-7-row")
+        self.assertPresence("—", div="mailinglist-7-row")
+        self.assertPresence("1 Abonnent. 2 Moderatoren.", div="mailinglist-7-row")
         if user['id'] == USER_DICT['berta']['id']:
             self.assertPresence("Veranstaltungslisten")
             self.assertPresence("CdE-Party 2050 Orgateam")
@@ -1312,7 +1325,7 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
-    @unittest.mock.patch("mailmanclient.Client")
+    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
     def test_mailman_moderation(self, client_class, user):
         #
@@ -1320,12 +1333,12 @@ class TestMlFrontend(FrontendTest):
         #
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()
-        mmlist.held = messages
         moderation_response = unittest.mock.MagicMock()
         moderation_response.status = 204
         mmlist.moderate_message.return_value = moderation_response
         client = client_class.return_value
-        client.get_list.return_value = mmlist
+        client.get_held_messages.return_value = messages
+        client.get_list_safe.return_value = mmlist
 
         #
         # Run
@@ -1337,19 +1350,19 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
-        mmlist.held = messages[1:]
+        client.get_held_messages.return_value = messages[1:]
         f = self.response.forms['acceptmsg1']
         self.submit(f)
         self.assertNonPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
-        mmlist.held = messages[2:]
+        client.get_held_messages.return_value = messages[2:]
         f = self.response.forms['rejectmsg2']
         self.submit(f)
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
-        mmlist.held = messages[3:]
+        client.get_held_messages.return_value = messages[3:]
         f = self.response.forms['discardmsg3']
         self.submit(f)
         self.assertNonPresence("Finanzbericht")

@@ -34,6 +34,7 @@ import subprocess
 import tempfile
 import threading
 import urllib.parse
+import urllib.error
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
@@ -46,6 +47,7 @@ import babel.dates
 import babel.numbers
 import bleach
 import jinja2
+import mailmanclient
 import markdown
 import markdown.extensions.toc
 import werkzeug
@@ -77,6 +79,7 @@ from cdedb.common import (
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
 
 _LOGGER = logging.getLogger(__name__)
@@ -929,6 +932,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = make_proxy(EventBackend(configpath))
         self.mlproxy = make_proxy(MlBackend(configpath))
         self.pasteventproxy = make_proxy(PastEventBackend(configpath))
+        # Provide mailman access
+        secrets = SecretsConfig(configpath)
+        # local variables to prevent closure over secrets
+        mailman_password = secrets["MAILMAN_PASSWORD"]
+        mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
+        self.get_mailman = lambda: CdEMailmanClient(self.conf, mailman_password,
+                                                    mailman_basic_auth_password)
 
     @classmethod
     @abc.abstractmethod
@@ -1598,6 +1608,67 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     filename=pdf_file)
             else:
                 return None
+
+
+class CdEMailmanClient(mailmanclient.Client):
+    """Custom wrapper around mailmanclient.Client.
+
+    This custom wrapper provides additional functionality needed in multiple frontends.
+    Whenever access to the mailman server is needed, this class should be used.
+    """
+    def __init__(self, conf: Config, mailman_password: str,
+                 mailman_basic_auth_password: str):
+        """Automatically initializes a client with our custom parameters.
+
+        :param conf: Usually, he config used where this class is instantiated.
+        """
+        self.conf = conf
+
+        # Initialize base class
+        url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
+        super().__init__(url, self.conf["MAILMAN_USER"], mailman_password)
+        self.template_password = mailman_basic_auth_password
+
+        # Initialize logger. This needs the base class initialization to be done.
+        logger_name = "cdedb.frontend.mailmanclient"
+        make_root_logger(
+            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
+        self.logger = logging.getLogger(logger_name)
+        self.logger.debug("Instantiated {} with configpath {}.".format(
+            self, conf._configpath))
+
+    def get_list_safe(self, address: str) -> Optional[
+            mailmanclient.restobjects.mailinglist.MailingList]:
+        """Return list with standard error handling.
+
+        In contrast to the original function, this does not raise if no list has been
+        found, but returns None instead. This is particularly important since list
+        creation and deletion are not synced immediately."""
+        try:
+            return self.get_list(address)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            else:
+                raise
+
+    def get_held_messages(self, dblist: CdEDBObject) -> Optional[
+            List[mailmanclient.restobjects.held_message.HeldMessage]]:
+        """Returns all held messages for mailman lists.
+
+        If the list is not managed by mailman, this function returns None instead.
+        """
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
+            self.logger.info("Skipping mailman query in dev/offline mode.")
+            if self.conf["CDEDB_DEV"]:
+                if dblist['domain'] in const.MailinglistDomain.mailman_domains():
+                    return HELD_MESSAGE_SAMPLE
+        elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
+            mmlist = self.get_list_safe(dblist['address'])
+            return mmlist.held if mmlist else None
+        return None
 
 
 class Worker(threading.Thread):
