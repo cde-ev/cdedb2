@@ -29,6 +29,7 @@ from cdedb.common import (
     extract_roles, get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now,
     pairwise, unwrap, xsorted,
 )
+
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
@@ -135,10 +136,13 @@ class CoreFrontend(AbstractFrontend):
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
                 sub_request = const.SubscriptionStates.pending
+                mailman = self.get_mailman()
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, mailinglist_id, states=(sub_request,))
+                    held_mails = mailman.get_held_messages(mailinglist)
                     mailinglist['requests'] = len(requests)
+                    mailinglist['held_mails'] = len(held_mails or [])
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
             # visible and open events

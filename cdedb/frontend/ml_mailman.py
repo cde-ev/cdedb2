@@ -9,7 +9,7 @@ from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
-from cdedb.frontend.common import periodic, cdedburl
+from cdedb.frontend.common import cdedburl, periodic
 from cdedb.frontend.ml_base import MlBaseFrontend
 
 POLICY_MEMBER_CONVERT = {
@@ -39,11 +39,6 @@ def template_url(name: str) -> str:
 
 
 class MailmanMixin(MlBaseFrontend):
-    def mailman_connect(self) -> Client:
-        """Create a Mailman REST client."""
-        url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
-        return self.mailman_create_client(url, self.conf["MAILMAN_USER"])
-
     def mailman_sync_list_meta(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
                                mm_list: MailingList) -> None:
@@ -170,7 +165,7 @@ do nothing.
                 mm_list.set_template(
                     name, template_url(file_name),
                     username=self.conf["MAILMAN_BASIC_AUTH_USER"],
-                    password=self.mailman_template_password())
+                    password=mailman.template_password)
         for name in set(existing_templates) - set(desired_templates):
             existing_templates[name].delete()
 
@@ -278,7 +273,7 @@ do nothing.
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
             return store
-        mailman = self.mailman_connect()
+        mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
             _ = mailman.system  # cause the client to connect
