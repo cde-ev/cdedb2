@@ -108,6 +108,7 @@ with Script(rs(), dry_run=DRY_RUN):
         print("Importing list {} (originally {})".format(ml_address, original_address))
         print("Checking for existence of subscriber addresses in DB")
         for sub_address in entry['subs']:
+            sub_address = sub_address.lower()
             if sub_address not in persona_addresses:
                 new_persona = {
                     'is_cde_realm': False,
@@ -176,6 +177,7 @@ with Script(rs(), dry_run=DRY_RUN):
         print("Preparing moderators")
         moderators = []
         for mod_address in entry['mods']:
+            mod_address = mod_address.lower()
             if mod_address not in persona_addresses:
                 print("Skipping moderator {} as no associated account was found".format(
                     mod_address))
@@ -188,6 +190,7 @@ with Script(rs(), dry_run=DRY_RUN):
         print("Created list {} with id {}".format(ml_address, new_ml_id))
         print("Adding subscribers to list")
         for sub_address in entry['subs']:
+            sub_address = sub_address.lower()
             persona_id = persona_addresses[sub_address]
             ml.do_subscription_action(rs(), SubscriptionActions.add_subscriber,
                                       new_ml_id, persona_id)
