@@ -25,8 +25,8 @@ ml = make_backend("ml")
 
 ADDRESS_SUBSTITTIONS = {
     "*@cdelokal.schuelerakademie.de": "*@cdelokal.cde-ev.de",
-    "multinational-all@cde-ev.de": "multinational-all@aka.cde-ev.de",
-    "multinational@cde-ev.de": "multinational@aka.cde-ev.de",
+    "multinational-all@cde-ev.de": "multinational-all@lists.cde-ev.de",
+    "multinational@cde-ev.de": "multinational@lists.cde-ev.de",
     "cde-segeln@lists.schuelerakademie.de": "cde-segeln@lists.cde-ev.de",
     "vorstand@cde-ev.de": "vorstand@lists.cde-ev.de",
     "dsa@lists.schuelerakademie.de": "dsa@lists.cde-ev.de",
