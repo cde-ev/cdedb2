@@ -9,7 +9,8 @@ from cdedb.script import make_backend, setup, Script
 # Configuration
 
 # The persona_id will need to be replaced before use.
-rs = setup(persona_id=-1, dbuser="cdb_admin",
+executing_admin_id = -1
+rs = setup(persona_id=executing_admin_id, dbuser="cdb_admin",
            dbpassword="9876543210abcdefghijklmnopqrst")
 
 data_path = "/path/to/data.json"
@@ -188,6 +189,10 @@ with Script(rs(), dry_run=DRY_RUN):
             moderators.append(persona_addresses[mod_address])
             print("Adding moderator {} as persona {}".format(
                 mod_address, persona_addresses[mod_address]))
+        if not moderators:
+            print("Exceptionally using admin {} as moderator".format(
+                executing_admin_id))
+            moderators.append(executing_admin_id)
         new_list['moderators'] = moderators
         new_ml_id = ml.create_mailinglist(rs(), new_list)
         print("Created list {} with id {}".format(ml_address, new_ml_id))
