@@ -23,6 +23,15 @@ ml = make_backend("ml")
 
 # Execution
 
+ADDRESS_SUBSTITTIONS = {
+    "*@cdelokal.schuelerakademie.de": "*@cdelokal.cde-ev.de",
+    "multinational-all@cde-ev.de": "multinational-all@aka.cde-ev.de",
+    "multinational@cde-ev.de": "multinational@aka.cde-ev.de",
+    "cde-segeln@lists.schuelerakademie.de": "cde-segeln@lists.cde-ev.de",
+    "vorstand@cde-ev.de": "vorstand@lists.cde-ev.de",
+    "dsa@lists.schuelerakademie.de": "dsa@lists.cde-ev.de",
+}
+
 with Script(rs(), dry_run=DRY_RUN):
     print("Fetching current state from database")
 
@@ -87,11 +96,16 @@ with Script(rs(), dry_run=DRY_RUN):
     }
 
     for ml_address, entry in data.items():
+        original_address = ml_address
+        ml_address = ADDRESS_SUBSTITTIONS.get(ml_address, ml_address)
+        if ml_address.endswith('cdelokal.schuelerakademie.de'):
+            ml_address = ml_address.replace('cdelokal.schuelerakademie.de',
+                                            'cdelokal.cde-ev.de')
         print("============================================================")
         if ml_address in existing_lists:
             print("Skipping existing list {}".format(ml_address))
             continue
-        print("Importing list {}".format(ml_address))
+        print("Importing list {} (originally {})".format(ml_address, original_address))
         print("Checking for existence of subscriber addresses in DB")
         for sub_address in entry['subs']:
             if sub_address not in persona_addresses:
