@@ -103,10 +103,12 @@ with Script(rs(), dry_run=DRY_RUN):
 
     for ml_address, entry in data.items():
         original_address = ml_address
+        lurker_addresses = {'lurker-' + ml_address}
         ml_address = ADDRESS_SUBSTITTIONS.get(ml_address, ml_address)
         if ml_address.endswith('cdelokal.schuelerakademie.de'):
             ml_address = ml_address.replace('cdelokal.schuelerakademie.de',
                                             'cdelokal.cde-ev.de')
+        lurker_addresses.add('lurker-' + ml_address)
         print("============================================================")
         if ml_address in existing_lists:
             print("Skipping existing list {}".format(ml_address))
@@ -115,6 +117,9 @@ with Script(rs(), dry_run=DRY_RUN):
         print("Checking for existence of subscriber addresses in DB")
         for sub_address in entry['subs']:
             sub_address = sub_address.lower()
+            if sub_address in lurker_addresses:
+                print(f"Avoiding lurker {sub_address}")
+                continue
             if sub_address not in persona_addresses:
                 new_persona = {
                     'is_cde_realm': False,
@@ -206,6 +211,8 @@ with Script(rs(), dry_run=DRY_RUN):
         subscribed = set()
         for sub_address in entry['subs']:
             sub_address = sub_address.lower()
+            if sub_address in lurker_addresses:
+                continue
             persona_id = persona_addresses[sub_address]
             if persona_id in subscribed:
                 print(f"Omitting {persona_id} with address {sub_address}"
