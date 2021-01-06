@@ -203,11 +203,17 @@ with Script(rs(), dry_run=DRY_RUN):
         new_ml_id = ml.create_mailinglist(rs(), new_list)
         print("Created list {} with id {}".format(ml_address, new_ml_id))
         print("Adding subscribers to list")
+        subscribed = set()
         for sub_address in entry['subs']:
             sub_address = sub_address.lower()
             persona_id = persona_addresses[sub_address]
+            if persona_id in subscribed:
+                print(f"Omitting {persona_id} with address {sub_address}"
+                      " (already subscribed)")
+                continue
             ml.do_subscription_action(rs(), SubscriptionActions.add_subscriber,
                                       new_ml_id, persona_id)
+            subscribed.add(persona_id)
             if sub_address not in semi_default_addresses:
                 ml.set_subscription_address(rs(), new_ml_id, persona_id,
                                             sub_address)
