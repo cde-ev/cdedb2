@@ -88,7 +88,8 @@ RUN mkdir /var/lib/cdedb \
     && mkdir /var/log/cdedb \
     && chown www-data:www-data /var/log/cdedb \
     \
-    && useradd --system cdedb \
+    && useradd --no-create-home cdedb \
+    && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
     \
     && touch /CONTAINER
 
