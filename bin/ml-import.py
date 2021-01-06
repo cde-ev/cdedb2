@@ -57,15 +57,18 @@ with Script(rs(), dry_run=DRY_RUN):
         persona_id = core.next_persona(rs(), persona_id, is_member=False)
         if persona_id is None:
             break
-        persona = core.get_persona(rs(), persona_id)
-        if persona['username']:
-            if (persona_addresses.get(persona['username'], persona['id'])
-                    != persona['id']):
+        history = core.changelog_get_history(rs(), persona_id, None)
+        persona_addreses = set()
+        for dataset in history.values():
+            if dataset['username']:
+                persona_addreses.add(dataset['username'])
+        for addr in persona_addreses:
+            if persona_addresses.get(addr, persona_id) != persona_id:
                 print("Non-unique persona "
-                      f"({persona_addresses[persona['username']]}, {persona['id']}) "
-                      f"for address {persona['username']}.")
-            persona_addresses[persona['username']] = persona['id']
-            default_addresses.add(persona['username'])
+                      f"({persona_addresses[addr]}, {persona_id}) "
+                      f"for address {addr}.")
+            persona_addresses[addr] = persona_id
+            default_addresses.add(addr)
 
     print("Reading data to import")
 
