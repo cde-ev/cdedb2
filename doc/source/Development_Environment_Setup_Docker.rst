@@ -62,7 +62,7 @@ To do this you can run the following:
     $ make i18n-compile
     $ make doc
     $ cd related/docker
-    $ docker-compose exec app make sql
+    $ docker-compose exec app make sample-data
 
 .. warning::
 
