@@ -40,6 +40,8 @@ with Script(rs(), dry_run=DRY_RUN):
     existing_lists = {e['address']: e for e in existing_lists.values()}
 
     persona_addresses = {}
+    semi_default_addresses = {}
+    default_addresses = {}
     for e in existing_lists.values():
         addresses = ml.get_subscription_addresses(
             rs(), e['id'], persona_ids=None, explicits_only=True)
@@ -52,23 +54,23 @@ with Script(rs(), dry_run=DRY_RUN):
                 else:
                     persona_addresses[address] = persona_id
     persona_id = -1
-    default_addresses = set()
     while True:
         persona_id = core.next_persona(rs(), persona_id, is_member=False)
         if persona_id is None:
             break
         history = core.changelog_get_history(rs(), persona_id, None)
-        persona_addreses = set()
-        for dataset in history.values():
-            if dataset['username']:
-                persona_addreses.add(dataset['username'])
-        for addr in persona_addreses:
+        this_addreses = {datum['username']
+                         for datum in history.values() if datum['username']}
+        for addr in this_addreses:
             if persona_addresses.get(addr, persona_id) != persona_id:
                 print("Non-unique persona "
                       f"({persona_addresses[addr]}, {persona_id}) "
                       f"for address {addr}.")
             persona_addresses[addr] = persona_id
-            default_addresses.add(addr)
+            semi_default_addresses[addr] = persona_id
+        persona = core.get_persona(rs(), persona_id)
+        if persona['username']:
+            default_addresses[persona_id] = persona['username']
 
     print("Reading data to import")
 
@@ -158,7 +160,8 @@ with Script(rs(), dry_run=DRY_RUN):
                 }
                 new_id = core.create_persona(rs(), new_persona)
                 persona_addresses[sub_address] = new_id
-                default_addresses.add(sub_address)
+                semi_default_addresses[sub_address] = new_id
+                default_addresses[new_id] = sub_address
                 print(f"Created account {new_id} for subscriber {sub_address}")
         print("Assemble infos for list creation")
         local_part, domain = ml_address.split('@')
@@ -205,11 +208,12 @@ with Script(rs(), dry_run=DRY_RUN):
             persona_id = persona_addresses[sub_address]
             ml.do_subscription_action(rs(), SubscriptionActions.add_subscriber,
                                       new_ml_id, persona_id)
-            if sub_address not in default_addresses:
+            if sub_address not in semi_default_addresses:
                 ml.set_subscription_address(rs(), new_ml_id, persona_id,
                                             sub_address)
-                print("Adding {} with non-default address {}".format(persona_id,
-                                                                     sub_address))
+                print(f"Adding {persona_id} with non-default address {sub_address}")
+            elif sub_address != default_addresses.get(persona_id):
+                print(f"Adding {persona_id} with augmented default address"
+                      f" {default_addresses.get(persona_id)} (from {sub_address})")
             else:
-                print("Adding {} with default address {}".format(persona_id,
-                                                                 sub_address))
+                print(f"Adding {persona_id} with default address {sub_address}")
