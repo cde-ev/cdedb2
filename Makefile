@@ -219,8 +219,7 @@ lint:
 	@echo $(BANNERLINE)
 	@echo ""
 	$(PYLINTBIN) --rcfile='./lint.rc' --output-format=text cdedb \
-		| grep -E '^(\*\*\*\*|E:|W:)' \
-		| grep -E -v "'cdedb.validation' has no '[a-zA-Z_]*' member"
+		| grep -E '^(\*\*\*\*|E:|W:)'
 
 
 prepare-check:
@@ -314,9 +313,4 @@ mypy-test:
 		tests/main.py tests/singular.py
 
 mypy:
-	# Do not provide cdedb/validation.py on purpose.
-	${MYPYBIN} cdedb/backend/ cdedb/frontend cdedb/__init__.py \
-		cdedb/common.py cdedb/enums.py cdedb/i18n_additional.py \
-		cdedb/ml_subscription_aux.py cdedb/ml_type_aux.py cdedb/query.py \
-		cdedb/script.py cdedb/validationdata.py cdedb/validationtypes.py \
-		tests/common.py
+	${MYPYBIN} cdedb tests/common.py

@@ -2076,7 +2076,7 @@ def REQUESTdata(*spec: Tuple[str, str]) -> Callable[[F], F]:
                             # problematic for the werkzeug MultiDict
                             rs.values[name] = None
                         kwargs[name] = tuple(
-                            check_validation(rs, argtype[1:-1], val, name)
+                            _check_validation(rs, argtype[1:-1], val, name)
                             for val in vals)
                     else:
                         val = rs.request.values.get(name, "")
@@ -2096,7 +2096,7 @@ def REQUESTdata(*spec: Tuple[str, str]) -> Callable[[F], F]:
                                 if val is None:
                                     # Clean out the invalid value
                                     rs.values[name] = None
-                        kwargs[name] = check_validation(rs, argtype, val, name)
+                        kwargs[name] = _check_validation(rs, argtype, val, name)
             return fun(obj, rs, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -2326,8 +2326,8 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
-def check_validation(rs: RequestState, assertion: str, value: T,
-                     name: str = None, **kwargs: Any) -> T:
+def _check_validation(rs: RequestState, assertion: str, value: T,
+                     name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
     :param assertion: name of validation routine to call
@@ -2335,12 +2335,53 @@ def check_validation(rs: RequestState, assertion: str, value: T,
       out how to nicely get rid of this -- python has huge introspection
       capabilities, but I didn't see how this should be done).
     """
-    checker: Callable[..., Tuple[T, List[Error]]] = getattr(
+    checker: Callable[..., Tuple[Optional[T], List[Error]]] = getattr(
         validate, "check_{}".format(assertion))
     if name is not None:
         ret, errs = checker(value, name, **kwargs)
     else:
         ret, errs = checker(value, **kwargs)
+    rs.extend_validation_errors(errs)
+    return ret
+
+
+def check_validation_typed(rs: RequestState, type_: Type[T], value: Any,
+                     name: str = None, **kwargs: Any) -> Optional[T]:
+    """Helper to perform parameter sanitization.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation`
+    but accepts a type object instead of a string.
+
+    :param type_: type to check for
+    :param name: name of the parameter to check (bonus points if you find
+      out how to nicely get rid of this -- python has huge introspection
+      capabilities, but I didn't see how this should be done).
+    """
+    if name is not None:
+        ret, errs = validate.validate_check(type_, value, argname=name, **kwargs)
+    else:
+        ret, errs = validate.validate_check(type_, value, **kwargs)
+    rs.extend_validation_errors(errs)
+    return ret
+
+
+def check_validation_typed_optional(rs: RequestState, type_: Type[T], value: Any,
+                     name: str = None, **kwargs: Any) -> Optional[T]:
+    """Helper to perform parameter sanitization.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation`
+    but accepts a type object instead of a string.
+
+    :param type_: type to check for
+    :param name: name of the parameter to check (bonus points if you find
+      out how to nicely get rid of this -- python has huge introspection
+      capabilities, but I didn't see how this should be done).
+    """
+    if name is not None:
+        ret, errs = validate.validate_check_optional(
+            type_, value, argname=name, **kwargs)
+    else:
+        ret, errs = validate.validate_check_optional(type_, value, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
 

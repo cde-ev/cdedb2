@@ -24,6 +24,7 @@ import psycopg2.extras
 from typing_extensions import Literal
 
 import cdedb.validation as validate
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
     Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
@@ -625,7 +626,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             q = glue(q, "ORDER BY", ", ".join(orders))
         return self.query_all(rs, q, params)
 
-    def generic_retrieve_log(self, rs: RequestState, code_validator: str,
+    def generic_retrieve_log(self, rs: RequestState, code_validator: Type[T],
                              entity_name: str, table: str,
                              codes: Collection[int] = None,
                              entity_ids: Collection[Any] = None,
@@ -669,18 +670,20 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :param time_start: lower bound for ctime columns
         :param time_stop: upper bound for ctime column
         """
-        codes = affirm_set_validation(code_validator, codes, allow_None=True)
-        entity_ids = affirm_set_validation("id", entity_ids, allow_None=True)
-        offset = affirm_validation("non_negative_int_or_None", offset)
-        length = affirm_validation("positive_int_or_None", length)
+        codes = affirm_set_validation(code_validator, codes or set())
+        entity_ids = affirm_set_validation(vtypes.ID, entity_ids or set())
+        offset: Optional[int] = affirm_validation_typed_optional(
+            vtypes.NonNegativeInt, offset)
+        length: Optional[int] = affirm_validation_typed_optional(
+            vtypes.PositiveInt, length)
         additional_columns = affirm_set_validation(
-            "restrictive_identifier", additional_columns, allow_None=True)
-        persona_id = affirm_validation("id_or_None", persona_id)
-        submitted_by = affirm_validation("id_or_None", submitted_by)
-        reviewed_by = affirm_validation("id_or_None", reviewed_by)
-        change_note = affirm_validation("regex_or_None", change_note)
-        time_start = affirm_validation("datetime_or_None", time_start)
-        time_stop = affirm_validation("datetime_or_None", time_stop)
+            vtypes.RestrictiveIdentifier, additional_columns or set())
+        persona_id = affirm_validation_typed_optional(vtypes.ID, persona_id)
+        submitted_by = affirm_validation_typed_optional(vtypes.ID, submitted_by)
+        reviewed_by = affirm_validation_typed_optional(vtypes.ID, reviewed_by)
+        change_note = affirm_validation_typed_optional(vtypes.Regex, change_note)
+        time_start = affirm_validation_typed_optional(datetime.datetime, time_start)
+        time_stop = affirm_validation_typed_optional(datetime.datetime, time_stop)
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         additional_columns: List[str] = list(additional_columns or [])
@@ -731,7 +734,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         # The first query determines the absolute number of logs existing
         # matching the given criteria
         query = f"SELECT COUNT(*) AS count FROM {table} {condition}"
-        total = unwrap(self.query_one(rs, query, params)) or 0
+        total: int = unwrap(self.query_one(rs, query, params)) or 0
         if offset and offset > total:
             # Why you do this
             return total, tuple()
@@ -776,77 +779,42 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
+def _affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
 
 
-# Ignore the parameter name allow_None
-# noinspection PyPep8Naming
-@overload
-def affirm_array_validation(assertion: str, values: None,
-                            allow_None: Literal[True], **kwargs: Any
-                            ) -> None: ...
+def affirm_validation_typed(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
+    return validate.validate_assert(assertion, value, **kwargs)
 
 
-# noinspection PyPep8Naming
-@overload
-def affirm_array_validation(assertion: str, values: Iterable[T],
-                            allow_None: Literal[False] = False, **kwargs: Any
-                            ) -> Tuple[T, ...]: ...
+def affirm_validation_typed_optional(
+    assertion: Type[T], value: Any, **kwargs: Any
+) -> Optional[T]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
+    return validate.validate_assert_optional(assertion, value, **kwargs)
 
 
-# noinspection PyPep8Naming
-def affirm_array_validation(assertion: str, values: Optional[Iterable[T]],
-                            allow_None: bool = False, **kwargs: Any
-                            ) -> Optional[Tuple[T, ...]]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
-
-    :param allow_None: Since we don't have the luxury of an automatic
-      '_or_None' variant like with other validators we have this parameter.
-    """
-    if values is None:
-        if allow_None:
-            return None
-        else:
-            raise ValueError(n_("Is not iterable."))
-    checker: Callable[..., T] = getattr(
-        validate, "assert_{}".format(assertion))
-    return tuple(checker(value, **kwargs) for value in values)
+def affirm_array_validation(
+    assertion: Type[T], values: Iterable[Any], **kwargs: Any
+) -> Tuple[T, ...]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
+    return tuple(
+        affirm_validation_typed(assertion, value, **kwargs)
+        for value in values
+    )
 
 
-# Ignore the parameter name allow_None
-# noinspection PyPep8Naming
-@overload
-def affirm_set_validation(assertion: str, values: None,
-                          allow_None: bool = False, **kwargs: Any) -> None: ...
-
-
-# noinspection PyPep8Naming
-@overload
-def affirm_set_validation(assertion: str, values: Iterable[T],
-                          allow_None: bool = False, **kwargs: Any
-                          ) -> Set[T]: ...
-
-
-# noinspection PyPep8Naming
-def affirm_set_validation(assertion: str, values: Optional[Iterable[T]],
-                          allow_None: bool = False, **kwargs: Any
-                          ) -> Optional[Set[T]]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
-
-    :param allow_None: Since we don't have the luxury of an automatic
-      '_or_None' variant like with other validators we have this parameter.
-    """
-    if values is None:
-        if allow_None:
-            return None
-        else:
-            raise ValueError(n_("Is not iterable."))
-    checker: Callable[..., T] = getattr(
-        validate, "assert_{}".format(assertion))
-    return {checker(value, **kwargs) for value in values}
+def affirm_set_validation(
+    assertion: Type[T], values: Iterable[T], **kwargs: Any
+) -> Set[T]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set."""
+    return set(
+        affirm_validation_typed(assertion, value, **kwargs)
+        for value in values
+    )
 
 
 def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:

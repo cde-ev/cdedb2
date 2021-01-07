@@ -16,6 +16,7 @@ from werkzeug import Response
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     EntitySorter, RequestState, get_hash, merge_dicts, n_, now, schulze_evaluate,
@@ -23,8 +24,8 @@ from cdedb.common import (
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
-    calculate_db_logparams, calculate_loglinks, cdedburl, check_validation as check,
-    periodic, process_dynamic_input, request_extractor,
+    calculate_db_logparams, calculate_loglinks, cdedburl,
+    check_validation_typed as check, periodic, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, Query, mangle_query_input
@@ -103,8 +104,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, vtypes.QueryInput, query_input, "query",
+                                      spec=spec, allow_empty=False)
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
@@ -318,9 +319,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                         data: Dict[str, Any]) -> Response:
         """Modify an assembly."""
         data['id'] = assembly_id
-        data = check(rs, "assembly", data)
+        data = check(rs, vtypes.Assembly, data)
         if rs.has_validation_errors():
             return self.change_assembly_form(rs, assembly_id)
+        assert data is not None
         code = self.assemblyproxy.set_assembly(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
@@ -410,9 +412,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Make a new assembly."""
         if presider_ids is not None:
             data["presiders"] = presider_ids
-        data = check(rs, "assembly", data, creation=True)
+        data = check(rs, vtypes.Assembly, data, creation=True)
         if rs.has_validation_errors():
             return self.create_assembly_form(rs)
+        assert data is not None
         presider_ml_data = None
         if create_presider_list:
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
@@ -422,7 +425,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 presider_ml_data = None
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': presider_address})
-        data = check(rs, "assembly", data, creation=True)
+        data = check(rs, vtypes.Assembly, data, creation=True)
         if presider_ids:
             if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):
                 rs.append_validation_error(
@@ -441,6 +444,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                         n_("Must not be empty in order to create a mailinglist."))))
         if rs.has_validation_errors():
             return self.create_assembly_form(rs)
+        assert data is not None
         new_id = self.assemblyproxy.create_assembly(rs, data)
         if presider_ml_data:
             presider_ml_data['assembly_id'] = new_id
@@ -731,9 +735,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                       data: Dict[str, Any]) -> Response:
         """Make a new ballot."""
         data['assembly_id'] = assembly_id
-        data = check(rs, "ballot", data, creation=True)
+        data = check(rs, vtypes.Ballot, data, creation=True)
         if rs.has_validation_errors():
             return self.create_ballot_form(rs, assembly_id)
+        assert data is not None
         new_id = self.assemblyproxy.create_ballot(rs, data)
         self.notify_return_code(rs, new_id)
         return self.redirect(rs, "assembly/show_ballot", {
@@ -823,12 +828,13 @@ class AssemblyFrontend(AbstractUserFrontend):
         if attachment and not filename:
             assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]
-            filename = check(rs, "identifier", tmp, 'filename')
-        attachment = cast(bytes, check(rs, "pdffile", attachment, 'attachment'))
+            filename = check(rs, vtypes.Identifier, tmp, 'filename')
+        attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
         if rs.has_validation_errors():
             return self.add_attachment_form(
                 rs, assembly_id=assembly_id, ballot_id=ballot_id,
                 attachment_id=attachment_id)
+        assert attachment is not None
         data: CdEDBObject = {
             'title': title,
             'filename': filename,
@@ -1437,9 +1443,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""
         data['id'] = ballot_id
-        data = check(rs, "ballot", data)
+        data = check(rs, vtypes.Ballot, data)
         if rs.has_validation_errors():
             return self.change_ballot_form(rs, assembly_id, ballot_id)
+        assert data is not None
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
@@ -1501,6 +1508,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot = rs.ambience['ballot']
         candidates = tuple(e['shortname']
                            for e in ballot['candidates'].values())
+        vote: Optional[str]
         if ballot['votes']:
             voted = unwrap(
                 request_extractor(rs, (("vote", "[str]"),)))
@@ -1539,9 +1547,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                 vote = "=".join(candidates)
                 if ballot['use_bar']:
                     vote += "={}".format(ASSEMBLY_BAR_SHORTNAME)
-        vote = check(rs, "vote", vote, "vote", ballot=ballot)
+        vote = check(rs, vtypes.Vote, vote, "vote", ballot=ballot)
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
+        assert vote is not None
         code = self.assemblyproxy.vote(rs, ballot_id, vote, secret=None)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")

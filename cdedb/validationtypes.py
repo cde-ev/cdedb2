@@ -13,9 +13,9 @@ from cdedb.query import Query
 NonNegativeInt = NewType("NonNegativeInt", int)
 PositiveInt = NewType("PositiveInt", int)
 ID = NewType("ID", int)
+CdedbID = NewType("CdedbID", ID)  # subtype of ID as it also uses that validator
 PartialImportID = NewType("PartialImportID", int)
 SingleDigitInt = NewType("SingleDigitInt", int)
-CdedbID = NewType("CdedbID", int)
 
 NonNegativeDecimal = NewType("NonNegativeDecimal", decimal.Decimal)
 NonNegativeLargeDecimal = NewType(
@@ -92,11 +92,11 @@ LodgementGroup = NewType("LodgementGroup", CdEDBObject)
 Lodgement = NewType("Lodgement", CdEDBObject)
 Questionnaire = NewType("Questionnaire", Dict[int, Any]) # TODO maybe cast keys to str
 
-SerializedEventUpload = NewType("SerializedEventUpload", CdEDBObject)
 SerializedEvent = NewType("SerializedEvent", CdEDBObject)
-SerializedPartialEventUpload = NewType(
-    "SerializedPartialEventUpload", CdEDBObject)
+SerializedEventUpload = NewType("SerializedEventUpload", SerializedEvent)
 SerializedPartialEvent = NewType("SerializedPartialEvent", CdEDBObject)
+SerializedPartialEventUpload = NewType(
+    "SerializedPartialEventUpload", SerializedPartialEvent)
 
 PartialCourse = NewType("PartialCourse", CdEDBObject)
 PartialLodgementGroup = NewType("PartialLodgementGroup", CdEDBObject)

@@ -14,13 +14,14 @@ from typing import Optional
 
 import psycopg2.extensions
 
-import cdedb.validation as validate
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
     PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles, glue,
     make_root_logger, now,
 )
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
+from cdedb.validation import validate_is
 
 
 class SessionBackend:
@@ -69,8 +70,8 @@ class SessionBackend:
         """
         persona_id = None
         data = None
-        if (validate.is_printable_ascii(sessionkey)
-                and validate.is_printable_ascii(ip) and sessionkey):
+        if (validate_is(vtypes.PrintableASCII, sessionkey)
+                and validate_is(vtypes.PrintableASCII, ip) and sessionkey):
             query = ("SELECT persona_id, ip, is_active, atime, ctime"
                      " FROM core.sessions WHERE sessionkey = %s")
             with self.connpool["cdb_anonymous"] as conn:
