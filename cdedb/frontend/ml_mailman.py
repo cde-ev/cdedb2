@@ -259,9 +259,10 @@ do nothing.
     def mailman_sync_list(self, rs: RequestState, mailman: Client,
                           db_list: CdEDBObject, mm_list: MailingList) -> None:
         self.mailman_sync_list_meta(rs, mailman, db_list, mm_list)
-        self.mailman_sync_list_subs(rs, mailman, db_list, mm_list)
-        self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
-        self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
+        if db_list['is_active']:
+            self.mailman_sync_list_subs(rs, mailman, db_list, mm_list)
+            self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
+            self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
 
     @periodic("mailman_sync")
     def mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
