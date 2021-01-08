@@ -344,7 +344,9 @@ I18N_STRINGS = (
     n_("cde_misc"),
 
     #
-    # Programmatically hidden string
+    # hidden strings, see ml/message_moderation.tmpl
     #
+    n_("Accept"),
+    n_("Reject"),
     n_("Discard"),
 )
