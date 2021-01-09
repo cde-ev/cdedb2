@@ -51,7 +51,7 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
                 rs.notify("error", n_("List unavailable."))
             else:
                 try:
-                    held = mailman.get_held_message(request_id)
+                    held = mmlist.get_held_message(request_id)
                     change_note = f'{held.sender} / {held.subject}'
                     response = mmlist.moderate_message(request_id, action)
                 except urllib.error.HTTPError:
