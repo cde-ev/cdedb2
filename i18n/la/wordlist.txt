@@ -1,0 +1,5 @@
+# Here we collect common words for the latin translations. Let's try alphabetical order. Sorces for words help to be sure that it is latin.
+
+email (one message): littera electronica, ae f [https://la.wikipedia.org/wiki/Cursus_electronicus]
+email [service]: cursus electronicus, us/i m [https://la.wikipedia.org/wiki/Cursus_electronicus]
+email address: inscriptio electrica, onis/ae f [https://la.wikipedia.org/wiki/Cursus_electronicus]
