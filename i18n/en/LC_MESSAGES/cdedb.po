@@ -12157,7 +12157,7 @@ msgstr "Account Request deleted"
 
 #: cdedb/i18n_additional.py:61
 msgid "CoreLogCodes.genesis_verified"
-msgstr "Accountanfrage verified"
+msgstr "Account Request verified"
 
 #: cdedb/i18n_additional.py:62
 msgid "CoreLogCodes.privilege_change_pending"
