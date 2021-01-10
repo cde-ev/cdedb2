@@ -1,0 +1,40 @@
+# Diese Datei dient als Wörterbuch für "Fachbegriffe", damit diese einheitlich verwendet werden können.
+# Quellen sind hilfreich.
+# Abkürzungen:
+## NLL -- Neues Latein Lexikon (Das gibt der Vatikan heraus)
+
+Abstimmung
+suffragium (PONS, identisch mit Stimme)
+
+Adresse
+domicilium (PONS)
+
+Datei
+tabularium (PONS)
+
+E-Mail
+epistula electronica (PONS, Philipp mag keine Pluralwörter, daher nicht "litterae")
+
+entfernen (Informatik)
+removere (Philipp findet das am passendsten. Siehe auch "löschen")
+
+exPuls
+exPulsus
+
+löschen (Informatik)
+delere (Philipp findet das am passendsten. Siehe auch "entfernen")
+
+Mailingliste
+tabella epistularum electronicarum (Eigenkreation Philipp)
+
+Mitglied
+socius (PONS)
+
+Stimme (bei einer Abstimmung)
+suffragium (PONS, identisch mit Abstimmung)
+
+Versammlung
+contio, -onis, f. (NLL)
+
+Wahlleiter
+princeps elegendi (Eigenkreation Philipp)

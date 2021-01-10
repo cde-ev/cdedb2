@@ -11989,131 +11989,131 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:16
 msgid "AssemblyLogCodes.assembly_created"
-msgstr ""
+msgstr "Contio creata"
 
 #: cdedb/i18n_additional.py:17
 msgid "AssemblyLogCodes.assembly_changed"
-msgstr ""
+msgstr "Contio retractata"
 
 #: cdedb/i18n_additional.py:18
 msgid "AssemblyLogCodes.assembly_concluded"
-msgstr ""
+msgstr "Contio finita"
 
 #: cdedb/i18n_additional.py:19
 msgid "AssemblyLogCodes.assembly_deleted"
-msgstr ""
+msgstr "Contio deleta"
 
 #: cdedb/i18n_additional.py:20
 msgid "AssemblyLogCodes.ballot_created"
-msgstr ""
+msgstr "Suffragium creatum"
 
 #: cdedb/i18n_additional.py:21
 msgid "AssemblyLogCodes.ballot_changed"
-msgstr ""
+msgstr "Suffragium retractatum"
 
 #: cdedb/i18n_additional.py:22
 msgid "AssemblyLogCodes.ballot_deleted"
-msgstr ""
+msgstr "Suffragium deletum"
 
 #: cdedb/i18n_additional.py:23
 msgid "AssemblyLogCodes.ballot_extended"
-msgstr ""
+msgstr "Suffragium prorogatum"
 
 #: cdedb/i18n_additional.py:24
 msgid "AssemblyLogCodes.ballot_tallied"
-msgstr ""
+msgstr "Suffragia computata"
 
 #: cdedb/i18n_additional.py:25
 msgid "AssemblyLogCodes.candidate_added"
-msgstr ""
+msgstr "Candidatus additus"
 
 #: cdedb/i18n_additional.py:26
 msgid "AssemblyLogCodes.candidate_updated"
-msgstr ""
+msgstr "Candidatus retractatus"
 
 #: cdedb/i18n_additional.py:27
 msgid "AssemblyLogCodes.candidate_removed"
-msgstr ""
+msgstr "Candidatus remotus"
 
 #: cdedb/i18n_additional.py:28
 msgid "AssemblyLogCodes.new_attendee"
-msgstr ""
+msgstr "Particeps novus"
 
 #: cdedb/i18n_additional.py:29
 msgid "AssemblyLogCodes.assembly_presider_added"
-msgstr ""
+msgstr "Princeps elegendi additus"
 
 #: cdedb/i18n_additional.py:30
 msgid "AssemblyLogCodes.assembly_presider_removed"
-msgstr ""
+msgstr "Princeps elegendi remotus"
 
 #: cdedb/i18n_additional.py:31
 msgid "AssemblyLogCodes.attachment_added"
-msgstr ""
+msgstr "Appendix addita"
 
 #: cdedb/i18n_additional.py:32
 msgid "AssemblyLogCodes.attachment_changed"
-msgstr ""
+msgstr "Appendix mutata"
 
 #: cdedb/i18n_additional.py:33
 msgid "AssemblyLogCodes.attachment_removed"
-msgstr ""
+msgstr "Appendix remota"
 
 #: cdedb/i18n_additional.py:34
 msgid "AssemblyLogCodes.attachment_version_added"
-msgstr ""
+msgstr "Versio appendicis addita"
 
 #: cdedb/i18n_additional.py:35
 msgid "AssemblyLogCodes.attachment_version_removed"
-msgstr ""
+msgstr "Versio appendicis remota"
 
 #: cdedb/i18n_additional.py:36
 msgid "AssemblyLogCodes.attachment_version_changed"
-msgstr ""
+msgstr "Versio appendicis retractata"
 
 #: cdedb/i18n_additional.py:38
 msgid "AttachmentPolicy.allow"
-msgstr ""
+msgstr "Epistolae electronicae in HTML omnesque appendices permittuntur."
 
 #: cdedb/i18n_additional.py:39
 msgid "AttachmentPolicy.pdf_only"
-msgstr ""
+msgstr "Epistolae electronicae solae de verbis appendicesque solae, si tabularii in pdf sunt, permittuntur."
 
 #: cdedb/i18n_additional.py:40
 msgid "AttachmentPolicy.forbid"
-msgstr ""
+msgstr "Epistolae electronicae in HTML atque appendices prohibuntur."
 
 #: cdedb/i18n_additional.py:42
 msgid "CdeLogCodes.semester_bill"
-msgstr ""
+msgstr "Adhortatio ad solvendum missa"
 
 #: cdedb/i18n_additional.py:43
 msgid "CdeLogCodes.semester_bill_with_addresscheck"
-msgstr ""
+msgstr "Adhortatio ad solvendum misi domicilium probans"
 
 #: cdedb/i18n_additional.py:44
 msgid "CdeLogCodes.semester_ejection"
-msgstr ""
+msgstr "Socii immoti deleti"
 
 #: cdedb/i18n_additional.py:45
 msgid "CdeLogCodes.semester_balance_update"
-msgstr ""
+msgstr "Peculia retractata"
 
 #: cdedb/i18n_additional.py:46
 msgid "CdeLogCodes.semester_advance"
-msgstr ""
+msgstr "Semestre praeteritum"
 
 #: cdedb/i18n_additional.py:47
 msgid "CdeLogCodes.expuls_addresscheck"
-msgstr ""
+msgstr "Domicilia pro exPulso probata"
 
 #: cdedb/i18n_additional.py:48
 msgid "CdeLogCodes.expuls_addresscheck_skipped"
-msgstr ""
+msgstr "Domicilia pro exPulso non probata"
 
 #: cdedb/i18n_additional.py:49
 msgid "CdeLogCodes.expuls_advance"
-msgstr ""
+msgstr "Proximus exPulsus"
 
 #: cdedb/i18n_additional.py:51
 msgid "CoreLogCodes.persona_creation"
