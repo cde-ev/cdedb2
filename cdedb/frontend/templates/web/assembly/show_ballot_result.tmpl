@@ -139,7 +139,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for vote, count in vote_counts|dictsort|reverse %}
+                {% for vote, count in vote_counts|dictsort(by_key=False, reverse=True) %}
                     <tr>
                         <td>
                             {% if vote == MAGIC_ABSTAIN %}

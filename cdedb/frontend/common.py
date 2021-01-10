@@ -706,14 +706,14 @@ def sort_filter(env: jinja2.Environment, value: Iterable[T],
     return xsorted(value, key=key_func, reverse=reverse)
 
 
-def dictsort_filter(value: Mapping[T, S],
+def dictsort_filter(value: Mapping[T, S], by_key: bool = True,
                     reverse: bool = False) -> List[Tuple[T, S]]:
     """Sort a dict and yield (key, value) pairs.
 
     Because python dicts are unsorted you may want to use this function to
     order them by key.
     """
-    return xsorted(value.items(), key=lambda x: x[0], reverse=reverse)
+    return xsorted(value.items(), key=lambda x: x[0 if by_key else 1], reverse=reverse)
 
 
 def set_filter(value: Iterable[T]) -> Set[T]:
