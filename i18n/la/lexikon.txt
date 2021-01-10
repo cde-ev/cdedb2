@@ -6,14 +6,20 @@
 Abstimmung
 suffragium (PONS, identisch mit Stimme)
 
-Adresse
-domicilium (PONS)
+Adresse, Anschrift
+inscriptio (NLL)
 
 Datei
 tabularium (PONS)
 
-E-Mail
+E-Mail (einzelne Mail)
 epistula electronica (PONS, Philipp mag keine Pluralwörter, daher nicht "litterae")
+
+E-Mail (Service)
+cursus electronicus (https://la.wikipedia.org/wiki/Cursus_electronicus)
+
+E-Mail-Adresse
+inscriptio electronica (https://la.wikipedia.org/wiki/Cursus_electronicus)
 
 entfernen (Informatik)
 removere (Philipp findet das am passendsten. Siehe auch "löschen")
