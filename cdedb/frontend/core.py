@@ -1463,13 +1463,13 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "promote_user")
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdata("target_realm")
     @REQUESTdatadict(
         "title", "name_supplement", "birthday", "gender", "free_form",
         "telephone", "mobile", "address", "address_supplement", "postal_code",
         "location", "country", "trial_member")
+    @REQUESTdata("target_realm")
     def promote_user(self, rs: RequestState, persona_id: int,
-                     target_realm: Realm, data: CdEDBObject) -> Response:
+                     target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
             # remove irrelevant keys, due to the possible combinations it is
@@ -2021,8 +2021,8 @@ class CoreFrontend(AbstractFrontend):
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
         "postal_code", "location", "country", "birth_name")
-    @REQUESTdata("attachment_hash", "attachment_filename", "ignore_warnings")
     @REQUESTfile("attachment")
+    @REQUESTdata("attachment_hash", "attachment_filename", "ignore_warnings")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         attachment: Optional[werkzeug.FileStorage],
                         attachment_hash: Optional[str],

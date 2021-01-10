@@ -2048,8 +2048,14 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(*spec: Union[str, Tuple[str, str]]) -> Callable[[F], F]:
-    """Decorator to extract parameters from requests and validate them. This
-    should always be used, so automatic form filling works as expected.
+    """Decorator to extract parameters from requests and validate them.
+    
+    This should always be used, so automatic form filling works as expected.
+    The decorator should be the innermost one
+    as it needs access to the original "__defaults__" attribute
+    to correctly determine types (e.g. "foo: str = None" -> "Optional[str]").
+    Alternatively "functools.wraps" can be invoked in a way
+    which also updates this attribute if the signature allows this.
 
     :param spec: Specification of parameters to extract. The
       first value of a tuple is the name of the parameter to look out
