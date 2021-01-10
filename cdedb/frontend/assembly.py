@@ -1197,16 +1197,18 @@ class AssemblyFrontend(AbstractUserFrontend):
             vote_counts = {vote: sum((1 for v in result['votes']
                                       if v.get('vote').split('>')[0] == vote))
                            for vote in vote_set}
-            # count the abstentions, which have no >
-            vote_counts[MAGIC_ABSTAIN] = sum(1 for v in result['votes']
-                                             if len(v.get('vote').split('>')) == 1)
-            if vote_counts[MAGIC_ABSTAIN] == 0:
-                del vote_counts[MAGIC_ABSTAIN]
         else:
-            vote_set = {vote['vote'] for vote in result['votes']}
+            # if there are no >, it is an abstention which will be counted later
+            vote_set = {vote['vote'] for vote in result['votes']
+                        if len(vote['vote'].split('>')) != 1}
             vote_counts = {vote: sum((1 for v in result['votes']
                                       if v.get('vote') == vote))
                            for vote in vote_set}
+        # count the abstentions, which have no >
+        vote_counts[MAGIC_ABSTAIN] = sum(1 for v in result['votes']
+                                         if len(v.get('vote').split('>')) == 1)
+        if vote_counts[MAGIC_ABSTAIN] == 0:
+            del vote_counts[MAGIC_ABSTAIN]
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
