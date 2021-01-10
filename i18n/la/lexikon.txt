@@ -2,9 +2,11 @@
 # Quellen sind hilfreich.
 # Abkürzungen:
 ## NLL -- Neues Latein Lexikon (Das gibt der Vatikan heraus)
+## CIC -- Codex iuris canonici (1983)
 
 Abstimmung
-suffragium (PONS, identisch mit Stimme)
+suffragium (PONS, Stowasser; identisch mit Stimme)
+alternativ aus dem Kirchenrecht (Kilian): suffragatio (can. 699 § 1 CIC "per secretam suffragationem"; nach Stowasser "Begünstigung, Empfehlung"), scrutinium (can. 119 CIC für Abstimmungsgang im Kontext von Stichentscheid u.ä.; eigentlich Kernbedeutung eher "Prüfung")
 
 Adresse, Anschrift
 inscriptio (NLL)
@@ -37,10 +39,12 @@ Mitglied
 socius (PONS)
 
 Stimme (bei einer Abstimmung)
-suffragium (PONS, identisch mit Abstimmung)
+suffragium (PONS, Stowasser; identisch mit Abstimmung; auch in can. 119 n. 2, 171ff CIC)
 
 Versammlung
 contio, -onis, f. (NLL)
+alternativ aus dem Kirchenrecht (Kilian): conventus [habere] (can. 215, 363 § 2 CIC für allgemeine Versammlungen; can. 451ff. CIC für Bischofskonferenzen), comitia [celebrare] (can. 309 CIC ausdrücklich im Vereinsrecht; nach dem klassischen Begriff für die Volksversammlung; Plural von comitium "Versammlungsort" - contio ist nach Wikipedia antik die informelle Diskussionsversammlung vor der abstimmenden comitia), coetus [celebrare] (can. 342, 345ff. CIC für die Bischofssynoden; can. 460 Diözesansynode; personarum coetus ganz allgemein in can. 358 CIC), coadunatio (can. 761 Versammlungen aller Art, auf denen man den Glauben verkünden soll) - ich plädire für coetus
 
 Wahlleiter
 princeps elegendi (Eigenkreation Philipp)
+alternativ aus dem Kirchenrecht (Kilian): praeses electionis (can. 173 § 2 CIC für Wahlvorsitzender)
