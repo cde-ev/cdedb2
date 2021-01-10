@@ -279,7 +279,8 @@ class Application(BaseApp):
             try:
                 ret = handler(rs, **args)
                 if rs.validation_appraised is False:
-                    raise RuntimeError("Input validation forgotten.")
+                    raise RuntimeError("Input validation forgotten.",
+                                       endpoint, args, handler.__name__)
                 return ret
             finally:
                 # noinspection PyProtectedMember

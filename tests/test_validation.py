@@ -4,6 +4,7 @@ import copy
 import datetime
 import decimal
 import unittest
+from typing import List, Optional
 
 import pytz
 
@@ -587,3 +588,12 @@ class TestValidation(unittest.TestCase):
                 "Forbidden characters (%(chars)s). (None)", {"chars": "&[]"}), False),
         ]
         self.do_validator_test("_safe_str", spec)
+
+    def test_generic_list(self):
+        self.assertTrue(validate.validate_is(List[int], [0, 1, 2, 3]))
+        self.assertFalse(validate.validate_is(List[int], [0, 1.7, 2, 3]))
+
+    def test_optional_type(self):
+        self.assertTrue(validate.validate_is(Optional[int], 5))
+        self.assertTrue(validate.validate_is(Optional[int], None))
+        self.assertFalse(validate.validate_is(Optional[int], 6.3))

@@ -60,7 +60,16 @@ import string
 import sys
 from enum import Enum
 from typing import (
-    Callable, Dict, Sequence, Set, Tuple, Type, TypeVar, cast, get_type_hints, overload,
+    Callable,
+    Dict,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+    get_type_hints,
+    overload,
 )
 
 import magic
@@ -69,6 +78,7 @@ import pytz
 import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
+from typing_extensions import Protocol
 
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
@@ -133,9 +143,19 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         super().__setitem__(type_, validator)
 
     def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
+        if (
+            getattr(type_, "__origin__", None) is Union
+            and type_.__args__[1] is NoneType  # type: ignore
+        ):
+            validator = self[type_.__args__[0]]  # type: ignore
+            return _allow_None(validator)  # type: ignore
         return super().__getitem__(type_)
 
     def __missing__(self, type_: Type[T]) -> Callable[..., T]:
+        # generic tuples
+        if getattr(type_, "__origin__", None) is list:
+            return make_list_validator(type_.__args__[0])  # type: ignore
+
         # TODO resolve potential cyclic imports with enums
         if callable(type_):
             return type_  # we have a raw enum validator
@@ -183,7 +203,7 @@ def validate_assert_optional(type: Type[T], value: Any, **kwargs: Any) -> Option
     validation = _ALL_TYPED[type]
     # as long as we cannot handle Optional in ValidatorStorage.__getitem__
     # we have to resort to this somewhat ugly workaround
-    return validate_assert(_allow_None(validation), value, **kwargs) # type: ignore
+    return validate_assert(_allow_None(validation), value, **kwargs)  # type: ignore
 
 
 def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
@@ -225,19 +245,21 @@ def _create_check_valid(fun: Callable[..., T]
 
     return check_valid
 
+
 def validate_check(
     type: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
-        try:
-            val = _ALL_TYPED[type](value, **kwargs)
-            return val, []
-        except ValidationSummary as errs:
-            old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
-            _LOGGER.debug(
-                f"{old_format} for '{str(type)}'"
-                f" with input {value}, {kwargs}."
-            )
-            return None, old_format
+    try:
+        val = _ALL_TYPED[type](value, **kwargs)
+        return val, []
+    except ValidationSummary as errs:
+        old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
+        _LOGGER.debug(
+            f"{old_format} for '{str(type)}'"
+            f" with input {value}, {kwargs}."
+        )
+        return None, old_format
+
 
 def validate_check_optional(
     type: Type[T], value: Any, **kwargs: Any
@@ -245,7 +267,8 @@ def validate_check_optional(
     validation = _ALL_TYPED[type]
     # as long as we cannot handle Optional in ValidatorStorage.__getitem__
     # we have to resort to this somewhat ugly workaround
-    return validate_check(_allow_None(validation), value, **kwargs) # type: ignore
+    return validate_check(_allow_None(validation), value, **kwargs)  # type: ignore
+
 
 def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     """Wrap a validator to allow ``None`` as valid input.
@@ -879,10 +902,10 @@ def _list_of(
             # TODO use escaped_split?
             # Skip emtpy entries which can be produced by JavaScript.
             val = [v for v in val.split(",") if v]
-        val = list(_iterable(val, argname, _convert=_convert, **kwargs))
+        val = _iterable(val, argname, _convert=_convert, **kwargs)
     else:
         # TODO why _sequence here but iterable above?
-        val = list(_sequence(val, argname, _convert=_convert, **kwargs))
+        val = _sequence(val, argname, _convert=_convert, **kwargs)
     vals: List[T] = []
     errs = ValidationSummary()
     for v in val:
@@ -897,6 +920,20 @@ def _list_of(
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
 
     return vals
+
+
+class ListValidator(Protocol[T]):
+    def __call__(val: Any, argname: str = None, **kargs: Any) -> List[T]:
+        ...
+
+
+def make_list_validator(type_: Type[T]) -> ListValidator[T]:
+
+    @functools.wraps(_list_of)
+    def list_validator(val: Any, argname: str = None, **kwargs: Any) -> List[T]:
+        return _list_of(val, type_, argname, **kwargs)
+
+    return list_validator
 
 
 @_add_typed_validator
