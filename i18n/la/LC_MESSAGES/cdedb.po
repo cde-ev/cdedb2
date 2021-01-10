@@ -12969,109 +12969,109 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:291
 msgid "Use a few words, avoid common phrases."
-msgstr ""
+msgstr "Complura verba neque series utatae utaris."
 
 #: cdedb/i18n_additional.py:292
 msgid "No need for symbols, digits, or uppercase letters."
-msgstr ""
+msgstr "Notas symbolicas numericasque atque litteras maiores uti non opus est."
 
 #: cdedb/i18n_additional.py:293
 msgid "Add another word or two. Uncommon words are better."
-msgstr ""
+msgstr "Verba adderis. Verba inusitata melius sunt."
 
 #: cdedb/i18n_additional.py:294
 msgid "Straight rows of keys are easy to guess."
-msgstr ""
+msgstr "Multi propinqui malleoli facile coniectari possunt."
 
 #: cdedb/i18n_additional.py:295
 msgid "Short keyboard patterns are easy to guess."
-msgstr ""
+msgstr "Formula parva malleolorum facile coniectari possunt."
 
 #: cdedb/i18n_additional.py:296
 msgid "Use a longer keyboard pattern with more turns."
-msgstr ""
+msgstr "Maiorem formulam malleolorum pluribus cum conversionibus utaris."
 
 #: cdedb/i18n_additional.py:297
 msgid "Repeats like \"aaa\" are easy to guess."
-msgstr ""
+msgstr "Repetitiones ut „aaa“ facile coniectari possunt."
 
 #: cdedb/i18n_additional.py:298
 msgid ""
 "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\"."
-msgstr ""
+msgstr "Repetitiones ut „abcabcabc“ paulo tantum difficilius quam „abc“ coniectari possunt."
 
 #: cdedb/i18n_additional.py:300
 msgid "Avoid repeated words and characters."
-msgstr ""
+msgstr "Verba notaeque repetere vites."
 
 #: cdedb/i18n_additional.py:301
 msgid "Sequences like \"abc\" or \"6543\" are easy to guess."
-msgstr ""
+msgstr "Series ut „abc“ aut „6543“ facile coniectari possunt."
 
 #: cdedb/i18n_additional.py:302
 msgid "Avoid sequences."
-msgstr ""
+msgstr "Series vites."
 
 #: cdedb/i18n_additional.py:303
 msgid "Recent years are easy to guess."
-msgstr ""
+msgstr "Anni recentes facile coniectari possunt."
 
 #: cdedb/i18n_additional.py:304
 msgid "Avoid recent years."
-msgstr ""
+msgstr "Annos recentes vites."
 
 #: cdedb/i18n_additional.py:305
 msgid "Avoid years that are associated with you."
-msgstr ""
+msgstr "Annos tibi coniunctos vites."
 
 #: cdedb/i18n_additional.py:306
 msgid "Avoid dates and years that are associated with you."
-msgstr ""
+msgstr "Annos diesque tibi coniunctos vites."
 
 #: cdedb/i18n_additional.py:307
 msgid "This is a top-10 common password."
-msgstr ""
+msgstr "Hoc unum decem sigorum arcanorum frequentissime usorum est."
 
 #: cdedb/i18n_additional.py:308
 msgid "This is a top-100 common password."
-msgstr ""
+msgstr "Hoc unum centum sigorum arcanorum frequentissime usorum est."
 
 #: cdedb/i18n_additional.py:309
 msgid "This is a very common password."
-msgstr ""
+msgstr "Hoc signum arcanum frequentissime usum est."
 
 #: cdedb/i18n_additional.py:310
 msgid "This is similar to a commonly used password."
-msgstr ""
+msgstr "Hoc uni signorum arcanorum frequenter usorum simile est."
 
 #: cdedb/i18n_additional.py:311
 msgid "A word by itself is easy to guess."
-msgstr ""
+msgstr "Verbum singulare facile coniectari potest."
 
 #: cdedb/i18n_additional.py:312
 msgid "Names and surnames by themselves are easy to guess."
-msgstr ""
+msgstr "nomina singulara facile coniectari possunt."
 
 #: cdedb/i18n_additional.py:313
 msgid "Common names and surnames are easy to guess."
-msgstr ""
+msgstr "nomina frequenta facile coniectari possunt."
 
 #: cdedb/i18n_additional.py:314
 msgid "Capitalization doesn't help very much."
-msgstr ""
+msgstr "Litteras maiores scribere non utillimum est."
 
 #: cdedb/i18n_additional.py:315
 msgid "All-uppercase is almost as easy to guess as all-lowercase."
-msgstr ""
+msgstr "Solae litterae maiores paene tanto facile quanto solae litterae minores coniectari possunt."
 
 #: cdedb/i18n_additional.py:316
 msgid "Reversed words aren't much harder to guess."
-msgstr ""
+msgstr "Verba circumagere non utillimum est."
 
 #: cdedb/i18n_additional.py:317
 msgid ""
 "Predictable substitutions like \"@\" instead of \"a\" don't help very much."
-msgstr ""
+msgstr "Notas sic substituere, ut provideri possint (exempli causa „@“ pro „a“), non utillimum est."
 
 #: cdedb/i18n_additional.py:329
 msgid "Finanzvorstand_Name"
