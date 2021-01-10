@@ -12089,7 +12089,7 @@ msgstr "Adhortatio ad solvendum missa"
 
 #: cdedb/i18n_additional.py:43
 msgid "CdeLogCodes.semester_bill_with_addresscheck"
-msgstr "Adhortatio ad solvendum misi domicilium probans"
+msgstr "Adhortatio ad solvendum misi inscriptionem probans"
 
 #: cdedb/i18n_additional.py:44
 msgid "CdeLogCodes.semester_ejection"
@@ -12105,11 +12105,11 @@ msgstr "Semestre praeteritum"
 
 #: cdedb/i18n_additional.py:47
 msgid "CdeLogCodes.expuls_addresscheck"
-msgstr "Domicilia pro exPulso probata"
+msgstr "Inscriptiones pro exPulso probatae"
 
 #: cdedb/i18n_additional.py:48
 msgid "CdeLogCodes.expuls_addresscheck_skipped"
-msgstr "Domicilia pro exPulso non probata"
+msgstr "Inscriptiones pro exPulso non probatae"
 
 #: cdedb/i18n_additional.py:49
 msgid "CdeLogCodes.expuls_advance"
