@@ -11989,35 +11989,35 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:16
 msgid "AssemblyLogCodes.assembly_created"
-msgstr "Contio creata"
+msgstr "Coetus creatus"
 
 #: cdedb/i18n_additional.py:17
 msgid "AssemblyLogCodes.assembly_changed"
-msgstr "Contio retractata"
+msgstr "Coetus retractatus"
 
 #: cdedb/i18n_additional.py:18
 msgid "AssemblyLogCodes.assembly_concluded"
-msgstr "Contio finita"
+msgstr "Coetus finitus"
 
 #: cdedb/i18n_additional.py:19
 msgid "AssemblyLogCodes.assembly_deleted"
-msgstr "Contio deleta"
+msgstr "Coetus deletus"
 
 #: cdedb/i18n_additional.py:20
 msgid "AssemblyLogCodes.ballot_created"
-msgstr "Suffragium creatum"
+msgstr "Suffragatio creata"
 
 #: cdedb/i18n_additional.py:21
 msgid "AssemblyLogCodes.ballot_changed"
-msgstr "Suffragium retractatum"
+msgstr "Suffragatio retractata"
 
 #: cdedb/i18n_additional.py:22
 msgid "AssemblyLogCodes.ballot_deleted"
-msgstr "Suffragium deletum"
+msgstr "Suffragatio deleta"
 
 #: cdedb/i18n_additional.py:23
 msgid "AssemblyLogCodes.ballot_extended"
-msgstr "Suffragium prorogatum"
+msgstr "Suffragatio prorogata"
 
 #: cdedb/i18n_additional.py:24
 msgid "AssemblyLogCodes.ballot_tallied"
@@ -12041,11 +12041,11 @@ msgstr "Particeps novus"
 
 #: cdedb/i18n_additional.py:29
 msgid "AssemblyLogCodes.assembly_presider_added"
-msgstr "Princeps elegendi additus"
+msgstr "Praeses elegendi additus"
 
 #: cdedb/i18n_additional.py:30
 msgid "AssemblyLogCodes.assembly_presider_removed"
-msgstr "Princeps elegendi remotus"
+msgstr "Praeses elegendi remotus"
 
 #: cdedb/i18n_additional.py:31
 msgid "AssemblyLogCodes.attachment_added"
