@@ -242,7 +242,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
     def participant_list(self, rs: RequestState, event_id: int,
-                         part_id: vtypes.ID = None, sortkey: str = "persona",
+                         part_id: vtypes.ID = None, sortkey: Optional[str] = "persona",
                          reverse: bool = False) -> Response:
         """List participants of an event"""
         if rs.has_validation_errors():
