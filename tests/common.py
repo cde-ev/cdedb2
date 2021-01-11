@@ -256,7 +256,7 @@ class MyTextTestRunner(unittest.TextTestRunner):
     ) -> unittest.TestResult:
         result = super().run(test)
         failed = map(
-            lambda error: error[0].id(),
+            lambda error: error[0].id().split()[0],  # split to strip subtest paramters
             result.errors + result.failures + result.unexpectedSuccesses  # type: ignore
         )
         if not result.wasSuccessful():
