@@ -1075,8 +1075,7 @@ class EventFrontend(AbstractUserFrontend):
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
                                 ) -> CdEDBObject:
-        email_local_part = "{}{}".format(
-            event['shortname'], "" if orgalist else "-all")
+        email_local_part = f"{event['shortname']}{'' if orgalist else '-all'}"
         # During event creation the id is not yet known.
         event_id = event.get('id')
         if orgalist:
@@ -1171,7 +1170,7 @@ class EventFrontend(AbstractUserFrontend):
             orga_ml_data = self._get_mailinglist_setter(data, orgalist=True)
             orga_ml_address = ml_type.get_full_address(orga_ml_data)
             data['orga_address'] = orga_ml_address
-            if self.mlproxy.verify_existence(rs, orga_ml_address):
+            if self.mlproxy.verify_existence(rs, orga_ml_address, strict=False):
                 orga_ml_data = None
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': orga_ml_address})

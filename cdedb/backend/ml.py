@@ -1406,15 +1406,17 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("persona")
-    def verify_existence(self, rs: RequestState, address: str) -> bool:
-        """
-        Check whether a mailinglist with the given address is known.
+    def verify_existence(self, rs: RequestState, address: str, *, strict: bool = True
+                         ) -> bool:
+        """Check whether a mailinglist with the given address is known.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type address: str
-        :rtype: bool
+        :param strict: If this is True, require `address` to successfully validate as
+            an email address. Otherwise only check that it is printable ASCII.
         """
-        address = affirm(vtypes.Email, address)
+        if strict:
+            address = affirm(vtypes.Email, address)
+        else:
+            address = affirm(vtypes.PrintableASCII, address)
 
         query = "SELECT COUNT(*) AS num FROM ml.mailinglists WHERE address = %s"
         data = self.query_one(rs, query, (address,))
