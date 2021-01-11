@@ -1089,7 +1089,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['createeventform']
         f['title'] = "Alternative Akademie"
         f['institution'] = 1
-        f['shortname'] = "AltAka"
+        f['shortname'] = ""
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "2345-6-7"
         f['nonmember_surcharge'] = "4.20"
@@ -1097,6 +1097,14 @@ etc;anything else""", f['entries_2'].value)
         f['create_track'].checked = True
         f['create_orga_list'].checked = True
         f['create_participant_list'].checked = True
+        self.submit(f, check_notification=False)
+        # The following submissions with invalid shortnames also check for the
+        # mailignlist creation bug in #1487.
+        self.assertValidationError("shortname", "Darf nicht leer sein.")
+        f['shortname'] = "²@³"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("shortname", "Darf nur aus druckbaren ASCII-Zeichen bestehen.")
+        f['shortname'] = "AltAka"
         self.submit(f)
         self.assertTitle("Alternative Akademie")
         # self.assertPresence("altaka@aka.cde-ev.de")
