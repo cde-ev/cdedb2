@@ -12093,7 +12093,7 @@ msgstr "Adhortatio ad solvendum misi inscriptionem probans"
 
 #: cdedb/i18n_additional.py:44
 msgid "CdeLogCodes.semester_ejection"
-msgstr "Socii immoti deleti"
+msgstr "Consocii immoti deleti"
 
 #: cdedb/i18n_additional.py:45
 msgid "CdeLogCodes.semester_balance_update"
@@ -12937,35 +12937,35 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:279
 msgid "[<class 'decimal.ConversionSyntax'>]"
-msgstr ""
+msgstr "Nullus numerus inveniri potuit."
 
 #: cdedb/i18n_additional.py:282
 msgid "is_meta_admin"
-msgstr ""
+msgstr "administrator administratorum"
 
 #: cdedb/i18n_additional.py:283
 msgid "is_core_admin"
-msgstr ""
+msgstr "administrator capitis"
 
 #: cdedb/i18n_additional.py:284
 msgid "is_cde_admin"
-msgstr ""
+msgstr "administrator CdEi"
 
 #: cdedb/i18n_additional.py:285
 msgid "is_finance_admin"
-msgstr ""
+msgstr "administrator pecuniae"
 
 #: cdedb/i18n_additional.py:286
 msgid "is_event_admin"
-msgstr ""
+msgstr "administrator eventuum"
 
 #: cdedb/i18n_additional.py:287
 msgid "is_ml_admin"
-msgstr ""
+msgstr "administrator tabellarum epistularum electronicarum"
 
 #: cdedb/i18n_additional.py:288
 msgid "is_assembly_admin"
-msgstr ""
+msgstr "administrator coetuum"
 
 #: cdedb/i18n_additional.py:291
 msgid "Use a few words, avoid common phrases."
