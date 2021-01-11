@@ -34,8 +34,8 @@ from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
-    calculate_db_logparams, calculate_loglinks, check_validation_typed as check,
-    check_validation_typed_optional as check_optional, date_filter, enum_entries_filter,
+    calculate_db_logparams, calculate_loglinks, check_validation as check,
+    check_validation_optional as check_optional, date_filter, enum_entries_filter,
     make_membership_fee_reference, periodic, querytoparams_filter,
     request_dict_extractor, request_extractor,
 )

@@ -19,7 +19,7 @@ from cdedb.common import (
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
-    cdedbid_filter as cdedbid, check_validation_typed as check, csv_output,
+    cdedbid_filter as cdedbid, check_validation as check, csv_output,
     keydictsort_filter, mailinglist_guard, periodic,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend

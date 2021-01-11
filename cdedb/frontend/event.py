@@ -42,7 +42,7 @@ from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     CustomCSVDialect, RequestConstraint, REQUESTdata, REQUESTdatadict, REQUESTfile,
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter, cdedburl,
-    check_validation_typed as check, check_validation_typed_optional as check_optional,
+    check_validation as check, check_validation_optional as check_optional,
     enum_entries_filter, event_guard, keydictsort_filter, make_event_fee_reference,
     process_dynamic_input, querytoparams_filter, request_extractor, safe_filter,
 )

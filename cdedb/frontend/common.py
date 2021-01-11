@@ -34,8 +34,8 @@ import subprocess
 import tempfile
 import threading
 import typing
-import urllib.parse
 import urllib.error
+import urllib.parse
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
@@ -2049,7 +2049,7 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 # noinspection PyPep8Naming
 def REQUESTdata(*spec: Union[str, Tuple[str, str]]) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
-    
+
     This should always be used, so automatic form filling works as expected.
     The decorator should be the innermost one
     as it needs access to the original "__defaults__" attribute
@@ -2074,101 +2074,66 @@ def REQUESTdata(*spec: Union[str, Tuple[str, str]]) -> Callable[[F], F]:
                     **kwargs: Any) -> Any:
             hints = typing.get_type_hints(fun)
             for item in spec:
-                if not isinstance(item, tuple):
-
-                    if item.startswith('#'):
-                        name = item[1:]
-                        encoded = True
-                    else:
-                        name = item
-                        encoded = False
-
-                    if name not in kwargs:
-
-                        if getattr(hints[name], "__origin__", None) is Union:
-                            type_, _ = hints[name].__args__
-                            optional = True
-                        else:
-                            type_ = hints[name]
-                            optional = False
-
-                        val = rs.request.values.get(name, "")
-                        
-                        # TODO allow encoded collections?
-                        if encoded and val:
-                            # only decode if exists
-                            # noinspection PyProtectedMember
-                            timeout, val = rs._coders['decode_parameter'](
-                                "{}/{}".format(obj.realm, fun.__name__),
-                                name, val, persona_id=rs.user.persona_id)
-                            if timeout is True:
-                                rs.notify("warning", n_("Link expired."))
-                            if timeout is False:
-                                rs.notify("warning", n_("Link invalid."))
-                        
-                        if getattr(
-                            type_, "__origin__", None
-                        ) is collections.abc.Collection:
-                            type_ = unwrap(type_.__args__)
-                            vals = tuple(rs.request.values.getlist(name))
-                            if vals:
-                                rs.values.setlist(name, vals)
-                            else:
-                                # TODO should also work normally
-                                # We have to be careful, since empty lists are
-                                # problematic for the werkzeug MultiDict
-                                rs.values[name] = None
-                            if optional:
-                                kwargs[name] = tuple(
-                                    check_validation_typed_optional(rs, type_, val, name)
-                                    for val in vals
-                                )
-                            else:
-                                kwargs[name] = tuple(
-                                    check_validation_typed(rs, type_, val, name)
-                                    for val in vals
-                                )
-                        else:
-                            rs.values[name] = val
-                            if optional:
-                                kwargs[name] = check_validation_typed_optional(
-                                    rs, type_, val, name)
-                            else:
-                                kwargs[name] = check_validation_typed(
-                                    rs, type_, val, name)
+                if item.startswith('#'):
+                    name = item[1:]
+                    encoded = True
                 else:
-                    name, argtype = item
-                    if name not in kwargs:
-                        if argtype.startswith('[') and argtype.endswith(']'):
-                            vals = tuple(rs.request.values.getlist(name))
-                            if vals:
-                                rs.values.setlist(name, vals)
-                            else:
-                                # We have to be careful, since empty lists are
-                                # problematic for the werkzeug MultiDict
-                                rs.values[name] = None
-                            kwargs[name] = tuple(
-                                _check_validation(rs, argtype[1:-1], val, name)
-                                for val in vals)
+                    name = item
+                    encoded = False
+
+                if name not in kwargs:
+
+                    if getattr(hints[name], "__origin__", None) is Union:
+                        type_, _ = hints[name].__args__
+                        optional = True
+                    else:
+                        type_ = hints[name]
+                        optional = False
+
+                    val = rs.request.values.get(name, "")
+
+                    # TODO allow encoded collections?
+                    if encoded and val:
+                        # only decode if exists
+                        # noinspection PyProtectedMember
+                        timeout, val = rs._coders['decode_parameter'](
+                            "{}/{}".format(obj.realm, fun.__name__),
+                            name, val, persona_id=rs.user.persona_id)
+                        if timeout is True:
+                            rs.notify("warning", n_("Link expired."))
+                        if timeout is False:
+                            rs.notify("warning", n_("Link invalid."))
+
+                    if getattr(
+                        type_, "__origin__", None
+                    ) is collections.abc.Collection:
+                        type_ = unwrap(type_.__args__)
+                        vals = tuple(rs.request.values.getlist(name))
+                        if vals:
+                            rs.values.setlist(name, vals)
                         else:
-                            val = rs.request.values.get(name, "")
-                            rs.values[name] = val
-                            if argtype.startswith('#'):
-                                argtype = argtype[1:]
-                                if val:
-                                    # only decode if exists
-                                    # noinspection PyProtectedMember
-                                    timeout, val = rs._coders['decode_parameter'](
-                                        "{}/{}".format(obj.realm, fun.__name__),
-                                        name, val, persona_id=rs.user.persona_id)
-                                    if timeout is True:
-                                        rs.notify("warning", n_("Link expired."))
-                                    if timeout is False:
-                                        rs.notify("warning", n_("Link invalid."))
-                                    if val is None:
-                                        # Clean out the invalid value
-                                        rs.values[name] = None
-                            kwargs[name] = _check_validation(rs, argtype, val, name)
+                            # TODO should also work normally
+                            # We have to be careful, since empty lists are
+                            # problematic for the werkzeug MultiDict
+                            rs.values[name] = None
+                        if optional:
+                            kwargs[name] = tuple(
+                                check_validation_optional(rs, type_, val, name)
+                                for val in vals
+                            )
+                        else:
+                            kwargs[name] = tuple(
+                                check_validation(rs, type_, val, name)
+                                for val in vals
+                            )
+                    else:
+                        rs.values[name] = val
+                        if optional:
+                            kwargs[name] = check_validation_optional(
+                                rs, type_, val, name)
+                        else:
+                            kwargs[name] = check_validation(
+                                rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -2398,26 +2363,7 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
-def _check_validation(rs: RequestState, assertion: str, value: T,
-                     name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
-
-    :param assertion: name of validation routine to call
-    :param name: name of the parameter to check (bonus points if you find
-      out how to nicely get rid of this -- python has huge introspection
-      capabilities, but I didn't see how this should be done).
-    """
-    checker: Callable[..., Tuple[Optional[T], List[Error]]] = getattr(
-        validate, "check_{}".format(assertion))
-    if name is not None:
-        ret, errs = checker(value, name, **kwargs)
-    else:
-        ret, errs = checker(value, **kwargs)
-    rs.extend_validation_errors(errs)
-    return ret
-
-
-def check_validation_typed(rs: RequestState, type_: Type[T], value: Any,
+def check_validation(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
@@ -2437,7 +2383,7 @@ def check_validation_typed(rs: RequestState, type_: Type[T], value: Any,
     return ret
 
 
-def check_validation_typed_optional(rs: RequestState, type_: Type[T], value: Any,
+def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
