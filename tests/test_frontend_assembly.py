@@ -388,6 +388,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Versammlungen")
         self.assertNonPresence("Drittes CdE-Konzil")
 
+        presider_address = "presider@lists.cde-ev.de"
+        self._create_assembly(delta={'presider_address': presider_address})
+        self.traverse("Konfiguration")
+        f = self.response.forms["changeassemblyform"]
+        self.assertEqual(f["presider_address"].value, presider_address)
+
     @as_users("charly")
     def test_signup(self, user):
         self.traverse({'description': 'Versammlungen'},
