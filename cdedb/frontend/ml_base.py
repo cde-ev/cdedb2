@@ -5,7 +5,7 @@
 import collections
 import copy
 from datetime import datetime
-from typing import Any, Collection, Dict, Optional, cast
+from typing import Any, Collection, Dict, Optional, Set, cast
 
 import werkzeug
 from werkzeug import Response
@@ -279,7 +279,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
                                                       managed='managed')
-        relevant_set = set(relevant_mls)
+        relevant_set: Set[vtypes.ID] = set(relevant_mls)  # type: ignore
         if not self.is_admin(rs):
             if db_mailinglist_ids is None:
                 db_mailinglist_ids = relevant_set

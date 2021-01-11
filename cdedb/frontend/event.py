@@ -154,7 +154,7 @@ class EventFrontend(AbstractUserFrontend):
         return super().create_user(rs, data, ignore_warnings=ignore_warnings)
 
     @access("core_admin", "event_admin")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
@@ -240,11 +240,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
-    @REQUESTdata(("part_id", "id_or_None"),
-                 ("sortkey", "str_or_None"),
-                 ("reverse", "bool"))
+    @REQUESTdata("part_id", "sortkey", "reverse")
     def participant_list(self, rs: RequestState, event_id: int,
-                         part_id: int = None, sortkey: str = "persona",
+                         part_id: vtypes.ID = None, sortkey: str = "persona",
                          reverse: bool = False) -> Response:
         """List participants of an event"""
         if rs.has_validation_errors():
@@ -396,6 +394,7 @@ class EventFrontend(AbstractUserFrontend):
             'course_room_fields': course_room_fields})
 
     @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
@@ -405,7 +404,6 @@ class EventFrontend(AbstractUserFrontend):
         "is_course_state_visible", "is_participant_list_visible",
         "courses_in_participant_list", "is_cancelled", "course_room_field",
         "nonmember_surcharge")
-    @event_guard(check_offline=True)
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
@@ -434,9 +432,9 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['shortname']))
 
     @access("event", modi={"POST"})
-    @REQUESTfile("minor_form")
-    @REQUESTdata(("delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTfile("minor_form")
+    @REQUESTdata("delete")
     def change_minor_form(self, rs: RequestState, event_id: int,
                           minor_form: werkzeug.FileStorage, delete: bool
                           ) -> Response:
@@ -459,9 +457,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("orga_id", "cdedbid"))
     @event_guard(check_offline=True)
-    def add_orga(self, rs: RequestState, event_id: int, orga_id: int
+    @REQUESTdata("orga_id")
+    def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID
                  ) -> Response:
         """Make an additional persona become orga."""
         if rs.has_validation_errors():
@@ -482,9 +480,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("orga_id", "id"))
     @event_guard(check_offline=True)
-    def remove_orga(self, rs: RequestState, event_id: int, orga_id: int
+    @REQUESTdata("orga_id")
+    def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID
                     ) -> Response:
         """Remove a persona as orga of an event.
 
@@ -498,7 +496,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("orgalist", "bool"))
+    @REQUESTdata("orgalist")
     def create_event_mailinglist(self, rs: RequestState, event_id: int,
                                  orgalist: bool = False) -> Response:
         """Create a default mailinglist for the event."""
@@ -1050,7 +1048,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata(('active_tab', 'str_or_None'))
+    @REQUESTdata("active_tab")
     def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str]
                       ) -> Response:
         """Manipulate the fields of an event."""
@@ -1133,15 +1131,13 @@ class EventFrontend(AbstractUserFrontend):
                             'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("part_begin", "date"), ("part_end", "date"),
-                 ("orga_ids", "cdedbid_csv_list"), ("create_track", "bool"),
-                 ("create_orga_list", "bool"),
-                 ("create_participant_list", "bool"))
+    @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
+                 "create_orga_list", "create_participant_list")
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "iban", "nonmember_surcharge", "notes")
     def create_event(self, rs: RequestState, part_begin: datetime.date,
-                     part_end: datetime.date, orga_ids: Collection[int],
+                     part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
                      create_track: bool, create_orga_list: bool,
                      create_participant_list: bool, data: CdEDBObject
                      ) -> Response:
@@ -1287,10 +1283,10 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_course")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("segments", "[int]"), ("active_segments", "[int]"))
+    @event_guard(check_offline=True)
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
                      "max_size", "min_size", "notes")
-    @event_guard(check_offline=True)
+    @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
                       segments: Collection[int],
                       active_segments: Collection[int], data: CdEDBObject
@@ -1329,10 +1325,10 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_course")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("segments", "[int]"))
+    @event_guard(check_offline=True)
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
                      "max_size", "min_size", "notes")
-    @event_guard(check_offline=True)
+    @REQUESTdata("segments")
     def create_course(self, rs: RequestState, event_id: int,
                       segments: Collection[int], data: CdEDBObject) -> Response:
         """Create a new course associated to an event organized via DB."""
@@ -1357,8 +1353,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_delete")
     def delete_course(self, rs: RequestState, event_id: int, course_id: int,
                       ack_delete: bool) -> Response:
         """Delete a course from an event organized via DB."""
@@ -1782,15 +1778,15 @@ class EventFrontend(AbstractUserFrontend):
             'reg_problems': reg_problems})
 
     @access("event")
-    @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
-                 ("position", "infinite_enum_coursefilterpositions_or_None"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("include_active", "bool_or_None"))
     @event_guard()
+    @REQUESTdata("course_id", "track_id",
+                 ("position", "infinite_enum_coursefilterpositions_or_None"),
+                 "ids", "include_active")
     def course_choices_form(
-            self, rs: RequestState, event_id: int, course_id: Optional[int],
-            track_id: Optional[int], position: Optional[InfiniteEnum],
-            ids: Optional[Collection[int]], include_active: bool) -> Response:
+            self, rs: RequestState, event_id: int, course_id: Optional[vtypes.ID],
+            track_id: Optional[vtypes.ID], position: Optional[InfiniteEnum],
+            ids: Optional[vtypes.IntCSVList], include_active: Optional[bool]
+            ) -> Response:
         """Provide an overview of course choices.
 
         This allows flexible filtering of the displayed registrations.
@@ -1891,22 +1887,21 @@ class EventFrontend(AbstractUserFrontend):
             'action_entries': action_entries})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
-                 ("position", "infinite_enum_coursefilterpositions_or_None"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("include_active", "bool_or_None"),
-                 ("registration_ids", "[int]"), ("assign_track_ids", "[int]"),
-                 ("assign_action", "infinite_enum_coursechoicetoolactions"),
-                 ("assign_course_id", "id_or_None"))
     @event_guard(check_offline=True)
+    @REQUESTdata("course_id", "track_id",
+                 ("position", "infinite_enum_coursefilterpositions_or_None"),
+                 "ids", "include_active", "registration_ids", "assign_track_ids",
+                 ("assign_action", "infinite_enum_coursechoicetoolactions"),
+                 "assign_course_id")
     def course_choices(self, rs: RequestState, event_id: int,
-                       course_id: Optional[int], track_id: Optional[int],
+                       course_id: Optional[vtypes.ID], track_id: Optional[vtypes.ID],
                        position: Optional[CourseFilterPositions],
-                       ids: Collection[int], include_active: bool,
+                       ids: Optional[vtypes.IntCSVList],
+                       include_active: Optional[bool],
                        registration_ids: Collection[int],
                        assign_track_ids: Collection[int],
                        assign_action: InfiniteEnum,
-                       assign_course_id: Optional[int]) -> Response:
+                       assign_course_id: Optional[vtypes.ID]) -> Response:
         """Manipulate course choices.
 
         The first four parameters (course_id, track_id, position, ids) are the
@@ -2014,9 +2009,9 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("include_active", "bool_or_None"))
-    def course_stats(self, rs: RequestState, event_id: int,
-                     include_active: bool) -> Response:
+    @REQUESTdata("include_active")
+    def course_stats(self, rs: RequestState, event_id: int, include_active: bool
+                     ) -> Response:
         """List courses.
 
         Provide an overview of the number of choices and assignments for
@@ -2263,11 +2258,9 @@ class EventFrontend(AbstractUserFrontend):
         return True, count
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("force", "bool"), ("fee_data", "str_or_None"),
-                 ("checksum", "str_or_None"), ("send_notifications", "bool"),
-                 ("full_payment", "bool"))
-    @REQUESTfile("fee_data_file")
     @event_guard(check_offline=True)
+    @REQUESTfile("fee_data_file")
+    @REQUESTdata("force", "fee_data", "checksum", "send_notifications", "full_payment")
     def batch_fees(self, rs: RequestState, event_id: int, force: bool,
                    fee_data: Optional[str],
                    fee_data_file: Optional[werkzeug.FileStorage],
@@ -2345,10 +2338,10 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_nametags(self, rs: RequestState, event_id: int, runs: int
-                          ) -> Response:
+    @REQUESTdata("runs")
+    def download_nametags(self, rs: RequestState, event_id: int,
+                          runs: vtypes.SingleDigitInt) -> Response:
         """Create nametags.
 
         You probably want to edit the provided tex file.
@@ -2401,10 +2394,10 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_course_puzzle(self, rs: RequestState, event_id: int, runs: int
-                               ) -> Response:
+    @REQUESTdata("runs")
+    def download_course_puzzle(self, rs: RequestState, event_id: int,
+                               runs: vtypes.SingleDigitInt) -> Response:
         """Aggregate course choice information.
 
         This can be printed and cut to help with distribution of participants.
@@ -2454,10 +2447,10 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
+    @REQUESTdata("runs")
     def download_lodgement_puzzle(self, rs: RequestState, event_id: int,
-                                  runs: int) -> Response:
+                                  runs: vtypes.SingleDigitInt) -> Response:
         """Aggregate lodgement information.
 
         This can be printed and cut to help with distribution of participants.
@@ -2519,10 +2512,10 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_course_lists(self, rs: RequestState, event_id: int, runs: int
-                              ) -> Response:
+    @REQUESTdata("runs")
+    def download_course_lists(self, rs: RequestState, event_id: int,
+                              runs: vtypes.SingleDigitInt) -> Response:
         """Create lists to post to course rooms."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
@@ -2592,10 +2585,10 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
+    @REQUESTdata("runs")
     def download_lodgement_lists(self, rs: RequestState, event_id: int,
-                                 runs: int) -> Response:
+                                 runs: vtypes.SingleDigitInt) -> Response:
         """Create lists to post to lodgements."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
@@ -2632,13 +2625,12 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"), ("landscape", "bool"),
-                 ("orgas_only", "bool"), ("part_ids", "[id]"))
     @event_guard()
+    @REQUESTdata("runs", "landscape", "orgas_only", "part_ids")
     def download_participant_list(self, rs: RequestState, event_id: int,
-                                  runs: int, landscape: bool,
+                                  runs: vtypes.SingleDigitInt, landscape: bool,
                                   orgas_only: bool,
-                                  part_ids: Collection[int] = ()) -> Response:
+                                  part_ids: Collection[vtypes.ID]) -> Response:
         """Create list to send to all participants."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
@@ -2812,10 +2804,10 @@ class EventFrontend(AbstractUserFrontend):
             filename=f"{rs.ambience['event']['shortname']}_registrations")
 
     @access("event", modi={"GET"})
-    @REQUESTdata(("agree_unlocked_download", "bool_or_None"))
     @event_guard()
+    @REQUESTdata("agree_unlocked_download")
     def download_export(self, rs: RequestState, event_id: int,
-                        agree_unlocked_download: bool) -> Response:
+                        agree_unlocked_download: Optional[bool]) -> Response:
         """Retrieve all data for this event to initialize an offline
         instance."""
         if rs.has_validation_errors():
@@ -2879,10 +2871,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "partial_import")
 
     @access("event", modi={"POST"})
-    @REQUESTfile("json_file")
-    @REQUESTdata(("partial_import_data", "str_or_None"),
-                 ("token", "str_or_None"))
     @event_guard(check_offline=True)
+    @REQUESTfile("json_file")
+    @REQUESTdata("partial_import_data", "token")
     def partial_import(self, rs: RequestState, event_id: int,
                        json_file: Optional[werkzeug.FileStorage],
                        partial_import_data: Optional[str], token: Optional[str]
@@ -3171,7 +3162,7 @@ class EventFrontend(AbstractUserFrontend):
                 lodgement_titles)
 
     @access("event")
-    @REQUESTdata(("preview", "bool"))
+    @REQUESTdata("preview")
     def register_form(self, rs: RequestState, event_id: int,
                       preview: bool = False) -> Response:
         """Render form."""
@@ -3627,7 +3618,7 @@ class EventFrontend(AbstractUserFrontend):
         return code
 
     @access("event")
-    @REQUESTdata(("preview", "bool_or_None"))
+    @REQUESTdata("preview")
     def additional_questionnaire_form(self, rs: RequestState, event_id: int,
                                       preview: bool = False,
                                       internal: bool = False) -> Response:
@@ -3832,7 +3823,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata(("kind", "enum_questionnaireusages"))
+    @REQUESTdata("kind")
     def reorder_questionnaire_form(self, rs: RequestState, event_id: int,
                                    kind: const.QuestionnaireUsages) -> Response:
         """Render form."""
@@ -3860,11 +3851,10 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata(("order", "int_csv_list"),
-                 ("kind", "enum_questionnaireusages"))
+    @REQUESTdata("order", "kind")
     def reorder_questionnaire(self, rs: RequestState, event_id: int,
                               kind: const.QuestionnaireUsages,
-                              order: Sequence[int]) -> Response:
+                              order: vtypes.IntCSVList) -> Response:
         """Shuffle rows of the orga designed form.
 
         This is strictly speaking redundant functionality, but it's pretty
@@ -3914,7 +3904,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata(('skip', '[str]'))
+    @REQUESTdata("skip")
     def change_registration_form(self, rs: RequestState, event_id: int,
                                  registration_id: int, skip: Collection[str],
                                  internal: bool = False) -> Response:
@@ -4102,7 +4092,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata(('skip', '[str]'))
+    @REQUESTdata("skip")
     def change_registration(self, rs: RequestState, event_id: int,
                             registration_id: int, skip: Collection[str]
                             ) -> Response:
@@ -4197,8 +4187,8 @@ class EventFrontend(AbstractUserFrontend):
                              {'registration_id': new_id})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_delete")
     def delete_registration(self, rs: RequestState, event_id: int,
                             registration_id: int, ack_delete: bool) -> Response:
         """Remove a registration."""
@@ -4218,10 +4208,10 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/registration_query")
 
     @access("event")
-    @REQUESTdata(("reg_ids", "int_csv_list"))
     @event_guard(check_offline=True)
+    @REQUESTdata("reg_ids")
     def change_registrations_form(self, rs: RequestState, event_id: int,
-                                  reg_ids: Collection[int]) -> Response:
+                                  reg_ids: vtypes.IntCSVList) -> Response:
         """Render form for changing multiple registrations."""
 
         # Redirect, if the reg_ids parameters is error-prone, to avoid backend
@@ -4309,10 +4299,10 @@ class EventFrontend(AbstractUserFrontend):
             'lodgements': lodgements})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("reg_ids", "int_csv_list"))
     @event_guard(check_offline=True)
+    @REQUESTdata("reg_ids")
     def change_registrations(self, rs: RequestState, event_id: int,
-                             reg_ids: Collection[int]) -> Response:
+                             reg_ids: vtypes.IntCSVList) -> Response:
         """Make privileged changes to any information pertaining to multiple
         registrations.
         """
@@ -4492,11 +4482,9 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("sort_part_id", "id_or_None"),
-                 ("sortkey", "enum_lodgementssortkeys_or_None"),
-                 ("reverse", "bool"))
+    @REQUESTdata("sort_part_id", "sortkey", "reverse")
     def lodgements(self, rs: RequestState, event_id: int,
-                   sort_part_id: int = None, sortkey: LodgementsSortkeys = None,
+                   sort_part_id: vtypes.ID = None, sortkey: LodgementsSortkeys = None,
                    reverse: bool = False) -> Response:
         """Overview of the lodgements of an event.
 
@@ -4756,9 +4744,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "group_id", "notes")
-    @event_guard(check_offline=True)
     def create_lodgement(self, rs: RequestState, event_id: int,
                          data: CdEDBObject) -> Response:
         """Add a new lodgement."""
@@ -4795,9 +4783,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "notes", "group_id")
-    @event_guard(check_offline=True)
     def change_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, data: CdEDBObject) -> Response:
         """Alter the attributes of a lodgement.
@@ -4823,8 +4811,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_delete")
     def delete_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, ack_delete: bool) -> Response:
         """Remove a lodgement."""
@@ -5490,8 +5478,8 @@ class EventFrontend(AbstractUserFrontend):
         return choices, titles
 
     @access("event")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     @event_guard()
+    @REQUESTdata("download", "is_search")
     def registration_query(self, rs: RequestState, event_id: int,
                            download: Optional[str], is_search: bool
                            ) -> Response:
@@ -5653,8 +5641,8 @@ class EventFrontend(AbstractUserFrontend):
         return choices, titles
 
     @access("event")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     @event_guard()
+    @REQUESTdata("download", "is_search")
     def course_query(self, rs: RequestState, event_id: int,
                      download: Optional[str], is_search: bool) -> Response:
 
@@ -5816,10 +5804,10 @@ class EventFrontend(AbstractUserFrontend):
         return choices, titles
 
     @access("event")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     @event_guard()
+    @REQUESTdata("download", "is_search")
     def lodgement_query(self, rs: RequestState, event_id: int,
-                        download: str, is_search: bool) -> Response:
+                        download: Optional[str], is_search: bool) -> Response:
 
         spec = self.make_lodgement_query_spec(rs.ambience['event'])
         query_input = mangle_query_input(rs, spec)
@@ -5917,9 +5905,9 @@ class EventFrontend(AbstractUserFrontend):
             'lodgements': lodgements})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("registration_id", "id"))
     @event_guard(check_offline=True)
-    def checkin(self, rs: RequestState, event_id: int, registration_id: int
+    @REQUESTdata("registration_id")
+    def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID
                 ) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
@@ -6013,12 +6001,12 @@ class EventFrontend(AbstractUserFrontend):
         return entities, ordered_ids, labels, field
 
     @access("event")
-    @REQUESTdata(("field_id", "id_or_None"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("kind", "enum_fieldassociations"))
     @event_guard(check_offline=True)
-    def field_set_select(self, rs: RequestState, event_id: int, field_id: int,
-                         ids: Collection[int], kind: const.FieldAssociations) -> Response:
+    @REQUESTdata("field_id", "ids", "kind")
+    def field_set_select(self, rs: RequestState, event_id: int,
+                         field_id: Optional[vtypes.ID],
+                         ids: Optional[vtypes.IntCSVList],
+                         kind: const.FieldAssociations) -> Response:
         """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
             return self.render(rs, "field_set_select")
@@ -6039,12 +6027,10 @@ class EventFrontend(AbstractUserFrontend):
                 'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event")
-    @REQUESTdata(("field_id", "id"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("kind", "enum_fieldassociations"))
     @event_guard(check_offline=True)
-    def field_set_form(self, rs: RequestState, event_id: int, field_id: int,
-                       ids: Collection[int], kind: const.FieldAssociations,
+    @REQUESTdata("field_id", "ids", "kind")
+    def field_set_form(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
+                       ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
                        internal: bool = False) -> Response:
         """Render form.
 
@@ -6067,12 +6053,11 @@ class EventFrontend(AbstractUserFrontend):
             'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("field_id", "id"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("kind", "enum_fieldassociations"))
     @event_guard(check_offline=True)
-    def field_set(self, rs: RequestState, event_id: int, field_id: int,
-                  ids: Collection[int], kind: const.FieldAssociations) -> Response:
+    @REQUESTdata("field_id", "ids", "kind")
+    def field_set(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
+                  ids: Optional[vtypes.IntCSVList],
+                  kind: const.FieldAssociations) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
@@ -6151,8 +6136,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
-    @REQUESTfile("json")
     @event_guard()
+    @REQUESTfile("json")
     def unlock_event(self, rs: RequestState, event_id: int,
                      json: werkzeug.FileStorage) -> Response:
         """Unlock an event after offline usage and incorporate the offline
@@ -6177,9 +6162,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("ack_archive", "bool"),
-                 ("create_past_event", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_archive", "create_past_event")
     def archive_event(self, rs: RequestState, event_id: int, ack_archive: bool,
                       create_past_event: bool) -> Response:
         """Archive an event and optionally create a past event.
@@ -6217,8 +6201,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_delete")
     def delete_event(self, rs: RequestState, event_id: int, ack_delete: bool
                      ) -> Response:
         """Remove an event."""
@@ -6245,9 +6229,9 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/index")
 
     @access("event")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
+    @REQUESTdata("phrase", "kind", "aux")
     def select_registration(self, rs: RequestState, phrase: str,
-                            kind: str, aux: Optional[int]) -> Response:
+                            kind: str, aux: Optional[vtypes.ID]) -> Response:
         """Provide data for inteligent input fields.
 
         This searches for registrations (and associated users) by name
@@ -6365,7 +6349,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("phrase", "str"))
+    @REQUESTdata("phrase")
     def quick_show_registration(self, rs: RequestState, event_id: int,
                                 phrase: str) -> Response:
         """Allow orgas to quickly retrieve a registration.
@@ -6454,18 +6438,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.show_event(rs, event_id)
 
     @access("event_admin")
-    @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
-                 ("persona_id", "cdedbid_or_None"),
-                 ("submitted_by", "cdedbid_or_None"),
-                 ("change_note", "str_or_None"),
-                 ("offset", "int_or_None"),
-                 ("length", "positive_int_or_None"),
-                 ("time_start", "datetime_or_None"),
-                 ("time_stop", "datetime_or_None"))
+    @REQUESTdata("codes", "event_id", "persona_id", "submitted_by",
+                 "change_note", "offset", "length", "time_start", "time_stop")
     def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
-                 event_id: Optional[int], offset: Optional[int],
-                 length: Optional[int], persona_id: Optional[int],
-                 submitted_by: Optional[int], change_note: Optional[str],
+                 event_id: Optional[vtypes.ID], offset: Optional[int],
+                 length: Optional[vtypes.PositiveInt],
+                 persona_id: Optional[vtypes.CdedbID],
+                 submitted_by: Optional[vtypes.CdedbID],
+                 change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
                  time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning events organized via DB."""
@@ -6498,18 +6478,14 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
-                 ("submitted_by", "cdedbid_or_None"),
-                 ("change_note", "str_or_None"),
-                 ("offset", "int_or_None"),
-                 ("length", "positive_int_or_None"),
-                 ("time_start", "datetime_or_None"),
-                 ("time_stop", "datetime_or_None"))
+    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
+                 "length", "time_start", "time_stop")
     def view_event_log(self, rs: RequestState,
                        codes: Collection[const.EventLogCodes],
                        event_id: int, offset: Optional[int],
-                       length: Optional[int], persona_id: Optional[int],
-                       submitted_by: Optional[int],
+                       length: Optional[vtypes.PositiveInt],
+                       persona_id: Optional[vtypes.CdedbID],
+                       submitted_by: Optional[vtypes.CdedbID],
                        change_note: Optional[str],
                        time_start: Optional[datetime.datetime],
                        time_stop: Optional[datetime.datetime]) -> Response:
