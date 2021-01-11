@@ -1410,14 +1410,14 @@ class CoreFrontend(AbstractFrontend):
                 # The code is negative, the user's password needs to be changed.
                 # We didn't actually issue the success message above.
                 rs.notify("success", success)
-                success, cookie = self.coreproxy.make_reset_cookie(
+                successful, cookie = self.coreproxy.make_reset_cookie(
                     rs, email, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-                if success:
+                if successful:
                     params["email"] = self.encode_parameter(
                         "core/do_password_reset_form", "email", email, persona_id=None,
                         timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     params["cookie"] = cookie
-            headers = {"To": (email,), "Subject": "Admin-Privilegien geändert"}
+            headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
             self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
 
