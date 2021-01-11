@@ -12441,19 +12441,19 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:137
 msgid "Genders.female"
-msgstr ""
+msgstr "femininum"
 
 #: cdedb/i18n_additional.py:138
 msgid "Genders.male"
-msgstr ""
+msgstr "masculum"
 
 #: cdedb/i18n_additional.py:139
 msgid "Genders.other"
-msgstr ""
+msgstr "alium"
 
 #: cdedb/i18n_additional.py:140
 msgid "Genders.not_specified"
-msgstr ""
+msgstr "non dictum"
 
 #: cdedb/i18n_additional.py:142
 msgid "GenesisStati.unconfirmed"
