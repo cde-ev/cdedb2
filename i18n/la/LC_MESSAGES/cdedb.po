@@ -6977,47 +6977,47 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_history.tmpl:161
 #: cdedb/frontend/templates/web/core/show_user.tmpl:202
 msgid "Meta-Admin"
-msgstr ""
+msgstr "administrator administratorum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:24
 #: cdedb/frontend/templates/web/core/show_history.tmpl:162
 #: cdedb/frontend/templates/web/core/show_user.tmpl:203
 msgid "Core-Admin"
-msgstr ""
+msgstr "administrator capitis"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:25
 #: cdedb/frontend/templates/web/core/show_history.tmpl:163
 #: cdedb/frontend/templates/web/core/show_user.tmpl:204
 msgid "CdE-Admin"
-msgstr ""
+msgstr "administrator CdEi"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:26
 #: cdedb/frontend/templates/web/core/show_user.tmpl:205
 msgid "Finance-Admin"
-msgstr ""
+msgstr "administrator pecuniae"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:27
 #: cdedb/frontend/templates/web/core/show_user.tmpl:208
 msgid "CdElokal-Admin"
-msgstr ""
+msgstr "administrator CdElocalis"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:30
 #: cdedb/frontend/templates/web/core/show_history.tmpl:164
 #: cdedb/frontend/templates/web/core/show_user.tmpl:206
 msgid "Event-Admin"
-msgstr ""
+msgstr "administrator eventuum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:33
 #: cdedb/frontend/templates/web/core/show_history.tmpl:165
 #: cdedb/frontend/templates/web/core/show_user.tmpl:207
 msgid "Mailinglist-Admin"
-msgstr ""
+msgstr "administrator tabellarum epistularum electronicarum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:36
 #: cdedb/frontend/templates/web/core/show_history.tmpl:166
 #: cdedb/frontend/templates/web/core/show_user.tmpl:209
 msgid "Assembly-Admin"
-msgstr ""
+msgstr "administrator coetuum"
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:7
 #: cdedb/frontend/templates/web/core/change_user.tmpl:15
@@ -7083,7 +7083,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/field_set_select.tmpl:47
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:22
 msgid "Continue"
-msgstr ""
+msgstr "Porro"
 
 #: cdedb/frontend/templates/web/core/debug_email.tmpl:4
 msgid "View E-Mail"
@@ -7091,18 +7091,19 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:4
 msgid "Set New Password"
-msgstr ""
+msgstr "Signum arcanum novum afferre"
 
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:10
 msgid ""
 "You can reset Your Password here. Then You can use the new Password to login."
-msgstr ""
+msgstr "Hic signum arcanum reportare potes. Deinde signum novum ad "
+"annuntiandum uti potes."
 
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:34
 #: cdedb/frontend/templates/web/core/login.tmpl:37
 #: cdedb/frontend/templates/web/core/reset_password.tmpl:4
 msgid "Reset Password"
-msgstr ""
+msgstr "Signum arcanum reportare"
 
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:10
 #, python-format
@@ -7110,12 +7111,14 @@ msgid ""
 "Enter Your Password and click “Confirm” to change Your E-Mail-Address to "
 "<code>%(email)s</code>. Aftwerwards you need to user Your new email address "
 "to login."
-msgstr ""
+msgstr "Signum arcanum inscribas „Confirmo“que premas, ut inscriptionem "
+"electronicam pro <code>%(email)s</code> mutes. Deinde inscriptio nova "
+"tibi ad te annuntiandum utenda est."
 
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:20
 #: cdedb/frontend/templates/web/core/login.tmpl:28
 msgid "Password"
-msgstr ""
+msgstr "Signum arcanum"
 
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:17
 msgid "The Account Request will be permanently deleted."
@@ -7144,7 +7147,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:603
 #: cdedb/frontend/templates/web/generic.tmpl:606
 msgid "Details"
-msgstr ""
+msgstr "Singula"
 
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:50
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:115
@@ -7282,12 +7285,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:83
 #: cdedb/i18n_additional.py:323
 msgid "Cancel"
-msgstr ""
+msgstr "Desine"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:8
 #: cdedb/frontend/templates/web/core/login.tmpl:9
 msgid "CdE-Datenbank"
-msgstr ""
+msgstr "Collectio datorum CdEi"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:19
 #: cdedb/frontend/templates/web/core/login.tmpl:19
@@ -7296,7 +7299,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:34
 msgid "Search for Users by ID or Name"
-msgstr ""
+msgstr "Homines nominis IDve auxilio quaerere potes."
 
 #: cdedb/frontend/templates/web/core/index.tmpl:62
 msgid "Account Management"
@@ -7341,32 +7344,32 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:121
 msgid "(Registration open)"
-msgstr ""
+msgstr "(annuntiari potest)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:125
 #, python-format
 msgid "(Registration until %(date)s, late registration open.)"
-msgstr ""
+msgstr "(recte ad %(date)s annuntiari potest, posterius annuntiari potest)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:130
 #, python-format
 msgid "(Registration until %(date)s)"
-msgstr ""
+msgstr "(ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:134
 #, python-format
 msgid "(Registration until %(date)s, late registration until %(date2)s.)"
-msgstr ""
+msgstr "(recte ad %(date)s, posterius ad %(date2)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:139
 #, python-format
 msgid "(Late registration until %(date)s)"
-msgstr ""
+msgstr "(posterius ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:144
 #, python-format
 msgid "(Registration starts %(date)s)"
-msgstr ""
+msgstr "(ab %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:152
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:14
@@ -7383,7 +7386,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:21
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:14
 msgid "Registrations"
-msgstr ""
+msgstr "Annuntiationes"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:155
 #: cdedb/frontend/templates/web/event/base.tmpl:37
@@ -7391,14 +7394,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/stats.tmpl:12
 #: cdedb/frontend/templates/web/event/stats.tmpl:16
 msgid "Statistics"
-msgstr ""
+msgstr "statistica"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:171
 #: cdedb/frontend/templates/web/ml/base.tmpl:69
 #: cdedb/frontend/templates/web/ml/moderated_mailinglists.tmpl:6
 #: cdedb/frontend/templates/web/ml/moderated_mailinglists.tmpl:10
 msgid "Moderated Mailinglists"
-msgstr ""
+msgstr "tabellae epistularum electronicarum moderatae"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:181
 #, python-format
@@ -7418,7 +7421,7 @@ msgstr[1] ""
 #: cdedb/frontend/templates/web/event/index.tmpl:13
 #: cdedb/frontend/templates/web/event/list_events.tmpl:61
 msgid "Current Events"
-msgstr ""
+msgstr "Eventus praesentes"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:212
 #, python-format
@@ -7428,14 +7431,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/index.tmpl:213
 #: cdedb/frontend/templates/web/event/index.tmpl:45
 msgid "registered"
-msgstr ""
+msgstr "annuntiatus:a (TODO: gender specific string)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:219
 #: cdedb/frontend/templates/web/event/additional_questionnaire.tmpl:25
 #: cdedb/frontend/templates/web/event/base.tmpl:19
 #: cdedb/frontend/templates/web/event/index.tmpl:51
 msgid "Questionnaire"
-msgstr ""
+msgstr "Interrogatio"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:223
 #: cdedb/frontend/templates/web/event/base.tmpl:23
@@ -7443,35 +7446,35 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/register.tmpl:22
 #: cdedb/frontend/templates/web/event/register.tmpl:219
 msgid "Register"
-msgstr ""
+msgstr "Annuntiare"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:226
 #: cdedb/frontend/templates/web/core/index.tmpl:239
 #, python-format
 msgid "(Until %(date)s)"
-msgstr ""
+msgstr "(ad %(date)s)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:230
 #, python-format
 msgid "(Late Registrations until %(date)s)"
-msgstr ""
+msgstr "(posterius ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:234
 msgid "(Only late Registrations possible)"
-msgstr ""
+msgstr "(solum posterius annuntiari potest)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:253
 msgid "Current Assemblies"
-msgstr ""
+msgstr "Coetus praesentes"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:262
 msgid "(Already attending)"
-msgstr ""
+msgstr "(iam annuntiatus:a) (TODO: gender specific string)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:266
 #, python-format
 msgid "(Registration possible until %(date)s)"
-msgstr ""
+msgstr "(Ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:7
 #, python-format
