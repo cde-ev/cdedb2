@@ -1173,15 +1173,15 @@ class TestCoreBackend(BackendTest):
                 if u["id"] in {8, 12, 15}:
                     if u["id"] in {15}:  # These users are deactivated.
                         self.assertIsNone(
-                            self.core.login(None, u["username"], u["password"], ip))
+                            self.core.login(ANONYMOUS, u["username"], u["password"], ip))
                     else:  # These users have no usernames.
                         with self.assertRaises(TypeError):
-                            self.core.login(None, u["username"], u["password"], ip)
+                            self.core.login(ANONYMOUS, u["username"], u["password"], ip)
                 else:
                     if u["id"] != user["id"]:
                         self.assertIsNone(
                             self.core.get_persona_latest_session(self.key, u["id"]))
-                        self.core.login(None, u["username"], u["password"], ip)
+                        self.core.login(ANONYMOUS, u["username"], u["password"], ip)
                     self.assertEqual(
                         nearly_now(),
                         self.core.get_persona_latest_session(self.key, u["id"]))
