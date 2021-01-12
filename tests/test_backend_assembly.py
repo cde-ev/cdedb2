@@ -3,7 +3,7 @@
 import datetime
 import json
 import time
-from typing import Collection, Optional, Tuple, NamedTuple
+from typing import Collection, Optional, NamedTuple
 
 import pytz
 
@@ -468,27 +468,27 @@ class TestAssemblyBackend(BackendTest):
             self.key, assembly_id=1))
 
     def test_get_vote(self) -> None:
-        TestCase = NamedTuple(
-            "TestCase", [
+        testcase = NamedTuple(
+            "testcase", [
                 ("user", UserIdentifier), ("ballot_id", int),
                 ("secret", Optional[str]), ("vote", Optional[str])])
-        tests: Collection[TestCase] = (
-            ('anton', 1, 'aoeuidhtns', '2>3>_bar_>1=4'),
-            ('berta', 1, 'snthdiueoa', '3>2=4>_bar_>1'),
-            ('inga', 1, 'asonetuhid', '_bar_>4>3>2>1'),
-            ('kalif', 1, 'bxronkxeud', '1>2=3=4>_bar_'),
-            ('anton', 1, None, '2>3>_bar_>1=4'),
-            ('berta', 1, None, '3>2=4>_bar_>1'),
-            ('inga', 1, None, '_bar_>4>3>2>1'),
-            ('kalif', 1, None, '1>2=3=4>_bar_'),
-            ('berta', 2, None, None),
-            ('berta', 3, None, 'Lo>Li=St=Fi=Bu=Go=_bar_'),
-            ('berta', 4, None, None),
+        tests: Collection[testcase] = (
+            testcase('anton', 1, 'aoeuidhtns', '2>3>_bar_>1=4'),
+            testcase('berta', 1, 'snthdiueoa', '3>2=4>_bar_>1'),
+            testcase('inga', 1, 'asonetuhid', '_bar_>4>3>2>1'),
+            testcase('kalif', 1, 'bxronkxeud', '1>2=3=4>_bar_'),
+            testcase('anton', 1, None, '2>3>_bar_>1=4'),
+            testcase('berta', 1, None, '3>2=4>_bar_>1'),
+            testcase('inga', 1, None, '_bar_>4>3>2>1'),
+            testcase('kalif', 1, None, '1>2=3=4>_bar_'),
+            testcase('berta', 2, None, None),
+            testcase('berta', 3, None, 'Lo>Li=St=Fi=Bu=Go=_bar_'),
+            testcase('berta', 4, None, None),
         )
         for case in tests:
             user, ballot_id, secret, vote = case
             with self.subTest(case=case):
-                self.login(USER_DICT[user])
+                self.login(user)
                 self.assertEqual(
                     vote, self.assembly.get_vote(self.key, ballot_id, secret))
 

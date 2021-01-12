@@ -1031,10 +1031,10 @@ etc;anything else""", f['entries_2'].value)
     @as_users("annika", "ferdinand")
     def test_create_event(self, user: CdEDBObject) -> None:
         # Some helper to find dynamic ids
-        def find_event_id(url: str) -> str:
+        def find_event_id(url: str) -> int:
             result = re.search(r'event\/event\/(\d+)', url)
             assert result is not None
-            return result.group(1)
+            return int(result.group(1))
 
         find_parts = lambda f: [int(m.group(1))
                                 for m in (re.match(r'delete_(\d+)', field)
