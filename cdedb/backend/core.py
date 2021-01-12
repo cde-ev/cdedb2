@@ -1114,6 +1114,18 @@ class CoreBackend(AbstractBackend):
 
         return ret
 
+    @access("core_admin")
+    def get_persona_latest_session(self, rs: RequestState, persona_id: int
+                                   ) -> Optional[datetime.datetime]:
+        """Retrieve the time of a users latest session.
+
+        Returns None if there are no active sessions on record.
+        """
+        persona_id = affirm(vtypes.ID, persona_id)
+
+        query = "SELECT MAX(atime) AS atime FROM core.sessions WHERE persona_id = %s"
+        return unwrap(self.query_one(rs, query, (persona_id,)))
+
     @access("core_admin", "cde_admin")
     def archive_persona(self, rs: RequestState, persona_id: int,
                         note: str) -> DefaultReturnCode:
