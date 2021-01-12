@@ -1787,7 +1787,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def course_choices_form(
             self, rs: RequestState, event_id: int, course_id: Optional[int],
-            track_id: Optional[int], position: Optional[InfiniteEnum],
+            track_id: Optional[int], position: Optional[CourseFilterPositions],
             ids: Optional[Collection[int]], include_active: bool) -> Response:
         """Provide an overview of course choices.
 
