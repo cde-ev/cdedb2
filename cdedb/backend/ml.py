@@ -1407,13 +1407,7 @@ class MlBackend(AbstractBackend):
 
     @access("persona")
     def verify_existence(self, rs: RequestState, address: str) -> bool:
-        """
-        Check whether a mailinglist with the given address is known.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type address: str
-        :rtype: bool
-        """
+        """Check whether a mailinglist with the given address is known."""
         address = affirm(vtypes.Email, address)
 
         query = "SELECT COUNT(*) AS num FROM ml.mailinglists WHERE address = %s"
