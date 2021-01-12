@@ -1561,8 +1561,8 @@ class TestCoreFrontend(FrontendTest):
 
     EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
     EVENT_GENESIS_DATA.update({
-        'realm': "event", 'gender': const.Genders.female, 'birthday': "1987-06-05",
-        'address': "An der Eiche", 'postal_code': "12345",
+        'realm': "event", 'gender': const.Genders.female.value,
+        'birthday': "1987-06-05", 'address': "An der Eiche", 'postal_code': "12345",
         'location': "Marcuria", 'country': "Arkadien"
     })
 

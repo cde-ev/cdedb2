@@ -413,15 +413,6 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_enum_validators(self) -> None:
-        stati = const.AudiencePolicy
-        self.do_validator_test("_enum_audiencepolicy", (
-            (stati.require_cde, stati.require_cde, None, True),
-            (4, stati.require_cde, None, True),
-            ("4", stati.require_cde, None, False),
-            (str(stati.require_cde), stati.require_cde, None, False),
-            (-1, None, ValueError, False),
-            ("alorecuh", None, ValueError, False),
-        ))
         stati = const.RegistrationPartStati
         self.do_validator_test("_enum_registrationpartstati", (
             (stati.participant, stati.participant, None, True),

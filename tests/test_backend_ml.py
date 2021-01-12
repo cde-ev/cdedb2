@@ -181,7 +181,7 @@ class TestMlBackend(BackendTest):
                 'fidel@example.cde',
                 'che@example.cde',
             },
-            'ml_type': const.MailinglistTypes.member_invitation_only.value,
+            'ml_type': const.MailinglistTypes.member_invitation_only,
         }
         new_id = self.ml.create_mailinglist(self.key, new_data)
         self.assertLess(0, new_id)

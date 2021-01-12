@@ -92,8 +92,8 @@ class NearlyNow(datetime.datetime):
         return not self.__eq__(other)
 
     @classmethod
-    def from_datetime(cls, _datetime: datetime.datetime) -> "NearlyNow":
-        ret = cls.fromisoformat(_datetime.isoformat())
+    def from_datetime(cls, datetime: datetime.datetime) -> "NearlyNow":
+        ret = cls.fromisoformat(datetime.isoformat())
         return ret
 
 

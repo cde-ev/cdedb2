@@ -3,13 +3,15 @@
 import datetime
 import json
 import time
-from typing import Collection, Optional, Set, Tuple
+from typing import Collection, Optional, Tuple, NamedTuple
 
 import pytz
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, CdEDBObjectMap, FUTURE_TIMESTAMP, get_hash, now
-from tests.common import USER_DICT, BackendTest, as_users, nearly_now, prepsql
+from tests.common import (
+    BackendTest, UserIdentifier, USER_DICT, as_users, nearly_now, prepsql,
+)
 
 
 class TestAssemblyBackend(BackendTest):
@@ -466,7 +468,11 @@ class TestAssemblyBackend(BackendTest):
             self.key, assembly_id=1))
 
     def test_get_vote(self) -> None:
-        tests: Collection[Tuple[str, int, Optional[str], Optional[str]]] = (
+        TestCase = NamedTuple(
+            "TestCase", [
+                ("user", UserIdentifier), ("ballot_id", int),
+                ("secret", Optional[str]), ("vote", Optional[str])])
+        tests: Collection[TestCase] = (
             ('anton', 1, 'aoeuidhtns', '2>3>_bar_>1=4'),
             ('berta', 1, 'snthdiueoa', '3>2=4>_bar_>1'),
             ('inga', 1, 'asonetuhid', '_bar_>4>3>2>1'),
@@ -480,11 +486,11 @@ class TestAssemblyBackend(BackendTest):
             ('berta', 4, None, None),
         )
         for case in tests:
-            user, ballot_id, secret, expectation = case
+            user, ballot_id, secret, vote = case
             with self.subTest(case=case):
                 self.login(USER_DICT[user])
                 self.assertEqual(
-                    expectation, self.assembly.get_vote(self.key, ballot_id, secret))
+                    vote, self.assembly.get_vote(self.key, ballot_id, secret))
 
     def test_vote(self) -> None:
         self.login(USER_DICT['anton'])
