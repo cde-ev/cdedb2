@@ -1153,6 +1153,27 @@ class TestCoreBackend(BackendTest):
         self.core.get_event_users(self.key, (9,), 1)
 
     @as_users("vera")
+    def test_get_persona_latest_session(self, user):
+        ip = "127.0.0.1"
+        for u in USER_DICT.values():
+            with self.subTest(u=u["id"]):
+                if u["id"] in {8, 12, 15}:
+                    if u["id"] in {15}:  # These users are deactivated.
+                        self.assertIsNone(
+                            self.core.login(None, u["username"], u["password"], ip))
+                    else:  # These users have no usernames.
+                        with self.assertRaises(TypeError):
+                            self.core.login(None, u["username"], u["password"], ip)
+                else:
+                    if u["id"] != user["id"]:
+                        self.assertIsNone(
+                            self.core.get_persona_latest_session(self.key, u["id"]))
+                        self.core.login(None, u["username"], u["password"], ip)
+                    self.assertEqual(
+                        nearly_now(),
+                        self.core.get_persona_latest_session(self.key, u["id"]))
+
+    @as_users("vera")
     def test_log(self, user):
         ## first generate some data
         data = copy.deepcopy(PERSONA_TEMPLATE)
