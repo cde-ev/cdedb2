@@ -1103,11 +1103,12 @@ etc;anything else""", f['entries_2'].value)
         self.assertValidationError("shortname", "Darf nicht leer sein.")
         f['shortname'] = "²@³"
         self.submit(f, check_notification=False)
-        self.assertValidationError("shortname", "Darf nur aus druckbaren ASCII-Zeichen bestehen.")
+        self.assertValidationError(
+            "shortname", "Darf nur aus druckbaren ASCII-Zeichen bestehen.")
         f['shortname'] = "AltAka"
         self.submit(f)
         self.assertTitle("Alternative Akademie")
-        # self.assertPresence("altaka@aka.cde-ev.de")
+        self.assertPresence("altaka@aka.cde-ev.de")
         self.traverse({'href': '/event/event/{}/part/summary'
                       .format(find_event_id(self.response.request.url))})
         f = self.response.forms['partsummaryform']
