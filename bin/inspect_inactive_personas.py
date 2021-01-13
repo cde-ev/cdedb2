@@ -19,14 +19,20 @@ CUTOFF = datetime.timedelta(days=365)
 
 core = make_backend("core", proxy=False)
 
-Counter = NamedTuple("Counter", (("ids", Set[int]), ("members", Set[int])))
+Counter = NamedTuple("Counter", (("ids", Set[int]), ("members", Set[int]),
+                                 ("no_username", Set[int])))
+
+
+def get_counter() -> Counter:
+    return Counter(set(), set(), set())
+
 
 # Execution
 
 with Script(rs(), dry_run=DRY_RUN):
-    no_session = Counter(set(), set())
-    old_session = Counter(set(), set())
-    recent_session = Counter(set(), set())
+    no_session = get_counter()
+    old_session = get_counter()
+    recent_session = get_counter()
     timestamp = now()
     query = """SELECT id FROM core.personas"""
     all_persona_ids = tuple(e['id'] for e in core.query_all(rs(), query, ()))
@@ -45,11 +51,16 @@ with Script(rs(), dry_run=DRY_RUN):
         pointer.ids.add(persona_id)
         if all_personas[persona_id]["is_member"]:
             pointer.members.add(persona_id)
+        if all_personas[persona_id]["username"] is None:
+            pointer.no_username.add(persona_id)
 
     print(f"{len(no_session.ids)} users have no sessions on record,"
-          f" {len(no_session.members)} of which are currently members.")
+          f" {len(no_session.members)} of which are currently members."
+          f" {len(no_session.no_username)} of these also have no username.")
     print(f"{len(old_session.ids)} users have no recent sessions on record,"
-          f" {len(old_session.members)} of which are currently members.")
+          f" {len(old_session.members)} of which are currently members."
+          f" {len(old_session.no_username)} of these also have no username.")
     print(f"{len(recent_session.ids)} users have recent sessions on record,"
-          f" {len(recent_session.members)} of which are currently members.")
+          f" {len(recent_session.members)} of which are currently members."
+          f" {len(recent_session.no_username)} of these also have no username.")
 
