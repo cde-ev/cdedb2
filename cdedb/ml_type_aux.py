@@ -41,13 +41,15 @@ class MailinglistGroup(enum.IntEnum):
 
 
 class AllUsersImplicitMeta:
-    """Metaclass for all mailinglists with members as implicit subscribers."""
+    """Metaclass for all mailinglists with all users as implicit subscribers."""
     maxsize_default = 64
 
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
-        """Return a set of all current members."""
+        """Return a set of all personas.
+
+        Leave out personas which are archived or have no valid email set.."""
         check_appropriate_type(mailinglist, cls)  # type: ignore
         return bc.core.list_all_personas(rs, is_active=False, valid_email=True)
 
@@ -622,8 +624,8 @@ class GeneralModeratorMailinglist(GeneralMailinglist):
                                  ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
-        For the `AssemblyAssociatedMailinglist` this means opt-out for
-        attendees of the associated assembly.
+        For the `GeneralModeratorMailinglist` this means mandatory for all users who
+        are moderators, while other users are not allowed to subscribe.
         """
         check_appropriate_type(mailinglist, cls)
 
@@ -642,8 +644,8 @@ class GeneralModeratorMailinglist(GeneralMailinglist):
                                  mailinglist: CdEDBObject) -> Set[int]:
         """Get a list of people that should be on this mailinglist.
 
-        For the `AssemblyAssociatedMailinglist` this means the attendees of the
-        linked assembly.
+        For the `GeneralModeratorMailinglist` this means mandatory for all users who
+        are moderators of any mailinglist.
         """
         check_appropriate_type(mailinglist, cls)
         return bc.core.list_all_moderators(rs)
