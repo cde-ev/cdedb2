@@ -7096,7 +7096,7 @@ msgstr "Signum arcanum novum afferre"
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:10
 msgid ""
 "You can reset Your Password here. Then You can use the new Password to login."
-msgstr "Hic signum arcanum reportare potes. Deinde signum novum ad "
+msgstr "Hic signum arcanum reportare potes. Deinde signo novo ad "
 "annuntiandum uti potes."
 
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:34
@@ -7112,8 +7112,8 @@ msgid ""
 "<code>%(email)s</code>. Aftwerwards you need to user Your new email address "
 "to login."
 msgstr "Signum arcanum inscribas „Confirmo“que premas, ut inscriptionem "
-"electronicam pro <code>%(email)s</code> mutes. Deinde inscriptio nova "
-"tibi ad te annuntiandum utenda est."
+"electronicam pro <code>%(email)s</code> mutes. Deinde "
+"tibi ad te annuntiandum inscriptione nova utenda est."
 
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:20
 #: cdedb/frontend/templates/web/core/login.tmpl:28
@@ -12972,7 +12972,7 @@ msgstr "administrator coetuum"
 
 #: cdedb/i18n_additional.py:291
 msgid "Use a few words, avoid common phrases."
-msgstr "Complura verba neque series utatae utaris."
+msgstr "Compluribus verbis neque seriebus utatis utaris."
 
 #: cdedb/i18n_additional.py:292
 msgid "No need for symbols, digits, or uppercase letters."
@@ -12992,7 +12992,7 @@ msgstr "Formula parva malleolorum facile coniectari possunt."
 
 #: cdedb/i18n_additional.py:296
 msgid "Use a longer keyboard pattern with more turns."
-msgstr "Maiorem formulam malleolorum pluribus cum conversionibus utaris."
+msgstr "Maiore formula malleolorum pluribus cum conversionibus utaris."
 
 #: cdedb/i18n_additional.py:297
 msgid "Repeats like \"aaa\" are easy to guess."
