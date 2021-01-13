@@ -721,7 +721,7 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
                     else:
                         kwargs['user'] = get_user(user)
                         self.login(user)
-                    return fun(self, *args, **kwargs)
+                    fun(self, *args, **kwargs)
         return new_fun
     return wrapper
 
