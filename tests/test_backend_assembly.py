@@ -110,7 +110,8 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, self.assembly.set_assembly(self.key, data))
         self.assertTrue(self.assembly.set_assembly_presiders(self.key, new_id, {23}))
         # Check return of setting presiders to the same thing.
-        self.assertEqual(-1, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        self.assertEqual(
+            -1, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
         expectation['presiders'] = {23}
         self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
         self.assertLess(0, self.assembly.delete_assembly(
@@ -146,24 +147,35 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(expectation, self.assembly.list_ballots(self.key,
                                                                  assembly_id))
         expectation = {
-            1: {'assembly_id': 1,
+            1: {
+                'assembly_id': 1,
                 'use_bar': True,
-                'candidates': {2: {'ballot_id': 1,
-                                   'title': 'Ich',
-                                   'id': 2,
-                                   'shortname': '1'},
-                               3: {'ballot_id': 1,
-                                   'title': '23',
-                                   'id': 3,
-                                   'shortname': '2'},
-                               4: {'ballot_id': 1,
-                                   'title': '42',
-                                   'id': 4,
-                                   'shortname': '3'},
-                               5: {'ballot_id': 1,
-                                   'title': 'Philosophie',
-                                   'id': 5,
-                                   'shortname': '4'}},
+                'candidates': {
+                    2: {
+                        'ballot_id': 1,
+                        'title': 'Ich',
+                        'id': 2,
+                        'shortname': '1',
+                    },
+                    3: {
+                        'ballot_id': 1,
+                        'title': '23',
+                        'id': 3,
+                        'shortname': '2',
+                    },
+                    4: {
+                        'ballot_id': 1,
+                        'title': '42',
+                        'id': 4,
+                        'shortname': '3',
+                    },
+                    5: {
+                        'ballot_id': 1,
+                        'title': 'Philosophie',
+                        'id': 5,
+                        'shortname': '4',
+                    },
+                },
                 'description': 'Nach dem Leben, dem Universum und dem ganzen Rest.',
                 'extended': True,
                 'id': 1,
@@ -173,32 +185,48 @@ class TestAssemblyBackend(BackendTest):
                 'rel_quorum': 0,
                 'quorum': 2,
                 'title': 'Antwort auf die letzte aller Fragen',
-                'vote_begin': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222, tzinfo=pytz.utc),
-                'vote_end': datetime.datetime(2002, 2, 23, 20, 22, 22, 222222, tzinfo=pytz.utc),
+                'vote_begin': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
+                                                tzinfo=pytz.utc),
+                'vote_end': datetime.datetime(2002, 2, 23, 20, 22, 22, 222222,
+                                              tzinfo=pytz.utc),
                 'vote_extension_end': nearly_now(),
-                'votes': None},
-            4: {'assembly_id': 1,
+                'votes': None,
+            },
+            4: {
+                'assembly_id': 1,
                 'use_bar': True,
-                'candidates': {17: {'ballot_id': 4,
-                                    'title': 'Wackelpudding',
-                                    'id': 17,
-                                    'shortname': 'W'},
-                               18: {'ballot_id': 4,
-                                    'title': 'Salat',
-                                    'id': 18,
-                                    'shortname': 'S'},
-                               19: {'ballot_id': 4,
-                                    'title': 'Eis',
-                                    'id': 19,
-                                    'shortname': 'E'},
-                               20: {'ballot_id': 4,
-                                    'title': 'Joghurt',
-                                    'id': 20,
-                                    'shortname': 'J'},
-                               21: {'ballot_id': 4,
-                                    'title': 'Nichts',
-                                    'id': 21,
-                                    'shortname': 'N'},},
+                'candidates': {
+                    17: {
+                        'ballot_id': 4,
+                        'title': 'Wackelpudding',
+                        'id': 17,
+                        'shortname': 'W',
+                    },
+                    18: {
+                        'ballot_id': 4,
+                        'title': 'Salat',
+                        'id': 18,
+                        'shortname': 'S',
+                    },
+                    19: {
+                        'ballot_id': 4,
+                        'title': 'Eis',
+                        'id': 19,
+                        'shortname': 'E',
+                    },
+                    20: {
+                        'ballot_id': 4,
+                        'title': 'Joghurt',
+                        'id': 20,
+                        'shortname': 'J',
+                    },
+                    21: {
+                        'ballot_id': 4,
+                        'title': 'Nichts',
+                        'id': 21,
+                        'shortname': 'N',
+                    },
+                },
                 'description': 'denkt an die Frutaner',
                 'extended': None,
                 'id': 4,
@@ -209,11 +237,14 @@ class TestAssemblyBackend(BackendTest):
                 'quorum': 0,
                 'title': 'Akademie-Nachtisch',
                 'vote_begin': nearly_now(),
-                'vote_end': datetime.datetime(2222, 1, 1, 20, 22, 22, 222222, tzinfo=pytz.utc),
+                'vote_end': datetime.datetime(2222, 1, 1, 20, 22, 22, 222222,
+                                              tzinfo=pytz.utc),
                 'vote_extension_end': None,
-                'votes': 2}}
-        self.assertEqual(expectation, self.assembly.get_ballots(self.key,
-                                                                (1, 4)))
+                'votes': 2,
+            },
+        }
+        self.assertEqual(
+            expectation, self.assembly.get_ballots(self.key, (1, 4)))
         data = {
             'id': 4,
             'notes': "Won't work",
@@ -248,8 +279,10 @@ class TestAssemblyBackend(BackendTest):
             'rel_quorum': 0,
             'quorum': 0,
             'title': 'Farbe des Logos',
-            'vote_begin': datetime.datetime(2222, 2, 2, 20, 22, 22, 222222, tzinfo=pytz.utc),
-            'vote_end': datetime.datetime(2222, 2, 3, 20, 22, 22, 222222, tzinfo=pytz.utc),
+            'vote_begin': datetime.datetime(2222, 2, 2, 20, 22, 22, 222222,
+                                            tzinfo=pytz.utc),
+            'vote_end': datetime.datetime(2222, 2, 3, 20, 22, 22, 222222,
+                                          tzinfo=pytz.utc),
             'vote_extension_end': None,
             'votes': None}
         self.assertEqual(expectation, self.assembly.get_ballot(self.key, 2))
@@ -262,7 +295,8 @@ class TestAssemblyBackend(BackendTest):
                 -1: {'title': 'Aquamarin', 'shortname': 'aqua'},
             },
             'notes': "foo",
-            'vote_extension_end': datetime.datetime(2222, 2, 20, 20, 22, 22, 222222, tzinfo=pytz.utc),
+            'vote_extension_end': datetime.datetime(2222, 2, 20, 20, 22, 22, 222222,
+                                                    tzinfo=pytz.utc),
             'rel_quorum': 100,
         }
         self.assertLess(0, self.assembly.set_ballot(self.key, data))
@@ -283,17 +317,23 @@ class TestAssemblyBackend(BackendTest):
         data = {
             'assembly_id': assembly_id,
             'use_bar': False,
-            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
-                           -2: {'title': 'Nein', 'shortname': 'n'},},
+            'candidates': {
+                -1: {'title': 'Ja', 'shortname': 'j'},
+                -2: {'title': 'Nein', 'shortname': 'n'},
+            },
             'description': 'Sind sie sich sicher?',
             'notes': None,
             'abs_quorum': 10,
             'rel_quorum': 0,
             'title': 'Verstehen wir Spaß',
-            'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222, tzinfo=pytz.utc),
-            'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222, tzinfo=pytz.utc),
-            'vote_extension_end': datetime.datetime(2222, 2, 7, 13, 22, 22, 222222, tzinfo=pytz.utc),
-            'votes': None}
+            'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222,
+                                            tzinfo=pytz.utc),
+            'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
+                                          tzinfo=pytz.utc),
+            'vote_extension_end': datetime.datetime(2222, 2, 7, 13, 22, 22, 222222,
+                                                    tzinfo=pytz.utc),
+            'votes': None,
+        }
         new_id = self.assembly.create_ballot(self.key, data)
         self.assertLess(0, new_id)
         data.update({
@@ -301,14 +341,20 @@ class TestAssemblyBackend(BackendTest):
             'quorum': 10,
             'id': new_id,
             'is_tallied': False,
-            'candidates': {1002: {'ballot_id': new_id,
-                                  'title': 'Ja',
-                                  'id': 1002,
-                                  'shortname': 'j'},
-                           1003: {'ballot_id': new_id,
-                                  'title': 'Nein',
-                                  'id': 1003,
-                                  'shortname': 'n'},},
+            'candidates': {
+                1002: {
+                    'ballot_id': new_id,
+                    'title': 'Ja',
+                    'id': 1002,
+                    'shortname': 'j',
+                },
+                1003: {
+                    'ballot_id': new_id,
+                    'title': 'Nein',
+                    'id': 1003,
+                    'shortname': 'n',
+                },
+            },
         })
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
 
@@ -332,21 +378,26 @@ class TestAssemblyBackend(BackendTest):
         data = {
             'assembly_id': 1,
             'use_bar': False,
-            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
-                           -2: {'title': 'Nein', 'shortname': 'n'},},
+            'candidates': {
+                -1: {'title': 'Ja', 'shortname': 'j'},
+                -2: {'title': 'Nein', 'shortname': 'n'},
+            },
             'description': 'Sind sie sich sicher?',
             'notes': None,
             'abs_quorum': 11,
             'title': 'Verstehen wir Spaß',
-            'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222, tzinfo=pytz.utc),
-            'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222, tzinfo=pytz.utc),
+            'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222,
+                                            tzinfo=pytz.utc),
+            'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
+                                          tzinfo=pytz.utc),
             'vote_extension_end': None,
             'votes': None}
         with self.assertRaises(ValueError):
             self.assembly.create_ballot(self.key, data)
 
         data['abs_quorum'] = 0
-        data['vote_extension_end'] = datetime.datetime(2222, 2, 7, 13, 22, 22, 222222, tzinfo=pytz.utc)
+        data['vote_extension_end'] = datetime.datetime(2222, 2, 7, 13, 22, 22, 222222,
+                                                       tzinfo=pytz.utc)
         with self.assertRaises(ValueError):
             self.assembly.create_ballot(self.key, data)
 
@@ -391,8 +442,10 @@ class TestAssemblyBackend(BackendTest):
         ballot_data = {
             'assembly_id': assembly_id,
             'use_bar': False,
-            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
-                           -2: {'title': 'Nein', 'shortname': 'n'},},
+            'candidates': {
+                -1: {'title': 'Ja', 'shortname': 'j'},
+                -2: {'title': 'Nein', 'shortname': 'n'},
+            },
             'description': 'Sind sie sich sicher?',
             'notes': None,
             'rel_quorum': 100,
@@ -432,7 +485,6 @@ class TestAssemblyBackend(BackendTest):
         self.assembly.external_signup(self.key, assembly_id, 11)
         self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
 
-
     def test_extension(self) -> None:
         self.login(USER_DICT['werner'])
         future = now() + datetime.timedelta(seconds=.5)
@@ -440,21 +492,25 @@ class TestAssemblyBackend(BackendTest):
         data = {
             'assembly_id': 1,
             'use_bar': False,
-            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
-                           -2: {'title': 'Nein', 'shortname': 'n'},},
+            'candidates': {
+                -1: {'title': 'Ja', 'shortname': 'j'},
+                -2: {'title': 'Nein', 'shortname': 'n'},
+            },
             'description': 'Sind sie sich sicher?',
             'notes': None,
             'abs_quorum': 10,
             'title': 'Verstehen wir Spaß',
             'vote_begin': future,
             'vote_end': farfuture,
-            'vote_extension_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222, tzinfo=pytz.utc),
-            'votes': None}
+            'vote_extension_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
+                                                    tzinfo=pytz.utc),
+            'votes': None,
+        }
         new_id = self.assembly.create_ballot(self.key, data)
         self.assertEqual(None, self.assembly.get_ballot(self.key, new_id)['extended'])
         self.login(USER_DICT['kalif'])
         time.sleep(1)
-        self.assertEqual(True, self.assembly.check_voting_period_extension(self.key, new_id))
+        self.assertTrue(self.assembly.check_voting_period_extension(self.key, new_id))
         self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
 
     @as_users("charly")
@@ -495,12 +551,17 @@ class TestAssemblyBackend(BackendTest):
     def test_vote(self) -> None:
         self.login(USER_DICT['anton'])
         self.assertEqual(None, self.assembly.get_vote(self.key, 3, secret=None))
-        self.assertLess(0, self.assembly.vote(self.key, 3, 'Go>Li=St=Fi=Bu=Lo=_bar_', secret=None))
-        self.assertEqual('Go>Li=St=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
+        self.assertLess(
+            0, self.assembly.vote(self.key, 3, 'Go>Li=St=Fi=Bu=Lo=_bar_', secret=None))
+        self.assertEqual(
+            'Go>Li=St=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
         self.login(USER_DICT['berta'])
-        self.assertEqual('Lo>Li=St=Fi=Bu=Go=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
-        self.assertLess(0, self.assembly.vote(self.key, 3, 'St>Li=Go=Fi=Bu=Lo=_bar_', secret=None))
-        self.assertEqual('St>Li=Go=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
+        self.assertEqual(
+            'Lo>Li=St=Fi=Bu=Go=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
+        self.assertLess(
+            0, self.assembly.vote(self.key, 3, 'St>Li=Go=Fi=Bu=Lo=_bar_', secret=None))
+        self.assertEqual(
+            'St>Li=Go=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
 
     @as_users("kalif")
     def test_tally(self, user: CdEDBObject) -> None:
@@ -532,8 +593,10 @@ class TestAssemblyBackend(BackendTest):
         data = {
             'assembly_id': new_id,
             'use_bar': False,
-            'candidates': {-1: {'title': 'Ja', 'shortname': 'j'},
-                           -2: {'title': 'Nein', 'shortname': 'n'},},
+            'candidates': {
+                -1: {'title': 'Ja', 'shortname': 'j'},
+                -2: {'title': 'Nein', 'shortname': 'n'},
+            },
             'description': 'Sind sie sich sicher?',
             'notes': None,
             'abs_quorum': 0,
@@ -541,7 +604,8 @@ class TestAssemblyBackend(BackendTest):
             'vote_begin': future,
             'vote_end': farfuture,
             'vote_extension_end': None,
-            'votes': None}
+            'votes': None,
+        }
         ballot_id = self.assembly.create_ballot(self.key, data)
         time.sleep(1)
         self.assembly.check_voting_period_extension(self.key, ballot_id)
@@ -560,7 +624,9 @@ class TestAssemblyBackend(BackendTest):
     @as_users("werner")
     def test_entity_attachments(self, user: CdEDBObject) -> None:
         with open("/cdedb2/tests/ancillary_files/rechen.pdf", "rb") as f:
-            self.assertEqual(f.read(), self.assembly.get_attachment_content(self.key, attachment_id=1))
+            self.assertEqual(
+                f.read(),
+                self.assembly.get_attachment_content(self.key, attachment_id=1))
         self.assertEqual(set(), self.assembly.list_attachments(self.key, assembly_id=1))
         self.assertEqual(set(), self.assembly.list_attachments(self.key, ballot_id=2))
         data = {
@@ -571,7 +637,8 @@ class TestAssemblyBackend(BackendTest):
         }
         new_id = self.assembly.add_attachment(self.key, data, b'123')
         self.assertGreater(new_id, 0)
-        self.assertEqual(self.assembly.get_attachment_content(self.key, new_id, 1), b'123')
+        self.assertEqual(
+            b'123', self.assembly.get_attachment_content(self.key, new_id, 1))
         expectation = {
             "id": new_id,
             "assembly_id": None,
@@ -579,7 +646,8 @@ class TestAssemblyBackend(BackendTest):
             "num_versions": 1,
             "current_version": 1,
         }
-        self.assertEqual(expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
+        self.assertEqual(
+            expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
         data = {
             "id": new_id,
             "ballot_id": None,
@@ -635,7 +703,8 @@ class TestAssemblyBackend(BackendTest):
                 "file_hash": get_hash(b'123'),
             },
         }
-        self.assertEqual(expectation, self.assembly.get_attachment_history(self.key, new_id))
+        self.assertEqual(
+            expectation, self.assembly.get_attachment_history(self.key, new_id))
         with self.assertRaises(ValueError):
             self.assembly.remove_attachment_version(self.key, new_id, 1)
         data = {
@@ -644,11 +713,16 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Farin",
             "filename": "rechen_v2.pdf",
         }
-        self.assertEqual(b'123', self.assembly.get_attachment_content(self.key, new_id))
-        self.assertLess(0, self.assembly.add_attachment_version(self.key, data, b'1234'))
-        self.assertEqual(b'123', self.assembly.get_attachment_content(self.key, new_id, 1))
-        self.assertEqual(b'1234', self.assembly.get_attachment_content(self.key, new_id))
-        self.assertEqual(b'1234', self.assembly.get_attachment_content(self.key, new_id, 2))
+        self.assertEqual(
+            b'123', self.assembly.get_attachment_content(self.key, new_id))
+        self.assertLess(
+            0, self.assembly.add_attachment_version(self.key, data, b'1234'))
+        self.assertEqual(
+            b'123', self.assembly.get_attachment_content(self.key, new_id, 1))
+        self.assertEqual(
+            b'1234', self.assembly.get_attachment_content(self.key, new_id))
+        self.assertEqual(
+            b'1234', self.assembly.get_attachment_content(self.key, new_id, 2))
         expectation = {
             "id": new_id,
             "assembly_id": 1,
@@ -680,7 +754,8 @@ class TestAssemblyBackend(BackendTest):
             },
             2: data,
         }
-        self.assertEqual(history_expectation, self.assembly.get_attachment_history(self.key, new_id))
+        self.assertEqual(
+            history_expectation, self.assembly.get_attachment_history(self.key, new_id))
         with self.assertRaises(ValueError):
             self.assembly.delete_attachment(self.key, new_id)
 
@@ -714,7 +789,8 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Berta",
             "filename": "beschluss.pdf",
         }
-        self.assertLess(0, self.assembly.add_attachment(self.key, data, b'super secret'))
+        self.assertLess(
+            0, self.assembly.add_attachment(self.key, data, b'super secret'))
         del data["ballot_id"]
         history_expectation[1003] = {1: data}
         history_expectation[1003][1].update({
@@ -724,7 +800,8 @@ class TestAssemblyBackend(BackendTest):
             "dtime": None,
             "file_hash": get_hash(b'super secret'),
         })
-        self.assertEqual({1001, 1002}, self.assembly.list_attachments(self.key, assembly_id=1))
+        self.assertEqual(
+            {1001, 1002}, self.assembly.list_attachments(self.key, assembly_id=1))
         self.assertEqual({1003}, self.assembly.list_attachments(self.key, ballot_id=2))
         expectation = {
             1001: {
@@ -749,11 +826,15 @@ class TestAssemblyBackend(BackendTest):
                 'current_version': 1,
             },
         }
-        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
-        self.assertEqual(history_expectation, self.assembly.get_attachment_histories(self.key, (1001, 1002, 1003)))
+        self.assertEqual(
+            expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
+        self.assertEqual(
+            history_expectation,
+            self.assembly.get_attachment_histories(self.key, (1001, 1002, 1003)))
         self.assertTrue(self.assembly.delete_attachment(self.key, 1001, {"versions"}))
         del expectation[1001]
-        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
+        self.assertEqual(
+            expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies

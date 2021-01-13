@@ -97,14 +97,12 @@ class TestMlFrontend(FrontendTest):
     @as_users("nina", "ferdinand")
     def test_toggleactivity(self, user: CdEDBObject) -> None:
         self.realm_admin_view_profile('janis', 'ml')
-        self.assertEqual(
-            True,
-            self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
+        checkbox = self.response.lxml.get_element_by_id('activity_checkbox')
+        self.assertEqual(True, checkbox.get('data-checked') == 'True')
         f = self.response.forms['activitytoggleform']
         self.submit(f)
-        self.assertEqual(
-            False,
-            self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
+        checkbox = self.response.lxml.get_element_by_id('activity_checkbox')
+        self.assertEqual(False, checkbox.get('data-checked') == 'True')
 
     @as_users("nina", "vera")
     def test_user_search(self, user: CdEDBObject) -> None:
@@ -123,7 +121,8 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("nina", "vera")
     def test_create_user(self, user: CdEDBObject) -> None:
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'}, {'href': '/ml/user/create'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'},
+                      {'href': '/ml/user/create'})
         self.assertTitle("Neuen Mailinglistennutzer anlegen")
         data = {
             "username": 'zelda@example.cde',
@@ -784,8 +783,8 @@ class TestMlFrontend(FrontendTest):
                         f"Mailingliste zur Veranstaltung {event_title}")
                 elif ml_type in assembly_types:
                     self.submit(f, check_notification=False)
-                    self.assertValidationError('assembly_id', "Ungültige "
-                                                "Eingabe für eine Ganzzahl.")
+                    self.assertValidationError(
+                        'assembly_id', "Ungültige Eingabe für eine Ganzzahl.")
                     f['assembly_id'] = assembly_id
                     self.submit(f)
                     self.traverse({'description': r"\sÜbersicht"})
@@ -1003,35 +1002,36 @@ class TestMlFrontend(FrontendTest):
 
     def test_export(self) -> None:
         HEADERS = {'MLSCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
-        expectation = [{'address': 'announce@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'werbung@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'witz@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'klatsch@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'kongress@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'aktivenforum2000@lists.cde-ev.de', 'is_active': False},
-                       {'address': 'aktivenforum@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'aka@aka.cde-ev.de', 'is_active': True},
-                       {'address': 'participants@aka.cde-ev.de', 'is_active': True},
-                       {'address': 'wait@aka.cde-ev.de', 'is_active': True},
-                       {'address': 'opt@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'all@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'info@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'mitgestaltung@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'gutscheine@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'platin@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'bau@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'geheim@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'test-gast@aka.cde-ev.de', 'is_active': True},
-                       {'address': 'party50@aka.cde-ev.de', 'is_active': True},
-                       {'address': 'party50-all@aka.cde-ev.de', 'is_active': True},
-                       {'address': 'kanonisch@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'wal@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'dsa@lists.cde-ev.de', 'is_active': True},
-                       {'address': '42@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'hogwarts@cdelokal.cde-ev.de', 'is_active': True},
-                       {'address': 'kongress-leitung@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'migration@testmail.cde-ev.de', 'is_active': True},
-                       ]
+        expectation = [
+            {'address': 'announce@lists.cde-ev.de', 'is_active': True},
+            {'address': 'werbung@lists.cde-ev.de', 'is_active': True},
+            {'address': 'witz@lists.cde-ev.de', 'is_active': True},
+            {'address': 'klatsch@lists.cde-ev.de', 'is_active': True},
+            {'address': 'kongress@lists.cde-ev.de', 'is_active': True},
+            {'address': 'aktivenforum2000@lists.cde-ev.de', 'is_active': False},
+            {'address': 'aktivenforum@lists.cde-ev.de', 'is_active': True},
+            {'address': 'aka@aka.cde-ev.de', 'is_active': True},
+            {'address': 'participants@aka.cde-ev.de', 'is_active': True},
+            {'address': 'wait@aka.cde-ev.de', 'is_active': True},
+            {'address': 'opt@lists.cde-ev.de', 'is_active': True},
+            {'address': 'all@lists.cde-ev.de', 'is_active': True},
+            {'address': 'info@lists.cde-ev.de', 'is_active': True},
+            {'address': 'mitgestaltung@lists.cde-ev.de', 'is_active': True},
+            {'address': 'gutscheine@lists.cde-ev.de', 'is_active': True},
+            {'address': 'platin@lists.cde-ev.de', 'is_active': True},
+            {'address': 'bau@lists.cde-ev.de', 'is_active': True},
+            {'address': 'geheim@lists.cde-ev.de', 'is_active': True},
+            {'address': 'test-gast@aka.cde-ev.de', 'is_active': True},
+            {'address': 'party50@aka.cde-ev.de', 'is_active': True},
+            {'address': 'party50-all@aka.cde-ev.de', 'is_active': True},
+            {'address': 'kanonisch@lists.cde-ev.de', 'is_active': True},
+            {'address': 'wal@lists.cde-ev.de', 'is_active': True},
+            {'address': 'dsa@lists.cde-ev.de', 'is_active': True},
+            {'address': '42@lists.cde-ev.de', 'is_active': True},
+            {'address': 'hogwarts@cdelokal.cde-ev.de', 'is_active': True},
+            {'address': 'kongress-leitung@lists.cde-ev.de', 'is_active': True},
+            {'address': 'migration@testmail.cde-ev.de', 'is_active': True},
+        ]
         self.get("/ml/script/all", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
         expectation = {
@@ -1053,148 +1053,220 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual(expectation, self.response.json)
 
     def test_oldstyle_access(self) -> None:
+        expectation = [
+            {
+                'address': 'announce@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': True,
+            },
+            {
+                'address': 'werbung@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'witz@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': 2048,
+                'mime': None,
+            },
+            {
+                'address': 'klatsch@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'kongress@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': 1024,
+                'mime': None,
+            },
+            {
+                'address': 'aktivenforum2000@lists.cde-ev.de',
+                'inactive': True,
+                'maxsize': 1024,
+                'mime': None,
+            },
+            {
+                'address': 'aktivenforum@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': 1024,
+                'mime': None,
+            },
+            {
+                'address': 'aka@aka.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'participants@aka.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'wait@aka.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'opt@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'all@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'info@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': None,
+            },
+            {
+                'address': 'mitgestaltung@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'gutscheine@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'platin@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'bau@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'geheim@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'test-gast@aka.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': True,
+            },
+            {
+                'address': 'party50@aka.cde-ev.de',
+                'inactive': False,
+                'maxsize': 1024,
+                'mime': False,
+            },
+            {
+                'address': 'party50-all@aka.cde-ev.de',
+                'inactive': False,
+                'maxsize': 1024,
+                'mime': None,
+            },
+            {
+                'address': 'kanonisch@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': None,
+            },
+            {
+                'address': 'wal@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'dsa@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': True,
+            },
+            {
+                'address': '42@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'hogwarts@cdelokal.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'kongress-leitung@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'migration@testmail.cde-ev.de',
+                'inactive': False,
+                'maxsize': 1024,
+                'mime': None,
+            },
+        ]
         HEADERS = {'MLSCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
-        expectation = [{'address': 'announce@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': True},
-                       {'address': 'werbung@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'witz@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': 2048,
-                        'mime': None},
-                       {'address': 'klatsch@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'kongress@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': 1024,
-                        'mime': None},
-                       {'address': 'aktivenforum2000@lists.cde-ev.de',
-                        'inactive': True,
-                        'maxsize': 1024,
-                        'mime': None},
-                       {'address': 'aktivenforum@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': 1024,
-                        'mime': None},
-                       {'address': 'aka@aka.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'participants@aka.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'wait@aka.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'opt@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'all@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'info@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': None},
-                       {'address': 'mitgestaltung@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'gutscheine@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'platin@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'bau@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'geheim@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'test-gast@aka.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': True},
-                       {'address': 'party50@aka.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': 1024,
-                        'mime': False},
-                       {'address': 'party50-all@aka.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': 1024,
-                        'mime': None},
-                       {'address': 'kanonisch@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': None},
-                       {'address': 'wal@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'dsa@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': True},
-                       {'address': '42@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'hogwarts@cdelokal.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'kongress-leitung@lists.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': None,
-                        'mime': False},
-                       {'address': 'migration@testmail.cde-ev.de',
-                        'inactive': False,
-                        'maxsize': 1024,
-                        'mime': None}]
         self.get("/ml/script/all/compat", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
-        expectation = {'address': 'werbung@lists.cde-ev.de',
-                       'list-owner': 'https://db.cde-ev.de/',
-                       'list-subscribe': 'https://db.cde-ev.de/',
-                       'list-unsubscribe': 'https://db.cde-ev.de/',
-                       'listname': 'werbung',
-                       'moderators': ['janis@example.cde',],
-                       'sender': 'werbung-bounces@lists.cde-ev.de',
-                       'subscribers': ['anton@example.cde',
-                                       'berta@example.cde',
-                                       'charly@example.cde',
-                                       'garcia@example.cde',
-                                       'inga@example.cde',
-                                       'olaf@example.cde',
-                                       'akira@example.cde'],
-                       'whitelist': ['honeypot@example.cde',]}
+        expectation = {
+            'address': 'werbung@lists.cde-ev.de',
+            'list-owner': 'https://db.cde-ev.de/',
+            'list-subscribe': 'https://db.cde-ev.de/',
+            'list-unsubscribe': 'https://db.cde-ev.de/',
+            'listname': 'werbung',
+            'moderators': [
+                'janis@example.cde',
+            ],
+            'sender': 'werbung-bounces@lists.cde-ev.de',
+            'subscribers': [
+                'anton@example.cde',
+                'berta@example.cde',
+                'charly@example.cde',
+                'garcia@example.cde',
+                'inga@example.cde',
+                'olaf@example.cde',
+                'akira@example.cde',
+            ],
+            'whitelist': [
+                'honeypot@example.cde',
+            ]}
         self.get("/ml/script/one/compat?address=werbung@lists.cde-ev.de",
                  headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
-        expectation = {'address': 'werbung@lists.cde-ev.de',
-                       'list-owner': 'https://db.cde-ev.de/',
-                       'list-subscribe': 'https://db.cde-ev.de/',
-                       'list-unsubscribe': 'https://db.cde-ev.de/',
-                       'listname': 'werbung',
-                       'moderators': ['janis@example.cde',],
-                       'sender': 'cdedb-doublebounces@cde-ev.de',
-                       'subscribers': ['janis@example.cde',],
-                       'whitelist': ['*']}
+        expectation = {
+            'address': 'werbung@lists.cde-ev.de',
+            'list-owner': 'https://db.cde-ev.de/',
+            'list-subscribe': 'https://db.cde-ev.de/',
+            'list-unsubscribe': 'https://db.cde-ev.de/',
+            'listname': 'werbung',
+            'moderators': [
+                'janis@example.cde',
+            ],
+            'sender': 'cdedb-doublebounces@cde-ev.de',
+            'subscribers': [
+                'janis@example.cde',
+            ],
+            'whitelist': [
+                '*',
+            ]}
         self.get("/ml/script/mod/compat?address=werbung@lists.cde-ev.de",
                  headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
@@ -1330,8 +1402,10 @@ class TestMlFrontend(FrontendTest):
         self.get("/ml/mailinglist/60/change")
         f = self.response.forms['changelistform']
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
-        sample_data_stati = set(str(x) for x in self.get_sample_data(
-            "ml.mailinglists", (60,), ("registration_stati",))[60]["registration_stati"])
+        sample_data_stati = set(
+            str(x) for x in self.get_sample_data(
+                "ml.mailinglists", (60,), ("registration_stati",)
+            )[60]["registration_stati"])
         self.assertEqual(sample_data_stati | {None}, tmp)
         stati = [const.RegistrationPartStati.waitlist.value,
                  const.RegistrationPartStati.guest.value]

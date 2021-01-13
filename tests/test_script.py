@@ -22,7 +22,8 @@ class TestScript(unittest.TestCase):
                      check_system_user=False)
 
     @staticmethod
-    def check_buffer(buffer: io.StringIO, assertion: Callable[[str, str], None], value: str) -> None:
+    def check_buffer(buffer: io.StringIO, assertion: Callable[[str, str], None],
+                     value: str) -> None:
         buffer.seek(0)
         assertion(value, buffer.read())
         buffer.seek(0)

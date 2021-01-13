@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
-import copy
 import datetime
-import decimal
 
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, PERSONA_EVENT_FIELDS, xsorted
-from cdedb.query import QUERY_SPECS, Query, QueryOperators
-from tests.common import USER_DICT, BackendTest, as_users, nearly_now
+from cdedb.common import CdEDBObject, xsorted
+from tests.common import BackendTest, as_users, nearly_now
 
 
 class TestPastEventBackend(BackendTest):
@@ -109,22 +106,36 @@ class TestPastEventBackend(BackendTest):
 
     @as_users("vera")
     def test_entity_participant(self, user: CdEDBObject) -> None:
-        expectation = {(2, 1): {'pcourse_id': 1, 'is_instructor': True,
-                                'is_orga': False, 'persona_id': 2},
-                       (3, None): {'pcourse_id': None, 'is_instructor': False,
-                                   'is_orga': False, 'persona_id': 3},
-                       (5, 2): {'pcourse_id': 2, 'is_instructor': False,
-                                'is_orga': False, 'persona_id': 5},
-                       (6, 2): {'pcourse_id': 2, 'is_instructor': False,
-                                'is_orga': True, 'persona_id': 6},
-                       (100, 2): {'pcourse_id': 2, 'is_instructor': False,
-                                'is_orga': False, 'persona_id': 100}}
+        expectation = {
+            (2, 1): {
+                'pcourse_id': 1, 'is_instructor': True,
+                'is_orga': False, 'persona_id': 2,
+            },
+            (3, None): {
+                'pcourse_id': None, 'is_instructor': False,
+                'is_orga': False, 'persona_id': 3,
+            },
+            (5, 2): {
+                'pcourse_id': 2, 'is_instructor': False,
+                'is_orga': False, 'persona_id': 5,
+            },
+            (6, 2): {
+                'pcourse_id': 2, 'is_instructor': False,
+                'is_orga': True, 'persona_id': 6,
+            },
+            (100, 2): {
+                'pcourse_id': 2, 'is_instructor': False,
+                'is_orga': False, 'persona_id': 100,
+            },
+        }
 
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
         self.pastevent.add_participant(self.key, 1, None, 5, False, False)
-        expectation[(5, None)] = {'pcourse_id': None, 'is_instructor': False,
-                          'is_orga': False, 'persona_id': 5}
+        expectation[(5, None)] = {
+            'pcourse_id': None, 'is_instructor': False,
+            'is_orga': False, 'persona_id': 5,
+        }
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
         self.assertEqual(0, self.pastevent.remove_participant(self.key, 1, 1, 5))
@@ -149,7 +160,7 @@ class TestPastEventBackend(BackendTest):
 
     @as_users("vera")
     def test_past_log(self, user: CdEDBObject) -> None:
-        ## first generate some data
+        # first generate some data
         data = {
             'title': "New Link Academy",
             'shortname': "link",
@@ -177,7 +188,7 @@ class TestPastEventBackend(BackendTest):
         self.pastevent.add_participant(self.key, 1, None, 5, False, False)
         self.pastevent.remove_participant(self.key, 1, None, 5)
 
-        ## now check it
+        # now check it
         expectation = (7, (
             {'id': 1001,
              'change_note': None,
@@ -234,8 +245,10 @@ class TestPastEventBackend(BackendTest):
     def test_archive(self, user: CdEDBObject) -> None:
         update = {
             'id': 1,
-            'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0, tzinfo=pytz.utc),
-            'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0, tzinfo=pytz.utc),
+            'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
+                                                         tzinfo=pytz.utc),
+            'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0,
+                                                         tzinfo=pytz.utc),
             'parts': {
                 1: {
                     'part_begin': datetime.date(2003, 2, 2),

@@ -1172,8 +1172,9 @@ class TestCoreBackend(BackendTest):
             with self.subTest(u=u["id"]):
                 if u["id"] in {8, 12, 15}:
                     if u["id"] in {15}:  # These users are deactivated.
-                        self.assertIsNone(
-                            self.core.login(ANONYMOUS, u["username"], u["password"], ip))
+                        ret = self.core.login(
+                            ANONYMOUS, u["username"], u["password"], ip)
+                        self.assertIsNone(ret)
                     else:  # These users have no usernames.
                         with self.assertRaises(TypeError):
                             self.core.login(ANONYMOUS, u["username"], u["password"], ip)

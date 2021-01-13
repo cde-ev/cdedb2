@@ -66,7 +66,7 @@ class TestEventFrontend(FrontendTest):
             out = admin + ["Nutzer verwalten"]
         # core admins
         elif user == USER_DICT['vera']:
-            ins = everyone+ ["Nutzer verwalten"]
+            ins = everyone + ["Nutzer verwalten"]
             out = admin
         # event admins
         elif user == USER_DICT['annika']:
@@ -1032,7 +1032,7 @@ etc;anything else""", f['entries_2'].value)
     def test_create_event(self, user: CdEDBObject) -> None:
         # Some helper to find dynamic ids
         def find_event_id(url: str) -> int:
-            result = re.search(r'event\/event\/(\d+)', url)
+            result = re.search(r'event/event/(\d+)', url)
             assert result is not None
             return int(result.group(1))
 
@@ -1255,7 +1255,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertTitle("Anmeldung für Große Testakademie 2222")
         self.assertValidationError(
-            'course_choice3_1', "Du kannst diesen Kurs nicht als 1. und 2. Wahl wählen.")
+            'course_choice3_1',
+            "Du kannst diesen Kurs nicht als 1. und 2. Wahl wählen.")
         f['course_choice3_1'] = 4
         # Now, we did it right.
         self.submit(f)
@@ -1494,9 +1495,11 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': "Anmelden"})
         self.assertTitle("Anmeldung für CdE-Party 2050")
         f = self.response.forms['registerform']
-        self.assertPresence("Ich bin unter 13 Jahre alt.", div="registrationquestionnaire")
+        self.assertPresence("Ich bin unter 13 Jahre alt.",
+                            div="registrationquestionnaire")
         f['is_child'].checked = True
-        self.assertPresence("Ich bringe noch jemanden mit.", div="registrationquestionnaire")
+        self.assertPresence("Ich bringe noch jemanden mit.",
+                            div="registrationquestionnaire")
         f['plus_one'].checked = True
         self.assertPresence("Name des Partners", div="registrationquestionnaire")
         f['partner'] = ""
@@ -1570,7 +1573,8 @@ etc;anything else""", f['entries_2'].value)
         f['fee_modifier_create_4_-1'].checked = True
         f['fee_modifier_modifier_name_4_-1'] = "Ich bin Unter 13 Jahre alt."
         f['fee_modifier_amount_4_-1'] = "abc"
-        self.assertEqual([x[0] for x in f['fee_modifier_field_id_4_-1'].options], ['', '1001'])
+        self.assertEqual(
+            ['', '1001'], [x[0] for x in f['fee_modifier_field_id_4_-1'].options])
         f['fee_modifier_field_id_4_-1'].force_value(1002)
         self.submit(f, check_notification=False)
         self.assertValidationError('fee_modifier_amount_4_-1',
@@ -1607,9 +1611,10 @@ etc;anything else""", f['entries_2'].value)
                                    "Nicht mehr als ein Beitragsmodifikator pro"
                                    " Veranstaltungsteil darf mit dem gleichen Feld"
                                    " verbunden sein.")
-        self.assertValidationError('fee_modifier_modifier_name_4_-1',
-                                   "Nicht mehr als ein Beitragsmodifikator pro"
-                                   " Veranstaltungsteil darf den selben Bezeichner haben.")
+        self.assertValidationError(
+            'fee_modifier_modifier_name_4_-1',
+            "Nicht mehr als ein Beitragsmodifikator pro"
+            " Veranstaltungsteil darf den selben Bezeichner haben.")
         f['fee_modifier_modifier_name_4_-1'] = "is_child2"
         f['fee_modifier_field_id_4_-1'] = 1002
         self.submit(f)
@@ -2009,13 +2014,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
-            self.response.lxml.xpath(
-                '//*[@id="query-result"]//tr[1]/td[@data-col="lodgement2.title"]')[0].text.strip(),
-            "Einzelzelle")
+            "Einzelzelle",
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col='
+                                     '"lodgement2.title"]')[0].text.strip())
         self.assertEqual(
-            self.response.lxml.xpath(
-                '//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.title"]')[0].text.strip(),
-            "")
+            "",
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col='
+                                     '"lodgement2.title"]')[0].text.strip())
 
     @as_users("annika")
     def test_course_query(self, user: CdEDBObject) -> None:
@@ -2106,7 +2111,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
-        self.assertTitle("\nAnmeldung von Emilia E. Eventis (Große Testakademie 2222)\n")
+        self.assertTitle(
+            "\nAnmeldung von Emilia E. Eventis (Große Testakademie 2222)\n")
         self.assertPresence("56767 Wolkenkuckuksheim")
         self.assertPresence("Einzelzelle")
         self.assertPresence("α. Heldentum")
@@ -2128,7 +2134,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/3/show'},
                       {'href': '/event/event/1/registration/3/change'})
-        self.assertTitle("Anmeldung von Garcia G. Generalis bearbeiten (Große Testakademie 2222)")
+        self.assertTitle(
+            "Anmeldung von Garcia G. Generalis bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("2", f['track2.course_id'].value)
 
@@ -2141,7 +2148,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
-        self.assertTitle("Anmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)")
+        self.assertTitle(
+            "Anmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Unbedingt in die Einzelzelle.", f['reg.orga_notes'].value)
         f['reg.orga_notes'] = "Wir wollen mal nicht so sein."
@@ -2184,15 +2192,20 @@ etc;anything else""", f['entries_2'].value)
         # Try to add an archived user.
         f['persona.persona_id'] = "DB-8-6"
         self.submit(f, check_notification=False)
-        self.assertValidationError('persona.persona_id', "Dieser Benutzer existiert nicht oder ist archiviert.")
+        self.assertValidationError(
+            'persona.persona_id',
+            "Dieser Benutzer existiert nicht oder ist archiviert.")
         # Try to add a non-existent user.
         f['persona.persona_id'] = "DB-10000-5"
         self.submit(f, check_notification=False)
-        self.assertValidationError('persona.persona_id', "Dieser Benutzer existiert nicht oder ist archiviert.")
+        self.assertValidationError(
+            'persona.persona_id',
+            "Dieser Benutzer existiert nicht oder ist archiviert.")
         # Try to add a non-event user.
         f['persona.persona_id'] = "DB-11-6"
         self.submit(f, check_notification=False)
-        self.assertValidationError('persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.")
+        self.assertValidationError(
+            'persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.")
         # Now add an actually valid user.
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
@@ -2261,7 +2274,8 @@ etc;anything else""", f['entries_2'].value)
                       {'description': 'Alle Anmeldungen'})
         self.assertPresence("Anton Armin A.")
         self.traverse({'href': '/event/event/1/registration/1/show'})
-        self.assertTitle("Anmeldung von Anton Armin A. Administrator (Große Testakademie 2222)")
+        self.assertTitle(
+            "Anmeldung von Anton Armin A. Administrator (Große Testakademie 2222)")
         f = self.response.forms['deleteregistrationform']
         f['ack_delete'].checked = True
         self.submit(f)
@@ -2761,7 +2775,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         save = self.response
 
-        ## printables
+        # printables
         # nametags
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=0')
         self.assertTrue(self.response.body.startswith(magic_bytes['targz']))
@@ -2779,10 +2793,12 @@ etc;anything else""", f['entries_2'].value)
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
         self.assertLess(1000, len(self.response.body))
         # lodgement inhabitant list
-        self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=0')
+        self.response = save.click(
+            href='/event/event/1/download/lodgementlists\\?runs=0')
         self.assertTrue(self.response.body.startswith(magic_bytes['targz']))
         self.assertLess(1000, len(self.response.body))
-        self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=2')
+        self.response = save.click(
+            href='/event/event/1/download/lodgementlists\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
         self.assertLess(1000, len(self.response.body))
         # course puzzle
@@ -2793,31 +2809,37 @@ etc;anything else""", f['entries_2'].value)
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
         self.assertLess(1000, len(self.response.body))
         # lodgement puzzle
-        self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=0')
+        self.response = save.click(
+            href='/event/event/1/download/lodgementpuzzle\\?runs=0')
         self.assertPresence('documentclass')
         self.assertPresence('Kalte Kammer')
-        self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=2')
+        self.response = save.click(
+            href='/event/event/1/download/lodgementpuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
         self.assertLess(1000, len(self.response.body))
 
-        ## participant lists
+        # participant lists
         # public list
-        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0', index=0)
+        self.response = save.click(
+            href='/event/event/1/download/participantlist\\?runs=0', index=0)
         self.assertPresence('documentclass')
         self.assertPresence('Heldentum')
         self.assertPresence('Emilia E.')
         self.assertNonPresence('Garcia G.')
-        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=2', index=0)
+        self.response = save.click(
+            href='/event/event/1/download/participantlist\\?runs=2', index=0)
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
         self.assertLess(1000, len(self.response.body))
         # orga list
-        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0&orgas_only=True', index=0)
+        self.response = save.click(
+            href='/event/event/1/download/participantlist\\?runs=0&orgas_only=True',
+            index=0)
         self.assertPresence('documentclass')
         self.assertPresence('Heldentum')
         self.assertPresence('Emilia E.')
         self.assertPresence('Garcia G.')
 
-        ## export
+        # export
         # partial event export
         self.response = save.click(href='/event/event/1/download/partial')
         self.assertPresence('"kind": "partial",')
@@ -2830,7 +2852,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertIn('course.id;course.course_id;course.nr;', self.response.text)
         # lodgementlist
         self.response = save.click(href='/event/event/1/download/csv_lodgements')
-        self.assertIn('lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
+        self.assertIn(
+            'lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
         # courselist for exPuls
         self.response = save.click(href='/event/event/1/download/expuls')
         self.assertPresence('\\kurs')
@@ -2896,7 +2919,8 @@ etc;anything else""", f['entries_2'].value)
 
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=CustomCSVDialect))
-        self.assertIn('100', tuple(row['lodgement.camping_mat_capacity'] for row in result))
+        self.assertIn(
+            '100', tuple(row['lodgement.camping_mat_capacity'] for row in result))
         self.assertIn('low', tuple(row['lodgement_fields.xfield_contamination']
                                    for row in result))
 
@@ -2937,13 +2961,16 @@ etc;anything else""", f['entries_2'].value)
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
         self.response = save.click(href='/event/event/2/download/courselists\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.response = save.click(href='/event/event/2/download/lodgementlists\\?runs=0')
+        self.response = save.click(
+            href='/event/event/2/download/lodgementlists\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
         self.response = save.click(href='/event/event/2/download/coursepuzzle\\?runs=0')
         self.assertPresence('documentclass')
-        self.response = save.click(href='/event/event/2/download/lodgementpuzzle\\?runs=0')
+        self.response = save.click(
+            href='/event/event/2/download/lodgementpuzzle\\?runs=0')
         self.assertPresence('documentclass')
-        self.response = save.click(href='/event/event/2/download/participantlist\\?runs=0$')
+        self.response = save.click(
+            href='/event/event/2/download/participantlist\\?runs=0$')
         self.assertPresence('documentclass')
 
     @as_users("garcia")
@@ -3017,17 +3044,20 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = "-1,6"
         self.submit(f, check_notification=False)
-        self.assertValidationError("order", "Jede Reihe darf nur genau einmal vorkommen.")
+        self.assertValidationError(
+            "order", "Jede Reihe darf nur genau einmal vorkommen.")
         # row included twice
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = "0,1,1,3,4,5"
         self.submit(f, check_notification=False)
-        self.assertValidationError("order", "Jede Reihe darf nur genau einmal vorkommen.")
+        self.assertValidationError(
+            "order", "Jede Reihe darf nur genau einmal vorkommen.")
         # not all rows included
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = "0,1,2"
         self.submit(f, check_notification=False)
-        self.assertValidationError("order", "Jede Reihe darf nur genau einmal vorkommen.")
+        self.assertValidationError(
+            "order", "Jede Reihe darf nur genau einmal vorkommen.")
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
         self.submit(f)
@@ -3078,7 +3108,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/course/1/show'})
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
         self.traverse({'href': '/event/event/1/course/1/manage'})
-        self.assertTitle("\nKursteilnehmer für Kurs Planetenretten für Anfänger verwalten (Große Testakademie 2222)\n")
+        self.assertTitle("\nKursteilnehmer für Kurs Planetenretten für Anfänger"
+                         " verwalten (Große Testakademie 2222)\n")
         f = self.response.forms['manageattendeesform']
         f['new_1'] = "3"
         f['delete_3_4'] = True
@@ -3097,7 +3128,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Inga")
         self.assertNonPresence("Emilia")
         self.traverse({'href': '/event/event/1/lodgement/2/manage'})
-        self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten (Große Testakademie 2222)\n")
+        self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten"
+                         " (Große Testakademie 2222)\n")
         f = self.response.forms['manageinhabitantsform']
         f['new_1'] = ""
         f['delete_1_3'] = True
@@ -3150,7 +3182,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/import'})
         self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json", 'rb') as datafile:
+        with open(self.testfile_dir / "partial_event_import.json", 'rb') as datafile:
             data = datafile.read()
         f = self.response.forms["importform"]
         f['json_file'] = webtest.Upload("partial_event_import.json", data,
@@ -3168,7 +3200,8 @@ etc;anything else""", f['entries_2'].value)
                             div="box-changed-registration-fields")
         self.assertPresence("Morgenkreis: Kurswahlen",
                             div="box-changed-registration-fields")
-        self.assertNonPresence("Sitzung: Kursleiter", div="box-changed-registration-fields")
+        self.assertNonPresence(
+            "Sitzung: Kursleiter", div="box-changed-registration-fields")
         self.assertNonPresence("Inga", div="box-changed-registrations")
         self.assertPresence("Charly", div="box-new-registrations")
         self.assertPresence("Inga", div="box-deleted-registrations")
@@ -3212,7 +3245,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/import'})
         self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json", 'rb') as datafile:
+        with open(self.testfile_dir / "partial_event_import.json", 'rb') as datafile:
             data = datafile.read()
         f = self.response.forms["importform"]
         f['json_file'] = webtest.Upload("partial_event_import.json", data,

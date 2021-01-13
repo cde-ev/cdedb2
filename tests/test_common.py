@@ -263,7 +263,7 @@ class TestCommon(BasicTest):
         self.assertIsInstance(unwrap(unwrap({1: {"a": 1.0}})), float)
 
         for item in ("a", b"b"):
-            assert  isinstance(item, (str, bytes))
+            assert isinstance(item, (str, bytes))
             with self.assertRaises(TypeError) as cmt:
                 unwrap(item)
             self.assertIn("Cannot unwrap str or bytes.", cmt.exception.args[0])

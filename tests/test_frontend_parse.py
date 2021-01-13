@@ -8,7 +8,7 @@ import webtest
 import cdedb.frontend.parse_statement as parse
 from cdedb.common import CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect
-from tests.common import USER_DICT, FrontendTest, as_users
+from tests.common import FrontendTest, as_users
 
 
 class TestParseFrontend(FrontendTest):
@@ -101,7 +101,7 @@ class TestParseFrontend(FrontendTest):
     def check_dict(self, adict: CdEDBObject, **kwargs: Any) -> None:
         for k, v in kwargs.items():
             if "_" not in k:
-                assertion = ""
+                assertion, key = "", ""
             else:
                 assertion, key = k.split("_", 1)
             if assertion == "In":
@@ -116,7 +116,7 @@ class TestParseFrontend(FrontendTest):
         self.get("/cde/parse")
         self.assertTitle("Kontoauszug parsen")
         f = self.response.forms["statementform"]
-        with open("/cdedb2/tests/ancillary_files/statement.csv", mode="br") as statementfile:
+        with open(self.testfile_dir / "statement.csv", mode="rb") as statementfile:
             f["statement_file"] = webtest.Upload(
                 "statement.csv", statementfile.read(), "text/csv")
         self.submit(f, check_notification=False, verbose=True)
@@ -131,20 +131,28 @@ class TestParseFrontend(FrontendTest):
         # Fix Transactions with errors.
 
         # Fix line 6:
-        self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.", div="transaction6_errors")
-        self.assertPresence("given_names: (Anton Armin A.) nicht in (DB-1-9;DB-1-9) gefunden.", div="transaction6_warnings")
-        self.assertPresence("family_name: (Administrator) nicht in (DB-1-9;DB-1-9) gefunden.", div="transaction6_warnings")
+        self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
+                            div="transaction6_errors")
+        self.assertPresence(
+            "given_names: (Anton Armin A.) nicht in (DB-1-9;DB-1-9) gefunden.",
+            div="transaction6_warnings")
+        self.assertPresence(
+            "family_name: (Administrator) nicht in (DB-1-9;DB-1-9) gefunden.",
+            div="transaction6_warnings")
         self.assertEqual(f["cdedbid6"].value, "DB-1-9")
         f["persona_id_confirm6"].checked = True
 
         # Fix line 9:
-        self.assertPresence("cdedbid: Braucht Mitgliedszuordnung.", div="transaction9_errors")
+        self.assertPresence("cdedbid: Braucht Mitgliedszuordnung.",
+                            div="transaction9_errors")
         self.assertEqual(f["account_holder9"].value, "Daniel Dino")
         f["cdedbid9"] = "DB-4-3"
 
         # Fix line 11:
-        self.assertPresence("reference: Mehrere (2) DB-IDs in Zeile 11 gefunden.", div="transaction11_errors")
-        self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.", div="transaction11_errors")
+        self.assertPresence("reference: Mehrere (2) DB-IDs in Zeile 11 gefunden.",
+                            div="transaction11_errors")
+        self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
+                            div="transaction11_errors")
         self.assertEqual(f["account_holder11"].value, "Anton & Berta")
         self.assertEqual(f["cdedbid11"].value, "DB-1-9")
         f["persona_id_confirm11"].checked = True
@@ -152,7 +160,9 @@ class TestParseFrontend(FrontendTest):
         # Check transactions with warnings.
 
         # Line 8:
-        self.assertPresence("given_names: (Garcia G.) nicht in (DB-7-8, Garci G. Generalis;DB-6-8) gefunden.", div="transaction8_warnings")
+        self.assertPresence(
+            "given_names: (Garcia G.) nicht in (DB-7-8, Garci G."
+            " Generalis;DB-6-8) gefunden.", div="transaction8_warnings")
 
         self.submit(f, button="validate", check_notification=False)
 
@@ -164,7 +174,8 @@ class TestParseFrontend(FrontendTest):
         # Check new error:
 
         # Line 9:
-        self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.", div="transaction9_errors")
+        self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
+                            div="transaction9_errors")
         self.assertEqual(f["cdedbid9"].value, "DB-4-3")
         f["persona_id_confirm9"].checked = True
 

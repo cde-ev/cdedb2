@@ -479,7 +479,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_json(self) -> None:
-        for input, output, error in (
+        for input_, output, error in (
                 ("42", 42, None),
                 (b"42", 42, None),
                 ('"42"', "42", None),
@@ -493,8 +493,8 @@ class TestValidation(unittest.TestCase):
                 ('{"open": 1', None, ValueError),
                 (b'{"open": 1', None, ValueError),
                 (b"\xff", None, ValueError)):
-            with self.subTest(input=input):
-                result, errs = validate.check_json(input, _convert=True)
+            with self.subTest(input=input_):
+                result, errs = validate.check_json(input_, _convert=True)
                 self.assertEqual(output, result)
                 if error is None:
                     self.assertFalse(errs)

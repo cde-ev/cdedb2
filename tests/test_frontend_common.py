@@ -3,7 +3,6 @@
 import datetime
 import random
 import string
-import unittest
 
 import pytz
 

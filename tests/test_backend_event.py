@@ -36,7 +36,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_entity_event(self, user: CdEDBObject) -> None:
-        ## need administrator to create event
+        # need administrator to create event
         self.login(USER_DICT["annika"])
         old_events = self.event.list_events(self.key)
         data: CdEDBObject = {
@@ -46,8 +46,10 @@ class TestEventBackend(BackendTest):
 
             on more lines.""",
             'shortname': 'link',
-            'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0, tzinfo=pytz.utc),
-            'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
+            'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
+                                                    tzinfo=pytz.utc),
+            'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0,
+                                                         tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
             'nonmember_surcharge': decimal.Decimal("6.66"),
@@ -142,44 +144,43 @@ class TestEventBackend(BackendTest):
         data['parts'][-2]['tracks'][-1].update({'id': 1002, 'part_id': 1002})
         data['tracks'] = {1001: data['parts'][-1]['tracks'][-1],
                           1002: data['parts'][-2]['tracks'][-1]}
-        ## correct part and field ids
+        # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
         for part in tmp['parts']:
-            for oldpart in data['parts']:
+            for oldpart in data['parts'].keys():
                 if tmp['parts'][part]['title'] == data['parts'][oldpart]['title']:
                     part_map[tmp['parts'][part]['title']] = part
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
-                    self.assertEqual(set(x['title']
-                                         for x in data['parts'][part]['tracks'].values()),
-                                     set(x['title']
-                                         for x in tmp['parts'][part]['tracks'].values()))
+                    self.assertEqual(
+                        set(x['title'] for x in data['parts'][part]['tracks'].values()),
+                        set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
                     data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
+                    del data['parts'][oldpart]
                     break
-            del data['parts'][oldpart]
         field_map = {}
         for field in tmp['fields']:
-            for oldfield in data['fields']:
+            for oldfield in data['fields'].keys():
                 if (tmp['fields'][field]['field_name']
                         == data['fields'][oldfield]['field_name']):
                     field_map[tmp['fields'][field]['field_name']] = field
                     data['fields'][field] = data['fields'][oldfield]
                     data['fields'][field]['id'] = field
                     data['fields'][field]['event_id'] = new_id
+                    del data['fields'][oldfield]
                     break
-            del data['fields'][oldfield]
         fee_modifier_map = {}
         for mod in tmp['fee_modifiers']:
-            for oldmod in data['fee_modifiers']:
+            for oldmod in data['fee_modifiers'].keys():
                 if (tmp['fee_modifiers'][mod]['modifier_name']
                         == data['fee_modifiers'][oldmod]['modifier_name']):
                     fee_modifier_map[tmp['fee_modifiers'][mod]['modifier_name']] = mod
                     data['fee_modifiers'][mod] = data['fee_modifiers'][oldmod]
                     data['fee_modifiers'][mod]['id'] = mod
+                    del data['fee_modifiers'][oldmod]
                     break
-            del data['fee_modifiers'][oldmod]
 
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))
@@ -222,8 +223,10 @@ class TestEventBackend(BackendTest):
         changed_field = {
             'association': 2,
             'kind': 5,
-            'entries': [["2110-08-15", "early second coming"],
-                        ["2110-08-17", "late second coming"],],
+            'entries': [
+                ["2110-08-15", "early second coming"],
+                ["2110-08-17", "late second coming"],
+            ],
         }
         self.event.set_event(self.key, {
             'id': new_id,
@@ -358,13 +361,15 @@ class TestEventBackend(BackendTest):
 
             },
             'tracks': {
-                1002: {'choices': [new_course_id],
-                       'course_id': None,
-                       'course_instructor': None
-                      },
-                1003: {'course_id': None,
-                       'course_instructor': None
-                      },
+                1002: {
+                    'choices': [new_course_id],
+                    'course_id': None,
+                    'course_instructor': None,
+                },
+                1003: {
+                    'course_id': None,
+                    'course_instructor': None
+                },
             },
             'payment': None,
             'persona_id': 2,
@@ -462,7 +467,8 @@ class TestEventBackend(BackendTest):
         event['tracks'][new_track_id] = new_track
         event['parts'][part_id]['tracks'][new_track_id] = new_track
 
-        self.assertEqual(regs, self.event.get_registrations(self.key, self.event.list_registrations(self.key, event_id)))
+        reg_ids = self.event.list_registrations(self.key, event_id)
+        self.assertEqual(regs, self.event.get_registrations(self.key, reg_ids))
         self.assertEqual(event, self.event.get_event(self.key, event_id))
 
     @as_users("annika", "garcia")
@@ -781,7 +787,11 @@ class TestEventBackend(BackendTest):
             'amount_owed': decimal.Decimal("589.49"),
             'checkin': None,
             'event_id': 1,
-            'fields': {'brings_balls': True, 'transportation': 'pedes', 'is_child': False},
+            'fields': {
+                'brings_balls': True,
+                'transportation': 'pedes',
+                'is_child': False,
+            },
             'list_consent': True,
             'id': 2,
             'mixed_lodging': True,
@@ -789,40 +799,55 @@ class TestEventBackend(BackendTest):
             'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
             'parental_agreement': True,
             'parts': {
-                1: {'is_camping_mat': False,
+                1: {
+                    'is_camping_mat': False,
                     'lodgement_id': None,
                     'part_id': 1,
                     'registration_id': 2,
-                    'status': 3},
-                2: {'is_camping_mat': False,
+                    'status': 3,
+                },
+                2: {
+                    'is_camping_mat': False,
                     'lodgement_id': 4,
                     'part_id': 2,
                     'registration_id': 2,
-                    'status': 4},
-                3: {'is_camping_mat': False,
+                    'status': 4,
+                },
+                3: {
+                    'is_camping_mat': False,
                     'lodgement_id': 4,
                     'part_id': 3,
                     'registration_id': 2,
-                    'status': 2}},
+                    'status': 2,
+                },
+            },
             'tracks': {
-                1: {'choices': [5, 4, 2, 1],
+                1: {
+                    'choices': [5, 4, 2, 1],
                     'course_id': None,
                     'course_instructor': None,
                     'registration_id': 2,
-                    'track_id': 1,},
-                2: {'choices': [3],
+                    'track_id': 1,
+                },
+                2: {
+                    'choices': [3],
                     'course_id': None,
                     'course_instructor': None,
                     'registration_id': 2,
-                    'track_id': 2,},
-                3: {'choices': [4, 2],
+                    'track_id': 2,
+                },
+                3: {
+                    'choices': [4, 2],
                     'course_id': 1,
                     'course_instructor': 1,
                     'registration_id': 2,
-                    'track_id': 3,},},
+                    'track_id': 3,
+                },
+            },
             'payment': datetime.date(2014, 2, 2),
             'persona_id': 5,
-            'real_persona_id': None}
+            'real_persona_id': None,
+        }
         self.assertEqual(expectation,
                          self.event.get_registration(self.key, 2))
         data = {
@@ -849,28 +874,34 @@ class TestEventBackend(BackendTest):
             'orga_notes': None,
             'parental_agreement': True,
             'parts': {
-                1: {'is_camping_mat': False,
+                1: {
+                    'is_camping_mat': False,
                     'lodgement_id': None,
                     'status': 1
                 },
-                2: {'is_camping_mat': False,
+                2: {
+                    'is_camping_mat': False,
                     'lodgement_id': None,
                     'status': 1
                 },
-                3: {'is_camping_mat': False,
+                3: {
+                    'is_camping_mat': False,
                     'lodgement_id': None,
                     'status': 1
                 },
             },
             'tracks': {
-                1: {'choices': [1, 4, 5],
+                1: {
+                    'choices': [1, 4, 5],
                     'course_id': None,
                     'course_instructor': None,
                 },
-                2: {'course_id': None,
+                2: {
+                    'course_id': None,
                     'course_instructor': None,
                 },
-                3: {'course_id': None,
+                3: {
+                    'course_id': None,
                     'course_instructor': None,
                 },
             },
@@ -1117,26 +1148,32 @@ class TestEventBackend(BackendTest):
             'notes': None,
             'parental_agreement': False,
             'parts': {
-                1: {'lodgement_id': None,
-                    'status': 1
+                1: {
+                    'lodgement_id': None,
+                    'status': 1,
                 },
-                2: {'lodgement_id': None,
-                    'status': 1
+                2: {
+                    'lodgement_id': None,
+                    'status': 1,
                 },
-                3: {'lodgement_id': None,
-                    'status': 1
+                3: {
+                    'lodgement_id': None,
+                    'status': 1,
                 },
             },
             'tracks': {
-                1: {'choices': [1, 2, 4, 5],
+                1: {
+                    'choices': [1, 2, 4, 5],
                     'course_id': None,
-                    'course_instructor': None
+                    'course_instructor': None,
                 },
-                2: {'course_id': None,
-                    'course_instructor': None
+                2: {
+                    'course_id': None,
+                    'course_instructor': None,
                 },
-                3: {'course_id': None,
-                    'course_instructor': None
+                3: {
+                    'course_id': None,
+                    'course_instructor': None,
                 },
             },
             'payment': None,
@@ -1198,15 +1235,16 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_course_filtering(self, user: CdEDBObject) -> None:
         event_id = 1
-        expectation={1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
-        self.assertEqual(expectation, self.event.registrations_by_course(self.key, event_id))
+        expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
+        self.assertEqual(
+            expectation, self.event.registrations_by_course(self.key, event_id))
         expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100}
         self.assertEqual(expectation, self.event.registrations_by_course(
             self.key, event_id, track_id=3))
-        expectation={1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
+        expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
         self.assertEqual(expectation, self.event.registrations_by_course(
             self.key, event_id, course_id=1))
-        expectation={2: 5, 4: 9, 5: 100}
+        expectation = {2: 5, 4: 9, 5: 100}
         self.assertEqual(expectation, self.event.registrations_by_course(
             self.key, event_id, course_id=1, position=CourseFilterPositions.assigned))
 
@@ -1315,7 +1353,7 @@ class TestEventBackend(BackendTest):
                 'group_id': 1,
             }
         }
-        self.assertEqual(expectation_get, self.event.get_lodgements(self.key, (1,4)))
+        self.assertEqual(expectation_get, self.event.get_lodgements(self.key, (1, 4)))
         new = {
             'regular_capacity': 42,
             'event_id': 1,
@@ -1367,62 +1405,68 @@ class TestEventBackend(BackendTest):
                      'kind': const.QuestionnaireUsages.registration,
                      },
                 ],
-            const.QuestionnaireUsages.additional:
-                [
-                    {'field_id': None,
-                     'default_value': None,
-                     'info': 'mit Text darunter',
-                     'pos': 0,
-                     'readonly': None,
-                     'input_size': None,
-                     'title': 'Unterüberschrift',
-                     'kind': const.QuestionnaireUsages.additional,
-                     },
-                    {'field_id': 1,
-                     'default_value': 'True',
-                     'info': 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.',
-                     'pos': 1,
-                     'readonly': False,
-                     'input_size': None,
-                     'title': 'Bälle',
-                     'kind': const.QuestionnaireUsages.additional,
-                     },
-                    {'field_id': None,
-                     'default_value': None,
-                     'info': 'nur etwas Text',
-                     'pos': 2,
-                     'readonly': None,
-                     'input_size': None,
-                     'title': None,
-                     'kind': const.QuestionnaireUsages.additional,
-                     },
-                    {'field_id': None,
-                     'default_value': None,
-                     'info': None,
-                     'pos': 3,
-                     'readonly': None,
-                     'input_size': None,
-                     'title': 'Weitere Überschrift',
-                     'kind': const.QuestionnaireUsages.additional,
-                     },
-                    {'field_id': 2,
-                     'default_value': 'etc',
-                     'info': None,
-                     'pos': 4,
-                     'readonly': False,
-                     'input_size': None,
-                     'title': 'Vehikel',
-                     'kind': const.QuestionnaireUsages.additional,
-                     },
-                    {'field_id': 3,
-                     'default_value': None,
-                     'info': None,
-                     'pos': 5,
-                     'readonly': False,
-                     'input_size': 3,
-                     'title': 'Hauswunsch',
-                     'kind': const.QuestionnaireUsages.additional,
-                     },
+            const.QuestionnaireUsages.additional: [
+                    {
+                        'field_id': None,
+                        'default_value': None,
+                        'info': 'mit Text darunter',
+                        'pos': 0,
+                        'readonly': None,
+                        'input_size': None,
+                        'title': 'Unterüberschrift',
+                        'kind': const.QuestionnaireUsages.additional,
+                    },
+                    {
+                        'field_id': 1,
+                        'default_value': 'True',
+                        'info': 'Du bringst genug Bälle mit um einen ganzen Kurs'
+                                ' abzuwerfen.',
+                        'pos': 1,
+                        'readonly': False,
+                        'input_size': None,
+                        'title': 'Bälle',
+                        'kind': const.QuestionnaireUsages.additional,
+                    },
+                    {
+                        'field_id': None,
+                        'default_value': None,
+                        'info': 'nur etwas Text',
+                        'pos': 2,
+                        'readonly': None,
+                        'input_size': None,
+                        'title': None,
+                        'kind': const.QuestionnaireUsages.additional,
+                    },
+                    {
+                        'field_id': None,
+                        'default_value': None,
+                        'info': None,
+                        'pos': 3,
+                        'readonly': None,
+                        'input_size': None,
+                        'title': 'Weitere Überschrift',
+                        'kind': const.QuestionnaireUsages.additional,
+                    },
+                    {
+                        'field_id': 2,
+                        'default_value': 'etc',
+                        'info': None,
+                        'pos': 4,
+                        'readonly': False,
+                        'input_size': None,
+                        'title': 'Vehikel',
+                        'kind': const.QuestionnaireUsages.additional,
+                    },
+                    {
+                        'field_id': 3,
+                        'default_value': None,
+                        'info': None,
+                        'pos': 5,
+                        'readonly': False,
+                        'input_size': 3,
+                        'title': 'Hauswunsch',
+                        'kind': const.QuestionnaireUsages.additional,
+                    },
                 ],
         }
         self.assertEqual(expectation,
@@ -1490,7 +1534,8 @@ class TestEventBackend(BackendTest):
                 {
                     'field_id': 1001,
                     'default_value': None,
-                    'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige Akademien zu unterstützen.",
+                    'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
+                            " Akademien zu unterstützen.",
                     'readonly': None,
                     'input_size': None,
                     'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
@@ -1525,7 +1570,7 @@ class TestEventBackend(BackendTest):
                  ['pedes', 'etc'])],
             order=(("reg.id", True),),)
 
-        ## fix query spec (normally done by frontend)
+        # fix query spec (normally done by frontend)
         query.spec.update({
             'lodgement1.id': "int",
             'part3.status': "int",
@@ -1896,13 +1941,11 @@ class TestEventBackend(BackendTest):
         new_data = copy.deepcopy(data)
         del new_data['CDEDB_EXPORT_EVENT_VERSION']
         stored_data = copy.deepcopy(data)
-        ##
-        ## Apply some changes
-        ##
+        # Apply some changes
 
-        ## event
+        # event
         new_data['event.events'][1]['description'] = "We are done!"
-        ## event parts
+        # event parts
         new_data['event.event_parts'][4000] = {
             'event_id': 1,
             'fee': decimal.Decimal('666.66'),
@@ -1912,7 +1955,7 @@ class TestEventBackend(BackendTest):
             'part_end': datetime.date(2345, 12, 31),
             'title': 'Aftershowparty',
             'shortname': 'Aftershow'}
-        ## course tracks
+        # course tracks
         new_data['event.course_tracks'][1100] = {
             'part_id': 4000,
             'id': 1100,
@@ -1921,13 +1964,13 @@ class TestEventBackend(BackendTest):
             'num_choices': 3,
             'min_choices': 2,
             'sortkey': 1}
-        ## lodgemnet groups
+        # lodgemnet groups
         new_data['event.lodgement_groups'][5000] = {
             'id': 5000,
             'event_id': 1,
             'title': 'Nebenan',
         }
-        ## lodgements
+        # lodgements
         new_data['event.lodgements'][6000] = {
             'regular_capacity': 1,
             'event_id': 1,
@@ -1937,7 +1980,7 @@ class TestEventBackend(BackendTest):
             'notes': None,
             'group_id': 1,
             'camping_mat_capacity': 0}
-        ## registration
+        # registration
         new_data['event.registrations'][1000] = {
             'checkin': None,
             'event_id': 1,
@@ -1955,7 +1998,7 @@ class TestEventBackend(BackendTest):
             'amount_paid': decimal.Decimal("42.00"),
             'amount_owed': decimal.Decimal("666.66"),
         }
-        ## registration parts
+        # registration parts
         new_data['event.registration_parts'].update({
             5000: {
                 'id': 5000,
@@ -2028,17 +2071,17 @@ class TestEventBackend(BackendTest):
                 'status': const.RegistrationPartStati.not_applied,
             },
         })
-        ## registration parts
+        # registration parts
         new_data['event.registration_tracks'][1200] = {
             'course_id': 3000,
             'course_instructor': None,
             'id': 1200,
             'track_id': 1100,
             'registration_id': 1000}
-        ## orgas
+        # orgas
         new_data['event.orgas'][7000] = {
             'event_id': 1, 'id': 7000, 'persona_id': 2000}
-        ## course
+        # course
         new_data['event.courses'][3000] = {
             'description': 'Spontankurs',
             'event_id': 1,
@@ -2051,21 +2094,23 @@ class TestEventBackend(BackendTest):
             'nr': 'φ',
             'shortname': 'Spontan',
             'title': 'Spontankurs'}
-        ## course parts
+        # course parts
         new_data['event.course_segments'][8000] = {
             'course_id': 3000, 'id': 8000, 'track_id': 1100, 'is_active': True}
-        ## course choices
-        ## - an update
+        # course choices
+        # - an update
         new_data['event.course_choices'][27] = {
             'course_id': 5, 'id': 27, 'track_id': 3, 'rank': 0, 'registration_id': 4}
-        ## - a delete and an insert
+        # - a delete and an insert
         del new_data['event.course_choices'][28]
         new_data['event.course_choices'][9000] = {
             'course_id': 4, 'id': 9000, 'track_id': 3, 'rank': 1, 'registration_id': 4}
-        ## - an insert
+        # - an insert
         new_data['event.course_choices'][10000] = {
-            'course_id': 3000, 'id': 10000, 'track_id': 1100, 'rank': 0, 'registration_id': 1000}
-        ## field definitions
+            'course_id': 3000, 'id': 10000, 'track_id': 1100, 'rank': 0,
+            'registration_id': 1000,
+        }
+        # field definitions
         new_data['event.field_definitions'].update({
             11000: {
                 'association': 1,
@@ -2086,7 +2131,7 @@ class TestEventBackend(BackendTest):
                 'kind': const.FieldDatatypes.bool,
             }
         })
-        ## questionnaire rows
+        # questionnaire rows
         new_data['event.questionnaire_rows'][12000] = {
             'event_id': 1,
             'field_id': 11000,
@@ -2105,14 +2150,14 @@ class TestEventBackend(BackendTest):
             'modifier_name': 'solidarity',
             'amount': decimal.Decimal("+7.50"),
         }
-        ## Note that the changes above are not entirely consistent/complete (as
-        ## in some stuff is missing and another part may throw an error if we
-        ## used the resulting data set for real)
+        # Note that the changes above are not entirely consistent/complete (as
+        # in some stuff is missing and another part may throw an error if we
+        # used the resulting data set for real)
         self.assertLess(0, self.event.unlock_import_event(self.key, new_data))
-        ## Now we have to fix for new stuff
+        # Now we have to fix for new stuff
         stored_data['event.events'][1]['offline_lock'] = False
         stored_data['timestamp'] = nearly_now()
-        ## Apply the same changes as above but this time with (guessed) correct IDs
+        # Apply the same changes as above but this time with (guessed) correct IDs
         stored_data['event.events'][1]['description'] = "We are done!"
         stored_data['event.event_parts'][1001] = {
             'event_id': 1,
@@ -2270,7 +2315,9 @@ class TestEventBackend(BackendTest):
             'course_id': 5, 'id': 27, 'track_id': 3, 'rank': 0, 'registration_id': 4}
         del stored_data['event.course_choices'][28]
         stored_data['event.course_choices'][1002] = {
-            'course_id': 1001, 'id': 1002, 'track_id': 1001, 'rank': 0, 'registration_id': 1001}
+            'course_id': 1001, 'id': 1002, 'track_id': 1001, 'rank': 0,
+            'registration_id': 1001,
+        }
         stored_data['event.course_choices'][1001] = {
             'course_id': 4, 'id': 1001, 'track_id': 3, 'rank': 1, 'registration_id': 4}
         stored_data['event.field_definitions'].update({
@@ -2313,9 +2360,9 @@ class TestEventBackend(BackendTest):
         }
 
         result = self.event.export_event(self.key, 1)
-        ## because it's irrelevant anyway simply paste the result
+        # because it's irrelevant anyway simply paste the result
         stored_data['core.personas'] = result['core.personas']
-        ## add log message
+        # add log message
         stored_data['event.log'][1002] = {
             'change_note': None,
             'code': 61,
@@ -2362,14 +2409,14 @@ class TestEventBackend(BackendTest):
         expectation = previous
         delta = json_keys_to_int(data)
 
-        CMAP = {
+        cmap = {
             ('courses', -1): 1002,
             ('lodgement_groups', -1): 1002,
             ('lodgements', -1): 1003,
             ('lodgements', -2): 1004,
             ('registrations', -1): 1002,
         }
-        TMAP = {
+        tmap = {
             'courses': {'segments': {}, 'fields': {}},
             'lodgement_groups': {},
             'lodgements': {'fields': {}},
@@ -2394,8 +2441,8 @@ class TestEventBackend(BackendTest):
                 temp = new.pop(key)
                 if isinstance(key, int) and key < 0:
                     assert hint is not None
-                    new_key = CMAP[(hint, key)]
-                    old[new_key] = copy.deepcopy(TMAP[hint])
+                    new_key = cmap[(hint, key)]
+                    old[new_key] = copy.deepcopy(tmap[hint])
                 else:
                     new_key = key
                 if new_key not in old:
@@ -2415,18 +2462,18 @@ class TestEventBackend(BackendTest):
             for key in ('course_id', 'course_instructor', 'choices'):
                 if key in new:
                     if isinstance(new[key], int):
-                        new[key] = CMAP.get(('courses', new[key]), new[key])
+                        new[key] = cmap.get(('courses', new[key]), new[key])
                     elif isinstance(new[key], collections.abc.Sequence):
-                        new[key] = [CMAP.get(('courses', anid), anid)
+                        new[key] = [cmap.get(('courses', anid), anid)
                                     for anid in new[key]]
             for key in ('lodgement_id',):
                 if key in new:
                     if isinstance(new[key], int):
-                        new[key] = CMAP.get(('lodgements', new[key]), new[key])
+                        new[key] = cmap.get(('lodgements', new[key]), new[key])
             for key in ('group_id',):
                 if key in new:
                     if isinstance(new[key], int):
-                        new[key] = CMAP.get(
+                        new[key] = cmap.get(
                             ('lodgement_groups', new[key]), new[key])
             old.update(new)
 
@@ -2518,40 +2565,65 @@ class TestEventBackend(BackendTest):
             self.key, data, dryrun=True)
         self.assertNotEqual(token1, token3)
         expectation = {
-            'courses': {-1: {'description': 'Ein Lichtstrahl traf uns',
-                             'fields': {'room': 'Wintergarten'},
-                             'instructors': 'The Flash',
-                             'max_size': None,
-                             'min_size': None,
-                             'notes': None,
-                             'nr': 'ζ',
-                             'segments': {1: False, 3: True},
-                             'shortname': 'Blitz',
-                             'title': 'Blitzkurs'},
-                        3: None,
-                        4: {'segments': {1: None}}},
-            'lodgement_groups': {-1: {'title': 'Geheime Etage'}},
-            'lodgements': {-1: {'regular_capacity': 12,
-                                'fields': {'contamination': 'none'},
-                                'title': 'Geheimkabinett',
-                                'notes': 'Einfach den unsichtbaren Schildern folgen.',
-                                'group_id': -1,
-                                'camping_mat_capacity': 2},
-                           -2: {'regular_capacity': 42,
-                                'fields': {'contamination': 'low'},
-                                'title': 'Handtuchraum',
-                                'notes': 'Hier gibt es Handtücher für jeden.',
-                                'group_id': None,
-                                'camping_mat_capacity': 0},
-                           3: None,
-                           4: {'group_id': -1}},
-            'registrations': {3: {'tracks': {3: {'course_id': -1,
-                                                 'choices': [4, -1, 5]}}},
-                              4: None,
-                              1001: {'parts': {2: {'lodgement_id': -1}},
-                                  'tracks': {3: {'choices': [1, 4, 5, -1],
-                                                 'course_id': -1,
-                                                 'course_instructor': -1}}}}}
+            'courses': {
+                -1: {
+                    'description': 'Ein Lichtstrahl traf uns',
+                    'fields': {'room': 'Wintergarten'},
+                    'instructors': 'The Flash',
+                    'max_size': None,
+                    'min_size': None,
+                    'notes': None,
+                    'nr': 'ζ',
+                    'segments': {1: False, 3: True},
+                    'shortname': 'Blitz',
+                    'title': 'Blitzkurs'},
+                3: None,
+                4: {
+                    'segments': {1: None},
+                },
+            },
+            'lodgement_groups': {
+                -1: {'title': 'Geheime Etage'},
+            },
+            'lodgements': {
+                -1: {'regular_capacity': 12,
+                     'fields': {'contamination': 'none'},
+                     'title': 'Geheimkabinett',
+                     'notes': 'Einfach den unsichtbaren Schildern folgen.',
+                     'group_id': -1,
+                     'camping_mat_capacity': 2,
+                     },
+                -2: {'regular_capacity': 42,
+                     'fields': {'contamination': 'low'},
+                     'title': 'Handtuchraum',
+                     'notes': 'Hier gibt es Handtücher für jeden.',
+                     'group_id': None,
+                     'camping_mat_capacity': 0,
+                     },
+                3: None,
+                4: {'group_id': -1},
+            },
+            'registrations': {
+                3: {
+                    'tracks': {
+                        3: {
+                            'course_id': -1,
+                            'choices': [4, -1, 5]}}},
+                4: None,
+                1001: {
+                    'parts': {
+                        2: {'lodgement_id': -1},
+                    },
+                    'tracks': {
+                        3: {
+                            'choices': [1, 4, 5, -1],
+                            'course_id': -1,
+                            'course_instructor': -1,
+                        },
+                    },
+                },
+            },
+        }
         self.assertEqual(expectation, delta)
 
     @as_users("annika", "garcia")
@@ -2560,16 +2632,23 @@ class TestEventBackend(BackendTest):
 
         # Check for participant status
         stati = [const.RegistrationPartStati.participant]
-        self.assertTrue(self.event.check_registration_status(self.key, 1, event_id, stati))
-        self.assertFalse(self.event.check_registration_status(self.key, 3, event_id, stati))
-        self.assertTrue(self.event.check_registration_status(self.key, 5, event_id, stati))
-        self.assertTrue(self.event.check_registration_status(self.key, 9, event_id, stati))
+        self.assertTrue(
+            self.event.check_registration_status(self.key, 1, event_id, stati))
+        self.assertFalse(
+            self.event.check_registration_status(self.key, 3, event_id, stati))
+        self.assertTrue(
+            self.event.check_registration_status(self.key, 5, event_id, stati))
+        self.assertTrue(
+            self.event.check_registration_status(self.key, 9, event_id, stati))
 
         # Check for waitlist status
         stati = [const.RegistrationPartStati.waitlist]
-        self.assertFalse(self.event.check_registration_status(self.key, 1, event_id, stati))
-        self.assertTrue(self.event.check_registration_status(self.key, 5, event_id, stati))
-        self.assertFalse(self.event.check_registration_status(self.key, 9, event_id, stati))
+        self.assertFalse(
+            self.event.check_registration_status(self.key, 1, event_id, stati))
+        self.assertTrue(
+            self.event.check_registration_status(self.key, 5, event_id, stati))
+        self.assertFalse(
+            self.event.check_registration_status(self.key, 9, event_id, stati))
 
     @as_users("emilia", "garcia", "annika")
     def test_calculate_fees(self, user: CdEDBObject) -> None:
@@ -2587,9 +2666,13 @@ class TestEventBackend(BackendTest):
         reg_id = 2
         reg = self.event.get_registration(self.key, reg_id)
         self.assertEqual(reg['amount_owed'], decimal.Decimal("589.49"))
-        self.assertEqual(reg['parts'][1]['status'], const.RegistrationPartStati.waitlist)
-        self.assertEqual(reg['parts'][2]['status'], const.RegistrationPartStati.guest)
-        self.assertEqual(reg['parts'][3]['status'], const.RegistrationPartStati.participant)
+        self.assertEqual(
+            const.RegistrationPartStati.waitlist, reg['parts'][1]['status'])
+        self.assertEqual(
+            const.RegistrationPartStati.guest, reg['parts'][2]['status'])
+        self.assertEqual(
+            const.RegistrationPartStati.participant,
+            reg['parts'][3]['status'])
         update = {
             'id': reg_id,
             'parts': {
@@ -2720,10 +2803,11 @@ class TestEventBackend(BackendTest):
             }
         }
         self.event.set_event(self.key, data)
-        field_links = ((2, ValueError, "Fee Modifier linked to non-bool field."),
-                       (5, ValueError, "Fee Modifier linked to non-registration field."),
-                       (7, psycopg2.IntegrityError, None),
-                       (1001, None, None))
+        field_links = (
+            (2, ValueError, "Fee Modifier linked to non-bool field."),
+            (5, ValueError, "Fee Modifier linked to non-registration field."),
+            (7, psycopg2.IntegrityError, None),
+            (1001, None, None))
         for field_id, error, error_msg in field_links:
             data = {
                 'id': event_id,
@@ -2894,8 +2978,10 @@ class TestEventBackend(BackendTest):
 
             on more lines.""",
             'shortname': 'link',
-            'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0, tzinfo=pytz.utc),
-            'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
+            'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
+                                                    tzinfo=pytz.utc),
+            'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0,
+                                                         tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
             'nonmember_surcharge': decimal.Decimal("6.66"),
@@ -2955,25 +3041,25 @@ class TestEventBackend(BackendTest):
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
         for part in tmp['parts']:
-            for oldpart in data['parts']:
+            for oldpart in data['parts'].keys():
                 if tmp['parts'][part]['title'] == data['parts'][oldpart]['title']:
                     part_map[tmp['parts'][part]['title']] = part
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
+                    del data['parts'][oldpart]
                     break
-            del data['parts'][oldpart]
         field_map = {}
         for field in tmp['fields']:
-            for oldfield in data['fields']:
+            for oldfield in data['fields'].keys():
                 if (tmp['fields'][field]['field_name']
                         == data['fields'][oldfield]['field_name']):
                     field_map[tmp['fields'][field]['field_name']] = field
                     data['fields'][field] = data['fields'][oldfield]
                     data['fields'][field]['id'] = field
                     data['fields'][field]['event_id'] = new_id
+                    del data['fields'][oldfield]
                     break
-            del data['fields'][oldfield]
 
         data['title'] = "Alternate Universe Academy"
         data['orgas'] = {1, 7}
@@ -3012,8 +3098,10 @@ class TestEventBackend(BackendTest):
         changed_field = {
             'association': 1,
             'kind': 5,
-            'entries': [["2110-8-15", "early second coming"],
-                        ["2110-8-17", "late second coming"],],
+            'entries': [
+                ["2110-8-15", "early second coming"],
+                ["2110-8-17", "late second coming"],
+            ],
         }
         self.event.set_event(self.key, {
             'id': new_id,
@@ -3057,25 +3145,31 @@ class TestEventBackend(BackendTest):
             'orga_notes': None,
             'parental_agreement': True,
             'parts': {
-                1: {'lodgement_id': None,
+                1: {
+                    'lodgement_id': None,
                     'status': 1
                 },
-                2: {'lodgement_id': None,
+                2: {
+                    'lodgement_id': None,
                     'status': 1
                 },
-                3: {'lodgement_id': None,
+                3: {
+                    'lodgement_id': None,
                     'status': 1
                 },
             },
             'tracks': {
-                1: {'choices': {1: [1, 4, 5]},
+                1: {
+                    'choices': {1: [1, 4, 5]},
                     'course_id': None,
                     'course_instructor': None,
                 },
-                2: {'course_id': None,
+                2: {
+                    'course_id': None,
                     'course_instructor': None,
                 },
-                3: {'course_id': None,
+                3: {
+                    'course_id': None,
                     'course_instructor': None,
                 },
             },
@@ -3176,7 +3270,7 @@ class TestEventBackend(BackendTest):
         }
         self.event.set_questionnaire(self.key, 1, data)
 
-        ## now check it
+        # now check it
         expectation = (35, (
             {'id': 1001,
              'change_note': None,

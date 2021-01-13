@@ -106,7 +106,7 @@ class TestOffline(FrontendTest):
             else:
                 subprocess.run(
                     ["cp", "related/auto-build/files/stage3/localconfig.py",
-                    "cdedb/localconfig.py"], check=True)
+                     "cdedb/localconfig.py"], check=True)
             subprocess.run(["sudo", "rm", "-f", "/OFFLINEVM"], check=True)
             subprocess.run(
                 ["make", "reload"], check=True, cwd=base,

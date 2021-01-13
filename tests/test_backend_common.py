@@ -17,4 +17,4 @@ class TestBackendCommon(unittest.TestCase):
         self.assertTrue(callable(proxy.login))
         self.assertTrue(callable(proxy.get_realms_multi))
         with self.assertRaises(PrivilegeError):
-            proxy.verify_password
+            _ = proxy.verify_password

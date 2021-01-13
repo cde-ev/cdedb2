@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 
-import datetime
-import decimal
-from typing import Collection, Dict, Set, Optional, Union, cast
+from typing import Collection, Set, Optional, cast
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-import cdedb.validation as validate
 from cdedb.common import (
     CdEDBObject, PrivilegeError, RequestState, SubscriptionActions as SA,
     SubscriptionError
 )
 from cdedb.database.constants import SubscriptionStates as SS
-from cdedb.query import QUERY_SPECS, QueryOperators
 from tests.common import USER_DICT, BackendTest, as_users, nearly_now, prepsql
 
 
@@ -362,12 +358,12 @@ class TestMlBackend(BackendTest):
             5: SS.implicit,
             6: SS.subscribed,
             9: SS.implicit,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           54: SS.pending,
-           59: SS.implicit,
-           63: SS.subscribed
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            54: SS.pending,
+            59: SS.implicit,
+            63: SS.subscribed
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
@@ -377,8 +373,8 @@ class TestMlBackend(BackendTest):
         # Which lists is Janis subscribed to.
         expectation = {
             3: SS.subscribed,
-           64: SS.subscribed,
-           65: SS.subscribed,
+            64: SS.subscribed,
+            65: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=10))
@@ -387,8 +383,8 @@ class TestMlBackend(BackendTest):
     def test_subscriptions_three(self, user: CdEDBObject) -> None:
         expectation = {
             9: SS.unsubscribed,
-           10: SS.implicit,
-           58: SS.implicit,
+            10: SS.implicit,
+            58: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=5))
@@ -401,11 +397,11 @@ class TestMlBackend(BackendTest):
             4: SS.unsubscription_override,
             8: SS.implicit,
             9: SS.subscribed,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           54: SS.unsubscription_override,
-           56: SS.pending,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            54: SS.unsubscription_override,
+            56: SS.pending,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=7))
@@ -542,7 +538,7 @@ class TestMlBackend(BackendTest):
                          SA.remove_subscription_override,
                          code=None, state=SS.unsubscribed, kind="error")
         self._change_sub(user['id'], mailinglist_id,
-                             SA.subscribe,
+                         SA.subscribe,
                          code=1, state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_unsubscription_override,
@@ -570,7 +566,7 @@ class TestMlBackend(BackendTest):
         # Anton and Berta are already subscribed, unsubscribe them first
         if user['id'] in {1, 2}:
             self._change_sub(user['id'], mailinglist_id,
-                                 SA.unsubscribe,
+                             SA.unsubscribe,
                              code=1, state=SS.unsubscribed)
 
         # Try to subscribe
@@ -771,17 +767,17 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
 
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
+        self._change_sub(user['id'], ml_id, SA.subscribe,
                          code=None, state=SS.implicit, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
                          code=1, state=SS.unsubscribed)
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
                          code=None, state=SS.unsubscribed, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.request_subscription,
+        self._change_sub(user['id'], ml_id, SA.request_subscription,
                          code=None, state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
+        self._change_sub(user['id'], ml_id, SA.subscribe,
                          code=1, state=SS.subscribed)
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
+        self._change_sub(user['id'], ml_id, SA.subscribe,
                          code=None, state=SS.subscribed, kind="info")
 
         self.ml.write_subscription_states(self.key, ml_id)
@@ -810,11 +806,11 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
 
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
+        self._change_sub(user['id'], ml_id, SA.subscribe,
                          code=None, state=None, kind="error")
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
                          code=None, state=None, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.request_subscription,
+        self._change_sub(user['id'], ml_id, SA.request_subscription,
                          code=None, state=None, kind="error")
 
     @as_users("ferdinand")
@@ -843,15 +839,15 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
 
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
+        self._change_sub(user['id'], ml_id, SA.subscribe,
                          code=None, state=SS.implicit, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
                          code=1, state=SS.unsubscribed)
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
                          code=None, state=SS.unsubscribed, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.request_subscription,
+        self._change_sub(user['id'], ml_id, SA.request_subscription,
                          code=None, state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
+        self._change_sub(user['id'], ml_id, SA.subscribe,
                          code=1, state=SS.subscribed)
 
         ml_id = 66
@@ -950,7 +946,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], 7, SA.subscribe,
                          code=None, state=None, kind="error")
         # List 9 is only allowed for event users, and not joinable anyway
-        self._change_sub(user['id'],  9, SA.subscribe,
+        self._change_sub(user['id'], 9, SA.subscribe,
                          code=None, state=None, kind="error")
         # List 11 is only joinable by assembly users
         if user['id'] == 11:
@@ -1323,19 +1319,19 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina", "garcia")
     def test_subscription_addresses_three(self, user: CdEDBObject) -> None:
-            expectation = {7: 'garcia@example.cde'}
-            self.assertEqual(expectation,
-                             self.ml.get_subscription_addresses(self.key, 8))
-            expectation = {1: 'anton@example.cde',
-                           2: 'berta@example.cde',
-                           7: 'garcia@example.cde',
-                           9: 'inga@example.cde',
-                           100: 'akira@example.cde'}
-            self.assertEqual(expectation,
-                             self.ml.get_subscription_addresses(self.key, 9))
-            expectation = {5: 'emilia@example.cde'}
-            self.assertEqual(expectation,
-                             self.ml.get_subscription_addresses(self.key, 10))
+        expectation = {7: 'garcia@example.cde'}
+        self.assertEqual(expectation,
+                         self.ml.get_subscription_addresses(self.key, 8))
+        expectation = {1: 'anton@example.cde',
+                       2: 'berta@example.cde',
+                       7: 'garcia@example.cde',
+                       9: 'inga@example.cde',
+                       100: 'akira@example.cde'}
+        self.assertEqual(expectation,
+                         self.ml.get_subscription_addresses(self.key, 9))
+        expectation = {5: 'emilia@example.cde'}
+        self.assertEqual(expectation,
+                         self.ml.get_subscription_addresses(self.key, 10))
 
     @as_users("janis")
     def test_set_subscription_address(self, user: CdEDBObject) -> None:
@@ -1433,13 +1429,13 @@ class TestMlBackend(BackendTest):
             2: SS.implicit,
             5: SS.unsubscription_override,
             9: SS.implicit,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1467,13 +1463,13 @@ class TestMlBackend(BackendTest):
             4: SS.pending,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1494,13 +1490,13 @@ class TestMlBackend(BackendTest):
             4: SS.subscribed,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1517,13 +1513,13 @@ class TestMlBackend(BackendTest):
             4: SS.unsubscribed,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1540,13 +1536,13 @@ class TestMlBackend(BackendTest):
             4: SS.pending,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1566,13 +1562,13 @@ class TestMlBackend(BackendTest):
             2: SS.unsubscribed,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1935,7 +1931,7 @@ class TestMlBackend(BackendTest):
             'address': 'werbung@lists.cde-ev.de',
             'admin_address': 'werbung-owner@lists.cde-ev.de',
             'listname': 'Werbung',
-            'moderators': ['janis@example.cde',],
+            'moderators': ['janis@example.cde', ],
             'sender': 'werbung@lists.cde-ev.de',
             'size_max': None,
             'subscribers': ['anton@example.cde',
@@ -2074,7 +2070,7 @@ class TestMlBackend(BackendTest):
                        'list-subscribe': 'https://db.cde-ev.de/',
                        'list-unsubscribe': 'https://db.cde-ev.de/',
                        'listname': 'werbung',
-                       'moderators': ['janis@example.cde',],
+                       'moderators': ['janis@example.cde', ],
                        'sender': 'werbung-bounces@lists.cde-ev.de',
                        'subscribers': ['anton@example.cde',
                                        'berta@example.cde',
@@ -2094,9 +2090,9 @@ class TestMlBackend(BackendTest):
                        'list-subscribe': 'https://db.cde-ev.de/',
                        'list-unsubscribe': 'https://db.cde-ev.de/',
                        'listname': 'werbung',
-                       'moderators': ['janis@example.cde',],
+                       'moderators': ['janis@example.cde', ],
                        'sender': 'cdedb-doublebounces@cde-ev.de',
-                       'subscribers': ['janis@example.cde',],
+                       'subscribers': ['janis@example.cde', ],
                        'whitelist': ['*']}
         self.assertEqual(
             expectation,

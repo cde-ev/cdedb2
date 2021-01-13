@@ -621,7 +621,9 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("CdE-Nutzerverwaltung")
         self.assertPresence("Ergebnis [1]", div='query-results')
-        self.assertEqual(self.response.lxml.xpath("//*[@id='query-result']/tbody/tr[1]/@data-id")[0], "2")
+        self.assertEqual(
+            "2",
+            self.response.lxml.xpath("//*[@id='query-result']/tbody/tr[1]/@data-id")[0])
 
     @as_users("vera")
     def test_user_search_csv(self, user: CdEDBObject) -> None:
@@ -638,12 +640,17 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_given_names'].checked = True
         f['qord_primary'] = "personas.id"
         self.response = f.submit("download", value="csv")
-        expectation = '''personas.id;given_names;family_name;username;birthday;decided_search;free_form
-2;Bertålotta;Beispiel;berta@example.cde;1981-02-11;True;"Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen"
-3;Charly C.;Clown;charly@example.cde;1984-05-13;True;"Ich bin ein ""Künstler""; im weiteren Sinne."
-4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;
-6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;
-'''.encode('utf-8-sig')
+        expectation = "\n".join((
+            'personas.id;given_names;family_name;username;birthday;decided_search;'
+            'free_form',
+            '2;Bertålotta;Beispiel;berta@example.cde;1981-02-11;True;'
+            '"Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen"',
+            '3;Charly C.;Clown;charly@example.cde;1984-05-13;True;'
+            '"Ich bin ein ""Künstler""; im weiteren Sinne."',
+            '4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;',
+            '6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;',
+            ''
+        )).encode('utf-8-sig')
         self.assertEqual(expectation, self.response.body)
 
     @as_users("vera")
@@ -801,8 +808,10 @@ class TestCdEFrontend(FrontendTest):
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']
-        self.assertEqual(None, self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
-        self.assertFalse(self.response.lxml.get_element_by_id('input_checkbox_trial_member').checked)
+        self.assertIsNone(
+            self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
+        self.assertFalse(
+            self.response.lxml.get_element_by_id('input_checkbox_trial_member').checked)
         f['is_searchable'].checked = True
         f['is_member'].checked = True
         f['trial_member'].checked = True
@@ -980,7 +989,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen",
                             div='active-permit', exact=True)
-        #self.traverse({'href': '^/$'})
+        self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
         self.assertPresence("12,50 €")
 
@@ -1141,11 +1150,11 @@ class TestCdEFrontend(FrontendTest):
             f['accounts'] = tmp
         self.submit(f, check_notification=False)
 
-        ## first round
+        # first round
         self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
-        content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
+        content = self.get_content()
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
@@ -1197,7 +1206,8 @@ class TestCdEFrontend(FrontendTest):
         f['resolution6'] = 5
         f['doppelganger_id6'] = '5'
         inputdata = inputdata.replace("pa99", "pa14")
-        inputdata = inputdata.replace("Doomed course from hell", "Swish -- und alles ist gut")
+        inputdata = inputdata.replace(
+            "Doomed course from hell", "Swish -- und alles ist gut")
         inputdata = inputdata.replace("31.02.1981", "21.02.1981")
         inputdata = inputdata.replace("00000", "07751")
         inputdata = inputdata.replace("fPingst", "Pfingst")
@@ -1210,11 +1220,11 @@ class TestCdEFrontend(FrontendTest):
         f['accounts'] = inputdata
         self.submit(f, check_notification=False)
 
-        ## second round
+        # second round
         self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
-        content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
+        content = self.get_content()
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
@@ -1282,12 +1292,12 @@ class TestCdEFrontend(FrontendTest):
         f['resolution14'] = 1
         self.submit(f, check_notification=False)
 
-        ## third round
+        # third round
         self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
         self.assertEqual('', f['resolution4'].value)
-        content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
+        content = self.get_content()
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
@@ -1341,7 +1351,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual('', f['finalized'].value)
         self.submit(f, check_notification=False)
 
-        ## fourth round
+        # fourth round
         self.assertPresence("Anlegen")
         self.assertNonPresence("Erneut validieren")
         f = self.response.forms['admissionform']
@@ -1350,7 +1360,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence("7 Accounts erstellt.", div="notifications")
 
-        ## validate
+        # validate
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'})
         self.assertTitle("Vergangene Veranstaltungen")
@@ -1471,11 +1481,13 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transfersform']
         # This file has a newline at the end, which needs to be stripped or it
         # causes the checksum to differ and require a third round.
-        with open("/tmp/cdedb-store/testfiles/money_transfers_valid.csv", 'rb') as datafile:
+
+        with open(self.testfile_dir / "money_transfers_valid.csv", 'rb') as datafile:
             data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
 
         self.assertIn(b"\r\n", data)
-        f['transfers_file'] = webtest.Upload("money_transfers_valid.csv", data, "text/csv")
+        f['transfers_file'] = webtest.Upload(
+            "money_transfers_valid.csv", data, "text/csv")
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
         self.submit(f)

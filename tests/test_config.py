@@ -23,7 +23,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])
 
     def test_caching(self) -> None:
-        ## this is a regression test
+        # this is a regression test
         basic = BasicConfig()
         extrasecret = SecretsConfig("tests/ancillary_files/extra_config.py")
         self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])

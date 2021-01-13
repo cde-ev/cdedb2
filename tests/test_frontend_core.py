@@ -1089,7 +1089,9 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera", "berta")
     def test_get_foto(self, user: CdEDBObject) -> None:
-        response = self.app.get('/core/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9')
+        response = self.app.get(
+            '/core/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e6'
+            '1ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9')
         self.assertTrue(response.body.startswith(b"\x89PNG"))
         self.assertTrue(len(response.body) > 10000)
 
@@ -1151,9 +1153,7 @@ class TestCoreFrontend(FrontendTest):
     def test_create_user(self, user: CdEDBObject) -> None:
 
         def _traverse_to_realm(realm: str = None) -> webtest.Form:
-            self.traverse({'description': 'Index'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': 'Nutzer anlegen'})
+            self.traverse('Index', 'Nutzer verwalten', 'Nutzer anlegen')
             self.assertTitle("Nutzer anlegen")
             f = self.response.forms['selectrealmform']
             if realm:
@@ -1219,8 +1219,9 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
-        self.assertValidationError("note", "Darf nicht leer sein",
-                                   notification="Archivierungsnotiz muss angegeben werden.")
+        self.assertValidationError(
+            "note", "Darf nicht leer sein",
+            notification="Archivierungsnotiz muss angegeben werden.")
         self.assertTitle("Charly C. Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
@@ -1375,7 +1376,8 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile('inga')
         self.assertIn('<h4 id="CDEDB_MD_inga">', self.response.text)
         self.assertIn('<div class="toc">', self.response.text)
-        self.assertIn('<li><a href="#CDEDB_MD_musik">Musik</a></li>', self.response.text)
+        self.assertIn(
+            '<li><a href="#CDEDB_MD_musik">Musik</a></li>', self.response.text)
         self.assertIn('<a class="btn btn-xs btn-warning" href="http://www.cde-ev.de">',
                       self.response.text)
 
@@ -1580,7 +1582,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
         self.assertNonPresence("zorro@example.cde")
-        self.assertNonPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence(
+            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
         self.assertPresence(
             "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.",
             div='no-ml-request')
@@ -1598,14 +1601,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(
             "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.",
             div='no-event-request')
-        self.assertNonPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence(
+            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/modify'})
         f = self.response.forms['genesismodifyform']
         f['realm'] = 'event'
         self.submit(f)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
-        self.assertNonPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence(
+            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
         self.assertPresence(
             "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.",
             div='no-ml-request')
@@ -1647,7 +1652,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(
             "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.",
             div='no-event-request')
-        self.assertNonPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence(
+            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
         f = self.response.forms['genesismlapprovalform1']
         self.submit(f)
         mail = self.fetch_mail()[0]
@@ -1703,9 +1709,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde")
         self.assertNonPresence("zorro@example.cde")
-        self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
-        self.assertPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
-        self.assertNonPresence("Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
+        self.assertPresence(
+            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
+        self.assertPresence(
+            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence(
+            "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertPresence("Ganondorf")
         self.assertNonPresence("Zickzack")
@@ -1733,18 +1742,24 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zorro@example.cde")
         self.traverse({'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")
-        self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
-        self.assertNonPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
-        self.assertPresence("Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
+        self.assertPresence(
+            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence(
+            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
+        self.assertPresence(
+            "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/modify'})
         f = self.response.forms['genesismodifyform']
         f['realm'] = 'cde'
         self.submit(f)
         self.traverse({'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")
-        self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
-        self.assertPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
-        self.assertNonPresence("Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
+        self.assertPresence(
+            "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
+        self.assertPresence(
+            "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence(
+            "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         f = self.response.forms['genesiseventapprovalform']
@@ -1976,7 +1991,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['new_username'] = "bertalotta@example.cde"
         self.submit(f)
-        logs.append(((1012, const.CoreLogCodes.username_change)))
+        logs.append((1012, const.CoreLogCodes.username_change))
 
         # Now check it
         self.traverse({'description': 'Index'},

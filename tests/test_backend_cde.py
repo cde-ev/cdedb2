@@ -12,7 +12,7 @@ from cdedb.common import (
     QuotaException, CdEDBLog
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
-from tests.common import USER_DICT, BackendTest, as_users, nearly_now
+from tests.common import USER_DICT, BackendTest, as_users
 
 
 class TestCdEBackend(BackendTest):
@@ -57,11 +57,11 @@ class TestCdEBackend(BackendTest):
 
     @as_users("berta")
     def test_displacement(self, user: CdEDBObject) -> None:
-        self.assertEqual(
-            -1, self.core.change_persona(self.key, {'id': user['id'],
-                                                'family_name': "Link"}, 1))
+        data = {'id': user['id'], 'family_name': "Link"}
+        self.assertEqual(-1, self.core.change_persona(self.key, data, generation=1))
         newaddress = "newaddress@example.cde"
-        ret, _ = self.core.change_username(self.key, user['id'], newaddress, user['password'])
+        ret, _ = self.core.change_username(
+            self.key, user['id'], newaddress, user['password'])
         self.assertTrue(ret)
         self.core.logout(self.key)
         self.login(user)
@@ -141,11 +141,12 @@ class TestCdEBackend(BackendTest):
             spec=dict(QUERY_SPECS["qview_cde_user"]),
             fields_of_interest=("personas.id", "family_name",
                                    "birthday"),
-            constraints=[("given_names", QueryOperators.match, 'Berta'),
-                            ("address", QueryOperators.oneof, ("Auf der Düne 42", "Im Garten 77")),
-                            ("weblink", QueryOperators.containsall, ("/", ":", "http")),
-                            ("birthday", QueryOperators.between, (datetime.datetime(1000, 1, 1),
-                                                                        datetime.datetime.now()))],
+            constraints=[
+                ("given_names", QueryOperators.match, 'Berta'),
+                ("address", QueryOperators.oneof, ("Auf der Düne 42", "Im Garten 77")),
+                ("weblink", QueryOperators.containsall, ("/", ":", "http")),
+                ("birthday", QueryOperators.between, (datetime.datetime(1000, 1, 1),
+                                                      datetime.datetime.now()))],
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2}, {e['id'] for e in result})
@@ -175,17 +176,20 @@ class TestCdEBackend(BackendTest):
                                                                 active=None))
         self.assertEqual({1: 2}, self.cde.list_lastschrift(self.key, active=False))
         expectation = {
-            2: {'account_address': 'Im Geldspeicher 1',
-            'account_owner': 'Dagobert Anatidae',
-            'amount': decimal.Decimal('42.23'),
-            'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
-                                            tzinfo=pytz.utc),
-            'iban': 'DE12500105170648489890',
-            'id': 2,
-            'notes': 'reicher Onkel',
-            'persona_id': 2,
-            'revoked_at': None,
-            'submitted_by': 1}}
+            2: {
+                'account_address': 'Im Geldspeicher 1',
+                'account_owner': 'Dagobert Anatidae',
+                'amount': decimal.Decimal('42.23'),
+                'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
+                                                tzinfo=pytz.utc),
+                'iban': 'DE12500105170648489890',
+                'id': 2,
+                'notes': 'reicher Onkel',
+                'persona_id': 2,
+                'revoked_at': None,
+                'submitted_by': 1,
+            },
+        }
         self.assertEqual(expectation, self.cde.get_lastschrifts(self.key, (2,)))
         update = {
             'id': 2,
@@ -196,7 +200,8 @@ class TestCdEBackend(BackendTest):
         expectation[2].update(update)
         self.assertEqual(expectation, self.cde.get_lastschrifts(self.key, (2,)))
         self.assertEqual({}, self.cde.list_lastschrift(self.key))
-        self.assertEqual({1: 2, 2: 2}, self.cde.list_lastschrift(self.key, active=False))
+        self.assertEqual(
+            {1: 2, 2: 2}, self.cde.list_lastschrift(self.key, active=False))
         newdata = {
             'account_address': None,
             'account_owner': None,
@@ -271,16 +276,19 @@ class TestCdEBackend(BackendTest):
                 stati=(const.LastschriftTransactionStati.success,
                        const.LastschriftTransactionStati.cancelled,)))
         expectation = {
-            1: {'amount': decimal.Decimal('32.00'),
-            'id': 1,
-            'issued_at': datetime.datetime(2000, 3, 21, 22, 0, tzinfo=pytz.utc),
-            'lastschrift_id': 1,
-            'period_id': 41,
-            'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
-                                              tzinfo=pytz.utc),
-            'status': 12,
-            'submitted_by': 1,
-            'tally': decimal.Decimal('0.00')}}
+            1: {
+                'amount': decimal.Decimal('32.00'),
+                'id': 1,
+                'issued_at': datetime.datetime(2000, 3, 21, 22, 0, tzinfo=pytz.utc),
+                'lastschrift_id': 1,
+                'period_id': 41,
+                'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
+                                                  tzinfo=pytz.utc),
+                'status': 12,
+                'submitted_by': 1,
+                'tally': decimal.Decimal('0.00'),
+            },
+        }
         self.assertEqual(expectation,
                          self.cde.get_lastschrift_transactions(self.key, (1,)))
         newdata = {
@@ -376,9 +384,9 @@ class TestCdEBackend(BackendTest):
 
     @as_users("farin")
     def test_skip_lastschrift_transaction(self, user: CdEDBObject) -> None:
-        ## Skip testing for successful transaction
+        # Skip testing for successful transaction
         self.assertLess(0, self.cde.lastschrift_skip(self.key, 2))
-        ## Skip testing for young permit
+        # Skip testing for young permit
         newdata = {
             'account_address': None,
             'account_owner': None,
