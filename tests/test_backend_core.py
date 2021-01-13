@@ -927,7 +927,7 @@ class TestCoreBackend(BackendTest):
             'timeline': 'Überall',
             'trial_member': False,
             'username': 'berta@example.cde',
-            'weblink': 'https://www.bundestag.cde'})
+            'weblink': '<https://www.bundestag.cde>'})
         self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))
         expectation['notes'] = 'Beispielhaft, Besser, Baum.'
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))

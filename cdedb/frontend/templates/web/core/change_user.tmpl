@@ -52,7 +52,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if "weblink" in shown_fields %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
         {% endif %}
 
         {% if "address" in shown_fields %}
