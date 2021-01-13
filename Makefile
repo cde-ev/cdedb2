@@ -122,7 +122,7 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf$\
 		,ballot_result.json,sepapain.xml,event_export.json$\
 		,batch_admission.csv,money_transfers.csv$\
 		,money_transfers_valid.csv,partial_event_import.json$\
-		,TestAka_partial_export_event.json
+		,TestAka_partial_export_event.json,statement.csv
 
 storage-test:
 	rm -rf -- /tmp/cdedb-store/*
