@@ -948,7 +948,7 @@ class FrontendTest(BackendTest):
         """
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False, verbose=verbose)
-        self.key = None  # type: ignore
+        self.key = ANONYMOUS
 
     def admin_view_profile(self, user: UserIdentifier, check: bool = True,
                            verbose: bool = False) -> None:
