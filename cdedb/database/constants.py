@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Set, Dict
+from typing import Dict, Set
 
 
 def n_(x: str) -> str:
@@ -203,10 +203,16 @@ class MailinglistDomain(enum.IntEnum):
     cdemuenchen = 10
     dokuforge = 11
 
+    testmail = 100
+
     def __str__(self) -> str:
         if self not in _DOMAIN_STR_MAP:
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
+
+    @classmethod
+    def mailman_domains(cls) -> Set['MailinglistDomain']:
+        return {cls.aka, cls.testmail}
 
 
 # Instead of importing this, call str() on a MailinglistDomain.
@@ -217,6 +223,7 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
     MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
     MailinglistDomain.cdemuenchen: "cde-muenchen.de",
     MailinglistDomain.dokuforge: "dokuforge.de",
+    MailinglistDomain.testmail: "testmail.cde-ev.de",
 }
 
 
@@ -260,17 +267,6 @@ class AttachmentPolicy(enum.IntEnum):
     #: allow the mime-type application/pdf but nothing else
     pdf_only = 2
     forbid = 3  #:
-
-
-# This is deprecated and will be removed soon. Do not use.
-@enum.unique
-class AudiencePolicy(enum.IntEnum):
-    """Regulate who may subscribe to a mailing list by status."""
-    everybody = 1  #:
-    require_assembly = 2  #:
-    require_event = 3  #:
-    require_cde = 4  #:
-    require_member = 5  #:
 
 
 @enum.unique
@@ -456,3 +452,6 @@ class MlLogCodes(enum.IntEnum):
     request_cancelled = 32  #:
     request_blocked = 33  #:
     email_trouble = 40  #:
+    moderate_accept = 50  #:
+    moderate_reject = 51  #:
+    moderate_discard = 52  #:

@@ -184,6 +184,12 @@ h4.heading-underline, h5.heading-underline, h6.heading-underline {
     padding: 10px;
 }
 
+.checkbox input[type="checkbox"],.radio input[type="radio"] {
+    vertical-align: middle;
+    position: relative;
+    bottom: 3.5px;
+}
+
 /* Better definition lists */
 dd {
     margin-left: 20px;
@@ -233,6 +239,12 @@ p.nosp {
 h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {
     margin-top: 0;
 }
+h2.mosp {
+    margin-top: 40px;
+}
+h3.mosp {
+    margin-top: 30px;
+}
 label.nosp {
     margin-bottom: 0;
 }
@@ -245,6 +257,10 @@ label.nosp {
 h4.mosp,h5.mosp {
     margin-top: 20px;
 }
+dl.mosp {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
 ul.nosp, ol.nosp {
     margin-bottom: 0;
 }
@@ -256,6 +272,9 @@ ul.nosp, ol.nosp {
 }
 .form-group.mosp {
     margin-top: 16px;
+}
+.btn.mosp, img.mosp {
+    margin-bottom: 5px
 }
 .panel-body>:last-child {
     margin-bottom: 0;
@@ -518,6 +537,12 @@ p.textbox {
 }
 #footer a:hover, #footer a:focus, #footer a.btn {
     text-decoration: none;
+}
+
+pre.result {
+    display: inline-block;
+    margin-bottom: 4px;
+    color: #c7254e;
 }
 
 /* query form */

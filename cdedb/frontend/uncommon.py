@@ -9,16 +9,13 @@ dependencies.
 """
 
 import abc
+from typing import Callable, Mapping
+
 import werkzeug
 
-from typing import Mapping, Callable
-
-from cdedb.common import (
-    n_, merge_dicts, PERSONA_DEFAULTS, RequestState, CdEDBObject
-)
-from cdedb.frontend.common import (
-    AbstractFrontend, check_validation as check
-)
+from cdedb.common import PERSONA_DEFAULTS, CdEDBObject, RequestState, merge_dicts, n_
+from cdedb.frontend.common import AbstractFrontend, check_validation_typed as check
+import cdedb.validationtypes as vtypes
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
@@ -45,9 +42,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                     ignore_warnings: bool = False) -> werkzeug.Response:
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
-        data = check(
-            rs, "persona", data, creation=True,
-            _ignore_warnings=ignore_warnings)
+        data = check(rs, vtypes.Persona, data,
+            creation=True, _ignore_warnings=ignore_warnings)
         if data:
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:

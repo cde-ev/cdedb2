@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from cdedb.script import setup, make_backend
-from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
-from cdedb.common import unwrap, get_hash, now
+from cdedb.common import get_hash, now, unwrap
+from cdedb.database.connection import Atomizer
+from cdedb.script import make_backend, setup
 
 # Configuration
 

@@ -8,24 +8,25 @@ members are also possible.
 
 import datetime
 import decimal
+from typing import Any, Collection, Dict, List, Optional, Tuple
 
-from typing import (
-    Collection, Dict, Tuple, List, Any, Optional
-)
 from typing_extensions import Protocol
 
-from cdedb.backend.common import (
-    access, affirm_validation as affirm, AbstractBackend,
-    affirm_set_validation as affirm_set, singularize, batchify)
-from cdedb.common import (
-    n_, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
-    LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS,
-    implying_realms, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, CdEDBLog,
-    RequestState, DeletionBlockers, QuotaException,
-)
-from cdedb.query import QueryOperators, Query
-from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
+import cdedb.validationtypes as vtypes
+from cdedb.backend.common import (
+    AbstractBackend, access, affirm_set_validation as affirm_set,
+    affirm_validation_typed as affirm,
+    affirm_validation_typed_optional as affirm_optional, batchify, singularize,
+)
+from cdedb.common import (
+    EXPULS_PERIOD_FIELDS, LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS,
+    ORG_PERIOD_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    DeletionBlockers, PrivilegeError, QuotaException, RequestState, implying_realms,
+    merge_dicts, n_, now, unwrap,
+)
+from cdedb.database.connection import Atomizer
+from cdedb.query import Query, QueryOperators
 
 
 class CdEBackend(AbstractBackend):
@@ -71,7 +72,7 @@ class CdEBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
         return self.generic_retrieve_log(
-            rs, "enum_cdelogcodes", "persona", "cde.log", codes=codes,
+            rs, const.CdeLogCodes, "persona", "cde.log", codes=codes,
             offset=offset, length=length, persona_id=persona_id,
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
@@ -91,7 +92,7 @@ class CdEBackend(AbstractBackend):
         """
         additional_columns = ["delta", "new_balance", "members", "total"]
         return self.generic_retrieve_log(
-            rs, "enum_financelogcodes", "persona", "cde.finance_log",
+            rs, const.FinanceLogCodes, "persona", "cde.finance_log",
             codes=codes, offset=offset, length=length, persona_id=persona_id,
             submitted_by=submitted_by, additional_columns=additional_columns,
             change_note=change_note, time_start=time_start,
@@ -105,16 +106,16 @@ class CdEBackend(AbstractBackend):
 
         :returns: Mapping of lastschrift_ids to their respecive persona_ids.
         """
-        persona_ids = affirm_set("id", persona_ids, allow_None=True)
+        persona_ids = affirm_set(vtypes.ID, persona_ids or set())
         if (not ({"cde_admin", "core_admin"} & rs.user.roles)
-            and (persona_ids is None
+            and (not persona_ids
                  or any(p_id != rs.user.persona_id for p_id in persona_ids))):
             raise PrivilegeError(n_("Not privileged."))
-        active = affirm("bool_or_None", active)
+        active = affirm_optional(bool, active)
         query = "SELECT id, persona_id FROM cde.lastschrift"
         params = []
         constraints = []
-        if persona_ids is not None:
+        if persona_ids:
             constraints.append("persona_id = ANY(%s)")
             params.append(persona_ids)
         if active is not None:
@@ -129,7 +130,7 @@ class CdEBackend(AbstractBackend):
     def get_lastschrifts(self, rs: RequestState, lastschrift_ids: Collection[int]
                          ) -> CdEDBObjectMap:
         """Retrieve direct debit permits."""
-        lastschrift_ids = affirm_set("id", lastschrift_ids)
+        lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
         data = self.sql_select(
             rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, lastschrift_ids)
         if ("cde_admin" not in rs.user.roles
@@ -146,7 +147,7 @@ class CdEBackend(AbstractBackend):
     def set_lastschrift(self, rs: RequestState,
                         data: CdEDBObject) -> DefaultReturnCode:
         """Modify a direct debit permit."""
-        data = affirm("lastschrift", data)
+        data = affirm(vtypes.Lastschrift, data)
         with Atomizer(rs):
             # First check whether we revoke a lastschrift
             log_code = const.FinanceLogCodes.modify_lastschrift
@@ -166,7 +167,7 @@ class CdEBackend(AbstractBackend):
     def create_lastschrift(self, rs: RequestState,
                            data: CdEDBObject) -> DefaultReturnCode:
         """Make a new direct debit permit."""
-        data = affirm("lastschrift", data, creation=True)
+        data = affirm(vtypes.Lastschrift, data, creation=True)
         data['submitted_by'] = rs.user.persona_id
         with Atomizer(rs):
             if self.list_lastschrift(rs, persona_ids=(data['persona_id'],),
@@ -189,8 +190,8 @@ class CdEBackend(AbstractBackend):
         * 'active_transactions': Cannot delete a lastschrift that still has
             open transactions.
         """
-        lastschrift_id = affirm("id", lastschrift_id)
-        blockers = {}
+        lastschrift_id = affirm(vtypes.ID, lastschrift_id)
+        blockers: CdEDBObject = {}
 
         with Atomizer(rs):
             lastschrift = self.get_lastschrift(rs, lastschrift_id)
@@ -227,8 +228,8 @@ class CdEBackend(AbstractBackend):
         Only possible after the lastschrift has been revoked for at least 18
         months.
         """
-        lastschrift_id = affirm("id", lastschrift_id)
-        cascade = affirm_set("str", cascade or [])
+        lastschrift_id = affirm(vtypes.ID, lastschrift_id)
+        cascade = affirm_set(str, cascade or [])
 
         ret = 1
         with Atomizer(rs):
@@ -281,7 +282,7 @@ class CdEBackend(AbstractBackend):
           the specified periods.
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
-        lastschrift_ids = affirm_set("id", lastschrift_ids, allow_None=True)
+        lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids or set())
         if "cde_admin" not in rs.user.roles:
             # Don't allow None for non admins.
             if lastschrift_ids is None:
@@ -289,9 +290,8 @@ class CdEBackend(AbstractBackend):
             # Otherwise pass this to get_lastschrift, which does access check.
             else:
                 _ = self.get_lastschrifts(rs, lastschrift_ids)
-        stati = affirm_set("enum_lastschrifttransactionstati", stati,
-                           allow_None=True)
-        periods = affirm_set("id", periods, allow_None=True)
+        stati = affirm_set(const.LastschriftTransactionStati, stati or set())
+        periods = affirm_set(vtypes.ID, periods or set())
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
         params: List[Any] = []
         constraints = []
@@ -313,7 +313,7 @@ class CdEBackend(AbstractBackend):
     def get_lastschrift_transactions(self, rs: RequestState,
                                      ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve direct debit transactions."""
-        ids = affirm_set("id", ids)
+        ids = affirm_set(vtypes.ID, ids)
         data = self.sql_select(rs, "cde.lastschrift_transactions",
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
         # We only need these for access checking, which is done inside.
@@ -340,7 +340,7 @@ class CdEBackend(AbstractBackend):
         :returns: The id of the new transaction.
         """
         stati = const.LastschriftTransactionStati
-        data = affirm("lastschrift_transaction", data, creation=True)
+        data = affirm(vtypes.LastschriftTransaction, data, creation=True)
         with Atomizer(rs):
             lastschrift = unwrap(self.get_lastschrifts(
                 rs, (data['lastschrift_id'],)))
@@ -387,11 +387,11 @@ class CdEBackend(AbstractBackend):
           success the balance of the persona is increased by the yearly
           membership fee.
         """
-        transaction_id = affirm("id", transaction_id)
-        status = affirm("enum_lastschrifttransactionstati", status)
+        transaction_id = affirm(vtypes.ID, transaction_id)
+        status = affirm(const.LastschriftTransactionStati, status)
         if not status.is_finalized():
             raise RuntimeError(n_("Non-final target state."))
-        tally = affirm("decimal_or_None", tally)
+        tally = affirm_optional(decimal.Decimal, tally)
         with Atomizer(rs):
             transaction = unwrap(self.get_lastschrift_transactions(
                 rs, (transaction_id,)))
@@ -461,8 +461,8 @@ class CdEBackend(AbstractBackend):
 
         :param tally: The fee incurred by the revokation.
         """
-        transaction_id = affirm("id", transaction_id)
-        tally = affirm("decimal", tally)
+        transaction_id = affirm(vtypes.ID, transaction_id)
+        tally = affirm(decimal.Decimal, tally)
         stati = const.LastschriftTransactionStati
         with Atomizer(rs):
             transaction = unwrap(self.get_lastschrift_transactions(
@@ -527,7 +527,7 @@ class CdEBackend(AbstractBackend):
         long, since the permit is invalidated if it stays unused for
         three years.
         """
-        lastschrift_id = affirm("id", lastschrift_id)
+        lastschrift_id = affirm(vtypes.ID, lastschrift_id)
         with Atomizer(rs):
             lastschrift = unwrap(self.get_lastschrifts(rs, (lastschrift_id,)))
             if not self.lastschrift_may_skip(rs, lastschrift):
@@ -600,7 +600,7 @@ class CdEBackend(AbstractBackend):
     @access("cde")
     def get_period(self, rs: RequestState, period_id: int) -> CdEDBObject:
         """Get data for a semester."""
-        period_id = affirm("id", period_id)
+        period_id = affirm(vtypes.ID, period_id)
         ret = self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS,
                                   period_id)
         if not ret:
@@ -613,7 +613,7 @@ class CdEBackend(AbstractBackend):
     def set_period(self, rs: RequestState,
                    period: CdEDBObject) -> DefaultReturnCode:
         """Set data for the current semester."""
-        period = affirm("period", period)
+        period = affirm(vtypes.Period, period)
         with Atomizer(rs):
             current_id = self.current_period(rs)
             if period['id'] != current_id:
@@ -657,7 +657,7 @@ class CdEBackend(AbstractBackend):
     def finish_semester_bill(self, rs: RequestState,
                              addresscheck: bool = False) -> DefaultReturnCode:
         """Conclude the semester bill step."""
-        addresscheck = affirm("bool", addresscheck)
+        addresscheck = affirm(bool, addresscheck)
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
@@ -747,7 +747,7 @@ class CdEBackend(AbstractBackend):
     @access("cde")
     def get_expuls(self, rs: RequestState, expuls_id: int) -> CdEDBObject:
         """Get data for the an expuls."""
-        expuls_id = affirm("id", expuls_id)
+        expuls_id = affirm(vtypes.ID, expuls_id)
         ret = self.sql_select_one(rs, "cde.expuls_period",
                                   EXPULS_PERIOD_FIELDS, expuls_id)
         if not ret:
@@ -758,7 +758,7 @@ class CdEBackend(AbstractBackend):
     def set_expuls(self, rs: RequestState,
                    expuls: CdEDBObject) -> DefaultReturnCode:
         """Set data for the an expuls."""
-        expuls = affirm("expuls", expuls)
+        expuls = affirm(vtypes.ExPuls, expuls)
         with Atomizer(rs):
             current_id = self.current_expuls(rs)
             if expuls['id'] != current_id:
@@ -794,7 +794,7 @@ class CdEBackend(AbstractBackend):
     def finish_expuls_addresscheck(self, rs: RequestState,
                                    skip: bool = False) -> DefaultReturnCode:
         """Conclude the expuls addresscheck step."""
-        skip = affirm("bool", skip)
+        skip = affirm(bool, skip)
         with Atomizer(rs):
             expuls_id = self.current_expuls(rs)
             expuls = self.get_expuls(rs, expuls_id)
@@ -822,7 +822,7 @@ class CdEBackend(AbstractBackend):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
-        query = affirm("query", query)
+        query = affirm(Query, query)
         if query.scope == "qview_cde_member":
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))

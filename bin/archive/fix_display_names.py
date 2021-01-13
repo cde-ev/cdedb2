@@ -7,16 +7,15 @@ import datetime
 import gettext
 
 import psycopg2
-import psycopg2.extras
 import psycopg2.extensions
-
+import psycopg2.extras
 import pytz
 
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
 from cdedb.database.connection import IrradiatedConnection
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)

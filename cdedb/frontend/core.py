@@ -4,45 +4,46 @@
 
 import collections
 import copy
+import datetime
+import decimal
+import itertools
+import operator
 import pathlib
 import quopri
 import tempfile
-import datetime
-import operator
-import decimal
-import itertools
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast
 
 import magic
+import qrcode
+import qrcode.image.svg
+import vobject
 import werkzeug.exceptions
 from werkzeug import Response
 
-from typing import (
-    Optional, Collection, Set, cast, List, Tuple, Any, Dict,
+import cdedb.database.constants as const
+import cdedb.validationtypes as vtypes
+from cdedb.common import (
+    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
+    REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
+    EntitySorter, PathLike, PrivilegeError, Realm, RequestState, extract_roles,
+    get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise, unwrap,
+    xsorted,
 )
 
-from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
-    check_validation as check, request_extractor, REQUESTfile,
-    request_dict_extractor, querytoparams_filter,
-    csv_output, query_result_to_json, enum_entries_filter, periodic,
-    calculate_db_logparams, calculate_loglinks, make_membership_fee_reference,
-)
-from cdedb.common import (
-    n_, pairwise, extract_roles, unwrap, PrivilegeError,
-    now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
-    REALM_INHERITANCE, EntitySorter, REALM_SPECIFIC_GENESIS_FIELDS,
-    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME, xsorted, RequestState,
-    CdEDBObject, PathLike, Realm, DefaultReturnCode,
-    get_persona_fields_by_realm, ADMIN_KEYS,
-)
 from cdedb.config import SecretsConfig
-from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
+from cdedb.frontend.common import (
+    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
+    calculate_db_logparams, calculate_loglinks, check_validation_typed as check,
+    check_validation_typed_optional as check_optional, date_filter, enum_entries_filter,
+    make_membership_fee_reference, periodic, querytoparams_filter,
+    request_dict_extractor, request_extractor,
+)
+from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
     _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS)
-import cdedb.database.constants as const
-import cdedb.validation as validate
+    _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
+)
 
 # Name of each realm
 USER_REALM_NAMES = {
@@ -66,12 +67,6 @@ class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
     anonymous access and personas. """
     realm = "core"
-
-    def __init__(self, configpath: PathLike = None) -> None:
-        super().__init__(configpath)
-        secrets = SecretsConfig(configpath)
-        self.resolve_api_token_check = (
-            lambda x: x == secrets["RESOLVE_API_TOKEN"])
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -142,10 +137,13 @@ class CoreFrontend(AbstractFrontend):
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
                 sub_request = const.SubscriptionStates.pending
+                mailman = self.get_mailman()
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, mailinglist_id, states=(sub_request,))
+                    held_mails = mailman.get_held_messages(mailinglist)
                     mailinglist['requests'] = len(requests)
+                    mailinglist['held_mails'] = len(held_mails or [])
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
             # visible and open events
@@ -206,9 +204,10 @@ class CoreFrontend(AbstractFrontend):
         info = self.coreproxy.get_meta_info(rs)
         data_params = tuple((key, "str_or_None") for key in info)
         data = request_extractor(rs, data_params)
-        data = check(rs, "meta_info", data, keys=info.keys())
+        data = check(rs, vtypes.MetaInfo, data, keys=info.keys())
         if rs.has_validation_errors():
             return self.meta_info_form(rs)
+        assert data is not None
         code = self.coreproxy.set_meta_info(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "core/meta_info_form")
@@ -349,6 +348,104 @@ class CoreFrontend(AbstractFrontend):
             ",".join(enabled_views & ALL_ADMIN_VIEWS),
             expires=now() + datetime.timedelta(days=10 * 365))
         return response
+
+    @access("member")
+    @REQUESTdata(("confirm_id", "#int"))
+    def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int
+                       ) -> Response:
+        if persona_id != confirm_id or rs.has_validation_errors():
+            return self.index(rs)
+
+        vcard = self._create_vcard(rs, persona_id)
+        return self.send_file(rs, data=vcard, mimetype='text/vcard',
+                              filename='vcard.vcf')
+
+    @access("member")
+    @REQUESTdata(("confirm_id", "#int"))
+    def qr_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
+        if persona_id != confirm_id or rs.has_validation_errors():
+            return self.index(rs)
+
+        vcard = self._create_vcard(rs, persona_id)
+
+        qr = qrcode.QRCode()
+        qr.add_data(vcard)
+        qr.make(fit=True)
+        qr_image = qr.make_image(qrcode.image.svg.SvgPathFillImage)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            temppath = pathlib.Path(tmp_dir, f"vcard-{persona_id}")
+            qr_image.save(str(temppath))
+            with open(temppath) as f:
+                data = f.read()
+
+        return self.send_file(rs, data=data, mimetype="image/svg+xml")
+
+    def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
+        """
+        Generate a vCard string for a user to be delivered to a client.
+
+        The vcard is a vcard3, following https://tools.ietf.org/html/rfc2426
+        Where reasonable, we should consider the new RFC of vcard4, to increase
+        compatibility, see https://tools.ietf.org/html/rfc6350
+
+        :return: The serialized vCard (as in a vcf file)
+        """
+        if 'member' not in rs.user.roles:
+            raise werkzeug.exceptions.Forbidden(n_("Not a member."))
+
+        if not self.coreproxy.verify_persona(rs, persona_id, required_roles=['member']):
+            raise werkzeug.exceptions.Forbidden(n_("Viewed persona is no member."))
+
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+
+        vcard = vobject.vCard()
+
+        # Name
+        vcard.add('N')
+        vcard.n.value = vobject.vcard.Name(
+            family=persona['family_name'] or '',
+            given=persona['given_names'] or '',
+            prefix=persona['title'] or '',
+            suffix=persona['name_supplement'] or '')
+        vcard.add('FN')
+        vcard.fn.value = f"{persona['given_names'] or ''} {persona['family_name'] or ''}"
+        vcard.add('NICKNAME')
+        vcard.nickname.value = persona['display_name'] or ''
+
+        # Address data
+        if persona['address']:
+            vcard.add('adr')
+            # extended should be empty because of compatibility issues, see
+            # https://tools.ietf.org/html/rfc6350#section-6.3.1
+            vcard.adr.value = vobject.vcard.Address(
+                extended='',
+                street=persona['address'] or '',
+                city=persona['location'] or '',
+                code=persona['postal_code'] or '',
+                country=persona['country'] or '')
+
+        # Contact data
+        if persona['username']:
+            # see https://tools.ietf.org/html/rfc2426#section-3.3.2
+            vcard.add('email')
+            vcard.email.value = persona['username']
+        if persona['telephone']:
+            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
+            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'home,voice')],
+                                                persona['telephone']))
+        if persona['mobile']:
+            # see https://tools.ietf.org/html/rfc2426#section-3.3.1
+            vcard.add(vobject.vcard.ContentLine('TEL', [('TYPE', 'cell,voice')],
+                                                persona['mobile']))
+
+        # Birthday
+        if persona['birthday']:
+            vcard.add('bday')
+            # see https://tools.ietf.org/html/rfc2426#section-3.1.5
+            vcard.bday.value = date_filter(persona['birthday'], formatstr="%Y-%m-%d")
+
+        return vcard.serialize()
 
     @access("persona")
     def mydata(self, rs: RequestState) -> Response:
@@ -503,6 +600,9 @@ class CoreFrontend(AbstractFrontend):
             data['notes'] = total['notes']
             data['username'] = total['username']
 
+        # Determinate if vcard should be visible
+        data['show_vcard'] = "cde" in access_levels and "cde" in roles
+
         # Cull unwanted data
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
                  and 'foto' in data):
@@ -632,13 +732,15 @@ class CoreFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        anid, errs = validate.check_cdedbid(phrase, "phrase")
+        anid, errs = validate_check(vtypes.CdedbID, phrase, argname="phrase")
         if not errs:
-            if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
+            assert anid is not None
+            if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
-        anid, errs = validate.check_id(phrase, "phrase")
+        anid, errs = validate_check(vtypes.ID, phrase, argname="phrase")
         if not errs:
-            if self.coreproxy.verify_ids(rs, (anid,), is_archived=None):
+            assert anid is not None
+            if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         search = [("username,family_name,given_names,display_name",
@@ -778,14 +880,19 @@ class CoreFrontend(AbstractFrontend):
 
         # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
-            anid, errs = validate.check_cdedbid(phrase, "phrase")
+            anid: Optional[vtypes.ID]
+            anid, errs = validate_check(
+                vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
+                assert anid is not None
                 tmp = self.coreproxy.get_personas(rs, (anid,))
                 if tmp:
                     data = (unwrap(tmp),)
             else:
-                anid, errs = validate.check_id(phrase, "phrase")
+                anid, errs = validate_check(
+                    vtypes.ID, phrase, argname="phrase")
                 if not errs:
+                    assert anid is not None
                     tmp = self.coreproxy.get_personas(rs, (anid,))
                     if tmp:
                         data = (unwrap(tmp),)
@@ -799,7 +906,7 @@ class CoreFrontend(AbstractFrontend):
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             valid = True
             for t in terms:
-                _, errs = validate.check_non_regex(t, "phrase")
+                _, errs = validate_check(vtypes.NonRegex, t, argname="phrase")
                 if errs:
                     valid = False
             if not valid:
@@ -891,10 +998,11 @@ class CoreFrontend(AbstractFrontend):
         attributes = get_persona_fields_by_realm(rs.user.roles, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
-        data = check(rs, "persona", data, "persona",
+        data = check(rs, vtypes.Persona, data, "persona",
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.change_user_form(rs)
+        assert data is not None
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note,
@@ -921,12 +1029,12 @@ class CoreFrontend(AbstractFrontend):
         """
         spec = copy.deepcopy(QUERY_SPECS['qview_core_user'])
         if query:
-            query = check(rs, "query", query, "query")
+            query = check(rs, vtypes.Query, query, "query")
         elif is_search:
             # mangle the input, so we can prefill the form
             query_input = mangle_query_input(rs, spec)
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, vtypes.QueryInput,
+                query_input, "query", spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -981,8 +1089,8 @@ class CoreFrontend(AbstractFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, vtypes.QueryInput,
+                query_input, "query", spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -1065,10 +1173,10 @@ class CoreFrontend(AbstractFrontend):
         attributes = get_persona_fields_by_realm(roles, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
-        data = check(rs, "persona", data, _ignore_warnings=ignore_warnings)
+        data = check(rs, vtypes.Persona, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
-
+        assert data is not None
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note,
             ignore_warnings=bool(ignore_warnings))
@@ -1395,10 +1503,11 @@ class CoreFrontend(AbstractFrontend):
         data['is_{}_realm'.format(target_realm)] = True
         for realm in implied_realms(target_realm):
             data['is_{}_realm'.format(realm)] = True
-        data = check(rs, "persona", data, transition=True)
+        data = check(rs, vtypes.Persona, data, transition=True)
         if rs.has_validation_errors():
             return self.promote_user_form(  # type: ignore
                 rs, persona_id, internal=True)
+        assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
         if code > 0 and target_realm == "cde":
@@ -1538,8 +1647,7 @@ class CoreFrontend(AbstractFrontend):
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        foto = cast(Optional[bytes],
-                    check(rs, 'profilepic_or_None', foto, "foto"))
+        foto = check_optional(rs, vtypes.ProfilePicture, foto, "foto")
         if not foto and not delete:
             rs.append_validation_error(
                 ("foto", ValueError("Must not be empty.")))
@@ -1599,13 +1707,16 @@ class CoreFrontend(AbstractFrontend):
         new_password, errs = self.coreproxy.check_password_strength(
             rs, new_password, persona_id=rs.user.persona_id,
             argname="new_password")
-        rs.extend_validation_errors(errs)
 
-        if rs.has_validation_errors():
+        if errs:
+            rs.extend_validation_errors(errs)
             if any(name == "new_password"
                    for name, _ in rs.retrieve_validation_errors()):
                 rs.notify("error", n_("Password too weak."))
+            rs.ignore_validation_errors()
             return self.change_password_form(rs)
+        assert new_password is not None
+
         code, message = self.coreproxy.change_password(
             rs, old_password, new_password)
         self.notify_return_code(rs, code, success=n_("Password changed."),
@@ -1707,7 +1818,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", message)
         else:
             self.do_mail(
-                rs, "reset_password",
+                rs, "admin_reset_password",
                 {'To': (email,), 'Subject': "Passwort zurücksetzen"},
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email,
@@ -1758,14 +1869,16 @@ class CoreFrontend(AbstractFrontend):
             return self.change_password_form(rs)
         new_password, errs = self.coreproxy.check_password_strength(
             rs, new_password, email=email, argname="new_password")
-        rs.extend_validation_errors(errs)
 
-        if rs.has_validation_errors():
+        if errs:
+            rs.extend_validation_errors(errs)
             if any(name == "new_password"
                    for name, _ in rs.retrieve_validation_errors()):
                 rs.notify("error", n_("Password too weak."))
             return self.do_password_reset_form(rs, email=email, cookie=cookie,
                                                internal=True)
+        assert new_password is not None
+
         code, message = self.coreproxy.reset_password(rs, email, new_password,
                                                       cookie=cookie)
         self.notify_return_code(rs, code, success=n_("Password reset."),
@@ -1935,8 +2048,8 @@ class CoreFrontend(AbstractFrontend):
         attachment_data = None
         if attachment:
             attachment_filename = attachment.filename
-            attachment_data = cast(
-                Optional[bytes], check(rs, 'pdffile', attachment, 'attachment'))
+            attachment_data = check(
+                rs, vtypes.PDFFile, attachment, 'attachment')
         attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
         if attachment_data:
             myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
@@ -1954,10 +2067,11 @@ class CoreFrontend(AbstractFrontend):
                 rs.append_validation_error(e)
             else:
                 data['attachment'] = attachment_hash
-        data = check(rs, "genesis_case", data, creation=True,
+        data = check(rs, vtypes.GenesisCase, data, creation=True,
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
+        assert data is not None
         if len(data['notes']) > self.conf["MAX_RATIONALE"]:
             rs.append_validation_error(
                 ("notes", ValueError(n_("Rationale too long."))))
@@ -2183,9 +2297,11 @@ class CoreFrontend(AbstractFrontend):
                        ) -> Response:
         """Edit a case to fix potential issues before creation."""
         data['id'] = genesis_case_id
-        data = check(rs, "genesis_case", data, _ignore_warnings=ignore_warnings)
+        data = check(
+            rs, vtypes.GenesisCase, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
+        assert data is not None
         case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):

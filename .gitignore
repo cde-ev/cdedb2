@@ -8,7 +8,10 @@
 *.pyo
 
 # auto-generated test data
-test/ancillary_files/sample_data.sql
+tests/ancillary_files/sample_data.sql
+
+# HTML coverage reports
+htmlcov/
 
 # generated documentation files
 doc/build/**

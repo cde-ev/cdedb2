@@ -3,54 +3,50 @@
 """Services for the cde realm."""
 
 import cgitb
-from collections import OrderedDict, defaultdict
 import copy
 import csv
+import datetime
+import decimal
 import itertools
+import operator
 import pathlib
 import random
 import re
+import shutil
 import string
 import sys
 import tempfile
-import operator
-import datetime
 import time
-import dateutil.easter
-import shutil
-import decimal
+from collections import OrderedDict, defaultdict
+from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 
+import dateutil.easter
 import psycopg2.extensions
 import werkzeug.exceptions
-from werkzeug import Response, FileStorage
-
-from typing import (
-    Tuple, Optional, List, Collection, Set, Dict, Sequence, cast
-)
+from werkzeug import FileStorage, Response  # FIXME
 
 import cdedb.database.constants as const
-import cdedb.validation as validate
-from cdedb.database.connection import Atomizer
+import cdedb.frontend.parse_statement as parse
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
-    int_to_words, deduct_years, determine_age_class, LineResolutions,
-    PERSONA_DEFAULTS, diacritic_patterns, asciificator, EntitySorter,
-    TransactionType, xsorted, get_hash, RequestState, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, Error
+    PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
+    Error, LineResolutions, RequestState, TransactionType, asciificator, deduct_years,
+    determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
+    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
+from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
-    check_validation as check, cdedbid_filter, request_extractor,
-    make_postal_address, make_membership_fee_reference, query_result_to_json,
-    enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
-    calculate_db_logparams, calculate_loglinks, process_dynamic_input,
-    Response, periodic,
+    CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile, Response, Worker,
+    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
+    check_validation_typed as check, check_validation_typed_optional as check_optional,
+    csv_output, enum_entries_filter, make_membership_fee_reference, make_postal_address,
+    money_filter, periodic, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
-    QUERY_SPECS, mangle_query_input, QueryOperators, Query, QueryConstraint
+    QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
-import cdedb.frontend.parse_statement as parse
+from cdedb.validation import validate_check, validate_check_optional
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -171,7 +167,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         return self.render(rs, "consent_decision", {
             'decided_search': data['decided_search'],
-            'verwaltung': self.conf["MANAGEMENT_ADDRESS"] })
+            'verwaltung': self.conf["MANAGEMENT_ADDRESS"]})
 
     @access("member", modi={"POST"})
     @REQUESTdata(("ack", "bool"))
@@ -222,9 +218,9 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
-        query = cast(Query, check(
-            rs, "query_input", mangle_query_input(rs, spec, defaults),
-            "query", spec=spec, allow_empty=not is_search, separator=" "))
+        query = check(rs, vtypes.QueryInput,
+            mangle_query_input(rs, spec, defaults), "query", spec=spec,
+            allow_empty=not is_search, separator=" ")
 
         events = self.pasteventproxy.list_past_events(rs)
         pevent_id = None
@@ -243,32 +239,34 @@ class CdEFrontend(AbstractUserFrontend):
 
         if rs.has_validation_errors():
             self._fix_search_validation_error_references(rs)
-        elif is_search and not query.constraints:
-            rs.notify("error", n_("You have to specify some filters."))
-        elif is_search:
+        else:
+            assert query is not None
+            if is_search and not query.constraints:
+                rs.notify("error", n_("You have to specify some filters."))
+            elif is_search:
 
-            def restrict(constraint: QueryConstraint) -> QueryConstraint:
-                field, operation, value = constraint
-                if field == 'fulltext':
-                    value = [r"\m{}\M".format(val) if len(val) <= 3 else val
-                             for val in value]
-                elif len(str(value)) <= 3:
-                    operation = QueryOperators.equal
-                constraint = (field, operation, value)
-                return constraint
+                def restrict(constraint: QueryConstraint) -> QueryConstraint:
+                    field, operation, value = constraint
+                    if field == 'fulltext':
+                        value = [r"\m{}\M".format(val) if len(val) <= 3 else val
+                                for val in value]
+                    elif len(str(value)) <= 3:
+                        operation = QueryOperators.equal
+                    constraint = (field, operation, value)
+                    return constraint
 
-            query.constraints = [restrict(constrain)
-                                 for constrain in query.constraints]
-            query.scope = "qview_cde_member"
-            query.fields_of_interest.append('personas.id')
-            result = self.cdeproxy.submit_general_query(rs, query)
-            count = len(result)
-            if count == 1:
-                return self.redirect_show_user(rs, result[0]['id'],
-                                               quote_me=True)
-            if count > cutoff:
-                result = result[:cutoff]
-                rs.notify("info", n_("Too many query results."))
+                query.constraints = [restrict(constrain)
+                                    for constrain in query.constraints]
+                query.scope = "qview_cde_member"
+                query.fields_of_interest.append('personas.id')
+                result = self.cdeproxy.submit_general_query(rs, query)
+                count = len(result)
+                if count == 1:
+                    return self.redirect_show_user(rs, result[0]['id'],
+                                                quote_me=True)
+                if count > cutoff:
+                    result = result[:cutoff]
+                    rs.notify("info", n_("Too many query results."))
 
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
@@ -281,25 +279,27 @@ class CdEFrontend(AbstractUserFrontend):
         """Search for past courses."""
         defaults = copy.deepcopy(COURSESEARCH_DEFAULTS)
         spec = copy.deepcopy(QUERY_SPECS['qview_pevent_course'])
-        query = cast(Query, check(
-            rs, "query_input", mangle_query_input(rs, spec, defaults),
-            "query", spec=spec, allow_empty=not is_search, separator=" "))
+        query = check(rs, vtypes.QueryInput,
+            mangle_query_input(rs, spec, defaults), "query", spec=spec,
+            allow_empty=not is_search, separator=" ")
         result: Optional[Sequence[CdEDBObject]] = None
         count = 0
 
         if rs.has_validation_errors():
             self._fix_search_validation_error_references(rs)
-        elif is_search and not query.constraints:
-            rs.notify("error", n_("You have to specify some filters."))
-        elif is_search:
-            query.scope = "qview_pevent_course"
-            query.fields_of_interest.append('courses.id')
-            result = self.pasteventproxy.submit_general_query(rs, query)
-            count = len(result)
-            if count == 1:
-                return self.redirect(rs, "cde/show_past_course", {
-                    'pevent_id': result[0]['courses.pevent_id'],
-                    'pcourse_id': result[0]['courses.id']})
+        else:
+            assert query is not None
+            if is_search and not query.constraints:
+                rs.notify("error", n_("You have to specify some filters."))
+            elif is_search:
+                query.scope = "qview_pevent_course"
+                query.fields_of_interest.append('courses.id')
+                result = self.pasteventproxy.submit_general_query(rs, query)
+                count = len(result)
+                if count == 1:
+                    return self.redirect(rs, "cde/show_past_course", {
+                        'pevent_id': result[0]['courses.pevent_id'],
+                        'pcourse_id': result[0]['courses.id']})
 
         return self.render(rs, "past_course_search", {
             'spec': spec, 'result': result, 'count': count})
@@ -325,8 +325,8 @@ class CdEFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, vtypes.QueryInput, query_input, "query",
+                                      spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
@@ -462,16 +462,12 @@ class CdEFrontend(AbstractUserFrontend):
             'decided_search': False,
             'notes': None})
         merge_dicts(persona, PERSONA_DEFAULTS)
-        persona, problems = validate.check_persona(persona, "persona",
-                                                   creation=True)
-        try:
-            if (persona['birthday'] >
-                    deduct_years(now().date(), 10)):
-                problems.extend([('birthday', ValueError(
-                    n_("Persona is younger than 10 years.")))])
-        except TypeError:
-            # Errors like this are already handled by check_persona
-            pass
+        persona, problems = validate_check(
+            vtypes.Persona, persona, argname="persona", creation=True)
+        if persona and (persona['birthday'] > deduct_years(now().date(), 10)):
+            problems.extend([('birthday', ValueError(
+                n_("Persona is younger than 10 years.")))])
+
         pevent_id, w, p = self.pasteventproxy.find_past_event(
             rs, datum['raw']['event'])
         warnings.extend(w)
@@ -485,12 +481,12 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             warnings.append(("course", ValueError(n_("No course available."))))
         doppelgangers: CdEDBObjectMap = {}
-        if (datum['resolution'] == LineResolutions.create
-                and self.coreproxy.verify_existence(rs, persona['username'])):
-            warnings.append(
-                ("persona",
-                 ValueError(n_("Email address already taken."))))
         if persona:
+            if (datum['resolution'] == LineResolutions.create
+                    and self.coreproxy.verify_existence(rs, persona['username'])):
+                warnings.append(
+                    ("persona",
+                    ValueError(n_("Email address already taken."))))
             temp = copy.deepcopy(persona)
             temp['id'] = 1
             doppelgangers = self.coreproxy.find_doppelgangers(rs, temp)
@@ -511,9 +507,11 @@ class CdEFrontend(AbstractUserFrontend):
                      KeyError(n_("Doppelganger unavailable."))))
             else:
                 dg = doppelgangers[datum['doppelganger_id']]
-                if (dg['username'] != persona['username']
-                        and self.coreproxy.verify_existence(
-                            rs, persona['username'])):
+                if (
+                    persona
+                    and dg['username'] != persona['username']
+                    and self.coreproxy.verify_existence(rs, persona['username'])
+                ):
                     warnings.append(
                         ("doppelganger",
                          ValueError(n_("Email address already taken."))))
@@ -855,7 +853,7 @@ class CdEFrontend(AbstractUserFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
-            [(event['id'] , event['title']) for event in events.values()],
+            [(event['id'], event['title']) for event in events.values()],
             key=lambda e: EntitySorter.event(events[e[0]]), reverse=True)
         params = {
             'params': params or None,
@@ -937,10 +935,11 @@ class CdEFrontend(AbstractUserFrontend):
         filename = pathlib.Path(statement_file.filename).parts[-1]
         start, end, timestamp = parse.dates_from_filename(filename)
         # The statements from BFS are encoded in latin-1
-        statement_file = check(rs, "csvfile", statement_file,
+        statement_file = check(rs, vtypes.CSVFile, statement_file,
                                "statement_file", encoding="latin-1")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
+        assert statement_file is not None
         statementlines = statement_file.splitlines()
 
         event_list = self.eventproxy.list_events(rs)
@@ -1107,19 +1106,19 @@ class CdEFrontend(AbstractUserFrontend):
         :rtype: {str: object}
         :returns: The processed input datum.
         """
-        amount, problems = validate.check_positive_decimal(
-            datum['raw']['amount'], "amount")
-        persona_id, p = validate.check_cdedbid(
-            datum['raw']['persona_id'].strip(), "persona_id")
+        amount, problems = validate_check(
+            vtypes.PositiveDecimal, datum['raw']['amount'], argname="amount")
+        persona_id, p = validate_check(
+            vtypes.CdedbID, datum['raw']['persona_id'].strip(),
+            argname="persona_id")
         problems.extend(p)
-        family_name, p = validate.check_str(
-            datum['raw']['family_name'], "family_name")
+        family_name, p = validate_check(
+            str, datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = validate.check_str(
-            datum['raw']['given_names'], "given_names")
+        given_names, p = validate_check(
+            str, datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        note, p = validate.check_str_or_None(
-            datum['raw']['note'], "note")
+        note, p = validate_check_optional(str, datum['raw']['note'], argname="note")
         problems.extend(p)
 
         if persona_id:
@@ -1138,16 +1137,22 @@ class CdEFrontend(AbstractUserFrontend):
                     problems.append((
                         'persona_id',
                         ValueError(n_("Persona is not in CdE realm."))))
-                if not re.search(diacritic_patterns(re.escape(family_name)),
-                                 persona['family_name'], flags=re.IGNORECASE):
-                    problems.append(('family_name',
-                                     ValueError(
-                                         n_("Family name doesn’t match."))))
-                if not re.search(diacritic_patterns(re.escape(given_names)),
-                                 persona['given_names'], flags=re.IGNORECASE):
-                    problems.append(('given_names',
-                                     ValueError(
-                                         n_("Given names don’t match."))))
+
+                if family_name is not None and not re.search(
+                    diacritic_patterns(re.escape(family_name)),
+                    persona['family_name'],
+                    flags=re.IGNORECASE
+                ):
+                    problems.append(('family_name', ValueError(
+                        n_("Family name doesn’t match."))))
+
+                if given_names is not None and not re.search(
+                    diacritic_patterns(re.escape(given_names)),
+                    persona['given_names'],
+                    flags=re.IGNORECASE
+                ):
+                    problems.append(('given_names', ValueError(
+                        n_("Given names don’t match."))))
         datum.update({
             'persona_id': persona_id,
             'amount': amount,
@@ -1205,6 +1210,8 @@ class CdEFrontend(AbstractUserFrontend):
                     if new_balance >= self.conf["MEMBERSHIP_FEE"]:
                         memberships_gained += self.coreproxy.change_membership(
                             rs, datum['persona_id'], is_member=True)
+                    # Remember the changed balance in case of multiple transfers.
+                    personas[datum['persona_id']]['balance'] = new_balance
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
@@ -1225,15 +1232,13 @@ class CdEFrontend(AbstractUserFrontend):
         if sendmail:
             for datum in data:
                 persona = personas[datum['persona_id']]
-                address = make_postal_address(persona)
-                new_balance = (personas[datum['persona_id']]['balance']
-                               + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
                               'Subject': "Überweisung eingegangen",
                               },
-                             {'persona': persona, 'address': address,
-                              'new_balance': new_balance})
+                             {'persona': persona,
+                              'address': make_postal_address(persona),
+                              'new_balance': persona['balance']})
         return True, count, memberships_gained
 
     @access("finance_admin", modi={"POST"})
@@ -1253,8 +1258,8 @@ class CdEFrontend(AbstractUserFrontend):
         corruption and to explicitly signal at what point the data will
         be committed (for the second purpose it works like a boolean).
         """
-        transfers_file = cast(str, check(rs, "csvfile_or_None", transfers_file,
-                                         "transfers_file"))
+        transfers_file = check_optional(
+            rs, vtypes.CSVFile, transfers_file, "transfers_file")
         if rs.has_validation_errors():
             return self.money_transfers_form(rs)
         if transfers_file and transfers:
@@ -1424,9 +1429,10 @@ class CdEFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Modify one permit."""
         data['id'] = lastschrift_id
-        data = check(rs, "lastschrift", data)
+        data = check(rs, vtypes.Lastschrift, data)
         if rs.has_validation_errors():
             return self.lastschrift_change_form(rs, lastschrift_id)
+        assert data is not None
         code = self.cdeproxy.set_lastschrift(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/lastschrift_show", {
@@ -1446,9 +1452,10 @@ class CdEFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Create a new permit."""
         data['persona_id'] = persona_id
-        data = check(rs, "lastschrift", data, creation=True)
+        data = check(rs, vtypes.Lastschrift, data, creation=True)
         if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
+        assert data is not None
         if self.cdeproxy.list_lastschrift(
                 rs, persona_ids=(persona_id,), active=True):
             rs.notify("error", n_("Multiple active permits are disallowed."))
@@ -1540,9 +1547,11 @@ class CdEFrontend(AbstractUserFrontend):
           some additional attributes which are necessary.
         :rtype: str
         """
-        sanitized_transactions = check(rs, "sepa_transactions", transactions)
+        sanitized_transactions = check(
+            rs, vtypes.SepaTransactions, transactions)
         if rs.has_validation_errors():
             return None
+        assert sanitized_transactions is not None
         sorted_transactions: Dict[str, List[CdEDBObject]] = {}
         for transaction in sanitized_transactions:
             sorted_transactions.setdefault(transaction['type'], []).append(
@@ -1566,7 +1575,7 @@ class CdEFrontend(AbstractUserFrontend):
             },
             'payment_date': self._calculate_payment_date(),
         }
-        meta = check(rs, "sepa_meta", meta)
+        meta = check(rs, vtypes.SepaMeta, meta)
         if rs.has_validation_errors():
             return None
         sepapain_file = self.fill_template(rs, "other", "pain.008.003.02", {
@@ -2510,9 +2519,10 @@ class CdEFrontend(AbstractUserFrontend):
                           data: CdEDBObject) -> Response:
         """Modify a concluded event."""
         data['id'] = pevent_id
-        data = check(rs, "past_event", data)
+        data = check(rs, vtypes.PastEvent, data)
         if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
+        assert data is not None
         code = self.pasteventproxy.set_past_event(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/show_past_event")
@@ -2532,7 +2542,7 @@ class CdEFrontend(AbstractUserFrontend):
     def create_past_event(self, rs: RequestState, courses: Optional[str],
                           data: CdEDBObject) -> Response:
         """Add new concluded event."""
-        data = check(rs, "past_event", data, creation=True)
+        data = check(rs, vtypes.PastEvent, data, creation=True)
         thecourses: List[CdEDBObject] = []
         if courses:
             courselines = courses.split('\n')
@@ -2540,12 +2550,14 @@ class CdEFrontend(AbstractUserFrontend):
                 courselines, fieldnames=("nr", "title", "description"),
                 dialect=CustomCSVDialect())
             lineno = 0
+            pcourse: Optional[CdEDBObject]
             for pcourse in reader:
                 lineno += 1
                 # This is a placeholder for validation and will be substituted
                 # later. The typechecker expects a str here.
+                assert pcourse is not None
                 pcourse['pevent_id'] = "1"
-                pcourse = check(rs, "past_course", pcourse, creation=True)
+                pcourse = check(rs, vtypes.PastCourse, pcourse, creation=True)
                 if pcourse:
                     thecourses.append(pcourse)
                 else:
@@ -2553,6 +2565,7 @@ class CdEFrontend(AbstractUserFrontend):
                               {'lineno': lineno})
         if rs.has_validation_errors():
             return self.create_past_event_form(rs)
+        assert data is not None
         with Atomizer(rs):
             new_id = self.pasteventproxy.create_past_event(rs, data)
             for course in thecourses:
@@ -2590,9 +2603,10 @@ class CdEFrontend(AbstractUserFrontend):
                            pcourse_id: int, data: CdEDBObject) -> Response:
         """Modify a concluded course."""
         data['id'] = pcourse_id
-        data = check(rs, "past_course", data)
+        data = check(rs, vtypes.PastCourse, data)
         if rs.has_validation_errors():
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
+        assert data is not None
         code = self.pasteventproxy.set_past_course(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/show_past_course")
@@ -2609,9 +2623,10 @@ class CdEFrontend(AbstractUserFrontend):
                            data: CdEDBObject) -> Response:
         """Add new concluded course."""
         data['pevent_id'] = pevent_id
-        data = check(rs, "past_course", data, creation=True)
+        data = check(rs, vtypes.PastCourse, data, creation=True)
         if rs.has_validation_errors():
             return self.create_past_course_form(rs, pevent_id)
+        assert data is not None
         new_id = self.pasteventproxy.create_past_course(rs, data)
         self.notify_return_code(rs, new_id, success=n_("Course created."))
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': new_id})
@@ -2652,11 +2667,13 @@ class CdEFrontend(AbstractUserFrontend):
 
         # Check presence of valid event users for the given ids
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
-            rs.append_validation_error(("persona_ids",
-                ValueError(n_("Some of these users do not exist."))))
+            rs.append_validation_error(
+                ("persona_ids",
+                 ValueError(n_("Some of these users do not exist."))))
         if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
-            rs.append_validation_error(("persona_ids",
-                ValueError(n_("Some of these users are not event users."))))
+            rs.append_validation_error(
+                ("persona_ids",
+                 ValueError(n_("Some of these users are not event users."))))
         if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
@@ -2666,8 +2683,8 @@ class CdEFrontend(AbstractUserFrontend):
         code = 1
         # TODO: Check if participants are already present.
         for persona_id in persona_ids:
-            code *= self.pasteventproxy.add_participant(rs, pevent_id,
-                pcourse_id, persona_id, is_instructor, is_orga)
+            code *= self.pasteventproxy.add_participant(
+                rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
         self.notify_return_code(rs, code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course",

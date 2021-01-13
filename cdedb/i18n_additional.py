@@ -39,12 +39,6 @@ I18N_STRINGS = (
     n_("AttachmentPolicy.pdf_only"),
     n_("AttachmentPolicy.forbid"),
 
-    n_("AudiencePolicy.everybody"),
-    n_("AudiencePolicy.require_assembly"),
-    n_("AudiencePolicy.require_cde"),
-    n_("AudiencePolicy.require_event"),
-    n_("AudiencePolicy.require_member"),
-
     n_("CdeLogCodes.semester_bill"),
     n_("CdeLogCodes.semester_bill_with_addresscheck"),
     n_("CdeLogCodes.semester_ejection"),
@@ -182,6 +176,9 @@ I18N_STRINGS = (
     n_("MlLogCodes.request_cancelled"),
     n_("MlLogCodes.request_blocked"),
     n_("MlLogCodes.cron_removed"),
+    n_("MlLogCodes.moderate_accept"),
+    n_("MlLogCodes.moderate_reject"),
+    n_("MlLogCodes.moderate_discard"),
 
     n_("ModerationPolicy.unmoderated"),
     n_("ModerationPolicy.non_subscribers"),
@@ -347,4 +344,11 @@ I18N_STRINGS = (
     n_("banner_after_login"),
     n_("banner_genesis"),
     n_("cde_misc"),
+
+    #
+    # hidden strings, see ml/message_moderation.tmpl
+    #
+    n_("Accept"),
+    n_("Reject"),
+    n_("Discard"),
 )

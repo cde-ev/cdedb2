@@ -48,7 +48,7 @@
         {{ util.anti_csrf_token(action_target) }}
 
         {# Data field definitions. #}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=util.markdownhint) }}

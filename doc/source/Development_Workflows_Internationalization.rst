@@ -28,7 +28,7 @@ internationalization.
 * Ultimately pybabel needs to be compiled(``make i18n-compile``) and the apache
   restarted (for the changes to take effect in the browser).
   This can both be done via one command: ``make reload``.
-* The ``make i18n-check`` command performs some basic checks on the po-files.
+* The ``make i18n-compile`` command also performs some basic checks on the po-files.
   For example it will tell you if a format specifier is missing in a translation.
   It will also tell you how many untranslated strings there are.
   For the german translation file, there should not be any untranslated strings
@@ -40,3 +40,7 @@ Be aware that messages that need to be translated, but do not appear explicitly
 in the code, need to be added manually to the ``i18n_additional.py`` file, so that
 they are then extracted. This applies especially to human-readable descriptions of
 enum members.
+
+Some english words have multiple (semantically different) meanings, which may
+correspond to different words in other languages. Our approach to handle such
+homonyms is described in the Design section :doc:`Design_Internationalisation`.

@@ -2,32 +2,31 @@
 
 """Base class providing fundamental ml services."""
 
+import collections
 import copy
 from datetime import datetime
-import collections
-from typing import Dict, Any, Optional, Collection, cast
+from typing import Any, Collection, Dict, Optional, cast
 
-import mailmanclient
 import werkzeug
 from werkzeug import Response
 
-from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
-    check_validation as check, mailinglist_guard,
-    cdedbid_filter as cdedbid, keydictsort_filter,
-    calculate_db_logparams, calculate_loglinks)
-from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, mangle_query_input, Query
-from cdedb.common import (
-    n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter,
-    RequestState, CdEDBObject, PathLike, CdEDBObjectMap, unwrap,
-    MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS,
-    PrivilegeError)
 import cdedb.database.constants as const
-from cdedb.config import SecretsConfig
-
+import cdedb.validationtypes as vtypes
+from cdedb.common import (
+    MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS,
+    CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike, PrivilegeError, RequestState,
+    SubscriptionActions, SubscriptionError, merge_dicts, n_, now, unwrap,
+)
+from cdedb.frontend.common import (
+    REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
+    cdedbid_filter as cdedbid, check_validation_typed as check, csv_output,
+    keydictsort_filter, mailinglist_guard, periodic,
+)
+from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.ml_type_aux import (
-    MailinglistGroup, TYPE_MAP, ADDITIONAL_TYPE_FIELDS, get_type)
+    ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
+)
+from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -35,11 +34,6 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
-        secrets = SecretsConfig(configpath)
-        self.mailman_create_client = lambda url, user: mailmanclient.Client(
-            url, user, secrets["MAILMAN_PASSWORD"])
-        self.mailman_template_password = (
-            lambda: secrets["MAILMAN_BASIC_AUTH_PASSWORD"])
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -101,8 +95,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = cast(Query, check(rs, "query_input", query_input, "query",
-                                      spec=spec, allow_empty=False))
+            query = check(rs, vtypes.QueryInput,
+                query_input, "query", spec=spec, allow_empty=False)
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_ml_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
@@ -168,8 +162,15 @@ class MlBaseFrontend(AbstractUserFrontend):
                 self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id)
         subs = self.mlproxy.get_many_subscription_states(
             rs, mailinglist_ids=mailinglists, states=sub_states)
-        for ml_id in subs:
+        mailman = self.get_mailman()
+        for ml_id in mailinglists:
             mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
+            held_mails = mailman.get_held_messages(mailinglist_infos[ml_id])
+            if held_mails is None:
+                mailinglist_infos[ml_id]['held_mails'] = None
+            else:
+                mailinglist_infos[ml_id]['held_mails'] = len(held_mails)
+
         return self.render(rs, endpoint, {
             'groups': MailinglistGroup,
             'mailinglists': grouped,
@@ -228,7 +229,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Make a new list."""
         data["moderators"] = moderators
         data['ml_type'] = ml_type
-        data = check(rs, "mailinglist", data, creation=True)
+        data = check(rs, vtypes.Mailinglist, data, creation=True)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
@@ -239,6 +240,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     "Some of these users are not ml users."))))
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
+        assert data is not None
         # Check if mailinglist address is unique
         try:
             self.mlproxy.validate_address(rs, data)
@@ -247,6 +249,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
+        assert data is not None
 
         new_id = self.mlproxy.create_mailinglist(rs, data)
         self.notify_return_code(rs, new_id)
@@ -381,12 +384,15 @@ class MlBaseFrontend(AbstractUserFrontend):
         # requiring privileged access
         privileged = (self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
                       or not (additional_fields & PRIVILEGE_MOD_REQUIRING_FIELDS))
+        is_mailman = (const.MailinglistDomain(int(rs.values['domain']))
+            in const.MailinglistDomain.mailman_domains())
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
             'available_domains': available_domains,
             'additional_fields': additional_fields,
             'privileged': privileged,
+            'is_mailman': is_mailman,
         })
 
     @access("ml", modi={"POST"})
@@ -412,9 +418,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         for key in set(data) - allowed:
             data[key] = rs.ambience['mailinglist'][key]
 
-        data = check(rs, "mailinglist", data)
+        data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
+        assert data is not None
 
         # Check if mailinglist address is unique
         try:
@@ -454,9 +461,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         new_type = get_type(data['ml_type'])
         if ml['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
-        data = check(rs, 'mailinglist', data)
+        data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
+        assert data is not None
 
         code = self.mlproxy.set_mailinglist(rs, data)
         self.notify_return_code(rs, code)

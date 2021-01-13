@@ -16,11 +16,12 @@
 #  *.po merge=pomerge
 #  *.pot merge=pomerge
 #
-# Attention: The merge failes, if duplicate message ids are present in one of the po files to be merged. Even if these
+# Attention: This driver may silently drop duplicate messages in one of the po files to be merged. Even if these
 # duplicate definitions are in the block of commented, old message definitions at the end of the file. So, make sure to
 # delete all duplicte message defintions before trying to merge branches.
 #
 # Taken from https://github.com/mezis/git-whistles/blob/master/libexec/git-merge-po.sh
+# and adapted to remove obsolete strings.
 #
 set -e
 IFS=
@@ -121,8 +122,11 @@ m_msgcat -o - ${TEMP}.local ${TEMP}.remote \
 # final merge, adds saved header
 m_msgcat -o ${TEMP}.merge3 --use-first ${TEMP}.header ${TEMP}.merge2
 
+# remove obsolete strings
+msgattrib --no-obsolete -o ${TEMP}.merge4 ${TEMP}.merge3
+
 # produce output file (overwrites input LOCAL file)
-cat ${TEMP}.merge3 > $OUTPUT
+cat ${TEMP}.merge4 > $OUTPUT
 
 # check for conflicts
 if grep -q '#-#-#-#-#' $OUTPUT ; then

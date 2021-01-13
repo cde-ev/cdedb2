@@ -95,7 +95,7 @@ Folgende HTML-Tags sind erlaubt: ``a``, ``abbr``, ``acronym``, ``b``, ``blockquo
 
 Folgende Attribute dürfen verwendet werden::
 
-    '*': ['class'],
+    '*': ['class', 'id'],
     'a': ['href', 'title'],
     'abbr': ['title'],
     'acronym': ['title'],

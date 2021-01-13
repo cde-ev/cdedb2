@@ -24,8 +24,23 @@ from mailman.interfaces.mime import FilterAction
 
 def default_settings(mlist):
     """Provide sane default settings not accessible via REST-API."""
-    mlist.send_goodbye_message = False
-    mlist.unsubscription_policy = SubscriptionPolicy.moderate
-    mlist.filter_action = FilterAction.forward
-    mlist.pass_types = ['multipart', 'text/plain', 'application/pdf']
-    mlist.pass_extensions = ['pdf']
+    if mlist.send_goodbye_message != False:
+        mlist.send_goodbye_message = False
+    if mlist.unsubscription_policy != SubscriptionPolicy.moderate:
+        mlist.unsubscription_policy = SubscriptionPolicy.moderate
+    if mlist.filter_content != True:
+        mlist.filter_content = True
+    if mlist.filter_action != FilterAction.forward:
+        mlist.filter_action = FilterAction.forward
+    if mlist.pass_types != ['multipart', 'text/plain', 'application/pdf']:
+        mlist.pass_types = ['multipart', 'text/plain', 'application/pdf']
+    if mlist.pass_extensions != ['pdf']:
+        mlist.pass_extensions = ['pdf']
+
+
+def lax_settings(mlist):
+    """Provide lax settings not accessible via REST-API."""
+    if mlist.pass_types != []:
+        mlist.pass_types = []
+    if mlist.pass_extensions != []:
+        mlist.pass_extensions = []

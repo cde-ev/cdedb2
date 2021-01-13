@@ -9,6 +9,7 @@ import collections
 import copy
 import csv
 import datetime
+import decimal
 import email
 import email.charset
 import email.encoders
@@ -18,9 +19,9 @@ import email.mime.application
 import email.mime.audio
 import email.mime.image
 import email.mime.multipart
-from email.mime.nonmultipart import MIMENonMultipart
 import email.mime.text
 import email.utils
+import enum
 import functools
 import io
 import json
@@ -33,39 +34,32 @@ import subprocess
 import tempfile
 import threading
 import urllib.parse
-import decimal
-import enum
+import urllib.error
+from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
+from typing import (
+    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Container, Dict,
+    Generator, ItemsView, Iterable, List, Mapping, MutableMapping, Optional, Sequence,
+    Set, Tuple, Type, TypeVar, Union, cast, overload,
+)
 
-import markdown
-import markdown.extensions.toc
 import babel.dates
 import babel.numbers
 import bleach
 import jinja2
+import mailmanclient
+import markdown
+import markdown.extensions.toc
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
+from typing_extensions import Literal, Protocol
 
-from typing import (
-    Callable, Any, Tuple, Optional, Union, TypeVar, overload, Generator,
-    Container, Collection, Iterable, List, Mapping, Set, AnyStr, Dict,
-    ClassVar, MutableMapping, Sequence, cast, AbstractSet, IO, ItemsView,
-    Type
-)
-from typing_extensions import Protocol, Literal
-
-from cdedb.common import (
-    n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
-    roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
-    encode_parameter, decode_parameter, make_proxy, EntitySorter,
-    REALM_SPECIFIC_GENESIS_FIELDS, ValidationWarning, xsorted, unwrap, CdEDBMultiDict,
-    CdEDBObject, Role, Error, PathLike, NotificationType, Notification, User,
-    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, _tdelta
-)
+import cdedb.database.constants as const
+import cdedb.query as query_mod
+import cdedb.validation as validate
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -73,13 +67,20 @@ from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
+from cdedb.common import (
+    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject,
+    CustomJSONEncoder, EntitySorter, Error, Notification, NotificationType, PathLike,
+    RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
+    compute_checkdigit, decode_parameter, encode_parameter, glue, json_serialize,
+    make_proxy, make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
+    xsorted,
+)
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
-import cdedb.query as query_mod
-import cdedb.database.constants as const
-import cdedb.validation as validate
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -125,16 +126,18 @@ class BaseApp(metaclass=abc.ABCMeta):
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
         self.logger.debug("Instantiated {} with configpath {}.".format(
             self, configpath))
+        # local variable to prevent closure over secrets
+        url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = (
             lambda target, name, param, persona_id: decode_parameter(
-                secrets["URL_PARAMETER_SALT"], target, name, param,
+                url_parameter_salt, target, name, param,
                 persona_id))
 
         def local_encode(
                 target: str, name: str, param: str, persona_id: Optional[int],
                 timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"]
         ) -> str:
-            return encode_parameter(secrets["URL_PARAMETER_SALT"], target, name,
+            return encode_parameter(url_parameter_salt, target, name,
                                     param, persona_id, timeout)
 
         self.encode_parameter = local_encode
@@ -591,17 +594,13 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         'abbr': ['title'],
         'acronym': ['title'],
         # customizations
-        '*': ['class'],
+        '*': ['class', 'id'],
         'col': ['width'],
         'thead': ['valign'],
         'tbody': ['valign'],
         'table': ['border'],
         'th': ['colspan', 'rowspan'],
         'td': ['colspan', 'rowspan'],
-        'div': ['id'],
-        'h4': ['id'],
-        'h5': ['id'],
-        'h6': ['id'],
         'details': ['open'],
     }
     cleaner = bleach.sanitizer.Cleaner(tags=tags, attributes=attributes)
@@ -933,6 +932,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = make_proxy(EventBackend(configpath))
         self.mlproxy = make_proxy(MlBackend(configpath))
         self.pasteventproxy = make_proxy(PastEventBackend(configpath))
+        # Provide mailman access
+        secrets = SecretsConfig(configpath)
+        # local variables to prevent closure over secrets
+        mailman_password = secrets["MAILMAN_PASSWORD"]
+        mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
+        self.get_mailman = lambda: CdEMailmanClient(self.conf, mailman_password,
+                                                    mailman_basic_auth_password)
 
     @classmethod
     @abc.abstractmethod
@@ -1575,18 +1581,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             Defaults to error message for event downloads.
         """
         if not runs:
-            target = pathlib.Path(
-                tmp_dir, "{}.tar.gz".format(work_dir_name))
-            args = ("tar", "-vczf", str(target), work_dir_name)
-            self.logger.info("Invoking {}".format(args))
-            subprocess.check_call(args, stdout=subprocess.DEVNULL,
-                                  cwd=str(tmp_dir))
+            target = pathlib.Path(tmp_dir, work_dir_name)
+            archive = shutil.make_archive(
+                str(target), "gztar", base_dir=work_dir_name, root_dir=tmp_dir,
+                logger=self.logger)
             if tex_file_name.endswith('.tex'):
                 tex_file = "{}.tar.gz".format(tex_file_name[:-4])
             else:
                 tex_file = "{}.tar.gz".format(tex_file_name)
             return self.send_file(
-                rs, path=target, inline=False,
+                rs, path=archive, inline=False,
                 filename=tex_file)
         else:
             work_dir = pathlib.Path(tmp_dir, work_dir_name)
@@ -1604,6 +1608,67 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     filename=pdf_file)
             else:
                 return None
+
+
+class CdEMailmanClient(mailmanclient.Client):
+    """Custom wrapper around mailmanclient.Client.
+
+    This custom wrapper provides additional functionality needed in multiple frontends.
+    Whenever access to the mailman server is needed, this class should be used.
+    """
+    def __init__(self, conf: Config, mailman_password: str,
+                 mailman_basic_auth_password: str):
+        """Automatically initializes a client with our custom parameters.
+
+        :param conf: Usually, he config used where this class is instantiated.
+        """
+        self.conf = conf
+
+        # Initialize base class
+        url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
+        super().__init__(url, self.conf["MAILMAN_USER"], mailman_password)
+        self.template_password = mailman_basic_auth_password
+
+        # Initialize logger. This needs the base class initialization to be done.
+        logger_name = "cdedb.frontend.mailmanclient"
+        make_root_logger(
+            logger_name, self.conf["MAILMAN_LOG"], self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
+        self.logger = logging.getLogger(logger_name)
+        self.logger.debug("Instantiated {} with configpath {}.".format(
+            self, conf._configpath))
+
+    def get_list_safe(self, address: str) -> Optional[
+            mailmanclient.restobjects.mailinglist.MailingList]:
+        """Return list with standard error handling.
+
+        In contrast to the original function, this does not raise if no list has been
+        found, but returns None instead. This is particularly important since list
+        creation and deletion are not synced immediately."""
+        try:
+            return self.get_list(address)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            else:
+                raise
+
+    def get_held_messages(self, dblist: CdEDBObject) -> Optional[
+            List[mailmanclient.restobjects.held_message.HeldMessage]]:
+        """Returns all held messages for mailman lists.
+
+        If the list is not managed by mailman, this function returns None instead.
+        """
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
+            self.logger.info("Skipping mailman query in dev/offline mode.")
+            if self.conf["CDEDB_DEV"]:
+                if dblist['domain'] in const.MailinglistDomain.mailman_domains():
+                    return HELD_MESSAGE_SAMPLE
+        elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
+            mmlist = self.get_list_safe(dblist['address'])
+            return mmlist.held if mmlist else None
+        return None
 
 
 class Worker(threading.Thread):
@@ -2011,7 +2076,7 @@ def REQUESTdata(*spec: Tuple[str, str]) -> Callable[[F], F]:
                             # problematic for the werkzeug MultiDict
                             rs.values[name] = None
                         kwargs[name] = tuple(
-                            check_validation(rs, argtype[1:-1], val, name)
+                            _check_validation(rs, argtype[1:-1], val, name)
                             for val in vals)
                     else:
                         val = rs.request.values.get(name, "")
@@ -2031,7 +2096,7 @@ def REQUESTdata(*spec: Tuple[str, str]) -> Callable[[F], F]:
                                 if val is None:
                                     # Clean out the invalid value
                                     rs.values[name] = None
-                        kwargs[name] = check_validation(rs, argtype, val, name)
+                        kwargs[name] = _check_validation(rs, argtype, val, name)
             return fun(obj, rs, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -2261,8 +2326,8 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
-def check_validation(rs: RequestState, assertion: str, value: T,
-                     name: str = None, **kwargs: Any) -> T:
+def _check_validation(rs: RequestState, assertion: str, value: T,
+                     name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
     :param assertion: name of validation routine to call
@@ -2270,12 +2335,53 @@ def check_validation(rs: RequestState, assertion: str, value: T,
       out how to nicely get rid of this -- python has huge introspection
       capabilities, but I didn't see how this should be done).
     """
-    checker: Callable[..., Tuple[T, List[Error]]] = getattr(
+    checker: Callable[..., Tuple[Optional[T], List[Error]]] = getattr(
         validate, "check_{}".format(assertion))
     if name is not None:
         ret, errs = checker(value, name, **kwargs)
     else:
         ret, errs = checker(value, **kwargs)
+    rs.extend_validation_errors(errs)
+    return ret
+
+
+def check_validation_typed(rs: RequestState, type_: Type[T], value: Any,
+                     name: str = None, **kwargs: Any) -> Optional[T]:
+    """Helper to perform parameter sanitization.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation`
+    but accepts a type object instead of a string.
+
+    :param type_: type to check for
+    :param name: name of the parameter to check (bonus points if you find
+      out how to nicely get rid of this -- python has huge introspection
+      capabilities, but I didn't see how this should be done).
+    """
+    if name is not None:
+        ret, errs = validate.validate_check(type_, value, argname=name, **kwargs)
+    else:
+        ret, errs = validate.validate_check(type_, value, **kwargs)
+    rs.extend_validation_errors(errs)
+    return ret
+
+
+def check_validation_typed_optional(rs: RequestState, type_: Type[T], value: Any,
+                     name: str = None, **kwargs: Any) -> Optional[T]:
+    """Helper to perform parameter sanitization.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation`
+    but accepts a type object instead of a string.
+
+    :param type_: type to check for
+    :param name: name of the parameter to check (bonus points if you find
+      out how to nicely get rid of this -- python has huge introspection
+      capabilities, but I didn't see how this should be done).
+    """
+    if name is not None:
+        ret, errs = validate.validate_check_optional(
+            type_, value, argname=name, **kwargs)
+    else:
+        ret, errs = validate.validate_check_optional(type_, value, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
 

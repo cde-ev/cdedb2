@@ -4,24 +4,26 @@
 event and assembly realm in the form of specific mailing lists.
 """
 from datetime import datetime
-from typing import (Collection, Dict, List, Optional, Set, Tuple, overload, Any, cast)
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast, overload
+
 from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set, affirm_validation as affirm,
-    internal, singularize,
+    affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
+    affirm_validation_typed_optional as affirm_optional, internal, singularize,
 )
 from cdedb.backend.event import EventBackend
-from cdedb.common import (MAILINGLIST_FIELDS, CdEDBObject, CdEDBObjectMap,
-                          DefaultReturnCode, DeletionBlockers, PrivilegeError,
-                          make_proxy, RequestState, SubscriptionActions,
-                          SubscriptionError, glue, implying_realms, n_, now,
-                          unwrap, PathLike, CdEDBLog, MOD_ALLOWED_FIELDS,
-                          PRIVILEGED_MOD_ALLOWED_FIELDS, mixed_existence_sorter)
+from cdedb.common import (
+    MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBLog,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
+    PrivilegeError, RequestState, SubscriptionActions, SubscriptionError, glue,
+    implying_realms, make_proxy, mixed_existence_sorter, n_, now, unwrap,
+)
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
@@ -47,7 +49,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_ml_type(self, rs: RequestState, mailinglist_id: int) -> MLType:
-        mailinglist_id = affirm("id", mailinglist_id)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         data = self.sql_select_one(
             rs, "ml.mailinglists", ("ml_type",), mailinglist_id)
         if not data:
@@ -97,7 +99,7 @@ class MlBackend(AbstractBackend):
             pool of privileged moderators. Delegated to
             `MailinglistType.is_privileged_moderator`.
         """
-        ml_id = affirm("id", ml_id)
+        ml_id = affirm(vtypes.ID, ml_id)
 
         is_moderator = ml_id in rs.user.moderator
         if privileged:
@@ -115,7 +117,7 @@ class MlBackend(AbstractBackend):
 
         :param privileged: See `MlBackend.is_moderator`.
         """
-        mailinglist_id = affirm("id_or_None", mailinglist_id)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
         return (self.is_moderator(rs, mailinglist_id, privileged=privileged)
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
@@ -164,12 +166,12 @@ class MlBackend(AbstractBackend):
         elif mailinglist is not None and mailinglist_id is not None:
             raise ValueError("Too many inputs specified")
         elif mailinglist_id:
-            mailinglist_id = affirm("id", mailinglist_id)
+            mailinglist_id = affirm(vtypes.ID, mailinglist_id)
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
-        persona_id = affirm("id", persona_id)
+        persona_id = affirm(vtypes.ID, persona_id)
         ml = cast(CdEDBObject,
-                  affirm("mailinglist", mailinglist, _allow_readonly=True))
+                  affirm(vtypes.Mailinglist, mailinglist, _allow_readonly=True))
 
         if not (rs.user.persona_id == persona_id
                 or self.may_manage(rs, ml['id'], privileged=True)):
@@ -199,8 +201,8 @@ class MlBackend(AbstractBackend):
         :return: Tuple of personas whose interaction policies are in
             allowed_pols
         """
-        affirm("mailinglist", ml, _allow_readonly=True)
-        affirm_set("enum_mailinglistinteractionpolicy", allowed_pols)
+        affirm(vtypes.Mailinglist, ml, _allow_readonly=True)
+        affirm_set(const.MailinglistInteractionPolicy, allowed_pols)
 
         # persona_ids are validated inside get_personas
         persona_ids = tuple(e['id'] for e in data)
@@ -228,7 +230,7 @@ class MlBackend(AbstractBackend):
     def moderator_infos(self, rs: RequestState, persona_ids: Collection[int]
                         ) -> Dict[int, Set[int]]:
         """List mailing lists moderated by specific personas."""
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         data = self.sql_select(
             rs, "ml.moderators", ("persona_id", "mailinglist_id"), persona_ids,
             entity_key="persona_id")
@@ -303,13 +305,13 @@ class MlBackend(AbstractBackend):
         :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
-        mailinglist_ids = affirm_set("id", mailinglist_ids, allow_None=True)
+        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
         if not (self.is_admin(rs) or (mailinglist_ids
                 and all(self.may_manage(rs, ml_id)
                         for ml_id in mailinglist_ids))):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
-            rs, "enum_mllogcodes", "mailinglist", "ml.log", codes=codes,
+            rs, const.MlLogCodes, "mailinglist", "ml.log", codes=codes,
             entity_ids=mailinglist_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             change_note=change_note, time_start=time_start,
@@ -325,7 +327,7 @@ class MlBackend(AbstractBackend):
         :type query: :py:class:`cdedb.query.Query`
         :rtype: [{str: object}]
         """
-        query = affirm("query", query)
+        query = affirm(Query, query)
         if query.scope == "qview_persona":
             # Include only un-archived ml users.
             query.constraints.append(("is_ml_realm", QueryOperators.equal,
@@ -360,7 +362,7 @@ class MlBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: Mapping of mailinglist ids to titles.
         """
-        active_only = affirm("bool", active_only)
+        active_only = affirm(bool, active_only)
         query = "SELECT id, title FROM ml.mailinglists"
         constraints = []
         params: List[Any] = []
@@ -416,7 +418,7 @@ class MlBackend(AbstractBackend):
         * moderators,
         * whitelist.
         """
-        mailinglist_ids = affirm_set("id", mailinglist_ids)
+        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
                                    mailinglist_ids)
@@ -467,8 +469,8 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        mailinglist_id = affirm("id", mailinglist_id)
-        moderators = affirm_set("id", moderators)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+        moderators = affirm_set(vtypes.ID, moderators)
         if not moderators:
             raise ValueError(n_("Cannot remove all moderators."))
 
@@ -522,8 +524,8 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        mailinglist_id = affirm("id", mailinglist_id)
-        whitelist = affirm_set("str", whitelist)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+        whitelist = affirm_set(str, whitelist)
 
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -591,7 +593,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        data = affirm("mailinglist", data)
+        data = affirm(vtypes.Mailinglist, data)
 
         ret = 1
         with Atomizer(rs):
@@ -656,7 +658,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: the id of the new mailinglist
         """
-        data = affirm("mailinglist", data, creation=True)
+        data = affirm(vtypes.Mailinglist, data, creation=True)
         data['address'] = self.validate_address(rs, data)
         if not self.is_relevant_admin(rs, mailinglist=data):
             raise PrivilegeError("Not privileged to create mailinglist of this "
@@ -708,7 +710,7 @@ class MlBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        mailinglist_id = affirm("id", mailinglist_id)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
             raise PrivilegeError(n_("Not privileged."))
         blockers = {}
@@ -759,13 +761,13 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        mailinglist_id = affirm("id", mailinglist_id)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
             raise PrivilegeError(n_("Not privileged."))
         blockers = self.delete_mailinglist_blockers(rs, mailinglist_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -824,7 +826,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: Number of affected rows.
         """
-        data = affirm_array("subscription_state", data)
+        data = affirm_array(vtypes.SubscriptionState, data)
 
         if not all(datum['persona_id'] == rs.user.persona_id
                    or self.may_manage(rs, datum['mailinglist_id'], privileged=True)
@@ -866,7 +868,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: Number of affected rows.
         """
-        data = affirm_array("subscription_identifier", data)
+        data = affirm_array(vtypes.SubscriptionIdentifier, data)
 
         if not all(datum['persona_id'] == rs.user.persona_id
                    or self.may_manage(rs, datum['mailinglist_id'])
@@ -906,17 +908,17 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: number of affected rows.
         """
-        action = affirm("enum_subscriptionactions", action)
+        action = affirm(SubscriptionActions, action)
         sa = SubscriptionActions
 
         # 1: Check if everything is alright – current state comes later
-        mailinglist_id = affirm("id", mailinglist_id)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         # Managing actions can only be done by moderators. Other options always
         # change your own subscription state.
         if action.is_managing():
             if not self.may_manage(rs, mailinglist_id, privileged=True):
                 raise PrivilegeError("Not privileged.")
-            persona_id = affirm("id", persona_id)
+            persona_id = affirm(vtypes.ID, persona_id)
         else:
             persona_id = rs.user.persona_id
 
@@ -1003,9 +1005,9 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :return: Default return code.
         """
-        mailinglist_id = affirm("id", mailinglist_id)
-        persona_id = affirm("id", persona_id)
-        email = affirm("email", email)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        email = affirm(vtypes.Email, email)
 
         if (not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
                 and persona_id != rs.user.persona_id):
@@ -1037,8 +1039,8 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :return: Default return code.
         """
-        mailinglist_id = affirm("id", mailinglist_id)
-        persona_id = affirm("id", persona_id)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+        persona_id = affirm(vtypes.ID, persona_id)
 
         if (not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
                 and persona_id != rs.user.persona_id):
@@ -1072,9 +1074,9 @@ class MlBackend(AbstractBackend):
             given mailinglists.
             If states were given, limit this to personas with those states.
         """
-        mailinglist_ids = affirm_set("id", mailinglist_ids)
+        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         states = states or set()
-        states = affirm_array("enum_subscriptionstates", states)
+        states = affirm_array(const.SubscriptionStates, states)
 
         if not all(self.may_manage(rs, ml_id) for ml_id in mailinglist_ids):
             raise PrivilegeError(n_("Not privileged."))
@@ -1123,10 +1125,10 @@ class MlBackend(AbstractBackend):
         :return: A mapping of mailinglist ids to the persona's subscription
             state wrt. this mailinglist.
         """
-        persona_id = affirm("id", persona_id or rs.user.persona_id)
+        persona_id = affirm(vtypes.ID, persona_id or rs.user.persona_id)
         states = states or set()
-        states = affirm_set("enum_subscriptionstates", states)
-        mailinglist_ids = affirm_set("id", mailinglist_ids or set())
+        states = affirm_set(const.SubscriptionStates, states)
+        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
         if (not self.is_admin(rs) and rs.user.persona_id != persona_id
                 and (not mailinglist_ids
                      or any(not self.may_manage(rs, ml_id)
@@ -1197,7 +1199,7 @@ class MlBackend(AbstractBackend):
         :returns: Returns persona ids mapped to email addresses or None if
             `explicits_only` is True.
         """
-        mailinglist_id = affirm("id", mailinglist_id)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
         ret: Dict[int, Optional[str]] = {}
         with Atomizer(rs):
@@ -1211,7 +1213,7 @@ class MlBackend(AbstractBackend):
                 # Default to all subscribers.
                 persona_ids = set(subscribers)
             else:
-                persona_ids = affirm_set("id", persona_ids)
+                persona_ids = affirm_set(vtypes.ID, persona_ids)
                 # Limit to actual subscribers.
                 persona_ids = {p_id for p_id in persona_ids
                                if p_id in subscribers}
@@ -1257,8 +1259,8 @@ class MlBackend(AbstractBackend):
         """
 
         if persona_id == rs.user.persona_id:
-            mailinglist_id = affirm("id", mailinglist_id)
-            persona_id = affirm("id", persona_id)
+            mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+            persona_id = affirm(vtypes.ID, persona_id)
 
             query = ("SELECT address FROM ml.subscription_addresses "
                      "WHERE mailinglist_id = %s AND persona_id = %s")
@@ -1324,7 +1326,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :return: default return code.
         """
-        mailinglist_id = affirm("id", mailinglist_id)
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
         # States of current subscriptions we may touch.
         old_subscriber_states = {const.SubscriptionStates.implicit,
@@ -1405,14 +1407,8 @@ class MlBackend(AbstractBackend):
 
     @access("persona")
     def verify_existence(self, rs: RequestState, address: str) -> bool:
-        """
-        Check whether a mailinglist with the given address is known.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type address: str
-        :rtype: bool
-        """
-        address = affirm("email", address)
+        """Check whether a mailinglist with the given address is known."""
+        address = affirm(vtypes.Email, address)
 
         query = "SELECT COUNT(*) AS num FROM ml.mailinglists WHERE address = %s"
         data = self.query_one(rs, query, (address,))
@@ -1448,7 +1444,7 @@ class MlBackend(AbstractBackend):
         :type address: str
         :rtype: {str: object}
         """
-        address = affirm("email", address)
+        address = affirm(vtypes.Email, address)
         with Atomizer(rs):
             query = "SELECT id FROM ml.mailinglists WHERE address = %s"
             mailinglist_id = unwrap(self.query_one(rs, query, (address,)))
@@ -1527,7 +1523,7 @@ class MlBackend(AbstractBackend):
                  'subscribers' : [unicode, ...],
                  'whitelist' : [unicode, ...]}
         """
-        address = affirm("email", address)
+        address = affirm(vtypes.Email, address)
         with Atomizer(rs):
             query = "SELECT id FROM ml.mailinglists WHERE address = %s"
             mailinglist_id = unwrap(self.query_one(rs, query, (address,)))
@@ -1588,7 +1584,7 @@ class MlBackend(AbstractBackend):
                  'subscribers' : [unicode, ...],
                  'whitelist' : [unicode, ...]}
         """
-        address = affirm("email", address)
+        address = affirm(vtypes.Email, address)
         with Atomizer(rs):
             query = "SELECT id FROM ml.mailinglists WHERE address = %s"
             mailinglist_id = unwrap(self.query_one(rs, query, (address,)))
@@ -1618,8 +1614,8 @@ class MlBackend(AbstractBackend):
     @access("droid_rklist")
     def oldstyle_bounce(self, rs: RequestState, address: str,
                         error: int) -> Optional[bool]:
-        address = affirm("email", address)
-        error = affirm("int", error)
+        address = affirm(vtypes.Email, address)
+        error = affirm(int, error)
         with Atomizer(rs):
             # We do not use self.core.get_personas since this triggers an
             # access violation. It would be quite tedious to fix this so
@@ -1638,3 +1634,12 @@ class MlBackend(AbstractBackend):
             self.ml_log(rs, const.MlLogCodes.email_trouble, None,
                         persona_id=unwrap(data)['id'], change_note=line)
             return True
+
+    @access("ml")
+    def log_moderation(self, rs: RequestState, code: const.MlLogCodes,
+                       mailinglist_id: int, change_note: str) -> DefaultReturnCode:
+        """Log a moderation action (delegated to Mailman)."""
+        code = affirm(const.MlLogCodes, code)
+        mailinglist_id = affirm(int, mailinglist_id)
+        change_note = affirm(str, change_note)
+        return self.ml_log(rs, code, mailinglist_id, change_note=change_note)

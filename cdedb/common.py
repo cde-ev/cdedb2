@@ -8,6 +8,7 @@ import datetime
 import decimal
 import enum
 import functools
+import hashlib
 import hmac
 import itertools
 import json
@@ -17,33 +18,30 @@ import pathlib
 import re
 import string
 import sys
-import hashlib
 from secrets import choice
-
 from typing import (
-    Any, TypeVar, Mapping, Optional, Dict, List, overload, Sequence, Tuple,
-    Callable, Set, Iterable, Union, Generator, Type, Collection,
-    MutableMapping, Container, TYPE_CHECKING, cast, KeysView, AbstractSet,
-    MutableSequence
+    TYPE_CHECKING, AbstractSet, Any, Callable, Collection, Container, Dict, Generator,
+    Iterable, KeysView, List, Mapping, MutableMapping, MutableSequence, Optional,
+    Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
+import icu
 import psycopg2.extras
 import pytz
 import werkzeug
+import werkzeug.exceptions
 import werkzeug.routing
 
-import icu
-
 import cdedb.database.constants as const
+from cdedb.database.connection import IrradiatedConnection
 
 # The following imports are only for re-export. They are not used
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
 # noinspection PyUnresolvedReferences
 from cdedb.ml_subscription_aux import (
-    SubscriptionError, SubscriptionInfo, SubscriptionActions)
-
-from cdedb.database.connection import IrradiatedConnection
+    SubscriptionActions, SubscriptionError, SubscriptionInfo,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -449,7 +447,7 @@ def now() -> datetime.datetime:
     return datetime.datetime.now(pytz.utc)
 
 
-class QuotaException(RuntimeError):
+class QuotaException(werkzeug.exceptions.TooManyRequests):
     """
     Exception for signalling a quota excess. This is thrown in
     :py:mod:`cdedb.backend.cde` and caught in

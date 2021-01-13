@@ -1,5 +1,4 @@
--- This file specifies the accounts in the database and should be pretty
--- stable.
+-- This file specifies the accounts in the database and should be pretty stable
 
 -- drop everything to be sure
 DROP DATABASE IF EXISTS cdb;

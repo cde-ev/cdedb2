@@ -8,10 +8,9 @@ on the mail VM from within the CdEDB.
 from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
-from cdedb.common import RequestState, CdEDBObject
-from cdedb.frontend.common import periodic
+from cdedb.common import CdEDBObject, RequestState
+from cdedb.frontend.common import cdedburl, periodic
 from cdedb.frontend.ml_base import MlBaseFrontend
-
 
 POLICY_MEMBER_CONVERT = {
     const.ModerationPolicy.unmoderated: 'accept',
@@ -40,11 +39,6 @@ def template_url(name: str) -> str:
 
 
 class MailmanMixin(MlBaseFrontend):
-    def mailman_connect(self) -> Client:
-        """Create a Mailman REST client."""
-        url = f"http://{self.conf['MAILMAN_HOST']}/3.1"
-        return self.mailman_create_client(url, self.conf["MAILMAN_USER"])
-
     def mailman_sync_list_meta(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
                                mm_list: MailingList) -> None:
@@ -83,12 +77,21 @@ class MailmanMixin(MlBaseFrontend):
             # 'pass_extensions': ['pdf'],
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
+        desired_templates = {}
         if not db_list['is_active']:
             desired_settings.update({
                 'advertised': False,
                 'default_member_action': 'reject',
                 'default_nonmember_action': 'reject',
             })
+            desired_templates['list:user:notice:rejected'] = """
+Your message to the $listname mailing-list was rejected for the following
+reasons:
+
+The list is currently inactive and does not process messages.
+
+The original message as received by Mailman is attached.
+""".strip()
         changed = False
         for key, val in desired_settings.items():
             if mm_list.settings[key] != val:
@@ -97,11 +100,47 @@ class MailmanMixin(MlBaseFrontend):
         if changed:
             mm_list.settings.save()
 
-        desired_templates = {
-            'list:member:regular:footer': (
-                "Dies ist eine Mailingliste des CdE e.V.\n"
-                "Zur Abo-Verwaltung benutze die Datenbank"
-                " (https://db.cde-ev.de/db/ml/)"),
+        desired_header_matches = {
+            ('x-spam-flag', 'YES', 'hold'),
+        }
+        existing_header_matches = {
+            (match.rest_data['header'], match.rest_data['pattern'],
+             match.rest_data['action'])
+            for match in mm_list.header_matches
+        }
+        if desired_header_matches != existing_header_matches:
+            header_matches = mm_list.header_matches
+            for match in header_matches:
+                match.delete()
+            for header, pattern, action in desired_header_matches:
+                mm_list.header_matches.add(header, pattern, action)
+
+        desired_templates.update({
+            # Funny split to protect trailing whitespace
+            'list:member:regular:footer': '-- ' + f"""
+Dies ist eine Mailingliste des CdE e.V.
+Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)})""",
+            'list:admin:action:post': f"""
+As list moderator, your authorization is requested for the
+following mailing list posting:
+
+    List:    $listname
+    From:    $sender_email
+    Subject: $subject
+
+The message is being held because:
+
+$reasons
+
+At your convenience, visit the CdEDB [1] to approve or deny the request. Note
+that the paragraph below about email moderation is wrong. Sending mails will
+do nothing.
+
+[1] { cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True) }
+""".strip(),
+        })
+        existing_templates = {
+            t.name: t for t in mm_list.templates
         }
         store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
@@ -115,13 +154,20 @@ class MailmanMixin(MlBaseFrontend):
                     current_text = f.read()
                 if current_text != text:
                     todo = True
+            url = template_url(file_name)
+            if name not in existing_templates:
+                todo = True
+            elif existing_templates[name].uri != url:
+                todo = True
             if todo:
                 with open(file_path, 'w') as f:
                     f.write(text)
                 mm_list.set_template(
                     name, template_url(file_name),
                     username=self.conf["MAILMAN_BASIC_AUTH_USER"],
-                    password=self.mailman_template_password())
+                    password=mailman.template_password)
+        for name in set(existing_templates) - set(desired_templates):
+            existing_templates[name].delete()
 
     def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
@@ -171,6 +217,15 @@ class MailmanMixin(MlBaseFrontend):
         for address in delete_mods:
             mm_list.remove_moderator(address)
 
+        mm_owners = {m.email: m for m in mm_list.owners}
+        new_owners = set(db_moderators) - set(mm_owners)
+        delete_owners = set(mm_owners) - set(db_moderators)
+
+        for address in new_owners:
+            mm_list.add_owner(address)
+        for address in delete_owners:
+            mm_list.remove_owner(address)
+
     def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
                                  db_list: CdEDBObject,
                                  mm_list: MailingList) -> None:
@@ -204,9 +259,10 @@ class MailmanMixin(MlBaseFrontend):
     def mailman_sync_list(self, rs: RequestState, mailman: Client,
                           db_list: CdEDBObject, mm_list: MailingList) -> None:
         self.mailman_sync_list_meta(rs, mailman, db_list, mm_list)
-        self.mailman_sync_list_subs(rs, mailman, db_list, mm_list)
-        self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
-        self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
+        if db_list['is_active']:
+            self.mailman_sync_list_subs(rs, mailman, db_list, mm_list)
+            self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
+            self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
 
     @periodic("mailman_sync")
     def mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
@@ -218,7 +274,7 @@ class MailmanMixin(MlBaseFrontend):
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
             return store
-        mailman = self.mailman_connect()
+        mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
             _ = mailman.system  # cause the client to connect
@@ -227,9 +283,12 @@ class MailmanMixin(MlBaseFrontend):
             return store
         db_lists = self.mlproxy.get_mailinglists(
             rs, self.mlproxy.list_mailinglists(rs, active_only=False))
-        # Exclude CdE-München lists as they are not managed by our mail server
+        # Exclude CdE-München and Dokuforge lists as they are not managed by
+        # our mail server
+        external_domains = {const.MailinglistDomain.cdemuenchen,
+                            const.MailinglistDomain.dokuforge}
         db_lists = {lst['address']: lst for lst in db_lists.values()
-                    if lst['domain'] != const.MailinglistDomain.cdemuenchen}
+                    if lst['domain'] not in external_domains}
         mm_lists = {lst.fqdn_listname: lst for lst in mailman.lists}
         new_lists = set(db_lists) - set(mm_lists)
         current_lists = set(db_lists) - new_lists
