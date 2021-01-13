@@ -1,8 +1,9 @@
 import enum
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Collection, Dict, List, Set, Tuple, Type, Union
+from typing import Optional, TYPE_CHECKING, Collection, Dict, List, Set, Tuple, Type, Union
 
 import cdedb.database.constants as const
+import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject, RequestState, User, extract_roles, n_
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistInteractionPolicy, MailinglistTypes,
@@ -56,7 +57,7 @@ class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
     mandatory_validation_fields = {
-        ("event_id", "id_or_None"),
+        ("event_id", Optional[vtypes.ID]),
     }
 
     @classmethod
@@ -119,10 +120,14 @@ class GeneralMailinglist:
         ret = set()
         for field, argtype in (cls.mandatory_validation_fields
                                | cls.optional_validation_fields):
-            if argtype.startswith('[') and argtype.endswith(']'):
+            if (
+                isinstance(argtype, str)
+                and argtype.startswith('[')
+                and argtype.endswith(']')
+            ):
                 ret.add((field, "[str]"))
             else:
-                ret.add((field, "str"))
+                ret.add((field, str))
         return ret
 
     viewer_roles: Set[str] = {"ml"}
@@ -478,7 +483,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
 class AssemblyAssociatedMailinglist(AssemblyMailinglist):
     mandatory_validation_fields = {
-        ("assembly_id", "id"),
+        ("assembly_id", vtypes.ID),
     }
 
     @classmethod

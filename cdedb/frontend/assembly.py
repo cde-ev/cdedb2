@@ -1503,8 +1503,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                            for e in ballot['candidates'].values())
         vote: Optional[str]
         if ballot['votes']:
-            voted = unwrap(
-                request_extractor(rs, (("vote", "[str]"),)))
+            voted = unwrap(request_extractor(rs, {"vote": Collection[str]}))
             if rs.has_validation_errors():
                 return self.show_ballot(rs, assembly_id, ballot_id)
             if voted == (ASSEMBLY_BAR_SHORTNAME,):
@@ -1534,7 +1533,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 else:
                     vote = winners + losers
         else:
-            vote = unwrap(request_extractor(rs, (("vote", "str_or_None"),)))
+            vote = unwrap(request_extractor(
+                rs, {"vote": Optional[str]}))  # type: ignore
             # Empty preferential vote counts as abstaining
             if not vote:
                 vote = "=".join(candidates)
@@ -1573,7 +1573,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         candidates = process_dynamic_input(
             rs, rs.ambience['ballot']['candidates'].keys(),
-            {'shortname': "restrictive_identifier", 'title': "str"})
+            {'shortname': vtypes.RestrictiveIdentifier, 'title': str})
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():

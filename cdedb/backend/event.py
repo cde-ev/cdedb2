@@ -2593,7 +2593,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def registrations_by_course(
             self, rs: RequestState, event_id: int, course_id: int = None,
-            track_id: int = None, position: InfiniteEnum = None,
+            track_id: int = None, position: InfiniteEnum[CourseFilterPositions] = None,
             reg_ids: Collection[int] = None,
             reg_states: Collection[const.RegistrationPartStati] =
             (const.RegistrationPartStati.participant,)) -> Dict[int, int]:
@@ -2607,7 +2607,7 @@ class EventBackend(AbstractBackend):
         event_id = affirm(vtypes.ID, event_id)
         track_id = affirm_optional(vtypes.ID, track_id)
         course_id = affirm_optional(vtypes.ID, course_id)
-        position = affirm_optional(CourseFilterPositions, position)
+        position = affirm_optional(InfiniteEnum[CourseFilterPositions], position)
         reg_ids = reg_ids or set()
         reg_ids = affirm_set(vtypes.ID, reg_ids)
         reg_states = affirm_set(const.RegistrationPartStati, reg_states)

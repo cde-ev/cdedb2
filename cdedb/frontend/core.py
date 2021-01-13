@@ -41,7 +41,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
-    _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    TypeMapping, _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
 )
 from cdedb.validationtypes import CdedbID
@@ -203,7 +203,10 @@ class CoreFrontend(AbstractFrontend):
     def change_meta_info(self, rs: RequestState) -> Response:
         """Change the meta info constants."""
         info = self.coreproxy.get_meta_info(rs)
-        data_params = tuple((key, "str_or_None") for key in info)
+        data_params: TypeMapping = {
+            key: Optional[str]  # type: ignore
+            for key in info
+        }
         data = request_extractor(rs, data_params)
         data = check(rs, vtypes.MetaInfo, data, keys=info.keys())
         if rs.has_validation_errors():

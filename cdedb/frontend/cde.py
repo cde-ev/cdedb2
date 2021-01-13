@@ -29,7 +29,7 @@ import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
+    Accounts, PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
     Error, LineResolutions, RequestState, TransactionType, asciificator, deduct_years,
     determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
     lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
@@ -46,7 +46,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
-from cdedb.validation import validate_check, validate_check_optional
+from cdedb.validation import TypeMapping, validate_check, validate_check_optional
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -764,10 +764,11 @@ class CdEFrontend(AbstractUserFrontend):
         lineno = 0
         for raw_entry in reader:
             dataset: CdEDBObject = {'raw': raw_entry}
-            params = (
-                ("resolution{}".format(lineno), "enum_lineresolutions_or_None"),
-                ("doppelganger_id{}".format(lineno), "id_or_None"),
-                ("hash{}".format(lineno), "str_or_None"),)
+            params: TypeMapping = {
+                f"resolution{lineno}": Optional[LineResolutions],  # type: ignore
+                f"doppelganger_id{lineno}": Optional[vtypes.ID],  # type: ignore
+                f"hash{lineno}": Optional[str],  # type: ignore
+            }
             tmp = request_extractor(rs, params)
             dataset['resolution'] = tmp["resolution{}".format(lineno)]
             dataset['doppelganger_id'] = tmp["doppelganger_id{}".format(lineno)]
@@ -995,31 +996,32 @@ class CdEFrontend(AbstractUserFrontend):
         """
         rs.ignore_validation_errors()
 
-        params = lambda i: (
-            ("reference{}".format(i), "str_or_None"),
-            ("account{}".format(i), "enum_accounts"),
-            ("statement_date{}".format(i), "date"),
-            ("amount{}".format(i), "decimal"),
-            ("account_holder{}".format(i), "str_or_None"),
-            ("posting{}".format(i), "str"),
-            ("iban{}".format(i), "iban_or_None"),
-            ("t_id{}".format(i), "id"),
-            ("transaction_type{}".format(i), "enum_transactiontype"),
-            ("transaction_type_confidence{}".format(i), "int"),
-            ("transaction_type_confirm{}".format(i), "bool_or_None"),
-            ("cdedbid{}".format(i), "cdedbid_or_None"),
-            ("persona_id_confidence{}".format(i), "int_or_None"),
-            ("persona_id_confirm{}".format(i), "bool_or_None"),
-            ("event_id{}".format(i), "id_or_None"),
-            ("event_id_confidence{}".format(i), "int_or_None"),
-            ("event_id_confirm{}".format(i), "bool_or_None"),
-        )
+        def params_generator(i: int) -> TypeMapping:
+            return {
+                f"reference{i}": Optional[str],  # type: ignore
+                f"account{i}": Accounts,
+                f"statement_date{i}": datetime.date,
+                f"amount{i}": decimal.Decimal,
+                f"account_holder{i}": Optional[str],  # type: ignore
+                f"posting{i}": str,
+                f"iban{i}": Optional[vtypes.IBAN],  # type: ignore
+                f"t_id{i}": vtypes.ID,
+                f"transaction_type{i}": TransactionType,
+                f"transaction_type_confidence{i}": int,
+                f"transaction_type_confirm{i}": Optional[bool],  # type: ignore
+                f"cdedbid{i}": Optional[vtypes.CdedbID],  # type: ignore
+                f"persona_id_confidence{i}": Optional[int],  # type: ignore
+                f"persona_id_confirm{i}": Optional[bool],  # type: ignore
+                f"event_id{i}": Optional[vtypes.ID],  # type: ignore
+                f"event_id_confidence{i}": Optional[int],  # type: ignore
+                f"event_id_confirm{i}": Optional[bool],  # type: ignore
+            }
 
         get_persona = lambda p_id: self.coreproxy.get_persona(rs, p_id)
         get_event = lambda event_id: self.eventproxy.get_event(rs, event_id)
         transactions = []
         for i in range(1, count + 1):
-            t = request_extractor(rs, params(i))
+            t = request_extractor(rs, params_generator(i))
             t = parse.Transaction({k.rstrip(str(i)): v for k, v in t.items()})
             t.inspect(get_persona)
             transactions.append(t)
@@ -2289,7 +2291,7 @@ class CdEFrontend(AbstractUserFrontend):
     def institution_summary(self, rs: RequestState) -> Response:
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
-        spec = {'title': "str", 'shortname': "str"}
+        spec = {'title': str, 'shortname': str}
         institutions = process_dynamic_input(rs, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)

@@ -80,6 +80,8 @@ import werkzeug.datastructures
 import zxcvbn
 from typing_extensions import Protocol
 
+
+import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
@@ -152,13 +154,14 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         return super().__getitem__(type_)
 
     def __missing__(self, type_: Type[T]) -> Callable[..., T]:
+        # pass
         # generic tuples
-        if getattr(type_, "__origin__", None) is list:
-            return make_list_validator(type_.__args__[0])  # type: ignore
+        # if getattr(type_, "__origin__", None) is list:
+        #     return make_list_validator(type_.__args__[0])  # type: ignore
 
         # TODO resolve potential cyclic imports with enums
-        if callable(type_):
-            return type_  # we have a raw enum validator
+        # if callable(type_):
+        #     return type_  # we have a raw enum validator
         # TODO implement dynamic lookup for container types
         raise NotImplementedError(type_)
 
@@ -203,7 +206,7 @@ def validate_assert_optional(type: Type[T], value: Any, **kwargs: Any) -> Option
     validation = _ALL_TYPED[type]
     # as long as we cannot handle Optional in ValidatorStorage.__getitem__
     # we have to resort to this somewhat ugly workaround
-    return validate_assert(_allow_None(validation), value, **kwargs)  # type: ignore
+    return validate_assert(Optional[validation], value, **kwargs)  # type: ignore
 
 
 def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
@@ -262,12 +265,9 @@ def validate_check(
 
 
 def validate_check_optional(
-    type: Type[T], value: Any, **kwargs: Any
+    type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
-    validation = _ALL_TYPED[type]
-    # as long as we cannot handle Optional in ValidatorStorage.__getitem__
-    # we have to resort to this somewhat ugly workaround
-    return validate_check(_allow_None(validation), value, **kwargs)  # type: ignore
+    return validate_check(Optional[type_], value, **kwargs)  # type: ignore
 
 
 def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
@@ -315,7 +315,7 @@ def _add_typed_validator(fun: F, return_type: Type[Any] = None) -> F:
         raise RuntimeError(f"Type {return_type} already registered")
     _ALL_TYPED[return_type] = fun
     allow_none = _allow_None(fun)
-    _ALL_TYPED[Optional[return_type]] = allow_none  # type: ignore
+    # _ALL_TYPED[Optional[return_type]] = allow_none  # type: ignore
     setattr(current_module, allow_none.__name__, allow_none)
 
     return fun
@@ -1088,7 +1088,7 @@ def _PERSONA_BASE_CREATION() -> Mapping[str, Any]: return {
 def _PERSONA_CDE_CREATION() -> Mapping[str, Any]: return {
     'title': Optional[str],
     'name_supplement': Optional[str],
-    'gender': _enum_genders,  # type: ignore
+    'gender': const.Genders,
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1120,7 +1120,7 @@ def _PERSONA_CDE_CREATION() -> Mapping[str, Any]: return {
 def _PERSONA_EVENT_CREATION() -> Mapping[str, Any]: return {
     'title': Optional[str],
     'name_supplement': Optional[str],
-    'gender': _enum_genders,  # type: ignore
+    'gender': const.Genders,
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1156,7 +1156,7 @@ def _PERSONA_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'family_name': str,
     'title': Optional[str],
     'name_supplement': Optional[str],
-    'gender': _enum_genders,  # type: ignore
+    'gender': const.Genders,
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1496,13 +1496,13 @@ def _GENESIS_CASE_COMMON_FIELDS() -> Mapping[str, Any]: return {
 
 
 def _GENESIS_CASE_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'case_status': _enum_genesisstati,  # type: ignore
+    'case_status': const.GenesisStati,
     'reviewer': ID,
 }
 
 
 def _GENESIS_CASE_ADDITIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'gender': _enum_genders,  # type: ignore
+    'gender': const.Genders,
     'birthday': Birthday,
     'telephone': Optional[Phone],
     'mobile': Optional[Phone],
@@ -1564,7 +1564,7 @@ def _genesis_case(
 def _PRIVILEGE_CHANGE_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'persona_id': ID,
     'submitted_by': ID,
-    'status': _enum_privilegechangestati,  # type: ignore
+    'status': const.PrivilegeChangeStati,
     'notes': str,
 }
 
@@ -1850,7 +1850,7 @@ def _iban(
 
 def _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'amount': PositiveDecimal,
-    'status': _enum_lastschrifttransactionstati,  # type: ignore
+    'status': const.LastschriftTransactionStati,
     'issued_at': datetime.datetime,
     'processed_at': Optional[datetime.datetime],
     'tally': Optional[decimal.Decimal],
@@ -2370,8 +2370,8 @@ def _event_track(
 
 
 def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    'kind{}'.format(extra_suffix): _enum_fielddatatypes,  # type: ignore
-    'association{}'.format(extra_suffix): _enum_fieldassociations,  # type: ignore
+    'kind{}'.format(extra_suffix): const.FieldDatatypes,
+    'association{}'.format(extra_suffix): const.FieldAssociations,
     'entries{}'.format(extra_suffix): Any,  # type: ignore
 }
 
@@ -2645,7 +2645,7 @@ def _registration(
         for anid, part in val['parts'].items():
             try:
                 anid = _id(anid, 'parts', **kwargs)
-                part = _registration_part_or_None(  # type: ignore
+                part = _ALL_TYPED[Optional[RegistrationPart]](  # type: ignore
                     part, 'parts', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
@@ -2657,7 +2657,7 @@ def _registration(
         for anid, track in val['tracks'].items():
             try:
                 anid = _id(anid, 'tracks', **kwargs)
-                track = _registration_track_or_None(  # type: ignore
+                track = _ALL_TYPED[Optional[RegistrationTrack]](  # type: ignore
                     track, 'tracks', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
@@ -2685,9 +2685,9 @@ def _registration_part(
 
     val = _mapping(val, argname, **kwargs)
 
-    optional_fields = {
-        'status': _enum_registrationpartstati,  # type: ignore
-        'lodgement_id': Optional[ID],
+    optional_fields: TypeMapping = {
+        'status': const.RegistrationPartStati,
+        'lodgement_id': Optional[ID],  # type: ignore
         'is_camping_mat': bool,
     }
     return RegistrationPart(_examine_dictionary_fields(
@@ -2756,7 +2756,7 @@ def _event_associated_fields(
     datatypes: Dict[str, Type[Any]] = {}
     for field in fields.values():
         if field['association'] == association:
-            dt = _enum_fielddatatypes(  # type: ignore
+            dt = _ALL_TYPED[const.FieldDatatypes](
                 field['kind'], field['field_name'], **kwargs)
             datatypes[field['field_name']] = cast(Type[Any], eval(
                 f"Optional[{dt.name}]",
@@ -2897,7 +2897,7 @@ def _questionnaire(
     fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
     for k, v in copy.deepcopy(val).items():
         try:
-            k = _enum_questionnaireusages(k, argname, **kwargs)  # type: ignore
+            k = _ALL_TYPED[const.QuestionnaireUsages](k, argname, **kwargs)
             v = _iterable(v, argname, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
@@ -2912,7 +2912,7 @@ def _questionnaire(
                 'default_value': Optional[str],  # type: ignore
             }
             optional_fields = {
-                'kind': _enum_questionnaireusages,  # type: ignore
+                'kind': const.QuestionnaireUsages,
             }
             for value in v:
                 try:
@@ -3111,7 +3111,7 @@ def _serialized_event(
                 'field_id': Optional[ID], 'title': Optional[str],  # type: ignore
                 'info': Optional[str], 'input_size': Optional[int],  # type: ignore
                 'readonly': Optional[bool],  # type: ignore
-                'kind': _enum_questionnaireusages,  # type: ignore
+                'kind': const.QuestionnaireUsages,
             }),
         'event.fee_modifiers': _event_fee_modifier,
     }
@@ -3201,11 +3201,11 @@ def _serialized_partial_event(
         raise ValidationSummary(ValueError(
             argname, n_("Schema version mismatch.")))
 
-    domain_validators = {
-        'courses': Optional[PartialCourse],
-        'lodgement_groups': Optional[PartialLodgementGroup],
-        'lodgements': Optional[PartialLodgement],
-        'registrations': Optional[PartialRegistration],
+    domain_validators: TypeMapping = {
+        'courses': Optional[PartialCourse],  # type: ignore
+        'lodgement_groups': Optional[PartialLodgementGroup],  # type: ignore
+        'lodgements': Optional[PartialLodgement],  # type: ignore
+        'registrations': Optional[PartialRegistration],  # type: ignore
     }
 
     errs = ValidationSummary()
@@ -3223,7 +3223,7 @@ def _serialized_partial_event(
 
             creation = (new_key < 0)
             try:
-                new_entry = _ALL_TYPED[type_](  # type: ignore
+                new_entry = _ALL_TYPED[type_](
                     entry, domain, creation=creation, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
@@ -3458,9 +3458,9 @@ def _partial_registration_part(
 
     val = _mapping(val, argname, **kwargs)
 
-    optional_fields = {
-        'status': _enum_registrationpartstati,  # type: ignore
-        'lodgement_id': Optional[PartialImportID],
+    optional_fields: TypeMapping = {
+        'status': const.RegistrationPartStati,
+        'lodgement_id': Optional[PartialImportID],  # type: ignore
         'is_camping_mat': bool,
     }
 
@@ -3511,11 +3511,11 @@ def _partial_registration_track(
 def _MAILINGLIST_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'title': str,
     'local_part': EmailLocalPart,
-    'domain': _enum_mailinglistdomain,  # type: ignore
+    'domain': const.MailinglistDomain,
     'description': Optional[str],
-    'mod_policy': _enum_moderationpolicy,  # type: ignore
-    'attachment_policy': _enum_attachmentpolicy,  # type: ignore
-    'ml_type': _enum_mailinglisttypes,  # type: ignore
+    'mod_policy': const.ModerationPolicy,
+    'attachment_policy': const.AttachmentPolicy,
+    'ml_type': const.MailinglistTypes,
     'subject_prefix': Optional[str],
     'maxsize': Optional[ID],
     'is_active': bool,
@@ -3630,7 +3630,7 @@ _SUBSCRIPTION_ID_FIELDS: TypeMapping = {
 
 
 def _SUBSCRIPTION_STATE_FIELDS() -> Mapping[str, Any]: return {
-    'subscription_state': _enum_subscriptionstates,  # type: ignore
+    'subscription_state': const.SubscriptionStates,
 }
 
 
@@ -3642,6 +3642,7 @@ _SUBSCRIPTION_ADDRESS_FIELDS = {
 
 
 def _SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS() -> Mapping[str, Any]: return {
+    #FIXME help?
     'resolution': _enum_subscriptionrequestresolutions,  # type: ignore
 }
 
@@ -3688,6 +3689,7 @@ def _subscription_address(
         val, mandatory_fields, **kwargs))
 
 
+#FIXME this is not used anywhere?!
 @_add_typed_validator
 def _subscription_request_resolution(
     val: Any, argname: str = "subscription request resolution", **kwargs: Any
@@ -4104,7 +4106,9 @@ def _query_input(
         # Second the constraints (filters)
         # Get operator
         try:
-            operator = _enum_queryoperators_or_None(  # type: ignore
+            operator: Optional[QueryOperators] = _ALL_TYPED[
+                Optional[QueryOperators]  # type: ignore
+            ](
                 val.get("qop_{}".format(field)), field, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
@@ -4290,7 +4294,7 @@ def _query(
             continue
 
         try:
-            operator = _enum_queryoperators(  # type: ignore
+            operator = _ALL_TYPED[QueryOperators](
                 operator, "constraints/{}".format(field),
                 **{**kwargs, '_convert': False})
         except ValidationSummary as e:
@@ -4402,7 +4406,7 @@ def _enum_validator_maker(
             raise ValidationSummary(TypeError(
                 argname, n_("Must be a %(type)s."), {'type': anenum}))
 
-    the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())
+    the_validator.__name__ = name or "_enum_{anenum.__name__.lower()}"
 
     if not internal:
         _add_typed_validator(the_validator, anenum)
@@ -4463,11 +4467,10 @@ def _infinite_enum_validator_maker(anenum: Type[E], name: str = None) -> None:
                 raise ValidationSummary(TypeError(argname, n_(
                     "Must be a %(type)s."), {'type': anenum}))
 
-        return InfiniteEnum(val_enum, val_int)  # type: ignore
+        return InfiniteEnum[anenum](val_enum, val_int)  # type: ignore
 
-    the_validator.__name__ = name or "_infinite_enum_{}".format(
-        anenum.__name__.lower())
-    _add_typed_validator(the_validator, anenum)
+    the_validator.__name__ = name or f"_infinite_enum_{anenum.__name__.lower()}"
+    _add_typed_validator(the_validator, InfiniteEnum[anenum])  # type: ignore
     setattr(current_module, the_validator.__name__, the_validator)
 
 

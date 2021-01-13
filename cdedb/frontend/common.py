@@ -2047,7 +2047,9 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 
 # noinspection PyPep8Naming
-def REQUESTdata(*spec: Union[str, Tuple[str, str]]) -> Callable[[F], F]:
+def REQUESTdata(
+    *spec: str, _hints: validate.TypeMapping = None
+) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
     This should always be used, so automatic form filling works as expected.
@@ -2072,7 +2074,7 @@ def REQUESTdata(*spec: Union[str, Tuple[str, str]]) -> Callable[[F], F]:
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            hints = typing.get_type_hints(fun)
+            hints = _hints or typing.get_type_hints(fun)
             for item in spec:
                 if item.startswith('#'):
                     name = item[1:]
@@ -2187,7 +2189,7 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 
 
 def request_extractor(
-        rs: RequestState, args: Iterable[Tuple[str, str]],
+        rs: RequestState, spec: validate.TypeMapping,
         constraints: Collection[RequestConstraint] = None) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
@@ -2205,12 +2207,12 @@ def request_extractor(
     list of callables that perform a check and associated errors that
     are reported if the check fails.
 
-    :param args: handed through to the decorator
+    :param spec: handed through to the decorator
     :param constraints: additional constraints that shoud produce
       validation errors
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*args)
+    @REQUESTdata(*spec, _hints=spec)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
@@ -2495,7 +2497,7 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
 
 
 def process_dynamic_input(rs: RequestState, existing: Collection[int],
-                          spec: Mapping[str, str],
+                          spec: validate.TypeMapping,
                           additional: CdEDBObject = None
                           ) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve information provided by flux tables.
@@ -2509,13 +2511,13 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
     :param spec: name of input fields, mapped to their validation
     :param additional: additional keys added to each output object
     """
-    delete_flags = request_extractor(
-        rs, ((f"delete_{anid}", "bool") for anid in existing))
+    delete_flags = request_extractor(rs, {f"delete_{anid}": bool for anid in existing})
     deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
-    params = tuple(
-        (f"{key}_{anid}", value)
+    params: validate.TypeMapping = {
+        f"{key}_{anid}": value
         for anid in existing if anid not in deletes
-        for key, value in spec.items())
+        for key, value in spec.items()
+    }
     data = request_extractor(rs, params)
     ret: Dict[int, Optional[CdEDBObject]] = {
         anid: {key: data[f"{key}_{anid}"] for key in spec}
@@ -2529,10 +2531,9 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
     marker = 1
     while marker < 2 ** 10:
         will_create = unwrap(
-            request_extractor(rs, ((f"create_-{marker}", "bool"),)))
+            request_extractor(rs, {f"create_-{marker}": bool}))
         if will_create:
-            params = tuple((f"{key}_-{marker}", value)
-                           for key, value in spec.items())
+            params = {f"{key}_-{marker}": value for key, value in spec.items()}
             data = request_extractor(rs, params)
             ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
             if additional:

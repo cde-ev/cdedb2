@@ -7,8 +7,9 @@ correct numeric values. The raw values should never be used, instead
 their symbolic names provided by this module should be used.
 """
 
+import datetime
 import enum
-from typing import Dict, Set
+from typing import Any, Dict, Set, Type
 
 
 def n_(x: str) -> str:
@@ -86,6 +87,16 @@ class FieldDatatypes(enum.IntEnum):
     float = 4  #:
     date = 5  #:
     datetime = 6  #:
+
+    # TODO can this be cleaner?
+    def to_type(self) -> Type[Any]:
+        if self == FieldDatatypes.str: return str
+        elif self == FieldDatatypes.bool: return bool
+        elif self == FieldDatatypes.int: return int
+        elif self == FieldDatatypes.float: return float
+        elif self == FieldDatatypes.date: return datetime.date
+        elif self == FieldDatatypes.datetime: return datetime.datetime
+        else: raise ValueError("Impossible")
 
 
 @enum.unique
