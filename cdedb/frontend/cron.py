@@ -107,6 +107,7 @@ class CronFrontend(BaseApp):
                             or self.conf["CDEDB_DEV"]):
                         rs.begin = now()
                         state = self.core.get_cron_store(rs, hook.cron['name'])
+                        self.logger.info(f"Starting execution of {hook.cron['name']}:")
                         # noinspection PyBroadException
                         try:
                             tmp = hook(rs, state)
@@ -124,8 +125,12 @@ class CronFrontend(BaseApp):
                             if self.conf["CDEDB_TEST"]:
                                 raise
                         else:
-                            self.core.set_cron_store(rs, hook.cron['name'],
-                                                     tmp)
+                            self.core.set_cron_store(rs, hook.cron['name'], tmp)
+                        finally:
+                            time_taken = now() - rs.begin
+                            self.logger.info(
+                                f"Finished execution of {hook.cron['name']}."
+                                f" Time taken: {time_taken}.")
         finally:
             self.core.set_cron_store(rs, "_base", base_state)
         return True
