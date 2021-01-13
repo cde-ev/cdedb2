@@ -3654,6 +3654,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("N. N.")
 
     def test_log(self) -> None:
+        # The following calls to other test methods do not work as intended, since
+        # a test method with multiple `as_users` resets intermediate database state.
         # First: generate data
         self.test_register()
         self.logout()
