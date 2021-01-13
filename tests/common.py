@@ -447,12 +447,12 @@ class BackendTest(CdEDBTest):
     def setUp(self) -> None:
         """Reset login state."""
         super().setUp()
-        self.key = None  # type: ignore
+        self.key = ANONYMOUS
 
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
-        self.key = self.core.login(  # type: ignore
-            None, user['username'], user['password'], ip)  # type: ignore
+        self.key = cast(RequestState, self.core.login(
+            ANONYMOUS, user['username'], user['password'], ip))
         return self.key  # type: ignore
 
     @staticmethod
