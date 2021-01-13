@@ -1132,7 +1132,6 @@ class TestMlBackend(BackendTest):
             6: SS.implicit,
             7: SS.implicit,
             9: SS.implicit,
-            12: SS.implicit,
             15: SS.implicit,
             100: SS.implicit,
         }
@@ -1195,7 +1194,6 @@ class TestMlBackend(BackendTest):
             6: SS.implicit,
             7: SS.implicit,
             9: SS.implicit,
-            12: SS.implicit,
             15: SS.implicit,
             100: SS.implicit,
         }
@@ -1286,7 +1284,6 @@ class TestMlBackend(BackendTest):
             3: 'charly@example.cde',
             7: 'garcia@example.cde',
             9: 'inga@example.cde',
-            12: None,
             15: 'olaf@example.cde',
             100: 'akira@example.cde',
         }
