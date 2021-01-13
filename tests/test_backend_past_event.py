@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 
-import copy
 import datetime
-import decimal
 
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import PERSONA_EVENT_FIELDS, xsorted
-from cdedb.query import QUERY_SPECS, Query, QueryOperators
-from tests.common import USER_DICT, BackendTest, as_users, nearly_now
+from cdedb.common import CdEDBObject, xsorted
+from tests.common import BackendTest, as_users, nearly_now
 
 
 class TestPastEventBackend(BackendTest):
     used_backends = ("core", "event", "pastevent")
 
     @as_users("vera", "berta")
-    def test_participation_infos(self, user):
+    def test_participation_infos(self, user: CdEDBObject) -> None:
         participation_infos = self.pastevent.participation_infos(self.key, (1, 2))
         expectation = {
             1: dict(),
@@ -40,7 +37,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(participation_infos[1], participation_info)
 
     @as_users("vera")
-    def test_entity_past_event(self, user):
+    def test_entity_past_event(self, user: CdEDBObject) -> None:
         old_events = self.pastevent.list_past_events(self.key)
         data = {
             'title': "New Link Academy",
@@ -66,21 +63,21 @@ class TestPastEventBackend(BackendTest):
         self.assertIn(new_id, new_events)
 
     @as_users("vera")
-    def test_delete_past_course_cascade(self, user):
+    def test_delete_past_course_cascade(self, user: CdEDBObject) -> None:
         self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
         self.pastevent.delete_past_course(
             self.key, 1, cascade=("participants",))
         self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
 
     @as_users("vera")
-    def test_delete_past_event_cascade(self, user):
+    def test_delete_past_event_cascade(self, user: CdEDBObject) -> None:
         self.assertIn(1, self.pastevent.list_past_events(self.key))
         self.pastevent.delete_past_event(
             self.key, 1, cascade=("courses", "participants", "log"))
         self.assertNotIn(1, self.pastevent.list_past_events(self.key))
 
     @as_users("vera")
-    def test_entity_past_course(self, user):
+    def test_entity_past_course(self, user: CdEDBObject) -> None:
         pevent_id = 1
         old_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         data = {
@@ -108,23 +105,37 @@ class TestPastEventBackend(BackendTest):
         self.assertNotIn(new_id, newer_courses)
 
     @as_users("vera")
-    def test_entity_participant(self, user):
-        expectation = {(2, 1): {'pcourse_id': 1, 'is_instructor': True,
-                                'is_orga': False, 'persona_id': 2},
-                       (3, None): {'pcourse_id': None, 'is_instructor': False,
-                                   'is_orga': False, 'persona_id': 3},
-                       (5, 2): {'pcourse_id': 2, 'is_instructor': False,
-                                'is_orga': False, 'persona_id': 5},
-                       (6, 2): {'pcourse_id': 2, 'is_instructor': False,
-                                'is_orga': True, 'persona_id': 6},
-                       (100, 2): {'pcourse_id': 2, 'is_instructor': False,
-                                'is_orga': False, 'persona_id': 100}}
+    def test_entity_participant(self, user: CdEDBObject) -> None:
+        expectation = {
+            (2, 1): {
+                'pcourse_id': 1, 'is_instructor': True,
+                'is_orga': False, 'persona_id': 2,
+            },
+            (3, None): {
+                'pcourse_id': None, 'is_instructor': False,
+                'is_orga': False, 'persona_id': 3,
+            },
+            (5, 2): {
+                'pcourse_id': 2, 'is_instructor': False,
+                'is_orga': False, 'persona_id': 5,
+            },
+            (6, 2): {
+                'pcourse_id': 2, 'is_instructor': False,
+                'is_orga': True, 'persona_id': 6,
+            },
+            (100, 2): {
+                'pcourse_id': 2, 'is_instructor': False,
+                'is_orga': False, 'persona_id': 100,
+            },
+        }
 
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
         self.pastevent.add_participant(self.key, 1, None, 5, False, False)
-        expectation[(5, None)] = {'pcourse_id': None, 'is_instructor': False,
-                          'is_orga': False, 'persona_id': 5}
+        expectation[(5, None)] = {
+            'pcourse_id': None, 'is_instructor': False,
+            'is_orga': False, 'persona_id': 5,
+        }
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
         self.assertEqual(0, self.pastevent.remove_participant(self.key, 1, 1, 5))
@@ -148,8 +159,8 @@ class TestPastEventBackend(BackendTest):
                          self.pastevent.list_participants(self.key, pevent_id=1))
 
     @as_users("vera")
-    def test_past_log(self, user):
-        ## first generate some data
+    def test_past_log(self, user: CdEDBObject) -> None:
+        # first generate some data
         data = {
             'title': "New Link Academy",
             'shortname': "link",
@@ -177,7 +188,7 @@ class TestPastEventBackend(BackendTest):
         self.pastevent.add_participant(self.key, 1, None, 5, False, False)
         self.pastevent.remove_participant(self.key, 1, None, 5)
 
-        ## now check it
+        # now check it
         expectation = (7, (
             {'id': 1001,
              'change_note': None,
@@ -231,11 +242,13 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation, self.pastevent.retrieve_past_log(self.key))
 
     @as_users("anton")
-    def test_archive(self, user):
+    def test_archive(self, user: CdEDBObject) -> None:
         update = {
             'id': 1,
-            'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0, tzinfo=pytz.utc),
-            'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0, tzinfo=pytz.utc),
+            'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
+                                                         tzinfo=pytz.utc),
+            'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0,
+                                                         tzinfo=pytz.utc),
             'parts': {
                 1: {
                     'part_begin': datetime.date(2003, 2, 2),
@@ -253,6 +266,7 @@ class TestPastEventBackend(BackendTest):
         }
         self.event.set_event(self.key, update)
         new_ids, _ = self.pastevent.archive_event(self.key, 1)
+        assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = xsorted(
             (self.pastevent.get_past_event(self.key, new_id)
@@ -285,9 +299,8 @@ class TestPastEventBackend(BackendTest):
             'tempus': datetime.date(2003, 11, 11),
             'notes': None, }
         self.assertEqual(expectation, pevent_data[2])
-        expectation = set()
         self.assertEqual(
-            expectation,
+            set(),
             set(self.pastevent.list_past_courses(
                 self.key, pevent_data[0]['id']).values()))
         expectation = {'Lustigsein für Fortgeschrittene'}

@@ -3,7 +3,6 @@
 import datetime
 import random
 import string
-import unittest
 
 import pytz
 
@@ -15,13 +14,14 @@ from cdedb.frontend.common import (
 from tests.common import FrontendTest
 
 
-def rand_str(chars, exclude=''):
+def rand_str(num: int, exclude: str = '') -> str:
     pool = string.printable
     pool = "".join(c for c in pool if c not in exclude)
-    return "".join(random.choice(pool) for _ in range(chars))
+    return "".join(random.choice(pool) for _ in range(num))
+
 
 class TestFrontendCommon(FrontendTest):
-    def test_parameter_encoding(self):
+    def test_parameter_encoding(self) -> None:
         rounds = 100
         for _ in range(rounds):
             salt = rand_str(12, exclude='-')
@@ -83,7 +83,7 @@ class TestFrontendCommon(FrontendTest):
             (False, None),
             decode_parameter(salt, target, name, wrong_encoded, None))
 
-    def test_date_filters(self):
+    def test_date_filters(self) -> None:
         dt_naive = datetime.datetime(2010, 5, 22, 4, 55)
         dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=pytz.utc)
         dt_other = pytz.timezone('America/New_York').localize(dt_naive)
@@ -93,7 +93,7 @@ class TestFrontendCommon(FrontendTest):
         self.assertEqual("2010-05-22 06:55 (CEST)", datetime_filter(dt_aware))
         self.assertEqual("2010-05-22 10:55 (CEST)", datetime_filter(dt_other))
 
-    def test_cdedbid_filter(self):
+    def test_cdedbid_filter(self) -> None:
         self.assertEqual("DB-1-9", cdedbid_filter(1))
         self.assertEqual("DB-2-7", cdedbid_filter(2))
         self.assertEqual("DB-3-5", cdedbid_filter(3))
@@ -110,7 +110,7 @@ class TestFrontendCommon(FrontendTest):
         self.assertEqual("DB-11111-2", cdedbid_filter(11111))
         self.assertEqual("DB-11118-X", cdedbid_filter(11118))
 
-    def test_tex_escape_filter(self):
+    def test_tex_escape_filter(self) -> None:
         self.assertEqual(r"\textbackslash foo", tex_escape_filter(r"\foo"))
         self.assertEqual(r"line\textbackslash \textbackslash next",
                          tex_escape_filter(r"line\\next"))
@@ -125,7 +125,7 @@ class TestFrontendCommon(FrontendTest):
         self.assertEqual(r"a\$b", tex_escape_filter(r"a$b"))
         self.assertEqual(r"a''b", tex_escape_filter(r'a"b'))
 
-    def test_enum_member_translations(self):
+    def test_enum_member_translations(self) -> None:
         ignored_enums = {
             cdedb.enums.TransactionType,
             cdedb.enums.const.SubscriptionStates,
