@@ -1174,19 +1174,6 @@ class EventFrontend(AbstractUserFrontend):
                 'tracks': ({-1: new_track} if create_track else {}),
             }
         }
-        orga_ml_data = None
-        orga_ml_address = None
-        if create_orga_list:
-            orga_ml_data = self._get_mailinglist_setter(data, orgalist=True)
-            orga_ml_address = ml_type.get_full_address(orga_ml_data)
-            data['orga_address'] = orga_ml_address
-            if self.mlproxy.verify_existence(rs, orga_ml_address):
-                orga_ml_data = None
-                rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': orga_ml_address})
-        else:
-            data['orga_address'] = None
-
         data = check(rs, vtypes.Event, data, creation=True)
         if orga_ids:
             if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
@@ -1202,9 +1189,7 @@ class EventFrontend(AbstractUserFrontend):
                     ))
                 )
         else:
-            # we check orga_ml_data instead of create_orga_list here,
-            # because the former is falsy if an orga ml already exists
-            if orga_ml_data or create_participant_list:
+            if create_orga_list or create_participant_list:
                 # mailinglists require moderators
                 rs.append_validation_error(
                     ("orga_ids", ValueError(
@@ -1214,6 +1199,19 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.create_event_form(rs)
         assert data is not None
+
+        orga_ml_data = None
+        orga_ml_address = None
+        if create_orga_list:
+            orga_ml_data = self._get_mailinglist_setter(data, orgalist=True)
+            orga_ml_address = ml_type.get_full_address(orga_ml_data)
+            data['orga_address'] = orga_ml_address
+            if self.mlproxy.verify_existence(rs, orga_ml_address):
+                orga_ml_data = None
+                rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                          {'address': orga_ml_address})
+        else:
+            data['orga_address'] = None
 
         new_id = self.eventproxy.create_event(rs, data)
         if orga_ml_data:

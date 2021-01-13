@@ -6797,7 +6797,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:86
 #: cdedb/frontend/templates/web/core/change_user.tmpl:76
 msgid ""
-"This address is meant to be a “backup”,, should the primary address not "
+"This address is meant to be a “backup”, should the primary address not "
 "work. Please give an address where you can be reached long-term, e.g. your "
 "parents' address."
 msgstr ""

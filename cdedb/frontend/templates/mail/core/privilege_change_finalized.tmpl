@@ -1,0 +1,20 @@
+Hallo,
+
+Deine Adminrechte in der CdE-Datenbank haben sich geändert.
+Auf Deinem Profil [1] kannst Du jederzeit Deine Adminrechte ansehen.
+
+{% if cookie -%}
+Da Du bisher keine Adminrechte hattest musst Du zunächst ein neues Passwort festlegen.
+Dein neues Passwort muss sich nicht zwingend von Deinem alten Passwort unterscheiden,
+jedoch gelten für Personen mit Adminrechten höhere Anforderungen an die Sicherheit von
+Passwörtern.
+
+Besuche folgenden Link um ein neues Passwort festzulegen [2].
+{% endif %}
+
+Die Datenbank
+
+[1] {{ cdedblink('core/mydata') }} (Login notwendig)
+{% if cookie -%}
+[2] {{ cdedblink('core/do_password_reset_form', {'email': email, 'cookie': cookie}) }}
+{%- endif %}

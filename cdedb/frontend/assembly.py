@@ -29,7 +29,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, Query, mangle_query_input
-from cdedb.validationtypes import CdedbID
+from cdedb.validationtypes import CdedbID, Email
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a shortname since it contains
@@ -404,7 +404,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata("presider_ids", "create_attendee_list", "create_presider_list")
     def create_assembly(self, rs: RequestState, presider_ids: vtypes.CdedbIDList,
                         create_attendee_list: bool, create_presider_list: bool,
-                        data: Dict[str, Any]) -> Response:
+                        presider_address: Optional[Email], data: Dict[str, Any]
+                        ) -> Response:
         """Make a new assembly."""
         if presider_ids is not None:
             data["presiders"] = presider_ids
@@ -414,6 +415,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert data is not None
         presider_ml_data = None
         if create_presider_list:
+            # TODO maybe display a notification?
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
             presider_address = ml_type.get_full_address(presider_ml_data)
             data["presider_address"] = presider_address
@@ -421,6 +423,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 presider_ml_data = None
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': presider_address})
+        else:
+            data["presider_address"] = presider_address
         data = check(rs, vtypes.Assembly, data, creation=True)
         if presider_ids:
             if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):

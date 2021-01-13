@@ -24,8 +24,8 @@ import urllib.parse
 from types import TracebackType
 from typing import (
     Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List, MutableMapping,
-    NamedTuple, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union, cast,
-    no_type_check,
+    NamedTuple, Optional, Pattern, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union,
+    cast, no_type_check,
 )
 
 import PIL.Image
@@ -60,6 +60,10 @@ ExceptionInfo = Union[
     Tuple[None, None, None]
 ]
 
+# This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
+ANONYMOUS = cast(RequestState, None)
+
+
 def check_test_setup() -> None:
     """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
     if pathlib.Path("/OFFLINEVM").exists():
@@ -86,6 +90,11 @@ class NearlyNow(datetime.datetime):
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
+
+    @classmethod
+    def from_datetime(cls, datetime: datetime.datetime) -> "NearlyNow":
+        ret = cls.fromisoformat(datetime.isoformat())
+        return ret
 
 
 def create_mock_image(file_type: str = "png") -> bytes:
@@ -236,7 +245,7 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
                     n_("Attribute %(name)s not public"), {"name": name})
 
             @functools.wraps(attr)
-            def wrapper(key: str, *args: Any, **kwargs: Any) -> Any:
+            def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
                 rs = setup_requeststate(key)
                 return attr(rs, *args, **kwargs)
 
@@ -256,7 +265,7 @@ class MyTextTestRunner(unittest.TextTestRunner):
     ) -> unittest.TestResult:
         result = super().run(test)
         failed = map(
-            lambda error: error[0].id(),
+            lambda error: error[0].id().split()[0],  # split to strip subtest paramters
             result.errors + result.failures + result.unexpectedSuccesses  # type: ignore
         )
         if not result.wasSuccessful():
@@ -361,8 +370,10 @@ class BasicTest(unittest.TestCase):
 
         :returns: The result of the above "query" mapping id to entry.
         """
-        def parse_datetime(s: str) -> datetime.datetime:
+        def parse_datetime(s: Optional[str]) -> Optional[datetime.datetime]:
             # Magic placeholder that is replaced with the current time.
+            if s is None:
+                return None
             if s == "---now---":
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
@@ -380,9 +391,9 @@ class BasicTest(unittest.TestCase):
                             r[k] = decimal.Decimal(r[k])
                         if k == 'birthday':
                             r[k] = datetime.date.fromisoformat(r[k])
-                    elif table == 'core.changelog':
-                        if k == 'ctime':
-                            r[k] = parse_datetime(r[k])
+                    if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
+                             'vote_extension_end'}:
+                        r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
                 ret[anid] = copy.deepcopy(self.sample_data[table][anid])
@@ -401,7 +412,8 @@ class CdEDBTest(BasicTest):
                               stderr=subprocess.DEVNULL)
         super(CdEDBTest, self).setUp()
 
-UserIdentifier = Union[CdEDBObject, str]
+
+UserIdentifier = Union[CdEDBObject, str, int]
 
 
 class BackendTest(CdEDBTest):
@@ -416,7 +428,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
-    key: Optional[str]
+    key: RequestState
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -435,15 +447,13 @@ class BackendTest(CdEDBTest):
     def setUp(self) -> None:
         """Reset login state."""
         super().setUp()
-        self.key = None
+        self.key = ANONYMOUS
 
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
-        if isinstance(user, str):
-            user = USER_DICT[user]
-        assert isinstance(user, dict)
-        self.key = self.core.login(
-            None, user['username'], user['password'], ip)  # type: ignore
-        return self.key
+        user = get_user(user)
+        self.key = cast(RequestState, self.core.login(
+            ANONYMOUS, user['username'], user['password'], ip))
+        return self.key  # type: ignore
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
@@ -458,7 +468,7 @@ class BackendTest(CdEDBTest):
 # A reference of the most important attributes for all users. This is used for
 # logging in and the `as_user` decorator.
 # Make sure not to alter this during testing.
-USER_DICT = {
+USER_DICT: Dict[str, CdEDBObject] = {
     "anton": {
         'id': 1,
         'DB-ID': "DB-1-9",
@@ -676,14 +686,24 @@ USER_DICT = {
         'family_name': "Abukara",
     },
 }
+_PERSONA_ID_TO_USER = {user["id"]: user for user in USER_DICT.values()}
+
+
+def get_user(user: UserIdentifier) -> CdEDBObject:
+    if isinstance(user, str):
+        user = USER_DICT[user]
+    elif isinstance(user, int):
+        user = _PERSONA_ID_TO_USER[user]
+    return user
 
 
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def as_users(*users: str) -> Callable[[F], F]:
+def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
+                                                 Callable[..., None]]:
     """Decorate a test to run it as the specified user(s)."""
-    def wrapper(fun: F) -> F:
+    def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
         def new_fun(self: Union[BackendTest, FrontendTest], *args: Any, **kwargs: Any
                     ) -> None:
@@ -691,7 +711,7 @@ def as_users(*users: str) -> Callable[[F], F]:
                 with self.subTest(user=user):
                     if i > 0:
                         self.setUp()
-                    if user is "anonymous":
+                    if user == "anonymous":
                         if not isinstance(self, FrontendTest):
                             raise RuntimeError(
                                 "Anonymous testing not supported for backend tests."
@@ -699,10 +719,10 @@ def as_users(*users: str) -> Callable[[F], F]:
                         kwargs['user'] = None
                         self.get('/')
                     else:
-                        kwargs['user'] = USER_DICT[user]
-                        self.login(USER_DICT[user])
+                        kwargs['user'] = get_user(user)
+                        self.login(user)
                     fun(self, *args, **kwargs)
-        return cast(F, new_fun)
+        return new_fun
     return wrapper
 
 
@@ -845,9 +865,9 @@ class FrontendTest(BackendTest):
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: str = "submitform",
+    def submit(self, form: webtest.Form, button: Optional[str] = "submitform",
                check_notification: bool = True, verbose: bool = False,
-               value: bool = None) -> None:
+               value: str = None) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -912,15 +932,14 @@ class FrontendTest(BackendTest):
 
         :param verbose: If True display additional debug information.
         """
-        if isinstance(user, str):
-            user = USER_DICT[user]
+        user = get_user(user)
         self.get("/", verbose=verbose)
         f = self.response.forms['loginform']
         f['username'] = user['username']
         f['password'] = user['password']
         self.submit(f, check_notification=False, verbose=verbose)
         self.key = self.app.cookies.get('sessionkey', None)
-        return self.key
+        return self.key  # type: ignore
 
     def logout(self, verbose: bool = False) -> None:
         """Log out. Raises a KeyError if not currently logged in.
@@ -929,9 +948,9 @@ class FrontendTest(BackendTest):
         """
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False, verbose=verbose)
-        self.key = None
+        self.key = ANONYMOUS
 
-    def admin_view_profile(self, user: str, check: bool = True,
+    def admin_view_profile(self, user: UserIdentifier, check: bool = True,
                            verbose: bool = False) -> None:
         """Shortcut to use the admin quicksearch to navigate to a user profile.
 
@@ -941,7 +960,7 @@ class FrontendTest(BackendTest):
         :param check: If True check that the Profile was reached.
         :param verbose: If True display additional debug information.
         """
-        u = USER_DICT[user]
+        u = get_user(user)
         self.traverse({'href': '^/$'}, verbose=verbose)
         f = self.response.forms['adminshowuserform']
         f['phrase'] = u["DB-ID"]
@@ -999,6 +1018,12 @@ class FrontendTest(BackendTest):
                 msg = cast(email.message.EmailMessage, parser.parsestr(raw))
                 ret.append(msg)
         return ret
+
+    def fetch_mail_content(self, index: int = 0) -> str:
+        mail = self.fetch_mail()[index]
+        body = mail.get_body()
+        assert isinstance(body, email.message.EmailMessage)
+        return body.get_content()
 
     @staticmethod
     def fetch_link(msg: email.message.EmailMessage, num: int = 1) -> Optional[str]:
@@ -1139,8 +1164,8 @@ class FrontendTest(BackendTest):
         msg = f"Expected error message not found near input with name {f!r}."
         self.assertIn(message, container[0].text_content(), msg)
 
-    def assertNoLink(self, href_pattern: str = None, tag: str = 'a',
-                     href_attr: str = 'href', content: str = None,
+    def assertNoLink(self, href_pattern: Union[str, Pattern[str]] = None,
+                     tag: str = 'a', href_attr: str = 'href', content: str = None,
                      verbose: bool = False) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
         criteria include:
@@ -1176,7 +1201,8 @@ class FrontendTest(BackendTest):
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
 
-    def log_pagination(self, title: str, logs: List[Tuple[int, enum.IntEnum]]) -> None:
+    def log_pagination(self, title: str, logs: Tuple[Tuple[int, enum.IntEnum], ...]
+                       ) -> None:
         """Helper function to test the logic of the log pagination.
 
         This should be called from every frontend log, to ensure our pagination
@@ -1256,7 +1282,8 @@ class FrontendTest(BackendTest):
         f["length"] = None
         self.submit(f)
 
-    def _log_subroutine(self, title: str, all_logs: List[Tuple[int, enum.IntEnum]],
+    def _log_subroutine(self, title: str,
+                        all_logs: Tuple[Tuple[int, enum.IntEnum], ...],
                         start: int, end: int) -> None:
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
@@ -1292,7 +1319,8 @@ class FrontendTest(BackendTest):
             raise AssertionError(
                 f"Unexpected sidebar elements '{present}' found.")
 
-    def _click_admin_view_button(self, label: str, current_state: bool = None) -> None:
+    def _click_admin_view_button(self, label: Union[str, Pattern[str]],
+                                 current_state: bool = None) -> None:
         """
         Helper function for checking the disableable admin views
 
@@ -1408,7 +1436,7 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
             attr = getattr(backend, name)
 
             @functools.wraps(attr)
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
+            def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
                 rs = cron.make_request_state()
                 return attr(rs, *args, **kwargs)
             return wrapper

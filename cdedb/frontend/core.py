@@ -1398,13 +1398,22 @@ class CoreFrontend(AbstractFrontend):
         if not code:
             return self.show_privilege_change(rs, privilege_change_id)
         else:
+            persona = self.coreproxy.get_persona(rs, privilege_change['persona_id'])
+            email = persona['username']
+            params = {}
             if code < 0:
                 # The code is negative, the user's password needs to be changed.
                 # We didn't actually issue the success message above.
                 rs.notify("success", success)
-                # Do not return this on purpose to just send the mail.
-                self.admin_send_password_reset_link(
-                    rs, privilege_change["persona_id"], internal=True)
+                successful, cookie = self.coreproxy.make_reset_cookie(
+                    rs, email, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                if successful:
+                    params["email"] = self.encode_parameter(
+                        "core/do_password_reset_form", "email", email, persona_id=None,
+                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                    params["cookie"] = cookie
+            headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
+            self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)

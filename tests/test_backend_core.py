@@ -4,14 +4,17 @@ import copy
 import datetime
 import decimal
 from pathlib import Path
+from typing import cast
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, ArchiveError,
-    PrivilegeError, get_hash, merge_dicts, now,
+    CdEDBObject, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
+    ArchiveError, PrivilegeError, RequestState, get_hash, merge_dicts, now,
 )
-from cdedb.validation import _PERSONA_CDE_CREATION, _PERSONA_EVENT_CREATION
-from tests.common import USER_DICT, BackendTest, as_users, create_mock_image, nearly_now
+from cdedb.validation import _PERSONA_CDE_CREATION
+from tests.common import (
+    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, nearly_now,
+)
 
 PERSONA_TEMPLATE = {
     'username': "zelda@example.cde",
@@ -55,35 +58,35 @@ PERSONA_TEMPLATE = {
     'foto': None,
     'paper_expuls': None,
 }
+# This can be used whenever an ip needs to be specified.
+IP = "127.0.0.0"
 
 
 class TestCoreBackend(BackendTest):
     used_backends = ("core",)
 
-    def test_login(self):
+    def test_login(self) -> None:
         for i, u in enumerate(("anton", "berta", "janis")):
             with self.subTest(u=u):
                 if i > 0:
                     self.setUp()
                 user = USER_DICT[u]
-                key = self.core.login(None, user['username'], user['password'],
-                                      "127.0.0.0")
+                key = self.core.login(ANONYMOUS, user['username'], user['password'], IP)
                 self.assertIsInstance(key, str)
                 self.assertTrue(key)
 
-                key = self.core.login(None, user['username'], "wrong key",
-                                      "127.0.0.0")
-                self.assertEqual(None, key)
+                key = self.core.login(ANONYMOUS, user['username'], "wrong key", IP)
+                self.assertIsNone(key)
 
     @as_users("anton", "berta", "janis")
-    def test_logout(self, user):
+    def test_logout(self, user: CdEDBObject) -> None:
         self.assertTrue(self.key)
         self.assertEqual(1, self.core.logout(self.key))
         with self.assertRaises(RuntimeError):
             self.core.logout(self.key)
 
     @as_users("anton", "berta", "janis")
-    def test_set_persona(self, user):
+    def test_set_persona(self, user: CdEDBObject) -> None:
         new_name = "Zelda"
         self.core.set_persona(self.key, {'id': user['id'],
                                          'display_name': new_name})
@@ -91,7 +94,7 @@ class TestCoreBackend(BackendTest):
             self.key, user['id'])['display_name'])
 
     @as_users("anton", "berta", "janis")
-    def test_change_password(self, user):
+    def test_change_password(self, user: CdEDBObject) -> None:
         ret, _ = self.core.change_password(self.key, user['password'],
                                            "weakpass")
         self.assertFalse(ret)
@@ -101,9 +104,8 @@ class TestCoreBackend(BackendTest):
         self.assertTrue(ret)
         self.assertEqual(newpass, message)
         self.core.logout(self.key)
-        self.key = None
         self.login(user)
-        self.assertEqual(None, self.key)
+        self.assertIsNone(self.key)
         newuser = copy.deepcopy(user)
         newuser['password'] = newpass
         self.login(newuser)
@@ -111,12 +113,12 @@ class TestCoreBackend(BackendTest):
 
     # Martin may do this in the backend, but not manually via the frontend.
     @as_users("anton", "martin", "vera")
-    def test_invalidate_session(self, user):
+    def test_invalidate_session(self, user: CdEDBObject) -> None:
         # Login with another user.
         other_user = copy.deepcopy(USER_DICT["berta"])
         new_foto = create_mock_image()
-        other_key = self.core.login(
-            None, other_user["username"], other_user["password"], "127.0.0.0")
+        other_key = cast(RequestState, self.core.login(
+            ANONYMOUS, other_user["username"], other_user["password"], IP))
         self.assertIsNotNone(other_key)
         self.assertLess(
             0, self.core.change_foto(other_key, other_user["id"], new_foto))
@@ -130,24 +132,25 @@ class TestCoreBackend(BackendTest):
         self.assertIsNone(self.login(other_user))
 
     @as_users("anton", "berta", "janis")
-    def test_change_username(self, user):
+    def test_change_username(self, user: CdEDBObject) -> None:
         newaddress = "newaddress@example.cde"
-        ret, _ = self.core.change_username(self.key, user['id'], newaddress, user['password'])
+        ret, _ = self.core.change_username(
+            self.key, user['id'], newaddress, user['password'])
         self.assertTrue(ret)
         self.core.logout(self.key)
-        self.key = None
         self.login(user)
-        self.assertEqual(None, self.key)
+        self.assertIsNone(self.key)
         newuser = copy.deepcopy(user)
         newuser['username'] = newaddress
         self.login(newuser)
         self.assertTrue(self.key)
 
     @as_users("vera")
-    def test_admin_change_username(self, user):
+    def test_admin_change_username(self, user: CdEDBObject) -> None:
         persona_id = 2
         newaddress = "newaddress@example.cde"
-        ret, _ = self.core.change_username(self.key, persona_id, newaddress, password=None)
+        ret, _ = self.core.change_username(
+            self.key, persona_id, newaddress, password=None)
         self.assertTrue(ret)
         expected_log = {
             'id': 1001,
@@ -161,7 +164,7 @@ class TestCoreBackend(BackendTest):
         self.assertIn(expected_log, log_entry)
 
     @as_users("vera", "berta")
-    def test_set_foto(self, user):
+    def test_set_foto(self, user: CdEDBObject) -> None:
         new_foto = create_mock_image('png')
         persona_id = 2
         self.assertLess(0, self.core.change_foto(self.key, persona_id, new_foto))
@@ -171,9 +174,10 @@ class TestCoreBackend(BackendTest):
         self.assertGreater(0, self.core.change_foto(self.key, persona_id, None))
         self.assertIsNone(self.core.get_cde_user(self.key, persona_id)['foto'])
 
-    def test_verify_existence(self):
+    def test_verify_existence(self) -> None:
         self.assertTrue(self.core.verify_existence(self.key, "anton@example.cde"))
-        self.assertFalse(self.core.verify_existence(self.key, "nonexistent@example.cde"))
+        self.assertFalse(
+            self.core.verify_existence(self.key, "nonexistent@example.cde"))
         self.login(USER_DICT["berta"])
         self.assertTrue(self.core.verify_ids(self.key, {1, 2, 5, 100}))
         self.assertFalse(self.core.verify_ids(self.key, {123456}))
@@ -185,11 +189,12 @@ class TestCoreBackend(BackendTest):
         self.assertTrue(self.core.verify_ids(self.key, {8}, is_archived=True))
         self.assertFalse(self.core.verify_ids(self.key, {1, 8}, is_archived=True))
 
-    def test_password_reset(self):
+    def test_password_reset(self) -> None:
         new_pass = "rK;7e$ekgReW2t"
         ret, cookie = self.core.make_reset_cookie(self.key, "berta@example.cde")
         self.assertTrue(ret)
-        ret, effective = self.core.reset_password(self.key, "berta@example.cde", new_pass, cookie)
+        ret, effective = self.core.reset_password(
+            self.key, "berta@example.cde", new_pass, cookie)
         self.assertTrue(ret)
         self.assertEqual(new_pass, effective)
         with self.assertRaises(PrivilegeError):
@@ -198,7 +203,7 @@ class TestCoreBackend(BackendTest):
         self.assertFalse(ret)
 
     @as_users("vera")
-    def test_create_persona(self, user):
+    def test_create_persona(self, user: CdEDBObject) -> None:
         data = copy.deepcopy(PERSONA_TEMPLATE)
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -282,7 +287,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, history)
 
     @as_users("vera")
-    def test_create_member(self, user):
+    def test_create_member(self, user: CdEDBObject) -> None:
         data = copy.deepcopy(PERSONA_TEMPLATE)
         data.update({
             'is_ml_realm': True,
@@ -339,7 +344,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(data, new_data)
 
     @as_users("annika", "vera")
-    def test_create_event_user(self, user):
+    def test_create_event_user(self, user: CdEDBObject) -> None:
         data = copy.deepcopy(PERSONA_TEMPLATE)
         data.update({
             'is_ml_realm': True,
@@ -376,7 +381,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(data, new_data)
 
     @as_users("vera", "viktor")
-    def test_create_assembly_user(self, user):
+    def test_create_assembly_user(self, user: CdEDBObject) -> None:
         data = copy.deepcopy(PERSONA_TEMPLATE)
         data['is_ml_realm'] = True
         data['is_assembly_realm'] = True
@@ -400,7 +405,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(data, new_data)
 
     @as_users("vera")
-    def test_create_mixed_user(self, user):
+    def test_create_mixed_user(self, user: CdEDBObject) -> None:
         data = copy.deepcopy(PERSONA_TEMPLATE)
         data.update({
             'is_ml_realm': True,
@@ -438,7 +443,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(data, new_data)
 
     @as_users("vera")
-    def test_change_realm(self, user):
+    def test_change_realm(self, user: CdEDBObject) -> None:
         persona_id = 5
         data = {
             'id': 5,
@@ -470,15 +475,15 @@ class TestCoreBackend(BackendTest):
         self.assertIn(log_entry, expected_log)
 
     @as_users("vera")
-    def test_change_persona_balance(self, user):
+    def test_change_persona_balance(self, user: CdEDBObject) -> None:
         log_code = const.FinanceLogCodes.manual_balance_correction
         # Test non-members
         with self.assertRaises(RuntimeError) as cm:
             self.core.change_persona_balance(self.key, 5, '23.45', log_code)
         self.assertEqual(str(cm.exception),
-            "Tried to credit balance to non-cde person.")
+                         "Tried to credit balance to non-cde person.")
 
-        def persona_finances(rs, persona_id):
+        def persona_finances(rs: RequestState, persona_id: int) -> CdEDBObject:
             return self.core.retrieve_persona(
                 rs, persona_id, ("balance", "trial_member"))
 
@@ -505,7 +510,7 @@ class TestCoreBackend(BackendTest):
         self.assertDictEqual(persona_finances(self.key, persona_id), persona)
 
     @as_users("vera")
-    def test_meta_info(self, user):
+    def test_meta_info(self, user: CdEDBObject) -> None:
         expectation = self.sample_data['core.meta_info'][1]['info']
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
@@ -516,7 +521,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
 
     @as_users("vera")
-    def test_genesis_deletion(self, user):
+    def test_genesis_deletion(self, user: CdEDBObject) -> None:
         case_data = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
@@ -525,8 +530,9 @@ class TestCoreBackend(BackendTest):
             "notes": "Some blah",
         }
         # Create the request anonymously.
-        case_id = self.core.genesis_request(None, case_data)
+        case_id = self.core.genesis_request(ANONYMOUS, case_data)
         self.assertLess(0, case_id)
+        assert case_id is not None
 
         # Deletion is blocked, because link has not timed out yet.
         blockers = self.core.delete_genesis_case_blockers(self.key, case_id)
@@ -537,7 +543,7 @@ class TestCoreBackend(BackendTest):
             self.core.delete_genesis_case(self.key, case_id, cascade=blockers)
 
         # Verify the request anonymously.
-        self.core.genesis_verify(None, case_id)
+        self.core.genesis_verify(ANONYMOUS, case_id)
 
         # Deletion is blocked, because it is being reviewed.
         blockers = self.core.delete_genesis_case_blockers(self.key, case_id)
@@ -570,7 +576,7 @@ class TestCoreBackend(BackendTest):
         self.assertIn(log_entry_expectation, log_entries)
 
     @as_users("annika", "vera")
-    def test_genesis_event(self, user):
+    def test_genesis_event(self, user: CdEDBObject) -> None:
         data = {
             'family_name': "Zeruda-Hime",
             'given_names': "Zelda",
@@ -587,9 +593,10 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "Arkadien",
         }
-        case_id = self.core.genesis_request(None, data)
+        case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertGreater(case_id, 0)
-        self.assertEqual((1, 'event'), self.core.genesis_verify(None, case_id))
+        assert case_id is not None
+        self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
         expectation = data
@@ -617,7 +624,8 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_event_user(self.key, new_id)
-        expectation = {k: v for k, v in expectation.items() if k in PERSONA_EVENT_FIELDS}
+        expectation = {k: v for k, v in expectation.items()
+                       if k in PERSONA_EVENT_FIELDS}
         expectation.update({
             'is_meta_admin': False,
             'is_archived': False,
@@ -644,17 +652,18 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, value)
 
     @as_users("anton")
-    def test_genesis_ml(self, user):
-        data = {
+    def test_genesis_ml(self, user: CdEDBObject) -> None:
+        data: CdEDBObject = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zelda@example.cde',
             "realm": "ml",
             "notes": "Some blah",
         }
-        case_id = self.core.genesis_request(None, data)
+        case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertGreater(case_id, 0)
-        self.assertEqual((1, "ml"), self.core.genesis_verify(None, case_id))
+        assert case_id is not None
+        self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
         expectation = data
@@ -718,7 +727,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, value)
 
     @as_users("vera")
-    def test_genesis_cde(self, user):
+    def test_genesis_cde(self, user: CdEDBObject) -> None:
         attachment_hash = "really_cool_filename"
         data = {
             'family_name': "Zeruda-Hime",
@@ -740,11 +749,12 @@ class TestCoreBackend(BackendTest):
         }
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
-        case_id = self.core.genesis_request(None, data)
+        case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertTrue(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
         self.assertLess(0, case_id)
-        self.assertEqual((1, 'cde'), self.core.genesis_verify(None, case_id))
+        assert case_id is not None
+        self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
         expectation = data
@@ -814,7 +824,7 @@ class TestCoreBackend(BackendTest):
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
 
-    def test_genesis_attachments(self):
+    def test_genesis_attachments(self) -> None:
         pdffile = Path("/tmp/cdedb-store/testfiles/form.pdf")
         with open(pdffile, 'rb') as f:
             pdfdata = f.read()
@@ -828,8 +838,8 @@ class TestCoreBackend(BackendTest):
             0, self.core.genesis_attachment_usage(self.key, pdfhash))
         self.assertEqual(1, self.core.genesis_forget_attachments(self.key))
 
-    def test_genesis_verify_multiple(self):
-        self.assertEqual((0, "core"), self.core.genesis_verify(None, 123))
+    def test_genesis_verify_multiple(self) -> None:
+        self.assertEqual((0, "core"), self.core.genesis_verify(ANONYMOUS, 123))
         genesis_data = {
             "given_names": "Max",
             "family_name": "Mailschreiber",
@@ -837,18 +847,20 @@ class TestCoreBackend(BackendTest):
             "username": "max@mailschreiber.de",
             "notes": "Max möchte Mails mitbekommen.",
         }
-        case_id = self.core.genesis_request(None, genesis_data)
-        self.assertTrue(case_id)
-        ret, realm = self.core.genesis_verify(None, case_id)
-        self.assertTrue(ret > 0)
-        ret, realm = self.core.genesis_verify(None, case_id)
-        self.assertTrue(ret < 0)
+        case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
+        self.assertLess(0, case_id)
+        assert case_id is not None
+        ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
+        self.assertLess(0, ret)
+        ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
+        self.assertLess(ret, 0)
         self.login(USER_DICT["anton"])
-        total, _ = self.core.retrieve_log(self.key, codes=(const.CoreLogCodes.genesis_verified,))
+        total, _ = self.core.retrieve_log(
+            self.key, codes=(const.CoreLogCodes.genesis_verified,))
         self.assertEqual(1, total)
 
     @as_users("vera")
-    def test_verify_personas(self, user):
+    def test_verify_personas(self, user: CdEDBObject) -> None:
         self.assertFalse(self.core.verify_personas(
             self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), {"event"}))
         self.assertFalse(self.core.verify_persona(self.key, 1000))
@@ -864,7 +876,7 @@ class TestCoreBackend(BackendTest):
             self.key, (1, 2, 9), {"searchable"}))
 
     @as_users("vera")
-    def test_user_getters(self, user):
+    def test_user_getters(self, user: CdEDBObject) -> None:
         expectation = {
             'display_name': 'Bertå',
             'family_name': 'Beispiel',
@@ -916,7 +928,8 @@ class TestCoreBackend(BackendTest):
             'bub_search': True,
             'country2': 'Far Away',
             'decided_search': True,
-            'foto': 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9',
+            'foto': 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbe'
+                    'c03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9',
             'free_form': 'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen',
             'interests': 'Immer',
             'location2': 'Foreign City',
@@ -933,7 +946,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
     @as_users("vera")
-    def test_archive(self, user):
+    def test_archive(self, user: CdEDBObject) -> None:
         persona_id = 3
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
@@ -997,7 +1010,7 @@ class TestCoreBackend(BackendTest):
         self.core.archive_persona(self.key, 8, "Testing")
 
     @as_users("vera")
-    def test_archive_activate_bug(self, user):
+    def test_archive_activate_bug(self, user: CdEDBObject) -> None:
         self.core.archive_persona(self.key, 4, "Archived for testing.")
         self.core.dearchive_persona(self.key, 4)
         # The following call sometimes failed with the error "editing
@@ -1013,13 +1026,13 @@ class TestCoreBackend(BackendTest):
         self.core.change_persona(self.key, data, may_wait=False)
 
     @as_users("vera")
-    def test_archive_admin(self, user):
+    def test_archive_admin(self, user: CdEDBObject) -> None:
         # Nina is mailinglist admin.
         with self.assertRaises(ArchiveError):
             self.core.archive_persona(self.key, 14, "Admins can not be archived.")
 
     @as_users("vera")
-    def test_purge(self, user):
+    def test_purge(self, user: CdEDBObject) -> None:
         data = self.core.get_total_persona(self.key, 8)
         self.assertEqual("Hades", data['given_names'])
         ret = self.core.purge_persona(self.key, 8)
@@ -1027,7 +1040,7 @@ class TestCoreBackend(BackendTest):
         data = self.core.get_total_persona(self.key, 8)
         self.assertEqual("N.", data['given_names'])
 
-    def test_privilege_change(self):
+    def test_privilege_change(self) -> None:
         # This is somewhat hacky for now, because we need a second meta admin
         # for this to work with the new pending PrivilegeChange system
         admin1 = USER_DICT["anton"]
@@ -1110,7 +1123,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(changelog_expectation, result)
 
     @as_users("anton", "martin")
-    def test_invalid_privilege_change(self, user):
+    def test_invalid_privilege_change(self, user: CdEDBObject) -> None:
         data = {
             "persona_id": USER_DICT["janis"]["id"],
             "is_meta_admin": True,
@@ -1145,7 +1158,7 @@ class TestCoreBackend(BackendTest):
             self.core.initialize_privilege_change(self.key, data)
 
     @as_users("garcia")
-    def test_non_participant_privacy(self, user):
+    def test_non_participant_privacy(self, user: CdEDBObject) -> None:
         with self.assertRaises(PrivilegeError) as cm:
             self.core.get_event_users(self.key, (3,), 1)
         self.assertIn("Access to persona data inhibited.",
@@ -1153,8 +1166,30 @@ class TestCoreBackend(BackendTest):
         self.core.get_event_users(self.key, (9,), 1)
 
     @as_users("vera")
-    def test_log(self, user):
-        ## first generate some data
+    def test_get_persona_latest_session(self, user: CdEDBObject) -> None:
+        ip = "127.0.0.1"
+        for u in USER_DICT.values():
+            with self.subTest(u=u["id"]):
+                if u["id"] in {8, 12, 15}:
+                    if u["id"] in {15}:  # These users are deactivated.
+                        ret = self.core.login(
+                            ANONYMOUS, u["username"], u["password"], ip)
+                        self.assertIsNone(ret)
+                    else:  # These users have no usernames.
+                        with self.assertRaises(TypeError):
+                            self.core.login(ANONYMOUS, u["username"], u["password"], ip)
+                else:
+                    if u["id"] != user["id"]:
+                        self.assertIsNone(
+                            self.core.get_persona_latest_session(self.key, u["id"]))
+                        self.core.login(ANONYMOUS, u["username"], u["password"], ip)
+                    self.assertEqual(
+                        nearly_now(),
+                        self.core.get_persona_latest_session(self.key, u["id"]))
+
+    @as_users("vera")
+    def test_log(self, user: CdEDBObject) -> None:
+        # first generate some data
         data = copy.deepcopy(PERSONA_TEMPLATE)
         new_persona_id = self.core.create_persona(self.key, data)
         data = {
@@ -1164,7 +1199,7 @@ class TestCoreBackend(BackendTest):
             'realm': "ml",
             "notes": "Some blah",
         }
-        case_id = self.core.genesis_request(None, data)
+        case_id = self.core.genesis_request(ANONYMOUS, data)
         update = {
             'id': case_id,
             'realm': "ml",
@@ -1205,7 +1240,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.retrieve_log(self.key))
 
     @as_users("vera")
-    def test_changelog_meta(self, user):
+    def test_changelog_meta(self, user: CdEDBObject) -> None:
         expectation = self.get_sample_data(
             "core.changelog", range(1, 32),
             ("id", "submitted_by", "reviewed_by", "ctime", "generation",

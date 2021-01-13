@@ -53,7 +53,7 @@ class TestValidation(unittest.TestCase):
                     onepass, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
-    def test_or_None(self):
+    def test_or_None(self) -> None:
         self.assertTrue(validate.is_int(12))
         self.assertFalse(validate.is_int(None))
         self.assertFalse(validate.is_int("12"))
@@ -87,7 +87,7 @@ class TestValidation(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate.assert_int_or_None("garbage")
 
-    def test_int(self):
+    def test_int(self) -> None:
         self.do_validator_test("_int", (
             (0, 0, None, True),
             (12, 12, None, True),
@@ -103,13 +103,13 @@ class TestValidation(unittest.TestCase):
             (1e10, None, ValueError, False),
         ))
 
-    def test_bool_int(self):
+    def test_bool_int(self) -> None:
         self.do_validator_test("_int", (
             (True, None, TypeError, False),
             (False, None, TypeError, False),
         ), {"_convert": False})
 
-    def test_float(self):
+    def test_float(self) -> None:
         self.do_validator_test("_float", (
             (0.0, 0.0, None, True),
             (12.3, 12.3, None, True),
@@ -122,7 +122,7 @@ class TestValidation(unittest.TestCase):
             (1e7, None, ValueError, False),
         ))
 
-    def test_decimal(self):
+    def test_decimal(self) -> None:
         self.do_validator_test("_decimal", (
             (decimal.Decimal(0), decimal.Decimal(0), None, True),
             (decimal.Decimal(12.3), decimal.Decimal(12.3), None, True),
@@ -134,7 +134,7 @@ class TestValidation(unittest.TestCase):
             (12.3, None, TypeError, False),
         ))
 
-    def test_str_type(self):
+    def test_str_type(self) -> None:
         self.do_validator_test("_str_type", (
             ("a string", "a string", None, True),
             ("with stuff äößł€ ", "with stuff äößł€ ", None, True),
@@ -149,7 +149,7 @@ class TestValidation(unittest.TestCase):
             ("a string", "a sti", None, True),
         ), extraparams={'sieve': ' aist'})
 
-    def test_str(self):
+    def test_str(self) -> None:
         self.do_validator_test("_str", (
             ("a string", "a string", None, True),
             ("string with stuff äößł€", "string with stuff äößł€", None, True),
@@ -158,13 +158,13 @@ class TestValidation(unittest.TestCase):
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None, True),
         ))
 
-    def test_mapping(self):
+    def test_mapping(self) -> None:
         self.do_validator_test("_mapping", (
             ({"a": "dict"}, {"a": "dict"}, None, True),
             ("something else", "", TypeError, False),
         ))
 
-    def test_bool(self):
+    def test_bool(self) -> None:
         self.do_validator_test("_bool", (
             (True, True, None, True),
             (False, False, None, True),
@@ -175,7 +175,7 @@ class TestValidation(unittest.TestCase):
             (54, True, None, False),
         ))
 
-    def test_printable_ascii_type(self):
+    def test_printable_ascii_type(self) -> None:
         self.do_validator_test("_printable_ascii_type", (
             ("a string", "a string", None, True),
             ("string with stuff äößł€", None, ValueError, False),
@@ -183,7 +183,7 @@ class TestValidation(unittest.TestCase):
             (54, "54", None, False),
         ))
 
-    def test_printable_ascii(self):
+    def test_printable_ascii(self) -> None:
         self.do_validator_test("_printable_ascii", (
             ("a string", "a string", None, True),
             ("string with stuff äößł€", None, ValueError, False),
@@ -191,7 +191,7 @@ class TestValidation(unittest.TestCase):
             (54, "54", None, False),
         ))
 
-    def test_password_strength(self):
+    def test_password_strength(self) -> None:
         self.do_validator_test("_password_strength", (
             ("Secure String 0#", "Secure String 0#", None, True),
             ("short", None, ValueError, False),
@@ -199,7 +199,7 @@ class TestValidation(unittest.TestCase):
             ("", "", ValueError, False),
         ))
 
-    def test_email(self):
+    def test_email(self) -> None:
         self.do_validator_test("_email", (
             ("address@domain.tld", "address@domain.tld", None, True),
             ("eXtRaS_-4+@DomAin.tld", "extras_-4+@domain.tld", None, True),
@@ -210,7 +210,7 @@ class TestValidation(unittest.TestCase):
             ("a@ddress@domain.tld", None, ValueError, False),
         ))
 
-    def test_persona_data(self):
+    def test_persona_data(self) -> None:
         base_example = {
             "id": 42,
             "username": "address@domain.tld",
@@ -236,7 +236,7 @@ class TestValidation(unittest.TestCase):
             (value_example, value_example, ValueError, False),
         ))
 
-    def test_date(self):
+    def test_date(self) -> None:
         now = datetime.datetime.now()
         self.do_validator_test("_date", (
             (now.date(), now.date(), None, True),
@@ -251,7 +251,7 @@ class TestValidation(unittest.TestCase):
             # ("more garbage", None, TypeError, False),
         ))
 
-    def test_datetime(self):
+    def test_datetime(self) -> None:
         now = datetime.datetime.now()
         now_aware = datetime.datetime.now(pytz.utc)
         now_other = pytz.timezone('America/New_York').localize(now)
@@ -306,7 +306,7 @@ class TestValidation(unittest.TestCase):
             # ("more garbage", None, TypeError, False),
         ), extraparams={'default_date': datetime.date(2000, 5, 23)})
 
-    def test_phone(self):
+    def test_phone(self) -> None:
         self.do_validator_test("_phone", (
             ("+49 (3641) 12345", "+49 (3641) 12345", None, True),
             ("0049364112345", "+49 (3641) 12345", None, True),
@@ -322,7 +322,7 @@ class TestValidation(unittest.TestCase):
             ("+210 (12390) 12345", None, ValueError, False),
         ))
 
-    def test_member_data(self):
+    def test_member_data(self) -> None:
         base_example = {
             "id": 42,
             "username": "address@domain.tld",
@@ -375,7 +375,7 @@ class TestValidation(unittest.TestCase):
             (value_example, value_example, ValidationWarning, False),
         ))
 
-    def test_event_user_data(self):
+    def test_event_user_data(self) -> None:
         base_example = {
             "id": 42,
             "username": "address@domain.tld",
@@ -413,7 +413,7 @@ class TestValidation(unittest.TestCase):
             (value_example, None, ValidationWarning, False),
         ))
 
-    def test_enum_validators(self):
+    def test_enum_validators(self) -> None:
         stati = const.RegistrationPartStati
         self.do_validator_test("_enum_registrationpartstati", (
             (stati.participant, stati.participant, None, True),
@@ -423,7 +423,7 @@ class TestValidation(unittest.TestCase):
             ("alorecuh", None, ValueError, False),
         ))
 
-    def test_vote(self):
+    def test_vote(self) -> None:
         ballot = {
             'votes': None,
             'use_bar': True,
@@ -462,7 +462,7 @@ class TestValidation(unittest.TestCase):
             ("E=C>A>_bar_=D=B",  None, ValueError, False),
         ), extraparams={'ballot': classical_ballot})
 
-    def test_iban(self):
+    def test_iban(self) -> None:
         self.do_validator_test("_iban", (
             ("DE75512108001245126199", "DE75512108001245126199", None, True),
             ("DE75 5121 0800 1245 1261 99", "DE75512108001245126199", None, True),
@@ -479,8 +479,8 @@ class TestValidation(unittest.TestCase):
             ("DE00512108001245126199", None, ValueError, False),  # Wrong Checksum
         ))
 
-    def test_json(self):
-        for input, output, error in (
+    def test_json(self) -> None:
+        for input_, output, error in (
                 ("42", 42, None),
                 (b"42", 42, None),
                 ('"42"', "42", None),
@@ -494,8 +494,8 @@ class TestValidation(unittest.TestCase):
                 ('{"open": 1', None, ValueError),
                 (b'{"open": 1', None, ValueError),
                 (b"\xff", None, ValueError)):
-            with self.subTest(input=input):
-                result, errs = validate.check_json(input, _convert=True)
+            with self.subTest(input=input_):
+                result, errs = validate.check_json(input_, _convert=True)
                 self.assertEqual(output, result)
                 if error is None:
                     self.assertFalse(errs)
@@ -503,7 +503,7 @@ class TestValidation(unittest.TestCase):
                     for fieldname, e in errs:
                         self.assertIsInstance(e, error)
 
-    def test_german_postal_code(self):
+    def test_german_postal_code(self) -> None:
         for assertion in ("_persona", "_genesis_case"):
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""},
@@ -569,7 +569,7 @@ class TestValidation(unittest.TestCase):
                         outv['realm'] = "event"
             self.do_validator_test(assertion, spec, {'_ignore_warnings': True})
 
-    def test_encoding(self):
+    def test_encoding(self) -> None:
         # Make sure decoding utf-8 as if it were utf-8-sig works.
         msg = "abc"
         self.assertEqual(msg, msg.encode('utf-8').decode('utf-8'))
@@ -578,7 +578,7 @@ class TestValidation(unittest.TestCase):
             "\ufeff" + msg, msg.encode('utf-8-sig').decode('utf-8'))
         self.assertEqual(msg, msg.encode('utf-8-sig').decode('utf-8-sig'))
 
-    def test_safe_str(self):
+    def test_safe_str(self) -> None:
         spec = [
             ("abc123 .,-+()/", "abc123 .,-+()/", None, True),
             ("", None, ValueError, False),
