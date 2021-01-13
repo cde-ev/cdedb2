@@ -1026,7 +1026,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Änderung wurde übernommen.", div="notifications")
         if new_password:
             mail = self.fetch_mail()[0]
-            link = self.fetch_link(mail)
+            link = self.fetch_link(mail, num=2)
             self.get(link)
             f = self.response.forms["passwordresetform"]
             f["new_password"] = new_password
