@@ -311,7 +311,7 @@ class TestMlFrontend(FrontendTest):
         # Exemplarily, test mailinglist 54 in detail.
         self.assertPresence("Gutscheine", div="mailinglist-54-row")
         self.assertPresence("Mitglieder (Moderiertes Opt-in)", div="mailinglist-54-row")
-        self.assertPresence("—", div="mailinglist-54-row")
+        self.assertPresence("3", div="mailinglist-54-row")
         self.assertPresence("2 Abonnenten. 1 Moderator.", div="mailinglist-54-row")
         # Test if moderation hints work
         self.assertPresence("Mailman-Migration", div="mailinglist-99-row")
@@ -353,7 +353,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Allgemeine Mailinglisten")
         self.assertPresence("Aktivenforum 2001", div="mailinglist-7-row")
         self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-7-row")
-        self.assertPresence("—", div="mailinglist-7-row")
+        self.assertPresence("3", div="mailinglist-7-row")
         self.assertPresence("1 Abonnent. 2 Moderatoren.", div="mailinglist-7-row")
         if user['id'] == USER_DICT['berta']['id']:
             self.assertPresence("Veranstaltungslisten")
@@ -663,7 +663,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Werbung – Konfiguration")
 
         # Check if the attachment policy hint works
-        self.assertNonPresence("Admin-Team")
+        self.assertPresence("Admin-Team")
         f = self.response.forms['changelistform']
         f['domain'] = const.MailinglistDomain.testmail.value
         f['maxsize'] = "intentionally no valid maxsize"
@@ -680,7 +680,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Werbung")
         self.traverse({'href': '/ml/mailinglist/2/change'}, )
-        self.assertNonPresence("Admin-Team")
+        self.assertPresence("Admin-Team")
 
         # Test list deactivation
         f = self.response.forms['changelistform']
