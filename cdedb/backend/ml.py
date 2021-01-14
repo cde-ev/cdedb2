@@ -1344,7 +1344,7 @@ class MlBackend(AbstractBackend):
                 raise PrivilegeError(n_("Not privileged."))
 
             # Only run write_subscription_states if the mailinglist is active and has
-            # oeriodic cleanup enabled.
+            # periodic cleanup enabled.
             if not atype.periodic_cleanup(rs, ml) or not ml['is_active']:
                 return ret
 
