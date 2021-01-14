@@ -1383,6 +1383,13 @@ class AssemblyFrontend(AbstractUserFrontend):
                 if '>' not in vote['vote']:
                     abstentions += 1
             result['abstentions'] = abstentions
+
+            # strip the leading _bar_ of the result if it has only technical meanings
+            if not result['use_bar']:
+                if result['result'].endswith(ASSEMBLY_BAR_SHORTNAME):
+                    # remove also the trailing > or =
+                    result['result'] = result['result'][:-len(ASSEMBLY_BAR_SHORTNAME)-1]
+
             return result
         return None
 
