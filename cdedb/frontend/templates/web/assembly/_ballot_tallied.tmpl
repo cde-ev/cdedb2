@@ -35,11 +35,6 @@
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['title'] }}
-                            {% if not ballot['votes'] and not short %}
-                                <span class="label label-primary">
-                                    {{- candidate_shortname -}}
-                                </span>
-                            {% endif %}
                         </td>
                     {% if is_classical %}
                         <td>
@@ -139,11 +134,6 @@
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['title'] }}
-                            {% if not ballot['votes'] and not short %}
-                                <span class="label label-primary">
-                                    {{- candidate_shortname -}}
-                                </span>
-                            {% endif %}
                         </td>
                     {% if is_classical %}
                         <td>
