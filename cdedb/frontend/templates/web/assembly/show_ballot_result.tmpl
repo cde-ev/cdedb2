@@ -30,6 +30,20 @@
     {{ util.breadcrumb_link(cdedblink("assembly/show_ballot_result"), gettext("Detailed Results"), active=True) }}
 {% endblock %}
 
+{% macro print_vote(votestring) %}
+    {%- for candidate_level in votestring.split(">") -%}
+        {%- for candidate in candidate_level.split("=") -%}
+            {{- candidates[candidate] -}}
+            {%- if not loop.last -%}
+                {{ nbsp }}<span class="result-separator">=</span>{{ nbsp }}
+            {%- endif -%}
+        {%- endfor -%}
+        {%- if not loop.last -%}
+            {{ nbsp }}<span class="result-separator">></span>{{ nbsp }}
+        {%- endif -%}
+    {%- endfor -%}
+{% endmacro %}
+
 {% block content %}
 
     {% set classical = ambience['ballot']['votes'] %}
@@ -48,10 +62,10 @@
         {% endtrans %}
     </p>
 
-    <pre class="result">{{ result['result'] }}</pre>
+    <pre class="result">{{ print_vote(result['result']) }}</pre>
 
     <p>
-        {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s %}
+        {% trans  gt="<code class=result-separator >></code>"|s, eq="<code class=result-separator >=</code>"|s %}
             The greater-than character {{ gt }} means that the candidate, represented by their
             shortname, on the left has higher overall preference than the one on the right.
             The equals character {{ eq }} means that two or more candidates have the same overall
@@ -61,7 +75,7 @@
 
     {% if ambience['ballot']['use_bar'] %}
         <p>
-            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
+            {% trans abm="<code class=result >%(abm)s</code>"|s|format(abm=candidates[ASSEMBLY_BAR_SHORTNAME]) %}
                 Additionally the shortname {{ abm }} shows where in the election the rejection limit was ranked.
             {% endtrans %}
         </p>
@@ -139,21 +153,13 @@
                 </tr>
             </thead>
             <tbody>
-                {% for vote, count in vote_counts|dictsort(by_key=False, reverse=True) %}
+                {% for votestring, count in vote_counts|dictsort(by_key=False, reverse=True) %}
                     <tr>
                         <td>
                             {% if vote == MAGIC_ABSTAIN %}
                                 {% trans %}Abstained{% endtrans %}
                             {% else %}
-                                <code>
-                                    {% if classical %}
-                                        {%- for vote in vote.split("=") -%}
-                                            {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
-                                        {%- endfor -%}
-                                    {% else %}
-                                        {{ vote }}
-                                    {% endif %}
-                                </code>
+                                <code class="result">{{ print_vote(votestring) }}</code>
                             {% endif %}
                         </td>
                         <td class="text-right">
@@ -175,22 +181,15 @@
         {% elif own_vote %}
             {% if own_vote == MAGIC_ABSTAIN %}
                 <p>{% trans %}You abstained.{% endtrans %}</p>
-            {# Show own vote under result: Classical vote #}
-            {% elif ambience['ballot']['votes'] %}
-                {% if own_vote == ASSEMBLY_BAR_SHORTNAME %}
-                    <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
-                {% else %}
-                    <p>{% trans %}You voted for the following candidates:{% endtrans %}</p>
-                    <pre class="result">
-                        {%- for vote in own_vote.split('=') -%}
-                            {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
-                        {%- endfor -%}
-                    </pre>
-                {% endif %}
-            {# Show own vote under result: Preferential vote #}
+            {% elif own_vote == ASSEMBLY_BAR_SHORTNAME %}
+                <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
             {% else %}
-                <p>{% trans %}You voted in the following preference:{% endtrans %}</p>
-                    <pre class="result">{{ own_vote }}</pre>
+                {% if classical %}
+                    <p>{% trans %}You voted for the following candidates:{% endtrans %}</p>
+                {% else %}
+                    <p>{% trans %}You voted in the following preference:{% endtrans %}</p>
+                {% endif %}
+                <pre class="result">{{ print_vote(own_vote) }}</pre>
             {% endif %}
         {% else %}
             <p>

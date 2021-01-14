@@ -539,10 +539,21 @@ p.textbox {
     text-decoration: none;
 }
 
+code.result {
+    color: #0f0f0f;
+    background-color: #f5f5f5;
+}
+
 pre.result {
     display: inline-block;
     margin-bottom: 4px;
+    color: #0f0f0f;
+    background-color: #f5f5f5;
+}
+
+span.result-separator, code.result-separator {
     color: #c7254e;
+    background-color: #f5f5f5;
 }
 
 /* query form */

@@ -1210,6 +1210,15 @@ class AssemblyFrontend(AbstractUserFrontend):
         if vote_counts[MAGIC_ABSTAIN] == 0:
             del vote_counts[MAGIC_ABSTAIN]
 
+        # map the candidate shortnames to their titles
+        candidates = {candidate['shortname']: candidate['title']
+                      for candidate in ballot['candidates'].values()}
+        if ballot['use_bar']:
+            if ballot['votes']:
+                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
+            else:
+                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Against all Candidates")
+
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
         assert result_bytes is not None
@@ -1233,7 +1242,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'result_hash': result_hash, 'secret': secret, **vote_dict,
             'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
-            'prev_ballot': prev_ballot, 'next_ballot': next_ballot})
+            'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
+            'candidates': candidates})
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
                            secret: str = None) -> CdEDBObject:
