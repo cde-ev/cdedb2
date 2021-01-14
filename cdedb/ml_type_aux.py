@@ -304,7 +304,7 @@ class MemberMailinglist(CdEMailinglist):
 
 class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.mandatory)
+        ("member", MailinglistInteractionPolicy.subscribable)
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
@@ -314,13 +314,13 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
 
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.opt_out)
+        ("member", MailinglistInteractionPolicy.subscribable)
     ])
 
 
 class MemberOptInMailinglist(MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.opt_in)
+        ("member", MailinglistInteractionPolicy.subscribable)
     ])
 
 
@@ -388,7 +388,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             if bc.event.check_registration_status(
                     rs, persona_id, mailinglist['event_id'],
                     mailinglist['registration_stati']):
-                ret[persona_id] = MailinglistInteractionPolicy.opt_out
+                ret[persona_id] = MailinglistInteractionPolicy.subscribable
             else:
                 ret[persona_id] = None
 
@@ -454,7 +454,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         event = bc.event.get_event(rs, mailinglist["event_id"])
         for persona_id in persona_ids:
             if persona_id in event["orgas"]:
-                ret[persona_id] = const.MailinglistInteractionPolicy.opt_out
+                ret[persona_id] = const.MailinglistInteractionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -515,7 +515,7 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
                 rs, persona_id=persona_id,
                 assembly_id=mailinglist["assembly_id"])
             if attending:
-                ret[persona_id] = const.MailinglistInteractionPolicy.opt_out
+                ret[persona_id] = const.MailinglistInteractionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -550,7 +550,7 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
         ret: MIPolMap = {}
         for persona_id in persona_ids:
             if persona_id in presiders:
-                ret[persona_id] = MailinglistInteractionPolicy.opt_out
+                ret[persona_id] = MailinglistInteractionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -569,13 +569,13 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
 
 class AssemblyOptInMailinglist(AssemblyMailinglist):
     role_map = OrderedDict([
-        ("assembly", MailinglistInteractionPolicy.opt_in)
+        ("assembly", MailinglistInteractionPolicy.subscribable)
     ])
 
 
 class GeneralOptInMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
-        ("ml", MailinglistInteractionPolicy.opt_in)
+        ("ml", MailinglistInteractionPolicy.subscribable)
     ])
 
 
@@ -593,7 +593,7 @@ class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
 
 class SemiPublicMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.opt_in),
+        ("member", MailinglistInteractionPolicy.subscribable),
         ("ml", MailinglistInteractionPolicy.moderated_opt_in)
     ])
 
