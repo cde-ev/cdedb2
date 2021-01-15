@@ -148,14 +148,13 @@ class MlBaseFrontend(AbstractUserFrontend):
             grouped[group_id][ml_id] = {
                 'title': mailinglist_infos[ml_id]['title'], 'id': ml_id}
         event_ids = self.eventproxy.list_events(rs)
-        events = {}
-        for event_id in event_ids:
-            event = self.eventproxy.get_event(rs, event_id)
+        events = self.eventproxy.get_events(rs, event_ids)
+        for event in events.values():
             visible = (
                     "event_admin" in rs.user.roles
                     or rs.user.persona_id in event['orgas']
                     or event['is_visible'])
-            events[event_id] = {'title': event['title'], 'is_visible': visible}
+            event['is_visible'] = visible
         assemblies = self.assemblyproxy.list_assemblies(rs)
         for assembly_id in assemblies:
             assemblies[assembly_id]['is_visible'] = \
