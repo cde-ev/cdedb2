@@ -41,6 +41,7 @@ class User:
         self.roles = ALL_ROLES
         self.orga: Set[int] = set()
         self.moderator: Set[int] = set()
+        self.presider: Set[int] = set()
         self.username = None
         self.display_name = None
         self.given_names = None
