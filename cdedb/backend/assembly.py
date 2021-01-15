@@ -103,7 +103,7 @@ class AssemblyBackend(AbstractBackend):
                 rs, ballot_id=ballot_id, attachment_id=attachment_id)
         assembly_id = affirm_optional(vtypes.ID, assembly_id)
 
-        if not persona_id:
+        if persona_id is None or persona_id == rs.user.persona_id:
             return self.is_admin(rs) or assembly_id in rs.user.presider
         else:
             roles = self.core.get_roles_single(rs, persona_id)
