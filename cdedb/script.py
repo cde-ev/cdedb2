@@ -185,7 +185,7 @@ class Script(Atomizer):
         """
         self.end_time = time.time()
         time_diff = self.end_time - self.start_time
-        formatmsg = lambda msg: f"{msg} Time taken: {time_diff:.0f} seconds."
+        formatmsg = lambda msg: f"{msg} Time taken: {time_diff:.3f} seconds."
         if exc_type is None:
             if self.dry_run:
                 msg = "Aborting Dry Run!"
