@@ -129,8 +129,11 @@ class AssemblyBackend(AbstractBackend):
 
         :param persona_id: If not provided the current user is used.
         """
-        persona_id = persona_id or rs.user.persona_id
-        roles = self.core.get_roles_single(rs, persona_id)
+        if persona_id is None or persona_id == rs.user.persona_id:
+            persona_id = rs.user.persona_id
+            roles = rs.user.roles
+        else:
+            roles = self.core.get_roles_single(rs, persona_id)
 
         if "member" in roles or self.is_presider(
                 rs, assembly_id=assembly_id, ballot_id=ballot_id,
