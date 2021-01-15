@@ -2640,23 +2640,22 @@ class EventBackend(AbstractBackend):
         if position is not None:
             cfp = CourseFilterPositions
             sub_conditions = []
-            if position.enum in (cfp.instructor, cfp.anywhere):  # type: ignore
+            if position.enum in (cfp.instructor, cfp.anywhere):
                 if course_id:
                     sub_conditions.append("rtracks.course_instructor = %s")
                     params.append(course_id)
                 else:
                     sub_conditions.append("rtracks.course_instructor IS NULL")
-            if position.enum in (  # type: ignore
-                cfp.any_choice, cfp.anywhere) and course_id:
+            if position.enum in (cfp.any_choice, cfp.anywhere) and course_id:
                 sub_conditions.append(
                     "(choices.course_id = %s AND "
                     " choices.rank < course_tracks.num_choices)")
                 params.append(course_id)
-            if position.enum == cfp.specific_rank and course_id:  # type: ignore
+            if position.enum == cfp.specific_rank and course_id:
                 sub_conditions.append(
                     "(choices.course_id = %s AND choices.rank = %s)")
-                params.extend((course_id, position.int))  # type: ignore
-            if position.enum in (cfp.assigned, cfp.anywhere):  # type: ignore
+                params.extend((course_id, position.int))
+            if position.enum in (cfp.assigned, cfp.anywhere):
                 if course_id:
                     sub_conditions.append("rtracks.course_id = %s")
                     params.append(course_id)

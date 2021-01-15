@@ -199,7 +199,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     ("ml_type", ValueError(n_(
                         "May not create mailinglist of this type."))))
             available_domains = atype.domains
-            additional_fields = [f for f, _ in atype.get_additional_fields()]
+            additional_fields = atype.get_additional_fields().keys()
             if "event_id" in additional_fields:
                 event_ids = self.eventproxy.list_events(rs)
                 events = self.eventproxy.get_events(rs, event_ids)
@@ -359,7 +359,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Render form."""
         atype = TYPE_MAP[rs.ambience['mailinglist']['ml_type']]
         available_domains = atype.domains
-        additional_fields = {f for f, _ in atype.get_additional_fields()}
+        additional_fields = atype.get_additional_fields().keys()
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)

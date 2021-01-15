@@ -401,7 +401,8 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "shortname", "signup_end", "notes")
-    @REQUESTdata("presider_ids", "create_attendee_list", "create_presider_list")
+    @REQUESTdata("presider_ids", "create_attendee_list", "create_presider_list",
+                 "presider_address")
     def create_assembly(self, rs: RequestState, presider_ids: vtypes.CdedbIDList,
                         create_attendee_list: bool, create_presider_list: bool,
                         presider_address: Optional[Email], data: Dict[str, Any]
@@ -417,7 +418,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         if create_presider_list:
             # TODO maybe display a notification?
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
-            presider_address = ml_type.get_full_address(presider_ml_data)
+            presider_address = ml_type.get_full_address(  # type: ignore
+                presider_ml_data)
+            assert presider_address is not None
             data["presider_address"] = presider_address
             if self.mlproxy.verify_existence(rs, presider_address):
                 presider_ml_data = None

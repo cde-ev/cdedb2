@@ -145,25 +145,24 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         super().__setitem__(type_, validator)
 
     def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
-        if (
-            getattr(type_, "__origin__", None) is Union
-            and type_.__args__[1] is NoneType  # type: ignore
-        ):
-            validator = self[type_.__args__[0]]  # type: ignore
-            return _allow_None(validator)  # type: ignore
+        # TODO replace with get_origin etc in Python 3.8
+        if hasattr(type_, "__origin__"):
+            if (type_.__origin__ is Union):  # type: ignore
+                inner_type, none_type = type_.__args__  # type: ignore
+                if none_type is not NoneType:
+                    raise KeyError("Complex unions not supported")
+                validator = self[inner_type]
+                return _allow_None(validator)  # type: ignore
+            elif type_.__origin__ is list:
+                [inner_type] = type_.__args__  # type: ignore
+                return make_list_validator(inner_type)  # type: ignore
+            # TODO more container types like tuple
         return super().__getitem__(type_)
 
-    def __missing__(self, type_: Type[T]) -> Callable[..., T]:
-        # pass
-        # generic tuples
-        # if getattr(type_, "__origin__", None) is list:
-        #     return make_list_validator(type_.__args__[0])  # type: ignore
-
-        # TODO resolve potential cyclic imports with enums
-        # if callable(type_):
-        #     return type_  # we have a raw enum validator
-        # TODO implement dynamic lookup for container types
-        raise NotImplementedError(type_)
+    # def __missing__(self, type_: Type[T]) -> Callable[..., T]:
+    #     if callable(type_):
+    #         return type_
+    #     raise NotImplementedError(type_)
 
 
 _ALL_TYPED = ValidatorStorage()
@@ -3550,26 +3549,33 @@ def _mailinglist(
     val = _mapping(val, argname, **kwargs)
 
     # TODO replace these with generic types
-    mandatory_validation_fields = [('moderators', '[id]'), ]
-    optional_validation_fields = [('whitelist', '[email]'), ]
+    mandatory_validation_fields: TypeMapping = {'moderators': List[ID]}
+    optional_validation_fields: TypeMapping = {'whitelist': List[Email]}
     if "ml_type" not in val:
         raise ValidationSummary(ValueError(
             "ml_type", "Must provide ml_type for setting mailinglist."))
     atype = ml_type.get_type(val["ml_type"])
-    mandatory_validation_fields.extend(atype.mandatory_validation_fields)
-    optional_validation_fields.extend(atype.optional_validation_fields)
+    mandatory_validation_fields.update(  # type: ignore
+        atype.mandatory_validation_fields)
+    optional_validation_fields.update(  # type: ignore
+        atype.optional_validation_fields)
     mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
     optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
 
-    iterable_fields = []
+    # iterable_fields = []
     for source, target in ((mandatory_validation_fields, mandatory_fields),
                            (optional_validation_fields, optional_fields)):
-        for key, validator_str in source:
-            if validator_str.startswith('[') and validator_str.endswith(']'):
-                target[key] = _iterable
-                iterable_fields.append((key, "_" + validator_str[1:-1]))
-            else:
-                target[key] = getattr(current_module, "_" + validator_str)
+        for key, validator in source.items():
+            target[key] = validator
+            # if (
+            #     isinstance(validator, str)
+            #     and validator.startswith('[')
+            #     and validator.endswith(']')
+            # ):
+            #     target[key] = _iterable
+            #     iterable_fields.append((key, "_" + validator_str[1:-1]))
+            # else:
+            #     target[key] = getattr(current_module, "_" + validator_str)
     # Optionally remove readonly attributes, take care to keep the original.
     if _allow_readonly:
         val = dict(copy.deepcopy(val))
@@ -3594,18 +3600,18 @@ def _mailinglist(
             "moderators", n_("Must not be empty.")))
 
     errs = ValidationSummary()
-    for key, validator_str in iterable_fields:
-        validator = getattr(current_module, validator_str)
-        newarray = []
-        if key in val:
-            for x in val[key]:
-                try:
-                    v = validator(x, argname=key, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newarray.append(v)
-            val[key] = newarray
+    # for key, validator_str in iterable_fields:
+    #     validator = getattr(current_module, validator_str)
+    #     newarray = []
+    #     if key in val:
+    #         for x in val[key]:
+    #             try:
+    #                 v = validator(x, argname=key, **kwargs)
+    #             except ValidationSummary as e:
+    #                 errs.extend(e)
+    #             else:
+    #                 newarray.append(v)
+    #         val[key] = newarray
 
     if "domain" in val:
         if "ml_type" not in val:
@@ -4406,7 +4412,7 @@ def _enum_validator_maker(
             raise ValidationSummary(TypeError(
                 argname, n_("Must be a %(type)s."), {'type': anenum}))
 
-    the_validator.__name__ = name or "_enum_{anenum.__name__.lower()}"
+    the_validator.__name__ = name or f"_enum_{anenum.__name__.lower()}"
 
     if not internal:
         _add_typed_validator(the_validator, anenum)
