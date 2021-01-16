@@ -1127,6 +1127,94 @@ class CoreBackend(AbstractBackend):
         query = "SELECT MAX(atime) AS atime FROM core.sessions WHERE persona_id = %s"
         return unwrap(self.query_one(rs, query, (persona_id,)))
 
+    @access("core_admin")
+    def is_persona_automatically_archivable(self, rs: RequestState, persona_id: int
+                                            ) -> bool:
+        """Determine whether a persona is eligble to be automatically archived.
+
+        Things that prevent such automated archival:
+            * The persona having any admin bit.
+            * The persona being a member.
+            * The persona already being archived.
+            * The persona having logged in in the last two years.
+            * The persona being involved (orga/registration) with any recent event.
+            * The persona being involved (preside/attendee) with an active assembly.
+            * The persona being explicitly subscribed to any mailinglist.
+        """
+        persona_id = affirm(vtypes.ID, persona_id)
+
+        timestamp = now()
+        cutoff = timestamp - self.conf["AUTOMATED_ARCHIVAL_CUTOFF"]
+        with Atomizer(rs):
+            persona = self.get_persona(rs, persona_id)
+
+            # Do some basic sanity checks.
+            if any(persona[admin_key] for admin_key in ADMIN_KEYS):
+                return False
+
+            if persona['is_member'] or persona['is_archived']:
+                return False
+
+            # Check latest user session.
+            latest_session = self.get_persona_latest_session(rs, persona_id)
+            if latest_session is not None and latest_session > cutoff:
+                return False
+
+            # Check event involvement.
+            # TODO use 'is_archived' instead of 'event_end'?
+            query = """SELECT MAX(part_end) AS event_end
+            FROM (
+                (
+                    SELECT event_id
+                    FROM event.registrations
+                    WHERE persona_id = %s
+                    UNION
+                    SELECT event_id
+                    FROM event.orgas
+                    WHERE persona_id = %s
+                ) as ids
+                JOIN event.event_parts ON ids.event_id = event_parts.id
+            )
+            """
+            event_end = unwrap(self.query_one(rs, query, (persona_id, persona_id)))
+            if event_end and event_end > cutoff.date():
+                return False
+
+            # Check assembly involvement
+            query = """SELECT assembly_id
+            FROM (
+                (
+                    SELECT assembly_id
+                    FROM assembly.attendees
+                    WHERE persona_id = %s
+                    UNION
+                    SELECT assembly_id
+                    FROM assembly.presiders
+                    WHERE persona_id = %s
+                ) AS ids
+                JOIN assembly.assemblies ON ids.assembly_id = assemblies.id
+            )
+            WHERE assemblies.is_active = True"""
+            if self.query_all(rs, query, (persona_id, persona_id)):
+                return False
+
+            # Check mailinglist subscriptions.
+            # TODO don't hardcode subscription states here?
+            query = """SELECT mailinglist_id
+            FROM ml.subscription_states AS ss
+            JOIN ml.mailinglists ON ss.mailinglist_id = mailinglists.id
+            WHERE persona_id = %s AND subscription_state = ANY(%s)
+                AND mailinglists.is_active = True"""
+            states = {
+                const.SubscriptionStates.subscribed,
+                const.SubscriptionStates.subscription_override,
+                const.SubscriptionStates.pending,
+            }
+            if self.query_all(rs, query, (persona_id, states)):
+                return False
+
+        return True
+
     @access("core_admin", "cde_admin")
     def archive_persona(self, rs: RequestState, persona_id: int,
                         note: str) -> DefaultReturnCode:
