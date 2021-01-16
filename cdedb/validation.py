@@ -60,16 +60,7 @@ import string
 import sys
 from enum import Enum
 from typing import (
-    Callable,
-    Dict,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    cast,
-    get_type_hints,
-    overload,
+    Callable, Dict, Sequence, Set, Tuple, Type, TypeVar, cast, get_type_hints, overload,
 )
 
 import magic
@@ -79,7 +70,6 @@ import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
 from typing_extensions import Protocol
-
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -153,7 +143,7 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
                     raise KeyError("Complex unions not supported")
                 validator = self[inner_type]
                 return _allow_None(validator)  # type: ignore
-            elif type_.__origin__ is list:
+            elif type_.__origin__ is list:  # type: ignore
                 [inner_type] = type_.__args__  # type: ignore
                 return make_list_validator(inner_type)  # type: ignore
             # TODO more container types like tuple
@@ -888,22 +878,25 @@ def _csv_identifier(
 @_add_typed_validator
 def _list_of(
     val: Any, atype: Type[T],
-    argname: str = None, *,
-    _convert: bool = True, _allow_empty: bool = True, **kwargs: Any
+    argname: str = None,
+    *,
+    _convert: bool = True,
+    _parse_csv: bool = False,
+    _allow_empty: bool = True,
+    **kwargs: Any,
 ) -> List[T]:
     """Apply another validator to all entries of of a list.
 
     With `_convert` being True, the input may be a comma-separated string.
     """
     if _convert:
-        if isinstance(val, str):
+        if isinstance(val, str) and _parse_csv:
             # TODO use default separator from config here?
             # TODO use escaped_split?
             # Skip emtpy entries which can be produced by JavaScript.
             val = [v for v in val.split(",") if v]
         val = _iterable(val, argname, _convert=_convert, **kwargs)
     else:
-        # TODO why _sequence here but iterable above?
         val = _sequence(val, argname, _convert=_convert, **kwargs)
     vals: List[T] = []
     errs = ValidationSummary()
@@ -939,7 +932,7 @@ def make_list_validator(type_: Type[T]) -> ListValidator[T]:
 def _int_csv_list(
     val: Any, argname: str = None, **kwargs: Any
 ) -> IntCSVList:
-    return IntCSVList(_list_of(val, int, argname, **kwargs))
+    return IntCSVList(_list_of(val, int, argname, _parse_csv=True, **kwargs))
 
 
 @_add_typed_validator
@@ -949,7 +942,7 @@ def _cdedbid_csv_list(
     """This deals with strings containing multiple cdedbids,
     like when they are returned from cdedbSearchPerson.
     """
-    return CdedbIDList(_list_of(val, CdedbID, argname, **kwargs))
+    return CdedbIDList(_list_of(val, CdedbID, argname, _parse_csv=True, **kwargs))
 
 
 @_add_typed_validator  # TODO split into Password and AdminPassword?
