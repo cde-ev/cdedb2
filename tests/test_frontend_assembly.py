@@ -539,9 +539,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
         self.traverse({'description': 'Ergebnisdetails'})
-        self.assertPresence(
-            "Du hast mit der folgenden Präferenz abgestimmt: 2>3>_bar_>1=4",
-            div='own-vote', exact=True)
+        own_vote = ("Du hast mit der folgenden Präferenz abgestimmt:"
+                    " 23 > 42 > Gegen alle Kandidaten > Ich = Philosophie")
+        self.assertPresence(own_vote, div='own-vote', exact=True)
 
     @as_users("garcia")
     def test_show_ballot_without_vote(self, user: CdEDBObject) -> None:
@@ -946,7 +946,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                               {'description': bdata['title']},
                               {'description': 'Ergebnisdetails'})
                 self.assertPresence("Du hast für die folgenden Kandidaten "
-                                    "gestimmt: arthur, ford",
+                                    "gestimmt: Arthur Dent = Ford Prefect",
                                     div='own-vote', exact=True)
 
     @as_users("werner", "inga", "kalif")
@@ -1166,7 +1166,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Abstimmungen'},
                       {'description': bdata['title']},
                       {'description': 'Ergebnisdetails'})
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: ja",
+        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                             div='own-vote', exact=True)
 
         self.traverse({'description': 'Abstimmungen'},
@@ -1210,7 +1210,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f, check_notification=False)
         self.assertNonPresence("Die Versammlung wurde beendet und die "
                                "Stimmen sind nun verschlüsselt.")
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: ja",
+        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                             div='own-vote', exact=True)
 
     def test_log(self) -> None:
