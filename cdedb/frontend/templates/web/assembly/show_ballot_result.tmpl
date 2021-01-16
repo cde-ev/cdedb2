@@ -62,7 +62,9 @@
         {% endtrans %}
     </p>
 
-    <pre class="result">{{ print_vote(result['result']) }}</pre>
+    <pre class="result" id="combined-preference">
+        {{- print_vote(result['result']) -}}
+    </pre>
 
     <p>
         {% trans  gt="<code class=result-separator >></code>"|s, eq="<code class=result-separator >=</code>"|s %}
@@ -154,7 +156,7 @@
             </thead>
             <tbody>
                 {% for votestring, count in vote_counts|dictsort(by_key=False, reverse=True) %}
-                    <tr>
+                    <tr id="vote-{{ loop.index }}">
                         <td>
                             {% if vote == MAGIC_ABSTAIN %}
                                 {% trans %}Abstained{% endtrans %}
