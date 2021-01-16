@@ -2500,7 +2500,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
-    @REQUESTdata(("stati", "[int]"),
+    @REQUESTdata(("codes", "[int]"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("reviewed_by", "cdedbid_or_None"),
                  ("persona_id", "cdedbid_or_None"),
@@ -2510,7 +2510,7 @@ class CoreFrontend(AbstractFrontend):
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
     def view_changelog_meta(self, rs: RequestState,
-                            stati: Collection[const.MemberChangeStati],
+                            codes: Collection[const.MemberChangeStati],
                             offset: Optional[int], length: Optional[int],
                             persona_id: Optional[int],
                             submitted_by: Optional[int],
@@ -2528,7 +2528,7 @@ class CoreFrontend(AbstractFrontend):
         # are lost
         rs.ignore_validation_errors()
         total, log = self.coreproxy.retrieve_changelog_meta(
-            rs, stati, _offset, _length, persona_id=persona_id,
+            rs, codes, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
         persona_ids = (
