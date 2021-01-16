@@ -1346,6 +1346,7 @@ class CoreBackend(AbstractBackend):
                 rs, update, generation=None, may_wait=False,
                 change_note="Benutzer archiviert.",
                 allow_specials=("archive",))
+            self.core_log(rs, const.CoreLogCodes.persona_archived, persona_id)
             #
             # 11. Clear changelog
             #
@@ -1383,10 +1384,12 @@ class CoreBackend(AbstractBackend):
                 'id': persona_id,
                 'is_archived': False,
             }
-            return self.set_persona(
+            code = self.set_persona(
                 rs, update, generation=None, may_wait=False,
                 change_note="Benutzer aus dem Archiv wiederhergestellt.",
                 allow_specials=("archive",))
+            self.core_log(rs, const.CoreLogCodes.persona_dearchived, persona_id)
+            return code
 
     @access("core_admin", "cde_admin")
     def purge_persona(self, rs: RequestState,
@@ -1454,6 +1457,7 @@ class CoreBackend(AbstractBackend):
             #
             # 4. Finish
             #
+            self.core_log(rs, const.CoreLogCodes.persona_purged, persona_id)
             return ret
 
     @access("persona")

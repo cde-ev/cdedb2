@@ -8458,7 +8458,7 @@ msgid "Restore Account"
 msgstr "Account wiederherstellen"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:613
-msgid "Restores the archives Account. It will be usable again."
+msgid "Restores the archived Account. It will be usable again."
 msgstr ""
 "Stellt den archivierten Account wieder her. Er kann anschließend wieder "
 "normal genutzt werden."
@@ -12823,6 +12823,15 @@ msgstr "Account erstellt"
 #: cdedb/i18n_additional.py:52
 msgid "CoreLogCodes.persona_change"
 msgstr "Account geändert"
+
+msgid "CoreLogCodes.persona_archived"
+msgstr "Account archiviert"
+
+msgid "CoreLogCodes.persona_dearchived"
+msgstr "Account wiederhergestellt"
+
+msgid "CoreLogCodes.persona_purged"
+msgstr "Account geleert"
 
 #: cdedb/i18n_additional.py:53
 msgid "CoreLogCodes.password_change"

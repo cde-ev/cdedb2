@@ -50,6 +50,9 @@ I18N_STRINGS = (
 
     n_("CoreLogCodes.persona_creation"),
     n_("CoreLogCodes.persona_change"),
+    n_("CoreLogCodes.persona_archived"),
+    n_("CoreLogCodes.persona_dearchived"),
+    n_("CoreLogCodes.persona_purged"),
     n_("CoreLogCodes.password_change"),
     n_("CoreLogCodes.password_reset_cookie"),
     n_("CoreLogCodes.password_reset"),

@@ -12123,6 +12123,15 @@ msgstr "Account created"
 msgid "CoreLogCodes.persona_change"
 msgstr "Account modified"
 
+msgid "CoreLogCodes.persona_archived"
+msgstr "Account archived"
+
+msgid "CoreLogCodes.persona_dearchived"
+msgstr "Account dearchived"
+
+msgid "CoreLogCodes.persona_purged"
+msgstr "Account purged"
+
 #: cdedb/i18n_additional.py:53
 msgid "CoreLogCodes.password_change"
 msgstr "Password changed"
