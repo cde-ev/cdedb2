@@ -7022,6 +7022,11 @@
             "subscription_state": 1
         },
         {
+            "mailinglist_id": 6,
+            "persona_id": 4,
+            "subscription_state": 1
+        },
+        {
             "mailinglist_id": 7,
             "persona_id": 1,
             "subscription_state": 2
