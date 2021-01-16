@@ -15,6 +15,10 @@ DRY_RUN = True
 
 core = make_backend("core")
 
+successful = set()
+archive_error = set()
+other_error = set()
+
 # Execution
 
 with Script(rs(), dry_run=DRY_RUN):
@@ -29,10 +33,22 @@ with Script(rs(), dry_run=DRY_RUN):
                 code = core.archive_persona(rs(), persona_id, note)
             except ArchiveError as e:
                 print(f"Error: {e}")
+                archive_error.add((persona_id, e))
             else:
                 if code:
+                    successful.add(persona_id)
                     print("Success!")
                 else:
+                    other_error.add(persona_id)
                     print("Error!")
 
         persona_id = core.next_persona(rs(), persona_id=persona_id, is_member=False)
+
+    print(f"Successfully archived {len(successful)} accounts.")
+    print(f"{len(archive_error)} archivals failed with an archive error.")
+    print(f"{len(other_error)} archivals failed for an unknown reason.")
+
+    print("Here comes a list of archive errors:")
+    for persona_id, e in archive_error:
+        print(persona_id, e)
+        print()
