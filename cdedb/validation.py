@@ -177,13 +177,13 @@ def _create_assert_valid(fun: Callable[..., T]) -> Callable[..., T]:
     return assert_valid
 
 
-def validate_assert(type: Type[T], value: Any, **kwargs: Any) -> T:
+def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
     try:
-        return _ALL_TYPED[type](value, **kwargs)
+        return _ALL_TYPED[type_](value, **kwargs)
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
-            f"{old_format} for '{str(type)}'"
+            f"{old_format} for '{str(type_)}'"
             f" with input {value}, {kwargs}."
         )
         e = errs[0]
@@ -191,11 +191,8 @@ def validate_assert(type: Type[T], value: Any, **kwargs: Any) -> T:
         raise e from errs
 
 
-def validate_assert_optional(type: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
-    validation = _ALL_TYPED[type]
-    # as long as we cannot handle Optional in ValidatorStorage.__getitem__
-    # we have to resort to this somewhat ugly workaround
-    return validate_assert(Optional[validation], value, **kwargs)  # type: ignore
+def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
+    return validate_assert(Optional[type_], value, **kwargs)  # type: ignore
 
 
 def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
@@ -211,13 +208,17 @@ def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
     return is_valid
 
 
-def validate_is(type: Type[T], value: Any, **kwargs: Any) -> bool:
+def validate_is(type_: Type[T], value: Any, **kwargs: Any) -> bool:
     kwargs['_convert'] = False
     try:
-        _ALL_TYPED[type](value, **kwargs)
+        _ALL_TYPED[type_](value, **kwargs)
         return True
     except ValidationSummary as errs:
         return False
+
+
+def validate_is_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
+    return validate_is(Optional[type_], value, **kwargs)  # type: ignore
 
 
 def _create_check_valid(fun: Callable[..., T]
