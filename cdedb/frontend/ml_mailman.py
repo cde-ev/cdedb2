@@ -283,12 +283,7 @@ do nothing.
             return store
         db_lists = self.mlproxy.get_mailinglists(
             rs, self.mlproxy.list_mailinglists(rs, active_only=False))
-        # Exclude CdE-München and Dokuforge lists as they are not managed by
-        # our mail server
-        external_domains = {const.MailinglistDomain.cdemuenchen,
-                            const.MailinglistDomain.dokuforge}
-        db_lists = {lst['address']: lst for lst in db_lists.values()
-                    if lst['domain'] not in external_domains}
+        db_lists = {lst['address']: lst for lst in db_lists.values()}
         mm_lists = {lst.fqdn_listname: lst for lst in mailman.lists}
         new_lists = set(db_lists) - set(mm_lists)
         current_lists = set(db_lists) - new_lists
