@@ -198,7 +198,7 @@ class MailinglistDomain(enum.IntEnum):
     general = 3
     cdelokal = 4
 
-    # The domains are not supportedt. To avoid conflicts, do not reuse:
+    # The domains are not supported. To avoid conflicts, do not reuse:
     # cdemuenchen = 10
     # dokuforge = 11
 
