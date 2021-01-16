@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from cdedb.common import ArchiveError
 from cdedb.script import make_backend, setup, Script
 
 # Configuration
@@ -24,10 +25,14 @@ with Script(rs(), dry_run=DRY_RUN):
         if is_archivable:
             note = "Automatically archived after prolonged inactivity."
             print(f"Archiving user {persona_id}...")
-            code = core.archive_persona(rs(), persona_id, note)
-            if code:
-                print("Success!")
+            try:
+                code = core.archive_persona(rs(), persona_id, note)
+            except ArchiveError as e:
+                print(f"Error: {e}")
             else:
-                print("Error!")
+                if code:
+                    print("Success!")
+                else:
+                    print("Error!")
 
         persona_id = core.next_persona(rs(), persona_id=persona_id, is_member=False)
