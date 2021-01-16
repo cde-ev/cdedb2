@@ -1,33 +1,35 @@
 #!/usr/bin/env python3
 
-import unittest
+from typing import Any
 import unittest.mock
 
+from cdedb.common import CdEDBObject
 from tests.common import FrontendTest, as_users
 
 
 class TestApplication(FrontendTest):
-    def test_404(self):
+    def test_404(self) -> None:
         self.get("/nonexistentpath", status=404)
         self.assertTitle('404: Not Found')
 
     @as_users("berta")
-    def test_403(self, user):
+    def test_403(self, user: CdEDBObject) -> None:
         self.get("/cde/semester/show", status=403)
         self.assertTitle('403: Forbidden')
 
-    def test_405(self):
+    def test_405(self) -> None:
         self.get("/core/login", status=405)
         self.assertTitle('405: Method Not Allowed')
 
     @unittest.mock.patch('cdedb.config.BasicConfig.__getitem__')
     @unittest.mock.patch('cdedb.frontend.core.CoreFrontend.index')
-    def test_500(self, hander_mock, config_mock):
+    def test_500(self, hander_mock: unittest.mock.Mock,
+                 config_mock: unittest.mock.Mock) -> None:
         # Replace CoreFrontend.index() function with Mock that raises ValueError
         hander_mock.side_effect = ValueError("a really unexpected exception")
-        hander_mock.modi = {"GET", "HEAD"} # TODO set modi automatically
+        hander_mock.modi = {"GET", "HEAD"}  # TODO set modi automatically
 
-        def config_mock_getitem(key):
+        def config_mock_getitem(key: str) -> Any:
             if key in ["CDEDB_DEV", "CDEDB_TEST"]:
                 return False
             return self.app.app.conf._configchain[key]
@@ -37,8 +39,7 @@ class TestApplication(FrontendTest):
         self.assertTitle("500: Internal Server Error")
         self.assertPresence("ValueError", div='static-notifications')
 
-
-    def test_error_catching(self):
+    def test_error_catching(self) -> None:
         """
         This test checks that errors risen from within the CdEDB Python code
         are correctly caught by the test framework. Otherwise we cannot rely
@@ -59,11 +60,11 @@ class TestApplication(FrontendTest):
                                        "report all errors in the application."):
                 self.get('/', status='*')
 
-    def test_basics(self):
+    def test_basics(self) -> None:
         self.get("/")
 
     @as_users("anton")
-    def test_csrf_mitigation(self, user):
+    def test_csrf_mitigation(self, user: CdEDBObject) -> None:
         self.get("/core/self/change")
         f = self.response.forms['changedataform']
         # Try submitting with missing anti CSRF token
@@ -79,7 +80,9 @@ class TestApplication(FrontendTest):
         # Try submitting with invalid anti CSRF token hash
         self.get("/core/self/change")
         f = self.response.forms['changedataform']
-        f['_anti_csrf'] = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000--2200-01-01 00:00:00+0000--1"
+        f['_anti_csrf'] = "000000000000000000000000000000000000000000000000000000000" \
+                          "000000000000000000000000000000000000000000000000000000000" \
+                          "00000000000000--2200-01-01 00:00:00+0000--1"
         f['postal_code2'] = "abcd"
         self.submit(f, check_notification=False)
         self.assertPresence("Der Anti-CSRF-Token wurde gefälscht.",

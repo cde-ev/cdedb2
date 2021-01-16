@@ -11,7 +11,9 @@ import datetime
 import decimal
 from pathlib import Path
 from secrets import token_hex
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast, overload
+from typing import (
+    Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast, overload,
+)
 
 from passlib.hash import sha512_crypt
 from typing_extensions import Protocol
@@ -528,8 +530,8 @@ class CoreBackend(AbstractBackend):
         return {d['id']: d for d in data}
 
     class _RetrievePersonaProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int, columns: Tuple[str, ...]
-                     ) -> CdEDBObject: ...
+        def __call__(self, rs: RequestState, persona_id: int,
+                     columns: Tuple[str, ...] = PERSONA_CORE_FIELDS) -> CdEDBObject: ...
     retrieve_persona: _RetrievePersonaProtocol = singularize(
         retrieve_personas, "persona_ids", "persona_id")
 
@@ -1010,7 +1012,7 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin")
     def change_persona_balance(self, rs: RequestState, persona_id: int,
-                               balance: decimal.Decimal,
+                               balance: Union[str, decimal.Decimal],
                                log_code: const.FinanceLogCodes,
                                change_note: str = None,
                                trial_member: bool = None) -> DefaultReturnCode:
@@ -1113,6 +1115,18 @@ class CoreBackend(AbstractBackend):
                              persona_id=persona_id)
 
         return ret
+
+    @access("core_admin")
+    def get_persona_latest_session(self, rs: RequestState, persona_id: int
+                                   ) -> Optional[datetime.datetime]:
+        """Retrieve the time of a users latest session.
+
+        Returns None if there are no active sessions on record.
+        """
+        persona_id = affirm(vtypes.ID, persona_id)
+
+        query = "SELECT MAX(atime) AS atime FROM core.sessions WHERE persona_id = %s"
+        return unwrap(self.query_one(rs, query, (persona_id,)))
 
     @access("core_admin", "cde_admin")
     def archive_persona(self, rs: RequestState, persona_id: int,
@@ -2326,7 +2340,7 @@ class CoreBackend(AbstractBackend):
           taken
         """
         data = affirm(vtypes.GenesisCase, data,
-            creation=True, _ignore_warnings=ignore_warnings)
+                      creation=True, _ignore_warnings=ignore_warnings)
 
         if self.verify_existence(rs, data['username']):
             return None

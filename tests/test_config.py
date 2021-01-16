@@ -8,7 +8,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 
 
 class TestConfig(unittest.TestCase):
-    def test_override(self):
+    def test_override(self) -> None:
         basic = BasicConfig()
         self.assertEqual(pytz.timezone('CET'), basic["DEFAULT_TIMEZONE"])
         config = Config(None)
@@ -22,8 +22,8 @@ class TestConfig(unittest.TestCase):
         extrasecret = SecretsConfig("tests/ancillary_files/extra_config.py")
         self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])
 
-    def test_caching(self):
-        ## this is a regression test
+    def test_caching(self) -> None:
+        # this is a regression test
         basic = BasicConfig()
         extrasecret = SecretsConfig("tests/ancillary_files/extra_config.py")
         self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])

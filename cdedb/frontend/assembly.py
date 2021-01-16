@@ -405,10 +405,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "shortname", "signup_end", "notes")
     @REQUESTdata(("presider_ids", "cdedbid_csv_list"),
+                 ("presider_address", "email_or_None"),
                  ("create_attendee_list", "bool"), ("create_presider_list", "bool"))
     def create_assembly(self, rs: RequestState, presider_ids: Collection[int],
                         create_attendee_list: bool, create_presider_list: bool,
-                        data: Dict[str, Any]) -> Response:
+                        presider_address: str, data: Dict[str, Any]) -> Response:
         """Make a new assembly."""
         if presider_ids is not None:
             data["presiders"] = presider_ids
@@ -418,6 +419,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert data is not None
         presider_ml_data = None
         if create_presider_list:
+            # TODO maybe display a notification?
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
             presider_address = ml_type.get_full_address(presider_ml_data)
             data["presider_address"] = presider_address
@@ -425,6 +427,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 presider_ml_data = None
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': presider_address})
+        else:
+            data["presider_address"] = presider_address
         data = check(rs, vtypes.Assembly, data, creation=True)
         if presider_ids:
             if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):

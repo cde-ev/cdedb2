@@ -6797,7 +6797,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:86
 #: cdedb/frontend/templates/web/core/change_user.tmpl:76
 msgid ""
-"This address is meant to be a “backup”,, should the primary address not "
+"This address is meant to be a “backup”, should the primary address not "
 "work. Please give an address where you can be reached long-term, e.g. your "
 "parents' address."
 msgstr ""
@@ -12157,7 +12157,7 @@ msgstr "Account Request deleted"
 
 #: cdedb/i18n_additional.py:61
 msgid "CoreLogCodes.genesis_verified"
-msgstr "Accountanfrage verified"
+msgstr "Account Request verified"
 
 #: cdedb/i18n_additional.py:62
 msgid "CoreLogCodes.privilege_change_pending"
