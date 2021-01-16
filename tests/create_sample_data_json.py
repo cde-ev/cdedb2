@@ -79,22 +79,30 @@ tables = [
     'ml.log',
 ]
 
-query = "SELECT table_schema, table_name, column_name " \
-        "FROM information_schema.columns WHERE data_type = %s"
-params = ("jsonb",)
-data = core.query_all(rs, query, params)
 
 full_sample_data = {}
 
+# mark some columns which shall not be filled with information extracted from the
+# database, meanly because they will be filled at runtime in create_sample_data_sql.py
+ignored_columns = {
+    "core.personas":
+        {
+            "fulltext",
+        },
+}
+
 for table in tables:
+    query = f"SELECT * FROM {table} ORDER BY id"
     entities = core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ())
     print(f"{query:60} ==> {len(entities):3}", "" if entities else "!")
     for entity in entities:
         for field, value in entity.items():
             if isinstance(value, datetime.datetime) and value == nearly_now():
                 entity[field] = "---now---"
+            if table in ignored_columns and field in ignored_columns[table]:
+                entity[field] = None
     full_sample_data[table] = entities
 
-with open("/cdedb2/sample_data.json", "w") as f:
+with open("/cdedb2/tests/ancillary_files/sample_data.json", "w") as f:
     json.dump(full_sample_data, f, cls=CustomJSONEncoder,
               indent=4, ensure_ascii=False)
