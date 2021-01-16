@@ -554,6 +554,7 @@ class CoreBackend(AbstractBackend):
 
         :returns: Next valid id in table core.personas
         """
+        persona_id = affirm(int, persona_id)
         query = "SELECT MIN(id) FROM core.personas WHERE id > %s"
         if is_member:
             query = glue(query, "AND is_member = True")
