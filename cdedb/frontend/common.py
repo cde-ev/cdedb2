@@ -713,7 +713,7 @@ def dictsort_filter(value: Mapping[T, S], by_key: bool = True,
     Because python dicts are unsorted you may want to use this function to
     order them by key.
     """
-    return xsorted(value.items(), key=lambda x: x[0 if by_key else 1], reverse=reverse)
+    return xsorted(value.items(), key=lambda x: x[0] if by_key else (x[1], x[0]), reverse=reverse)
 
 
 def set_filter(value: Iterable[T]) -> Set[T]:
