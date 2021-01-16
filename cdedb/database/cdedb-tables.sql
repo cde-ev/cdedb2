@@ -145,7 +145,7 @@ CREATE TABLE core.personas (
         free_form               varchar,
         balance                 numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_balance
-            CHECK(NOT is_cde_realm OR balance IS NOT NULL),
+            CHECK(NOT is_cde_realm OR balance IS NOT NULL OR is_purged),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_consent
