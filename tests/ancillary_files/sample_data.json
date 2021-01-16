@@ -5136,7 +5136,7 @@
             "id": 8,
             "assembly_id": 2,
             "title": "Eine damals wichtige Frage",
-            "description": "Was für ein Logo soll der CdE bekommen?",
+            "description": "Was für ein Logo soll der CdE bekommen?\n\n* CdE Wappen: Die vier Wappentiere, die den Schriftzug CdE umringen\n* CdE Glühbirne: Glühbirne mit dem Schriftzug CdE\n* Baum & Blätter: Ein Baum mit Blättern und Grün",
             "vote_begin": "1000-09-29T22:00:00+00:00",
             "vote_end": "1100-01-01T23:00:00+00:00",
             "vote_extension_end": "1999-09-05T23:00:00+00:00",
@@ -5542,19 +5542,19 @@
         {
             "id": 46,
             "ballot_id": 8,
-            "title": "Eine Glühbirne mit Schriftzug",
+            "title": "CdE Glühbirne",
             "shortname": "Gluehbirne"
         },
         {
             "id": 47,
             "ballot_id": 8,
-            "title": "Die vier Wappentiere, die den Schriftzug CdE umringen",
+            "title": "CdE Wappen",
             "shortname": "Wappen"
         },
         {
             "id": 48,
             "ballot_id": 8,
-            "title": "Ein Baum mit Blättern und Grün!",
+            "title": "Baum & Blätter",
             "shortname": "Baum"
         },
         {
@@ -5636,6 +5636,48 @@
             "persona_id": 18,
             "assembly_id": 2,
             "secret": null
+        },
+        {
+            "id": 8,
+            "persona_id": 1,
+            "assembly_id": 2,
+            "secret": "V04KDLN6JQQCR6NF"
+        },
+        {
+            "id": 9,
+            "persona_id": 3,
+            "assembly_id": 2,
+            "secret": "A32UkoilRtAhrnCc"
+        },
+        {
+            "id": 10,
+            "persona_id": 32,
+            "assembly_id": 2,
+            "secret": "6I96448xmPJExrcJ"
+        },
+        {
+            "id": 11,
+            "persona_id": 7,
+            "assembly_id": 2,
+            "secret": "9U0Oe0xNzrHO_MmW"
+        },
+        {
+            "id": 12,
+            "persona_id": 9,
+            "assembly_id": 2,
+            "secret": "VDQCL3e53pV-QbY2"
+        },
+        {
+            "id": 13,
+            "persona_id": 17,
+            "assembly_id": 2,
+            "secret": "iQ86C3CWgd6aQN9Z"
+        },
+        {
+            "id": 14,
+            "persona_id": 22,
+            "assembly_id": 2,
+            "secret": "CtRNJJ-wfDQxdSQM"
         }
     ],
     "assembly.voter_register": [
@@ -6022,6 +6064,174 @@
             "persona_id": 18,
             "ballot_id": 10,
             "has_voted": true
+        },
+        {
+            "id": 65,
+            "persona_id": 1,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "id": 66,
+            "persona_id": 1,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "id": 67,
+            "persona_id": 1,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "id": 68,
+            "persona_id": 1,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "id": 69,
+            "persona_id": 3,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "id": 70,
+            "persona_id": 3,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "id": 71,
+            "persona_id": 3,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "id": 72,
+            "persona_id": 3,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "id": 73,
+            "persona_id": 32,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "id": 74,
+            "persona_id": 32,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "id": 75,
+            "persona_id": 32,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "id": 76,
+            "persona_id": 32,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "id": 77,
+            "persona_id": 7,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "id": 78,
+            "persona_id": 7,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "id": 79,
+            "persona_id": 7,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "id": 80,
+            "persona_id": 7,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "id": 81,
+            "persona_id": 9,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "id": 82,
+            "persona_id": 9,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "id": 83,
+            "persona_id": 9,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "id": 84,
+            "persona_id": 9,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "id": 85,
+            "persona_id": 17,
+            "ballot_id": 7,
+            "has_voted": false
+        },
+        {
+            "id": 86,
+            "persona_id": 17,
+            "ballot_id": 8,
+            "has_voted": false
+        },
+        {
+            "id": 87,
+            "persona_id": 17,
+            "ballot_id": 9,
+            "has_voted": false
+        },
+        {
+            "id": 88,
+            "persona_id": 17,
+            "ballot_id": 10,
+            "has_voted": false
+        },
+        {
+            "id": 89,
+            "persona_id": 22,
+            "ballot_id": 7,
+            "has_voted": false
+        },
+        {
+            "id": 90,
+            "persona_id": 22,
+            "ballot_id": 8,
+            "has_voted": false
+        },
+        {
+            "id": 91,
+            "persona_id": 22,
+            "ballot_id": 9,
+            "has_voted": false
+        },
+        {
+            "id": 92,
+            "persona_id": 22,
+            "ballot_id": 10,
+            "has_voted": false
         }
     ],
     "assembly.votes": [
@@ -6087,6 +6297,146 @@
             "vote": "Eisenberg>Akademien>Aktien",
             "salt": "8ci4wof73",
             "hash": "ec21445bdd06f5a62a59add324b1f7743a00e9e60f9d546f45199e96a3706af603b114069f3dbbecdd53ab4765522f1eea1bca410a3a91aec48ac97a2b2baddc"
+        },
+        {
+            "id": 10,
+            "ballot_id": 8,
+            "vote": "Wappen>Gluehbirne=Baum=_bar_",
+            "salt": "mZvg8C3N_mTw0NHR",
+            "hash": "091121018b9b4abb32170cf94b1835d54257aff1af0ab89a9d8f0cccb285feed684f4d156c7e0c3b2712ee09c29ff4a86fa84248f50e27fc7201160992c1aaed"
+        },
+        {
+            "id": 11,
+            "ballot_id": 7,
+            "vote": "Ja>Nein=_bar_",
+            "salt": "4gqC7wabgL-3QNJ4",
+            "hash": "af192fbe7a45b78f5f1207489e8fdcecec14a56a21ce35b60e045719237e95459502e452e6b528a512ea50616515209885b8bb11bf5ed314daeb2153e44fae03"
+        },
+        {
+            "id": 12,
+            "ballot_id": 9,
+            "vote": "Olaf>Farin=Inga=_bar_",
+            "salt": "8USC8u8z8V6Jr1Sv",
+            "hash": "ea3810b465a5696333e1642d1c4fe0f9806c39dd25cb7ba0b592c9d4d4649de38333b4060aac8d776f13e680620404f41f445dff818ccae3a3dfdbf226331558"
+        },
+        {
+            "id": 13,
+            "ballot_id": 10,
+            "vote": "Akademien>Aktien=Eisenberg",
+            "salt": "FnOt-eANAelixHHS",
+            "hash": "5b42013b4add2dab818a49df94477a7cfea5ddcd1726c4b786d683e5dd3bc6cbbfacb0bd16be7d18ec72940f9f83b73e73c6852518339f3254558ab4d68a2414"
+        },
+        {
+            "id": 14,
+            "ballot_id": 8,
+            "vote": "_bar_>Gluehbirne=Wappen=Baum",
+            "salt": "rBzNY2yvrIfhJvVX",
+            "hash": "597b4b9389443a8e712f84353cb6543fcfdb5303f52863832e1e20ddc3b16bbcdc50e45a763cd60f40a27de9dae694c7a2cabc337a99b6c5c16841b616066be1"
+        },
+        {
+            "id": 15,
+            "ballot_id": 7,
+            "vote": "Ja>Nein=_bar_",
+            "salt": "e7yJMgd8Pny-CTTw",
+            "hash": "c7a19f5d43d3d8e19eed5c30a35171cb6f03722857b6829223c80f5c9b64dfe5e4581efef9ca5968a1c2d2259fd9dcd9a24edf102956064abd8b6f508ebf0a37"
+        },
+        {
+            "id": 16,
+            "ballot_id": 9,
+            "vote": "Farin>Inga=Olaf=_bar_",
+            "salt": "9hXGpSsu7Qa8yRZ2",
+            "hash": "61bc51488881cf86d60aba06a2b77992aacde7be81a5f3a58db0bc3a3e7b453a9852d4f6e334fe435e361bd88c276aae76563bbe18b3a6cd782b2302ff2a14a3"
+        },
+        {
+            "id": 17,
+            "ballot_id": 10,
+            "vote": "Eisenberg>Akademien=Aktien",
+            "salt": "4-kBxpIISJfyQD1p",
+            "hash": "25657cc8604a54b8e6c2ea98f72b93920634e46378cbc9d8f38e4d15f6f45ab12adf34dd801ede59b37e16ac4cc899e8adee798a70735e8f736e7bdd76795626"
+        },
+        {
+            "id": 18,
+            "ballot_id": 8,
+            "vote": "Gluehbirne>Wappen=Baum=_bar_",
+            "salt": "6jFfFLgzS7v-5RzS",
+            "hash": "af5d435c45eb47be1e59038f0b58df82b74ccc357f0b0be6c2dd55947408ac9e0b79b10f4d91947659aa0041cda8f5c2ed7082dd80397af30135113209b89671"
+        },
+        {
+            "id": 19,
+            "ballot_id": 7,
+            "vote": "Ja>Nein=_bar_",
+            "salt": "oxhpQAiFuo3FGeKh",
+            "hash": "f604f6b034a8f2ad7cdd526bfed5e7cc284988fc932ea5b298f1290613c4dba71e27f2b33ba114df729ed9dfb9efb44a9cdbd7f491da26cd66d2bf2e28008137"
+        },
+        {
+            "id": 20,
+            "ballot_id": 9,
+            "vote": "Farin>Inga=Olaf=_bar_",
+            "salt": "xecpP9gmqvB6Rrgf",
+            "hash": "73df69c21688a5220e530155a3afabec5ec33d3891a2d5ac96a8e50d0af4e0bb70fed78d2d877743134b972749de22c68fb9898ad842df57354b321f85fd1acc"
+        },
+        {
+            "id": 21,
+            "ballot_id": 10,
+            "vote": "Aktien=Eisenberg>Akademien",
+            "salt": "XmqDTwUsvglmweu1",
+            "hash": "b3ed496a4cf289fdffb92c87fe00b0511e56c87960d0a6a785cdea67c5845a6ad74a4c5f502160c071b2c7c95dd52c12137cb7a03c957437579447d0b4010756"
+        },
+        {
+            "id": 22,
+            "ballot_id": 8,
+            "vote": "Wappen>Gluehbirne=Baum=_bar_",
+            "salt": "m_4y96XOHVw23G8S",
+            "hash": "31ffbf8192e2ad59d2a4876b2f56c97c7afd5ee6d1f69c878dbbfcc59fd825e15c5cb5633d12b1570d8d7ba39996c918f0a4797a26a0347db4b3ce7ab249fa72"
+        },
+        {
+            "id": 23,
+            "ballot_id": 7,
+            "vote": "Ja=Nein=_bar_",
+            "salt": "3qKtF_n5-N1x6SXg",
+            "hash": "9a6ccef853b8d047117245f376e32d7e26679e7e04821240f66ec6e7b4aa349017b420d58b3674872833d90b080a7021cb5a7d8477827ae52f296678c3b44375"
+        },
+        {
+            "id": 24,
+            "ballot_id": 9,
+            "vote": "Inga>Farin=Olaf=_bar_",
+            "salt": "EotzylymAo0VIqE7",
+            "hash": "25a016c273582b9908f32c6746d438f815ad8709cb8b3e2397cee59f9d66bbfa6593b23d9c764b3de75d880fa79aa0d090f58d514d5c5879d912d2625fbd626e"
+        },
+        {
+            "id": 25,
+            "ballot_id": 10,
+            "vote": "Akademien>Aktien=Eisenberg",
+            "salt": "36wNHsz7gVZLah8N",
+            "hash": "6e7d517f142dda4f30aa674c9587c160c5f248f0bfa3df7567a4cd6b7516e39662341c84b97931f70038552de250bb6a0d8c007fdf14dccf7d2f2e7e44a443f4"
+        },
+        {
+            "id": 26,
+            "ballot_id": 8,
+            "vote": "Baum>Gluehbirne=Wappen=_bar_",
+            "salt": "ONniRgTiarLlGG6g",
+            "hash": "462a25f47353c2201805f78721e809d1ec657a77a10ad9a23dd8abbf032449584fc8ab79c8a398c90dcc4a05906b165c93683bf8799269518650ce9c20ee3687"
+        },
+        {
+            "id": 27,
+            "ballot_id": 7,
+            "vote": "Nein>Ja=_bar_",
+            "salt": "tXsTeh_u4W8hkgFw",
+            "hash": "9ffdeb8357bd7f2f55796fc7b758c366ddf4d5c9a2099db2175c37e3439f5447482d7c70f41768b772acf0eb83de6b9b6f1de839d8e7017ea7dcd93c277038fd"
+        },
+        {
+            "id": 28,
+            "ballot_id": 9,
+            "vote": "Inga>Farin=Olaf=_bar_",
+            "salt": "cF0alQC23taX_Vcf",
+            "hash": "25c43a5c71ed71ebb1c92c131c1e17c0519c8b53b3f76d68924a319c34b736e03b9d86345b2536d2cdf94696aa72d05e70391ec317b47aa44f57d6c507199ad9"
+        },
+        {
+            "id": 29,
+            "ballot_id": 10,
+            "vote": "Akademien>Aktien=Eisenberg",
+            "salt": "lRM2mSqJNbAZRQyQ",
+            "hash": "bc5657f03d4062bf2680850199e4e1dea057d081c865549b0b4766e881c99a515bb25bed4dd0933812628c41c694dab2eeed40d20bc992996780c776617a1cf3"
         }
     ],
     "assembly.attachments": [
@@ -6163,7 +6513,80 @@
             "file_hash": "xyz"
         }
     ],
-    "assembly.log": [],
+    "assembly.log": [
+        {
+            "id": 1,
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 1,
+            "assembly_id": 2,
+            "persona_id": 18,
+            "change_note": null
+        },
+        {
+            "id": 2,
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 1,
+            "assembly_id": 2,
+            "persona_id": 1,
+            "change_note": null
+        },
+        {
+            "id": 3,
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 3,
+            "assembly_id": 2,
+            "persona_id": 3,
+            "change_note": null
+        },
+        {
+            "id": 4,
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 32,
+            "assembly_id": 2,
+            "persona_id": 32,
+            "change_note": null
+        },
+        {
+            "id": 5,
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 7,
+            "assembly_id": 2,
+            "persona_id": 7,
+            "change_note": null
+        },
+        {
+            "id": 6,
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 9,
+            "assembly_id": 2,
+            "persona_id": 9,
+            "change_note": null
+        },
+        {
+            "id": 7,
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 1,
+            "assembly_id": 2,
+            "persona_id": 17,
+            "change_note": null
+        },
+        {
+            "id": 8,
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 1,
+            "assembly_id": 2,
+            "persona_id": 22,
+            "change_note": null
+        }
+    ],
     "ml.mailinglists": [
         {
             "id": 1,
