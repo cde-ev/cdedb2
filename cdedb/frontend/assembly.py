@@ -1217,11 +1217,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         # map the candidate shortnames to their titles
         candidates = {candidate['shortname']: candidate['title']
                       for candidate in ballot['candidates'].values()}
+        candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
         if ballot['use_bar']:
             if ballot['votes']:
-                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
-            else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Against all Candidates")
+            else:
+                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
