@@ -1137,6 +1137,7 @@ class CoreBackend(AbstractBackend):
             * The persona being a member.
             * The persona already being archived.
             * The persona having logged in in the last two years.
+            * The persona having been changed/created in the last two years.
             * The persona being involved (orga/registration) with any recent event.
             * The persona being involved (preside/attendee) with an active assembly.
             * The persona being explicitly subscribed to any mailinglist.
@@ -1158,6 +1159,12 @@ class CoreBackend(AbstractBackend):
             # Check latest user session.
             latest_session = self.get_persona_latest_session(rs, persona_id)
             if latest_session is not None and latest_session > cutoff:
+                return False
+
+            generation = self.changelog_get_generation(rs, persona_id)
+            history = self.changelog_get_history(rs, persona_id, (generation,))
+            last_change = history[generation]
+            if last_change['ctime'] > cutoff:
                 return False
 
             # Check event involvement.
