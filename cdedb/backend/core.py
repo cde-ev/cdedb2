@@ -1180,7 +1180,7 @@ class CoreBackend(AbstractBackend):
                     FROM event.orgas
                     WHERE persona_id = %s
                 ) as ids
-                JOIN event.event_parts ON ids.event_id = event_parts.id
+                JOIN event.event_parts ON ids.event_id = event_parts.event_id
             )
             """
             event_end = unwrap(self.query_one(rs, query, (persona_id, persona_id)))
