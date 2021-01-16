@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 
 from cdedb.common import CustomJSONEncoder
 from cdedb.script import make_backend, setup
@@ -27,58 +28,11 @@ core = make_backend("core", proxy=False)
 #
 # # pprint(tables)
 
-tables = [
-    'core.meta_info',
-    'core.cron_store',
-    'core.personas',
-    'core.changelog',
-    'core.privilege_changes',
-    'core.genesis_cases',
-    'core.sessions',
-    'core.quota',
-    'core.log',
-    'cde.org_period',
-    'cde.expuls_period',
-    'cde.lastschrift',
-    'cde.lastschrift_transactions',
-    'cde.finance_log',
-    'cde.log',
-    'past_event.institutions',
-    'past_event.events',
-    'past_event.courses',
-    'past_event.participants',
-    'past_event.log',
-    'event.events',
-    'event.orgas',
-    'event.field_definitions',
-    'event.questionnaire_rows',
-    'event.event_parts',
-    'event.course_tracks',
-    'event.courses',
-    'event.course_segments',
-    'event.lodgement_groups',
-    'event.lodgements',
-    'event.registrations',
-    'event.registration_parts',
-    'event.registration_tracks',
-    'event.course_choices',
-    'event.log',
-    'assembly.assemblies',
-    'assembly.attendees',
-    'assembly.ballots',
-    'assembly.candidates',
-    'assembly.attachments',
-    'assembly.votes',
-    'assembly.voter_register',
-    'assembly.log',
-    'ml.mailinglists',
-    'ml.moderators',
-    'ml.whitelist',
-    'ml.subscription_states',
-    'ml.subscription_addresses',
-    'ml.log',
-]
 
+# extract the tables to be created from the database tables
+with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
+    tables = re.findall("CREATE TABLE(.+?)\n", f.read())
+    tables = [table.strip("(").strip() for table in tables]
 
 full_sample_data = {}
 
