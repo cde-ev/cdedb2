@@ -1217,7 +1217,7 @@ class FrontendTest(BackendTest):
         self._log_subroutine(title, logs, start=1,
                              end=total if total < 50 else 50)
         # check if the log page numbers are proper (no 0th page, no last+1 page)
-        self.assertNonPresence("", div="pagination-0", check_div=False)
+        self.assertNonPresence("", check_div=False, div="pagination-0")
         self.assertNonPresence("", check_div=False,
                                div=f"pagination-{str(total // 50 + 2)}")
         # check translations
@@ -1281,6 +1281,22 @@ class FrontendTest(BackendTest):
         f["offset"] = None
         f["length"] = None
         self.submit(f)
+
+        # check multi-checkbox selections
+        f = self.response.forms['logshowform']
+        n_checkboxes = 0
+        while True:
+            try:
+                f.set("codes", True, index=n_checkboxes)
+            except IndexError:
+                break
+            n_checkboxes += 1
+        self.assertLess(1, n_checkboxes)
+        self.submit(f)
+        self.traverse({'linkid': 'pagination-first'})
+        f = self.response.forms['logshowform']
+        for i in range(n_checkboxes):
+            self.assertTrue(f.get("codes", index=i, default=False))
 
     def _log_subroutine(self, title: str,
                         all_logs: Tuple[Tuple[int, enum.IntEnum], ...],
