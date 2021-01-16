@@ -1231,7 +1231,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.login(USER_DICT['anton'])
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Log'})
-        self.assertTitle("Versammlungs-Log [1–18 von 18]")
+        self.assertTitle("Versammlungs-Log [1–26 von 26]")
         self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         codes = [const.AssemblyLogCodes.assembly_created.value,
