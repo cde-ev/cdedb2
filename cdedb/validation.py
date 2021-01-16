@@ -3675,7 +3675,7 @@ def _ASSEMBLY_COMMON_FIELDS() -> Mapping[str, Any]: return {
 
 def _ASSEMBLY_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'is_active': bool,
-    'presider_address': Optional[str],
+    'presider_address': Optional[Email],
     'presiders': Iterable
 }
 
