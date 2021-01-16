@@ -344,7 +344,7 @@
                     <dt>{% trans %}WWW{% endtrans %}</dt>
                     {# TODO maybe add links or so - must be validated before! #}
                     <dd id="contact-weblink">
-                        {{ util.web_link(data['weblink']) }}
+                        {{ data['weblink']|md }}
                     </dd>
                 {% endif %}
             </dl>

@@ -14,7 +14,8 @@ import gettext
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Callable, Optional, Set, Type, cast
+from typing import Any, Optional, Set, Type, cast
+from typing_extensions import Protocol
 
 import psycopg2
 import psycopg2.extensions
@@ -74,9 +75,13 @@ class MockRequestState:
         self.csrf_alert = False
 
 
+class _RSFactory(Protocol):
+    def __call__(self, persona_id: int = -1) -> MockRequestState: ...
+
+
 def setup(persona_id: int, dbuser: str, dbpassword: str,
           check_system_user: bool = True, dbname: str = 'cdb'
-          ) -> Callable[[int], MockRequestState]:
+          ) -> _RSFactory:
     """This sets up the database.
 
     :param persona_id: default ID for the owner of the generated request state
@@ -107,8 +112,8 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
         cdb = psycopg2.connect(**connection_parameters, host="cdb")
     cdb.set_client_encoding("UTF8")
 
-    def rs(pid: int = persona_id) -> MockRequestState:
-        return MockRequestState(pid, cdb)
+    def rs(persona_id: int = persona_id) -> MockRequestState:
+        return MockRequestState(persona_id, cdb)
 
     return rs
 

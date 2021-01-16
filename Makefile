@@ -122,7 +122,7 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf$\
 		,ballot_result.json,sepapain.xml,event_export.json$\
 		,batch_admission.csv,money_transfers.csv$\
 		,money_transfers_valid.csv,partial_event_import.json$\
-		,TestAka_partial_export_event.json
+		,TestAka_partial_export_event.json,statement.csv
 
 storage-test:
 	rm -rf -- /tmp/cdedb-store/*
@@ -177,12 +177,12 @@ else
 	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
 	sudo systemctl start pgbouncer
 endif
-	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb_test 
+	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
 	$(MAKE) sql-test-shallow
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
-	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/clean_data.sql --dbname=cdb_test 
-	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=cdb_test 
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/clean_data.sql --dbname=cdb_test
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
 
 sql-xss: tests/ancillary_files/sample_data_escaping.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -313,4 +313,5 @@ mypy-test:
 		tests/main.py tests/singular.py
 
 mypy:
-	${MYPYBIN} cdedb tests/common.py
+	# Match all test files except `test_validation`.
+	${MYPYBIN} cdedb tests/common.py tests/test_[^v]*

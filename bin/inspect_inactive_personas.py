@@ -17,28 +17,31 @@ CUTOFF = datetime.timedelta(days=365)
 
 # Prepare stuff
 
-core = make_backend("core")
+core = make_backend("core", proxy=False)
 
-Counter = NamedTuple("Counter", (("ids", Set[int]), ("members", Set[int])))
+Counter = NamedTuple("Counter", (("ids", Set[int]), ("members", Set[int]),
+                                 ("no_username", Set[int])))
+
+
+def get_counter() -> Counter:
+    return Counter(set(), set(), set())
+
 
 # Execution
 
 with Script(rs(), dry_run=DRY_RUN):
-    no_session = Counter(set(), set())
-    old_session = Counter(set(), set())
-    recent_session = Counter(set(), set())
+    no_session = get_counter()
+    old_session = get_counter()
+    recent_session = get_counter()
     timestamp = now()
-    persona_id = -1
-    while True:
-        persona_id = core.next_persona(rs(), persona_id, is_member=False)
-        if persona_id is None:
-            break
-
+    query = """SELECT id FROM core.personas"""
+    all_persona_ids = tuple(e['id'] for e in core.query_all(rs(), query, ()))
+    all_personas = core.get_personas(rs(), all_persona_ids)
+    for persona_id in all_persona_ids:
         latest_session = core.get_persona_latest_session(rs(), persona_id)
         diff = timestamp - latest_session if latest_session else None
         # print(f"{persona_id}: {latest_session} {diff}")
 
-        persona = core.get_persona(rs(), persona_id)
         if diff is None:
             pointer = no_session
         elif diff > CUTOFF:
@@ -46,13 +49,18 @@ with Script(rs(), dry_run=DRY_RUN):
         else:
             pointer = recent_session
         pointer.ids.add(persona_id)
-        if persona["is_member"]:
+        if all_personas[persona_id]["is_member"]:
             pointer.members.add(persona_id)
+        if all_personas[persona_id]["username"] is None:
+            pointer.no_username.add(persona_id)
 
     print(f"{len(no_session.ids)} users have no sessions on record,"
-          f" {len(no_session.members)} of which are currently members.")
+          f" {len(no_session.members)} of which are currently members."
+          f" {len(no_session.no_username)} of these also have no username.")
     print(f"{len(old_session.ids)} users have no recent sessions on record,"
-          f" {len(old_session.members)} of which are currently members.")
+          f" {len(old_session.members)} of which are currently members."
+          f" {len(old_session.no_username)} of these also have no username.")
     print(f"{len(recent_session.ids)} users have recent sessions on record,"
-          f" {len(recent_session.members)} of which are currently members.")
+          f" {len(recent_session.members)} of which are currently members."
+          f" {len(recent_session.no_username)} of these also have no username.")
 

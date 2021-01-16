@@ -2593,7 +2593,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def registrations_by_course(
             self, rs: RequestState, event_id: int, course_id: int = None,
-            track_id: int = None, position: InfiniteEnum = None,
+            track_id: int = None, position: CourseFilterPositions = None,
             reg_ids: Collection[int] = None,
             reg_states: Collection[const.RegistrationPartStati] =
             (const.RegistrationPartStati.participant,)) -> Dict[int, int]:

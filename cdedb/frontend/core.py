@@ -1403,13 +1403,22 @@ class CoreFrontend(AbstractFrontend):
         if not code:
             return self.show_privilege_change(rs, privilege_change_id)
         else:
+            persona = self.coreproxy.get_persona(rs, privilege_change['persona_id'])
+            email = persona['username']
+            params = {}
             if code < 0:
                 # The code is negative, the user's password needs to be changed.
                 # We didn't actually issue the success message above.
                 rs.notify("success", success)
-                # Do not return this on purpose to just send the mail.
-                self.admin_send_password_reset_link(
-                    rs, privilege_change["persona_id"], internal=True)
+                successful, cookie = self.coreproxy.make_reset_cookie(
+                    rs, email, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                if successful:
+                    params["email"] = self.encode_parameter(
+                        "core/do_password_reset_form", "email", email, persona_id=None,
+                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                    params["cookie"] = cookie
+            headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
+            self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)
@@ -2491,7 +2500,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
-    @REQUESTdata(("stati", "[int]"),
+    @REQUESTdata(("codes", "[int]"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("reviewed_by", "cdedbid_or_None"),
                  ("persona_id", "cdedbid_or_None"),
@@ -2501,7 +2510,7 @@ class CoreFrontend(AbstractFrontend):
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
     def view_changelog_meta(self, rs: RequestState,
-                            stati: Collection[const.MemberChangeStati],
+                            codes: Collection[const.MemberChangeStati],
                             offset: Optional[int], length: Optional[int],
                             persona_id: Optional[int],
                             submitted_by: Optional[int],
@@ -2519,7 +2528,7 @@ class CoreFrontend(AbstractFrontend):
         # are lost
         rs.ignore_validation_errors()
         total, log = self.coreproxy.retrieve_changelog_meta(
-            rs, stati, _offset, _length, persona_id=persona_id,
+            rs, codes, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
         persona_ids = (

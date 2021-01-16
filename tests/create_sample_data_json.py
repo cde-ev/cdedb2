@@ -1,9 +1,5 @@
 import datetime
 import json
-import sys
-from pprint import pprint
-
-sys.path.insert(0, "/cdedb2")
 
 from cdedb.common import CustomJSONEncoder
 from cdedb.script import make_backend, setup
@@ -14,7 +10,7 @@ rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
 core = make_backend("core", proxy=False)
 
 # The following code was initially used to generate the list below.
-# However to preserve referential integrity, the order of the tables hab to
+# However to preserve referential integrity, the order of the tables had to
 # be slightly adjusted, so we cannot keep the dynamic list of table.
 
 # query = "SELECT schemaname, tablename " \
@@ -101,4 +97,4 @@ for table in tables:
 
 with open("/cdedb2/sample_data.json", "w") as f:
     json.dump(full_sample_data, f, cls=CustomJSONEncoder,
-        indent=4, ensure_ascii=False)
+              indent=4, ensure_ascii=False)
