@@ -220,7 +220,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "attachment_policy", "ml_type", "subject_prefix",
-        "maxsize", "is_active", "notes", *ADDITIONAL_TYPE_FIELDS)
+        "maxsize", "is_active", "notes", *ADDITIONAL_TYPE_FIELDS.items())
     @REQUESTdata("ml_type", "moderators")
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
                            ml_type: const.MailinglistTypes,
@@ -395,7 +395,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
-        "is_active", *ADDITIONAL_TYPE_FIELDS)
+        "is_active", *ADDITIONAL_TYPE_FIELDS.items())
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
@@ -448,7 +448,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdatadict("ml_type", *ADDITIONAL_TYPE_FIELDS)
+    @REQUESTdatadict("ml_type", *ADDITIONAL_TYPE_FIELDS.items())
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
                        data: CdEDBObject) -> Response:
         ml = rs.ambience['mailinglist']

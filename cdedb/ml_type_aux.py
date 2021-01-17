@@ -1,13 +1,19 @@
 import enum
 import itertools
 from collections import OrderedDict
-from typing import Any, Mapping, Optional, TYPE_CHECKING, Collection, Dict, List, Set, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING, Any, Collection, Dict, List, Mapping, Optional, Set, Tuple, Type,
+    Union,
+)
+
+from typing_extensions import Literal
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject, RequestState, User, extract_roles, n_
 from cdedb.database.constants import (
-    MailinglistDomain, MailinglistInteractionPolicy, MailinglistTypes, RegistrationPartStati,
+    MailinglistDomain, MailinglistInteractionPolicy, MailinglistTypes,
+    RegistrationPartStati,
 )
 from cdedb.query import Query, QueryOperators
 
@@ -118,16 +124,18 @@ class GeneralMailinglist:
     optional_validation_fields: TypeMapping = {}
 
     @classmethod
-    def get_additional_fields(cls) -> TypeMapping:
-        ret: TypeMapping = {}
+    def get_additional_fields(cls) -> Mapping[
+        str, Union[Literal["str"], Literal["[str]"]]
+    ]:
+        ret: Dict[str, Union[Literal["str"], Literal["[str]"]]] = {}
         for field, argtype in {
             **cls.mandatory_validation_fields,
             **cls.optional_validation_fields,
         }.items():
             if getattr(argtype, "__origin__", None) is list:
-                ret[field] = List[str]  # type: ignore
+                ret[field] = "[str]"
             else:
-                ret[field] = str  # type: ignore
+                ret[field] = "str"
         return ret
 
     viewer_roles: Set[str] = {"ml"}
