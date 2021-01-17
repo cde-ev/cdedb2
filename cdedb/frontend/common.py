@@ -714,7 +714,7 @@ def dictsort_filter(value: Mapping[T, S], by: Literal["key", "value"] = "key",
     order them by key.
     """
 
-    def sortfunc(x):
+    def sortfunc(x: Any) -> Any:
         if by == "key":
             return x[0]
         elif by == "value":
