@@ -31,10 +31,17 @@ core = make_backend("core", proxy=False)
 
 # extract the tables to be created from the database tables
 with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
-    tables = re.findall("CREATE TABLE(.+?)\n", f.read())
-    tables = [table.strip("(").strip() for table in tables]
+    tables = [table.group('name')
+              for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
+
 
 full_sample_data = {}
+
+# mark some tables which shall not be filled with information extracted from the
+# database.
+ignored_tables = {
+    "core.sessions"
+}
 
 # mark some columns which shall not be filled with information extracted from the
 # database, meanly because they will be filled at runtime in create_sample_data_sql.py
@@ -48,6 +55,8 @@ ignored_columns = {
 for table in tables:
     query = f"SELECT * FROM {table} ORDER BY id"
     entities = core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ())
+    if table in ignored_tables:
+        entities = list()
     print(f"{query:60} ==> {len(entities):3}", "" if entities else "!")
     for entity in entities:
         for field, value in entity.items():
