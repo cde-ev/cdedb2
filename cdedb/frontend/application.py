@@ -133,7 +133,7 @@ class Application(BaseApp):
                 'ngettext': self.translations[lang].ngettext,
                 'lang': lang,
                 'notifications': tuple(),
-                'user': User(),
+                'user': User(roles=set()),
                 'values': {},
                 'error': error,
                 'help': message,
@@ -163,15 +163,13 @@ class Application(BaseApp):
             endpoint, args = urls.match()
             if apitoken:
                 sessionkey = None
-                user = self.sessionproxy.lookuptoken(apitoken,
-                                                        request.remote_addr)
+                user = self.sessionproxy.lookuptoken(apitoken, request.remote_addr)
                 # Error early to make debugging easier.
                 if 'droid' not in user.roles:
                     raise werkzeug.exceptions.Forbidden(
                         "API token invalid.")
             else:
-                user = self.sessionproxy.lookupsession(sessionkey,
-                                                        request.remote_addr)
+                user = self.sessionproxy.lookupsession(sessionkey, request.remote_addr)
 
                 # Check for timed out / invalid sessionkey
                 if sessionkey and not user.persona_id:

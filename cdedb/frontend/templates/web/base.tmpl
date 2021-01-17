@@ -147,9 +147,11 @@
                                 {{ util.href(cdedblink("cde/index"), gettext("Members"), icon="graduation-cap") }}
                                 </li>
                         {% endif %}
+                        {% if "anonymous" in user.roles %}
                         <li {% if mainnav_active == 'event' %}class="active" aria-current="page"{% endif %}>
                             {{ util.href(cdedblink("event/index"), gettext("Events"), icon="chalkboard-teacher") }}
                         </li>
+                        {% endif %}
                         {% if "ml" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'ml' %}class="active" aria-current="page"{% endif %}>
                                 {{ util.href(cdedblink("ml/index"), gettext("Mailinglists"), icon="envelope") }}
@@ -180,7 +182,7 @@
                     </div>
                 </nav>
                 <div class="col-md-9">
-                    {% if self.breadcrumb %}
+                    {% if self.breadcrumb() %}
                         <h6 id="bc-title" class="sr-only">{% trans %}You are here:{% endtrans %}</h6>
                         <nav>
                             <ol class="breadcrumb breadcrumb-hanging" aria-labelledby="bc-title">
