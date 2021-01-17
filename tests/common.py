@@ -1284,19 +1284,16 @@ class FrontendTest(BackendTest):
 
         # check multi-checkbox selections
         f = self.response.forms['logshowform']
-        n_checkboxes = 0
-        while True:
-            try:
-                f.set("codes", True, index=n_checkboxes)
-            except IndexError:
-                break
-            n_checkboxes += 1
-        self.assertLess(1, n_checkboxes)
+        # use internal value property as I don't see a way to get the
+        # checkbox value otherwise
+        codes = [field._value for field in f.fields['codes']]
+        f['codes'] = codes
+        self.assertGreater(len(codes), 1)
         self.submit(f)
         self.traverse({'linkid': 'pagination-first'})
         f = self.response.forms['logshowform']
-        for i in range(n_checkboxes):
-            self.assertTrue(f.get("codes", index=i, default=False))
+        for field in f.fields['codes']:
+            self.assertTrue(field.checked)
 
     def _log_subroutine(self, title: str,
                         all_logs: Tuple[Tuple[int, enum.IntEnum], ...],
