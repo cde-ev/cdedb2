@@ -720,7 +720,7 @@ def dictsort_filter(value: Mapping[T, S], by: Literal["key", "value"] = "key",
         elif by == "value":
             return x[1], x[0]
         else:
-            raise NotImplementedError()
+            raise ValueError
 
     return xsorted(value.items(), key=sortfunc, reverse=reverse)
 
