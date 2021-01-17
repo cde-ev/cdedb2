@@ -118,7 +118,7 @@ class User:
                  moderator: Collection[int] = None,
                  presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
-        self.roles = roles if roles is not None else {"anonymous"}
+        self.roles = roles or {"anonymous"}
         self.username = username
         self.display_name = display_name
         self.given_names = given_names

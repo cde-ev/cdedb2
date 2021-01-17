@@ -154,7 +154,7 @@ class Application(BaseApp):
     def __call__(self, request: werkzeug.wrappers.Request) -> werkzeug.Response:
         # note time for performance measurement
         begin = now()
-        user = User(roles=set())
+        user = User()
         try:
             sessionkey = request.cookies.get("sessionkey")
             # TODO remove ml script key backwards compatibility code
