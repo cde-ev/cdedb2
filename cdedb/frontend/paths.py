@@ -684,6 +684,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
         sub('/ml', (
             rule("/", methods=_GET,
                  endpoint="index"),
+            rule("/refresh/mailinglists", methods=_POST,
+                 endpoint="manually_write_subscription_states"),
             rule("/search/user", methods=_GET,
                  endpoint="user_search"),
             rule("/user/create", methods=_GET,
