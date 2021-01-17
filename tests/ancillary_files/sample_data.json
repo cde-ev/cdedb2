@@ -7964,6 +7964,48 @@
             "mailinglist_id": 66,
             "persona_id": 23,
             "subscription_state": 30
+        },
+        {
+            "id": 140,
+            "mailinglist_id": 61,
+            "persona_id": 32,
+            "subscription_state": 30
+        },
+        {
+            "id": 141,
+            "mailinglist_id": 61,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "id": 142,
+            "mailinglist_id": 61,
+            "persona_id": 17,
+            "subscription_state": 30
+        },
+        {
+            "id": 143,
+            "mailinglist_id": 61,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "id": 144,
+            "mailinglist_id": 61,
+            "persona_id": 22,
+            "subscription_state": 30
+        },
+        {
+            "id": 145,
+            "mailinglist_id": 61,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "id": 146,
+            "mailinglist_id": 61,
+            "persona_id": 9,
+            "subscription_state": 30
         }
     ],
     "ml.subscription_addresses": [

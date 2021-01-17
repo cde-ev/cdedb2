@@ -402,6 +402,7 @@ class TestMlBackend(BackendTest):
             53: SS.subscribed,
             54: SS.unsubscription_override,
             56: SS.pending,
+            61: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=7))
@@ -1434,6 +1435,7 @@ class TestMlBackend(BackendTest):
             52: SS.implicit,
             53: SS.subscribed,
             56: SS.subscribed,
+            61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
         }
@@ -1468,6 +1470,7 @@ class TestMlBackend(BackendTest):
             52: SS.implicit,
             53: SS.subscribed,
             56: SS.subscribed,
+            61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
         }
@@ -1495,6 +1498,7 @@ class TestMlBackend(BackendTest):
             52: SS.implicit,
             53: SS.subscribed,
             56: SS.subscribed,
+            61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
         }
@@ -1518,6 +1522,7 @@ class TestMlBackend(BackendTest):
             52: SS.implicit,
             53: SS.subscribed,
             56: SS.subscribed,
+            61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
         }
@@ -1541,6 +1546,7 @@ class TestMlBackend(BackendTest):
             52: SS.implicit,
             53: SS.subscribed,
             56: SS.subscribed,
+            61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
         }
@@ -1567,6 +1573,7 @@ class TestMlBackend(BackendTest):
             52: SS.implicit,
             53: SS.subscribed,
             56: SS.subscribed,
+            61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
         }
