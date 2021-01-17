@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-01-16 16:00+0100\n"
+"POT-Creation-Date: 2021-01-17 20:02+0100\n"
 "PO-Revision-Date: 2020-11-15 19:04+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -42,7 +42,7 @@ msgstr "Unzulässiger Bereich."
 #: cdedb/backend/assembly.py:341 cdedb/backend/assembly.py:364
 #: cdedb/backend/assembly.py:1931 cdedb/backend/event.py:67
 #: cdedb/backend/event.py:98 cdedb/backend/past_event.py:552
-#: cdedb/frontend/common.py:1145
+#: cdedb/frontend/common.py:1154
 msgid "No input specified."
 msgstr "Keine Eingabe gemacht."
 
@@ -127,8 +127,8 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:546 cdedb/backend/ml.py:480
 #: cdedb/frontend/assembly.py:275 cdedb/frontend/assembly.py:437
-#: cdedb/frontend/event.py:1173 cdedb/frontend/ml_base.py:235
-#: cdedb/frontend/ml_base.py:646 cdedb/frontend/ml_base.py:740
+#: cdedb/frontend/event.py:1173 cdedb/frontend/ml_base.py:256
+#: cdedb/frontend/ml_base.py:667 cdedb/frontend/ml_base.py:761
 msgid "Some of these users do not exist or are archived."
 msgstr "Einige dieser Nutzer existieren nicht oder sind archiviert."
 
@@ -362,7 +362,7 @@ msgstr "Kein Saldo für fehlgeschlagene Transaktion angegeben."
 
 #: cdedb/backend/cde.py:447 cdedb/backend/common.py:610
 #: cdedb/frontend/cde.py:633 cdedb/frontend/cde.py:798
-#: cdedb/frontend/common.py:1454
+#: cdedb/frontend/common.py:1463
 msgid "Impossible."
 msgstr "Unmöglich."
 
@@ -666,7 +666,7 @@ msgstr "Fehler bei verschachtelten Transaktionen."
 msgid "Preventing reset of admin."
 msgstr "Zurücksetzen von Admin-Account verhindert."
 
-#: cdedb/backend/core.py:2128 cdedb/frontend/common.py:2093
+#: cdedb/backend/core.py:2128 cdedb/frontend/common.py:2102
 msgid "Link expired."
 msgstr "Link abgelaufen."
 
@@ -700,7 +700,7 @@ msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
 #: cdedb/backend/core.py:2230 cdedb/frontend/cde.py:1275
-#: cdedb/frontend/common.py:1367 cdedb/frontend/event.py:2290
+#: cdedb/frontend/common.py:1376 cdedb/frontend/event.py:2290
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
 
@@ -927,8 +927,8 @@ msgstr "Unterschiedliche Mailinglisten angegeben."
 msgid "Cannot remove all moderators."
 msgstr "Es können nicht sämtliche Moderatoren entfernt werden."
 
-#: cdedb/backend/ml.py:483 cdedb/frontend/ml_base.py:239
-#: cdedb/frontend/ml_base.py:650
+#: cdedb/backend/ml.py:483 cdedb/frontend/ml_base.py:260
+#: cdedb/frontend/ml_base.py:671
 msgid "Some of these users are not ml users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
 
@@ -1243,7 +1243,7 @@ msgstr "Der Anti-CSRF-Token is ungültig."
 
 #: cdedb/frontend/assembly.py:285 cdedb/frontend/assembly.py:300
 #: cdedb/frontend/event.py:481 cdedb/frontend/event.py:497
-#: cdedb/frontend/ml_base.py:657 cdedb/frontend/ml_base.py:769
+#: cdedb/frontend/ml_base.py:678 cdedb/frontend/ml_base.py:790
 msgid "Action had no effect."
 msgstr "Aktion hatte keinen Effekt."
 
@@ -1280,7 +1280,7 @@ msgstr "Versammlung angelegt."
 #: cdedb/frontend/core.py:2461 cdedb/frontend/core.py:2494
 #: cdedb/frontend/event.py:1365 cdedb/frontend/event.py:4205
 #: cdedb/frontend/event.py:4831 cdedb/frontend/event.py:6193
-#: cdedb/frontend/event.py:6225 cdedb/frontend/ml_base.py:481
+#: cdedb/frontend/event.py:6225 cdedb/frontend/ml_base.py:502
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
@@ -1308,7 +1308,7 @@ msgstr "Mitglieder müssen sich selbst anmelden."
 #: cdedb/frontend/event.py:2684 cdedb/frontend/event.py:2758
 #: cdedb/frontend/event.py:2781 cdedb/frontend/event.py:2806
 #: cdedb/frontend/event.py:2829 cdedb/frontend/event.py:2843
-#: cdedb/frontend/ml_base.py:601
+#: cdedb/frontend/ml_base.py:622
 msgid "Empty File."
 msgstr "Leere Datei."
 
@@ -1675,80 +1675,80 @@ msgstr "Einige dieser Nutzer sind keine Veranstaltungsnutzer."
 msgid "*Nothing here yet.*"
 msgstr "*Hier gibt es noch nichts.*"
 
-#: cdedb/frontend/common.py:188 cdedb/frontend/common.py:1245
+#: cdedb/frontend/common.py:188 cdedb/frontend/common.py:1254
 msgid "Failed validation."
 msgstr "Validierung fehlgeschlagen."
 
-#: cdedb/frontend/common.py:991 cdedb/frontend/common.py:1001
+#: cdedb/frontend/common.py:1000 cdedb/frontend/common.py:1010
 msgid "Must not be used in web templates."
 msgstr "Darf nicht in Web-Templates verwendet werden."
 
-#: cdedb/frontend/common.py:1053
+#: cdedb/frontend/common.py:1062
 msgid "Given method is not callable."
 msgstr "Die fragliche Methode ist nicht aufrufbar."
 
-#: cdedb/frontend/common.py:1085
+#: cdedb/frontend/common.py:1094
 #, python-format
 msgid "Default values cannot be overridden: %(keys)s"
 msgstr "Standardwerte können nicht überschrieben werden: %(keys)s"
 
-#: cdedb/frontend/common.py:1098
+#: cdedb/frontend/common.py:1107
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
 msgstr "Angefordeter modus existiert nicht: %(modus)s"
 
-#: cdedb/frontend/common.py:1103
+#: cdedb/frontend/common.py:1112
 #, python-format
 msgid "Template not found: %(file)s"
 msgstr "Template nicht gefunden: %(file)s"
 
-#: cdedb/frontend/common.py:1147
+#: cdedb/frontend/common.py:1156
 msgid "Ambiguous input."
 msgstr "Uneindeutige Eingabe."
 
-#: cdedb/frontend/common.py:1163
+#: cdedb/frontend/common.py:1172
 msgid "Invalid datatype read from file."
 msgstr "Ungültiger Datentyp aus Datei eingelesen."
 
-#: cdedb/frontend/common.py:1170
+#: cdedb/frontend/common.py:1179
 msgid "Invalid input type."
 msgstr "Ungültiger Eingabetyp."
 
-#: cdedb/frontend/common.py:1209
+#: cdedb/frontend/common.py:1218
 msgid "Cannot download query result without fields of interest."
 msgstr ""
 "Download eines Abfrageergebnis nicht möglich ohne selektierte Ausgabefelder."
 
-#: cdedb/frontend/common.py:1224
+#: cdedb/frontend/common.py:1233
 msgid "Unknown download kind {kind}."
 msgstr "Unbekannte Downloadart {kind}."
 
-#: cdedb/frontend/common.py:1247
+#: cdedb/frontend/common.py:1256
 msgid "The database currently undergoes maintenance and is unavailable."
 msgstr ""
 "Es werden derzeit Wartungsarbeiten an der Datenbank vorgenommen und diese "
 "ist daher leider nicht verfügbar."
 
-#: cdedb/frontend/common.py:1302
+#: cdedb/frontend/common.py:1311
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
-#: cdedb/frontend/common.py:1433 cdedb/frontend/core.py:1400
+#: cdedb/frontend/common.py:1442 cdedb/frontend/core.py:1400
 #: cdedb/frontend/core.py:2450
 msgid "Change committed."
 msgstr "Die Änderung wurde übernommen."
 
-#: cdedb/frontend/common.py:1434 cdedb/frontend/core.py:981
+#: cdedb/frontend/common.py:1443 cdedb/frontend/core.py:981
 #: cdedb/frontend/core.py:1152
 msgid "Change pending."
 msgstr "Die Änderung wartet auf Bestätigung."
 
-#: cdedb/frontend/common.py:1435
+#: cdedb/frontend/common.py:1444
 msgid "Change failed."
 msgstr "Änderung fehlgeschlagen."
 
-#: cdedb/frontend/common.py:1494
+#: cdedb/frontend/common.py:1503
 msgid ""
 "LaTeX compilation failed. Try downloading the source files and compiling "
 "them manually."
@@ -1756,58 +1756,58 @@ msgstr ""
 "Der LaTeX-Code konnte nicht kompiliert werden. Du kannst die Quelldateien "
 "herunterladen und versuchen sie manuell zu kompilieren."
 
-#: cdedb/frontend/common.py:1744
+#: cdedb/frontend/common.py:1753
 msgid "Inconsistent request."
 msgstr "Inkonsistente Anfrage."
 
-#: cdedb/frontend/common.py:1822
+#: cdedb/frontend/common.py:1831
 msgid "Object {param}={value} not found"
 msgstr "Objekt {param}={value} wurde nicht gefunden."
 
-#: cdedb/frontend/common.py:1868
+#: cdedb/frontend/common.py:1877
 msgid "You must login."
 msgstr "Login benötigt."
 
-#: cdedb/frontend/common.py:1872
+#: cdedb/frontend/common.py:1881
 msgid "Access denied to {realm}/{endpoint}."
 msgstr "Zugriff auf {realm}/{endpoint} verweigert."
 
-#: cdedb/frontend/common.py:1959
+#: cdedb/frontend/common.py:1968
 msgid "Magic URL parameter replacement failed."
 msgstr "Ersetzung magischer URL-Parameter fehlgeschlagen."
 
-#: cdedb/frontend/common.py:2095
+#: cdedb/frontend/common.py:2104
 msgid "Link invalid."
 msgstr "Link ungültig."
 
-#: cdedb/frontend/common.py:2139
+#: cdedb/frontend/common.py:2148
 msgid "Invalid argtype {t} found."
 msgstr "Ungültiger Argumenttyp {t}."
 
-#: cdedb/frontend/common.py:2252
+#: cdedb/frontend/common.py:2261
 msgid "This page can only be accessed by orgas."
 msgstr "Auf diese Seite können nur Orgas zugreifen."
 
-#: cdedb/frontend/common.py:2257
+#: cdedb/frontend/common.py:2266
 msgid "This event is locked for offline usage."
 msgstr "Diese Veranstaltung ist für die Offline-Nutzung gesperrt."
 
-#: cdedb/frontend/common.py:2289
+#: cdedb/frontend/common.py:2298
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
 
-#: cdedb/frontend/common.py:2294
+#: cdedb/frontend/common.py:2303
 msgid ""
 "You do not have privileged moderator access and may not change subscriptions."
 msgstr ""
 "Du hast keinen Zugriff als Privilegierter Moderator und darfst keine "
 "Abbonements ändern."
 
-#: cdedb/frontend/common.py:2299
+#: cdedb/frontend/common.py:2308
 msgid "This page can only be accessed by appropriate admins."
 msgstr "Auf diese Seite können nur Administratoren zugreifen."
 
-#: cdedb/frontend/common.py:2321
+#: cdedb/frontend/common.py:2330
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
@@ -2965,39 +2965,45 @@ msgstr "Nachricht moderiert."
 msgid "Message not moderated."
 msgstr "Nachricht moderiert."
 
-#: cdedb/frontend/ml_base.py:199
+#: cdedb/frontend/ml_base.py:73
+msgid "Manual writing of subscription states is only available in dev mode."
+msgstr ""
+"Das manuelle aktualisieren der Subscription States ist nur im "
+"Entwicklermodus möglich."
+
+#: cdedb/frontend/ml_base.py:220
 msgid "May not create mailinglist of this type."
 msgstr "Kann keine Mailingliste des gewünschten Typs erstellen."
 
-#: cdedb/frontend/ml_base.py:293
+#: cdedb/frontend/ml_base.py:314
 msgid "Not privileged to view log for all these mailinglists."
 msgstr "Keine Berechtigung um auf die Logs aller Mailinglisten zuzugreifen."
 
-#: cdedb/frontend/ml_base.py:669
+#: cdedb/frontend/ml_base.py:690
 msgid "User is no moderator."
 msgstr "Person ist kein Moderator."
 
-#: cdedb/frontend/ml_base.py:676
+#: cdedb/frontend/ml_base.py:697
 msgid "Not allowed to remove yourself as moderator."
 msgstr "Du kannst Dich nicht selbst als Moderator entfernen."
 
-#: cdedb/frontend/ml_base.py:681
+#: cdedb/frontend/ml_base.py:702
 msgid "Cannot remove last moderator."
 msgstr "Der letzte Moderator kann nicht entfernt werden."
 
-#: cdedb/frontend/ml_base.py:725 cdedb/frontend/ml_base.py:767
+#: cdedb/frontend/ml_base.py:746 cdedb/frontend/ml_base.py:788
 msgid "Not privileged to change subscriptions."
 msgstr "Darf Abonnements nicht ändern."
 
-#: cdedb/frontend/ml_base.py:977
+#: cdedb/frontend/ml_base.py:998
 msgid "Confirmation email sent."
 msgstr "Verifizierungsmail verschickt."
 
-#: cdedb/frontend/ml_base.py:1013
+#: cdedb/frontend/ml_base.py:1034
 msgid "Not subscribed."
 msgstr "Nicht abonniert."
 
-#: cdedb/frontend/ml_base.py:1019
+#: cdedb/frontend/ml_base.py:1040
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
@@ -12217,7 +12223,11 @@ msgstr "nicht abonniert"
 msgid "Manage"
 msgstr "Verwalten"
 
-#: cdedb/frontend/templates/web/ml/index.tmpl:31
+#: cdedb/frontend/templates/web/ml/index.tmpl:32
+msgid "Write Subscription States"
+msgstr "Aktualisieren der Subscription States"
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:39
 msgid ""
 "Here you can find the CdE’s Mailinglists; notably also those linked to "
 "events and assemblies."

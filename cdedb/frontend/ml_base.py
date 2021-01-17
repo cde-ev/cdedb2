@@ -70,8 +70,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         rs.ignore_validation_errors()
         if not self.conf["CDEDB_DEV"]:
-            msg = "Manual writing of subscription states is only available in dev mode."
-            raise RuntimeError(n_(msg))
+            raise RuntimeError(n_(
+                "Manual writing of subscription states is only available in dev mode."))
 
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
