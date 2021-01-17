@@ -540,7 +540,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
         self.traverse({'description': 'Ergebnisdetails'})
         own_vote = ("Du hast mit der folgenden Präferenz abgestimmt:"
-                    " 23 > 42 > Gegen alle Kandidaten > Ich = Philosophie")
+                    " 23 > 42 > Ablehnungsgrenze > Ich = Philosophie")
         self.assertPresence(own_vote, div='own-vote', exact=True)
 
     @as_users("garcia")
