@@ -155,7 +155,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for votestring, count in vote_counts|dictsort(by_key=False, reverse=True) %}
+                {% for votestring, count in vote_counts|dictsort(by="value", reverse=True) %}
                     <tr id="vote-{{ loop.index }}">
                         <td>
                             {% if vote == MAGIC_ABSTAIN %}
