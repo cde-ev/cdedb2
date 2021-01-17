@@ -88,15 +88,16 @@ class FieldDatatypes(enum.IntEnum):
     date = 5  #:
     datetime = 6  #:
 
-    # TODO can this be cleaner?
     def to_type(self) -> Type[Any]:
-        if self == FieldDatatypes.str: return str
-        elif self == FieldDatatypes.bool: return bool
-        elif self == FieldDatatypes.int: return int
-        elif self == FieldDatatypes.float: return float
-        elif self == FieldDatatypes.date: return datetime.date
-        elif self == FieldDatatypes.datetime: return datetime.datetime
-        else: raise ValueError("Impossible")
+        type_associations = {
+            FieldDatatypes.str: str,
+            FieldDatatypes.bool: bool,
+            FieldDatatypes.int: int,
+            FieldDatatypes.float: float,
+            FieldDatatypes.date: datetime.date,
+            FieldDatatypes.datetime: datetime.datetime,
+        }
+        return type_associations[self]
 
 
 @enum.unique

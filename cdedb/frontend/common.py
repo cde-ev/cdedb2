@@ -2059,15 +2059,16 @@ def REQUESTdata(
     Alternatively "functools.wraps" can be invoked in a way
     which also updates this attribute if the signature allows this.
 
-    :param spec: Specification of parameters to extract. The
-      first value of a tuple is the name of the parameter to look out
-      for. The second value of each tuple denotes the sort of parameter to
-      extract, valid values are all validators from
-      :py:mod:`cdedb.validation` vanilla, enclosed in square brackets or
-      with a leading hash, the square brackets are for HTML elements which
-      submit multiple values for the same parameter (e.g. <select>) which
-      are extracted as lists and the hash signals an encoded parameter,
-      which needs to be decoded first.
+    :param spec: Names of the parameters to extract.
+        The type of the parameter will be dynamically extracted
+        from the type annotations of the decorated function.
+        Permitted types are the ones registered in :py:mod:`cdedb.validation`.
+        This includes all types from :py:mod:`cdedb.validationtypes`
+        as well as some native python types (primitives, datetimes, decimals).
+        Additonally the generic types ``Optional[T]`` and ``Collection[T]``
+        are valid as a type.
+        To extract an encoded parameter one may prepended the name of it 
+        with an octothorpe (``#``).
     """
 
     def wrap(fun: F) -> F:

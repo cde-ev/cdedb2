@@ -3638,14 +3638,6 @@ _SUBSCRIPTION_ADDRESS_FIELDS = {
     'address': Email,
 }
 
-# TODO the enum does not exist anymore?
-
-
-def _SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS() -> Mapping[str, Any]: return {
-    #FIXME help?
-    'resolution': _enum_subscriptionrequestresolutions,  # type: ignore
-}
-
 
 @_add_typed_validator
 def _subscription_identifier(
@@ -3686,20 +3678,6 @@ def _subscription_address(
     mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
 
     return SubscriptionAddress(_examine_dictionary_fields(
-        val, mandatory_fields, **kwargs))
-
-
-#FIXME this is not used anywhere?!
-@_add_typed_validator
-def _subscription_request_resolution(
-    val: Any, argname: str = "subscription request resolution", **kwargs: Any
-) -> SubscriptionRequestResolution:
-    val = _mapping(val, argname, **kwargs)
-
-    mandatory_fields = {**_SUBSCRIPTION_ID_FIELDS}
-    mandatory_fields.update(_SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS())
-
-    return SubscriptionRequestResolution(_examine_dictionary_fields(
         val, mandatory_fields, **kwargs))
 
 
