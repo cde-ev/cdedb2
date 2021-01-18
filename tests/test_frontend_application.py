@@ -10,23 +10,24 @@ from tests.common import FrontendTest, as_users
 class TestApplication(FrontendTest):
     def test_404_anonymous(self) -> None:
         self.get("/nonexistentpath", status=404)
-        self.assertTitle('404: Not Found')
+        self.assertTitle("404: Not Found")
         self.assertPresence("Index", div="navbar-collapse-1")
         self.assertPresence("Veranstaltungen", div="navbar-collapse-1")
         self.assertNonPresence("Mitglieder", div="navbar-collapse-1")
         self.assertNonPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertNonPresence("Versammlungen", div="navbar-collapse-1")
+        self.assertNonPresence("", div="displayname", check_div=False)
 
     @as_users("berta")
     def test_404(self, user: CdEDBObject) -> None:
         self.get("/nonexistentpath", status=404)
-        self.assertTitle('404: Not Found')
+        self.assertTitle("404: Not Found")
         self.assertPresence("Index", div="navbar-collapse-1")
         self.assertPresence("Mitglieder", div="navbar-collapse-1")
         self.assertPresence("Veranstaltungen", div="navbar-collapse-1")
         self.assertPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertPresence(user['display_name'], div='displayname')
+        self.assertPresence(user["display_name"], div="displayname")
 
     @as_users("berta")
     def test_403(self, user: CdEDBObject) -> None:
@@ -64,6 +65,7 @@ class TestApplication(FrontendTest):
         self.assertNonPresence("Mitglieder", div="navbar-collapse-1")
         self.assertNonPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertNonPresence("Versammlungen", div="navbar-collapse-1")
+        self.assertNonPresence("", div="displayname", check_div=False)
 
     @as_users("berta")
     def test_500(self, user: CdEDBObject) -> None:
@@ -87,13 +89,13 @@ class TestApplication(FrontendTest):
             self.get('/', status=500)
 
         self.assertTitle("500: Internal Server Error")
-        self.assertPresence("ValueError", div='static-notifications')
+        self.assertPresence("ValueError", div="static-notifications")
         self.assertPresence("Index", div="navbar-collapse-1")
         self.assertPresence("Veranstaltungen", div="navbar-collapse-1")
         self.assertPresence("Mitglieder", div="navbar-collapse-1")
         self.assertPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertPresence(user['display_name'], div='displayname')
+        self.assertPresence(user["display_name"], div="displayname")
 
     def test_error_catching(self) -> None:
         """
