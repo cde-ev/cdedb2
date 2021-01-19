@@ -439,7 +439,7 @@ CREATE TABLE cde.org_period (
         -- keep track of automated archival stats which is built into different parts
         -- of the semester lifecycle.
         archival_notifications  integer NOT NULL DEFAULT 0,
-        archival_count          ingeger NOT NULL DEFAULT 0,
+        archival_count          integer NOT NULL DEFAULT 0,
         semester_done           timestamp WITH TIME ZONE DEFAULT NULL
 );
 GRANT SELECT ON cde.org_period TO cdb_persona;
