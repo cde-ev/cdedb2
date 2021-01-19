@@ -14,8 +14,9 @@ import pathlib
 import subprocess
 import sys
 
-import psycopg2.extras
+from psycopg2.extras import Json, DictCursor
 
+from cdedb.common import CdEDBObject
 from cdedb.script import setup
 
 # This is 'secret' the hashed
@@ -51,13 +52,9 @@ DEFAULTS = {
 }
 
 
-def populate_table(cur, table, data, repopath):
-    """Insert the passed data into the DB.
-
-    :type cur: psycopg cursor
-    :type table: str
-    :type data: {str: object}
-    """
+def populate_table(cur: DictCursor, table: str, data: CdEDBObject,
+                   repopath: pathlib.Path) -> None:
+    """Insert the passed data into the DB."""
     if data:
         for entry in data.values():
             if table in DEFAULTS:
@@ -66,7 +63,7 @@ def populate_table(cur, table, data, repopath):
                 if isinstance(v, collections.abc.Mapping):
                     # No special care for serialization needed, since the data
                     # comes from a json load operation
-                    entry[k] = psycopg2.extras.Json(v)
+                    entry[k] = Json(v)
             keys = tuple(key for key in entry)
             query = "INSERT INTO {table} ({keys}) VALUES ({placeholders})"
             query = query.format(table=table, keys=", ".join(keys),
@@ -76,7 +73,7 @@ def populate_table(cur, table, data, repopath):
         # include a small buffer of 1000 (mainly to allow for the log
         # messages of locking the event if somebody gets the ordering wrong)
         query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
-            table, max(int(id) for id in data) + 1000)
+            table, max(map(int, data)) + 1000)
         # we need elevated privileges for sequences
         subprocess.run(
             [str(repopath / "bin/execute_sql_script.py"),
@@ -85,20 +82,19 @@ def populate_table(cur, table, data, repopath):
         print("No data for table found")
 
 
-def make_institution(cur, institution_id):
+def make_institution(cur: DictCursor, institution_id: int) -> None:
     query = """INSERT INTO past_event.institutions (id, title, shortname)
                VALUES (%s, %s, %s)"""
     params = (institution_id, 'Veranstaltungsservice', 'CdE')
     cur.execute(query, params)
 
 
-def make_meta_info(cur):
+def make_meta_info(cur: DictCursor) -> None:
     query = """INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb)"""
-    params = tuple()
-    cur.execute(query, params)
+    cur.execute(query, tuple())
 
 
-def update_event(cur, event):
+def update_event(cur: DictCursor, event: CdEDBObject) -> None:
     query = """UPDATE event.events
                SET (lodge_field, camping_mat_field, course_room_field)
                = (%s, %s, %s)"""
@@ -107,7 +103,7 @@ def update_event(cur, event):
     cur.execute(query, params)
 
 
-def work(args):
+def work(args: argparse.Namespace) -> None:
     db_name = 'cdb_test' if args.test else 'cdb'
 
     print("Loading exported event")
@@ -150,15 +146,14 @@ def work(args):
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}
     for persona in data['core.personas'].values():
         if persona['id'] in orgas:
-            bits = (
-                "is_active", "is_core_admin", "is_cde_admin", "is_event_admin",
-                "is_cde_realm", "is_event_realm", "is_ml_realm")
+            bits = ["is_active", "is_core_admin", "is_cde_admin", "is_event_admin",
+                    "is_cde_realm", "is_event_realm", "is_ml_realm"]
             for bit in bits:
                 persona[bit] = True
 
     print("Remove inappropriate admin flags from all users")
     for persona in data['core.personas'].values():
-        bits = ("is_meta_admin", "is_assembly_admin", "is_ml_admin")
+        bits = ["is_meta_admin", "is_assembly_admin", "is_ml_admin"]
         for bit in bits:
             persona[bit] = False
 
@@ -222,10 +217,8 @@ def work(args):
                 datum['code'] = 2  # MemberChangeStati.committed
                 datum['persona_id'] = persona['id']
                 keys = tuple(key for key in datum)
-                query = ("INSERT INTO core.changelog ({keys})"
-                         " VALUES ({placeholders})").format(
-                             table=table, keys=", ".join(keys),
-                             placeholders=", ".join(("%s",) * len(keys)))
+                query = (f"INSERT INTO core.changelog ({', '.join(keys)})"
+                         f" VALUES ({', '.join(('%s',) * len(keys))})")
                 params = tuple(datum[key] for key in keys)
                 cur.execute(query, params)
 
