@@ -342,7 +342,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                      " Versammlung zusammenhängen, über diese Liste an uns.")
             presider_ml_data = {
                 'title': f"{assembly['title']} Versammlungsleitung",
-                'local_part': f"{assembly['shortname']}-leitung",
+                'local_part': f"{assembly['shortname'].lower()}-leitung",
                 'domain': const.MailinglistDomain.lists,
                 'description': descr,
                 'mod_policy': const.ModerationPolicy.unmoderated,
@@ -361,7 +361,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                      " der [Versammlung anmeldest]({}).")
             attendee_ml_data = {
                 'title': assembly['title'],
-                'local_part': assembly['shortname'],
+                'local_part': assembly['shortname'].lower(),
                 'domain': const.MailinglistDomain.lists,
                 'description': descr,
                 'mod_policy': const.ModerationPolicy.non_subscribers,

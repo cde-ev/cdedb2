@@ -98,7 +98,7 @@
             "postal_code2": "8XA 45-$",
             "location2": "Foreign City",
             "country2": "Far Away",
-            "weblink": "https://www.bundestag.cde",
+            "weblink": "<https://www.bundestag.cde>",
             "specialisation": "Alles\nUnd noch mehr",
             "affiliation": "Jedermann",
             "timeline": "Überall",
@@ -1483,7 +1483,7 @@
             "postal_code2": "8XA 45-$",
             "location2": "Foreign City",
             "country2": "Far Away",
-            "weblink": "https://www.bundestag.cde",
+            "weblink": "<https://www.bundestag.cde>",
             "specialisation": "Alles\nUnd noch mehr",
             "affiliation": "Jedermann",
             "timeline": "Überall",
@@ -8006,6 +8006,12 @@
             "mailinglist_id": 61,
             "persona_id": 9,
             "subscription_state": 30
+        },
+        {
+            "id": 147,
+            "mailinglist_id": 6,
+            "persona_id": 4,
+            "subscription_state": 1
         }
     ],
     "ml.subscription_addresses": [

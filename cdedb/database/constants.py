@@ -198,8 +198,9 @@ class MailinglistDomain(enum.IntEnum):
     general = 3
     cdelokal = 4
 
-    cdemuenchen = 10
-    dokuforge = 11
+    # The domains are not supported. To avoid conflicts, do not reuse:
+    # cdemuenchen = 10
+    # dokuforge = 11
 
     testmail = 100
 
@@ -219,8 +220,6 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
     MailinglistDomain.aka: "aka.cde-ev.de",
     MailinglistDomain.general: "cde-ev.de",
     MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
-    MailinglistDomain.cdemuenchen: "cde-muenchen.de",
-    MailinglistDomain.dokuforge: "dokuforge.de",
     MailinglistDomain.testmail: "testmail.cde-ev.de",
 }
 

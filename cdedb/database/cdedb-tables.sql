@@ -1106,7 +1106,7 @@ CREATE TABLE ml.mailinglists (
         -- explicitly store the address for simplicity.
         address                 varchar UNIQUE NOT NULL,
         local_part              varchar NOT NULL,
-        -- see cdedb.database.constants.MailinglistDomains
+        -- see cdedb.database.constants.MailinglistDomain
         domain                  integer NOT NULL,
         CONSTRAINT mailinglists_unique_address
             UNIQUE(domain, local_part),

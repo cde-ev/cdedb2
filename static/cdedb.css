@@ -166,7 +166,7 @@ h4.heading-underline, h5.heading-underline, h6.heading-underline {
 }
 @media (min-width: 768px) {
     h1 small, h2 small {
-        white-space: nowrap;
+        display: inline-block;
     }
 }
 .checkbox.input-sm {

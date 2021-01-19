@@ -366,9 +366,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['changeassemblyform']
         f['title'] = 'Drittes CdE-Konzil'
         f['description'] = "Wir werden alle Häretiker exkommunizieren."
+        f['presider_address'] = "drittes konzil@example.cde"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('presider_address',
+                                   "Muss eine valide E-Mail-Adresse sein.")
+        f['presider_address'] = "Konzil@example.cde"
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Häretiker", div='description')
+        self.traverse({'description': 'Konfiguration'},)
+        f = self.response.forms['changeassemblyform']
+        self.assertEqual(f['presider_address'].value, 'konzil@example.cde')
 
     @as_users("werner")
     def test_past_assembly(self, user: CdEDBObject) -> None:
@@ -411,8 +419,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         presider_address = "presider@lists.cde-ev.de"
         self._create_assembly(delta={'presider_address': presider_address})
         self.traverse("Konfiguration")
-        f = self.response.forms["changeassemblyform"]
-        self.assertEqual(f["presider_address"].value, presider_address)
+        f = self.response.forms['changeassemblyform']
+        self.assertEqual(f['presider_address'].value, presider_address)
 
     @as_users("charly")
     def test_signup(self, user: CdEDBObject) -> None:

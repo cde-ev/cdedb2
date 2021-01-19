@@ -71,7 +71,7 @@ class TeamMeta:
     """Metaclass for all team lists."""
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
-    domains = [MailinglistDomain.lists, MailinglistDomain.dokuforge]
+    domains = [MailinglistDomain.lists]
     maxsize_default = 4096
 
 
@@ -600,7 +600,7 @@ class SemiPublicMailinglist(GeneralMailinglist):
 
 class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
-    domains = [MailinglistDomain.cdelokal, MailinglistDomain.cdemuenchen]
+    domains = [MailinglistDomain.cdelokal]
     relevant_admins = {"cdelokal_admin"}
 
 
