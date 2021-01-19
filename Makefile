@@ -314,4 +314,4 @@ mypy-test:
 
 mypy:
 	# Match all test files except `test_validation`.
-	${MYPYBIN} cdedb tests/common.py tests/test_[^v]*
+	${MYPYBIN} cdedb static tests/common.py tests/test_[^v]*

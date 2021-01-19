@@ -122,7 +122,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
          for x in candidates for y in candidates}
     # Third we execute the Schulze method by iteratively determining
     # winners
-    result = []
+    result: List[List[str]] = []
     while True:
         done = {x for level in result for x in level}
         # avoid sets to preserve ordering
@@ -137,7 +137,7 @@ def schulze_evaluate(votes: Collection[str], candidates: Collection[str]
     condensed = ">".join("=".join(level) for level in result)
     detailed = []
     for lead, follow in zip(result, result[1:]):
-        level = {
+        level: Dict[str, Union[List[str], int]] = {
             'winner': lead,
             'loser': follow,
             'pro_votes': counts[(lead[0], follow[0])],
