@@ -646,6 +646,8 @@ class CdEBackend(AbstractBackend):
                 'balance_done': None,
                 'balance_trialmembers': 0,
                 'balance_total': decimal.Decimal(0),
+                'archival_notifications': 0,
+                'archival_count': 0,
                 'semester_done': None,
             }
             ret *= self.sql_insert(rs, "cde.org_period", new_period)
