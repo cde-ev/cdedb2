@@ -549,19 +549,26 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin")
     def next_persona(self, rs: RequestState, persona_id: int,
-                     is_member: bool = True) -> Optional[int]:
+                     is_member: Optional[bool] = True,
+                     is_archived: Optional[bool] = False) -> Optional[int]:
         """Look up the following persona.
 
         :returns: Next valid id in table core.personas
         """
         persona_id = affirm(int, persona_id)
-        query = "SELECT MIN(id) FROM core.personas WHERE id > %s"
-        if is_member:
-            query = glue(query, "AND is_member = True")
-        tmp = self.query_one(rs, query, (persona_id,))
-        if not tmp:
-            return None
-        return unwrap(tmp)
+        is_member = affirm_optional(bool, is_member)
+        is_archived = affirm_optional(bool, is_archived)
+        query = "SELECT MIN(id) FROM core.personas"
+        constraints = ["id > %s"]
+        params = [persona_id]
+        if is_member is not None:
+            constraints.append("is_member = &s")
+            params.append(is_member)
+        if is_archived is not None:
+            constraints.append("is_archived = %s")
+            params.append(is_archived)
+        query += " WHERE " + " AND ".join(constraints)
+        return unwrap(self.query_one(rs, query, params))
 
     def commit_persona(self, rs: RequestState, data: CdEDBObject,
                        change_note: Optional[str]) -> DefaultReturnCode:
