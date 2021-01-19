@@ -2101,7 +2101,6 @@ class CdEFrontend(AbstractUserFrontend):
         def eject_member(rrs: RequestState, rs: None = None) -> bool:
             """Check one member for ejection and advance semester state."""
             with Atomizer(rrs):
-                period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
                 persona_id = self.coreproxy.next_persona(
                     rrs, period['ejection_state'], is_member=None, is_archived=False)
