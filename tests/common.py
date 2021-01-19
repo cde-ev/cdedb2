@@ -1217,7 +1217,7 @@ class FrontendTest(BackendTest):
         self._log_subroutine(title, logs, start=1,
                              end=total if total < 50 else 50)
         # check if the log page numbers are proper (no 0th page, no last+1 page)
-        self.assertNonPresence("", div="pagination-0", check_div=False)
+        self.assertNonPresence("", check_div=False, div="pagination-0")
         self.assertNonPresence("", check_div=False,
                                div=f"pagination-{str(total // 50 + 2)}")
         # check translations
@@ -1281,6 +1281,19 @@ class FrontendTest(BackendTest):
         f["offset"] = None
         f["length"] = None
         self.submit(f)
+
+        # check multi-checkbox selections
+        f = self.response.forms['logshowform']
+        # use internal value property as I don't see a way to get the
+        # checkbox value otherwise
+        codes = [field._value for field in f.fields['codes']]
+        f['codes'] = codes
+        self.assertGreater(len(codes), 1)
+        self.submit(f)
+        self.traverse({'linkid': 'pagination-first'})
+        f = self.response.forms['logshowform']
+        for field in f.fields['codes']:
+            self.assertTrue(field.checked)
 
     def _log_subroutine(self, title: str,
                         all_logs: Tuple[Tuple[int, enum.IntEnum], ...],

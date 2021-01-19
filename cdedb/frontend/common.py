@@ -964,7 +964,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param templatename: file name of template without extension
         """
 
-        def _cdedblink(endpoint: str, params: CdEDBObject = None,
+        def _cdedblink(endpoint: str, params: CdEDBMultiDict = None,
                        magic_placeholders: Collection[str] = None) -> str:
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
@@ -976,7 +976,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             :type magic_placeholders: [str]
             :rtype: str
             """
-            params = params or {}
+            params = params or werkzeug.datastructures.MultiDict()
             return cdedburl(rs, endpoint, params,
                             force_external=(modus != "web"),
                             magic_placeholders=magic_placeholders)
@@ -1914,7 +1914,8 @@ def periodic(name: str, period: int = 1
     return decorator
 
 
-def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
+def cdedburl(rs: RequestState, endpoint: str,
+             params: Union[CdEDBObject, CdEDBMultiDict] = None,
              force_external: bool = False,
              magic_placeholders: Collection[str] = None) -> str:
     """Construct an HTTP URL.
@@ -1968,6 +1969,14 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
     else:
         for key in params:
             allparams[key] = params[key]
+
+    # Until Werkzeug 0.15, this workaround is necessary to keep duplicates.
+    allparams = allparams.to_dict(flat=False)
+    for key in allparams:
+        # And then, this needs to be done to keep <magic replacements> working
+        if len(allparams[key]) == 1:
+            allparams[key] = unwrap(allparams[key])
+
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 
