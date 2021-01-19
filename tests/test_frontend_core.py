@@ -28,6 +28,16 @@ class TestCoreFrontend(FrontendTest):
                 self.assertPresence(user['display_name'], div='displayname',
                                     exact=True)
 
+    def test_login_redirect(self) -> None:
+        user = USER_DICT["berta"]
+        self.get("/core/admins")  # could be any non-public page
+        f = self.response.forms["loginform"]
+        f["username"] = user["username"]
+        f["password"] = user["password"]
+        self.submit(f, check_notification=False)
+        self.assertLogin(user["display_name"])
+        self.assertTitle("Administratorenübersicht")
+
     @as_users("vera", "berta", "emilia")
     def test_logout(self, user: CdEDBObject) -> None:
         self.assertPresence(user['display_name'], div='displayname', exact=True)

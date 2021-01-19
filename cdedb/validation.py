@@ -305,7 +305,6 @@ def _add_typed_validator(fun: F, return_type: Type[Any] = None) -> F:
         raise RuntimeError(f"Type {return_type} already registered")
     _ALL_TYPED[return_type] = fun
     allow_none = _allow_None(fun)
-    # _ALL_TYPED[Optional[return_type]] = allow_none  # type: ignore
     setattr(current_module, allow_none.__name__, allow_none)
 
     return fun

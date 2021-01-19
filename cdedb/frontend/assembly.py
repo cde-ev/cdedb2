@@ -125,14 +125,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "user_search", params)
 
     @access("assembly_admin")
-    @REQUESTdata("codes", "assembly_id",
-                 "persona_id",
-                 "submitted_by",
-                 "change_note",
-                 "offset",
-                 "length",
-                 "time_start",
-                 "time_stop")
+    @REQUESTdata("codes", "assembly_id", "persona_id", "submitted_by",
+                 "change_note", "offset", "length", "time_start", "time_stop")
     def view_log(self, rs: RequestState,
                  codes: Collection[const.AssemblyLogCodes],
                  assembly_id: Optional[vtypes.ID], offset: Optional[int],

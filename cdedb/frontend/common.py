@@ -2370,9 +2370,6 @@ def check_validation(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
-    This is similar to :func:`~cdedb.frontend.common.check_validation`
-    but accepts a type object instead of a string.
-
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find
       out how to nicely get rid of this -- python has huge introspection
@@ -2391,7 +2388,7 @@ def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
     """Helper to perform parameter sanitization.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
-    but accepts a type object instead of a string.
+    but also allows optional/falsy values.
 
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find

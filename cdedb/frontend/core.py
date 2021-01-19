@@ -217,7 +217,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect(rs, "core/meta_info_form")
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdata("username", "password", "wants")
+    @REQUESTdata("username", "password", "#wants")
     def login(self, rs: RequestState, username: vtypes.PrintableASCII,
               password: str, wants: Optional[str]) -> Response:
         """Create session.
@@ -2591,7 +2591,7 @@ class CoreFrontend(AbstractFrontend):
         return self.coreproxy.set_cron_store(rs, name, data)
 
     @access("droid_resolve")
-    @REQUESTdata("username", )
+    @REQUESTdata("username")
     def api_resolve_username(self, rs: RequestState, username: vtypes.Email
                              ) -> Response:
         """API to resolve username to that users given names and family name."""
