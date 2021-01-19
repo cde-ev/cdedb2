@@ -2007,6 +2007,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
+        meta_info = self.coreproxy.get_meta_info(rs)
 
         if rs.has_validation_errors():
             return self.show_semester(rs)
@@ -2016,9 +2017,7 @@ class CdEFrontend(AbstractUserFrontend):
         def send_billing_mail(rrs: RequestState, rs: None = None) -> bool:
             """Send one billing mail and advance semester state."""
             with Atomizer(rrs):
-                period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
-                meta_info = self.coreproxy.get_meta_info(rrs)
                 persona_id = self.coreproxy.next_persona(
                     rrs, period['billing_state'], is_member=None, is_archived=False)
                 if testrun:
