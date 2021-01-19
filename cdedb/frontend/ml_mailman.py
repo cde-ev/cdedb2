@@ -82,26 +82,26 @@ class MailmanMixin(MlBaseFrontend):
         desired_templates = {
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + f"""
-        Dies ist eine Mailingliste des CdE e.V.
-        Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)})""",
-            'list:admin:action:post': f"""
-        As list moderator, your authorization is requested for the
-        following mailing list posting:
+Dies ist eine Mailingliste des CdE e.V.
+Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)})""",
+    'list:admin:action:post': f"""
+As list moderator, your authorization is requested for the
+following mailing list posting:
 
-            List:    $listname
-            From:    $sender_email
-            Subject: $subject
+    List:    $listname
+    From:    $sender_email
+    Subject: $subject
 
-        The message is being held because:
+The message is being held because:
 
-        $reasons
+$reasons
 
-        At your convenience, visit the CdEDB [1] to approve or deny the request. Note
-        that the paragraph below about email moderation is wrong. Sending mails will
-        do nothing.
+At your convenience, visit the CdEDB [1] to approve or deny the request. Note
+that the paragraph below about email moderation is wrong. Sending mails will
+do nothing.
 
-        [1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True)}
-        """.strip(),
+[1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True)}
+""".strip(),
         }
         desired_header_matches = {
             ('x-spam-flag', 'YES', 'hold'),
