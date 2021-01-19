@@ -1843,7 +1843,7 @@ class CoreBackend(AbstractBackend):
         :returns: The id of the newly created persona.
         """
         data = affirm(vtypes.Persona, data,
-            creation=True, _ignore_warnings=ignore_warnings)
+                      creation=True, _ignore_warnings=ignore_warnings)
         submitted_by = affirm_optional(vtypes.ID, submitted_by)
         # zap any admin attempts
         data.update({
@@ -2370,8 +2370,8 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate_check(vtypes.PasswordStrength,
-            password, argname=argname, admin=admin, inputs=inputs)
+        password, errs = validate_check(vtypes.PasswordStrength, password,
+                                        argname=argname, admin=admin, inputs=inputs)
 
         return password, errs
 
@@ -2639,7 +2639,7 @@ class CoreBackend(AbstractBackend):
         :param ignore_warnings: Ignore errors with kind ValidationWarning
         """
         data = affirm(vtypes.GenesisCase, data,
-            _ignore_warnings=ignore_warnings)
+                      _ignore_warnings=ignore_warnings)
 
         with Atomizer(rs):
             current = self.sql_select_one(
@@ -2685,7 +2685,7 @@ class CoreBackend(AbstractBackend):
             # Fix realms, so that the persona validator does the correct thing
             data.update(GENESIS_REALM_OVERRIDE[case['realm']])
             data = affirm(vtypes.Persona, data,
-                creation=True, _ignore_warnings=True)
+                          creation=True, _ignore_warnings=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)
