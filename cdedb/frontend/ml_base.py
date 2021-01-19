@@ -65,13 +65,10 @@ class MlBaseFrontend(AbstractUserFrontend):
     def manually_write_subscription_states(self, rs: RequestState) -> Response:
         """Write subscription states of all mailinglists now.
 
-        This is usually be done by a cron job, but during developing it can be nice to
-        trigger this immediately.
+        This will usually be done by a cron job, but sometimes it can be nice to trigger
+        this immediately.
         """
         rs.ignore_validation_errors()
-        if not self.conf["CDEDB_DEV"]:
-            raise RuntimeError(n_(
-                "Manual writing of subscription states is only available in dev mode."))
 
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
