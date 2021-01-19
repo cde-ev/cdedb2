@@ -5,7 +5,7 @@ from cdedb.script import make_backend, setup, Script
 # Configuration
 
 # The admin id will need to be replaces before use.
-executing_admin_id = 1
+executing_admin_id = -1
 rs = setup(persona_id=executing_admin_id, dbuser="cdb_admin",
            dbpassword="9876543210abcdefghijklmnopqrst")
 
