@@ -67,7 +67,7 @@
             <li>
                 {{ candidate['title'] }}
                 {# We show the candidates shortnames on purpose even before the vote starts, so mistakes have a better chance to be noticed #}
-                {% attends %}
+                {% if attends %}
                     <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
                         {{ candidate['shortname'] }}
                     </span>
