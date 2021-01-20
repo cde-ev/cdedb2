@@ -80,7 +80,7 @@ class _RSFactory(Protocol):
 
 def setup(persona_id: int, dbuser: str, dbpassword: str,
           check_system_user: bool = True, dbname: str = 'cdb'
-          ) -> Callable[[int], MockRequestState]:
+          ) -> Callable[[int], RequestState]:
     """This sets up the database.
 
     :param persona_id: default ID for the owner of the generated request state
