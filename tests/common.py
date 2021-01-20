@@ -16,6 +16,7 @@ import os
 import pathlib
 import re
 import subprocess
+import signal
 import sys
 import tempfile
 import time
@@ -407,9 +408,15 @@ class CdEDBTest(BasicTest):
     conf: ClassVar[Config]
 
     def setUp(self) -> None:
-        subprocess.check_call(("make", "sample-data-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
+        try:
+            subprocess.check_call(("make", "sample-data-test-shallow"),
+                                  stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError as e:
+            if e.returncode == -signal.SIGINT:
+                self.skipTest("Setup was interrupted.")
+            else:
+                raise
         super(CdEDBTest, self).setUp()
 
 
