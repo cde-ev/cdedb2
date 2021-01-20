@@ -419,7 +419,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert data is not None
         presider_ml_data = None
         if create_presider_list:
-            if data["presider_address"]:
+            if presider_address:
                 rs.notify("info", n_("Given presider address ignored in favor of"
                                      " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
