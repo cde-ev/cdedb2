@@ -1139,11 +1139,13 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin")
     def is_persona_automatically_archivable(self, rs: RequestState, persona_id: int,
-                                            cutoff: datetime.datetime = None) -> bool:
+                                            reference_date: datetime.datetime = None
+                                            ) -> bool:
         """Determine whether a persona is eligble to be automatically archived.
 
-        :param cutoff: If given consider this as the cutoff point for inactivity.
-            Otherwise calculate the cutoff using a config parameter. This is intended
+        :param reference_date: If given consider this as the reference point for
+            determining inactivity. Otherwise use the current date. Either way this
+            calculates the actual cutoff using a config parameter. This is intended
             to be used during semester management to send notifications during step 1
             and later archive those who were previosly notified, not those who turned
             eligible for archival in between.
@@ -1159,9 +1161,9 @@ class CoreBackend(AbstractBackend):
             * The persona being explicitly subscribed to any mailinglist.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        cutoff = affirm_optional(datetime.datetime, cutoff)
+        reference_date = affirm(datetime.datetime, reference_date or now().date())
 
-        cutoff = cutoff or now() - self.conf["AUTOMATED_ARCHIVAL_CUTOFF"]
+        cutoff = reference_date - self.conf["AUTOMATED_ARCHIVAL_CUTOFF"]
         with Atomizer(rs):
             persona = self.get_persona(rs, persona_id)
 
