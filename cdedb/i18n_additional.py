@@ -47,8 +47,8 @@ I18N_STRINGS = (
     n_("CdeLogCodes.expuls_addresscheck"),
     n_("CdeLogCodes.expuls_addresscheck_skipped"),
     n_("CdeLogCodes.expuls_advance"),
-    n_("CdELogCodes.archival_notification_done"),
-    n_("CdELogCodes.automated_archival_done"),
+    n_("CdeLogCodes.automated_archival_notification_done"),
+    n_("CdeLogCodes.automated_archival_done"),
 
     n_("CoreLogCodes.persona_creation"),
     n_("CoreLogCodes.persona_change"),

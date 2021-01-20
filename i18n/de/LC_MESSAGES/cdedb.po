@@ -12840,11 +12840,11 @@ msgid "CdeLogCodes.expuls_advance"
 msgstr "Nächster exPuls"
 
 #: cdedb/i18n_additional.py:50
-msgid "CdELogCodes.archival_notification_done"
+msgid "CdeLogCodes.automated_archival_notification_done"
 msgstr "Archivierungsbenachrichtigungen versandt"
 
 #: cdedb/i18n_additional.py:51
-msgid "CdELogCodes.automated_archival_done"
+msgid "CdeLogCodes.automated_archival_done"
 msgstr "Automatische ARchivierung abgeschlossen"
 
 #: cdedb/i18n_additional.py:53
