@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-01-08 22:24+0100\n"
+"POT-Creation-Date: 2021-01-20 22:51+0100\n"
 "PO-Revision-Date: 2020-11-15 19:04+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -33,8 +33,8 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 msgid "Must have privileged access to view assembly log."
 msgstr "Keine Zugriffsrechte auf Veranstaltungs-Log."
 
-#: cdedb/backend/assembly.py:293 cdedb/backend/cde.py:865
-#: cdedb/backend/core.py:2698 cdedb/backend/event.py:914
+#: cdedb/backend/assembly.py:293 cdedb/backend/cde.py:891
+#: cdedb/backend/core.py:2831 cdedb/backend/event.py:914
 #: cdedb/backend/ml.py:345 cdedb/backend/past_event.py:767
 msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
@@ -66,9 +66,9 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/backend/assembly.py:1911 cdedb/backend/assembly.py:1938
 #: cdedb/backend/assembly.py:1998 cdedb/backend/cde.py:113
 #: cdedb/backend/cde.py:138 cdedb/backend/cde.py:289 cdedb/backend/core.py:497
-#: cdedb/backend/core.py:666 cdedb/backend/core.py:2482
-#: cdedb/backend/core.py:2485 cdedb/backend/core.py:2513
-#: cdedb/backend/core.py:2540 cdedb/backend/core.py:2544
+#: cdedb/backend/core.py:680 cdedb/backend/core.py:2615
+#: cdedb/backend/core.py:2618 cdedb/backend/core.py:2646
+#: cdedb/backend/core.py:2673 cdedb/backend/core.py:2677
 #: cdedb/backend/event.py:172 cdedb/backend/event.py:248
 #: cdedb/backend/event.py:470 cdedb/backend/event.py:494
 #: cdedb/backend/event.py:713 cdedb/backend/event.py:1623
@@ -145,8 +145,8 @@ msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 #: cdedb/backend/assembly.py:689 cdedb/backend/assembly.py:738
 #: cdedb/backend/assembly.py:1007 cdedb/backend/assembly.py:1049
 #: cdedb/backend/assembly.py:1720 cdedb/backend/assembly.py:1751
-#: cdedb/backend/cde.py:241 cdedb/backend/cde.py:267 cdedb/backend/core.py:2390
-#: cdedb/backend/core.py:2413 cdedb/backend/event.py:1070
+#: cdedb/backend/cde.py:241 cdedb/backend/cde.py:267 cdedb/backend/core.py:2523
+#: cdedb/backend/core.py:2546 cdedb/backend/event.py:1070
 #: cdedb/backend/event.py:1106 cdedb/backend/event.py:1299
 #: cdedb/backend/event.py:1332 cdedb/backend/event.py:1419
 #: cdedb/backend/event.py:1477 cdedb/backend/event.py:1993
@@ -163,7 +163,7 @@ msgstr "Löschen von %(type)s wird verhindert von %(block)s."
 
 #: cdedb/backend/assembly.py:700 cdedb/backend/assembly.py:1470
 #: cdedb/backend/assembly.py:1473 cdedb/backend/cde.py:247
-#: cdedb/backend/core.py:2401 cdedb/backend/core.py:2404
+#: cdedb/backend/core.py:2534 cdedb/backend/core.py:2537
 #, python-format
 msgid "Unable to cascade %(blocker)s."
 msgstr "Kaskadierung für %(blocker)s nicht möglich."
@@ -386,53 +386,62 @@ msgstr "Nur das aktuelle Semester kann bearbeitet werden."
 msgid "Current period not finalized."
 msgstr "Das aktuelle Semester ist noch nicht abgeschlossen."
 
-#: cdedb/backend/cde.py:665
+#: cdedb/backend/cde.py:651
 msgid "Billing already done for this period."
 msgstr "Zahlungserinnerung für dieses Semester bereits verschickt."
 
-#: cdedb/backend/cde.py:690
+#: cdedb/backend/cde.py:676
+msgid "Archival notifications done for this period."
+msgstr ""
+"Archivierungsbenachrichtigungen für dieses Semester bereits verschickt."
+
+#: cdedb/backend/cde.py:696
+msgid "Automated archival done for this period."
+msgstr "Automatische Archivierung für dieses Semester bereits abgeschlossen."
+
+#: cdedb/backend/cde.py:716
 msgid "Billing not done for this semester."
 msgstr "Zahlungserinnerungen für dieses Semester noch nicht verschickt."
 
-#: cdedb/backend/cde.py:692
+#: cdedb/backend/cde.py:718
 msgid "Ejection already done for this semester."
 msgstr ""
 "Streichung inaktiver Mitglieder für dieses Semester bereits durchgeführt."
 
-#: cdedb/backend/cde.py:715
+#: cdedb/backend/cde.py:741
 msgid "Ejection not done for this period."
 msgstr ""
 "Streichung inaktiver Mitglieder für dieses Semester noch nicht durchgeführt."
 
-#: cdedb/backend/cde.py:717
+#: cdedb/backend/cde.py:743
 msgid "Balance update already done for this period."
 msgstr "Guthabenaktualisierung für dieses Semester bereits durchgeführt."
 
-#: cdedb/backend/cde.py:744
+#: cdedb/backend/cde.py:770
 msgid "No exPuls exists."
 msgstr "Es existiert keine exPuls-Ausgabe."
 
-#: cdedb/backend/cde.py:754
+#: cdedb/backend/cde.py:780
 msgid "This exPuls does not exist."
 msgstr "Diese exPuls-Ausgabe existiert nicht."
 
-#: cdedb/backend/cde.py:765
+#: cdedb/backend/cde.py:791
 msgid "Only able to modify current expuls."
 msgstr "Nur der aktuelle exPuls kann bearbeitet werden."
 
-#: cdedb/backend/cde.py:775
+#: cdedb/backend/cde.py:801
 msgid "Current expuls not finalized."
 msgstr "Der aktuelle exPuls ist noch nicht abgeschlossen."
 
-#: cdedb/backend/cde.py:802
+#: cdedb/backend/cde.py:828
 msgid "Addresscheck already done for this expuls."
 msgstr "Adressabfrage für diesen ExPuls bereits durchgeführt."
 
-#: cdedb/backend/cde.py:828 cdedb/backend/core.py:1665
+#: cdedb/backend/cde.py:854 cdedb/backend/core.py:1798
 msgid "Too many queries."
 msgstr "Zu viele Anfragen."
 
-#: cdedb/backend/cde.py:843 cdedb/backend/cde.py:857 cdedb/backend/event.py:476
+#: cdedb/backend/cde.py:869 cdedb/backend/cde.py:883 cdedb/backend/event.py:476
 msgid "Admin only."
 msgstr "Nur für Admins erlaubt."
 
@@ -465,275 +474,275 @@ msgstr "Eine bestehende Änderung ist im Konflikt."
 msgid "Modification failed."
 msgstr "Modifikation fehlgeschlagen."
 
-#: cdedb/backend/core.py:575 cdedb/backend/core.py:2284
-#: cdedb/backend/core.py:2306 cdedb/frontend/core.py:1759
+#: cdedb/backend/core.py:589 cdedb/backend/core.py:2417
+#: cdedb/backend/core.py:2439 cdedb/frontend/core.py:1759
 msgid "Nonexistent user."
 msgstr "Nutzer existiert nicht."
 
-#: cdedb/backend/core.py:620 cdedb/backend/core.py:2080
-#: cdedb/backend/core.py:2109 cdedb/backend/core.py:2241
+#: cdedb/backend/core.py:634 cdedb/backend/core.py:2213
+#: cdedb/backend/core.py:2242 cdedb/backend/core.py:2374
 msgid "Persona does not exist."
 msgstr "Person existiert nicht."
 
-#: cdedb/backend/core.py:623
+#: cdedb/backend/core.py:637
 msgid "Non-waiting change without generation override."
 msgstr "Prioritätsänderung ohne Generationsausnahme."
 
-#: cdedb/backend/core.py:629
+#: cdedb/backend/core.py:643
 msgid "Realm modification prevented."
 msgstr "Bereichsänderung verhindert."
 
-#: cdedb/backend/core.py:635
+#: cdedb/backend/core.py:649
 msgid "Admin privilege modification prevented."
 msgstr "Änderung der Adminprivilegien verhindert."
 
-#: cdedb/backend/core.py:639
+#: cdedb/backend/core.py:653
 msgid "Membership modification prevented."
 msgstr "Änderung des Mitgliedschaftsstatus verhindert."
 
-#: cdedb/backend/core.py:642
+#: cdedb/backend/core.py:656
 msgid "Hiding prevented."
 msgstr "Widerruf der Datenschutz-Einwilligung verhindert."
 
-#: cdedb/backend/core.py:646
+#: cdedb/backend/core.py:660
 msgid "Archive modification prevented."
 msgstr "Änderung des Archivierungsstatus verhindert."
 
-#: cdedb/backend/core.py:653
+#: cdedb/backend/core.py:667
 msgid "Modification of balance prevented."
 msgstr "Änderung des Guthabens verhindert."
 
-#: cdedb/backend/core.py:655
+#: cdedb/backend/core.py:669
 msgid "Modification of email address prevented."
 msgstr "Änderung der E-Mail-Adresse verhindert."
 
-#: cdedb/backend/core.py:657
+#: cdedb/backend/core.py:671
 msgid "Modification of foto prevented."
 msgstr "Änderung des Profilbildes verhindert."
 
-#: cdedb/backend/core.py:659
+#: cdedb/backend/core.py:673
 msgid "Own activation prevented."
 msgstr "Aktivierung des eigenen Accounts verhindert."
 
-#: cdedb/backend/core.py:673
+#: cdedb/backend/core.py:687
 msgid "Editing archived member impossible."
 msgstr "Bearbeitung eines archivierten Accounts nicht möglich."
 
-#: cdedb/backend/core.py:680
+#: cdedb/backend/core.py:694
 msgid "Special change not committed."
 msgstr "Spezialänderung nicht vollzogen."
 
-#: cdedb/backend/core.py:804 cdedb/backend/core.py:879
+#: cdedb/backend/core.py:818 cdedb/backend/core.py:893
 #: cdedb/frontend/core.py:1311 cdedb/frontend/core.py:1393
 msgid "Cannot modify own meta admin privileges."
 msgstr "Die eigenen Meta-Admin-Privilegien können nicht bearbeitet werden."
 
-#: cdedb/backend/core.py:809
+#: cdedb/backend/core.py:823
 msgid "Pending privilege change."
 msgstr "Ausstehende Änderung der Admin-Privilegien."
 
-#: cdedb/backend/core.py:816
+#: cdedb/backend/core.py:830
 msgid "User does not fit the requirements for this admin privilege."
 msgstr ""
 "Nutzer hat nicht die notwendigen Voraussetzungen für diese Adminprivilegien."
 
-#: cdedb/backend/core.py:873
+#: cdedb/backend/core.py:887
 #, python-format
 msgid "Invalid privilege change state: %(status)s."
 msgstr "Ungültiger Status für Änderung der Admin-Privilegien: %(status)s."
 
-#: cdedb/backend/core.py:882 cdedb/frontend/core.py:1396
+#: cdedb/backend/core.py:896 cdedb/frontend/core.py:1396
 msgid ""
 "Only a different admin than the submitter may approve a privilege change."
 msgstr ""
 "Nur ein anderer Admin als der Antragsteller kann eine Änderung bestätigen."
 
-#: cdedb/backend/core.py:928
+#: cdedb/backend/core.py:942
 msgid "Invalid new privilege change status."
 msgstr "Ungültiger neuer Status für Änderung der Admin-Privilegien."
 
-#: cdedb/backend/core.py:1004
+#: cdedb/backend/core.py:1018
 msgid "No realm provided."
 msgstr "Kein Realm angegeben."
 
-#: cdedb/backend/core.py:1034
+#: cdedb/backend/core.py:1048
 msgid "Tried to credit balance to non-cde person."
 msgstr "Guthabenänderung für Nicht-CdE-Person."
 
-#: cdedb/backend/core.py:1065
+#: cdedb/backend/core.py:1079
 msgid "Not a CdE account."
 msgstr "Account ist nicht im CdE-Bereich."
 
-#: cdedb/backend/core.py:1156
+#: cdedb/backend/core.py:1285
 msgid "Cannot archive admins."
 msgstr "Admins können nicht archiviert werden."
 
-#: cdedb/backend/core.py:1164
+#: cdedb/backend/core.py:1293
 msgid "Failed to revoke membership."
 msgstr "Entziehen der Mitgliedschaft fehlgeschlagen."
 
-#: cdedb/backend/core.py:1168
+#: cdedb/backend/core.py:1297
 msgid "Failed to remove foto."
 msgstr "Entfernen des Fotos fehlgeschlagen."
 
-#: cdedb/backend/core.py:1253
+#: cdedb/backend/core.py:1382
 msgid "Active lastschrift exists."
 msgstr "Eine aktive Lastschrift existiert."
 
-#: cdedb/backend/core.py:1273
+#: cdedb/backend/core.py:1402
 msgid "Involved in unfinished event."
 msgstr "Ist in eine nicht-abgeschlossene Veranstaltung involviert."
 
-#: cdedb/backend/core.py:1284
+#: cdedb/backend/core.py:1413
 msgid "Involved in unfinished assembly."
 msgstr "Ist in eine nicht-abgeschlossene Versammlung involviert."
 
-#: cdedb/backend/core.py:1313
+#: cdedb/backend/core.py:1442
 msgid "Sole moderator of a mailinglist {ml_ids}."
 msgstr "Einziger Moderator der Mailinglisten {ml_ids}."
 
-#: cdedb/backend/core.py:1346
+#: cdedb/backend/core.py:1476
 msgid "Cannot archive silently."
 msgstr "Kann nicht still archiviert werden."
 
-#: cdedb/backend/core.py:1400
+#: cdedb/backend/core.py:1532
 msgid "Persona is not archived."
 msgstr "Benutzer ist nicht archiviert."
 
-#: cdedb/backend/core.py:1436
+#: cdedb/backend/core.py:1568
 msgid "Cannot purge silently."
 msgstr "Kann nicht still geleert werden."
 
-#: cdedb/backend/core.py:1459
+#: cdedb/backend/core.py:1592
 msgid "Only admins may unset an email address."
 msgstr "Löschen von E-Mail-Adressen nur durch Admins."
 
-#: cdedb/backend/core.py:1463 cdedb/frontend/core.py:1908
+#: cdedb/backend/core.py:1596 cdedb/frontend/core.py:1908
 msgid "Name collision."
 msgstr "E-Mail-Adresse bereits vorhanden."
 
-#: cdedb/backend/core.py:1485
+#: cdedb/backend/core.py:1618
 msgid "Username removed."
 msgstr "E-Mail-Adresse entfernt."
 
-#: cdedb/backend/core.py:1486 cdedb/frontend/core.py:2106
+#: cdedb/backend/core.py:1619 cdedb/frontend/core.py:2106
 #: cdedb/frontend/core.py:2348
 msgid "Failed."
 msgstr "Aktion fehlgeschlagen."
 
-#: cdedb/backend/core.py:1567
+#: cdedb/backend/core.py:1700
 msgid "Access to persona data inhibited."
 msgstr "Zugriff auf Personendaten verhindert."
 
-#: cdedb/backend/core.py:1569
+#: cdedb/backend/core.py:1702
 msgid "Not an event user."
 msgstr "Account ist nicht im Veranstaltungsbereich."
 
-#: cdedb/backend/core.py:1609
+#: cdedb/backend/core.py:1742
 msgid "May not provide more than one input."
 msgstr "Es können nicht mehrere Eingaben gleichzeitig gemacht werden."
 
-#: cdedb/backend/core.py:1668
+#: cdedb/backend/core.py:1801
 msgid "Not a CdE user."
 msgstr "Account ist nicht im CdE-Bereich."
 
-#: cdedb/backend/core.py:1674
+#: cdedb/backend/core.py:1807
 msgid "Improper access to member data."
 msgstr "Unbefugter Zugriff auf Mitgliedsdaten."
 
-#: cdedb/backend/core.py:1686
+#: cdedb/backend/core.py:1819
 msgid "Not an ml user."
 msgstr "Account ist nicht im Mailinglistenbereich."
 
-#: cdedb/backend/core.py:1698
+#: cdedb/backend/core.py:1831
 msgid "Not an assembly user."
 msgstr "Account ist nicht im Versammlungsbereich."
 
-#: cdedb/backend/core.py:1715
+#: cdedb/backend/core.py:1848
 msgid "Must be privileged."
 msgstr "Zugriffsberechtigung benötigt."
 
-#: cdedb/backend/core.py:1753
+#: cdedb/backend/core.py:1886
 msgid "Unable to create this sort of persona."
 msgstr "Unzulässige Accountart für Erstellung ausgewählt."
 
-#: cdedb/backend/core.py:1841 cdedb/backend/core.py:2165
-#: cdedb/backend/core.py:2235
+#: cdedb/backend/core.py:1974 cdedb/backend/core.py:2298
+#: cdedb/backend/core.py:2368
 msgid "Atomized – impossible to escalate."
 msgstr "Fehler bei verschachtelten Transaktionen."
 
-#: cdedb/backend/core.py:2075
+#: cdedb/backend/core.py:2208
 msgid "Preventing reset of admin."
 msgstr "Zurücksetzen von Admin-Account verhindert."
 
-#: cdedb/backend/core.py:2114 cdedb/frontend/common.py:2093
+#: cdedb/backend/core.py:2247 cdedb/frontend/common.py:2093
 msgid "Link expired."
 msgstr "Link abgelaufen."
 
-#: cdedb/backend/core.py:2116 cdedb/backend/core.py:2118
+#: cdedb/backend/core.py:2249 cdedb/backend/core.py:2251
 msgid "Link invalid or already used."
 msgstr "Link ist ungültig oder wurde bereits verwendet."
 
-#: cdedb/backend/core.py:2141
+#: cdedb/backend/core.py:2274
 msgid "Selecting persona allowed for reset only."
 msgstr "Passwörter anderer Accounts können nur zurückgesetzt werden."
 
-#: cdedb/backend/core.py:2144
+#: cdedb/backend/core.py:2277
 msgid "Could not determine persona to reset."
 msgstr "Konnte Account für Zurücksetzen nicht finden."
 
-#: cdedb/backend/core.py:2146
+#: cdedb/backend/core.py:2279
 msgid "No authorization provided."
 msgstr "Kein Authentifizierung geliefert."
 
-#: cdedb/backend/core.py:2149
+#: cdedb/backend/core.py:2282
 msgid "Password verification failed."
 msgstr "Passwort ist falsch."
 
-#: cdedb/backend/core.py:2156
+#: cdedb/backend/core.py:2289
 msgid "No new password provided."
 msgstr "Kein neues Password angegeben."
 
-#: cdedb/backend/core.py:2158 cdedb/frontend/core.py:1715
+#: cdedb/backend/core.py:2291 cdedb/frontend/core.py:1715
 #: cdedb/frontend/core.py:1877 cdedb/validation.py:950
 msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
-#: cdedb/backend/core.py:2216 cdedb/frontend/cde.py:1275
+#: cdedb/backend/core.py:2349 cdedb/frontend/cde.py:1275
 #: cdedb/frontend/common.py:1367 cdedb/frontend/event.py:2292
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
 
-#: cdedb/backend/core.py:2218
+#: cdedb/backend/core.py:2351
 msgid "More than one input provided."
 msgstr "Mehrere Eingabewerte angegeben."
 
-#: cdedb/backend/core.py:2286
+#: cdedb/backend/core.py:2419
 msgid "Inactive user."
 msgstr "Inaktiver Account."
 
-#: cdedb/backend/core.py:2308
+#: cdedb/backend/core.py:2441
 msgid "Lockdown active."
 msgstr "Datenbank für Wartungsarbeiten gesperrt."
 
-#: cdedb/backend/core.py:2381
+#: cdedb/backend/core.py:2514
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
 "Accountanfrage kann vor Ablauf der Verifizierung nicht gelöscht werden."
 
-#: cdedb/backend/core.py:2384
+#: cdedb/backend/core.py:2517
 msgid "Unable to remove genesis case with status {}."
 msgstr "Kann Accountanfrage mit Status {} nicht löschen."
 
-#: cdedb/backend/core.py:2537
+#: cdedb/backend/core.py:2670
 msgid "Genesis case does not exist."
 msgstr "Accountanfrage existiert nicht."
 
-#: cdedb/backend/core.py:2578
+#: cdedb/backend/core.py:2711
 msgid "Invalid genesis state."
 msgstr "Ungültiger Zustand für Accountanfrage."
 
-#: cdedb/backend/core.py:2582
+#: cdedb/backend/core.py:2715
 msgid "Wrong target realm."
 msgstr "Falscher Zielbereich."
 
@@ -1127,51 +1136,51 @@ msgstr "Warteliste"
 msgid "50_query_dokuteam_courselist"
 msgstr "Dokuteam Kursliste"
 
-#: cdedb/config.py:475
+#: cdedb/config.py:478
 msgid "00_query_cde_user_all"
 msgstr "Alle Nutzer"
 
-#: cdedb/config.py:481
+#: cdedb/config.py:484
 msgid "10_query_cde_user_trial_members"
 msgstr "Probemitglieder"
 
-#: cdedb/config.py:487
+#: cdedb/config.py:490
 msgid "20_query_cde_user_expuls"
 msgstr "Adressexport exPuls"
 
-#: cdedb/config.py:497
+#: cdedb/config.py:500
 msgid "00_query_archived_persona_all"
 msgstr "Alle archivierten Nutzer"
 
-#: cdedb/config.py:506
+#: cdedb/config.py:509
 msgid "00_query_event_user_all"
 msgstr "Alle Nutzer"
 
-#: cdedb/config.py:512
+#: cdedb/config.py:515
 msgid "10_query_event_user_minors"
 msgstr "Minderjährige"
 
-#: cdedb/config.py:522
+#: cdedb/config.py:525
 msgid "00_query_core_user_all"
 msgstr "Alle Nutzer"
 
-#: cdedb/config.py:528
+#: cdedb/config.py:531
 msgid "10_query_core_any_admin"
 msgstr "Alle Admins"
 
-#: cdedb/config.py:540
+#: cdedb/config.py:543
 msgid "00_query_assembly_user_all"
 msgstr "Alle Nutzer"
 
-#: cdedb/config.py:546
+#: cdedb/config.py:549
 msgid "02_query_assembly_user_admin"
 msgstr "Admins"
 
-#: cdedb/config.py:555
+#: cdedb/config.py:558
 msgid "00_query_ml_user_all"
 msgstr "Alle Nutzer"
 
-#: cdedb/config.py:561
+#: cdedb/config.py:564
 msgid "02_query_ml_user_admin"
 msgstr "Admins"
 
@@ -1276,7 +1285,7 @@ msgstr "Versammlung angelegt."
 
 #: cdedb/frontend/assembly.py:477 cdedb/frontend/assembly.py:640
 #: cdedb/frontend/assembly.py:1048 cdedb/frontend/assembly.py:1482
-#: cdedb/frontend/cde.py:2584 cdedb/frontend/cde.py:2644
+#: cdedb/frontend/cde.py:2645 cdedb/frontend/cde.py:2705
 #: cdedb/frontend/core.py:2452 cdedb/frontend/core.py:2485
 #: cdedb/frontend/event.py:1367 cdedb/frontend/event.py:4207
 #: cdedb/frontend/event.py:4833 cdedb/frontend/event.py:6195
@@ -1372,7 +1381,7 @@ msgstr "Ablehnung kann nur exklusiv gewählt werden."
 msgid "Ballot not yet tallied."
 msgstr "Abstimmung noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly.py:1590 cdedb/validation.py:3877
+#: cdedb/frontend/assembly.py:1590 cdedb/validation.py:3879
 msgid "Mustn’t be the bar shortname."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
@@ -1575,88 +1584,100 @@ msgstr ""
 "Formular konnte nicht erstellt werden. Bitte wenn möglich Sonderzeichen "
 "vermeiden."
 
-#: cdedb/frontend/cde.py:2004
+#: cdedb/frontend/cde.py:2007
 msgid "Billing already done."
 msgstr "Zahlungserinnerung bereits erledigt."
 
-#: cdedb/frontend/cde.py:2070 cdedb/frontend/cde.py:2263
-msgid "Started sending mail."
-msgstr "E-Mail-Versand hat begonnen."
+#: cdedb/frontend/cde.py:2100
+msgid "Started sending billing mails."
+msgstr "Versand der Zahlungsauffordderungen begonnen."
 
-#: cdedb/frontend/cde.py:2079
+#: cdedb/frontend/cde.py:2102
+msgid "Started sending archival notifications."
+msgstr "Versand der Archivierungsbenachrichtigungen begonnen."
+
+#: cdedb/frontend/cde.py:2115
 msgid "Wrong timing for ejection."
 msgstr "Falscher Zeitpunkt für Bereinigung."
 
-#: cdedb/frontend/cde.py:2124
+#: cdedb/frontend/cde.py:2185
 msgid "Started ejection."
 msgstr "Streichung inaktiver Mitglieder gestartet."
 
-#: cdedb/frontend/cde.py:2133
+#: cdedb/frontend/cde.py:2187
+msgid "Started automated archival."
+msgstr "Automatische Archivierung inaktiveer Accounts begonnen."
+
+#: cdedb/frontend/cde.py:2196
 msgid "Wrong timing for balance update."
 msgstr "Falscher Zeitpunkt für Guthabenaktualisierung."
 
-#: cdedb/frontend/cde.py:2158
+#: cdedb/frontend/cde.py:2220
 msgid "Balance too low."
 msgstr "Guthaben zu niedrig."
 
-#: cdedb/frontend/cde.py:2187
+#: cdedb/frontend/cde.py:2249
 msgid "Started updating balance."
 msgstr "Aktualisierung der Guthaben gestartet."
 
-#: cdedb/frontend/cde.py:2196
+#: cdedb/frontend/cde.py:2258
 msgid "Wrong timing for advancing the semester."
 msgstr "Falscher Zeitpunkt für Beendigung des Semesters."
 
-#: cdedb/frontend/cde.py:2199
+#: cdedb/frontend/cde.py:2261
 msgid "New period started."
 msgstr "Nächstes Semester initialisiert."
 
-#: cdedb/frontend/cde.py:2217
+#: cdedb/frontend/cde.py:2279
 msgid "Addresscheck already done."
 msgstr "Adressabfrage bereits erledigt."
 
-#: cdedb/frontend/cde.py:2258
+#: cdedb/frontend/cde.py:2319
 msgid "Not sending mail."
 msgstr "Keine E-Mail verschickt."
 
-#: cdedb/frontend/cde.py:2274
+#: cdedb/frontend/cde.py:2324
+msgid "Started sending mail."
+msgstr "E-Mail-Versand hat begonnen."
+
+#: cdedb/frontend/cde.py:2335
 msgid "Addresscheck not done."
 msgstr "Adressabfrage noch nicht erledigt."
 
-#: cdedb/frontend/cde.py:2277
+#: cdedb/frontend/cde.py:2338
 msgid "New expuls started."
 msgstr "Nächster exPuls initialisiert."
 
-#: cdedb/frontend/cde.py:2470
+#: cdedb/frontend/cde.py:2531
 msgid "Institution parameter got lost."
 msgstr "Organisationsangabe ist verlorengegangen."
 
-#: cdedb/frontend/cde.py:2480
+#: cdedb/frontend/cde.py:2541
 msgid "Invalid institution id."
 msgstr "Nicht-existente Institution."
 
-#: cdedb/frontend/cde.py:2564
+#: cdedb/frontend/cde.py:2625
 #, python-format
 msgid "Line %(lineno)s is faulty."
 msgstr "Zeile %(lineno)s ist fehlerhaft."
 
-#: cdedb/frontend/cde.py:2574 cdedb/frontend/event.py:1229
+#: cdedb/frontend/cde.py:2635 cdedb/frontend/event.py:1229
 msgid "Event created."
 msgstr "Veranstaltung erstellt."
 
-#: cdedb/frontend/cde.py:2631 cdedb/frontend/event.py:1356
+#: cdedb/frontend/cde.py:2692 cdedb/frontend/event.py:1356
 msgid "Course created."
 msgstr "Kurs erstellt"
 
-#: cdedb/frontend/cde.py:2672
+#: cdedb/frontend/cde.py:2733
 msgid "Some of these users do not exist."
 msgstr "Einige dieser Nutzer existieren nicht."
 
-#: cdedb/frontend/cde.py:2676 cdedb/frontend/event.py:1192
+#: cdedb/frontend/cde.py:2737 cdedb/frontend/event.py:1192
 msgid "Some of these users are not event users."
 msgstr "Einige dieser Nutzer sind keine Veranstaltungsnutzer."
 
-#: cdedb/frontend/cde.py:2717
+#: cdedb/frontend/cde.py:2778
 msgid "*Nothing here yet.*"
 msgstr "*Hier gibt es noch nichts.*"
 
@@ -2103,7 +2124,7 @@ msgid "Only one part id allowed."
 msgstr "Lediglich die Id eines Teils ist zulässig."
 
 #: cdedb/frontend/event.py:452 cdedb/validation.py:645 cdedb/validation.py:796
-#: cdedb/validation.py:897 cdedb/validation.py:3557 cdedb/validation.py:4234
+#: cdedb/validation.py:897 cdedb/validation.py:3559 cdedb/validation.py:4236
 msgid "Must not be empty."
 msgstr "Darf nicht leer sein."
 
@@ -2132,7 +2153,7 @@ msgstr "Teilnehmermailingliste erstellt."
 msgid "Registrations exist, no deletion."
 msgstr "Anmeldungen vorhanden, keine Löschung möglich."
 
-#: cdedb/frontend/event.py:625 cdedb/validation.py:2267
+#: cdedb/frontend/event.py:625 cdedb/validation.py:2269
 msgid "Must be later than begin."
 msgstr "Muss später als Beginn sein."
 
@@ -2145,7 +2166,7 @@ msgstr "Unpassendes Datenfeld für die Warteliste."
 msgid "Registrations exist, no creation."
 msgstr "Anmeldungen vorhanden, kein Erstellen möglich."
 
-#: cdedb/frontend/event.py:718 cdedb/validation.py:2329
+#: cdedb/frontend/event.py:718 cdedb/validation.py:2331
 msgid "Must be less or equal than total Course Choices."
 msgstr "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein."
 
@@ -2153,7 +2174,7 @@ msgstr "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein."
 msgid "Fee Modifier linked to non-fitting field."
 msgstr "Unpassendes Datenfeld für Beitragsmodifikator."
 
-#: cdedb/frontend/event.py:848 cdedb/validation.py:2216
+#: cdedb/frontend/event.py:848 cdedb/validation.py:2218
 msgid ""
 "Must not have multiple fee modifiers linked to the same field in one event "
 "part."
@@ -2484,11 +2505,11 @@ msgstr "Fragebogen nicht aktiviert."
 msgid "Questionnaire is not enabled yet."
 msgstr "Der Fragebogen ist noch nicht für die Teilnehmer freigeschaltet."
 
-#: cdedb/frontend/event.py:3756 cdedb/validation.py:2929
+#: cdedb/frontend/event.py:3756 cdedb/validation.py:2931
 msgid "Must not duplicate field."
 msgstr "Felder dürfen nicht doppelt auftreten."
 
-#: cdedb/frontend/event.py:3763 cdedb/validation.py:4252
+#: cdedb/frontend/event.py:3763 cdedb/validation.py:4254
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
@@ -2497,7 +2518,7 @@ msgid "Fee modifier field may only be used in registration questionnaire."
 msgstr ""
 "Beitragsmodifikator-Feld kann nur im Anmeldungsfragebogen verwendet werden."
 
-#: cdedb/frontend/event.py:3779 cdedb/validation.py:2922
+#: cdedb/frontend/event.py:3779 cdedb/validation.py:2924
 msgid "Registration questionnaire rows may not be readonly."
 msgstr "Anmeldungs-Fragebogen darf nicht schreibgeschützt sein."
 
@@ -3837,6 +3858,7 @@ msgstr "Kurzname"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:325
 #: cdedb/frontend/templates/web/assembly/assembly_data.tmpl:67
+#: cdedb/frontend/templates/web/assembly/ballot_set_post_vote_note.tmpl:29
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:44
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:34
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:38
@@ -3862,7 +3884,7 @@ msgstr "Kurzname"
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:82
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:297
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:130
-#: cdedb/i18n_additional.py:324
+#: cdedb/i18n_additional.py:329
 msgid "Save"
 msgstr "Speichern"
 
@@ -3911,6 +3933,7 @@ msgid "Assembly"
 msgstr "Versammlung"
 
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:45
+#: cdedb/frontend/templates/web/assembly/ballot_set_post_vote_note.tmpl:14
 #: cdedb/frontend/templates/web/assembly/base.tmpl:13
 #: cdedb/frontend/templates/web/assembly/change_attachment_link.tmpl:40
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:12
@@ -7529,7 +7552,7 @@ msgstr "Genehmigen"
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:57
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:121
 #: cdedb/frontend/templates/web/ml/management.tmpl:129
-#: cdedb/i18n_additional.py:350
+#: cdedb/i18n_additional.py:355
 msgid "Reject"
 msgstr "Ablehnen"
 
@@ -7668,7 +7691,7 @@ msgstr "Anhang herunterladen"
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:33
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:77
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:83
-#: cdedb/i18n_additional.py:323
+#: cdedb/i18n_additional.py:328
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -12273,7 +12296,7 @@ msgid "Subscription Requests of other users to this mailinglist."
 msgstr "Abonnement-Anfragen für diese Mailingliste."
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:120
-#: cdedb/i18n_additional.py:349
+#: cdedb/i18n_additional.py:354
 msgid "Accept"
 msgstr "Genehmigen"
 
@@ -12816,1042 +12839,1053 @@ msgstr "exPuls Addresscheck übersprungen"
 msgid "CdeLogCodes.expuls_advance"
 msgstr "Nächster exPuls"
 
+#: cdedb/i18n_additional.py:50
+msgid "CdELogCodes.archival_notification_done"
+msgstr "Archivierungsbenachrichtigungen versandt"
+
 #: cdedb/i18n_additional.py:51
+msgid "CdELogCodes.automated_archival_done"
+msgstr "Automatische ARchivierung abgeschlossen"
+
+#: cdedb/i18n_additional.py:53
 msgid "CoreLogCodes.persona_creation"
 msgstr "Account erstellt"
 
-#: cdedb/i18n_additional.py:52
+#: cdedb/i18n_additional.py:54
 msgid "CoreLogCodes.persona_change"
 msgstr "Account geändert"
 
+#: cdedb/i18n_additional.py:55
 msgid "CoreLogCodes.persona_archived"
 msgstr "Account archiviert"
 
+#: cdedb/i18n_additional.py:56
 msgid "CoreLogCodes.persona_dearchived"
 msgstr "Account wiederhergestellt"
 
+#: cdedb/i18n_additional.py:57
 msgid "CoreLogCodes.persona_purged"
 msgstr "Account geleert"
 
-#: cdedb/i18n_additional.py:53
+#: cdedb/i18n_additional.py:58
 msgid "CoreLogCodes.password_change"
 msgstr "Passwort geändert"
 
-#: cdedb/i18n_additional.py:54
+#: cdedb/i18n_additional.py:59
 msgid "CoreLogCodes.password_reset_cookie"
 msgstr "Passwortrücksetzcookie erstellt"
 
-#: cdedb/i18n_additional.py:55
+#: cdedb/i18n_additional.py:60
 msgid "CoreLogCodes.password_reset"
 msgstr "Passwort zurückgesetzt"
 
-#: cdedb/i18n_additional.py:56
+#: cdedb/i18n_additional.py:61
 msgid "CoreLogCodes.password_invalidated"
 msgstr "Passwort gelöscht"
 
-#: cdedb/i18n_additional.py:57
+#: cdedb/i18n_additional.py:62
 msgid "CoreLogCodes.genesis_request"
 msgstr "Neue Accountanfrage"
 
-#: cdedb/i18n_additional.py:58
+#: cdedb/i18n_additional.py:63
 msgid "CoreLogCodes.genesis_approved"
 msgstr "Accountanfrage genehmigt"
 
-#: cdedb/i18n_additional.py:59
+#: cdedb/i18n_additional.py:64
 msgid "CoreLogCodes.genesis_rejected"
 msgstr "Accountanfrage abgelehnt"
 
-#: cdedb/i18n_additional.py:60
+#: cdedb/i18n_additional.py:65
 msgid "CoreLogCodes.genesis_deleted"
 msgstr "Accountanfrage gelöscht"
 
-#: cdedb/i18n_additional.py:61
+#: cdedb/i18n_additional.py:66
 msgid "CoreLogCodes.genesis_verified"
 msgstr "Accountanfrage bestätigt"
 
-#: cdedb/i18n_additional.py:62
+#: cdedb/i18n_additional.py:67
 msgid "CoreLogCodes.privilege_change_pending"
 msgstr "Admin-Änderung angestoßen"
 
-#: cdedb/i18n_additional.py:63
+#: cdedb/i18n_additional.py:68
 msgid "CoreLogCodes.privilege_change_approved"
 msgstr "Admin-Änderung bestätigt"
 
-#: cdedb/i18n_additional.py:64
+#: cdedb/i18n_additional.py:69
 msgid "CoreLogCodes.privilege_change_rejected"
 msgstr "Admin-Änderung abgelehnt"
 
-#: cdedb/i18n_additional.py:65
+#: cdedb/i18n_additional.py:70
 msgid "CoreLogCodes.realm_change"
 msgstr "Bereiche geändert"
 
-#: cdedb/i18n_additional.py:66
+#: cdedb/i18n_additional.py:71
 msgid "CoreLogCodes.username_change"
 msgstr "E-Mail-Adresse geändert"
 
-#: cdedb/i18n_additional.py:68
+#: cdedb/i18n_additional.py:73
 msgid "EventLogCodes.event_created"
 msgstr "Veranstaltung erstellt"
 
-#: cdedb/i18n_additional.py:69
+#: cdedb/i18n_additional.py:74
 msgid "EventLogCodes.event_changed"
 msgstr "Veranstaltung geändert"
 
-#: cdedb/i18n_additional.py:70
+#: cdedb/i18n_additional.py:75
 msgid "EventLogCodes.event_deleted"
 msgstr "Veranstaltung gelöscht"
 
-#: cdedb/i18n_additional.py:71
+#: cdedb/i18n_additional.py:76
 msgid "EventLogCodes.event_archived"
 msgstr "Veranstaltung archiviert"
 
-#: cdedb/i18n_additional.py:72
+#: cdedb/i18n_additional.py:77
 msgid "EventLogCodes.orga_added"
 msgstr "Orga hinzugefügt"
 
-#: cdedb/i18n_additional.py:73
+#: cdedb/i18n_additional.py:78
 msgid "EventLogCodes.orga_removed"
 msgstr "Orga entfernt"
 
-#: cdedb/i18n_additional.py:74
+#: cdedb/i18n_additional.py:79
 msgid "EventLogCodes.part_created"
 msgstr "Veranstaltungsteil erstellt"
 
-#: cdedb/i18n_additional.py:75
+#: cdedb/i18n_additional.py:80
 msgid "EventLogCodes.part_changed"
 msgstr "Veranstaltungsteil geändert"
 
-#: cdedb/i18n_additional.py:76
+#: cdedb/i18n_additional.py:81
 msgid "EventLogCodes.part_deleted"
 msgstr "Veranstaltungsteil gelöscht"
 
-#: cdedb/i18n_additional.py:77
+#: cdedb/i18n_additional.py:82
 msgid "EventLogCodes.field_added"
 msgstr "Feld hinzugefügt"
 
-#: cdedb/i18n_additional.py:78
+#: cdedb/i18n_additional.py:83
 msgid "EventLogCodes.field_updated"
 msgstr "Feld geändert"
 
-#: cdedb/i18n_additional.py:79
+#: cdedb/i18n_additional.py:84
 msgid "EventLogCodes.field_removed"
 msgstr "Feld entfernt"
 
-#: cdedb/i18n_additional.py:80
+#: cdedb/i18n_additional.py:85
 msgid "EventLogCodes.lodgement_created"
 msgstr "Unterkunft erstellt"
 
-#: cdedb/i18n_additional.py:81
+#: cdedb/i18n_additional.py:86
 msgid "EventLogCodes.lodgement_changed"
 msgstr "Unterkunft geändert"
 
-#: cdedb/i18n_additional.py:82
+#: cdedb/i18n_additional.py:87
 msgid "EventLogCodes.lodgement_deleted"
 msgstr "Unterkunft gelöscht"
 
-#: cdedb/i18n_additional.py:83
+#: cdedb/i18n_additional.py:88
 msgid "EventLogCodes.questionnaire_changed"
 msgstr "Fragebogen geändert"
 
-#: cdedb/i18n_additional.py:84
+#: cdedb/i18n_additional.py:89
 msgid "EventLogCodes.track_added"
 msgstr "Kursschiene hinzugefügt"
 
-#: cdedb/i18n_additional.py:85
+#: cdedb/i18n_additional.py:90
 msgid "EventLogCodes.track_updated"
 msgstr "Kursschiene geändert"
 
-#: cdedb/i18n_additional.py:86
+#: cdedb/i18n_additional.py:91
 msgid "EventLogCodes.track_removed"
 msgstr "Kursschiene entfernt"
 
-#: cdedb/i18n_additional.py:87
+#: cdedb/i18n_additional.py:92
 msgid "EventLogCodes.course_created"
 msgstr "Kurs erstellt"
 
-#: cdedb/i18n_additional.py:88
+#: cdedb/i18n_additional.py:93
 msgid "EventLogCodes.course_changed"
 msgstr "Kurs geändert"
 
-#: cdedb/i18n_additional.py:89
+#: cdedb/i18n_additional.py:94
 msgid "EventLogCodes.course_deleted"
 msgstr "Kurs gelöscht"
 
-#: cdedb/i18n_additional.py:90
+#: cdedb/i18n_additional.py:95
 msgid "EventLogCodes.course_segments_changed"
 msgstr "Kurs: angebotene Schienen geändert"
 
-#: cdedb/i18n_additional.py:91
+#: cdedb/i18n_additional.py:96
 msgid "EventLogCodes.course_segment_activity_changed"
 msgstr "Kurs: stattfindende Schienen geändert"
 
-#: cdedb/i18n_additional.py:92
+#: cdedb/i18n_additional.py:97
 msgid "EventLogCodes.registration_created"
 msgstr "Anmeldung erstellt"
 
-#: cdedb/i18n_additional.py:93
+#: cdedb/i18n_additional.py:98
 msgid "EventLogCodes.registration_changed"
 msgstr "Anmeldung geändert"
 
-#: cdedb/i18n_additional.py:94
+#: cdedb/i18n_additional.py:99
 msgid "EventLogCodes.registration_deleted"
 msgstr "Anmeldung gelöscht"
 
-#: cdedb/i18n_additional.py:95
+#: cdedb/i18n_additional.py:100
 msgid "EventLogCodes.event_locked"
 msgstr "Veranstaltung gesperrt"
 
-#: cdedb/i18n_additional.py:96
+#: cdedb/i18n_additional.py:101
 msgid "EventLogCodes.event_unlocked"
 msgstr "Veranstaltung entsperrt"
 
-#: cdedb/i18n_additional.py:97
+#: cdedb/i18n_additional.py:102
 msgid "EventLogCodes.event_partial_import"
 msgstr "Partieller Import"
 
-#: cdedb/i18n_additional.py:98
+#: cdedb/i18n_additional.py:103
 msgid "EventLogCodes.lodgement_group_created"
 msgstr "Unterkunftgruppe erstellt"
 
-#: cdedb/i18n_additional.py:99
+#: cdedb/i18n_additional.py:104
 msgid "EventLogCodes.lodgement_group_changed"
 msgstr "Unterkunftgruppe geändert"
 
-#: cdedb/i18n_additional.py:100
+#: cdedb/i18n_additional.py:105
 msgid "EventLogCodes.lodgement_group_deleted"
 msgstr "Unterkunftgruppe gelöscht"
 
-#: cdedb/i18n_additional.py:101
+#: cdedb/i18n_additional.py:106
 msgid "EventLogCodes.fee_modifier_created"
 msgstr "Beitragsmodifikator angelegt"
 
-#: cdedb/i18n_additional.py:102
+#: cdedb/i18n_additional.py:107
 msgid "EventLogCodes.fee_modifier_changed"
 msgstr "Beitragsmodifikator geändert"
 
-#: cdedb/i18n_additional.py:103
+#: cdedb/i18n_additional.py:108
 msgid "EventLogCodes.fee_modifier_deleted"
 msgstr "Beitragsmodifikator entfernt"
 
-#: cdedb/i18n_additional.py:104
+#: cdedb/i18n_additional.py:109
 msgid "EventLogCodes.minor_form_updated"
 msgstr "Minderjährigenformular geändert"
 
-#: cdedb/i18n_additional.py:105
+#: cdedb/i18n_additional.py:110
 msgid "EventLogCodes.minor_form_removed"
 msgstr "Minderjährigenformular entfernt"
 
-#: cdedb/i18n_additional.py:107
+#: cdedb/i18n_additional.py:112
 msgid "FinanceLogCodes.new_member"
 msgstr "Neues Mitglied"
 
-#: cdedb/i18n_additional.py:108
+#: cdedb/i18n_additional.py:113
 msgid "FinanceLogCodes.gain_membership"
 msgstr "Mitgliedschaft erhalten"
 
-#: cdedb/i18n_additional.py:109
+#: cdedb/i18n_additional.py:114
 msgid "FinanceLogCodes.lose_membership"
 msgstr "Mitgliedschaft verloren"
 
-#: cdedb/i18n_additional.py:110
+#: cdedb/i18n_additional.py:115
 msgid "FinanceLogCodes.increase_balance"
 msgstr "Guthaben gutgeschrieben"
 
-#: cdedb/i18n_additional.py:111
+#: cdedb/i18n_additional.py:116
 msgid "FinanceLogCodes.deduct_membership_fee"
 msgstr "Beitrag abgezogen"
 
-#: cdedb/i18n_additional.py:112
+#: cdedb/i18n_additional.py:117
 msgid "FinanceLogCodes.end_trial_membership"
 msgstr "Ende der Probemitgliedschaft"
 
-#: cdedb/i18n_additional.py:113
+#: cdedb/i18n_additional.py:118
 msgid "FinanceLogCodes.manual_balance_correction"
 msgstr "Manuelle Guthabenkorrektur"
 
-#: cdedb/i18n_additional.py:114
+#: cdedb/i18n_additional.py:119
 msgid "FinanceLogCodes.grant_lastschrift"
 msgstr "Einzugsermächtigung erteilt"
 
-#: cdedb/i18n_additional.py:115
+#: cdedb/i18n_additional.py:120
 msgid "FinanceLogCodes.revoke_lastschrift"
 msgstr "Einzugsermächtigung widerrufen"
 
-#: cdedb/i18n_additional.py:116
+#: cdedb/i18n_additional.py:121
 msgid "FinanceLogCodes.modify_lastschrift"
 msgstr "Einzugsermächtigung geändert"
 
-#: cdedb/i18n_additional.py:117
+#: cdedb/i18n_additional.py:122
 msgid "FinanceLogCodes.lastschrift_deleted"
 msgstr "Einzugsermächtigung gelöscht"
 
-#: cdedb/i18n_additional.py:118
+#: cdedb/i18n_additional.py:123
 msgid "FinanceLogCodes.lastschrift_transaction_issue"
 msgstr "Einzug erstellt"
 
-#: cdedb/i18n_additional.py:119
+#: cdedb/i18n_additional.py:124
 msgid "FinanceLogCodes.lastschrift_transaction_success"
 msgstr "Einzug erfolgreich"
 
-#: cdedb/i18n_additional.py:120
+#: cdedb/i18n_additional.py:125
 msgid "FinanceLogCodes.lastschrift_transaction_failure"
 msgstr "Einzug fehlgeschlagen"
 
-#: cdedb/i18n_additional.py:121
+#: cdedb/i18n_additional.py:126
 msgid "FinanceLogCodes.lastschrift_transaction_skip"
 msgstr "Einzug pausiert"
 
-#: cdedb/i18n_additional.py:122
+#: cdedb/i18n_additional.py:127
 msgid "FinanceLogCodes.lastschrift_transaction_cancelled"
 msgstr "Einzug abgebrochen"
 
-#: cdedb/i18n_additional.py:123
+#: cdedb/i18n_additional.py:128
 msgid "FinanceLogCodes.lastschrift_transaction_revoked"
 msgstr "Einzug zurückgebucht"
 
-#: cdedb/i18n_additional.py:124
+#: cdedb/i18n_additional.py:129
 msgid "FinanceLogCodes.other"
 msgstr "Sonstiges"
 
-#: cdedb/i18n_additional.py:126
+#: cdedb/i18n_additional.py:131
 msgid "FieldAssociations.registration"
 msgstr "Anmeldungsfelder"
 
-#: cdedb/i18n_additional.py:127
+#: cdedb/i18n_additional.py:132
 msgid "FieldAssociations.course"
 msgstr "Kursfelder"
 
-#: cdedb/i18n_additional.py:128
+#: cdedb/i18n_additional.py:133
 msgid "FieldAssociations.lodgement"
 msgstr "Unterkunftsfelder"
 
-#: cdedb/i18n_additional.py:130
+#: cdedb/i18n_additional.py:135
 msgid "FieldDatatypes.str"
 msgstr "Text"
 
-#: cdedb/i18n_additional.py:131
+#: cdedb/i18n_additional.py:136
 msgid "FieldDatatypes.bool"
 msgstr "Ja/Nein"
 
-#: cdedb/i18n_additional.py:132
+#: cdedb/i18n_additional.py:137
 msgid "FieldDatatypes.int"
 msgstr "Zahl"
 
-#: cdedb/i18n_additional.py:133
+#: cdedb/i18n_additional.py:138
 msgid "FieldDatatypes.float"
 msgstr "Dezimalzahl"
 
-#: cdedb/i18n_additional.py:134
+#: cdedb/i18n_additional.py:139
 msgid "FieldDatatypes.date"
 msgstr "Datum"
 
-#: cdedb/i18n_additional.py:135
+#: cdedb/i18n_additional.py:140
 msgid "FieldDatatypes.datetime"
 msgstr "Datum mit Zeit"
 
-#: cdedb/i18n_additional.py:137
+#: cdedb/i18n_additional.py:142
 msgid "Genders.female"
 msgstr "weiblich"
 
-#: cdedb/i18n_additional.py:138
+#: cdedb/i18n_additional.py:143
 msgid "Genders.male"
 msgstr "männlich"
 
-#: cdedb/i18n_additional.py:139
+#: cdedb/i18n_additional.py:144
 msgid "Genders.other"
 msgstr "sonstiges"
 
-#: cdedb/i18n_additional.py:140
+#: cdedb/i18n_additional.py:145
 msgid "Genders.not_specified"
 msgstr "keine Angabe"
 
-#: cdedb/i18n_additional.py:142
+#: cdedb/i18n_additional.py:147
 msgid "GenesisStati.unconfirmed"
 msgstr "unbestätigt"
 
-#: cdedb/i18n_additional.py:143
+#: cdedb/i18n_additional.py:148
 msgid "GenesisStati.to_review"
 msgstr "offen zur Begutachtung"
 
-#: cdedb/i18n_additional.py:144
+#: cdedb/i18n_additional.py:149
 msgid "GenesisStati.approved"
 msgstr "genehmigt"
 
-#: cdedb/i18n_additional.py:145
+#: cdedb/i18n_additional.py:150
 msgid "GenesisStati.successful"
 msgstr "erfolgreich"
 
-#: cdedb/i18n_additional.py:146
+#: cdedb/i18n_additional.py:151
 msgid "GenesisStati.rejected"
 msgstr "abgelehnt"
 
-#: cdedb/i18n_additional.py:148
+#: cdedb/i18n_additional.py:153
 msgid "LineResolutions.create"
 msgstr "Account erstellen"
 
-#: cdedb/i18n_additional.py:149
+#: cdedb/i18n_additional.py:154
 msgid "LineResolutions.skip"
 msgstr "Eintrag ignorieren"
 
-#: cdedb/i18n_additional.py:150
+#: cdedb/i18n_additional.py:155
 msgid "LineResolutions.renew_trial"
 msgstr "Probemitgliedschaft erneuern"
 
-#: cdedb/i18n_additional.py:151
+#: cdedb/i18n_additional.py:156
 msgid "LineResolutions.update"
 msgstr "Daten übernehmen"
 
-#: cdedb/i18n_additional.py:152
+#: cdedb/i18n_additional.py:157
 msgid "LineResolutions.renew_and_update"
 msgstr "Probemitgliedschaft erneuern und Daten übernehmen"
 
-#: cdedb/i18n_additional.py:154
+#: cdedb/i18n_additional.py:159
 msgid "MemberChangeStati.pending"
 msgstr "Änderung wartet auf Bestätigung"
 
-#: cdedb/i18n_additional.py:155
+#: cdedb/i18n_additional.py:160
 msgid "MemberChangeStati.committed"
 msgstr "Änderung übernommen"
 
-#: cdedb/i18n_additional.py:156
+#: cdedb/i18n_additional.py:161
 msgid "MemberChangeStati.superseded"
 msgstr "Änderung veraltet"
 
-#: cdedb/i18n_additional.py:157
+#: cdedb/i18n_additional.py:162
 msgid "MemberChangeStati.nacked"
 msgstr "Änderung abgelehnt"
 
-#: cdedb/i18n_additional.py:158
+#: cdedb/i18n_additional.py:163
 msgid "MemberChangeStati.displaced"
 msgstr "Änderung verdrängt"
 
-#: cdedb/i18n_additional.py:160
+#: cdedb/i18n_additional.py:165
 msgid "MlLogCodes.email_trouble"
 msgstr "Email Probleme"
 
-#: cdedb/i18n_additional.py:161
+#: cdedb/i18n_additional.py:166
 msgid "MlLogCodes.list_created"
 msgstr "Mailingliste erstellt"
 
-#: cdedb/i18n_additional.py:162
+#: cdedb/i18n_additional.py:167
 msgid "MlLogCodes.list_changed"
 msgstr "Mailingliste geändert"
 
-#: cdedb/i18n_additional.py:163
+#: cdedb/i18n_additional.py:168
 msgid "MlLogCodes.list_deleted"
 msgstr "Mailingliste gelöscht"
 
-#: cdedb/i18n_additional.py:164
+#: cdedb/i18n_additional.py:169
 msgid "MlLogCodes.moderator_added"
 msgstr "Moderator hinzugefügt"
 
-#: cdedb/i18n_additional.py:165
+#: cdedb/i18n_additional.py:170
 msgid "MlLogCodes.moderator_removed"
 msgstr "Moderator entfernt"
 
-#: cdedb/i18n_additional.py:166
+#: cdedb/i18n_additional.py:171
 msgid "MlLogCodes.whitelist_added"
 msgstr "Whitelist-Eintrag hinzugefügt"
 
-#: cdedb/i18n_additional.py:167
+#: cdedb/i18n_additional.py:172
 msgid "MlLogCodes.whitelist_removed"
 msgstr "Whitelist-Eintrag entfernt"
 
-#: cdedb/i18n_additional.py:168
+#: cdedb/i18n_additional.py:173
 msgid "MlLogCodes.subscription_requested"
 msgstr "Abonnement beantragt"
 
-#: cdedb/i18n_additional.py:169
+#: cdedb/i18n_additional.py:174
 msgid "MlLogCodes.subscribed"
 msgstr "Abonniert"
 
-#: cdedb/i18n_additional.py:170
+#: cdedb/i18n_additional.py:175
 msgid "MlLogCodes.subscription_changed"
 msgstr "Abonnement geändert"
 
-#: cdedb/i18n_additional.py:171
+#: cdedb/i18n_additional.py:176
 msgid "MlLogCodes.unsubscribed"
 msgstr "Abbestellt"
 
-#: cdedb/i18n_additional.py:172
+#: cdedb/i18n_additional.py:177
 msgid "MlLogCodes.marked_override"
 msgstr "Als Ausnahme markiert"
 
-#: cdedb/i18n_additional.py:173
+#: cdedb/i18n_additional.py:178
 msgid "MlLogCodes.marked_blocked"
 msgstr "Als Geblockt markiert"
 
-#: cdedb/i18n_additional.py:174
+#: cdedb/i18n_additional.py:179
 msgid "MlLogCodes.request_approved"
 msgstr "Abonnementantrag bestätigt"
 
-#: cdedb/i18n_additional.py:175
+#: cdedb/i18n_additional.py:180
 msgid "MlLogCodes.request_denied"
 msgstr "Abonnementantrag abgelehnt"
 
-#: cdedb/i18n_additional.py:176
+#: cdedb/i18n_additional.py:181
 msgid "MlLogCodes.request_cancelled"
 msgstr "Abonnementantrag zurückgezogen"
 
-#: cdedb/i18n_additional.py:177
+#: cdedb/i18n_additional.py:182
 msgid "MlLogCodes.request_blocked"
 msgstr "Abonnementantrag geblockt"
 
-#: cdedb/i18n_additional.py:178
+#: cdedb/i18n_additional.py:183
 msgid "MlLogCodes.cron_removed"
 msgstr "Automatisch abbestellt"
 
-#: cdedb/i18n_additional.py:179
+#: cdedb/i18n_additional.py:184
 msgid "MlLogCodes.moderate_accept"
 msgstr "Nachricht akzeptiert"
 
-#: cdedb/i18n_additional.py:180
+#: cdedb/i18n_additional.py:185
 msgid "MlLogCodes.moderate_reject"
 msgstr "Nachricht zurückgewiesen"
 
-#: cdedb/i18n_additional.py:181
+#: cdedb/i18n_additional.py:186
 msgid "MlLogCodes.moderate_discard"
 msgstr "Nachricht verworfen"
 
-#: cdedb/i18n_additional.py:183
+#: cdedb/i18n_additional.py:188
 msgid "ModerationPolicy.unmoderated"
 msgstr "Alle dürfen schreiben"
 
-#: cdedb/i18n_additional.py:184
+#: cdedb/i18n_additional.py:189
 msgid "ModerationPolicy.non_subscribers"
 msgstr "Abonnenten dürfen schreiben"
 
-#: cdedb/i18n_additional.py:185
+#: cdedb/i18n_additional.py:190
 msgid "ModerationPolicy.fully_moderated"
 msgstr "Alle moderiert"
 
-#: cdedb/i18n_additional.py:187
+#: cdedb/i18n_additional.py:192
 msgid "PastEventLogCodes.event_created"
 msgstr "Verg. Veranstaltung erstellt"
 
-#: cdedb/i18n_additional.py:188
+#: cdedb/i18n_additional.py:193
 msgid "PastEventLogCodes.event_changed"
 msgstr "Verg. Veranstaltung geändert"
 
-#: cdedb/i18n_additional.py:189
+#: cdedb/i18n_additional.py:194
 msgid "PastEventLogCodes.event_deleted"
 msgstr "Verg. Veranstaltung gelöscht"
 
-#: cdedb/i18n_additional.py:190
+#: cdedb/i18n_additional.py:195
 msgid "PastEventLogCodes.course_created"
 msgstr "Verg. Kurs erstellt"
 
-#: cdedb/i18n_additional.py:191
+#: cdedb/i18n_additional.py:196
 msgid "PastEventLogCodes.course_changed"
 msgstr "Verg. Kurs geändert"
 
-#: cdedb/i18n_additional.py:192
+#: cdedb/i18n_additional.py:197
 msgid "PastEventLogCodes.course_deleted"
 msgstr "Verg. Kurs gelöscht"
 
-#: cdedb/i18n_additional.py:193
+#: cdedb/i18n_additional.py:198
 msgid "PastEventLogCodes.participant_added"
 msgstr "Teilnehmer hinzugefügt"
 
-#: cdedb/i18n_additional.py:194
+#: cdedb/i18n_additional.py:199
 msgid "PastEventLogCodes.participant_removed"
 msgstr "Teilnehmer entfernt"
 
-#: cdedb/i18n_additional.py:195
+#: cdedb/i18n_additional.py:200
 msgid "PastEventLogCodes.institution_created"
 msgstr "Organisation erstellt"
 
-#: cdedb/i18n_additional.py:196
+#: cdedb/i18n_additional.py:201
 msgid "PastEventLogCodes.institution_changed"
 msgstr "Organisation geändert"
 
-#: cdedb/i18n_additional.py:197
+#: cdedb/i18n_additional.py:202
 msgid "PastEventLogCodes.institution_deleted"
 msgstr "Organisation gelöscht"
 
-#: cdedb/i18n_additional.py:199
+#: cdedb/i18n_additional.py:204
 msgid "PrivilegeChangeStati.pending"
 msgstr "Ausstehende Änderung der Admin-Privilegien"
 
-#: cdedb/i18n_additional.py:200
+#: cdedb/i18n_additional.py:205
 msgid "PrivilegeChangeStati.approved"
 msgstr "Bestätigte Änderung der Admin-Privilegien"
 
-#: cdedb/i18n_additional.py:201
+#: cdedb/i18n_additional.py:206
 msgid "PrivilegeChangeStati.successful"
 msgstr "Erfolgreiche Änderung der Admin-Privilegien"
 
-#: cdedb/i18n_additional.py:202
+#: cdedb/i18n_additional.py:207
 msgid "PrivilegeChangeStati.rejected"
 msgstr "Abgelehnte Änderung der Admin-Privilegien"
 
-#: cdedb/i18n_additional.py:204
+#: cdedb/i18n_additional.py:209
 msgid "QuestionnaireUsages.registration"
 msgstr "Anmeldungs-Fragebogen"
 
-#: cdedb/i18n_additional.py:205
+#: cdedb/i18n_additional.py:210
 msgid "QuestionnaireUsages.additional"
 msgstr "Zusätzlicher Fragebogen"
 
-#: cdedb/i18n_additional.py:207
+#: cdedb/i18n_additional.py:212
 msgid "RegistrationPartStati.not_applied"
 msgstr "Nicht angemeldet"
 
-#: cdedb/i18n_additional.py:208
+#: cdedb/i18n_additional.py:213
 msgid "RegistrationPartStati.applied"
 msgstr "Offen"
 
-#: cdedb/i18n_additional.py:209
+#: cdedb/i18n_additional.py:214
 msgid "RegistrationPartStati.participant"
 msgstr "Teilnehmer"
 
-#: cdedb/i18n_additional.py:210
+#: cdedb/i18n_additional.py:215
 msgid "RegistrationPartStati.waitlist"
 msgstr "Warteliste"
 
-#: cdedb/i18n_additional.py:211
+#: cdedb/i18n_additional.py:216
 msgid "RegistrationPartStati.guest"
 msgstr "Gast"
 
-#: cdedb/i18n_additional.py:212
+#: cdedb/i18n_additional.py:217
 msgid "RegistrationPartStati.cancelled"
 msgstr "Abgemeldet"
 
-#: cdedb/i18n_additional.py:213
+#: cdedb/i18n_additional.py:218
 msgid "RegistrationPartStati.rejected"
 msgstr "Abgelehnt"
 
-#: cdedb/i18n_additional.py:215
+#: cdedb/i18n_additional.py:220
 msgid "MailinglistInteractionPolicy.mandatory"
 msgstr "Alternativlos"
 
-#: cdedb/i18n_additional.py:216
+#: cdedb/i18n_additional.py:221
 msgid "MailinglistInteractionPolicy.opt_out"
 msgstr "Opt-Out"
 
-#: cdedb/i18n_additional.py:217
+#: cdedb/i18n_additional.py:222
 msgid "MailinglistInteractionPolicy.opt_in"
 msgstr "Opt-In"
 
-#: cdedb/i18n_additional.py:218
+#: cdedb/i18n_additional.py:223
 msgid "MailinglistInteractionPolicy.moderated_opt_in"
 msgstr "Moderiertes Opt-In"
 
-#: cdedb/i18n_additional.py:219
+#: cdedb/i18n_additional.py:224
 msgid "MailinglistInteractionPolicy.invitation_only"
 msgstr "Nur durch Moderatoren"
 
-#: cdedb/i18n_additional.py:220
+#: cdedb/i18n_additional.py:225
 msgid "MailinglistInteractionPolicy.implicits_only"
 msgstr "Nur implizit"
 
-#: cdedb/i18n_additional.py:222
+#: cdedb/i18n_additional.py:227
 msgid "LastschriftTransactionStati.issued"
 msgstr "Offen"
 
-#: cdedb/i18n_additional.py:223
+#: cdedb/i18n_additional.py:228
 msgid "LastschriftTransactionStati.skipped"
 msgstr "Übersprungen"
 
-#: cdedb/i18n_additional.py:224
+#: cdedb/i18n_additional.py:229
 msgid "LastschriftTransactionStati.success"
 msgstr "Erfolgreich"
 
-#: cdedb/i18n_additional.py:225
+#: cdedb/i18n_additional.py:230
 msgid "LastschriftTransactionStati.failure"
 msgstr "Geplatzt"
 
-#: cdedb/i18n_additional.py:226
+#: cdedb/i18n_additional.py:231
 msgid "LastschriftTransactionStati.cancelled"
 msgstr "Abgebrochen"
 
-#: cdedb/i18n_additional.py:227
+#: cdedb/i18n_additional.py:232
 msgid "LastschriftTransactionStati.rollback"
 msgstr "Rückgebucht"
 
-#: cdedb/i18n_additional.py:229
+#: cdedb/i18n_additional.py:234
 msgid "QueryOperators.empty"
 msgstr "ist leer"
 
-#: cdedb/i18n_additional.py:230
+#: cdedb/i18n_additional.py:235
 msgid "QueryOperators.nonempty"
 msgstr "ist nicht leer"
 
-#: cdedb/i18n_additional.py:231
+#: cdedb/i18n_additional.py:236
 msgid "QueryOperators.equal"
 msgstr "ist gleich"
 
-#: cdedb/i18n_additional.py:232
+#: cdedb/i18n_additional.py:237
 msgid "QueryOperators.unequal"
 msgstr "ist ungleich"
 
-#: cdedb/i18n_additional.py:233
+#: cdedb/i18n_additional.py:238
 msgid "QueryOperators.oneof"
 msgstr "ist eines aus"
 
-#: cdedb/i18n_additional.py:234
+#: cdedb/i18n_additional.py:239
 msgid "QueryOperators.otherthan"
 msgstr "ist keins von"
 
-#: cdedb/i18n_additional.py:235
+#: cdedb/i18n_additional.py:240
 msgid "QueryOperators.equalornull"
 msgstr "ist leer oder gleich"
 
-#: cdedb/i18n_additional.py:236
+#: cdedb/i18n_additional.py:241
 msgid "QueryOperators.unequalornull"
 msgstr "ist leer oder ungleich"
 
-#: cdedb/i18n_additional.py:237
+#: cdedb/i18n_additional.py:242
 msgid "QueryOperators.match"
 msgstr "passt zu"
 
-#: cdedb/i18n_additional.py:238
+#: cdedb/i18n_additional.py:243
 msgid "QueryOperators.unmatch"
 msgstr "passt nicht zu"
 
-#: cdedb/i18n_additional.py:239
+#: cdedb/i18n_additional.py:244
 msgid "QueryOperators.regex"
 msgstr "passt auf POSIX-RegEx"
 
-#: cdedb/i18n_additional.py:240
+#: cdedb/i18n_additional.py:245
 msgid "QueryOperators.notregex"
 msgstr "passt nicht auf POSIX-RegEx"
 
-#: cdedb/i18n_additional.py:241
+#: cdedb/i18n_additional.py:246
 msgid "QueryOperators.containsall"
 msgstr "enthält alle"
 
-#: cdedb/i18n_additional.py:242
+#: cdedb/i18n_additional.py:247
 msgid "QueryOperators.containsnone"
 msgstr "enthält keins von"
 
-#: cdedb/i18n_additional.py:243
+#: cdedb/i18n_additional.py:248
 msgid "QueryOperators.containssome"
 msgstr "enthält min. eines aus"
 
-#: cdedb/i18n_additional.py:244
+#: cdedb/i18n_additional.py:249
 msgid "QueryOperators.fuzzy"
 msgstr "ist ähnlich zu"
 
-#: cdedb/i18n_additional.py:245
+#: cdedb/i18n_additional.py:250
 msgid "QueryOperators.less"
 msgstr "ist kleiner als"
 
-#: cdedb/i18n_additional.py:246
+#: cdedb/i18n_additional.py:251
 msgid "QueryOperators.lessequal"
 msgstr "ist kleiner/gleich"
 
-#: cdedb/i18n_additional.py:247
+#: cdedb/i18n_additional.py:252
 msgid "QueryOperators.between"
 msgstr "ist zwischen"
 
-#: cdedb/i18n_additional.py:248
+#: cdedb/i18n_additional.py:253
 msgid "QueryOperators.outside"
 msgstr "ist nicht zwischen"
 
-#: cdedb/i18n_additional.py:249
+#: cdedb/i18n_additional.py:254
 msgid "QueryOperators.greaterequal"
 msgstr "ist größer/gleich"
 
-#: cdedb/i18n_additional.py:250
+#: cdedb/i18n_additional.py:255
 msgid "QueryOperators.greater"
 msgstr "ist größer"
 
-#: cdedb/i18n_additional.py:252
+#: cdedb/i18n_additional.py:257
 msgid "MailinglistGroup.other"
 msgstr "Andere Mailinglisten"
 
-#: cdedb/i18n_additional.py:253
+#: cdedb/i18n_additional.py:258
 msgid "MailinglistGroup.cde"
 msgstr "Allgemeine Mailinglisten"
 
-#: cdedb/i18n_additional.py:254
+#: cdedb/i18n_additional.py:259
 msgid "MailinglistGroup.team"
 msgstr "Teammailinglisten"
 
-#: cdedb/i18n_additional.py:255
+#: cdedb/i18n_additional.py:260
 msgid "MailinglistGroup.event"
 msgstr "Veranstaltungslisten"
 
-#: cdedb/i18n_additional.py:256
+#: cdedb/i18n_additional.py:261
 msgid "MailinglistGroup.assembly"
 msgstr "Versammlungslisten"
 
-#: cdedb/i18n_additional.py:257
+#: cdedb/i18n_additional.py:262
 msgid "MailinglistGroup.cdelokal"
 msgstr "CdElokal-Listen"
 
-#: cdedb/i18n_additional.py:259
+#: cdedb/i18n_additional.py:264
 msgid "MailinglistTypes.member_mandatory"
 msgstr "Mitglieder (Alternativlos)"
 
-#: cdedb/i18n_additional.py:260
+#: cdedb/i18n_additional.py:265
 msgid "MailinglistTypes.member_opt_out"
 msgstr "Mitglieder (Opt-out)"
 
-#: cdedb/i18n_additional.py:261
+#: cdedb/i18n_additional.py:266
 msgid "MailinglistTypes.member_opt_in"
 msgstr "Mitglieder (Opt-in)"
 
-#: cdedb/i18n_additional.py:262
+#: cdedb/i18n_additional.py:267
 msgid "MailinglistTypes.member_moderated_opt_in"
 msgstr "Mitglieder (Moderiertes Opt-in)"
 
-#: cdedb/i18n_additional.py:263
+#: cdedb/i18n_additional.py:268
 msgid "MailinglistTypes.member_invitation_only"
 msgstr "Mitglieder (Nur durch Modeatoren)"
 
-#: cdedb/i18n_additional.py:264
+#: cdedb/i18n_additional.py:269
 msgid "MailinglistTypes.team"
 msgstr "Team (Moderiertes Opt-In)"
 
-#: cdedb/i18n_additional.py:265
+#: cdedb/i18n_additional.py:270
 msgid "MailinglistTypes.restricted_team"
 msgstr "Team (Nur durch Moderatoren)"
 
-#: cdedb/i18n_additional.py:266
+#: cdedb/i18n_additional.py:271
 msgid "MailinglistTypes.event_associated"
 msgstr "Teilnehmer/Anmeldungen (Opt-out)"
 
-#: cdedb/i18n_additional.py:267
+#: cdedb/i18n_additional.py:272
 msgid "MailinglistTypes.event_orga"
 msgstr "Orga (Opt-out)"
 
-#: cdedb/i18n_additional.py:268
+#: cdedb/i18n_additional.py:273
 msgid "MailinglistTypes.assembly_associated"
 msgstr "Versammlung (Opt-out)"
 
-#: cdedb/i18n_additional.py:269
+#: cdedb/i18n_additional.py:274
 msgid "MailinglistTypes.assembly_opt_in"
 msgstr "Versammlungsnutzer (Opt-in)"
 
-#: cdedb/i18n_additional.py:270
+#: cdedb/i18n_additional.py:275
 msgid "MailinglistTypes.assembly_presider"
 msgstr "Versammlungsleitung (Opt-out)"
 
-#: cdedb/i18n_additional.py:271
+#: cdedb/i18n_additional.py:276
 msgid "MailinglistTypes.general_opt_in"
 msgstr "Öffentlich (Opt-in)"
 
-#: cdedb/i18n_additional.py:272
+#: cdedb/i18n_additional.py:277
 msgid "MailinglistTypes.semi_public"
 msgstr "Öffentlich ([Moderiertes] Opt-in)"
 
-#: cdedb/i18n_additional.py:273
+#: cdedb/i18n_additional.py:278
 msgid "MailinglistTypes.cdelokal"
 msgstr "CdElokal ([Moderiertes] Opt-in)"
 
-#: cdedb/i18n_additional.py:278
+#: cdedb/i18n_additional.py:283
 msgid "day is out of range for month"
 msgstr "Tag liegt nicht im Monat."
 
-#: cdedb/i18n_additional.py:279
+#: cdedb/i18n_additional.py:284
 msgid "[<class 'decimal.ConversionSyntax'>]"
 msgstr "Keine Zahl gefunden."
 
-#: cdedb/i18n_additional.py:282
+#: cdedb/i18n_additional.py:287
 msgid "is_meta_admin"
 msgstr "Meta-Admin"
 
-#: cdedb/i18n_additional.py:283
+#: cdedb/i18n_additional.py:288
 msgid "is_core_admin"
 msgstr "Core-Admin"
 
-#: cdedb/i18n_additional.py:284
+#: cdedb/i18n_additional.py:289
 msgid "is_cde_admin"
 msgstr "CdE-Admin"
 
-#: cdedb/i18n_additional.py:285
+#: cdedb/i18n_additional.py:290
 msgid "is_finance_admin"
 msgstr "Finanz-Admin"
 
-#: cdedb/i18n_additional.py:286
+#: cdedb/i18n_additional.py:291
 msgid "is_event_admin"
 msgstr "Veranstaltungs-Admin"
 
-#: cdedb/i18n_additional.py:287
+#: cdedb/i18n_additional.py:292
 msgid "is_ml_admin"
 msgstr "Mailinglisten-Admin"
 
-#: cdedb/i18n_additional.py:288
+#: cdedb/i18n_additional.py:293
 msgid "is_assembly_admin"
 msgstr "Versammlungs-Admin"
 
-#: cdedb/i18n_additional.py:291
+#: cdedb/i18n_additional.py:296
 msgid "Use a few words, avoid common phrases."
 msgstr "Benutze mehrere Worte, vermeide übliche Ausdrücke."
 
-#: cdedb/i18n_additional.py:292
+#: cdedb/i18n_additional.py:297
 msgid "No need for symbols, digits, or uppercase letters."
 msgstr "Sonderzeichen, Ziffern und Großbuchstaben nicht notwendig."
 
-#: cdedb/i18n_additional.py:293
+#: cdedb/i18n_additional.py:298
 msgid "Add another word or two. Uncommon words are better."
 msgstr "Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser."
 
-#: cdedb/i18n_additional.py:294
+#: cdedb/i18n_additional.py:299
 msgid "Straight rows of keys are easy to guess."
 msgstr "Reihen von Buchstaben auf der Tastatur sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:295
+#: cdedb/i18n_additional.py:300
 msgid "Short keyboard patterns are easy to guess."
 msgstr "Kurze Tastaturmuster sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:296
+#: cdedb/i18n_additional.py:301
 msgid "Use a longer keyboard pattern with more turns."
 msgstr "Benutze ein längeres Tastaturmuster mit mehr Wendungen."
 
-#: cdedb/i18n_additional.py:297
+#: cdedb/i18n_additional.py:302
 msgid "Repeats like \"aaa\" are easy to guess."
 msgstr "Wiederholungen wie „aaa“ sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:298
+#: cdedb/i18n_additional.py:303
 msgid ""
 "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\"."
 msgstr ""
 "Wiederholungen wie „abcabcabc“ sind nur geringfügig schwieriger zu erraten "
 "als „abc“."
 
-#: cdedb/i18n_additional.py:300
+#: cdedb/i18n_additional.py:305
 msgid "Avoid repeated words and characters."
 msgstr "Vermeide Wiederholungen von Wörtern und Buchstaben."
 
-#: cdedb/i18n_additional.py:301
+#: cdedb/i18n_additional.py:306
 msgid "Sequences like \"abc\" or \"6543\" are easy to guess."
 msgstr "Abfolgen wie „abc“ oder „6543“ sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:302
+#: cdedb/i18n_additional.py:307
 msgid "Avoid sequences."
 msgstr "Vermeide Abfolgen."
 
-#: cdedb/i18n_additional.py:303
+#: cdedb/i18n_additional.py:308
 msgid "Recent years are easy to guess."
 msgstr "Jahreszahlen der letzten Jahre sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:304
+#: cdedb/i18n_additional.py:309
 msgid "Avoid recent years."
 msgstr "Vermeide Jahreszahlen der letzten Jahre."
 
-#: cdedb/i18n_additional.py:305
+#: cdedb/i18n_additional.py:310
 msgid "Avoid years that are associated with you."
 msgstr "Vermeide Jahreszahlen, die mit Dir in Verbindung stehen."
 
-#: cdedb/i18n_additional.py:306
+#: cdedb/i18n_additional.py:311
 msgid "Avoid dates and years that are associated with you."
 msgstr "Vermeide Daten und Jahre, die mit Dir in Verbindung stehen."
 
-#: cdedb/i18n_additional.py:307
+#: cdedb/i18n_additional.py:312
 msgid "This is a top-10 common password."
 msgstr "Das ist eines der 10 häufigsten Passwörter."
 
-#: cdedb/i18n_additional.py:308
+#: cdedb/i18n_additional.py:313
 msgid "This is a top-100 common password."
 msgstr "Das ist eines der 100 häufigsten Passwörter."
 
-#: cdedb/i18n_additional.py:309
+#: cdedb/i18n_additional.py:314
 msgid "This is a very common password."
 msgstr "Das ist ein sehr häufiges Passwort."
 
-#: cdedb/i18n_additional.py:310
+#: cdedb/i18n_additional.py:315
 msgid "This is similar to a commonly used password."
 msgstr "Das ist ähnlich zu einem häufig genutzten Passwort."
 
-#: cdedb/i18n_additional.py:311
+#: cdedb/i18n_additional.py:316
 msgid "A word by itself is easy to guess."
 msgstr "Ein einzelnes Wort ist einfach zu erraten."
 
-#: cdedb/i18n_additional.py:312
+#: cdedb/i18n_additional.py:317
 msgid "Names and surnames by themselves are easy to guess."
 msgstr "Vornamen und Nachnamen für sich genommen sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:313
+#: cdedb/i18n_additional.py:318
 msgid "Common names and surnames are easy to guess."
 msgstr "Häufige Vornamen und Nachnamen sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:314
+#: cdedb/i18n_additional.py:319
 msgid "Capitalization doesn't help very much."
 msgstr "Großschreibung hilft nicht wirklich."
 
-#: cdedb/i18n_additional.py:315
+#: cdedb/i18n_additional.py:320
 msgid "All-uppercase is almost as easy to guess as all-lowercase."
 msgstr ""
 "Alles großzuschreiben ist fast genauso einfach zu erraten wie alles "
 "kleinzuschreiben."
 
-#: cdedb/i18n_additional.py:316
+#: cdedb/i18n_additional.py:321
 msgid "Reversed words aren't much harder to guess."
 msgstr "Umgedrehte Wörter sind nicht viel schwieriger zu erraten."
 
-#: cdedb/i18n_additional.py:317
+#: cdedb/i18n_additional.py:322
 msgid ""
 "Predictable substitutions like \"@\" instead of \"a\" don't help very much."
 msgstr "Vorhersehbare Ersetzungen wie „@“ statt „a“ helfen nicht wirklich."
 
-#: cdedb/i18n_additional.py:329
+#: cdedb/i18n_additional.py:334
 msgid "Finanzvorstand_Name"
 msgstr "Finanzvorstand Name"
 
-#: cdedb/i18n_additional.py:330
+#: cdedb/i18n_additional.py:335
 msgid "Finanzvorstand_Vorname"
 msgstr "Finanzvorstand Vorname"
 
-#: cdedb/i18n_additional.py:331
+#: cdedb/i18n_additional.py:336
 msgid "Finanzvorstand_Ort"
 msgstr "Finanzvorstand Ort"
 
-#: cdedb/i18n_additional.py:332
+#: cdedb/i18n_additional.py:337
 msgid "Finanzvorstand_Adresse_Einzeiler"
 msgstr "Finanzvorstand Adresse Einzeiler"
 
-#: cdedb/i18n_additional.py:333
+#: cdedb/i18n_additional.py:338
 msgid "Finanzvorstand_Adresse_Zeile2"
 msgstr "Finanzvorstand Adresse Zeile 2"
 
-#: cdedb/i18n_additional.py:334
+#: cdedb/i18n_additional.py:339
 msgid "Finanzvorstand_Adresse_Zeile3"
 msgstr "Finanzvorstand Adresse Zeile 3"
 
-#: cdedb/i18n_additional.py:335
+#: cdedb/i18n_additional.py:340
 msgid "Finanzvorstand_Adresse_Zeile4"
 msgstr "Finanzvorstand Adresse Zeile 4"
 
-#: cdedb/i18n_additional.py:336
+#: cdedb/i18n_additional.py:341
 msgid "CdE_Konto_Inhaber"
 msgstr "CdE Konto Inhaber"
 
-#: cdedb/i18n_additional.py:337
+#: cdedb/i18n_additional.py:342
 msgid "CdE_Konto_IBAN"
 msgstr "CdE Konto IBAN"
 
-#: cdedb/i18n_additional.py:338
+#: cdedb/i18n_additional.py:343
 msgid "CdE_Konto_BIC"
 msgstr "CdE Konto BIC"
 
-#: cdedb/i18n_additional.py:339
+#: cdedb/i18n_additional.py:344
 msgid "CdE_Konto_Institut"
 msgstr "CdE Konto Kreditinstitut"
 
-#: cdedb/i18n_additional.py:340
+#: cdedb/i18n_additional.py:345
 msgid "Vorstand"
 msgstr "Vorstand"
 
-#: cdedb/i18n_additional.py:341
+#: cdedb/i18n_additional.py:346
 msgid "banner_before_login"
 msgstr "Banner bevor Login"
 
-#: cdedb/i18n_additional.py:342
+#: cdedb/i18n_additional.py:347
 msgid "banner_after_login"
 msgstr "Banner nach Login"
 
-#: cdedb/i18n_additional.py:343
+#: cdedb/i18n_additional.py:348
 msgid "banner_genesis"
 msgstr "Banner bei Accountanfrage"
 
-#: cdedb/i18n_additional.py:344
+#: cdedb/i18n_additional.py:349
 msgid "cde_misc"
 msgstr "Linksammlung Mitgliederbereich"
 
-#: cdedb/i18n_additional.py:351
+#: cdedb/i18n_additional.py:356
 msgid "Discard"
 msgstr "Verwerfen"
 
@@ -14156,7 +14190,7 @@ msgstr "Muss eine valides Datum mit Uhrzeit sein."
 msgid "More than one digit."
 msgstr "Darf nur einstellig sein."
 
-#: cdedb/validation.py:1368 cdedb/validation.py:1775
+#: cdedb/validation.py:1368 cdedb/validation.py:1777
 msgid "Too short."
 msgstr "Zu kurz."
 
@@ -14228,204 +14262,204 @@ msgstr "Nur pdf erlaubt."
 msgid "Must contain exactly two elements."
 msgstr "Muss genau zwei Elemente enthalten."
 
-#: cdedb/validation.py:1782
+#: cdedb/validation.py:1784
 msgid "Must start with country code."
 msgstr "Muss mit einem Ländercode beginnen."
 
-#: cdedb/validation.py:1786
+#: cdedb/validation.py:1788
 msgid "Must have digits for checksum."
 msgstr "Prüfziffer muss aus Ziffern bestehen."
 
-#: cdedb/validation.py:1790
+#: cdedb/validation.py:1792
 msgid "Invalid character in IBAN."
 msgstr "Ungültiges Zeichen in der IBAN."
 
-#: cdedb/validation.py:1792
+#: cdedb/validation.py:1794
 msgid "Unknown or unsupported Country Code."
 msgstr "Unbekannter oder nicht unterstützter Ländercode."
 
-#: cdedb/validation.py:1797
+#: cdedb/validation.py:1799
 #, python-format
 msgid ""
 "Invalid length %(len)s for Country Code %(code)s. Expexted length %(exp)s."
 msgstr ""
 "Ungültige Länge  %(len)s für Ländercode %(code)s. Erwartete Länge: %(exp)s."
 
-#: cdedb/validation.py:1806
+#: cdedb/validation.py:1808
 msgid "Invalid checksum."
 msgstr "Ungültige Checksumme."
 
-#: cdedb/validation.py:1841
+#: cdedb/validation.py:1843
 msgid "Modification of lastschrift transactions not supported."
 msgstr "Veränderungen von Lastschrifttransaktionen sind nicht möglich."
 
-#: cdedb/validation.py:1899 cdedb/validation.py:1956 cdedb/validation.py:1967
-#: cdedb/validation.py:1973
+#: cdedb/validation.py:1901 cdedb/validation.py:1958 cdedb/validation.py:1969
+#: cdedb/validation.py:1975
 msgid "Too long."
 msgstr "Zu lang."
 
-#: cdedb/validation.py:1902
+#: cdedb/validation.py:1904
 msgid "Invalid constant."
 msgstr "Unzulässiger Wert für Konstante."
 
-#: cdedb/validation.py:1959
+#: cdedb/validation.py:1961
 msgid "Unsupported constant."
 msgstr "Nicht unterstützter Wert für Konstante."
 
-#: cdedb/validation.py:1961
+#: cdedb/validation.py:1963
 msgid "Exactly two lines required."
 msgstr "Genau zwei Zeilen nötig."
 
-#: cdedb/validation.py:1993
+#: cdedb/validation.py:1995
 #, python-format
 msgid "Forbidden characters (%(chars)s)."
 msgstr "Verbotene Zeichen (%(chars)s)."
 
-#: cdedb/validation.py:2142
+#: cdedb/validation.py:2144
 msgid "Must be before or equal to hard limit."
 msgstr "Muss vor dem tatsächlichen Anmeldeschluss liegen."
 
-#: cdedb/validation.py:2149
+#: cdedb/validation.py:2151
 msgid "Must be before hard and soft limit."
 msgstr "Muss vor dem offiziellen und dem tatsächlichen Anmeldeschluss liegen."
 
-#: cdedb/validation.py:2390
+#: cdedb/validation.py:2392
 #, python-format
 msgid "Invalid entry in line %(line)s."
 msgstr "Ungültiger Eintrag in Zeile %(line)s."
 
-#: cdedb/validation.py:2404
+#: cdedb/validation.py:2406
 msgid "Duplicate value."
 msgstr "Doppelter Eintrag."
 
-#: cdedb/validation.py:2548
+#: cdedb/validation.py:2550
 msgid "Must be a superset of active segments."
 msgstr "Muss alle aktiven Segmente enthalten."
 
-#: cdedb/validation.py:2747
+#: cdedb/validation.py:2749
 msgid "Entry not in definition list."
 msgstr "Eintrag nicht in Referenzliste."
 
-#: cdedb/validation.py:2896
+#: cdedb/validation.py:2898
 msgid "Incorrect kind for this part of the questionnaire"
 msgstr "Ungültige Art für diesen Teil des Fragebogens."
 
-#: cdedb/validation.py:2904
+#: cdedb/validation.py:2906
 msgid "Referenced field does not exist."
 msgstr "Verbundenes Feld existiert nicht."
 
-#: cdedb/validation.py:2918
+#: cdedb/validation.py:2920
 msgid "Inappropriate questionnaire usage for fee modifier field."
 msgstr "Unpassende Art von Fragebogen für Beitragsmodifikator-Feld."
 
-#: cdedb/validation.py:2958
+#: cdedb/validation.py:2960
 msgid "Invalid UTF-8 sequence."
 msgstr "Ungültige UTF-8-Sequenz."
 
-#: cdedb/validation.py:2963
+#: cdedb/validation.py:2965
 #, python-format
 msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
 msgstr "Ungültige JSON-Syntax (Zeile %(line)s, Spalte %(col)s)."
 
-#: cdedb/validation.py:2995
+#: cdedb/validation.py:2997
 msgid "Only full exports are supported."
 msgstr "Nur vollständige Exporte sind unterstützt."
 
-#: cdedb/validation.py:3027 cdedb/validation.py:3165
+#: cdedb/validation.py:3029 cdedb/validation.py:3167
 msgid "Schema version mismatch."
 msgstr "Schemaversion weicht ab."
 
-#: cdedb/validation.py:3101
+#: cdedb/validation.py:3103
 msgid "Only a single event is supported."
 msgstr "Nur eine einzelne Veranstaltung unterstützt."
 
-#: cdedb/validation.py:3105
+#: cdedb/validation.py:3107
 msgid "Wrong event specified."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/validation.py:3111
+#: cdedb/validation.py:3113
 msgid "Mismatched event."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/validation.py:3143
+#: cdedb/validation.py:3145
 msgid "Only partial exports are supported."
 msgstr "Nur partielle Exporte sind unterstützt."
 
-#: cdedb/validation.py:3575
+#: cdedb/validation.py:3577
 msgid "Must specify mailinglist type to change domain."
 msgstr "Mailinglistentyp muss angegeben werden um Domain zu ändern."
 
-#: cdedb/validation.py:3580
+#: cdedb/validation.py:3582
 msgid "Invalid domain for this mailinglist type."
 msgstr "Ungültige Domain für diesen Mailinglistentyp."
 
-#: cdedb/validation.py:3770
+#: cdedb/validation.py:3772
 msgid "Mustn’t be in the past."
 msgstr "Darf nicht in der Vergangenheit liegen."
 
-#: cdedb/validation.py:3773
+#: cdedb/validation.py:3775
 msgid "Mustn’t be before start of voting period."
 msgstr "Darf nicht vor Abstimmungsbeginn liegen."
 
-#: cdedb/validation.py:3777
+#: cdedb/validation.py:3779
 msgid "Mustn’t be before end of voting period."
 msgstr "Darf nicht vor Abstimmungsende liegen."
 
-#: cdedb/validation.py:3799
+#: cdedb/validation.py:3801
 msgid "Must not specify both absolute and relative quorum."
 msgstr "Darf nicht gleichzeitig absolutes und relatives Quorum angeben."
 
-#: cdedb/validation.py:3811
+#: cdedb/validation.py:3813
 msgid "Relative quorum must be between 0 and 100."
 msgstr "Relatives Quorum muss zwischen 0 und 100 liegen."
 
-#: cdedb/validation.py:3814
+#: cdedb/validation.py:3816
 msgid "Must be specified if quorum is given."
 msgstr "Muss angegeben werden falls das Quorum benutzt wird."
 
-#: cdedb/validation.py:3817
+#: cdedb/validation.py:3819
 msgid "Must specify a quorum if vote extension end is given."
 msgstr ""
 "Ein Quorum muss angegeben werden, wenn eine Verlängerung angegeben ist."
 
-#: cdedb/validation.py:3914
+#: cdedb/validation.py:3916
 msgid "Only one host allowed."
 msgstr "Nur eine Verknüpfung erlaubt."
 
-#: cdedb/validation.py:3916
+#: cdedb/validation.py:3918
 msgid "No host given."
 msgstr "Keine Zugehörigkeit angegeben."
 
-#: cdedb/validation.py:3961
+#: cdedb/validation.py:3963
 msgid "Must specify ballot in order to validate vote."
 msgstr "Um eine Stimme zu validieren muss eine Abstimmung angegeben werden."
 
-#: cdedb/validation.py:3969
+#: cdedb/validation.py:3971
 msgid "Superfluous candidates."
 msgstr "Unerwartete Kandidaten gefunden."
 
-#: cdedb/validation.py:3971
+#: cdedb/validation.py:3973
 msgid "Missing candidates."
 msgstr "Nicht alle Kandidaten vorhanden."
 
-#: cdedb/validation.py:3979
+#: cdedb/validation.py:3981
 msgid "Too many levels."
 msgstr "Zu viele Abstufungen."
 
-#: cdedb/validation.py:3981
+#: cdedb/validation.py:3983
 msgid "Too many votes."
 msgstr "Zu viele Optionen ausgewählt."
 
-#: cdedb/validation.py:3985
+#: cdedb/validation.py:3987
 msgid "Misplaced bar."
 msgstr "Ablehnungsoption an ungültiger Stelle."
 
-#: cdedb/validation.py:4004
+#: cdedb/validation.py:4006
 #, python-format
 msgid "Invalid  regular expression (position %(pos)s)."
 msgstr "Ungültiger regulärer Ausdruck (Position %(pos)s)."
 
-#: cdedb/validation.py:4016
+#: cdedb/validation.py:4018
 #, python-format
 msgid ""
 "Must not contain any forbidden characters (which are %(forbidden_chars)s "
@@ -14434,46 +14468,46 @@ msgstr ""
 "Darf keine verbotenen Zeichen enthalten (diese sind %(forbidden_chars)s) "
 "wohingegen .^$ erlaubt sind."
 
-#: cdedb/validation.py:4081
+#: cdedb/validation.py:4083
 msgid "Invalid operator for this field."
 msgstr "Unzulässiger Operator für dieses Feld."
 
-#: cdedb/validation.py:4125
+#: cdedb/validation.py:4127
 msgid "Two endpoints required."
 msgstr "Zwei Werte für Intervall benötigt."
 
-#: cdedb/validation.py:4156
+#: cdedb/validation.py:4158
 msgid "Selection may not be empty."
 msgstr "Es muss etwas ausgewählt werden."
 
-#: cdedb/validation.py:4202
+#: cdedb/validation.py:4204
 msgid "Not a Query."
 msgstr "Muss eine Query sein."
 
-#: cdedb/validation.py:4211
+#: cdedb/validation.py:4213
 msgid "Must start with “qview_”."
 msgstr "Muss mit „qview_“ beginnen."
 
-#: cdedb/validation.py:4241
+#: cdedb/validation.py:4243
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr "Ungültige Einschränkung bei Index %(index)s."
 
-#: cdedb/validation.py:4265
+#: cdedb/validation.py:4267
 msgid "Invalid operator."
 msgstr "Unzulässiger Operator."
 
-#: cdedb/validation.py:4299
+#: cdedb/validation.py:4301
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr "Ungültige Ordnungsrelation bei Index %(index)s."
 
-#: cdedb/validation.py:4330 cdedb/validation.py:4393
+#: cdedb/validation.py:4332 cdedb/validation.py:4395
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 
-#: cdedb/validation.py:4366 cdedb/validation.py:4426
+#: cdedb/validation.py:4368 cdedb/validation.py:4428
 #, python-format
 msgid "Must be a %(type)s."
 msgstr "Muss vom Typ %(type)s sein."
