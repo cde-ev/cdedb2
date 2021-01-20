@@ -548,10 +548,13 @@ class CoreBackend(AbstractBackend):
         return {e["id"] for e in data}
 
     @access("core_admin")
-    def next_persona(self, rs: RequestState, persona_id: int,
-                     is_member: Optional[bool] = True,
-                     is_archived: Optional[bool] = False) -> Optional[int]:
+    def next_persona(self, rs: RequestState, persona_id: int, *,
+                     is_member: Optional[bool],
+                     is_archived: Optional[bool]) -> Optional[int]:
         """Look up the following persona.
+
+        :param is_member: If not None, only consider personas with a matching flag.
+        :param is_archived: If not None, only consider personas with a matching flag.
 
         :returns: Next valid id in table core.personas
         """

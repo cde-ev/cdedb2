@@ -2169,10 +2169,9 @@ class CdEFrontend(AbstractUserFrontend):
         def update_balance(rrs: RequestState, rs: None = None) -> bool:
             """Update one members balance and advance state."""
             with Atomizer(rrs):
-                period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
-                previous = period['balance_state'] or 0
-                persona_id = self.coreproxy.next_persona(rrs, previous)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, period['balance_state'], is_member=True, is_archived=False)
                 if not persona_id or period['balance_done']:
                     if not period['balance_done']:
                         self.cdeproxy.finish_semester_balance_update(rrs)
@@ -2253,17 +2252,16 @@ class CdEFrontend(AbstractUserFrontend):
         def send_addresscheck(rrs: RequestState, rs: None = None) -> bool:
             """Send one address check mail and advance state."""
             with Atomizer(rrs):
-                expuls_id = self.cdeproxy.current_expuls(rrs)
                 expuls = self.cdeproxy.get_expuls(rrs, expuls_id)
-                previous = expuls['addresscheck_state'] or 0
-                count = expuls['addresscheck_count'] or 0
-                persona_id = self.coreproxy.next_persona(rrs, previous)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, expuls['addresscheck_state'],
+                    is_member=True, is_archived=False)
                 if testrun:
                     persona_id = rrs.user.persona_id
                 if not persona_id or expuls['addresscheck_done']:
                     if not expuls['addresscheck_done']:
-                        self.cdeproxy.finish_expuls_addresscheck(rrs,
-                                                                 skip=False)
+                        self.cdeproxy.finish_expuls_addresscheck(
+                            rrs, skip=False)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 address = make_postal_address(persona)
@@ -2279,7 +2277,7 @@ class CdEFrontend(AbstractUserFrontend):
                 expuls_update = {
                     'id': expuls_id,
                     'addresscheck_state': persona_id,
-                    'addresscheck_count': count + 1,
+                    'addresscheck_count': expuls['addresscheck_count'] + 1,
                 }
                 self.cdeproxy.set_expuls(rrs, expuls_update)
                 return True
