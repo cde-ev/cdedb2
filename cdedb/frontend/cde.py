@@ -2145,7 +2145,7 @@ class CdEFrontend(AbstractUserFrontend):
                     if code:
                         period_update['archival_count'] = period['archival_count'] + 1
                     else:
-                        self.logger.error(f"Automated arhival of persona {persona_id}"
+                        self.logger.error(f"Automated archival of persona {persona_id}"
                                           f" failed for unknown reasons.")
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
