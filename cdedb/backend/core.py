@@ -548,7 +548,7 @@ class CoreBackend(AbstractBackend):
         return {e["id"] for e in data}
 
     @access("core_admin")
-    def next_persona(self, rs: RequestState, persona_id: int, *,
+    def next_persona(self, rs: RequestState, persona_id: Optional[int], *,
                      is_member: Optional[bool],
                      is_archived: Optional[bool]) -> Optional[int]:
         """Look up the following persona.
@@ -558,14 +558,17 @@ class CoreBackend(AbstractBackend):
 
         :returns: Next valid id in table core.personas
         """
-        persona_id = affirm(int, persona_id)
+        persona_id = affirm_optional(int, persona_id)
         is_member = affirm_optional(bool, is_member)
         is_archived = affirm_optional(bool, is_archived)
         query = "SELECT MIN(id) FROM core.personas"
-        constraints = ["id > %s"]
-        params = [persona_id]
+        constraints = []
+        params: List[Any] = []
+        if persona_id is not None:
+            constraints.append("id > %s")
+            params.append(persona_id)
         if is_member is not None:
-            constraints.append("is_member = &s")
+            constraints.append("is_member = %s")
             params.append(is_member)
         if is_archived is not None:
             constraints.append("is_archived = %s")
