@@ -2100,9 +2100,8 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        Worker(self.conf, send_billing_mail, rs).start()
+        Worker(self.conf, (send_billing_mail, send_archival_notification), rs).start()
         rs.notify("success", n_("Started sending billing mails."))
-        Worker(self.conf, send_archival_notification, rs).start()
         rs.notify("success", n_("Started sending archival notifications."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2189,9 +2188,8 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        Worker(self.conf, eject_member, rs).start()
+        Worker(self.conf, (eject_member, automated_archival), rs).start()
         rs.notify("success", n_("Started ejection."))
-        Worker(self.conf, automated_archival, rs).start()
         rs.notify("success", n_("Started automated archival."))
         return self.redirect(rs, "cde/show_semester")
 
