@@ -633,23 +633,7 @@ class CdEBackend(AbstractBackend):
                 'semester_done': now(),
             }
             ret = self.sql_update(rs, "cde.org_period", update)
-            new_period = {
-                'id': current_id + 1,
-                'billing_state': None,
-                'billing_done': None,
-                'billing_count': 0,
-                'ejection_state': None,
-                'ejection_done': None,
-                'ejection_count': 0,
-                'ejection_balance': decimal.Decimal(0),
-                'balance_state': None,
-                'balance_done': None,
-                'balance_trialmembers': 0,
-                'balance_total': decimal.Decimal(0),
-                'archival_notifications': 0,
-                'archival_count': 0,
-                'semester_done': None,
-            }
+            new_period = {'id': current_id + 1}
             ret *= self.sql_insert(rs, "cde.org_period", new_period)
             self.cde_log(rs, const.CdeLogCodes.semester_advance,
                          persona_id=None, change_note=str(ret))
