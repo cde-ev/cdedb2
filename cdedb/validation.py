@@ -1692,18 +1692,20 @@ def _period(
     val = _mapping(val, argname, **kwargs)
 
     # TODO make these public?
+    prefix_map = {
+        'billing': ('state', 'done', 'count'),
+        'ejection': ('state', 'done', 'count', 'balance'),
+        'balance': ('state', 'done', 'trialmembers', 'total'),
+        'archival_notification': ('state', 'done', 'count'),
+        'archival': ('state', 'done', 'count'),
+    }
+    type_map = {'state': Optional[ID], 'done': datetime.datetime,
+                'count': NonNegativeInt, 'trialmembers': NonNegativeInt,
+                'total': NonNegativeDecimal, 'balance': NonNegativeDecimal}
+
     optional_fields = {
-        'billing_state': Optional[ID],
-        'billing_done': datetime.datetime,
-        'billing_count': NonNegativeInt,
-        'ejection_state': Optional[ID],
-        'ejection_done': datetime.datetime,
-        'ejection_count': NonNegativeInt,
-        'ejection_balance': NonNegativeDecimal,
-        'balance_state': Optional[ID],
-        'balance_done': datetime.datetime,
-        'balance_trialmembers': NonNegativeInt,
-        'balance_total': NonNegativeLargeDecimal,
+        f"{pre}_{suf}": type_map[suf]
+        for pre, suffixes in prefix_map.items() for suf in suffixes
     }
 
     return Period(_examine_dictionary_fields(

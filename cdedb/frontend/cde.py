@@ -2026,7 +2026,7 @@ class CdEFrontend(AbstractUserFrontend):
                     self.cdeproxy.finish_semester_bill(rrs, addresscheck)
                     return False
                 period_update = {
-                    'period_id': period_id,
+                    'id': period_id,
                     'billing_state': persona_id,
                 }
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
@@ -2078,7 +2078,7 @@ class CdEFrontend(AbstractUserFrontend):
                     self.cdeproxy.finish_archival_notification(rrs)
                     return False
                 period_update = {
-                    'period_id': period_id,
+                    'id': period_id,
                     'archival_notification_state': persona_id,
                 }
                 if self.coreproxy.is_persona_automatically_archivable(rrs, persona_id):
@@ -2162,7 +2162,7 @@ class CdEFrontend(AbstractUserFrontend):
                     self.cdeproxy.finish_automated_archival(rrs)
                     return False
                 period_update = {
-                    'id': period,
+                    'id': period_id,
                     'archival_state': persona_id,
                 }
                 if self.coreproxy.is_persona_automatically_archivable(
