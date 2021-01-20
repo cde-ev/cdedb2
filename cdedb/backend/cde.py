@@ -683,6 +683,46 @@ class CdEBackend(AbstractBackend):
             return ret
 
     @access("finance_admin")
+    def finish_archival_notification(self, rs: RequestState) -> DefaultReturnCode:
+        """Conclude the sending of archival notifications."""
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if not period['archival_notification_done'] is None:
+                raise RuntimeError(n_("Archival notifications done for this period."))
+            period_update = {
+                'id': period_id,
+                'archival_notification_state': None,
+                'archival_notification_done': now(),
+            }
+            ret = self.set_period(rs, period_update)
+            msg = f"{period['archival_notification_count']} E-Mails versandt."
+            self.cde_log(
+                rs, const.CdeLogCodes.automated_archival_notification_done,
+                persona_id=None, change_note=msg)
+            return ret
+
+    @access("finance_admin")
+    def finish_automated_archival(self, rs: RequestState) -> DefaultReturnCode:
+        """Conclude the automated archival."""
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if not period['archival_done'] is None:
+                raise RuntimeError(n_("Automated archival done for this period."))
+            period_update = {
+                'id': period_id,
+                'archival_state': None,
+                'archival_done': now(),
+            }
+            ret = self.set_period(rs, period_update)
+            msg = f"{period['archival_count']} Accounts archiviert."
+            self.cde_log(
+                rs, const.CdeLogCodes.automated_archival_done,
+                persona_id=None, change_note=msg)
+            return ret
+
+    @access("finance_admin")
     def finish_semester_ejection(self, rs: RequestState) -> DefaultReturnCode:
         """Conclude the semester ejection step."""
         with Atomizer(rs):

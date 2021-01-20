@@ -2019,68 +2019,87 @@ class CdEFrontend(AbstractUserFrontend):
             with Atomizer(rrs):
                 period = self.cdeproxy.get_period(rrs, period_id)
                 persona_id = self.coreproxy.next_persona(
-                    rrs, period['billing_state'], is_member=None, is_archived=False)
+                    rrs, period['billing_state'], is_member=True, is_archived=False)
                 if testrun:
                     persona_id = rrs.user.persona_id
-                if not persona_id or period['billing_done']:
-                    if not period['billing_done']:
-                        self.cdeproxy.finish_semester_bill(rrs, addresscheck)
+                if not persona_id:
+                    self.cdeproxy.finish_semester_bill(rrs, addresscheck)
                     return False
                 period_update = {
                     'period_id': period_id,
                     'billing_state': persona_id,
                 }
-                persona = self.coreproxy.get_persona(rrs, persona_id)
-                if persona["is_member"]:
-                    persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                    lastschrift_list = self.cdeproxy.list_lastschrift(
-                        rrs, persona_ids=(persona_id,))
-                    lastschrift = None
-                    if lastschrift_list:
-                        lastschrift = self.cdeproxy.get_lastschrift(
-                            rrs, unwrap(lastschrift_list.keys()))
-                        lastschrift['reference'] = lastschrift_reference(
-                            persona['id'], lastschrift['id'])
-                    address = make_postal_address(persona)
-                    transaction_subject = make_membership_fee_reference(persona)
-                    endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                                  and not persona['trial_member']
-                                  and not lastschrift)
-                    if endangered:
-                        subject = "Mitgliedschaft verlängern"
-                    else:
-                        subject = "Mitgliedschaft verlängert"
-                    self.do_mail(
-                        rrs, "billing",
-                        {'To': (persona['username'],),
-                         'Subject': subject},
-                        {'persona': persona,
-                         'fee': self.conf["MEMBERSHIP_FEE"],
-                         'lastschrift': lastschrift,
-                         'open_lastschrift': open_lastschrift,
-                         'address': address,
-                         'transaction_subject': transaction_subject,
-                         'addresscheck': addresscheck,
-                         'meta_info': meta_info})
-                    period_update['billing_count'] = period['billing_count'] + 1
-                elif self.coreproxy.is_persona_automatically_archivable(
-                        rrs, persona_id):
+                persona = self.coreproxy.get_cde_user(rrs, persona_id)
+                lastschrift_list = self.cdeproxy.list_lastschrift(
+                    rrs, persona_ids=(persona_id,))
+                lastschrift = None
+                if lastschrift_list:
+                    lastschrift = self.cdeproxy.get_lastschrift(
+                        rrs, unwrap(lastschrift_list.keys()))
+                    lastschrift['reference'] = lastschrift_reference(
+                        persona['id'], lastschrift['id'])
+                address = make_postal_address(persona)
+                transaction_subject = make_membership_fee_reference(persona)
+                endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                              and not persona['trial_member']
+                              and not lastschrift)
+                if endangered:
+                    subject = "Mitgliedschaft verlängern"
+                else:
+                    subject = "Mitgliedschaft verlängert"
+                self.do_mail(
+                    rrs, "billing",
+                    {'To': (persona['username'],),
+                     'Subject': subject},
+                    {'persona': persona,
+                     'fee': self.conf["MEMBERSHIP_FEE"],
+                     'lastschrift': lastschrift,
+                     'open_lastschrift': open_lastschrift,
+                     'address': address,
+                     'transaction_subject': transaction_subject,
+                     'addresscheck': addresscheck,
+                     'meta_info': meta_info})
+                period_update['billing_count'] = period['billing_count'] + 1
+                if testrun:
+                    return False
+                self.cdeproxy.set_period(rrs, period_update)
+                return True
+
+        def send_archival_notification(rrs: RequestState, rs: None = None) -> bool:
+            """Send archival notifications to inactive accounts."""
+            with Atomizer(rrs):
+                period = self.cdeproxy.get_period(rrs, period_id)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, period['archival_notification_state'], is_member=None,
+                    is_archived=False)
+                if testrun:
+                    persona_id = rrs.user.persona_id
+                if not persona_id:
+                    self.cdeproxy.finish_archival_notification(rrs)
+                    return False
+                period_update = {
+                    'period_id': period_id,
+                    'archival_notification_state': persona_id,
+                }
+                if self.coreproxy.is_persona_automatically_archivable(rrs, persona_id):
+                    persona = self.coreproxy.get_persona(rrs, persona_id)
                     self.do_mail(
                         rrs, "imminent_archival",
                         {'To': (persona['username'],),
                          'Subject': "Inaktivität in Deinem CdE-Datenbank-Account"},
                         {'persona': persona,
                          'management': self.conf["MANAGEMENT_ADDRESS"]})
-                    period_update['archival_nofications'] = \
-                        period['archival_notifications'] + 1
+                    period_update['archival_nofication_count'] = \
+                        period['archival_notification_count'] + 1
                 if testrun:
                     return False
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, send_billing_mail, rs)
-        worker.start()
-        rs.notify("success", n_("Started sending mail."))
+        Worker(self.conf, send_billing_mail, rs).start()
+        rs.notify("success", n_("Started sending billing mails."))
+        Worker(self.conf, send_archival_notification, rs).start()
+        rs.notify("success", n_("Started sending archival notifications."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
@@ -2103,39 +2122,51 @@ class CdEFrontend(AbstractUserFrontend):
             with Atomizer(rrs):
                 period = self.cdeproxy.get_period(rrs, period_id)
                 persona_id = self.coreproxy.next_persona(
-                    rrs, period['ejection_state'], is_member=None, is_archived=False)
-                if not persona_id or period['ejection_done']:
-                    if not period['ejection_done']:
-                        self.cdeproxy.finish_semester_ejection(rrs)
+                    rrs, period['ejection_state'], is_member=True, is_archived=False)
+                if not persona_id:
+                    self.cdeproxy.finish_semester_ejection(rrs)
                     return False
                 period_update = {
                     'id': period_id,
                     'ejection_state': persona_id,
                 }
-                persona = self.coreproxy.get_persona(rrs, persona_id)
-                if persona['is_member']:
-                    persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                    if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                            and not persona['trial_member']):
-                        self.coreproxy.change_membership(rrs, persona_id,
-                                                         is_member=False)
-                        period_update['ejection_count'] = \
-                            period['ejection_count'] + 1
-                        period_update['ejection_balance'] = \
-                            period['ejection_balance'] + persona['balance']
-                        transaction_subject = make_membership_fee_reference(persona)
-                        meta_info = self.coreproxy.get_meta_info(rrs)
-                        self.do_mail(
-                            rrs, "ejection",
-                            {'To': (persona['username'],),
-                             'Subject': "Austritt aus dem CdE e.V."},
-                            {'persona': persona,
-                             'fee': self.conf["MEMBERSHIP_FEE"],
-                             'transaction_subject': transaction_subject,
-                             'meta_info': meta_info,
-                             })
-                elif self.coreproxy.is_persona_automatically_archivable(
-                        rrs, persona_id, cutoff=period['billing_done']):
+                persona = self.coreproxy.get_cde_user(rrs, persona_id)
+                if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                        and not persona['trial_member']):
+                    self.coreproxy.change_membership(rrs, persona_id,
+                                                     is_member=False)
+                    period_update['ejection_count'] = \
+                        period['ejection_count'] + 1
+                    period_update['ejection_balance'] = \
+                        period['ejection_balance'] + persona['balance']
+                    transaction_subject = make_membership_fee_reference(persona)
+                    meta_info = self.coreproxy.get_meta_info(rrs)
+                    self.do_mail(
+                        rrs, "ejection",
+                        {'To': (persona['username'],),
+                         'Subject': "Austritt aus dem CdE e.V."},
+                        {'persona': persona,
+                         'fee': self.conf["MEMBERSHIP_FEE"],
+                         'transaction_subject': transaction_subject,
+                         'meta_info': meta_info,
+                         })
+                self.cdeproxy.set_period(rrs, period_update)
+                return True
+
+        def automated_archival(rrs: RequestState, rs: None = None) -> bool:
+            with Atomizer(rrs):
+                period = self.cdeproxy.get_period(rrs, period_id)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, period['archival_state'], is_member=False, is_archived=False)
+                if not persona_id:
+                    self.cdeproxy.finish_automated_archival(rrs)
+                    return False
+                period_update = {
+                    'id': period,
+                    'archival_state': persona_id,
+                }
+                if self.coreproxy.is_persona_automatically_archivable(
+                        rrs, persona_id, reference_date=period['billing_done']):
                     note = "Autmoatisch archiviert wegen Inaktivität."
                     try:
                         code = self.coreproxy.archive_persona(rrs, persona_id, note)
@@ -2150,9 +2181,10 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, eject_member, rs)
-        worker.start()
+        Worker(self.conf, eject_member, rs).start()
         rs.notify("success", n_("Started ejection."))
+        Worker(self.conf, automated_archival, rs).start()
+        rs.notify("success", n_("Started automated archival."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})

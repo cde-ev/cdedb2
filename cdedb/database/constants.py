@@ -320,6 +320,8 @@ class CdeLogCodes(enum.IntEnum):
     expuls_addresscheck = 20
     expuls_addresscheck_skipped = 21
     expuls_advance = 2
+    automated_archival_notification_done = 30
+    automated_archival_done = 31
 
 
 @enum.unique
