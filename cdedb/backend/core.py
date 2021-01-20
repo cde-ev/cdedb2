@@ -1142,7 +1142,7 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin")
     def is_persona_automatically_archivable(self, rs: RequestState, persona_id: int,
-                                            reference_date: datetime.datetime = None
+                                            reference_date: datetime.date = None
                                             ) -> bool:
         """Determine whether a persona is eligble to be automatically archived.
 
@@ -1164,7 +1164,7 @@ class CoreBackend(AbstractBackend):
             * The persona being explicitly subscribed to any mailinglist.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        reference_date = affirm(datetime.datetime, reference_date or now().date())
+        reference_date = affirm(datetime.date, reference_date or now().date())
 
         cutoff = reference_date - self.conf["AUTOMATED_ARCHIVAL_CUTOFF"]
         with Atomizer(rs):
@@ -1185,7 +1185,7 @@ class CoreBackend(AbstractBackend):
             generation = self.changelog_get_generation(rs, persona_id)
             history = self.changelog_get_history(rs, persona_id, (generation,))
             last_change = history[generation]
-            if last_change['ctime'] > cutoff:
+            if last_change['ctime'].date() > cutoff:
                 return False
 
             # Check event involvement.
