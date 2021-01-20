@@ -2022,8 +2022,10 @@ class CdEFrontend(AbstractUserFrontend):
                     rrs, period['billing_state'], is_member=True, is_archived=False)
                 if testrun:
                     persona_id = rrs.user.persona_id
-                if not persona_id:
-                    self.cdeproxy.finish_semester_bill(rrs, addresscheck)
+                # We are finished if we reached the end or if this was previously done.
+                if not persona_id or period['billing_done']:
+                    if not period['billing_done']:
+                        self.cdeproxy.finish_semester_bill(rrs, addresscheck)
                     return False
                 period_update = {
                     'id': period_id,
@@ -2074,8 +2076,10 @@ class CdEFrontend(AbstractUserFrontend):
                     is_archived=False)
                 if testrun:
                     persona_id = rrs.user.persona_id
-                if not persona_id:
-                    self.cdeproxy.finish_archival_notification(rrs)
+                # We are finished if we reached the end or if this was previously done.
+                if not persona_id or period['archival_notification_done']:
+                    if not period['archival_notification_done']:
+                        self.cdeproxy.finish_archival_notification(rrs)
                     return False
                 period_update = {
                     'id': period_id,
@@ -2123,8 +2127,10 @@ class CdEFrontend(AbstractUserFrontend):
                 period = self.cdeproxy.get_period(rrs, period_id)
                 persona_id = self.coreproxy.next_persona(
                     rrs, period['ejection_state'], is_member=True, is_archived=False)
-                if not persona_id:
-                    self.cdeproxy.finish_semester_ejection(rrs)
+                # We are finished if we reached the end or if this was previously done.
+                if not persona_id or period['ejection_done']:
+                    if not period['ejection_done']:
+                        self.cdeproxy.finish_semester_ejection(rrs)
                     return False
                 period_update = {
                     'id': period_id,
@@ -2158,8 +2164,10 @@ class CdEFrontend(AbstractUserFrontend):
                 period = self.cdeproxy.get_period(rrs, period_id)
                 persona_id = self.coreproxy.next_persona(
                     rrs, period['archival_state'], is_member=False, is_archived=False)
-                if not persona_id:
-                    self.cdeproxy.finish_automated_archival(rrs)
+                # We are finished if we reached the end or if this was previously done.
+                if not persona_id or period['archival_done']:
+                    if not period['archival_done']:
+                        self.cdeproxy.finish_automated_archival(rrs)
                     return False
                 period_update = {
                     'id': period_id,
@@ -2204,6 +2212,7 @@ class CdEFrontend(AbstractUserFrontend):
                 period = self.cdeproxy.get_period(rrs, period_id)
                 persona_id = self.coreproxy.next_persona(
                     rrs, period['balance_state'], is_member=True, is_archived=False)
+                # We are finished if we reached the end or if this was previously done.
                 if not persona_id or period['balance_done']:
                     if not period['balance_done']:
                         self.cdeproxy.finish_semester_balance_update(rrs)
@@ -2290,6 +2299,7 @@ class CdEFrontend(AbstractUserFrontend):
                     is_member=True, is_archived=False)
                 if testrun:
                     persona_id = rrs.user.persona_id
+                # We are finished if we reached the end or if this was previously done.
                 if not persona_id or expuls['addresscheck_done']:
                     if not expuls['addresscheck_done']:
                         self.cdeproxy.finish_expuls_addresscheck(
