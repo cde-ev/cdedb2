@@ -2003,6 +2003,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
+        # TODO this should also check 'archival_notification_done'.
         if period['billing_done']:
             rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "cde/show_semester")
@@ -2114,6 +2115,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
+        # TODO this should also check 'archival_notification_done' and 'archival_done'
         if not period['billing_done'] or period['ejection_done']:
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
