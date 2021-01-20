@@ -1617,14 +1617,14 @@ class TestCdEFrontend(FrontendTest):
 
         # Verify Log
         self.traverse({'description': 'CdE-Log'})
-        self.assertTitle("CdE-Log [1–8 von 8]")
-        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="2-1002")
-        self.assertPresence("3 Probemitgliedschaften beendet", div="3-1003")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="3-1003")
+        self.assertTitle("CdE-Log [1–12 von 12]")
+        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="3-1003")
+        self.assertPresence("3 Probemitgliedschaften beendet", div="5-1005")
+        self.assertPresence("15.00 € Guthaben abgebucht.", div="5-1005")
 
-        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="6-1006")
-        self.assertPresence("0 Probemitgliedschaften beendet", div="7-1007")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="7-1007")
+        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="9-1009")
+        self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
+        self.assertPresence("15.00 € Guthaben abgebucht.", div="11-1011")
 
     @as_users("farin")
     def test_expuls(self, user):
