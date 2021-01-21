@@ -1,34 +1,31 @@
-# type: ignore
-
 import argparse
 import json
-import sys
 from itertools import chain
+from typing import Any, Callable, Dict, List, Tuple, Type
+
+from typing_extensions import TypedDict
+
+from cdedb.backend.common import PsycoJson
+from cdedb.backend.core import CoreBackend
+from cdedb.script import MockRequestState, setup
 
 
-def read_input(infile):
-    with open(infile, "r", encoding="utf8") as f:
-        ret = json.load(f)
+class AuxData(TypedDict):
+    rs: MockRequestState
+    core: Type[CoreBackend]
+    PsycoJson: Type[PsycoJson]
+    seq_id_tables: List[str]
+    cyclic_references: Dict[str, Tuple[str, ...]]
+    constant_replacements: Dict[str, Any]
+    entry_replacements: Dict[str, Dict[str, Callable[..., Any]]]
 
-    return ret
 
-
-def prepare_aux(data):
-    ret = {}
-
-    # Set up the database connection.
-    sys.path.insert(0, "/cdedb2")
-
-    from cdedb.backend.common import PsycoJson
-    from cdedb.backend.core import CoreBackend
-    from cdedb.script import setup
-
+def prepare_aux(data: Dict[str, Any]) -> AuxData:
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
     rs_maker = setup(1, "nobody", "nobody", dbname="nobody")
-    ret["rs"] = rs_maker()
-    ret["core"] = CoreBackend  # No need to instantiate, we only use statics.
-    ret["PsycoJson"] = PsycoJson
+    rs = rs_maker()
+    core = CoreBackend  # No need to instantiate, we only use statics.
 
     # Extract some data about the databse tables using the database connection.
 
@@ -38,13 +35,13 @@ def prepare_aux(data):
         "cde.expuls_period",
     ]
 
-    ret["seq_id_tables"] = [t for t in data if t not in non_seq_id_tables]
+    seq_id_tables = [t for t in data if t not in non_seq_id_tables]
     # Prepare some constants for special casing.
 
     # This maps full table names to a list of column names in that table that
     # require special care, because they contain cycliy references.
     # They will be removed from the initial INSERT and UPDATEd later.
-    ret["cyclic_references"] = {
+    cyclic_references: Dict[str, Tuple[str, ...]] = {
         "event.events": ("lodge_field", "course_room_field", "camping_mat_field"),
     }
 
@@ -52,25 +49,32 @@ def prepare_aux(data):
     # code at the very end. Note that this is the only way to actually insert
     # SQL-syntax. We use it to alway produce a current timestamp, because a
     # fixed timestamp from the start of a test suite won't do.
-    ret["constant_replacements"] = {
+    constant_replacements = {
         "'---now---'": "now()",
     }
 
     # For every table we may map one of it's columns to a function which
     # dynamically generates data to insert.
     # The function will get the entire row as a argument.
-    ret["entry_replacements"] = {
+    entry_replacements = {
         "core.personas":
             {
-                "fulltext": ret["core"].create_fulltext,
+                "fulltext": core.create_fulltext,
             },
     }
 
-    return ret
+    return AuxData(
+        rs=rs, core=core,
+        PsycoJson=PsycoJson,
+        seq_id_tables=seq_id_tables,
+        cyclic_references=cyclic_references,
+        constant_replacements=constant_replacements,
+        entry_replacements=entry_replacements
+    )
 
 
-def build_commands(data, aux):
-    commands = []
+def build_commands(data: Dict[str, Any], aux: AuxData) -> List[str]:
+    commands: List[str] = []
 
     # Start off by resetting the sequential ids to 1.
     commands.extend("ALTER SEQUENCE IF EXISTS {}_id_seq RESTART WITH 1;"
@@ -93,7 +97,8 @@ def build_commands(data, aux):
 
         # Convert the keys to a tuple to ensure consistent ordering.
         keys = tuple(key_set)
-        params = []
+        # FIXME more precise type
+        params: List[Any] = []
         for entry in table_data:
             for k in keys:
                 if k not in entry:
@@ -147,14 +152,14 @@ def build_commands(data, aux):
     return ret
 
 
-def write_output(commands, outfile):
-    with open(outfile, "w", encoding="utf8") as f:
+def write_output(commands: List[str], outfile: str) -> None:
+    with open(outfile, "w") as f:
         for cmd in commands:
             f.write(cmd)
             f.write("\n")
 
 
-def main():
+def main() -> None:
     # Import filelocations from commandline.
     parser = argparse.ArgumentParser(
         description="Generate an SQL-file to insert sample data from a "
@@ -166,7 +171,8 @@ def main():
         "-o", "--outfile", default="/tmp/sample_data.sql")
     args = parser.parse_args()
 
-    data = read_input(args.infile)
+    data = json.loads(args.infile)
+    assert isinstance(data, dict)
     aux = prepare_aux(data)
     commands = build_commands(data, aux)
     write_output(commands, args.outfile)

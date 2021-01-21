@@ -308,9 +308,7 @@ mypy-frontend:
 	${MYPYBIN} cdedb/frontend/
 
 mypy-test:
-	${MYPYBIN} tests/__init__.py tests/common.py \
-		tests/create_sample_data_json.py tests/create_sample_data_sql.py \
-		tests/main.py tests/singular.py
+	${MYPYBIN} tests
 
 mypy:
 	${MYPYBIN} cdedb tests
