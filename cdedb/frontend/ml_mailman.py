@@ -84,7 +84,7 @@ class MailmanMixin(MlBaseFrontend):
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
 Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)})""",
-    'list:admin:action:post': f"""
+            'list:admin:action:post': f"""
 As list moderator, your authorization is requested for the
 following mailing list posting:
 
