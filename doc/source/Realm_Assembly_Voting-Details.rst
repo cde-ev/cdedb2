@@ -105,14 +105,13 @@ preference to the user.
 Classical Vote
 --------------
 
-In classical votes, the voter got a specified amount of choices, which can be
+In classical votes, the voter gets a specified amount of choices, which can be
 distributed over all candidates. Only one choice per candidate is allowed,
 not given choices are lost.
 
-Internal, we map classical votes into preferential votes. Since we allow a
-maximum of one choice per candidate and give no option to rank the candidates
-which are chosen respectively not chosen by design (we can use the preferential
-votes for this), we got at most two preference levels of candidates:
+Internal, we map classical votes into preferential votes. Since we only allow a
+maximum of one choice per candidate and give no possibility of ranking between
+candidates, we got at most two preference levels of candidates:
 Those which were chosen, and those which were not chosen.
 
 Lets take the following example ballot with **3 choices per voter** and the
@@ -163,7 +162,7 @@ and will be mapped to the string::
 
 To circumvent this problem, we introduce an **implicit _bar_** option into each
 vote. Implicit means here, the voter can not chose the ``_bar_`` option, but the
-vote will be threaten as if it was available and simply not chosen.
+vote will be treated as if it was available and simply not chosen.
 
 With employing this trick, we can distinguish between those two voting
 scenarios, since voting for all candidates
