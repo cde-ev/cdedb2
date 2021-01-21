@@ -419,7 +419,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert data is not None
         presider_ml_data = None
         if create_presider_list:
-            # TODO maybe display a notification?
+            if presider_address:
+                rs.notify("info", n_("Given presider address ignored in favor of"
+                                     " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
             presider_address = ml_type.get_full_address(presider_ml_data)
             data["presider_address"] = presider_address
@@ -429,7 +431,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                           {'address': presider_address})
         else:
             data["presider_address"] = presider_address
-        data = check(rs, vtypes.Assembly, data, creation=True)
         if presider_ids:
             if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):
                 rs.append_validation_error(

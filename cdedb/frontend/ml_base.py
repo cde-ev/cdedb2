@@ -362,6 +362,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         interaction_policy = self.mlproxy.get_interaction_policy(
             rs, rs.user.persona_id, mailinglist=ml)
+        allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
         personas = self.coreproxy.get_personas(rs, ml['moderators'])
         moderators = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
@@ -370,8 +371,8 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'state': state,
-            'interaction_policy': interaction_policy, 'event': event,
-            'assembly': assembly, 'moderators': moderators})
+            'interaction_policy': interaction_policy, 'allow_unsub': allow_unsub,
+            'event': event, 'assembly': assembly, 'moderators': moderators})
 
     @access("ml")
     @mailinglist_guard()
@@ -1028,10 +1029,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return False
-        policy = self.mlproxy.get_interaction_policy(
-            rs, persona_id=rs.user.persona_id,
-            mailinglist=rs.ambience['mailinglist'])
-        if setting and policy == const.MailinglistInteractionPolicy.mandatory:
+        if setting and not self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub:
             rs.notify("error", n_("Disallowed to change address."))
             return False
         return True

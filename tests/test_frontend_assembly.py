@@ -394,11 +394,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     # Use ferdinand since viktor is not a member and may not signup.
     @as_users("ferdinand")
     def test_create_delete_assembly(self, user: CdEDBObject) -> None:
-        self._create_assembly(delta={'create_presider_list': True})
+        presider_address = "presider@lists.cde-ev.de"
+        self._create_assembly(delta={'create_presider_list': True,
+                                     'presider_address': presider_address})
         self.assertPresence("Häretiker", div='description')
         self.assertPresence("Aprilscherz", div='notes')
         self.assertPresence("Versammlungsleitungs-Mailingliste angelegt.",
                             div="notifications")
+        self.assertPresence("Versammlungsleitungs-E-Mail-Adresse durch Adresse der"
+                            " neuen Mailingliste ersetzt.", div="notifications")
         self.assertNotIn('createpresiderlistform', self.response.forms)
         f = self.response.forms['createattendeelistform']
         self.submit(f)
@@ -416,7 +420,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Versammlungen")
         self.assertNonPresence("Drittes CdE-Konzil")
 
-        presider_address = "presider@lists.cde-ev.de"
         self._create_assembly(delta={'presider_address': presider_address})
         self.traverse("Konfiguration")
         f = self.response.forms['changeassemblyform']
